@@ -2,6 +2,7 @@
 script.on_event(defines.events.on_player_created, function(event)
     -- Create main-dialog GUI button
     local player = game.players[event.player_index]
+    data_init()
     gui_init(player)
 end)
 

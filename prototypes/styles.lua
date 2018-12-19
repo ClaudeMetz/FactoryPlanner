@@ -20,3 +20,10 @@ data.raw["gui-style"].default["fp_button_action"] = {
     height = 29,
     top_padding = 1
 }
+
+data.raw["gui-style"].default["fp_button_speed_selection"] = {
+    type = "button_style",
+    font = "default",
+    height = 26,
+    top_padding = 0
+}

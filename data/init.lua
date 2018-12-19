@@ -7,7 +7,8 @@ function data_init()
     if global["modal_dialog_open"] == nil then global["modal_dialog_open"] = false end
     global["currently_editing"] = false
     global["currently_deleting"] = false
-
+    global["main_dialog_dimensions"] = {width = 1200, height = nil}
+    
     -- Enables dev mode features including rebuilding of UI instead of hiding/showing
-    global["devmode"] = true
+    global["devmode"] = false
 end

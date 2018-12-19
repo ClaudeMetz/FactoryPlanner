@@ -5,6 +5,15 @@ function add_actionbar_to(main_dialog)
     actionbar.add{type="button", name="button_new_subfactory", caption={"button-text.new_subfactory"}, style="fp_button_action"}
     actionbar.add{type="button", name="button_edit_subfactory", caption={"button-text.edit_subfactory"}, style="fp_button_action"}
     actionbar.add{type="button", name="button_delete_subfactory", caption={"button-text.delete_subfactory"}, style="fp_button_action"}
+
+
+    --[[ -- Preserved for later use/implementation -> Timescale adjustment
+    local a = actionbar.add{type="flow", name="flow_action_bar", direction="horizontal"}
+    a.style.horizontally_stretchable = true
+
+    local flow = actionbar.add{type="flow", name="flow_speed_buttons", direction="horizontal"}
+    flow.style.top_padding = 3
+    flow.add{type="button", name="button_speed_1", caption="60s", style="fp_button_speed_selection"} ]]
 end
 
 
