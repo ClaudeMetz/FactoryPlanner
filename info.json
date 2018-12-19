@@ -1,0 +1,11 @@
+{
+    "name": "FactoryPlanner",
+    "version": "0.16.0",
+    "title": "Factory Planner",
+    "author": "Therenas",
+    "contact": "Therenas.FactoryPlanner@gmail.com",
+    "homepage": "https://github.com/ClaudeMetz/FactoryPlanner",
+    "factorio_version": "0.16",
+    "dependencies": ["base >= 0.16"],
+    "description": "[Placeholder]"
+}

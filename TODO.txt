@@ -1,0 +1,38 @@
+TODO Features:
+- Scaling
+- Info pane with shortcuts / small Tutorial
+- Make the Subfactory bar scalable (row-breakoff, multiple rows)
+? Notes and/or custom tooltip text for subfactories
+
+
+TODO Improvements:
+? create testsuite for sprite+label-buttons
+? more special characters for subfactory names
+? error handling to prevent crashing the whole save
+* subfactory_bar spacing is a super-mess on different resoultions and scaling modes,
+    sprite resizing is also still not fixable, might need to reconsider
+
+BUGS:
+- actual Sprite size doesn't adjust to height and width, only it's 'box' does
+    fix might be coming in 0.17
+- not whole frame considered part of GuiElement, fires no on_gui_click event (see subfactory_dialog)
+
+TODO 0.17:
+- *.style.visible -> *.visible
+
+TODO Post-Launch:
+! Modules
+! Energy consumption
+- Export/Import
+- Multiplayer
+? FNEI Linking
+? Power Planning
+
+
+API Changes:
+A let enter work as a way to submit forms, even when a textfield is in focus
+- button with both sprite and text
+
+
+MISC:
+- Count LOC: ( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l
