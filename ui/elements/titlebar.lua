@@ -8,7 +8,7 @@ function add_titlebar_to(main_dialog)
     titlebar["label_titlebar_name"].style.top_padding = 0
 
     titlebar.add{type="flow", name="flow_titlebar_spacing", direction="horizontal"}
-    titlebar["flow_titlebar_spacing"].style.width=550
+    titlebar["flow_titlebar_spacing"].style.horizontally_stretchable = true
 
     titlebar.add{type="button", name="button_titlebar_exit", caption="X", style="fp_button_exit"}
 end

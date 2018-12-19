@@ -3,6 +3,8 @@ require("ui.util")
 require("titlebar")
 require("actionbar")
 require("subfactory_bar")
+require("recipe_pane")
+require("production_pane")
 
 
 -- Create the always-present GUI button to open the main dialog
@@ -52,9 +54,11 @@ end
 -- Constructs the main dialog
 function create_main_dialog(player)
     local main_dialog = player.gui.center.add{type="frame", name="main_dialog", direction="vertical"}
+    main_dialog.style.width = global["main_dialog_dimensions"].width
     main_dialog.style.right_padding = 6
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)
     add_subfactory_bar_to(main_dialog, player)
+    add_recipe_pane_to(main_dialog, player)
 end
