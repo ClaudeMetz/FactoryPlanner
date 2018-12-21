@@ -1,10 +1,17 @@
 -- Adds a new subfactory to the database
 function add_subfactory(name, icon)
-    local subfactory = {name = name, icon = icon}
+    local subfactory = 
+    {
+        name = name,
+        icon = icon,
+        products = {},
+        byproducts = {},
+        ingredients = {}
+    }
     table.insert(global["subfactories"], subfactory)
 end
 
--- Changes a subfactory from the database
+-- Changes subfactory name and icon
 function edit_subfactory(id, name, icon)
     global["subfactories"][id].name = name
     global["subfactories"][id].icon = icon

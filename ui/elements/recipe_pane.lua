@@ -20,13 +20,12 @@ function refresh_recipe_pane(player)
 
         -- Products cell
         create_basic_recipe_pane_cell(table_recipe, "products", true)
-        
-        -- Ingredients cell
-        create_basic_recipe_pane_cell(table_recipe, "ingredients", true)
 
         -- Byproducts cell
         create_basic_recipe_pane_cell(table_recipe, "byproducts", true)
 
+        -- Ingredients cell
+        create_basic_recipe_pane_cell(table_recipe, "ingredients", true)
 
         table_recipe.add{type="label", name="label_information", caption=" Power usage: 14.7 MW"}
     end
@@ -40,5 +39,4 @@ function create_basic_recipe_pane_cell(table, kind, add_scrollpane)
     local capitalized_title = "   " .. (kind:gsub("^%l", string.upper))
     local label_title = flow.add{type="label", name="label_" .. kind .. "_title", caption = capitalized_title}
     label_title.style.font = "fp-button-standard"
-
 end
