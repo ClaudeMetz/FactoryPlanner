@@ -20,10 +20,19 @@ function gui_init(player)
             style = mod_gui.button_style
         }
     end
+
     -- Temporary for dev puroposes
-    add_subfactory(nil, "iron-plate")
-    add_subfactory("Beta", nil)
-    add_subfactory("Gamma", "copper-plate")
+    if global["devmod"] then
+        add_subfactory(nil, "iron-plate")
+        add_subfactory("Beta", nil)
+        add_subfactory("Gamma", "copper-plate")
+    end
+end
+
+-- Toggles the visibility of always-present GUI button to open the main dialog
+function toggle_button_interface(player, enable)
+    local enable = settings.get_player_settings(player)["fp_display_gui_button"].value
+    mod_gui.get_frame_flow(player)["fp_button_toggle_interface"].style.visible = enable
 end
 
 
