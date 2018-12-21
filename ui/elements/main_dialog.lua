@@ -30,7 +30,7 @@ end
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
     -- Won't toggle if a modal dialog is open
-    if not global["modal_dialog_open"] then
+    if not player.gui.center["frame_modal_dialog"] then
         local main_dialog = player.gui.center["main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)

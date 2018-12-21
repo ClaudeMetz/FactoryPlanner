@@ -32,10 +32,9 @@ end
 
 -- Closes the subfactory dialog
 function close_subfactory_dialog(player, save)
-    local subfactory_dialog = player.gui.center["subfactory_dialog"]
+    local subfactory_dialog = player.gui.center["frame_modal_dialog"]
 
     if not save then
-        subfactory_dialog.destroy()
         exit_modal_dialog(player, false)
     else
         local data = check_subfactory_data(subfactory_dialog)
@@ -50,7 +49,6 @@ function close_subfactory_dialog(player, save)
                 global["selected_subfactory_id"] = get_subfactory_count()
             end
             -- Only closes when correct data has been entered
-            subfactory_dialog.destroy()
             exit_modal_dialog(player, true)
         end
     end
@@ -98,7 +96,7 @@ end
 
 -- Constructs the subfactory dialog
 function create_subfactory_dialog(player, title, name, icon)
-    local subfactory_dialog = player.gui.center.add{type="frame", name="subfactory_dialog", direction="vertical", caption=title}
+    local subfactory_dialog = player.gui.center.add{type="frame", name="frame_modal_dialog", direction="vertical", caption=title}
 
     local table_conditions = subfactory_dialog.add{type="table", name="table_conditions", column_count=1}
     table_conditions.add{type="label", name="label_subfactory_instruction_1", caption={"label.subfactory_instruction_1"}}

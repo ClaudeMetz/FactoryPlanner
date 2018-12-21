@@ -1,16 +1,14 @@
 -- Sets up environment for opening a new modal dialog
 function enter_modal_dialog(player)
     toggle_main_dialog(player)
-    global["modal_dialog_open"] = true
 end
 
--- Sets up environment after a modal dialog has been closed
+-- Closes the modal dialog and reopens the main environment
 function exit_modal_dialog(player, refresh)
-    global["modal_dialog_open"] = false
+    player.gui.center["frame_modal_dialog"].destroy()
     toggle_main_dialog(player)
     if refresh then refresh_subfactory_bar(player) end
 end
-
 
 
 -- Sets the font color of the given label / button-label

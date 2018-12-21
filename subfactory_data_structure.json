@@ -2,7 +2,25 @@
     "Comment": "Only for documentation and reference puroposes, isn't involved in the actual code",
     "id": {
         "name": "",
-        "icon": ""
-
+        "icon": "",
+        "products": {
+            "name": {
+                "amount_required": 0,
+                "amount_produced": 0,
+                "gui_position": 1
+            }
+        },
+        "byproducts": {
+            "name": {
+                "amount_produced": 0,
+                "gui_position": 1
+            }
+        },
+        "ingredients": {
+            "name": {
+                "amount_required": 0,
+                "gui_position": 1
+            }
+        }
     }
 }
