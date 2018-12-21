@@ -34,8 +34,11 @@ end
 
 -- Constructs the basic structure of a recipe_pane-cell
 function create_basic_recipe_pane_cell(table, kind, add_scrollpane)
-    local width = global["main_dialog_dimensions"].width / 4 - 8
+    local width = global["main_dialog_dimensions"].width / 4 - 6
     local flow = table.add{type="flow", name="flow_" .. kind, direction="vertical"}
     flow.style.width = width
-    flow.add{type="label", name="label_" .. kind .. "_title", caption="   " .. (kind:gsub("^%l", string.upper))}
+    local capitalized_title = "   " .. (kind:gsub("^%l", string.upper))
+    local label_title = flow.add{type="label", name="label_" .. kind .. "_title", caption = capitalized_title}
+    label_title.style.font = "fp-button-standard"
+
 end

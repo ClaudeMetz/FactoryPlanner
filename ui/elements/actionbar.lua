@@ -23,7 +23,7 @@ function open_subfactory_dialog(player, edit)
 
     if edit then
         global["currently_editing"] = true
-        local subfactory = global["subfactories"][global["selected_subfactory_id"]]
+        local subfactory = get_subfactory(global["selected_subfactory_id"])
         create_subfactory_dialog(player, {"label.edit_subfactory"}, subfactory.name, subfactory.icon)
     else
         create_subfactory_dialog(player, {"label.new_subfactory"}, "", nil)
@@ -45,6 +45,9 @@ function close_subfactory_dialog(player, save)
                 global["currently_editing"] = false
             else
                 add_subfactory(data.name, data.icon)
+                
+                -- Sets the currently selected subfactory to the new one
+                global["selected_subfactory_id"] = get_subfactory_count()
             end
             -- Only closes when correct data has been entered
             subfactory_dialog.destroy()
