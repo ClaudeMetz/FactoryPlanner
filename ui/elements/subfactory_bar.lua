@@ -16,7 +16,7 @@ function refresh_subfactory_bar(player)
         actionbar["button_edit_subfactory"].enabled = false
         actionbar["button_delete_subfactory"].enabled = false
     else
-        for id, subfactory in ipairs(global["subfactories"]) do
+        for id, subfactory in ipairs(get_subfactories()) do
             local table = subfactory_bar.add{type="table", name="table_subfactory_" .. id, column_count=2}
             local selected = (global["selected_subfactory_id"] == id)
             
@@ -104,7 +104,7 @@ end
 
 -- Moves selection to the clicked element or shifts it's position left and right
 function handle_subfactory_element_click(player, id, control, shift)
-    local subfactories = global["subfactories"]
+    local subfactories = get_subfactories()
 
         -- shift position to the right
     if not control and shift then

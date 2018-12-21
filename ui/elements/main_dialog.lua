@@ -21,9 +21,9 @@ function gui_init(player)
         }
     end
     -- Temporary for dev puroposes
-    if not global["subfactories"][1] then global["subfactories"][1] = {name=nil, icon="iron-plate"} end
-    if not global["subfactories"][2] then global["subfactories"][2] = {name="Beta", icon="copper-plate"} end
-    if not global["subfactories"][3] then global["subfactories"][3] = {name="Delta", icon=nil} end
+    add_subfactory(nil, "iron-plate")
+    add_subfactory("Beta", nil)
+    add_subfactory("Gamma", "copper-plate")
 end
 
 
