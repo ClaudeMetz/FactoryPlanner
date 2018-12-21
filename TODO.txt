@@ -2,8 +2,7 @@ TODO Features:
 - Timescale setting
 - Scaling
 - Info pane with shortcuts / small Tutorial
-- Make the Subfactory bar scalable (row-breakoff, multiple rows)#
-- Add setting to disable the GUI open/close-button
+- Make the Subfactory bar scalable (row-breakoff, multiple rows)
 ? Custom notes for subfactories
 ? Make the GUI close itself when loading the save
 
@@ -12,6 +11,8 @@ TODO Improvements:
 ? create testsuite for sprite+label-buttons to test their jank size determination
 ? add special characters for subfactory names
 ? error handling to prevent crashing the whole save
+? reconsider recipe- and production-pane naming, seems kind of unfitting
+
 * subfactory_bar spacing is a super-mess on different resoultions and scaling modes,
     sprite resizing is also still not fixable, might need to reconsider
 

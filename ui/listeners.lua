@@ -1,23 +1,37 @@
--- Fires when a player joins
-script.on_event(defines.events.on_player_created, function(event)
-    -- Create main-dialog GUI button
-    local player = game.players[event.player_index]
+-- Sets up global data structure of the mod
+script.on_init(function()
     data_init()
-    gui_init(player)
 end)
+
+
+-- Fires when a player loads into a game for the first time
+script.on_event(defines.events.on_player_created, function(event)
+    local player = game.players[event.player_index]
+    
+    -- Sets up the always-present GUI button for open/close
+    gui_init(player)
+
+    -- Incorporates the mod setting for that button
+    toggle_button_interface(player, enable)
+end)
+
+
+-- Fires when mods settings change to incorporate them
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+    local player = game.players[event.player_index]
+    toggle_button_interface(player, enable)
+end)
+
 
 -- Fires on pressing of the custom 'Open/Close' shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
-    -- Toggle the main dialog
     local player = game.players[event.player_index]
     toggle_main_dialog(player)
 end)
 
--- Fires on pressing the custom 'Confirm' shortcut to confirm dialogs
+-- Fires on pressing the custom 'Confirm' shortcut to confirm the subfactory dialog
 script.on_event("fp_confirm", function(event)
     local player = game.players[event.player_index]
-
-    -- Confirms the new/edit subfactory dialog
     local subfactory_dialog = player.gui.center["subfactory_dialog"]
     if subfactory_dialog then
         close_subfactory_dialog(player, true)
@@ -35,6 +49,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         player.gui.center["subfactory_dialog"].focus()
     end
 
+    -- Deletes the currently selected subfactory
     if event.element.name == "button_delete_subfactory" and is_left_click then
         handle_subfactory_deletion(player, true)
     else
