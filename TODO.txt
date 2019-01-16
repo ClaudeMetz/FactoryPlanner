@@ -8,9 +8,7 @@ TODO Features:
 
 
 TODO Improvements:
-- preserve selected subfactory when changing order (should be fixed by following bullet point)
-- give subfactories actual gui_position attribute to avoid potential bugs when moving them around
-    makes some logic more complicated, but improves clarity and gives parity with other ordering implementations
+- Think of a reasonable order for functions in each file
 - error handling to prevent crashing the whole save (not sure how)
 ? Make the GUI close itself when loading the save
 ? create testsuite for sprite+label-buttons to test their jank size determination

@@ -4,12 +4,13 @@ function add_subfactory(name, icon)
     {
         name = name,
         icon = icon,
+        gui_position = #global["subfactories"]+1,
         products = {},
         byproducts = {},
         ingredients = {}
     }
     table.insert(global["subfactories"], subfactory)
-    local id = get_subfactory_count()
+    local id = #global["subfactories"]
     return id
 end
 
@@ -24,9 +25,16 @@ function delete_subfactory(id)
     table.remove(global["subfactories"], id)
 
     -- Moves the selected subfactory down by 1 if it's the last in the list being deleted
-    if get_subfactory(id) == nil then
-        global["selected_subfactory_id"] = get_subfactory_count()
+    if global["subfactories"][id] == nil then
+        global["selected_subfactory_id"] = #global["subfactories"]
     end
+end
+
+-- Swaps the position of the given subfactories
+function swap_subfactory_positions(id1, id2)
+    local subfactories = global["subfactories"]
+    subfactories[id1].gui_position, subfactories[id2].gui_position = 
+      subfactories[id2].gui_position, subfactories[id1].gui_position
 end
 
 -- Returns the list containing all subfactories
@@ -44,16 +52,12 @@ function get_subfactory_count()
     return #global["subfactories"]
 end
 
--- Moves given subfactory to either right or left by 1 position
-function move_subfactory(id, direction)
-    local subfactories = global["subfactories"]
-    if direction == "right" then
-        subfactories[id], subfactories[id+1] = subfactories[id+1], subfactories[id]
-    else
-        subfactories[id], subfactories[id-1] = subfactories[id-1], subfactories[id]
-    end
+-- Returns the gui position of the given subfactory
+function get_subfactory_gui_position(id)
+    return global["subfactories"][id].gui_position
 end
 
+-- Returns the products attached to the given subfactory
 function get_products(id)
     return global["subfactories"][id].products
 end

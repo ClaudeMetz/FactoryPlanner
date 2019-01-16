@@ -29,6 +29,8 @@ function gui_init(player)
 
         add_subfactory("Beta", nil)
         add_subfactory("Gamma", "copper-plate")
+        
+        update_subfactory_order()
     end
 end
 
