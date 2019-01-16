@@ -27,3 +27,17 @@ data.raw["gui-style"].default["fp_button_speed_selection"] = {
     height = 26,
     top_padding = 0
 }
+
+-- Saved for later implementaion reference
+data.raw["gui-style"].default["trans-image-button-style"] = {
+    type = "button_style",
+    parent = "icon_button",
+	default_graphical_set = {
+		type = "monolith",
+		monolith_image = {
+            filename = "__FactoryPlanner__/graphics/icons/blank.png",
+            width = 32,
+	        height = 32,
+		}
+    }
+}

@@ -11,5 +11,5 @@ function data_init()
     if global["subfactories"] == nil then global["subfactories"] = {} end
     
     -- Enables dev mode features including rebuilding of UI instead of hiding/showing
-    global["devmode"] = false
+    global["devmode"] = true
 end

@@ -22,15 +22,18 @@ function gui_init(player)
     end
 
     -- Temporary for dev puroposes
-    if global["devmod"] then
-        add_subfactory(nil, "iron-plate")
+    if global["devmode"] then
+        local id = add_subfactory(nil, "iron-plate")
+        global["subfactories"][id]["products"][1] = {name="iron-plate", amount_required = 120, amount_produced = 0, gui_position = 1}
+        global["subfactories"][id]["products"][2] = {name="iron-plate", amount_required = 35, amount_produced = 0, gui_position = 2}
+
         add_subfactory("Beta", nil)
         add_subfactory("Gamma", "copper-plate")
     end
 end
 
 -- Toggles the visibility of always-present GUI button to open the main dialog
-function toggle_button_interface(player, enable)
+function toggle_button_interface(player)
     local enable = settings.get_player_settings(player)["fp_display_gui_button"].value
     mod_gui.get_frame_flow(player)["fp_button_toggle_interface"].style.visible = enable
 end
@@ -44,21 +47,19 @@ function toggle_main_dialog(player)
         if main_dialog == nil then
             create_main_dialog(player)
         elseif main_dialog.style.visible == false then
-            if global["devmode"] then
-                create_main_dialog(player)
-            else
-                main_dialog.style.visible = true
-            end
+            main_dialog.style.visible = true
         else
-            if global["devmode"] then
-                main_dialog.destroy()
-            else
-                main_dialog.style.visible = false
-            end
+            main_dialog.style.visible = false
         end
     end
 end
 
+-- Refreshes all variable GUI-panes
+function refresh_main_dialog(player)
+    refresh_actionbar(player)
+    refresh_subfactory_bar(player)
+    refresh_recipe_pane(player)
+end
 
 -- Constructs the main dialog
 function create_main_dialog(player)

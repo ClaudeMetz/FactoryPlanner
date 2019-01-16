@@ -3,22 +3,26 @@
     "id": {
         "name": "",
         "icon": "",
+        "gui_position": 1,
+        "ingredients": {
+            "id": {
+                "name": "",
+                "amount_required": 0,
+                "gui_position": 1
+            }
+        },
         "products": {
-            "name": {
+            "id": {
+                "name": "",
                 "amount_required": 0,
                 "amount_produced": 0,
                 "gui_position": 1
             }
         },
         "byproducts": {
-            "name": {
+            "id": {
+                "name": "",
                 "amount_produced": 0,
-                "gui_position": 1
-            }
-        },
-        "ingredients": {
-            "name": {
-                "amount_required": 0,
                 "gui_position": 1
             }
         }

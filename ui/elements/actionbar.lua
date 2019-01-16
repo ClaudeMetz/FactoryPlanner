@@ -17,6 +17,16 @@ function add_actionbar_to(main_dialog)
 end
 
 
+-- Disables edit and delete buttons if there exist no subfactories
+function refresh_actionbar(player)
+    local actionbar = player.gui.center["main_dialog"]["flow_action_bar"]
+    -- selected_subfactory_id is always 0 when there are no subfactories
+    local subfactory_exists = (global["selected_subfactory_id"] ~= 0)
+    actionbar["button_edit_subfactory"].enabled = subfactory_exists
+    actionbar["button_delete_subfactory"].enabled = subfactory_exists
+end
+
+
 -- Opens the subfactory dialog for either new or edit
 function open_subfactory_dialog(player, edit)
     enter_modal_dialog(player)
@@ -141,7 +151,7 @@ function handle_subfactory_deletion(player, pressed)
                 delete_subfactory(id)
 
                 set_delete_button(delete_button, true)
-                refresh_subfactory_bar(player)
+                refresh_main_dialog(player)
             end
         end
     end
