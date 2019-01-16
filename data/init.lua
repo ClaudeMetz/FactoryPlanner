@@ -5,8 +5,9 @@ function data_init()
     global["main_dialog_dimensions"] = {width = 1200, height = nil}
     global["selected_subfactory_id"] = 1
     global["subfactory_order"] = {}
-    global["currently_editing"] = false
-    global["currently_deleting"] = false
+    global["currently_editing_subfactory"] = false
+    global["currently_deleting_subfactory"] = false
+    global["currently_changing_timescale"] = false
 
     -- if statement as a security measure to cure a bit of paranoia
     if global["subfactories"] == nil then global["subfactories"] = {} end

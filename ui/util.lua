@@ -1,22 +1,21 @@
--- Sets up environment for opening a new modal dialog
-function enter_modal_dialog(player)
-    toggle_main_dialog(player)
-end
-
--- Closes the modal dialog and reopens the main environment
-function exit_modal_dialog(player, refresh)
-    player.gui.center["frame_modal_dialog"].destroy()
-    toggle_main_dialog(player)
-    if refresh then refresh_main_dialog(player) end
-end
-
-
 -- Sets the font color of the given label / button-label
 function set_label_color(ui_element, color)
     if color == "red" then
         ui_element.style.font_color = {r = 1}
     elseif color == "white" or color == "default" then
         ui_element.style.font_color = {r = 1, g = 1, b = 1}
+    end
+end
+
+
+-- Determines unit of given timescale, currently limited to presets
+function determine_unit(timescale)
+    if timescale == 1 then
+        return "s"
+    elseif timescale == 60 then
+        return "m"
+    elseif timescale == 3600 then
+        return "h"
     end
 end
 
@@ -32,6 +31,7 @@ function determine_pixelsize_of(string)
     end
     return size
 end
+
 
 -- Returns the pixelsize of letters+numbers with font 'fp-button-standard' (16p font)
 function get_alphabet_pixelcounts()

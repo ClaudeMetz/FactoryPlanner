@@ -5,15 +5,6 @@ function add_actionbar_to(main_dialog)
     actionbar.add{type="button", name="button_new_subfactory", caption={"button-text.new_subfactory"}, style="fp_button_action"}
     actionbar.add{type="button", name="button_edit_subfactory", caption={"button-text.edit_subfactory"}, style="fp_button_action"}
     actionbar.add{type="button", name="button_delete_subfactory", caption={"button-text.delete_subfactory"}, style="fp_button_action"}
-
-
-    --[[ -- Preserved for later use/implementation -> Timescale adjustment
-    local a = actionbar.add{type="flow", name="flow_action_bar", direction="horizontal"}
-    a.style.horizontally_stretchable = true
-
-    local flow = actionbar.add{type="flow", name="flow_speed_buttons", direction="horizontal"}
-    flow.style.top_padding = 3
-    flow.add{type="button", name="button_speed_1", caption="60s", style="fp_button_speed_selection"} ]]
 end
 
 
@@ -32,7 +23,7 @@ function open_subfactory_dialog(player, edit)
     enter_modal_dialog(player)
 
     if edit then
-        global["currently_editing"] = true
+        global["currently_editing_subfactory"] = true
         local subfactory = get_subfactory(global["selected_subfactory_id"])
         create_subfactory_dialog(player, {"label.edit_subfactory"}, subfactory.name, subfactory.icon)
     else
@@ -49,9 +40,9 @@ function close_subfactory_dialog(player, save)
     else
         local data = check_subfactory_data(subfactory_dialog)
         if data ~= nil then
-            if global["currently_editing"] then
+            if global["currently_editing_subfactory"] then
                 edit_subfactory(global["selected_subfactory_id"], data.name, data.icon)
-                global["currently_editing"] = false
+                global["currently_editing_subfactory"] = false
             else
                 add_subfactory(data.name, data.icon)
                 
@@ -146,7 +137,7 @@ function handle_subfactory_deletion(player, pressed)
         if not pressed then
             set_delete_button(delete_button, true)
         else
-            if not global["currently_deleting"] then
+            if not global["currently_deleting_subfactory"] then
                 set_delete_button(delete_button, false)
             else
                 -- Delete subfactory from database
@@ -166,10 +157,10 @@ function set_delete_button(button, reset)
     if reset then
         button.caption = {"button-text.delete_subfactory"}
         set_label_color(button, "white")
-        global["currently_deleting"] = false
+        global["currently_deleting_subfactory"] = false
     else
         button.caption = {"button-text.delete_subfactory_confirm"}
         set_label_color(button, "red")
-        global["currently_deleting"] = true
+        global["currently_deleting_subfactory"] = true
     end
 end
