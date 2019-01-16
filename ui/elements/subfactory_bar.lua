@@ -1,7 +1,7 @@
 -- Creates the subfactory bar that includes all current subfactory buttons
 function add_subfactory_bar_to(main_dialog, player)
     main_dialog.add{type="table", name="table_subfactory_bar", direction="horizontal", column_count = 10}
-    refresh_subfactory_bar(player)
+    refresh_main_dialog(player)
 end
 
 
@@ -10,12 +10,8 @@ function refresh_subfactory_bar(player)
     local subfactory_bar =  player.gui.center["main_dialog"]["table_subfactory_bar"]
     subfactory_bar.clear()
 
-    -- selected_subfactory_id is always 0 when there are no subfactories
-    if global["selected_subfactory_id"] == 0 then
-        local actionbar = player.gui.center["main_dialog"]["flow_action_bar"]
-        actionbar["button_edit_subfactory"].enabled = false
-        actionbar["button_delete_subfactory"].enabled = false
-    else
+    -- selected_subfactory_id is 0 when there are no subfactories
+    if global["selected_subfactory_id"] ~= 0 then
         for id, subfactory in ipairs(get_subfactories()) do
             local table = subfactory_bar.add{type="table", name="table_subfactory_" .. id, column_count=2}
             local selected = (global["selected_subfactory_id"] == id)
@@ -104,12 +100,10 @@ end
 
 -- Moves selection to the clicked element or shifts it's position left and right
 function handle_subfactory_element_click(player, id, control, shift)
-    local subfactories = get_subfactories()
-
-        -- shift position to the right
+    -- shift position to the right
     if not control and shift then
-        if id ~= #subfactories then
-            subfactories[id], subfactories[id+1] = subfactories[id+1], subfactories[id]
+        if id ~= get_subfactory_count() then
+            move_subfactory(id, "right")
             if global["selected_subfactory_id"] == id then
                 global["selected_subfactory_id"] = global["selected_subfactory_id"] + 1
             end
@@ -118,7 +112,7 @@ function handle_subfactory_element_click(player, id, control, shift)
     -- shift position to the left
     elseif control and not shift then
         if id ~= 1 then
-            subfactories[id], subfactories[id-1] = subfactories[id-1], subfactories[id]
+            move_subfactory(id, "left")
             if global["selected_subfactory_id"] == id then
                 global["selected_subfactory_id"] = global["selected_subfactory_id"] - 1
             end
@@ -128,5 +122,5 @@ function handle_subfactory_element_click(player, id, control, shift)
         global["selected_subfactory_id"] = id
     end
 
-    refresh_subfactory_bar(player)
+    refresh_main_dialog(player)
 end

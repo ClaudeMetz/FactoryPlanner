@@ -1,26 +1,30 @@
 TODO Features:
 - Timescale setting
 - Scaling
+- Multiplayer compatability
 - Info pane with shortcuts / small Tutorial
 - Make the Subfactory bar scalable (row-breakoff, multiple rows)
 ? Custom notes for subfactories
-? Make the GUI close itself when loading the save
 
 
 TODO Improvements:
+- preserve selected subfactory when changing order (should be fixed by following bullet point)
+- give subfactories actual gui_position attribute to avoid potential bugs when moving them around
+    makes some logic more complicated, but improves clarity and gives parity with other ordering implementations
+- error handling to prevent crashing the whole save (not sure how)
+? Make the GUI close itself when loading the save
 ? create testsuite for sprite+label-buttons to test their jank size determination
-? add special characters for subfactory names
-? error handling to prevent crashing the whole save
+? add some special characters for subfactory names
 ? reconsider recipe- and production-pane naming, seems kind of unfitting
 
-* subfactory_bar spacing is a super-mess on different resoultions and scaling modes,
-    sprite resizing is also still not fixable, might need to reconsider
 
 BUGS:
 - actual Sprite size doesn't adjust to height and width, only it's 'box' does
     fix might be coming in 0.17
-- not whole frame considered part of GuiElement, fires no on_gui_click event (see subfactory_dialog)
+? not whole frame considered part of GuiElement, fires no on_gui_click event (see subfactory_dialog)
     not too bad, might take this listener out anyway, might not be worth it
+? subfactory_bar spacing is a super-mess on different resoultions and scaling modes,
+    sprite resizing is also still not fixable, might need to reconsider
 
 TODO 0.17:
 - *.style.visible -> *.visible
@@ -28,14 +32,14 @@ TODO 0.17:
 TODO Post-Launch:
 ! Modules
 ! Export/Import
-- Multiplayer
+- Better multiplayer support (access rights, etc)
 ? FNEI Linking
 ? Power Planning
 
 
-API Changes:
-- (A) let enter work as a way to submit forms, even when a textfield is in focus
-- button containing both sprite and text
+API wishes for change:
+- (A) let enter work as a way to submit forms, even when a textfield is in focus-
+- 
 
 
 MISC:

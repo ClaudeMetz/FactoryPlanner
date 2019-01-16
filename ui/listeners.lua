@@ -7,19 +7,17 @@ end)
 -- Fires when a player loads into a game for the first time
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.players[event.player_index]
-    
     -- Sets up the always-present GUI button for open/close
     gui_init(player)
-
-    -- Incorporates the mod setting for that button
-    toggle_button_interface(player, enable)
+    -- Incorporates the mod setting for the button
+    toggle_button_interface(player)
 end)
 
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local player = game.players[event.player_index]
-    toggle_button_interface(player, enable)
+    toggle_button_interface(player)
 end)
 
 
@@ -53,7 +51,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     if event.element.name == "button_delete_subfactory" and is_left_click then
         handle_subfactory_deletion(player, true)
     else
-        -- Resets button if any other button is pressed
+        -- Resets delete button if any other button is pressed
         handle_subfactory_deletion(player, false)
 
         -- Reacts to the always-present GUI button or the close-button on the main dialog being pressed
@@ -87,9 +85,19 @@ script.on_event(defines.events.on_gui_click, function(event)
 end)
 
 
--- Returns true when only the left mouse button has been pressed (no modifiers)
+-- Returns true only when the left mouse button (with no modifiers) has been pressed
 function is_left_click(event)
     if event.button == defines.mouse_button_type.left and
+      not event.alt and not event.control and not event.shift then
+        return true
+    else
+        return false
+    end
+end
+
+-- Returns true only when the right mouse button (with no modifiers) has been pressed
+function is_right_click(event)
+    if event.button == defines.mouse_button_type.right and
       not event.alt and not event.control and not event.shift then
         return true
     else

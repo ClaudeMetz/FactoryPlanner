@@ -7,7 +7,7 @@ end
 function exit_modal_dialog(player, refresh)
     player.gui.center["frame_modal_dialog"].destroy()
     toggle_main_dialog(player)
-    if refresh then refresh_subfactory_bar(player) end
+    if refresh then refresh_main_dialog(player) end
 end
 
 
