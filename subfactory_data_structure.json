@@ -3,6 +3,7 @@
     "id": {
         "name": "",
         "icon": "",
+        "timescale": 60,
         "gui_position": 1,
         "ingredients": {
             "id": {

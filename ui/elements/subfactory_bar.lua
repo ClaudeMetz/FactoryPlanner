@@ -102,6 +102,8 @@ end
 -- Moves selection to the clicked element or shifts it's position left or right
 function handle_subfactory_element_click(player, id, control, shift)
     local position = get_subfactory_gui_position(id)
+    local change = true
+    
     -- shift position to the right
     if not control and shift then
         if position ~= #global["subfactory_order"] then
@@ -114,11 +116,17 @@ function handle_subfactory_element_click(player, id, control, shift)
         end
     -- change selected subfactory
     elseif not control and not shift then
-        global["selected_subfactory_id"] = id
+        if global["selected_subfactory_id"] == id then
+            change = false
+        else
+            global["selected_subfactory_id"] = id
+        end
     end
 
-    update_subfactory_order()
-    refresh_main_dialog(player)
+    if change then
+        update_subfactory_order()
+        refresh_main_dialog(player)
+    end
 end
 
 -- Updates the GUI order of the individual subfactories

@@ -1,19 +1,23 @@
 TODO Features:
-- Timescale setting
-- Scaling
-- Multiplayer compatability
 - Info pane with shortcuts / small Tutorial
-- Make the Subfactory bar scalable (row-breakoff, multiple rows)
 ? Custom notes for subfactories
+? Add some special characters for subfactory names
+? Add more and/or custom timescales
 
 
 TODO Improvements:
+- Scaling
+- Multiplayer compatability
+- Make the Subfactory bar scalable (row-breakoff, multiple rows)
+
+
+TODO Code Improvements:
+- Verify that subfactories are actually only changed in /data
 - Think of a reasonable order for functions in each file
-- error handling to prevent crashing the whole save (not sure how)
-? Make the GUI close itself when loading the save
-? create testsuite for sprite+label-buttons to test their jank size determination
-? add some special characters for subfactory names
-? reconsider recipe- and production-pane naming, seems kind of unfitting
+- Add error handling to prevent crashing the whole save (not sure how)
+- Make the GUI close itself when loading the save
+? Create testsuite for sprite+label-buttons to test their jank size determination
+? Reconsider recipe- and production-pane naming, seems kind of unfitting
 
 
 BUGS:
@@ -24,20 +28,21 @@ BUGS:
 ? subfactory_bar spacing is a super-mess on different resoultions and scaling modes,
     sprite resizing is also still not fixable, might need to reconsider
 
+
 TODO 0.17:
 - *.style.visible -> *.visible
+
 
 TODO Post-Launch:
 ! Modules
 ! Export/Import
-- Better multiplayer support (access rights, etc)
+? Better multiplayer support (access rights, etc)
 ? FNEI Linking
 ? Power Planning
 
 
 API wishes for change:
-- (A) let enter work as a way to submit forms, even when a textfield is in focus-
-- 
+- (A) let enter work as a way to submit forms, even when a textfield is in focus
 
 
 MISC:

@@ -28,7 +28,6 @@ data.raw["gui-style"].default["fp_button_speed_selection"] = {
     top_padding = 0
 }
 
--- Saved for later implementaion reference
 data.raw["gui-style"].default["trans-image-button-style"] = {
     type = "button_style",
     parent = "icon_button",

@@ -4,6 +4,7 @@ function add_subfactory(name, icon)
     {
         name = name,
         icon = icon,
+        timescale = 60,
         gui_position = #global["subfactories"]+1,
         products = {},
         byproducts = {},
@@ -50,6 +51,15 @@ end
 -- Returns the total number of subfactories
 function get_subfactory_count()
     return #global["subfactories"]
+end
+
+-- Returns the current timescale of the given subfactory
+function get_subfactory_timescale(id)
+    return global["subfactories"][id].timescale
+end
+
+function set_subfactory_timescale(id, timescale)
+    global["subfactories"][id].timescale = timescale
 end
 
 -- Returns the gui position of the given subfactory

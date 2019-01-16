@@ -10,5 +10,11 @@ data:extend({
         name = "fp-button-standard",
         from = "default",
         size = 16
+    },
+    {
+        type = "font",
+        name = "fp-label-large",
+        from = "default",
+        size = 14
     }
 })
