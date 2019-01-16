@@ -12,7 +12,8 @@ function refresh_subfactory_bar(player)
 
     -- selected_subfactory_id is 0 when there are no subfactories
     if global["selected_subfactory_id"] ~= 0 then
-        for id, subfactory in ipairs(get_subfactories()) do
+        for _, id in ipairs(global["subfactory_order"]) do
+            local subfactory = get_subfactory(id)
             local table = subfactory_bar.add{type="table", name="table_subfactory_" .. id, column_count=2}
             local selected = (global["selected_subfactory_id"] == id)
             
@@ -98,29 +99,48 @@ function create_label_sprite_element(table, id, subfactory, selected)
 end
 
 
--- Moves selection to the clicked element or shifts it's position left and right
+-- Moves selection to the clicked element or shifts it's position left or right
 function handle_subfactory_element_click(player, id, control, shift)
+    local position = get_subfactory_gui_position(id)
     -- shift position to the right
     if not control and shift then
-        if id ~= get_subfactory_count() then
-            move_subfactory(id, "right")
-            if global["selected_subfactory_id"] == id then
-                global["selected_subfactory_id"] = global["selected_subfactory_id"] + 1
-            end
+        if position ~= #global["subfactory_order"] then
+            swap_subfactory_positions(global["subfactory_order"][position], global["subfactory_order"][position+1])
         end
-
     -- shift position to the left
     elseif control and not shift then
-        if id ~= 1 then
-            move_subfactory(id, "left")
-            if global["selected_subfactory_id"] == id then
-                global["selected_subfactory_id"] = global["selected_subfactory_id"] - 1
-            end
+        if position ~= 1 then
+            swap_subfactory_positions(global["subfactory_order"][position], global["subfactory_order"][position-1])
         end
-
+    -- change selected subfactory
     elseif not control and not shift then
         global["selected_subfactory_id"] = id
     end
 
+    update_subfactory_order()
     refresh_main_dialog(player)
+end
+
+-- Updates the GUI order of the individual subfactories
+-- Kinda stupid implementation, but whatever
+function update_subfactory_order()
+    -- First, it simply assigns them to the index in the array that's equal to their position
+    local count = 0
+    local uncompressed_order = {}
+    for id, subfactory in ipairs(get_subfactories()) do
+        uncompressed_order[subfactory.gui_position] = id
+        count = count + 1
+    end
+
+    -- Then, the empty index of the array is squashed
+    global["subfactory_order"] = {}
+    local i = 0
+    while i < count do
+        if uncompressed_order[i] ~= nil then
+            table.insert(global["subfactory_order"], uncompressed_order[i])
+        else
+            count = count + 1
+        end
+        i = i + 1
+    end
 end

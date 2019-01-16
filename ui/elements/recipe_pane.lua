@@ -9,6 +9,7 @@ end
 function refresh_recipe_pane(player)
     -- Structure provisional for now, info cell might get axed if it turns out it's not needed
     local table_recipe =  player.gui.center["main_dialog"]["table_recipe_pane"]
+    -- Cuts function short if the recipe pane hasn't been initialized yet
     if not table_recipe then return end
 
     table_recipe.style.horizontally_stretchable = true
