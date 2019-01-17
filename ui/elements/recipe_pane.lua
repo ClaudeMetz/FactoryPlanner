@@ -43,8 +43,7 @@ function create_recipe_pane_cell(table, kind)
     local width = global["main_dialog_dimensions"].width / 4 - 6
     local flow = table.add{type="flow", name="flow_" .. kind, direction="vertical"}
     flow.style.width = width
-    local capitalized_title = "   " .. (kind:gsub("^%l", string.upper))
-    local label_title = flow.add{type="label", name="label_" .. kind .. "_title", caption = capitalized_title}
+    local label_title = flow.add{type="label", name="label_" .. kind .. "_title", caption={"", "  ", {"label." ..kind}}}
     label_title.style.font = "fp-button-standard"
 
     return flow
@@ -63,6 +62,8 @@ function refresh_info_pane(player)
     local timescale = get_subfactory_timescale(global["selected_subfactory_id"])
     local unit = determine_unit(timescale)
     local table_timescale = flow["flow_info_list"].add{type="table", name="table_timescale_buttons", column_count=4}
+    local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
+      caption={"", " ", {"label.timescale"}, ": "}}
     label_timescale_title.style.top_padding = 1
     label_timescale_title.style.font = "fp-label-large"
 
@@ -75,10 +76,12 @@ function refresh_info_pane(player)
         local label_timescale = table_timescale.add{type="label", name="label_timescale", caption="1" .. unit .. "   "}
         label_timescale.style.top_padding = 1
         label_timescale.style.font = "default-bold"
-        table_timescale.add{type="button", name="button_change_timescale", caption="Change", style="fp_button_speed_selection"}
+        table_timescale.add{type="button", name="button_change_timescale", caption={"button-text.change"},
+          style="fp_button_speed_selection"}
     end
 
     local table_power_usage = flow["flow_info_list"].add{type="table", name="table_power_usage", column_count=2}
+    table_power_usage.add{type="label", name="label_power_usage_title", caption={"", " ",  {"label.power_usage"}, ": "}}
     table_power_usage["label_power_usage_title"].style.font = "fp-label-large"
     local power_usage = 14.7  -- Placeholder until a later implementation
     table_power_usage.add{type="label", name="label_power_usage", caption=power_usage .. " MW/" .. unit}
