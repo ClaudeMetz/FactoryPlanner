@@ -3,8 +3,8 @@ function add_actionbar_to(main_dialog)
     local actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
 
     actionbar.add{type="button", name="button_new_subfactory", caption={"button-text.new_subfactory"}, style="fp_button_action"}
-    actionbar.add{type="button", name="button_edit_subfactory", caption={"button-text.edit_subfactory"}, style="fp_button_action"}
-    actionbar.add{type="button", name="button_delete_subfactory", caption={"button-text.delete_subfactory"}, style="fp_button_action"}
+    actionbar.add{type="button", name="button_edit_subfactory", caption={"button-text.edit"}, style="fp_button_action"}
+    actionbar.add{type="button", name="button_delete_subfactory", caption={"button-text.delete"}, style="fp_button_action"}
 end
 
 
@@ -110,12 +110,12 @@ function create_subfactory_dialog(player, title, name, icon)
     local table_subfactory = subfactory_dialog.add{type="table", name="table_subfactory", column_count=2}
     table_subfactory.style.bottom_padding = 8
     -- Name
-    table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"label.subfactory_name"}, "    "}}
+    table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"label.name"}, "    "}}
     table_subfactory.add{type="textfield", name="textfield_subfactory_name", text=name}
     table_subfactory["textfield_subfactory_name"].focus()
 
     -- Icon
-    table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.subfactory_icon"}}
+    table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
     table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="item", item=icon}
 
     -- Button Bar
@@ -155,11 +155,11 @@ end
 -- Sets the delete button to either state
 function set_delete_button(button, reset)
     if reset then
-        button.caption = {"button-text.delete_subfactory"}
+        button.caption = {"button-text.delete"}
         set_label_color(button, "white")
         global["currently_deleting_subfactory"] = false
     else
-        button.caption = {"button-text.delete_subfactory_confirm"}
+        button.caption = {"button-text.delete_confirm"}
         set_label_color(button, "red")
         global["currently_deleting_subfactory"] = true
     end
