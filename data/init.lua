@@ -8,6 +8,7 @@ function data_init()
     global["currently_editing_subfactory"] = false
     global["currently_deleting_subfactory"] = false
     global["currently_changing_timescale"] = false
+    global["modal_dialog_submit_function"] = nil
 
     -- if statement as a security measure to cure a bit of paranoia
     if global["subfactories"] == nil then global["subfactories"] = {} end

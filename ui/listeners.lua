@@ -79,28 +79,28 @@ script.on_event(defines.events.on_gui_click, function(event)
         if event.element.name == "fp_button_toggle_interface" or event.element.name == "button_titlebar_exit" and
           is_left_click then
             toggle_main_dialog(player)
+
+        -- Closes the modal dialog straight away
+        elseif event.element.name == "button_modal_dialog_cancel" and is_left_click then
+            exit_modal_dialog(player, false)
+
+        -- Submits the modal dialog forwarding to the appropriate function
+        elseif event.element.name == "button_modal_dialog_submit" and is_left_click then
+            exit_modal_dialog(player, true)
         
         -- Opens the new-subfactory dialog
         elseif event.element.name == "button_new_subfactory" and is_left_click then
-            open_subfactory_dialog(player, false)
+            enter_modal_dialog(player, open_subfactory_dialog, submit_subfactory_dialog, {edit=false})
 
         -- Opens the edit-subfactory dialog
         elseif event.element.name == "button_edit_subfactory" and is_left_click then
-            open_subfactory_dialog(player, true)
-
-        -- Closes the subfactory dialog
-        elseif event.element.name == "button_subfactory_cancel" and is_left_click then
-            close_subfactory_dialog(player, false)
-
-        -- Submits the subfactory dialog
-        elseif event.element.name == "button_subfactory_submit" and is_left_click then
-            close_subfactory_dialog(player, true)
+            enter_modal_dialog(player, open_subfactory_dialog, submit_subfactory_dialog, {edit=true})
 
         -- Enters mode to change the timescale of the current subfactory
         elseif event.element.name == "button_change_timescale" and is_left_click then
             global["currently_changing_timescale"] = true
             refresh_info_pane(player)
-        
+
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and is_left_shift_ctrl_click(event) then
             local id = tonumber(string.match(event.element.name, "%d+"))

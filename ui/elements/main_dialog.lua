@@ -75,23 +75,50 @@ function toggle_main_dialog(player)
         local main_dialog = player.gui.center["main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)
-        elseif main_dialog.style.visible == false then
-            main_dialog.style.visible = true
+            player.gui.center["main_dialog"].style.visible = true  -- Strangely isn't set right away
         else
-            main_dialog.style.visible = false
+            main_dialog.style.visible = (not main_dialog.style.visible)
         end
     end
 end
 
 
--- Sets up environment for opening a new modal dialog
-function enter_modal_dialog(player)
+-- Opens a barebone modal dialog and calls upon the given function to populate it
+function enter_modal_dialog(player, f_open, f_submit, args)
+    global["modal_dialog_submit_function"] = f_submit
     toggle_main_dialog(player)
+    local flow_modal_dialog = create_base_modal_dialog(player)
+    f_open(flow_modal_dialog, args)
 end
 
--- Closes the modal dialog and reopens the main environment
-function exit_modal_dialog(player, refresh)
-    player.gui.center["frame_modal_dialog"].destroy()
-    toggle_main_dialog(player)
-    if refresh then refresh_main_dialog(player) end
+-- Handles the closing process of a modal dialog, reopening the main dialog thereafter
+function exit_modal_dialog(player, submission)
+    local frame_modal_dialog = player.gui.center["frame_modal_dialog"]
+    if not submission then
+        frame_modal_dialog.destroy()
+        toggle_main_dialog(player)
+    else
+        -- Runs submission process, if successful it returns true and the modal dialog can be closed
+        f_submit = global["modal_dialog_submit_function"]
+        if f_submit(frame_modal_dialog["flow_modal_dialog"]) then
+            global["modal_dialog_submit_function"] = nil
+            frame_modal_dialog.destroy()
+            toggle_main_dialog(player)
+            refresh_main_dialog(player)
+        end
+    end
+end
+
+-- Creates barebones modal dialog
+function create_base_modal_dialog(player)
+    local frame_modal_dialog = player.gui.center.add{type="frame", name="frame_modal_dialog", direction="vertical"}
+    local flow_modal_dialog = frame_modal_dialog.add{type="flow", name="flow_modal_dialog", direction="vertical"}
+
+    local buttonbar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
+    buttonbar.add{type="button", name="button_modal_dialog_cancel", caption={"button-text.cancel"}, style="fp_button_with_spacing"}
+    buttonbar.add{type="flow", name="flow_modal_dialog_buttonbar", direction="horizontal"}
+    buttonbar["flow_modal_dialog_buttonbar"].style.width = 40
+    buttonbar.add{type="button", name="button_modal_dialog_submit", caption={"button-text.submit"}, style="fp_button_with_spacing"}
+
+    return flow_modal_dialog
 end
