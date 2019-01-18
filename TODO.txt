@@ -1,6 +1,6 @@
 TODO Features:
-- Info pane with shortcuts / small Tutorial
-? Custom notes for subfactories
+- Info pane with shortcuts and tutorial
+? Custom notes and/or tooltips for subfactories
 ? Add some special characters for subfactory names
 ? Add more and/or custom timescales
 
@@ -12,6 +12,8 @@ TODO Improvements:
 
 
 TODO Code Improvements:
+- Think of sensible refresh strategy for GUI's -> level approach, top GUI's always refresh those under them,
+    but not the reverse; each level is individually callable
 - Verify that subfactories are actually only changed in /data
 - Think of a reasonable order for functions in each file
 - Add error handling to prevent crashing the whole save (not sure how)
