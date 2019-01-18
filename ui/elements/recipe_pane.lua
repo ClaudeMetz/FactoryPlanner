@@ -28,8 +28,8 @@ function refresh_recipe_pane(player)
 
         -- Products cell
         local flow_recipe = create_recipe_pane_cell(table_recipe, "products")
-        local products = get_products(selected_subfactory_id)
-        --create_item_buttons(flow_recipe, products, "products")
+        local products = get_subfactory_products(selected_subfactory_id)
+        create_product_buttons(flow_recipe, products)
 
         -- Byproducts cell
         create_recipe_pane_cell(table_recipe, "byproducts")
@@ -83,8 +83,8 @@ function refresh_info_pane(player)
     local table_power_usage = flow["flow_info_list"].add{type="table", name="table_power_usage", column_count=2}
     table_power_usage.add{type="label", name="label_power_usage_title", caption={"", " ",  {"label.power_usage"}, ": "}}
     table_power_usage["label_power_usage_title"].style.font = "fp-label-large"
-    local power_usage = 14.7  -- Placeholder until a later implementation
-    table_power_usage.add{type="label", name="label_power_usage", caption=power_usage .. " MW/" .. unit}
+    local power_usage = "14.7 MW"  -- Placeholder until a later implementation
+    table_power_usage.add{type="label", name="label_power_usage", caption=power_usage .. "/" .. unit}
     table_power_usage["label_power_usage"].style.font = "default-bold"
 end
 
@@ -97,25 +97,36 @@ function change_subfactory_timescale(player, timescale)
 end
 
 
-
-
-
---[[ -- Saved for later implementation reference
--- Constructs the table containing all item buttons of the given kind
+-- Constructs the table containing all product item buttons
 -- (Everything is called an item, even fluids, they get treated the same)
-function create_item_buttons(flow, items, kind)
+function create_product_buttons(flow, items)
     if #items ~= 0 then
-        local table = flow.add{type="table", name="table_" .. kind, column_count = 5}
+        local table = flow.add{type="table", name="table_products", column_count = 6}
         table.style.left_padding = 10
-        table.style.horizontal_spacing = 16
-        if kind == "products" then
-            local button
-            for id, product in ipairs(items) do
-                local display_number = product.amount_required - product.amount_produced
-                button = table.add{type="sprite-button", name="sprite-button_product_" .. id, 
-                  sprite="item/" .. product.name, number = display_number}
+        table.style.horizontal_spacing = 10
+
+        for id, product in ipairs(items) do
+            local button = table.add{type="sprite-button", name="sprite-button_product_" .. id, 
+                sprite="item/" .. product.name, number=product.amount_required}
+
+            button.tooltip = {"", game.item_prototypes[product.name].localised_name, "\n",
+              product.amount_produced," / ", product.amount_required}
+
+            if product.amount_produced == 0 then
+                button.style = "fp_button_icon_red"
+            elseif product.amount_produced < product.amount_required then
+                button.style = "fp_button_icon_yellow"
+            elseif product.amount_produced == product.amount_required then
+                button.style = "fp_button_icon_green"
+            else
+                button.style = "fp_button_icon_cyan"
             end
-            button.style = "trans-image-button-style"
         end
+        
+        local button = table.add{type="button", name="sprite-button_add_product", caption="+"}
+        button.style.height = 36
+        button.style.width = 36
+        button.style.top_padding = 0
+        button.style.font = "fp-button-large"
     end
-end ]]
+end

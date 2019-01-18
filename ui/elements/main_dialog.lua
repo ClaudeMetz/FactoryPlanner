@@ -24,8 +24,14 @@ function gui_init(player)
     -- Temporary for dev puroposes
     if global["devmode"] then
         local id = add_subfactory(nil, "iron-plate")
-        global["subfactories"][id]["products"][1] = {name="iron-plate", amount_required = 120, amount_produced = 0, gui_position = 1}
-        global["subfactories"][id]["products"][2] = {name="iron-plate", amount_required = 35, amount_produced = 0, gui_position = 2}
+        local p1 = add_subfactory_product(id, "electronic-circuit", 400)
+        change_product_amount_produced(id, p1, 600)
+        local p2 = add_subfactory_product(id, "advanced-circuit", 200)
+        change_product_amount_produced(id, p2, 200)
+        local p3 = add_subfactory_product(id, "processing-unit", 100)
+        change_product_amount_produced(id, p3, 60)
+        local p4 = add_subfactory_product(id, "rocket-control-unit", 40)
+        change_product_amount_produced(id, p4, 0)
 
         add_subfactory("Beta", nil)
         add_subfactory("Gamma", "copper-plate")
@@ -52,6 +58,7 @@ function create_main_dialog(player)
     add_actionbar_to(main_dialog)
     add_subfactory_bar_to(main_dialog, player)
     add_recipe_pane_to(main_dialog, player)
+    add_production_pane_to(main_dialog, player)
 end
 
 -- Refreshes all variable GUI-panes

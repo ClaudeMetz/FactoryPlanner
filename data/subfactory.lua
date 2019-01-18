@@ -31,12 +31,19 @@ function delete_subfactory(id)
     end
 end
 
+
+-- Returns the gui position of the given subfactory
+function get_subfactory_gui_position(id)
+    return global["subfactories"][id].gui_position
+end
+
 -- Swaps the position of the given subfactories
 function swap_subfactory_positions(id1, id2)
     local subfactories = global["subfactories"]
     subfactories[id1].gui_position, subfactories[id2].gui_position = 
       subfactories[id2].gui_position, subfactories[id1].gui_position
 end
+
 
 -- Returns the list containing all subfactories
 function get_subfactories()
@@ -53,6 +60,7 @@ function get_subfactory_count()
     return #global["subfactories"]
 end
 
+
 -- Returns the current timescale of the given subfactory
 function get_subfactory_timescale(id)
     return global["subfactories"][id].timescale
@@ -62,12 +70,28 @@ function set_subfactory_timescale(id, timescale)
     global["subfactories"][id].timescale = timescale
 end
 
--- Returns the gui position of the given subfactory
-function get_subfactory_gui_position(id)
-    return global["subfactories"][id].gui_position
+
+-- Adds a product to the specified subfactory
+function add_subfactory_product(id, name, amount_required)
+    local products = global["subfactories"][id]["products"]
+    local product = 
+    {
+        name = name,
+        amount_required = amount_required,
+        amount_produced = 0,
+        gui_position = #products+1
+    }
+    table.insert(products, product)
+    local id = #products
+    return id
 end
 
 -- Returns the products attached to the given subfactory
-function get_products(id)
+function get_subfactory_products(id)
     return global["subfactories"][id].products
+end
+
+function change_product_amount_produced(id, product, amount)
+    global["subfactories"][id]["products"][product].amount_produced = 
+      global["subfactories"][id]["products"][product].amount_produced + amount
 end

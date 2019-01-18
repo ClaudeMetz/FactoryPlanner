@@ -102,8 +102,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             refresh_info_pane(player)
         
         -- Reacts to a subfactory button being pressed
-        elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and not event.alt and
-          event.button ~= defines.mouse_button_type.right then
+        elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and is_left_shift_ctrl_click(event) then
             local id = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_element_click(player, id, event.control, event.shift)
 
@@ -116,22 +115,19 @@ script.on_event(defines.events.on_gui_click, function(event)
 end)
 
 
+-- Returns true when left mouse button and possibly shift or ctrl are pressed
+function is_left_shift_ctrl_click(event)
+    return event.button == defines.mouse_button_type.left and not event.alt
+end
+
 -- Returns true only when the left mouse button (with no modifiers) has been pressed
 function is_left_click(event)
-    if event.button == defines.mouse_button_type.left and
-      not event.alt and not event.control and not event.shift then
-        return true
-    else
-        return false
-    end
+    return event.button == defines.mouse_button_type.left and
+      not event.alt and not event.control and not event.shift
 end
 
 -- Returns true only when the right mouse button (with no modifiers) has been pressed
 function is_right_click(event)
-    if event.button == defines.mouse_button_type.right and
-      not event.alt and not event.control and not event.shift then
-        return true
-    else
-        return false
-    end
+    return event.button == defines.mouse_button_type.right and
+      not event.alt and not event.control and not event.shift
 end

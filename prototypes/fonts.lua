@@ -13,6 +13,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-button-large",
+        from = "default",
+        size = 20
+    },
+    {
+        type = "font",
         name = "fp-label-large",
         from = "default",
         size = 14
