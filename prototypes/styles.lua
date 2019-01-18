@@ -182,9 +182,6 @@ data.raw["gui-style"].default["fp_button_icon_green"] = {
 data.raw["gui-style"].default["fp_button_icon_cyan"] = {
     type = "button_style",
     parent = "fp_button_icon",
-    padding = 3,
-    width = 36,
-    height = 36,
     default_graphical_set =
       {
         type = "monolith",

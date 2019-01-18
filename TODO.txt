@@ -15,7 +15,7 @@ TODO Code Improvements:
 - Think of sensible refresh strategy for GUI's -> level approach, top GUI's always refresh those under them,
     but not the reverse; each level is individually callable
 - Verify that subfactories are actually only changed in /data
-- Think of a reasonable order for functions in each file
+- Think of a reasonable order for functions in each file (+ general refactoring)
 - Add error handling to prevent crashing the whole save (not sure how)
 - Make the GUI close itself when loading the save
 ? Create testsuite for sprite+label-buttons to test their jank size determination
@@ -23,6 +23,7 @@ TODO Code Improvements:
 
 
 BUGS:
+- Subfactory switching errors out sometimes after deleting a subfactory (selected_subfactory_id overhaul might be needed)
 - actual Sprite size doesn't adjust to height and width, only it's 'box' does
     fix might be coming in 0.17
 ? not whole frame considered part of GuiElement, fires no on_gui_click event (see subfactory_dialog)
@@ -49,3 +50,4 @@ API wishes for change:
 
 MISC:
 - Count LOC: ( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l
+- Replace commit on origin/: git push --force

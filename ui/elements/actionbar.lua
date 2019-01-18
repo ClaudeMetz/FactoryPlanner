@@ -18,53 +18,47 @@ function refresh_actionbar(player)
 end
 
 
--- Opens the subfactory dialog for either new or edit
-function open_subfactory_dialog(player, edit)
-    enter_modal_dialog(player)
-
-    if edit then
+-- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
+function open_subfactory_dialog(flow_modal_dialog, args)
+    if args.edit then
         global["currently_editing_subfactory"] = true
         local subfactory = get_subfactory(global["selected_subfactory_id"])
-        create_subfactory_dialog(player, {"label.edit_subfactory"}, subfactory.name, subfactory.icon)
+        create_subfactory_dialog_structure(flow_modal_dialog, {"label.edit_subfactory"}, subfactory.name, subfactory.icon)
     else
-        create_subfactory_dialog(player, {"label.new_subfactory"}, "", nil)
+        create_subfactory_dialog_structure(flow_modal_dialog, {"label.new_subfactory"}, "", nil)
     end
 end
 
--- Closes the subfactory dialog
-function close_subfactory_dialog(player, save)
-    local subfactory_dialog = player.gui.center["frame_modal_dialog"]
-
-    if not save then
-        exit_modal_dialog(player, false)
-    else
-        local data = check_subfactory_data(subfactory_dialog)
-        if data ~= nil then
-            if global["currently_editing_subfactory"] then
-                edit_subfactory(global["selected_subfactory_id"], data.name, data.icon)
-                global["currently_editing_subfactory"] = false
-            else
-                add_subfactory(data.name, data.icon)
-                
-                -- Sets the currently selected subfactory to the new one
-                global["selected_subfactory_id"] = get_subfactory_count()
-                -- Updates the GUI order list of subfactories
-                update_subfactory_order()
-            end
-            -- Only closes when correct data has been entered
-            exit_modal_dialog(player, true)
+-- Handles submission of the subfactory dialog
+function submit_subfactory_dialog(flow_modal_dialog)
+    local data = check_subfactory_data(flow_modal_dialog)
+    if data ~= nil then  -- meaning correct data has been entered
+        if global["currently_editing_subfactory"] then
+            edit_subfactory(global["selected_subfactory_id"], data.name, data.icon)
+            global["currently_editing_subfactory"] = false
+        else
+            add_subfactory(data.name, data.icon)
+            
+            -- Sets the currently selected subfactory to the new one
+            global["selected_subfactory_id"] = get_subfactory_count()
+            -- Updates the GUI order list of subfactories
+            update_subfactory_order()
         end
+        -- This closes the modal dialog, only returned when correct data has been entered
+        return true
+    else
+        return false
     end
 end
 
 
 -- Checks the entered data for errors and returns it if it's all correct, else returns nil
-function check_subfactory_data(subfactory_dialog)
-    local name = subfactory_dialog["table_subfactory"]["textfield_subfactory_name"].text
-    local icon = subfactory_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value
-    local instruction_1 = subfactory_dialog["table_conditions"]["label_subfactory_instruction_1"]
-    local instruction_2 = subfactory_dialog["table_conditions"]["label_subfactory_instruction_2"]
-    local instruction_3 = subfactory_dialog["table_conditions"]["label_subfactory_instruction_3"]
+function check_subfactory_data(flow_modal_dialog)
+    local name = flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text
+    local icon = flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value
+    local instruction_1 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_1"]
+    local instruction_2 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_2"]
+    local instruction_3 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_3"]
 
     -- Reset all error indications
     set_label_color(instruction_1, "white")
@@ -97,33 +91,25 @@ function check_subfactory_data(subfactory_dialog)
 end
 
 
--- Constructs the subfactory dialog
-function create_subfactory_dialog(player, title, name, icon)
-    local subfactory_dialog = player.gui.center.add{type="frame", name="frame_modal_dialog", direction="vertical", caption=title}
+-- Fills out the modal dialog to enter/edit a subfactory
+function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon)
+    flow_modal_dialog.parent.caption = title
 
-    local table_conditions = subfactory_dialog.add{type="table", name="table_conditions", column_count=1}
+    local table_conditions = flow_modal_dialog.add{type="table", name="table_conditions", column_count=1}
     table_conditions.add{type="label", name="label_subfactory_instruction_1", caption={"label.subfactory_instruction_1"}}
     table_conditions.add{type="label", name="label_subfactory_instruction_2", caption={"label.subfactory_instruction_2"}}
     table_conditions.add{type="label", name="label_subfactory_instruction_3", caption={"label.subfactory_instruction_3"}}
     table_conditions.style.bottom_padding = 6
 
-    local table_subfactory = subfactory_dialog.add{type="table", name="table_subfactory", column_count=2}
+    local table_subfactory = flow_modal_dialog.add{type="table", name="table_subfactory", column_count=2}
     table_subfactory.style.bottom_padding = 8
     -- Name
     table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"label.name"}, "    "}}
     table_subfactory.add{type="textfield", name="textfield_subfactory_name", text=name}
     table_subfactory["textfield_subfactory_name"].focus()
-
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
     table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="item", item=icon}
-
-    -- Button Bar
-    local buttonbar = subfactory_dialog.add{type="flow", name="flow_subfactory_button_bar", direction="horizontal"}
-    buttonbar.add{type="button", name="button_subfactory_cancel", caption={"button-text.cancel"}, style="fp_button_with_spacing"}
-    buttonbar.add{type="flow", name="flow_subfactory_buttonbar", direction="horizontal"}
-    buttonbar["flow_subfactory_buttonbar"].style.width = 35
-    buttonbar.add{type="button", name="button_subfactory_submit", caption={"button-text.submit"}, style="fp_button_with_spacing"}
 end
 
 
