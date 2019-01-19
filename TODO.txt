@@ -16,6 +16,7 @@ TODO Code Improvements:
     but not the reverse; each level is individually callable
 - Verify that subfactories are actually only changed in /data
 - Think of a reasonable order for functions in each file (+ general refactoring)
+    modal_dialog file, split up recipe_pane, ...)
 - Add error handling to prevent crashing the whole save (not sure how)
 - Make the GUI close itself when loading the save
 ? Create testsuite for sprite+label-buttons to test their jank size determination
@@ -50,4 +51,4 @@ API wishes for change:
 
 MISC:
 - Count LOC: ( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l
-- Replace commit on origin/: git push --force
+- Replace commit on origin/: git push --force origin
