@@ -60,7 +60,7 @@ function check_subfactory_data(flow_modal_dialog)
     local instruction_2 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_2"]
     local instruction_3 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_3"]
 
-    -- Reset all error indications
+    -- Resets all error indicators
     set_label_color(instruction_1, "white")
     set_label_color(instruction_2, "white")
     set_label_color(instruction_3, "white")
@@ -76,7 +76,7 @@ function check_subfactory_data(flow_modal_dialog)
         error_present = true
     end
 
-    -- matches everything that is not alphanumeric or a space
+    -- Matches everything that is not alphanumeric or a space
     if name ~= "" and name:match("[^%w ]") then
         set_label_color(instruction_3, "red")
         error_present = true

@@ -72,7 +72,7 @@ end
 
 
 -- Adds a product to the specified subfactory
-function add_subfactory_product(id, name, amount_required)
+function add_product(id, name, amount_required)
     local products = global["subfactories"][id]["products"]
     local product = 
     {
@@ -86,12 +86,28 @@ function add_subfactory_product(id, name, amount_required)
     return id
 end
 
+-- Deletes a product from the database
+function delete_product(id, product_id)
+    table.remove(global["subfactories"][id]["products"], product_id)
+end
+
 -- Returns the products attached to the given subfactory
-function get_subfactory_products(id)
+function get_products(id)
     return global["subfactories"][id].products
 end
 
-function change_product_amount_produced(id, product, amount)
-    global["subfactories"][id]["products"][product].amount_produced = 
-      global["subfactories"][id]["products"][product].amount_produced + amount
+-- Returns the specified product attached to the given subfactory
+function get_product(id, product_id)
+    return global["subfactories"][id]["products"][product_id]
+end
+
+-- Changes the amount produced of given product by given amount
+function change_product_amount_produced(id, product_id, amount)
+    global["subfactories"][id]["products"][product_id].amount_produced = 
+      global["subfactories"][id]["products"][product_id].amount_produced + amount
+end
+
+-- Sets the amount required of given product to given amount
+function set_product_amount_required(id, product_id, amount)
+    global["subfactories"][id]["products"][product_id].amount_required = amount     
 end

@@ -24,13 +24,13 @@ function gui_init(player)
     -- Temporary for dev puroposes
     if global["devmode"] then
         local id = add_subfactory(nil, "iron-plate")
-        local p1 = add_subfactory_product(id, "electronic-circuit", 400)
+        local p1 = add_product(id, "electronic-circuit", 400)
         change_product_amount_produced(id, p1, 600)
-        local p2 = add_subfactory_product(id, "advanced-circuit", 200)
+        local p2 = add_product(id, "advanced-circuit", 200)
         change_product_amount_produced(id, p2, 200)
-        local p3 = add_subfactory_product(id, "processing-unit", 100)
+        local p3 = add_product(id, "processing-unit", 100)
         change_product_amount_produced(id, p3, 60)
-        local p4 = add_subfactory_product(id, "rocket-control-unit", 40)
+        local p4 = add_product(id, "rocket-control-unit", 40)
         change_product_amount_produced(id, p4, 0)
 
         add_subfactory("Beta", nil)
@@ -95,6 +95,7 @@ end
 function exit_modal_dialog(player, submission)
     local frame_modal_dialog = player.gui.center["frame_modal_dialog"]
     if not submission then
+        global["modal_dialog_submit_function"] = nil
         frame_modal_dialog.destroy()
         toggle_main_dialog(player)
     else

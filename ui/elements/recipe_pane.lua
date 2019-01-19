@@ -28,7 +28,7 @@ function refresh_recipe_pane(player)
 
         -- Products cell
         local flow_recipe = create_recipe_pane_cell(table_recipe, "products")
-        local products = get_subfactory_products(selected_subfactory_id)
+        local products = get_products(selected_subfactory_id)
         create_product_buttons(flow_recipe, products)
 
         -- Byproducts cell
@@ -97,14 +97,13 @@ function change_subfactory_timescale(player, timescale)
 end
 
 
--- Constructs the table containing all product item buttons
--- (Everything is called an item, even fluids, they get treated the same)
+-- Constructs the table containing all product buttons
 function create_product_buttons(flow, items)
-    if #items ~= 0 then
-        local table = flow.add{type="table", name="table_products", column_count = 6}
-        table.style.left_padding = 10
-        table.style.horizontal_spacing = 10
+    local table = flow.add{type="table", name="table_products", column_count = 6}
+    table.style.left_padding = 10
+    table.style.horizontal_spacing = 10
 
+    if #items ~= 0 then
         for id, product in ipairs(items) do
             local button = table.add{type="sprite-button", name="sprite-button_product_" .. id, 
                 sprite="item/" .. product.name, number=product.amount_required}
@@ -122,11 +121,112 @@ function create_product_buttons(flow, items)
                 button.style = "fp_button_icon_cyan"
             end
         end
-        
-        local button = table.add{type="button", name="sprite-button_add_product", caption="+"}
-        button.style.height = 36
-        button.style.width = 36
-        button.style.top_padding = 0
-        button.style.font = "fp-button-large"
     end
+
+    local button = table.add{type="button", name="sprite-button_add_product", caption="+"}
+    button.style.height = 36
+    button.style.width = 36
+    button.style.top_padding = 0
+    button.style.font = "fp-button-large"
+end
+
+
+-- Handles populating the modal dialog to add or edit products
+function open_product_dialog(flow_modal_dialog, args)
+    if args.edit then
+        global["currently_editing_product_id"] = args.product_id
+        create_product_dialog_structure(flow_modal_dialog, {"label.edit_product"}, args.product_id)
+    else
+        create_product_dialog_structure(flow_modal_dialog, {"label.add_product"}, nil)
+    end
+end
+
+-- Handles submission of the product dialog
+function submit_product_dialog(flow_modal_dialog)
+    local data = check_product_data(flow_modal_dialog)
+    if data ~= nil then  -- meaning correct data has been entered
+        current_product_id = global["currently_editing_product_id"]
+        if current_product_id ~= nil then
+            set_product_amount_required(global["selected_subfactory_id"], current_product_id, data.amount_required)
+            global["currently_editing_product_id"] = nil
+        else
+            add_product(global["selected_subfactory_id"], data.product_name, data.amount_required)
+        end
+        -- This closes the modal dialog, only returned when correct data has been entered
+        return true
+    else
+        return false
+    end
+end
+
+-- Checks the entered data for errors and returns it if it's all correct, else returns nil
+function check_product_data(flow_modal_dialog)
+    local product = flow_modal_dialog["table_product"]["choose-elem-button_product"].elem_value
+    local amount = flow_modal_dialog["table_product"]["textfield_product_amount"].text
+    local label_product = flow_modal_dialog["table_product"]["label_product"]
+    local label_amount = flow_modal_dialog["table_product"]["label_product_amount"]
+
+    -- Resets all error indicators
+    set_label_color(label_product, "white")
+    set_label_color(label_amount, "white")
+    local error_present = false
+
+    if product == nil then
+        set_label_color(label_product, "red")
+        error_present = true
+    end
+
+    -- Matches everything that is not numeric
+    if amount == "" or amount:match("[^%d]") or tonumber(amount) <= 0 then
+        set_label_color(label_amount, "red")
+        error_present = true
+    end
+
+    if error_present then
+        return nil
+    else
+        return {product_name=product, amount_required=tonumber(amount)}
+    end
+end
+
+-- Fills out the modal dialog to add a product
+function create_product_dialog_structure(flow_modal_dialog, title, product_id)
+    local product
+    if product_id ~= nil then
+        product = get_product(global["selected_subfactory_id"], product_id)
+    else
+        product = {name=nil, amount_required=""}
+    end
+
+    flow_modal_dialog.parent.caption = title
+
+    -- Delete
+    if product_id ~= nil then
+        local button_delete = flow_modal_dialog.add{type="button", name="button_delete_product",
+        caption={"button-text.delete"}, style="fp_button_action"}
+        set_label_color(button_delete, "red")
+    end
+
+    local table_product = flow_modal_dialog.add{type="table", name="table_product", column_count=2}
+    table_product.style.top_padding = 5
+    table_product.style.bottom_padding = 8
+        -- Product
+    table_product.add{type="label", name="label_product", caption={"label.product"}}
+    table_product.add{type="choose-elem-button", name="choose-elem-button_product", elem_type="item", item=product.name}
+    if product_id ~= nil then table_product["choose-elem-button_product"].locked = true end
+
+    -- Amount
+    table_product.add{type="label", name="label_product_amount", caption={"", {"label.amount"}, "    "}}
+    local textfield_product = table_product.add{type="textfield", name="textfield_product_amount", text=product.amount_required}
+    textfield_product.style.width = 80
+    textfield_product.focus()
+end
+
+-- Handles the product deletion process
+-- (a bit of misuse of exit_modal_dialog(), but it fits the need)
+function handle_product_deletion(player)
+    delete_product(global["selected_subfactory_id"], global["currently_editing_product_id"])
+    global["currently_editing_product_id"] = nil
+    exit_modal_dialog(player, false)
+    refresh_main_dialog(player)
 end

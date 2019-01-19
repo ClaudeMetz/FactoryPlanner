@@ -101,12 +101,31 @@ script.on_event(defines.events.on_gui_click, function(event)
             global["currently_changing_timescale"] = true
             refresh_info_pane(player)
 
+        -- Opens the add-product dialog
+        elseif event.element.name == "sprite-button_add_product" and is_left_click then
+            enter_modal_dialog(player, open_product_dialog, submit_product_dialog, {edit=false})
+
+        -- Deletes the product that's being edited
+        elseif event.element.name == "button_delete_product" and is_left_click then
+            handle_product_deletion(player)
+
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and is_left_shift_ctrl_click(event) then
             local id = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_element_click(player, id, event.control, event.shift)
 
+        -- Reacts to a product button being pressed
+        elseif string.find(event.element.name, "^sprite%-button_product_%d+$") then
+            local id = tonumber(string.match(event.element.name, "%d+"))
+            if is_left_click then
+                -- adds recipe
+            elseif is_right_click then
+                enter_modal_dialog(player, open_product_dialog, submit_product_dialog, {edit=true, product_id=id})
+            elseif is_left_shift_ctrl_click(event) then
+                -- changes it's list position
+            end
         end
+
     end
 
     -- Refreshes info pane at the end to prevent reloading of elements that might be 
