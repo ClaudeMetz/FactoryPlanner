@@ -3,7 +3,7 @@ require("subfactory")
 -- Initiates all global necessary variables
 function data_init()
     global["main_dialog_dimensions"] = {width = 1200, height = nil}
-    global["modal_dialog_submit_function"] = nil
+    global["modal_dialog_type"] = nil
     global["selected_subfactory_id"] = 1
     global["subfactory_order"] = {}
     global["currently_editing_subfactory"] = false
