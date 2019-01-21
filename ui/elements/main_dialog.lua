@@ -84,25 +84,29 @@ end
 
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
-function enter_modal_dialog(player, f_open, f_submit, args)
-    global["modal_dialog_submit_function"] = f_submit
+function enter_modal_dialog(player, type, args)
+    global["modal_dialog_type"] = type
     toggle_main_dialog(player)
     local flow_modal_dialog = create_base_modal_dialog(player)
-    f_open(flow_modal_dialog, args)
+    _G["open_" .. type .. "_dialog"](flow_modal_dialog, args)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function exit_modal_dialog(player, submission)
     local frame_modal_dialog = player.gui.center["frame_modal_dialog"]
     if not submission then
-        global["modal_dialog_submit_function"] = nil
+        global["modal_dialog_type"] = nil
         frame_modal_dialog.destroy()
         toggle_main_dialog(player)
     else
-        -- Runs submission process, if successful it returns true and the modal dialog can be closed
-        f_submit = global["modal_dialog_submit_function"]
-        if f_submit(frame_modal_dialog["flow_modal_dialog"]) then
-            global["modal_dialog_submit_function"] = nil
+        local type = global["modal_dialog_type"]
+        local flow_modal_dialog = frame_modal_dialog["flow_modal_dialog"]
+
+        -- First checks if the entered data is correct
+        local data = _G["check_" .. type .. "_data"](flow_modal_dialog)
+        if data ~= nil then  -- meaning correct data has been entered
+            global["modal_dialog_type"] = nil
+            _G["submit_" .. type .. "_dialog"](flow_modal_dialog, data)
             frame_modal_dialog.destroy()
             toggle_main_dialog(player)
             refresh_main_dialog(player)

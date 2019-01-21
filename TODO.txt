@@ -1,6 +1,6 @@
 TODO Features:
 - Info pane with shortcuts and tutorial
-? Custom notes and/or tooltips for subfactories
+? Custom notes for subfactories
 ? Add some special characters for subfactory names
 ? Add more and/or custom timescales
 
@@ -19,6 +19,7 @@ TODO Code Improvements:
     modal_dialog file, split up recipe_pane, ...)
 - Add error handling to prevent crashing the whole save (not sure how)
 - Make the GUI close itself when loading the save
+- Generalize and merge process of shifting of GUI elements to the left/right
 ? Create testsuite for sprite+label-buttons to test their jank size determination
 ? Reconsider recipe- and production-pane naming, seems kind of unfitting
 
@@ -42,7 +43,7 @@ TODO Post-Launch:
 ! Export/Import
 ? Better multiplayer support (access rights, etc)
 ? FNEI Linking
-? Power Planning
+? Power Planning (separate mod?)
 
 
 API wishes for change:

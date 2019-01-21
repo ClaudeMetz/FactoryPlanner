@@ -7,7 +7,6 @@ end
 
 -- Refreshes the recipe pane by reloading the data
 function refresh_recipe_pane(player)
-    -- Structure provisional for now, info cell might get axed if it turns out it's not needed
     local table_recipe =  player.gui.center["main_dialog"]["table_recipe_pane"]
     -- Cuts function short if the recipe pane hasn't been initialized yet
     if not table_recipe then return end
@@ -142,20 +141,13 @@ function open_product_dialog(flow_modal_dialog, args)
 end
 
 -- Handles submission of the product dialog
-function submit_product_dialog(flow_modal_dialog)
-    local data = check_product_data(flow_modal_dialog)
-    if data ~= nil then  -- meaning correct data has been entered
-        current_product_id = global["currently_editing_product_id"]
-        if current_product_id ~= nil then
-            set_product_amount_required(global["selected_subfactory_id"], current_product_id, data.amount_required)
-            global["currently_editing_product_id"] = nil
-        else
-            add_product(global["selected_subfactory_id"], data.product_name, data.amount_required)
-        end
-        -- This closes the modal dialog, only returned when correct data has been entered
-        return true
+function submit_product_dialog(flow_modal_dialog, data)
+    currently_editing_product_id = global["currently_editing_product_id"]
+    if currently_editing_product_id ~= nil then
+        set_product_amount_required(global["selected_subfactory_id"], currently_editing_product_id, data.amount_required)
+        global["currently_editing_product_id"] = nil
     else
-        return false
+        add_product(global["selected_subfactory_id"], data.product_name, data.amount_required)
     end
 end
 
@@ -210,7 +202,7 @@ function create_product_dialog_structure(flow_modal_dialog, title, product_id)
     local table_product = flow_modal_dialog.add{type="table", name="table_product", column_count=2}
     table_product.style.top_padding = 5
     table_product.style.bottom_padding = 8
-        -- Product
+    -- Product
     table_product.add{type="label", name="label_product", caption={"label.product"}}
     table_product.add{type="choose-elem-button", name="choose-elem-button_product", elem_type="item", item=product.name}
     if product_id ~= nil then table_product["choose-elem-button_product"].locked = true end

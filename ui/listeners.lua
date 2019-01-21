@@ -40,13 +40,16 @@ end)
 -- Fires on any click on a GUI element
 script.on_event(defines.events.on_gui_click, function(event)
     local player = game.players[event.player_index]
-    local is_left_click = is_left_click(event)
+    local is_left_click = (event.button == defines.mouse_button_type.left and
+                            not event.alt and not event.control and not event.shift)
+    local is_right_click = (event.button == defines.mouse_button_type.right and
+                             not event.alt and not event.control and not event.shift)
+    local is_left_shift_ctrl_click = (event.button == defines.mouse_button_type.left and not event.alt)
     
     -- Unfocuses textfield when any other element in the dialog is clicked (buggy, see BUGS)
     if player.gui.center["subfactory_dialog"] and event.element.name ~= "textfield_subfactory_name" then
         player.gui.center["subfactory_dialog"].focus()
     end
-
 
     local button_matched = false
 
@@ -90,11 +93,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         
         -- Opens the new-subfactory dialog
         elseif event.element.name == "button_new_subfactory" and is_left_click then
-            enter_modal_dialog(player, open_subfactory_dialog, submit_subfactory_dialog, {edit=false})
+            enter_modal_dialog(player, "subfactory", {edit=false})
 
         -- Opens the edit-subfactory dialog
         elseif event.element.name == "button_edit_subfactory" and is_left_click then
-            enter_modal_dialog(player, open_subfactory_dialog, submit_subfactory_dialog, {edit=true})
+            enter_modal_dialog(player, "subfactory", {edit=true})
 
         -- Enters mode to change the timescale of the current subfactory
         elseif event.element.name == "button_change_timescale" and is_left_click then
@@ -103,26 +106,26 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif event.element.name == "sprite-button_add_product" and is_left_click then
-            enter_modal_dialog(player, open_product_dialog, submit_product_dialog, {edit=false})
+            enter_modal_dialog(player, "product", {edit=false})
 
         -- Deletes the product that's being edited
         elseif event.element.name == "button_delete_product" and is_left_click then
             handle_product_deletion(player)
 
         -- Reacts to a subfactory button being pressed
-        elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and is_left_shift_ctrl_click(event) then
+        elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and is_left_shift_ctrl_click then
             local id = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_element_click(player, id, event.control, event.shift)
 
         -- Reacts to a product button being pressed
         elseif string.find(event.element.name, "^sprite%-button_product_%d+$") then
-            local id = tonumber(string.match(event.element.name, "%d+"))
+            local product_id = tonumber(string.match(event.element.name, "%d+"))
             if is_left_click then
-                -- adds recipe
+                enter_modal_dialog(player, "recipe", {product_id=product_id})
             elseif is_right_click then
-                enter_modal_dialog(player, open_product_dialog, submit_product_dialog, {edit=true, product_id=id})
-            elseif is_left_shift_ctrl_click(event) then
-                -- changes it's list position
+                enter_modal_dialog(player, "product", {edit=true, product_id=product_id})
+            elseif is_left_shift_ctrl_click then
+                -- shift element to the left or right
             end
         end
 
@@ -132,21 +135,3 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- clicked above (related to timescale setting)
     if refresh then refresh_info_pane(player) end
 end)
-
-
--- Returns true when left mouse button and possibly shift or ctrl are pressed
-function is_left_shift_ctrl_click(event)
-    return event.button == defines.mouse_button_type.left and not event.alt
-end
-
--- Returns true only when the left mouse button (with no modifiers) has been pressed
-function is_left_click(event)
-    return event.button == defines.mouse_button_type.left and
-      not event.alt and not event.control and not event.shift
-end
-
--- Returns true only when the right mouse button (with no modifiers) has been pressed
-function is_right_click(event)
-    return event.button == defines.mouse_button_type.right and
-      not event.alt and not event.control and not event.shift
-end

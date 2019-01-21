@@ -30,24 +30,17 @@ function open_subfactory_dialog(flow_modal_dialog, args)
 end
 
 -- Handles submission of the subfactory dialog
-function submit_subfactory_dialog(flow_modal_dialog)
-    local data = check_subfactory_data(flow_modal_dialog)
-    if data ~= nil then  -- meaning correct data has been entered
-        if global["currently_editing_subfactory"] then
-            edit_subfactory(global["selected_subfactory_id"], data.name, data.icon)
-            global["currently_editing_subfactory"] = false
-        else
-            add_subfactory(data.name, data.icon)
-            
-            -- Sets the currently selected subfactory to the new one
-            global["selected_subfactory_id"] = get_subfactory_count()
-            -- Updates the GUI order list of subfactories
-            update_subfactory_order()
-        end
-        -- This closes the modal dialog, only returned when correct data has been entered
-        return true
+function submit_subfactory_dialog(flow_modal_dialog, data)
+    if global["currently_editing_subfactory"] then
+        edit_subfactory(global["selected_subfactory_id"], data.name, data.icon)
+        global["currently_editing_subfactory"] = false
     else
-        return false
+        add_subfactory(data.name, data.icon)
+        
+        -- Sets the currently selected subfactory to the new one
+        global["selected_subfactory_id"] = get_subfactory_count()
+        -- Updates the GUI order list of subfactories
+        update_subfactory_order()
     end
 end
 
