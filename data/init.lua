@@ -10,6 +10,7 @@ function data_init()
     global["currently_deleting_subfactory"] = false
     global["currently_changing_timescale"] = false
     global["currently_editing_product_id"] = nil
+    global["selected_item_group_name"] = nil
 
     -- if statement as a security measure to cure a bit of paranoia
     if global["subfactories"] == nil then global["subfactories"] = {} end
