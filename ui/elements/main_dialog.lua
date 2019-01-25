@@ -87,19 +87,23 @@ end
 function enter_modal_dialog(player, type, args)
     global["modal_dialog_type"] = type
     toggle_main_dialog(player)
-    local flow_modal_dialog = create_base_modal_dialog(player)
+    local flow_modal_dialog = create_base_modal_dialog(player, args.no_submit_button)
     _G["open_" .. type .. "_dialog"](flow_modal_dialog, args)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function exit_modal_dialog(player, submission)
     local frame_modal_dialog = player.gui.center["frame_modal_dialog"]
+    local type = global["modal_dialog_type"]
     if not submission then
+        -- Run cleanup if necessary
+        local cleanup = _G["cleanup_" .. type .. "_dialog"]
+        if cleanup ~= nil then cleanup() end
+
         global["modal_dialog_type"] = nil
         frame_modal_dialog.destroy()
         toggle_main_dialog(player)
     else
-        local type = global["modal_dialog_type"]
         local flow_modal_dialog = frame_modal_dialog["flow_modal_dialog"]
 
         -- First checks if the entered data is correct
@@ -115,15 +119,19 @@ function exit_modal_dialog(player, submission)
 end
 
 -- Creates barebones modal dialog
-function create_base_modal_dialog(player)
+function create_base_modal_dialog(player, no_submit_button)
     local frame_modal_dialog = player.gui.center.add{type="frame", name="frame_modal_dialog", direction="vertical"}
     local flow_modal_dialog = frame_modal_dialog.add{type="flow", name="flow_modal_dialog", direction="vertical"}
 
-    local buttonbar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
-    buttonbar.add{type="button", name="button_modal_dialog_cancel", caption={"button-text.cancel"}, style="fp_button_with_spacing"}
-    buttonbar.add{type="flow", name="flow_modal_dialog_buttonbar", direction="horizontal"}
-    buttonbar["flow_modal_dialog_buttonbar"].style.width = 40
-    buttonbar.add{type="button", name="button_modal_dialog_submit", caption={"button-text.submit"}, style="fp_button_with_spacing"}
+    local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
+    button_bar.add{type="button", name="button_modal_dialog_cancel", caption={"button-text.cancel"}, 
+      style="fp_button_with_spacing"}
+    button_bar.add{type="flow", name="flow_modal_dialog_spacer", direction="horizontal"}
+    button_bar["flow_modal_dialog_spacer"].style.width = 40
+    if no_submit_button ~= true then
+        button_bar.add{type="button", name="button_modal_dialog_submit", caption={"button-text.submit"}, 
+          style="fp_button_with_spacing"}
+    end
 
     return flow_modal_dialog
 end

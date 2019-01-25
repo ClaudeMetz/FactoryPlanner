@@ -36,6 +36,14 @@ script.on_event("fp_confirm", function(event)
     end
 end)
 
+-- Fires on any changing radiobutton
+script.on_event(defines.events.on_gui_checked_state_changed, function(event)
+    local player = game.players[event.player_index]
+    -- Filters the recipe modal dialog according to their enabled/hidden-attribute
+    if string.find(event.element.name, "^checkbox_filter_condition_%l+$") then
+        apply_recipe_filter(player)
+    end
+end)
 
 -- Fires on any click on a GUI element
 script.on_event(defines.events.on_gui_click, function(event)
@@ -112,6 +120,9 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "button_delete_product" and is_left_click then
             handle_product_deletion(player)
 
+        elseif event.element.name == "sprite-button_search_recipe" and is_left_click then
+            apply_recipe_filter(player)
+
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^xbutton_subfactory_%d+$") and is_left_shift_ctrl_click then
             local id = tonumber(string.match(event.element.name, "%d+"))
@@ -121,14 +132,18 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^sprite%-button_product_%d+$") then
             local product_id = tonumber(string.match(event.element.name, "%d+"))
             if is_left_click then
-                enter_modal_dialog(player, "recipe", {product_id=product_id})
+                enter_modal_dialog(player, "recipe", {product_id=product_id, no_submit_button=true})
             elseif is_right_click then
                 enter_modal_dialog(player, "product", {edit=true, product_id=product_id})
             elseif is_left_shift_ctrl_click then
                 -- shift element to the left or right
             end
-        end
 
+        -- Reacts to a item group button being pressed
+        elseif string.find(event.element.name, "^sprite%-button_item_group_[a-z-]+$") and is_left_click then
+            local item_group_name = string.gsub(event.element.name, "sprite%-button_item_group_", "")
+            change_item_group_selection(player, item_group_name)
+        end
     end
 
     -- Refreshes info pane at the end to prevent reloading of elements that might be 

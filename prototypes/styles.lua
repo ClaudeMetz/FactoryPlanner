@@ -38,52 +38,96 @@ data.raw["gui-style"].default["fp_button_icon"] = {
 }
 
 -- Generating styles for the different icon-buttons
-local icon_color_indexes = {red = 0, yellow = 36, green = 72, cyan = 108}
-for color, y in pairs(icon_color_indexes) do
-    data.raw["gui-style"].default["fp_button_icon_" .. color] = {
+local icon_state_indexes = {item_group = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}
+for state, y in pairs(icon_state_indexes) do
+    data.raw["gui-style"].default["fp_button_icon_" .. state] = {
         type = "button_style",
         parent = "fp_button_icon",
         default_graphical_set =
-          {
+        {
             type = "monolith",
             monolith_border = 1,
             monolith_image =
             {
-              filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
-              priority = "extra-high-no-scale",
-              width = 36,
-              height = 36,
-              x = 0,
-              y = y
+                filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
+                priority = "extra-high-no-scale",
+                width = 36,
+                height = 36,
+                x = 0,
+                y = y
             }
         },
         hovered_graphical_set =
-          {
+        {
             type = "monolith",
             monolith_border = 1,
             monolith_image =
             {
-              filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
-              priority = "extra-high-no-scale",
-              width = 36,
-              height = 36,
-              x = 37,
-              y = y
+                filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
+                priority = "extra-high-no-scale",
+                width = 36,
+                height = 36,
+                x = 37,
+                y = y
             }
         },
         clicked_graphical_set =
-          {
+        {
             type = "monolith",
             monolith_border = 1,
             monolith_image =
             {
-              filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
-              priority = "extra-high-no-scale",
-              width = 36,
-              height = 36,
-              x = 74,
-              y = y
+                filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
+                priority = "extra-high-no-scale",
+                width = 36,
+                height = 36,
+                x = 74,
+                y = y
             }
         }
     }
 end
+
+-- Specific style for a clicked item_group sprite button
+data.raw["gui-style"].default["fp_button_icon_clicked"] = {
+    type = "button_style",
+    parent = "fp_button_icon",
+    default_graphical_set =
+    {
+        type = "monolith",
+        monolith_border = 1,
+        monolith_image =
+        {
+            filename = "__FactoryPlanner__/graphics/icons/icon_backgrounds.png",
+            priority = "extra-high-no-scale",
+            width = 36,
+            height = 36,
+            x = 74,
+            y = 0
+        }
+    }
+}
+
+data.raw["gui-style"].default["fp_button_icon_recipe"] = {
+    type = "button_style",
+    parent = "fp_button_icon_item_group",
+    padding = 1,
+    width = 28,
+    height = 28,
+}
+
+data.raw["gui-style"].default["fp_button_icon_recipe_disabled"] = {
+    type = "button_style",
+    parent = "fp_button_icon_disabled",
+    padding = 1,
+    width = 28,
+    height = 28,
+}
+
+data.raw["gui-style"].default["fp_button_icon_recipe_hidden"] = {
+    type = "button_style",
+    parent = "fp_button_icon_hidden",
+    padding = 1,
+    width = 28,
+    height = 28,
+}
