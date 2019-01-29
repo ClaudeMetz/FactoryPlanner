@@ -269,7 +269,7 @@ function create_recipe_dialog_structure(flow_modal_dialog, title, search_term)
     for _, group in ipairs(formatted_recipes) do
         -- Item groups
         button_group = table_item_groups.add{type="sprite-button", name="sprite-button_item_group_" .. group.name,
-          sprite="item-group/" .. group.name, style="fp_button_icon_item_group"}
+          sprite="item-group/" .. group.name, style="fp_button_icon_recipe"}
         button_group.style.width = 64
         button_group.style.height = 64
 
@@ -291,8 +291,8 @@ function create_recipe_dialog_structure(flow_modal_dialog, title, search_term)
                     -- Recipes
                     local button_recipe = table_subgroup.add{type="sprite-button", name="sprite-button_recipe_" .. recipe.name,
                       sprite="recipe/" .. recipe.name, style="fp_button_icon_recipe"}
-                    if recipe.hidden then button_recipe.style = "fp_button_icon_recipe_hidden" end
-                    if not recipe.enabled then button_recipe.style = "fp_button_icon_recipe_disabled" end
+                    if recipe.hidden then button_recipe.style = "fp_button_icon_hidden" end
+                    if not recipe.enabled then button_recipe.style = "fp_button_icon_disabled" end
                     button_recipe.tooltip = generate_recipe_tooltip(recipe)
                     button_recipe.style.visible = false
                     if (#table_subgroup.children_names - 1) % 12 == 0 then  -- new row
@@ -390,7 +390,7 @@ function change_item_group_selection(player, item_group_name)
         local sprite_button = flow_modal_dialog["table_item_groups"]
           ["sprite-button_item_group_" .. global["selected_item_group_name"]]
         if sprite_button ~= nil then
-            sprite_button.style = "fp_button_icon_item_group"
+            sprite_button.style = "fp_button_icon_recipe"
             sprite_button.ignored_by_interaction = false
             flow_modal_dialog["scroll-pane_subgroups_" .. global["selected_item_group_name"]].style.visible = false
         end
