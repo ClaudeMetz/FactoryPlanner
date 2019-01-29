@@ -6,9 +6,7 @@ TODO Features:
 
 
 TODO Improvements:
-- Scaling
 - Multiplayer compatability
-- Make the Subfactory bar scalable (row-breakoff, multiple rows)
 - Make sure saved subfactories stay consistent when mods are added/removed/updated
 - Make the GUI close itself when loading the save
 - Add error handling to prevent crashing the whole save (not sure how)
@@ -28,24 +26,20 @@ TODO Code Improvements:
     modal_dialog file, split up recipe_pane, rename util functions with preceding 'util.', ...)
 - Generalize and merge process of shifting of GUI elements to the left/right
 - Create a system test writeup to maintain functionality after changes are implemented
-- Performance: Make recipe table only reload itself after new technology has been researched (also already create GUI already?)
+- Performance: Make recipe table only reload itself after new technology has been researched (+already create GUI on load?)
 - Performance: render recipe selector subgroups only when they are to be displayed, then cache them
 - Think about putting more style options into proper styles
-? Create testsuite for sprite+label-buttons to test their jank size determination
 ? Reconsider recipe- and production-pane naming, seems kind of unfitting
 
 
 BUGS:
 - Subfactory switching errors out sometimes after deleting a subfactory (selected_subfactory_id overhaul might be needed)
-- actual Sprite size doesn't adjust to height and width, only it's 'box' does
-    fix might be coming in 0.17
 ? not whole frame considered part of GuiElement, fires no on_gui_click event (see subfactory_dialog)
     not too bad, might take this listener out anyway, might not be worth it
-? subfactory_bar spacing is a super-mess on different resoultions and scaling modes,
-    sprite resizing is also still not fixable, might need to reconsider
 
 
 TODO 0.17:
+- Scaling -> All kinds of sizes seem to be wrong until 0.17, waiting until that happens
 - *.style.visible -> *.visible
 - Fancy recipe tooltips using the new fancy text formating
 
@@ -61,7 +55,8 @@ TODO Post-Launch:
 
 
 API wishes for change:
-- (A) let enter work as a way to submit forms, even when a textfield is in focus
+- (implementation probable) let enter work as a way to submit forms, even when a textfield is in focus
+- (asked) have style.padding still available at the control stage for easier changes
 
 
 MISC:

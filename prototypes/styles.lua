@@ -28,21 +28,12 @@ data.raw["gui-style"].default["fp_button_speed_selection"] = {
     top_padding = 0
 }
 
-
-data.raw["gui-style"].default["fp_button_icon"] = {
-    type = "button_style",
-    parent = "icon_button",
-    padding = 3,
-    width = 36,
-    height = 36,
-}
-
--- Generating styles for the different icon-buttons
-local icon_state_indexes = {item_group = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}
+-- Generating prototype styles for the different icon-buttons
+local icon_state_indexes = {recipe = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}
 for state, y in pairs(icon_state_indexes) do
-    data.raw["gui-style"].default["fp_button_icon_" .. state] = {
+    data.raw["gui-style"].default["fp_button_icon_" .. state .. "_prototype"] = {
         type = "button_style",
-        parent = "fp_button_icon",
+        parent = "icon_button",
         default_graphical_set =
         {
             type = "monolith",
@@ -88,10 +79,34 @@ for state, y in pairs(icon_state_indexes) do
     }
 end
 
+-- Generates all normal-sized styles
+local icons_normal = {"red", "yellow", "green", "cyan", "blank"}
+for _, type in ipairs(icons_normal) do
+    data.raw["gui-style"].default["fp_button_icon_" .. type] = {
+        type = "button_style",
+        parent = "fp_button_icon_" .. type .. "_prototype",
+        padding = 2,
+        width = 36,
+        height = 36,
+    }
+end
+
+-- Generates all small-sized styles
+local icons_small = {"recipe", "disabled", "hidden"}
+for _, type in ipairs(icons_small) do
+    data.raw["gui-style"].default["fp_button_icon_" .. type] = {
+        type = "button_style",
+        parent = "fp_button_icon_" .. type .. "_prototype",
+        padding = 1,
+        width = 28,
+        height = 28,
+    }
+end
+
 -- Specific style for a clicked item_group sprite button
 data.raw["gui-style"].default["fp_button_icon_clicked"] = {
     type = "button_style",
-    parent = "fp_button_icon",
+    parent = "fp_button_icon_recipe",
     default_graphical_set =
     {
         type = "monolith",
@@ -106,28 +121,4 @@ data.raw["gui-style"].default["fp_button_icon_clicked"] = {
             y = 0
         }
     }
-}
-
-data.raw["gui-style"].default["fp_button_icon_recipe"] = {
-    type = "button_style",
-    parent = "fp_button_icon_item_group",
-    padding = 1,
-    width = 28,
-    height = 28,
-}
-
-data.raw["gui-style"].default["fp_button_icon_recipe_disabled"] = {
-    type = "button_style",
-    parent = "fp_button_icon_disabled",
-    padding = 1,
-    width = 28,
-    height = 28,
-}
-
-data.raw["gui-style"].default["fp_button_icon_recipe_hidden"] = {
-    type = "button_style",
-    parent = "fp_button_icon_hidden",
-    padding = 1,
-    width = 28,
-    height = 28,
 }

@@ -22,5 +22,11 @@ data:extend({
         name = "fp-label-large",
         from = "default",
         size = 14
+    },
+    {
+        type = "font",
+        name = "fp-label-mono",
+        from = "default-mono",
+        size = 15
     }
 })
