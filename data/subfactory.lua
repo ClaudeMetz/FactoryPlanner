@@ -5,6 +5,8 @@ function add_subfactory(name, icon)
         name = name,
         icon = icon,
         timescale = 60,
+        notes = "",
+        valid = true,
         gui_position = #global["subfactories"]+1,
         products = {},
         byproducts = {},
@@ -32,19 +34,6 @@ function delete_subfactory(id)
 end
 
 
--- Returns the gui position of the given subfactory
-function get_subfactory_gui_position(id)
-    return global["subfactories"][id].gui_position
-end
-
--- Swaps the position of the given subfactories
-function swap_subfactory_positions(id1, id2)
-    local subfactories = global["subfactories"]
-    subfactories[id1].gui_position, subfactories[id2].gui_position = 
-      subfactories[id2].gui_position, subfactories[id1].gui_position
-end
-
-
 -- Returns the list containing all subfactories
 function get_subfactories()
     return global["subfactories"]
@@ -60,54 +49,81 @@ function get_subfactory_count()
     return #global["subfactories"]
 end
 
+-- Returns the gui position of the given subfactory
+function get_subfactory_gui_position(id)
+    return global["subfactories"][id].gui_position
+end
+
+
+-- Swaps the position of the given subfactories
+function swap_subfactory_positions(id1, id2)
+    local subfactories = global["subfactories"]
+    subfactories[id1].gui_position, subfactories[id2].gui_position = 
+      subfactories[id2].gui_position, subfactories[id1].gui_position
+end
+
 
 -- Returns the current timescale of the given subfactory
 function get_subfactory_timescale(id)
     return global["subfactories"][id].timescale
 end
 
+-- Sets the timescale of the given subfactory
 function set_subfactory_timescale(id, timescale)
     global["subfactories"][id].timescale = timescale
 end
 
 
--- Adds a product to the specified subfactory
-function add_product(id, name, amount_required)
-    local products = global["subfactories"][id]["products"]
-    local product = 
-    {
-        name = name,
-        amount_required = amount_required,
-        amount_produced = 0,
-        gui_position = #products+1
-    }
-    table.insert(products, product)
-    local id = #products
-    return id
+-- Returns the notes string of the given subfactory
+function get_subfactory_notes(id)
+    return global["subfactories"][id].notes
 end
 
--- Deletes a product from the database
-function delete_product(id, product_id)
-    table.remove(global["subfactories"][id]["products"], product_id)
+-- Sets the notes of the given subfactory
+function set_subfactory_notes(id, notes)
+    global["subfactories"][id].notes = notes
 end
 
--- Returns the products attached to the given subfactory
-function get_products(id)
-    return global["subfactories"][id].products
+
+-- Returns whether the given subfactory is valid (= contains valid items+recipes)
+function is_subfactory_valid(id) 
+    return global["subfactories"][id].valid
 end
 
--- Returns the specified product attached to the given subfactory
-function get_product(id, product_id)
-    return global["subfactories"][id]["products"][product_id]
+-- Sets the validity of the given subfactory
+function set_subfactory_validity(id, validity)
+    global["subfactories"][id].valid = validity
 end
 
--- Changes the amount produced of given product by given amount
-function change_product_amount_produced(id, product_id, amount)
-    global["subfactories"][id]["products"][product_id].amount_produced = 
-      global["subfactories"][id]["products"][product_id].amount_produced + amount
+-- Returns array of validation functions for each relevant part of a subfactory 
+function get_validation_functions()
+    return {check_product_validity}
 end
 
--- Sets the amount required of given product to given amount
-function set_product_amount_required(id, product_id, amount)
-    global["subfactories"][id]["products"][product_id].amount_required = amount     
+-- Checks all subfactories for missing items and recipes and sets their respective flags
+function determine_subfactory_validity()
+    local items = game.item_prototypes
+    local fluids = game.fluid_prototypes
+
+    for id, _ in ipairs(global["subfactories"]) do
+        local validity = true
+        for _, f in pairs(get_validation_functions()) do
+            if not f(items, fluids, id, false) then
+                validity = false
+                break
+            end
+        end
+        set_subfactory_validity(id, validity)
+    end
+end
+
+-- Deletes all invalid items/recipes from the given subfactory
+function delete_invalid_subfactory_parts(subfactory_id)
+    local items = game.item_prototypes
+    local fluids = game.fluid_prototypes
+
+    for _, f in pairs(get_validation_functions()) do
+        f(items, fluids, subfactory_id, true)
+    end
+    set_subfactory_validity(subfactory_id, true)
 end

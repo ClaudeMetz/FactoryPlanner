@@ -1,13 +1,14 @@
 require("mod-gui")
 require("ui.util")
-require("titlebar")
+require("modal_dialog")
 require("actionbar")
 require("subfactory_bar")
-require("recipe_pane")
+require("error_bar")
+require("subfactory_pane")
 require("production_pane")
 
 
--- Create the always-present GUI button to open the main dialog
+-- Create the always-present GUI button to open the main dialog + devmode setup
 function gui_init(player)
     local frame_flow = mod_gui.get_frame_flow(player)
     if not frame_flow["fp_button_toggle_interface"] then
@@ -21,117 +22,65 @@ function gui_init(player)
         }
     end
 
-    -- Temporary for dev puroposes
-    if global["devmode"] then
-        local id = add_subfactory(nil, "iron-plate")
-        local p1 = add_product(id, "electronic-circuit", 400)
-        change_product_amount_produced(id, p1, 600)
-        local p2 = add_product(id, "advanced-circuit", 200)
-        change_product_amount_produced(id, p2, 200)
-        local p3 = add_product(id, "processing-unit", 100)
-        change_product_amount_produced(id, p3, 60)
-        local p4 = add_product(id, "rocket-control-unit", 40)
-        change_product_amount_produced(id, p4, 0)
-
-        add_subfactory("Beta", nil)
-        add_subfactory("Gamma", "copper-plate")
-
-        update_subfactory_order()
-    end
+    if global["devmode"] then run_dev_config() end
 end
 
 
--- Toggles the visibility of always-present GUI button to open the main dialog
+-- Toggles the visibility of the toggle-main-dialog-button
 function toggle_button_interface(player)
     local enable = settings.get_player_settings(player)["fp_display_gui_button"].value
     mod_gui.get_frame_flow(player)["fp_button_toggle_interface"].style.visible = enable
 end
 
+-- Toggles the main dialog open and closed
+function toggle_main_dialog(player)
+    local center = player.gui.center
+    -- Won't toggle if a modal dialog is open
+    if not center["fp_frame_modal_dialog"] or not center["fp_frame_recipe_dialog"].style.visible then
+        local main_dialog = center["fp_main_dialog"]
+        if main_dialog == nil then
+            create_main_dialog(player)
+            center["fp_main_dialog"].style.visible = true  -- Strangely isn't set right away
+        else
+            -- Only refresh it when you make it visible
+            if not main_dialog.style.visible then refresh_main_dialog(player) end
+            main_dialog.style.visible = (not main_dialog.style.visible)
+        end
+    end
+end
+
+-- Refreshes all variable GUI-panes (refresh-hierarchy, subfactory_bar refreshes everything below it)
+function refresh_main_dialog(player)
+    refresh_actionbar(player)
+    refresh_subfactory_bar(player)
+end
 
 -- Constructs the main dialog
 function create_main_dialog(player)
-    local main_dialog = player.gui.center.add{type="frame", name="main_dialog", direction="vertical"}
+    local main_dialog = player.gui.center.add{type="frame", name="fp_main_dialog", direction="vertical"}
     main_dialog.style.width = global["main_dialog_dimensions"].width
     main_dialog.style.right_padding = 6
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)
     add_subfactory_bar_to(main_dialog, player)
-    add_recipe_pane_to(main_dialog, player)
+    add_error_bar_to(main_dialog, player)
+    add_subfactory_pane_to(main_dialog, player)
     add_production_pane_to(main_dialog, player)
 end
 
--- Refreshes all variable GUI-panes
-function refresh_main_dialog(player)
-    refresh_actionbar(player)
-    refresh_subfactory_bar(player)
-    refresh_recipe_pane(player)
-end
 
--- Toggles the main dialog open and closed
-function toggle_main_dialog(player)
-    -- Won't toggle if a modal dialog is open
-    if not player.gui.center["frame_modal_dialog"] then
-        local main_dialog = player.gui.center["main_dialog"]
-        if main_dialog == nil then
-            create_main_dialog(player)
-            player.gui.center["main_dialog"].style.visible = true  -- Strangely isn't set right away
-        else
-            main_dialog.style.visible = (not main_dialog.style.visible)
-        end
-    end
-end
+-- Creates the titlebar including name and exit-button
+function add_titlebar_to(main_dialog)
+    local titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
+    titlebar.style.top_padding = 4
+    
+    titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
+    titlebar["label_titlebar_name"].style.font="fp-label-supersized"
+    titlebar["label_titlebar_name"].style.top_padding = 0
 
+    titlebar.add{type="flow", name="flow_titlebar_spacing", direction="horizontal"}
+    titlebar["flow_titlebar_spacing"].style.horizontally_stretchable = true
 
--- Opens a barebone modal dialog and calls upon the given function to populate it
-function enter_modal_dialog(player, type, args)
-    global["modal_dialog_type"] = type
-    toggle_main_dialog(player)
-    local flow_modal_dialog = create_base_modal_dialog(player, args.no_submit_button)
-    _G["open_" .. type .. "_dialog"](flow_modal_dialog, args)
-end
-
--- Handles the closing process of a modal dialog, reopening the main dialog thereafter
-function exit_modal_dialog(player, submission)
-    local frame_modal_dialog = player.gui.center["frame_modal_dialog"]
-    local type = global["modal_dialog_type"]
-    if not submission then
-        -- Run cleanup if necessary
-        local cleanup = _G["cleanup_" .. type .. "_dialog"]
-        if cleanup ~= nil then cleanup() end
-
-        global["modal_dialog_type"] = nil
-        frame_modal_dialog.destroy()
-        toggle_main_dialog(player)
-    else
-        local flow_modal_dialog = frame_modal_dialog["flow_modal_dialog"]
-
-        -- First checks if the entered data is correct
-        local data = _G["check_" .. type .. "_data"](flow_modal_dialog)
-        if data ~= nil then  -- meaning correct data has been entered
-            global["modal_dialog_type"] = nil
-            _G["submit_" .. type .. "_dialog"](flow_modal_dialog, data)
-            frame_modal_dialog.destroy()
-            toggle_main_dialog(player)
-            refresh_main_dialog(player)
-        end
-    end
-end
-
--- Creates barebones modal dialog
-function create_base_modal_dialog(player, no_submit_button)
-    local frame_modal_dialog = player.gui.center.add{type="frame", name="frame_modal_dialog", direction="vertical"}
-    local flow_modal_dialog = frame_modal_dialog.add{type="flow", name="flow_modal_dialog", direction="vertical"}
-
-    local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
-    button_bar.add{type="button", name="button_modal_dialog_cancel", caption={"button-text.cancel"}, 
-      style="fp_button_with_spacing"}
-    button_bar.add{type="flow", name="flow_modal_dialog_spacer", direction="horizontal"}
-    button_bar["flow_modal_dialog_spacer"].style.width = 40
-    if no_submit_button ~= true then
-        button_bar.add{type="button", name="button_modal_dialog_submit", caption={"button-text.submit"}, 
-          style="fp_button_with_spacing"}
-    end
-
-    return flow_modal_dialog
+    titlebar.add{type="button", name="fp_button_titlebar_exit", caption="X", style="fp_button_exit"}
 end

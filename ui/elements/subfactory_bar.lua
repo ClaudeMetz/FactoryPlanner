@@ -7,13 +7,13 @@ function add_subfactory_bar_to(main_dialog, player)
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
     table_subfactories.style.vertical_spacing = 4
 
-    refresh_main_dialog(player)
+    refresh_subfactory_bar(player)
 end
 
 
 -- Refreshes the subfactory bar by reloading the data
 function refresh_subfactory_bar(player)
-    local table_subfactories =  player.gui.center["main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
+    local table_subfactories =  player.gui.center["fp_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
     local max_width = global["main_dialog_dimensions"].width * 0.9
@@ -42,6 +42,10 @@ function refresh_subfactory_bar(player)
             end
         end
     end
+
+    refresh_error_bar(player)
+    refresh_subfactory_pane(player)
+    refresh_production_pane(player)
 end
 
 -- Attempts to create and insert a new element into the table
@@ -64,7 +68,7 @@ function create_label_element(table, width_remaining, id, subfactory, selected)
     if button_width > width_remaining then
         return 0
     else    
-        local button = table.add{type="sprite-button", name="xbutton_subfactory_" .. id}
+        local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. id}
         local label = button.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
 
         if selected then
@@ -91,17 +95,14 @@ function create_sprite_element(table, width_remaining, id, subfactory, selected)
     if button_width > width_remaining then
         return 0
     else  
-        local button = table.add{type="sprite-button", name="xbutton_subfactory_" .. id, sprite="item/" .. subfactory.icon}
+        local button = create_sprite_button(table, "fp_sprite-button_subfactory_" .. id, subfactory)
 
         if selected then
             button.style = "fp_button_icon_blank"
         else
             button.style.height = 36
             button.style.width = 36
-            button.style.top_padding = 0
-            button.style.bottom_padding = 0
-            button.style.left_padding = 0
-            button.style.right_padding = 0
+            set_padding(button, 0)
         end
 
         return button_width
@@ -114,11 +115,10 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
     if button_width > width_remaining then
         return 0
     else 
-        local button = table.add{type="sprite-button", name="xbutton_subfactory_" .. id}
+        local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. id}
         local flow = button.add{type="flow", name="flow_subfactory_" .. id, direction="horizontal"}
 
-        local sprite = flow.add{type="sprite-button", name="sprite_subfactory_" .. id,
-        sprite="item/" .. subfactory.icon, style="fp_button_icon_blank"}
+        local sprite = create_sprite_button(flow, "sprite_subfactory_" .. id, subfactory)
         local label = flow.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
 
         if selected then
@@ -133,8 +133,10 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
 
         button.style.width = button_width
         button.style.top_padding = 0
+        button.tooltip = sprite.tooltip
         flow.ignored_by_interaction = true
 
+        sprite.style = "fp_button_icon_blank"
         sprite.style.height = 34
         sprite.style.width = 34
         label.style.font = "fp-label-mono"
@@ -144,32 +146,50 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
     end
 end
 
+-- Creates the sprite-button, checking if the sprite is still loaded (in case a mod is removed)
+function create_sprite_button(table, name, subfactory)
+    local sprite_path = "item/" .. subfactory.icon
+    local tooltip = ""
+    if not table.gui.is_valid_sprite_path(sprite_path) then
+        sprite_path = "utility/danger_icon"
+        tooltip = {"tooltip.sprite_missing"}
+    end
+    local button = table.add{type="sprite-button", name=name, sprite=sprite_path}
+    button.tooltip = tooltip
+
+    return button
+end
+
 
 -- Moves selection to the clicked element or shifts it's position left or right
 function handle_subfactory_element_click(player, id, control, shift)
     local position = get_subfactory_gui_position(id)
-    local change = true
+    local change = false
     
     -- shift position to the right
     if not control and shift then
         if position ~= #global["subfactory_order"] then
             swap_subfactory_positions(global["subfactory_order"][position], global["subfactory_order"][position+1])
+            change = true
         end
+
     -- shift position to the left
     elseif control and not shift then
         if position ~= 1 then
             swap_subfactory_positions(global["subfactory_order"][position], global["subfactory_order"][position-1])
+            change = true
         end
+
     -- change selected subfactory
     elseif not control and not shift then
-        if global["selected_subfactory_id"] == id then
-            change = false
-        else
+        if global["selected_subfactory_id"] ~= id then
             global["selected_subfactory_id"] = id
+            change = true
         end
     end
 
     if change then
+        global["current_activity"] = nil
         update_subfactory_order()
         refresh_main_dialog(player)
     end
