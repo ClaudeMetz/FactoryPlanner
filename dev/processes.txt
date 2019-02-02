@@ -1,0 +1,10 @@
+New Release:
+- Update info.json
+- Update changelog.txt
+? Update README.md
+- Commit
+? Merge onto master branch
+- Push to Github
+- Cut new release on Github
+- Upload onto Factorio mod-portal
+? Adjust mod-portal screenshots, description

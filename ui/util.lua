@@ -1,10 +1,18 @@
 -- Sets the font color of the given label / button-label
 function set_label_color(ui_element, color)
     if color == "red" then
-        ui_element.style.font_color = {r = 1}
+        ui_element.style.font_color = {r = 1, g = 0.2, b = 0.2}
     elseif color == "white" or color == "default" then
         ui_element.style.font_color = {r = 1, g = 1, b = 1}
     end
+end
+
+-- Sets all 4 padding attributes at once
+function set_padding(ui_element, padding)
+    ui_element.style.top_padding = padding
+    ui_element.style.right_padding = padding
+    ui_element.style.bottom_padding = padding
+    ui_element.style.left_padding = padding
 end
 
 
@@ -20,20 +28,6 @@ function determine_unit(timescale)
 end
 
 
--- Returns string of given table for debugging
-function dump(o)
-    if type(o) == 'table' then
-        local s = '{ '
-        for k,v in pairs(o) do
-            if type(k) ~= 'number' then k = '"'..k..'"' end
-            s = s .. '['..k..'] = ' .. dump(v) .. ','
-        end
-        return s .. '} '
-    else
-        return tostring(o)
-    end
-end
-
 -- Sorts a table by string-key using an iterator
 function pairsByKeys(t, f)
     local a = {}
@@ -47,4 +41,19 @@ function pairsByKeys(t, f)
         end
     end
     return iter
+end
+
+
+-- Returns string of given table for debugging
+function dump(o)
+    if type(o) == 'table' then
+        local s = '{ '
+        for k,v in pairs(o) do
+            if type(k) ~= 'number' then k = '"'..k..'"' end
+            s = s .. '['..k..'] = ' .. dump(v) .. ','
+        end
+        return s .. '} '
+    else
+        return tostring(o)
+    end
 end
