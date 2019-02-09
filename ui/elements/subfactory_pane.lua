@@ -19,9 +19,8 @@ function refresh_subfactory_pane(player)
 
     table_subfactory.clear()
     
-    local subfactory_id = global["selected_subfactory_id"]
     -- selected_subfactory_id is always 0 when there are no subfactories
-    if (subfactory_id ~= 0) and is_subfactory_valid(subfactory_id) then
+    if (global["selected_subfactory_id"] ~= 0) and global["factory"]:get_selected_subfactory():is_valid() then
         -- Info cell
         create_subfactory_pane_cell(table_subfactory, "info")
         refresh_info_pane(player)

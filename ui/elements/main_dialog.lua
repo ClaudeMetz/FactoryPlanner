@@ -40,6 +40,7 @@ function toggle_main_dialog(player)
         local main_dialog = center["fp_main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)
+            refresh_actionbar(player)
             center["fp_main_dialog"].style.visible = true  -- Strangely isn't set right away
         else
             -- Only refresh it when you make it visible

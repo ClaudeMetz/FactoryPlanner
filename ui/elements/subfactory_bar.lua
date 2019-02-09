@@ -23,20 +23,20 @@ function refresh_subfactory_bar(player)
 
     -- selected_subfactory_id is 0 when there are no subfactories
     if global["selected_subfactory_id"] ~= 0 then
-        for _, id in ipairs(global["subfactory_order"]) do
-            local subfactory = get_subfactory(id)
-            local selected = (global["selected_subfactory_id"] == id)
+        for _, subfactory_id in ipairs(global["factory"]:get_subfactories_in_order()) do
+            local subfactory = global["factory"]:get_subfactory(subfactory_id)
+            local selected = (global["selected_subfactory_id"] == subfactory_id)
             
             -- Tries to insert new element, if it doesn't fit, a new row is created and creation is reattempted
             -- First one is supposed to fail to create the first table
-            local width_used = attempt_element_creation(current_table, width_remaining, id, subfactory, selected)
+            local width_used = attempt_element_creation(current_table, width_remaining, subfactory_id, subfactory, selected)
             if width_used == 0 then
                 current_table = table_subfactories.add{type="table", name="table_subfactories_" .. current_table_index, 
                   column_count = 30}
                 current_table_index = current_table_index + 1
                 width_remaining = max_width
                 
-                attempt_element_creation(current_table, width_remaining, id, subfactory, selected)
+                attempt_element_creation(current_table, width_remaining, subfactory_id, subfactory, selected)
             else
                 width_remaining = width_remaining - width_used
             end
@@ -52,9 +52,9 @@ end
 -- The creation-function itself decides whether it will fit
 function attempt_element_creation(table, width_remaining, id, subfactory, selected)
     local width_used
-    if subfactory.name ~= nil and subfactory.icon == nil then
+    if subfactory:get_name() ~= nil and subfactory:get_icon() == nil then
         width_used = create_label_element(table, width_remaining, id, subfactory, selected)
-    elseif subfactory.icon ~= nil and subfactory.name == nil then
+    elseif subfactory:get_icon() ~= nil and subfactory:get_name() == nil then
         width_used = create_sprite_element(table, width_remaining, id, subfactory, selected)
     else
         width_used = create_label_sprite_element(table, width_remaining, id, subfactory, selected)
@@ -64,12 +64,12 @@ end
 
 -- Constructs an element of the subfactory bar if there only is a name
 function create_label_element(table, width_remaining, id, subfactory, selected)
-    local button_width = (#subfactory.name*10) + 13
+    local button_width = (#subfactory:get_name() * 10) + 13
     if button_width > width_remaining then
         return 0
     else    
         local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. id}
-        local label = button.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
+        local label = button.add{type="label", name="label_subfactory_" .. id, caption=subfactory:get_name()}
 
         if selected then
             button.style = "fp_button_icon_blank"
@@ -111,7 +111,7 @@ end
 
 -- Constructs an element of the subfactory bar if there is both a name and an icon
 function create_label_sprite_element(table, width_remaining, id, subfactory, selected)
-    local button_width = (#subfactory.name*10) + 46
+    local button_width = (#subfactory:get_name() * 10) + 46
     if button_width > width_remaining then
         return 0
     else 
@@ -119,7 +119,7 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
         local flow = button.add{type="flow", name="flow_subfactory_" .. id, direction="horizontal"}
 
         local sprite = create_sprite_button(flow, "sprite_subfactory_" .. id, subfactory)
-        local label = flow.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
+        local label = flow.add{type="label", name="label_subfactory_" .. id, caption=subfactory:get_name()}
 
         if selected then
             button.style = "fp_button_icon_blank"
@@ -148,7 +148,7 @@ end
 
 -- Creates the sprite-button, checking if the sprite is still loaded (in case a mod is removed)
 function create_sprite_button(table, name, subfactory)
-    local sprite_path = "item/" .. subfactory.icon
+    local sprite_path = "item/" .. subfactory:get_icon()
     local tooltip = ""
     if not table.gui.is_valid_sprite_path(sprite_path) then
         sprite_path = "utility/danger_icon"
@@ -162,59 +162,16 @@ end
 
 
 -- Moves selection to the clicked element or shifts it's position left or right
-function handle_subfactory_element_click(player, id, control, shift)
-    local position = get_subfactory_gui_position(id)
-    local change = false
-    
-    -- shift position to the right
-    if not control and shift then
-        if position ~= #global["subfactory_order"] then
-            swap_subfactory_positions(global["subfactory_order"][position], global["subfactory_order"][position+1])
-            change = true
-        end
+function handle_subfactory_element_click(player, subfactory_id, click, direction)
+    -- Shift subfactory in the given direction
+    if direction ~= nil then
+        global["factory"]:shift_subfactory(subfactory_id, direction)
 
-    -- shift position to the left
-    elseif control and not shift then
-        if position ~= 1 then
-            swap_subfactory_positions(global["subfactory_order"][position], global["subfactory_order"][position-1])
-            change = true
-        end
-
-    -- change selected subfactory
-    elseif not control and not shift then
-        if global["selected_subfactory_id"] ~= id then
-            global["selected_subfactory_id"] = id
-            change = true
-        end
+    -- Change selected subfactory
+    elseif click == "left" then
+        global["selected_subfactory_id"] = subfactory_id
     end
 
-    if change then
-        global["current_activity"] = nil
-        update_subfactory_order()
-        refresh_main_dialog(player)
-    end
-end
-
--- Updates the GUI order of the individual subfactories
--- Kinda stupid implementation, but whatever
-function update_subfactory_order()
-    -- First, it simply assigns them to the index in the array that's equal to their position
-    local count = 0
-    local uncompressed_order = {}
-    for id, subfactory in ipairs(get_subfactories()) do
-        uncompressed_order[subfactory.gui_position] = id
-        count = count + 1
-    end
-
-    -- Then, the empty index of the array is squashed
-    global["subfactory_order"] = {}
-    local i = 0
-    while i < count do
-        if uncompressed_order[i] ~= nil then
-            table.insert(global["subfactory_order"], uncompressed_order[i])
-        else
-            count = count + 1
-        end
-        i = i + 1
-    end
+    global["current_activity"] = nil
+    refresh_subfactory_bar(player)
 end

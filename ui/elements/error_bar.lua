@@ -15,7 +15,7 @@ function refresh_error_bar(player)
 
     local subfactory_id = global["selected_subfactory_id"]
     -- selected_subfactory_id is always 0 when there are no subfactories
-    if (subfactory_id ~= 0) and (not is_subfactory_valid(subfactory_id)) then
+    if (subfactory_id ~= 0) and (not global["factory"]:get_selected_subfactory():is_valid()) then
         create_error_bar(flow_error_bar, subfactory_id)
         flow_error_bar.style.visible = true
     else

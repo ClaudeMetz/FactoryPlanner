@@ -21,7 +21,7 @@ function refresh_production_pane(player)
     table_production.clear()
     -- selected_subfactory_id is always 0 when there are no subfactories
     local subfactory_id = global["selected_subfactory_id"]
-    if (subfactory_id ~= 0) and is_subfactory_valid(subfactory_id) then
+    if (subfactory_id ~= 0) and global["factory"]:get_selected_subfactory():is_valid() then
         flow_production.style.visible = true
         -- create table
     else

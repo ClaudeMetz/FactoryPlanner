@@ -1,12 +1,59 @@
 -- Sets up global data structure of the mod
 script.on_init(function()
+    global.metatables = {}
+    function global.set_persistent_metatable(table, meta)
+        global.metatables[table] = meta
+        setmetatable(table,meta)
+    end
+
+    global.set_persistent_metatable(BaseClass, {
+        __call = function (cls, ...)
+            local self = setmetatable({}, cls)
+            self:_init(...)
+            return self
+        end,
+    })
+
+    global.set_persistent_metatable(Factory, {
+        __call = function (cls, ...)
+            local self = setmetatable({}, cls)
+            self:_init(...)
+            return self
+        end,
+    })
+
+    global.set_persistent_metatable(Subfactory, {
+        __index = BaseClass,
+        __call = function (cls, ...)
+            local self = setmetatable({}, cls)
+            self:_init(...)
+            return self
+        end,
+    })
+
+    global.set_persistent_metatable(Product, {
+        __index = BaseClass,
+        __call = function (cls, ...)
+            local self = setmetatable({}, cls)
+            self:_init(...)
+            return self
+        end,
+    })
+    
     data_init()
+end)
+
+--
+script.on_load(function()
+    -- These don't work
+    for k,v in next,global do _G[k]=v end
+    for k,v in next,global.metatables do setmetatable(k,v) end
 end)
 
 -- Prompts a recipe dialog reload and a validity check on all subfactories
 script.on_configuration_changed(function()
     global["mods_changed"] = true
-    determine_subfactory_validity()
+    global["factory"]:update_validity()
 end)
 
 
@@ -38,7 +85,6 @@ end)
 -- Fires on any radiobutton change
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.players[event.player_index]
-    -- Filters the recipe modal dialog according to their enabled/hidden-attribute
     if string.find(event.element.name, "^fp_checkbox_filter_condition_%l+$") then
         apply_recipe_filter(player)
     end
@@ -50,7 +96,13 @@ script.on_event(defines.events.on_gui_click, function(event)
                             not event.alt and not event.control and not event.shift)
     local is_right_click = (event.button == defines.mouse_button_type.right and
                              not event.alt and not event.control and not event.shift)
-    local is_left_shift_ctrl_click = (event.button == defines.mouse_button_type.left and not event.alt)
+
+    local click, direction = nil, nil
+    if is_left_click then click = "left" elseif is_right_click then click = "right" end
+    if event.button == defines.mouse_button_type.left and (not event.alt) then
+        if not event.control and event.shift then direction = "positive" 
+        elseif event.control and not event.shift then direction = "negative" end
+    end
 
     local player = game.players[event.player_index]
     
@@ -104,14 +156,14 @@ script.on_event(defines.events.on_gui_click, function(event)
         close_recipe_dialog(player, nil)
 
     -- Reacts to a subfactory button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") and is_left_shift_ctrl_click then
-        local id = tonumber(string.match(event.element.name, "%d+"))
-        handle_subfactory_element_click(player, id, event.control, event.shift)
+    elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
+        local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
+        handle_subfactory_element_click(player, subfactory_id, click, direction)
 
     -- Deletes invalid subfactory items/recipes after the error bar button has been pressed
-    elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_shift_ctrl_click then
+    elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
         local id = tonumber(string.match(event.element.name, "%d+"))
-        delete_invalid_subfactory_parts(id)
+        global["factory"]:get_subfactory(id):remove_invalid_datasets()
         refresh_subfactory_bar(player)
 
     -- Changes the timescale of the current subfactory
@@ -122,13 +174,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- Reacts to a product button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_product_%d+$") then
         local product_id = tonumber(string.match(event.element.name, "%d+"))
-        if is_left_click then
-            open_recipe_dialog(player, product_id)
-        elseif is_right_click then
-            enter_modal_dialog(player, "product", true, true, {edit=true, product_id=product_id})
-        elseif is_left_shift_ctrl_click then
-            -- shift element left or right
-        end
+        handle_product_element_click(player, product_id, click, direction)
 
     -- Reacts to a item group button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
