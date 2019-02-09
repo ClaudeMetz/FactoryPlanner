@@ -8,10 +8,11 @@ function open_recipe_dialog(player, product_id)
     end
 
     frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
-    local product_name = get_product(global["selected_subfactory_id"], product_id).name
+    local product_name = global["factory"]:get_selected_subfactory():get("product", product_id):get_name()
     local recipe_name = run_preliminary_checks(player, product_name)
     -- nil meaning that no single enabled and matching recipe has been found (either 0 or 2+)
     if recipe_name == nil then
+        global["selected_product_id"] = product_id
         frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["textfield_search_recipe"].text = product_name
         apply_recipe_filter(player)
         toggle_main_dialog(player)
@@ -29,6 +30,7 @@ function close_recipe_dialog(player, recipe_name)
         -- add recipe to subfactory
     end
 
+    global["selected_product_id"] = 0
     change_item_group_selection(player, "logistics")  -- Returns selection to the first item_group for consistency
     player.gui.center["fp_frame_recipe_dialog"].style.visible = false
     toggle_main_dialog(player)
@@ -36,7 +38,7 @@ end
 
 
 -- Creates the modal dialog to choose a recipe
-function create_recipe_dialog_structure(player, search_term)
+function create_recipe_dialog_structure(player)
     local frame_recipe_dialog = player.gui.center.add{type="frame", name="fp_frame_recipe_dialog", direction="vertical"}
     frame_recipe_dialog.caption = {"label.add_recipe"}
     frame_recipe_dialog.style.visible = false
@@ -60,7 +62,7 @@ function create_recipe_dialog_structure(player, search_term)
       caption={"checkbox.hidden_recipes"}, state=false}
 
     table_filter_conditions.add{type="label", name="label_search_recipe", caption={"label.search"}}
-    table_filter_conditions.add{type="textfield", name="textfield_search_recipe", text=search_term}
+    table_filter_conditions.add{type="textfield", name="textfield_search_recipe"}
     table_filter_conditions["textfield_search_recipe"].focus()
     local sprite_button_search = table_filter_conditions.add{type="sprite-button", 
       name="fp_sprite-button_search_recipe", sprite="utility/go_to_arrow"}

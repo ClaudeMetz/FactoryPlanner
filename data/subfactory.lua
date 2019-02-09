@@ -1,129 +1,120 @@
--- Adds a new subfactory to the database
-function add_subfactory(name, icon)
-    local subfactory = 
-    {
-        name = name,
-        icon = icon,
-        timescale = 60,
-        notes = "",
-        valid = true,
-        gui_position = #global["subfactories"]+1,
-        products = {},
-        byproducts = {},
-        ingredients = {}
+Subfactory = {}
+Subfactory.__index = Subfactory
+
+
+function Subfactory:_init(name, icon)
+    BaseClass._init(self, name)
+    self.icon = icon
+    self.timescale = 60
+    self.notes = ""
+    self.ingredients = {}
+    self.products = {}
+    self.byproducts = {}
+    self.data_tables = {
+        ingredient = self.ingredients, 
+        product = self.products, 
+        byproduct = self.byproducts
     }
-    table.insert(global["subfactories"], subfactory)
-    local id = #global["subfactories"]
-    return id
+    self.counter = {
+        ingredient_index = 0,
+        ingredient_count = 0,
+        product_index = 0,
+        product_count = 0,
+        byproduct_index = 0,
+        byproduct_count = 0,
+    }
 end
 
--- Changes subfactory name and icon
-function edit_subfactory(id, name, icon)
-    global["subfactories"][id].name = name
-    global["subfactories"][id].icon = icon
+
+function Subfactory:set_icon(icon)
+    self.icon = icon
 end
 
--- Deletes a subfactory from the database
-function delete_subfactory(id)
-    table.remove(global["subfactories"], id)
+function Subfactory:get_icon()
+    return self.icon
+end
 
-    -- Moves the selected subfactory down by 1 if it's the last in the list being deleted
-    if global["subfactories"][id] == nil then
-        global["selected_subfactory_id"] = #global["subfactories"]
+
+function Subfactory:set_timescale(timescale)
+    self.timescale = timescale
+end
+
+function Subfactory:get_timescale()
+    return self.timescale
+end
+
+
+function Subfactory:set_notes(notes)
+    self.notes = notes
+end
+
+function Subfactory:get_notes()
+    return self.notes
+end
+
+
+function Subfactory:add(type, dataset)
+    local index = type .. "_index"
+    local count = type .. "_count"
+    self.counter[index] = self.counter[index] + 1
+    self.counter[count] = self.counter[count] + 1
+    dataset:set_gui_position(self.counter[count])
+    self.data_tables[type][self.counter[index]] = dataset
+    return self.counter[index]
+end
+
+function Subfactory:delete(type, id)
+    self.counter[type .. "_count"] = self.counter[type .. "_count"] - 1
+    update_positions(self.data_tables[type], self.data_tables[type][id]:get_gui_position())
+    self.data_tables[type][id] = nil
+end
+
+
+function Subfactory:get_count(type)
+    return self.counter[type .. "_count"]
+end
+
+function Subfactory:get(type, id)
+    return self.data_tables[type][id]
+end
+
+function Subfactory:get_in_order(type)
+    return order_by_position(self.data_tables[type])
+end
+
+
+-- Returns true when a product already exists in given subfactory
+function Subfactory:product_exists(product_name)
+    for _, product in pairs(self.products) do
+        if product.name == product_name then return true end
     end
+    return false
 end
 
 
--- Returns the list containing all subfactories
-function get_subfactories()
-    return global["subfactories"]
-end
-
--- Returns the subfactory specified by the id
-function get_subfactory(id)
-    return global["subfactories"][id]
-end
-
--- Returns the total number of subfactories
-function get_subfactory_count()
-    return #global["subfactories"]
-end
-
--- Returns the gui position of the given subfactory
-function get_subfactory_gui_position(id)
-    return global["subfactories"][id].gui_position
-end
-
-
--- Swaps the position of the given subfactories
-function swap_subfactory_positions(id1, id2)
-    local subfactories = global["subfactories"]
-    subfactories[id1].gui_position, subfactories[id2].gui_position = 
-      subfactories[id2].gui_position, subfactories[id1].gui_position
-end
-
-
--- Returns the current timescale of the given subfactory
-function get_subfactory_timescale(id)
-    return global["subfactories"][id].timescale
-end
-
--- Sets the timescale of the given subfactory
-function set_subfactory_timescale(id, timescale)
-    global["subfactories"][id].timescale = timescale
-end
-
-
--- Returns the notes string of the given subfactory
-function get_subfactory_notes(id)
-    return global["subfactories"][id].notes
-end
-
--- Sets the notes of the given subfactory
-function set_subfactory_notes(id, notes)
-    global["subfactories"][id].notes = notes
-end
-
-
--- Returns whether the given subfactory is valid (= contains valid items+recipes)
-function is_subfactory_valid(id) 
-    return global["subfactories"][id].valid
-end
-
--- Sets the validity of the given subfactory
-function set_subfactory_validity(id, validity)
-    global["subfactories"][id].valid = validity
-end
-
--- Returns array of validation functions for each relevant part of a subfactory 
-function get_validation_functions()
-    return {check_product_validity}
-end
-
--- Checks all subfactories for missing items and recipes and sets their respective flags
-function determine_subfactory_validity()
-    local items = game.item_prototypes
-    local fluids = game.fluid_prototypes
-
-    for id, _ in ipairs(global["subfactories"]) do
-        local validity = true
-        for _, f in pairs(get_validation_functions()) do
-            if not f(items, fluids, id, false) then
-                validity = false
-                break
+function Subfactory:update_validity()
+    for _, table in ipairs(data_tables) do
+        for _, dataset in pairs(table) do
+            if not dataset:check_validity() then
+                self.valid = false
+                return
             end
         end
-        set_subfactory_validity(id, validity)
     end
+    self.valid = true
 end
 
--- Deletes all invalid items/recipes from the given subfactory
-function delete_invalid_subfactory_parts(subfactory_id)
-    local items = game.item_prototypes
-    local fluids = game.fluid_prototypes
-
-    for _, f in pairs(get_validation_functions()) do
-        f(items, fluids, subfactory_id, true)
+function Subfactory:remove_invalid_datasets()
+    for table_name, table in pairs(data_tables) do
+        for id, dataset in pairs(table) do
+            if not dataset:is_valid() then
+                self.delete(table_name, id)
+            end
+        end
     end
-    set_subfactory_validity(subfactory_id, true)
+    self.valid = true
+end
+
+function Subfactory:shift(type, id, direction)
+    shift_position(self.data_tables[type], id, direction, self.counter[type .. "_count"])
 end

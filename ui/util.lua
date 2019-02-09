@@ -44,13 +44,16 @@ function pairsByKeys(t, f)
 end
 
 
--- Returns string of given table for debugging
+-- Returns string of given table, used for debugging
 function dump(o)
     if type(o) == 'table' then
         local s = '{ '
         for k,v in pairs(o) do
-            if type(k) ~= 'number' then k = '"'..k..'"' end
-            s = s .. '['..k..'] = ' .. dump(v) .. ','
+            if not string.find(k, "^__[a-z-]+$") then
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+            end
+            -- log(k)
         end
         return s .. '} '
     else

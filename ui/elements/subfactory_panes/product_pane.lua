@@ -11,20 +11,21 @@ function refresh_product_pane(player)
         flow["table_products"].clear()
     end
 
-    local products = get_products(global["selected_subfactory_id"])
-    if #products ~= 0 then
-        for id, product in ipairs(products) do
+    local subfactory = global["factory"]:get_selected_subfactory()
+    if subfactory:get_count("product") ~= 0 then
+        for _, id in ipairs(subfactory:get_in_order("product")) do
+            local product = subfactory:get("product", id)
+
             local button = flow["table_products"].add{type="sprite-button", name="fp_sprite-button_product_" .. id, 
-                sprite="item/" .. product.name, number=product.amount_required}
+                sprite="item/" .. product:get_name(), number=product:get_amount_required()}
+            button.tooltip = {"", game.item_prototypes[product:get_name()].localised_name, "\n",
+              product:get_amount_produced(), " / ", product:get_amount_required()}
 
-            button.tooltip = {"", game.item_prototypes[product.name].localised_name, "\n",
-              product.amount_produced, " / ", product.amount_required}
-
-            if product.amount_produced == 0 then
+            if product:get_amount_produced() == 0 then
                 button.style = "fp_button_icon_red"
-            elseif product.amount_produced < product.amount_required then
+            elseif product:get_amount_produced() < product:get_amount_required() then
                 button.style = "fp_button_icon_yellow"
-            elseif product.amount_produced == product.amount_required then
+            elseif product:get_amount_produced() == product:get_amount_required() then
                 button.style = "fp_button_icon_green"
             else
                 button.style = "fp_button_icon_cyan"
@@ -48,18 +49,19 @@ end
 
 -- Handles submission of the product dialog
 function submit_product_dialog(flow_modal_dialog, data)
-    selected_product_id = global["selected_product_id"]
-    if selected_product_id ~= 0 then
-        set_product_amount_required(global["selected_subfactory_id"], selected_product_id, data.amount_required)
+    local subfactory = global["factory"]:get_selected_subfactory()
+    if global["selected_product_id"] ~= 0 then
+        subfactory:get("product", global["selected_product_id"]):set_amount_required(data.amount_required)
         global["selected_product_id"] = 0
     else
-        add_product(global["selected_subfactory_id"], data.product_name, data.amount_required)
+        local product = Product(data.product_name, data.amount_required)
+        subfactory:add("product", product)
     end
 end
 
 -- Handles the product deletion process
 function delete_product_dialog()
-    delete_product(global["selected_subfactory_id"], global["selected_product_id"])
+    global["factory"]:get_selected_subfactory():delete("product", global["selected_product_id"])
     global["selected_product_id"] = 0
 end
 
@@ -86,8 +88,8 @@ function check_product_data(flow_modal_dialog)
         set_label_color(instruction_1, "red")
         error_present = true
     end
-
-    if global["selected_product_id"] == 0 and product_exists(global["selected_subfactory_id"], product_name) then
+    
+    if global["selected_product_id"] == 0 and global["factory"]:get_selected_subfactory():product_exists(product_name) then
         set_label_color(instruction_2, "red")
         error_present = true
     end
@@ -109,9 +111,6 @@ end
 function create_product_dialog_structure(flow_modal_dialog, title)
     flow_modal_dialog.parent.caption = title
 
-    local product_id = global["selected_product_id"]
-    local product = get_product(global["selected_subfactory_id"], product_id)
-
     -- Conditions
     local table_conditions = flow_modal_dialog.add{type="table", name="table_conditions", column_count=1}
     table_conditions.add{type="label", name="label_product_instruction_1", caption={"label.product_instruction_1"}}
@@ -123,17 +122,41 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     table_product.style.bottom_padding = 8
     -- Product
     table_product.add{type="label", name="label_product", caption={"label.product"}}
-    table_product.add{type="choose-elem-button", name="choose-elem-button_product", elem_type="item", item=product.name}
+    local button_product = table_product.add{type="choose-elem-button", name="choose-elem-button_product", 
+      elem_type="item"}
 
     -- Amount
     table_product.add{type="label", name="label_product_amount", caption={"", {"label.amount"}, "    "}}
-    local textfield_product = table_product.add{type="textfield", name="textfield_product_amount", text=product.amount_required}
-    textfield_product.style.width = 80
-    textfield_product.focus()
+    local textfield_product_amount = table_product.add{type="textfield", name="textfield_product_amount"}
+    textfield_product_amount.style.width = 80
+    textfield_product_amount.focus()
 
     -- Adjustments if the product is being edited
+    local product_id = global["selected_product_id"]
     if product_id ~= 0 then
+        local product = global["factory"]:get_selected_subfactory():get("product", product_id)
+        button_product.elem_value = product:get_name()
+        textfield_product_amount.text = product:get_amount_required()
+
         table_conditions["label_product_instruction_2"].style.visible = false
-        table_product["choose-elem-button_product"].locked = true
+        button_product.locked = true
     end
+end
+
+
+-- Opens modal dialogs of clicked element or shifts it's position left or right
+function handle_product_element_click(player, product_id, click, direction)
+    -- Shift product in the given direction
+    if direction ~= nil then
+        global["factory"]:get_selected_subfactory():shift("product", product_id, direction)
+
+    -- Open modal dialogs
+    else
+        if click == "left" then
+            open_recipe_dialog(player, product_id)
+        elseif click == "right" then
+            enter_modal_dialog(player, "product", true, true, {edit=true, product_id=product_id})
+        end
+    end
+    refresh_product_pane(player)
 end
