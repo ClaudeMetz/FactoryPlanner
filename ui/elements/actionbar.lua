@@ -34,13 +34,13 @@ function open_subfactory_dialog(flow_modal_dialog, args)
         global["current_activity"] = "editing_subfactory"
 
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
-        local subfactory = global["factory"]:get_selected_subfactory()
-        local icon = subfactory:get_icon()
+        local subfactory = Factory.get_selected_subfactory()
+        local icon = subfactory.icon
         if icon ~= nil then
             if not flow_modal_dialog.gui.is_valid_sprite_path("item/" .. icon) then icon = nil end
         end
 
-        create_subfactory_dialog_structure(flow_modal_dialog, {"label.edit_subfactory"}, subfactory:get_name(), icon)
+        create_subfactory_dialog_structure(flow_modal_dialog, {"label.edit_subfactory"}, subfactory.name, icon)
     else
         create_subfactory_dialog_structure(flow_modal_dialog, {"label.new_subfactory"}, nil, nil)
     end
@@ -49,14 +49,14 @@ end
 -- Handles submission of the subfactory dialog
 function submit_subfactory_dialog(flow_modal_dialog, data)
     if global["current_activity"] == "editing_subfactory" then
-        local subfactory = global["factory"]:get_selected_subfactory()
-        subfactory:set_name(data.name)
-        subfactory:set_icon(data.icon)
+        local subfactory_id = global["selected_subfactory_id"]
+        Subfactory.set_name(subfactory_id, data.name)
+        Subfactory.set_icon(subfactory_id, data.icon)
     else
-        local subfactory = Subfactory(data.name, data.icon)
-        local id = global["factory"]:add_subfactory(subfactory)
+        local subfactory = Subfactory.init(data.name, data.icon)
+        local subfactory_id = Factory.add_subfactory(subfactory)
         
-        global["selected_subfactory_id"] = id
+        global["selected_subfactory_id"] = subfactory_id
     end
 end
 
@@ -126,13 +126,13 @@ end
 -- Handles the subfactory deletion process
 function handle_subfactory_deletion(player)
     if global["current_activity"] == "deleting_subfactory" then
-        local subfactory_position = global["factory"]:get_subfactory(global["selected_subfactory_id"]):get_gui_position()
-        local subfactory_count = global["factory"]:get_subfactory_count()
-        global["factory"]:delete_subfactory(global["selected_subfactory_id"])
+        local subfactory_position = Factory.get_subfactory(global["selected_subfactory_id"]).gui_position
+        local subfactory_count = Factory.get_subfactory_count()
+        Factory.delete_subfactory(global["selected_subfactory_id"])
 
         -- Only if the last subfactory in the list is deleted does the selected subfactory id shift down
         if subfactory_count == subfactory_position then subfactory_position = subfactory_position - 1 end
-        global["selected_subfactory_id"] = global["factory"]:get_subfactory_id_by_position(subfactory_position)
+        global["selected_subfactory_id"] = Factory.get_subfactory_id_by_position(subfactory_position)
         global["current_activity"] = nil
     else
         global["current_activity"] = "deleting_subfactory"

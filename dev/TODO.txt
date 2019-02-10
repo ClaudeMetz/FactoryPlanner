@@ -12,7 +12,7 @@ TODO Improvements:
 TODO Code Improvements:
 - Generalize modal dialog instruction generation and checking
 - Change subfactory icon selector to signal-type, not item-type
-- reference data.util and ui.util by naming them on import
+? reference data.util and ui.util by naming them on import
 
 
 TODO Bugs:

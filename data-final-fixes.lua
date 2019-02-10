@@ -7,7 +7,7 @@ end
 -- Trying to fix missing link in space science production, might interfere with other mods in this form
 data:extend({{
         type = "recipe",
-        name = "space-science-pack",
+        name = "fp-space-science-pack",
         enabled = false,
         hidden = true,
         energy_required = 1,
@@ -18,4 +18,4 @@ data:extend({{
         result_count = 1000,
         result = "space-science-pack"
 }})
-table.insert(data.raw["technology"]["rocket-silo"].effects, {type = "unlock-recipe", recipe = "space-science-pack"})
+table.insert(data.raw["technology"]["rocket-silo"].effects, {type = "unlock-recipe", recipe = "fp-space-science-pack"})

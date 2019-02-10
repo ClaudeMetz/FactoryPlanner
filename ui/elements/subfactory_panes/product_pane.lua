@@ -11,21 +11,21 @@ function refresh_product_pane(player)
         flow["table_products"].clear()
     end
 
-    local subfactory = global["factory"]:get_selected_subfactory()
-    if subfactory:get_count("product") ~= 0 then
-        for _, id in ipairs(subfactory:get_in_order("product")) do
-            local product = subfactory:get("product", id)
+    local subfactory_id = global["selected_subfactory_id"]
+    if Subfactory.get_count(subfactory_id, "Product") ~= 0 then
+        for _, id in ipairs(Subfactory.get_in_order(subfactory_id, "Product")) do
+            local product = Subfactory.get(subfactory_id, "Product", id)
 
             local button = flow["table_products"].add{type="sprite-button", name="fp_sprite-button_product_" .. id, 
-                sprite="item/" .. product:get_name(), number=product:get_amount_required()}
-            button.tooltip = {"", game.item_prototypes[product:get_name()].localised_name, "\n",
-              product:get_amount_produced(), " / ", product:get_amount_required()}
+                sprite="item/" .. product.name, number=product.amount_required}
+            button.tooltip = {"", game.item_prototypes[product.name].localised_name, "\n",
+              product.amount_produced, " / ", product.amount_required}
 
-            if product:get_amount_produced() == 0 then
+            if product.amount_produced == 0 then
                 button.style = "fp_button_icon_red"
-            elseif product:get_amount_produced() < product:get_amount_required() then
+            elseif product.amount_produced < product.amount_required then
                 button.style = "fp_button_icon_yellow"
-            elseif product:get_amount_produced() == product:get_amount_required() then
+            elseif product.amount_produced == product.amount_required then
                 button.style = "fp_button_icon_green"
             else
                 button.style = "fp_button_icon_cyan"
@@ -49,19 +49,20 @@ end
 
 -- Handles submission of the product dialog
 function submit_product_dialog(flow_modal_dialog, data)
-    local subfactory = global["factory"]:get_selected_subfactory()
-    if global["selected_product_id"] ~= 0 then
-        subfactory:get("product", global["selected_product_id"]):set_amount_required(data.amount_required)
+    local subfactory_id = global["selected_subfactory_id"]
+    local product_id = global["selected_product_id"]
+    if product_id ~= 0 then
+        Product.set_amount_required(subfactory_id, product_id, data.amount_required)
         global["selected_product_id"] = 0
     else
-        local product = Product(data.product_name, data.amount_required)
-        subfactory:add("product", product)
+        local product = Product.init(data.product_name, data.amount_required)
+        Subfactory.add(subfactory_id, product)
     end
 end
 
 -- Handles the product deletion process
 function delete_product_dialog()
-    global["factory"]:get_selected_subfactory():delete("product", global["selected_product_id"])
+    Subfactory.delete(global["selected_subfactory_id"], "Product", global["selected_product_id"])
     global["selected_product_id"] = 0
 end
 
@@ -89,7 +90,7 @@ function check_product_data(flow_modal_dialog)
         error_present = true
     end
     
-    if global["selected_product_id"] == 0 and global["factory"]:get_selected_subfactory():product_exists(product_name) then
+    if global["selected_product_id"] == 0 and Subfactory.product_exists(global["selected_subfactory_id"], product_name) then
         set_label_color(instruction_2, "red")
         error_present = true
     end
@@ -134,9 +135,9 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     -- Adjustments if the product is being edited
     local product_id = global["selected_product_id"]
     if product_id ~= 0 then
-        local product = global["factory"]:get_selected_subfactory():get("product", product_id)
-        button_product.elem_value = product:get_name()
-        textfield_product_amount.text = product:get_amount_required()
+        local product = Subfactory.get(global["selected_subfactory_id"], "Product", product_id)
+        button_product.elem_value = product.name
+        textfield_product_amount.text = product.amount_required
 
         table_conditions["label_product_instruction_2"].style.visible = false
         button_product.locked = true
@@ -148,7 +149,7 @@ end
 function handle_product_element_click(player, product_id, click, direction)
     -- Shift product in the given direction
     if direction ~= nil then
-        global["factory"]:get_selected_subfactory():shift("product", product_id, direction)
+        Subfactory.shift(global["selected_subfactory_id"], "Product", product_id, direction)
 
     -- Open modal dialogs
     else
