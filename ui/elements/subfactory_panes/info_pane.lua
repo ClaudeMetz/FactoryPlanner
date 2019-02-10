@@ -9,7 +9,7 @@ function refresh_info_pane(player)
     end
 
     -- Timescale
-    local timescale = global["factory"]:get_selected_subfactory():get_timescale()
+    local timescale = Factory.get_selected_subfactory().timescale
     local unit = determine_unit(timescale)
     local table_timescale = flow["flow_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
@@ -50,7 +50,7 @@ end
 -- Handles the timescale changing process
 function handle_subfactory_timescale_change(player, timescale)
     if global["current_activity"] == "changing_timescale" then
-        global["factory"]:get_selected_subfactory():set_timescale(timescale)
+        Subfactory.set_timescale(global["selected_subfactory_id"], timescale)
         global["current_activity"] = nil
     else
         global["current_activity"] = "changing_timescale"
@@ -67,7 +67,7 @@ end
 
 -- Handles submission of the notes dialog
 function submit_notes_dialog(flow_modal_dialog, data)
-    global["factory"]:get_selected_subfactory():set_notes(data.notes)
+    Subfactory.set_notes(global["selected_subfactory_id"], data.notes)
 end
 
 -- Checks the entered data for errors and returns it if it's all correct, else returns nil
@@ -94,7 +94,7 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
 
     -- Notes
     local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
-      text=global["factory"]:get_selected_subfactory():get_notes()}
+      text=Factory.get_selected_subfactory().notes}
     text_box_notes.focus()
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400

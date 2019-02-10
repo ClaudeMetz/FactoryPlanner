@@ -1,59 +1,12 @@
 -- Sets up global data structure of the mod
 script.on_init(function()
-    global.metatables = {}
-    function global.set_persistent_metatable(table, meta)
-        global.metatables[table] = meta
-        setmetatable(table,meta)
-    end
-
-    global.set_persistent_metatable(BaseClass, {
-        __call = function (cls, ...)
-            local self = setmetatable({}, cls)
-            self:_init(...)
-            return self
-        end,
-    })
-
-    global.set_persistent_metatable(Factory, {
-        __call = function (cls, ...)
-            local self = setmetatable({}, cls)
-            self:_init(...)
-            return self
-        end,
-    })
-
-    global.set_persistent_metatable(Subfactory, {
-        __index = BaseClass,
-        __call = function (cls, ...)
-            local self = setmetatable({}, cls)
-            self:_init(...)
-            return self
-        end,
-    })
-
-    global.set_persistent_metatable(Product, {
-        __index = BaseClass,
-        __call = function (cls, ...)
-            local self = setmetatable({}, cls)
-            self:_init(...)
-            return self
-        end,
-    })
-    
     data_init()
-end)
-
---
-script.on_load(function()
-    -- These don't work
-    for k,v in next,global do _G[k]=v end
-    for k,v in next,global.metatables do setmetatable(k,v) end
 end)
 
 -- Prompts a recipe dialog reload and a validity check on all subfactories
 script.on_configuration_changed(function()
     global["mods_changed"] = true
-    global["factory"]:update_validity()
+    Factory.update_validity()
 end)
 
 
@@ -163,7 +116,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- Deletes invalid subfactory items/recipes after the error bar button has been pressed
     elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
         local id = tonumber(string.match(event.element.name, "%d+"))
-        global["factory"]:get_subfactory(id):remove_invalid_datasets()
+        Subfactory.remove_invalid_datasets(id)
         refresh_subfactory_bar(player)
 
     -- Changes the timescale of the current subfactory

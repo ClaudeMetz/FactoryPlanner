@@ -1,6 +1,6 @@
 [A1]
 Pro:
-!!! Allows fluids as well
+! Allows fluids as well
 - Consistency
 - Hide dublicate products
 - Hide products with no (researched?) recipe at all

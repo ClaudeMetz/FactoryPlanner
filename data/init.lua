@@ -1,8 +1,11 @@
+require("Factory")
+require("Subfactory")
+require("Product")
 require("util")
 
 -- Initiates all global variables
 function data_init()
-    global["factory"] = Factory()
+    global.factory = Factory.init()
 
     global["mods_changed"] = true  -- Prompts the recipe dialog to load the first time
 
@@ -20,18 +23,17 @@ end
 
 -- Sets up environment for development purposes
 function run_dev_config()
-    --[[ global["factory"]:add_subfactory(Subfactory(nil, "iron-plate"))
-    global["factory"]:add_subfactory(Subfactory("Beta", nil))
-    global["factory"]:add_subfactory(Subfactory("Gamma", "copper-plate"))
+    Factory.add_subfactory(Subfactory.init(nil, "iron-plate"))
+    Factory.add_subfactory(Subfactory.init("Beta", nil))
+    Factory.add_subfactory(Subfactory.init("Gamma", "copper-plate"))
     global["selected_subfactory_id"] = 1
 
-    local id
-    local subfactory = global["factory"]:get_selected_subfactory()
-    id = subfactory:add("product", Product("electronic-circuit", 400))
-    subfactory:get("product", id):add_to_amount_produced(600)
-    id = subfactory:add("product", Product("advanced-circuit", 200))
-    subfactory:get("product", id):add_to_amount_produced(200)
-    id = subfactory:add("product", Product("processing-unit", 100))
-    subfactory:get("product", id):add_to_amount_produced(60)
-    id = subfactory:add("product", Product("uranium-235", 40)) ]]
+    local subfactory_id = global["selected_subfactory_id"]
+    local id = Subfactory.add(subfactory_id, Product.init("electronic-circuit", 400))
+    Product.add_to_amount_produced(subfactory_id, id, 600)
+    id = Subfactory.add(subfactory_id, Product.init("advanced-circuit", 200))
+    Product.add_to_amount_produced(subfactory_id, id, 200)
+    id = Subfactory.add(subfactory_id, Product.init("processing-unit", 100))
+    Product.add_to_amount_produced(subfactory_id, id, 60)
+    id = Subfactory.add(subfactory_id, Product.init("uranium-235", 40))
 end

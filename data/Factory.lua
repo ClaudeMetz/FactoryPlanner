@@ -1,59 +1,64 @@
 Factory = {}
-Factory.__index = Factory
 
-
-function Factory:_init()
-    self.subfactories = {}
-    self.subfactory_index = 0
-    self.subfactory_count = 0
+function Factory.init()
+    return {
+        subfactories = {},
+        subfactory_index = 0,
+        subfactory_count = 0
+    }
 end
 
 
-function Factory:add_subfactory(subfactory)
+function Factory.add_subfactory(subfactory)
+    local self = global.factory
     self.subfactory_index = self.subfactory_index + 1
     self.subfactory_count = self.subfactory_count + 1
-    subfactory:set_gui_position(self.subfactory_count)
+    subfactory.gui_position = self.subfactory_count
     self.subfactories[self.subfactory_index] = subfactory
     return self.subfactory_index
 end
 
-function Factory:delete_subfactory(subfactory_id)
+function Factory.delete_subfactory(subfactory_id)
+    local self = global.factory
     self.subfactory_count = self.subfactory_count - 1
-    update_positions(self.subfactories, self.subfactories[subfactory_id]:get_gui_position())
+    update_positions(self.subfactories, Subfactory.get_gui_position(subfactory_id))
     self.subfactories[subfactory_id] = nil
 end
 
 
-function Factory:get_subfactory_count()
-    return self.subfactory_count
+function Factory.get_subfactory_count()
+    return global.factory.subfactory_count
 end
 
-function Factory:get_subfactory(subfactory_id)
-    return self.subfactories[subfactory_id]
+function Factory.get_subfactory(subfactory_id)
+    return global.factory.subfactories[subfactory_id]
 end
 
 -- For convenience
-function Factory:get_selected_subfactory()
-    return self.subfactories[global["selected_subfactory_id"]]
+function Factory.get_selected_subfactory()
+    return global.factory.subfactories[global["selected_subfactory_id"]]
 end
 
-function Factory:get_subfactories_in_order()
-    return order_by_position(self.subfactories)
+-- Returns subfactory id's in order by position (-> [gui_position] = id)
+function Factory.get_subfactories_in_order()
+    return order_by_position(global.factory.subfactories)
 end
-
 
 -- Used for changing the selected subfactory on deletion
-function Factory:get_subfactory_id_by_position(gui_position)
-    return get_id_by_position(self.subfactories, gui_position)
+function Factory.get_subfactory_id_by_position(gui_position)
+    return get_id_by_position(global.factory.subfactories, gui_position)
 end
 
-function Factory:update_validity()
-    for _, subfactory in self.subfactories do
-        subfactory:update_validity()
+
+-- Updates the validity values of all subfactories
+function Factory.update_validity()
+    for subfactory_id, _ in pairs(global.factory.subfactories) do
+        Subfactory.update_validity(subfactory_id)
     end
 end
 
 
-function Factory:shift_subfactory(subfactory_id, direction)
+function Factory.shift_subfactory(subfactory_id, direction)
+    local self = global.factory
     shift_position(self.subfactories, subfactory_id, direction, self.subfactory_count)
 end

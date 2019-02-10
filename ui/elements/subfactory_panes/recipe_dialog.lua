@@ -8,7 +8,7 @@ function open_recipe_dialog(player, product_id)
     end
 
     frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
-    local product_name = global["factory"]:get_selected_subfactory():get("product", product_id):get_name()
+    local product_name = Subfactory.get(global["selected_subfactory_id"], "Product", product_id).name
     local recipe_name = run_preliminary_checks(player, product_name)
     -- nil meaning that no single enabled and matching recipe has been found (either 0 or 2+)
     if recipe_name == nil then
