@@ -52,9 +52,9 @@ end
 -- The creation-function itself decides whether it will fit
 function attempt_element_creation(table, width_remaining, id, subfactory, selected)
     local width_used
-    if subfactory.name ~= nil and subfactory.icon == nil then
+    if subfactory.name ~= "" and subfactory.icon == nil then
         width_used = create_label_element(table, width_remaining, id, subfactory, selected)
-    elseif subfactory.icon ~= nil and subfactory.name == nil then
+    elseif subfactory.icon ~= nil and subfactory.name == "" then
         width_used = create_sprite_element(table, width_remaining, id, subfactory, selected)
     else
         width_used = create_label_sprite_element(table, width_remaining, id, subfactory, selected)
@@ -102,7 +102,7 @@ function create_sprite_element(table, width_remaining, id, subfactory, selected)
         else
             button.style.height = 36
             button.style.width = 36
-            set_padding(button, 0)
+            ui_util.set_padding(button, 0)
         end
 
         return button_width
@@ -148,8 +148,9 @@ end
 
 -- Creates the sprite-button, checking if the sprite is still loaded (in case a mod is removed)
 function create_sprite_button(table, name, subfactory)
-    local sprite_path = "item/" .. subfactory.icon
+    local sprite_path = subfactory.icon.type .. "/" .. subfactory.icon.name
     local tooltip = ""
+    log(sprite_path)
     if not table.gui.is_valid_sprite_path(sprite_path) then
         sprite_path = "utility/danger_icon"
         tooltip = {"tooltip.sprite_missing"}
@@ -173,5 +174,5 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
     end
 
     global["current_activity"] = nil
-    refresh_subfactory_bar(player)
+    refresh_main_dialog(player)
 end

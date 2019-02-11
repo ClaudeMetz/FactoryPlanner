@@ -1,6 +1,9 @@
 Subfactory = {}
 
+local data_types = {"Ingredient", "Product", "Byproduct"}
+
 function Subfactory.init(name, icon)
+    if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
     local subfactory = {
         name = name,
         icon = icon,
@@ -22,7 +25,7 @@ function Subfactory.init(name, icon)
     return subfactory
 end
 
-local data_types = {"Ingredient", "Product", "Byproduct"}
+
 local function get_subfactory(id)
     return global.factory.subfactories[id]
 end
@@ -76,7 +79,7 @@ end
 function Subfactory.delete(id, type, dataset_id)
     local data_table = get_subfactory(id)[type]
     data_table.counter = data_table.counter - 1
-    update_positions(data_table.datasets, data_table.datasets[dataset_id].gui_position)
+    data_util.update_positions(data_table.datasets, data_table.datasets[dataset_id].gui_position)
     data_table.datasets[dataset_id] = nil
 end
 
@@ -91,7 +94,7 @@ end
 
 -- Returns dataset id's in order by position (-> [gui_position] = id)
 function Subfactory.get_in_order(id, type)
-    return order_by_position(get_subfactory(id)[type].datasets)
+    return data_util.order_by_position(get_subfactory(id)[type].datasets)
 end
 
 
@@ -146,5 +149,5 @@ end
 
 function Subfactory.shift(id, type, dataset_id, direction)
     local data_table = get_subfactory(id)[type]
-    shift_position(data_table.datasets, dataset_id, direction, data_table.counter)
+    data_util.shift_position(data_table.datasets, dataset_id, direction, data_table.counter)
 end

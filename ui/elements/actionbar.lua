@@ -20,10 +20,10 @@ function refresh_actionbar(player)
 
     if global["current_activity"] == "deleting_subfactory" then
         delete_button.caption = {"button-text.delete_confirm"}
-        set_label_color(delete_button, "red")
+        ui_util.set_label_color(delete_button, "red")
     else
         delete_button.caption = {"button-text.delete"}
-        set_label_color(delete_button, "white")
+        ui_util.set_label_color(delete_button, "white")
     end
 end
 
@@ -37,7 +37,7 @@ function open_subfactory_dialog(flow_modal_dialog, args)
         local subfactory = Factory.get_selected_subfactory()
         local icon = subfactory.icon
         if icon ~= nil then
-            if not flow_modal_dialog.gui.is_valid_sprite_path("item/" .. icon) then icon = nil end
+            if not flow_modal_dialog.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil end
         end
 
         create_subfactory_dialog_structure(flow_modal_dialog, {"label.edit_subfactory"}, subfactory.name, icon)
@@ -47,69 +47,52 @@ function open_subfactory_dialog(flow_modal_dialog, args)
 end
 
 -- Handles submission of the subfactory dialog
-function submit_subfactory_dialog(flow_modal_dialog, data)
-    if global["current_activity"] == "editing_subfactory" then
-        local subfactory_id = global["selected_subfactory_id"]
-        Subfactory.set_name(subfactory_id, data.name)
-        Subfactory.set_icon(subfactory_id, data.icon)
-    else
-        local subfactory = Subfactory.init(data.name, data.icon)
-        local subfactory_id = Factory.add_subfactory(subfactory)
-        
-        global["selected_subfactory_id"] = subfactory_id
+function close_subfactory_dialog(flow_modal_dialog, action, data)
+    if action == "submit" then
+        if global["current_activity"] == "editing_subfactory" then
+            local subfactory_id = global["selected_subfactory_id"]
+            Subfactory.set_name(subfactory_id, data.name)
+            Subfactory.set_icon(subfactory_id, data.icon)
+        else
+            local subfactory = Subfactory.init(data.name, data.icon)
+            local subfactory_id = Factory.add_subfactory(subfactory)
+            
+            global["selected_subfactory_id"] = subfactory_id
+        end
     end
 end
 
 
--- Checks the entered data for errors and returns it if it's all correct, else returns nil
-function check_subfactory_data(flow_modal_dialog)
-    local name = flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("%s+", "")
-    local icon = flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value
-    local instruction_1 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_1"]
-    local instruction_2 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_2"]
-    local instruction_3 = flow_modal_dialog["table_conditions"]["label_subfactory_instruction_3"]
-
-    -- Resets all error indicators
-    set_label_color(instruction_1, "white")
-    set_label_color(instruction_2, "white")
-    set_label_color(instruction_3, "white")
-    local error_present = false
-
-    if name == "" and icon == nil then
-        set_label_color(instruction_1, "red")
-        error_present = true
-    end
-
-    if name:len() > 16 then
-        set_label_color(instruction_2, "red")
-        error_present = true
-    end
-
-    -- Matches everything that is not alphanumeric or a space
-    if name ~= "" and name:match("[^%w !#&'%(%)%+%-%./%?]") then
-        set_label_color(instruction_3, "red")
-        error_present = true
-    end
-
-    if error_present then
-        return nil
-    else
-        if name == "" then name = nil end
-        return {name=name, icon=icon}
-    end
+-- Returns all necessary instructions to create and run conditions on the modal dialog
+function get_subfactory_condition_instructions()
+    return {
+        data = {
+            name = (function(flow_modal_dialog) return flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("%s+", "") end),
+            icon = (function(flow_modal_dialog) return flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value end)
+        },
+        conditions = {
+            [1] = {
+                label = {"label.subfactory_instruction_1"},
+                check = (function(data) return (data.name == "" and data.icon == nil) end),
+                show_on_edit = true
+            },
+            [2] = {
+                label = {"label.subfactory_instruction_2"},
+                check = (function(data) return (data.name:len() > 16) end),
+                show_on_edit = true
+            },
+            [3] = {
+                label = {"", {"label.subfactory_instruction_3"}, " !#&'()+-./?"},
+                check = (function(data) return (data.name ~= "" and data.name:match("[^%w !#&'%(%)%+%-%./%?]")) end),
+                show_on_edit = true
+            }
+        }
+    }
 end
-
 
 -- Fills out the modal dialog to enter/edit a subfactory
 function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon)
     flow_modal_dialog.parent.caption = title
-
-    -- Conditions
-    local table_conditions = flow_modal_dialog.add{type="table", name="table_conditions", column_count=1}
-    table_conditions.add{type="label", name="label_subfactory_instruction_1", caption={"label.subfactory_instruction_1"}}
-    table_conditions.add{type="label", name="label_subfactory_instruction_2", caption={"label.subfactory_instruction_2"}}
-    table_conditions.add{type="label", name="label_subfactory_instruction_3", caption={"", {"label.subfactory_instruction_3"}, " !#&'()+-./?"}}
-    table_conditions.style.bottom_padding = 6
 
     local table_subfactory = flow_modal_dialog.add{type="table", name="table_subfactory", column_count=2}
     table_subfactory.style.bottom_padding = 8
@@ -119,7 +102,7 @@ function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon
     table_subfactory["textfield_subfactory_name"].focus()
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
-    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="item", item=icon}
+    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="signal", signal=icon}
 end
 
 

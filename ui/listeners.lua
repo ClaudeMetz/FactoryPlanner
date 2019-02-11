@@ -68,13 +68,13 @@ script.on_event(defines.events.on_gui_click, function(event)
     elseif event.element.name == "fp_button_modal_dialog_cancel" and is_left_click then
         exit_modal_dialog(player, "cancel")
 
-    -- Submits the modal dialog, forwarding to the appropriate function
-    elseif event.element.name == "fp_button_modal_dialog_submit" and is_left_click then
-        exit_modal_dialog(player, "submit")
-
     -- Closes the modal dialog, calling the appropriate deletion function
     elseif event.element.name == "fp_button_modal_dialog_delete" and is_left_click then
         exit_modal_dialog(player, "delete")
+
+    -- Submits the modal dialog, forwarding to the appropriate function
+    elseif event.element.name == "fp_button_modal_dialog_submit" and is_left_click then
+        exit_modal_dialog(player, "submit")
     
     -- Opens the new-subfactory dialog
     elseif event.element.name == "fp_button_new_subfactory" and is_left_click then
@@ -94,7 +94,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
     -- Opens notes dialog
     elseif event.element.name == "fp_button_view_notes" and is_left_click then
-        enter_modal_dialog(player, "notes", true, false)
+        enter_modal_dialog(player, "notes", true, false, {edit=false})
 
     -- Opens the add-product dialog
     elseif event.element.name == "fp_sprite-button_add_product" and is_left_click then

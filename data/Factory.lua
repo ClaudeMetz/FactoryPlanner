@@ -21,7 +21,7 @@ end
 function Factory.delete_subfactory(subfactory_id)
     local self = global.factory
     self.subfactory_count = self.subfactory_count - 1
-    update_positions(self.subfactories, Subfactory.get_gui_position(subfactory_id))
+    data_util.update_positions(self.subfactories, Subfactory.get_gui_position(subfactory_id))
     self.subfactories[subfactory_id] = nil
 end
 
@@ -41,12 +41,12 @@ end
 
 -- Returns subfactory id's in order by position (-> [gui_position] = id)
 function Factory.get_subfactories_in_order()
-    return order_by_position(global.factory.subfactories)
+    return data_util.order_by_position(global.factory.subfactories)
 end
 
 -- Used for changing the selected subfactory on deletion
 function Factory.get_subfactory_id_by_position(gui_position)
-    return get_id_by_position(global.factory.subfactories, gui_position)
+    return data_util.get_id_by_position(global.factory.subfactories, gui_position)
 end
 
 
@@ -60,5 +60,5 @@ end
 
 function Factory.shift_subfactory(subfactory_id, direction)
     local self = global.factory
-    shift_position(self.subfactories, subfactory_id, direction, self.subfactory_count)
+    data_util.shift_position(self.subfactories, subfactory_id, direction, self.subfactory_count)
 end

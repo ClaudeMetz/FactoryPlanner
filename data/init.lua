@@ -12,10 +12,10 @@ function data_init()
     global["main_dialog_dimensions"] = {width = 1200, height = nil}
     global["modal_dialog_type"] = nil
     global["current_activity"] = nil
-    global["selected_item_group_name"] = nil
 
     global["selected_subfactory_id"] = 0
     global["selected_product_id"] = 0
+    global["selected_item_group_name"] = nil
     
     global["devmode"] = true
 end
@@ -23,9 +23,9 @@ end
 
 -- Sets up environment for development purposes
 function run_dev_config()
-    Factory.add_subfactory(Subfactory.init(nil, "iron-plate"))
+    Factory.add_subfactory(Subfactory.init("", {type="item", name="iron-plate"}))
     Factory.add_subfactory(Subfactory.init("Beta", nil))
-    Factory.add_subfactory(Subfactory.init("Gamma", "copper-plate"))
+    Factory.add_subfactory(Subfactory.init("Gamma", {type="item", name="copper-plate"}))
     global["selected_subfactory_id"] = 1
 
     local subfactory_id = global["selected_subfactory_id"]

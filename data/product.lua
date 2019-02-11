@@ -26,11 +26,11 @@ end
 
 
 function Product.set_amount_required(subfactory_id, id, amount)
-    get_product(subfactory_id, id).amount = amount
+    get_product(subfactory_id, id).amount_required = amount
 end
 
 function Product.get_amount_required(subfactory_id, id)
-    return get_product(subfactory_id, id).amount
+    return get_product(subfactory_id, id).amount_required
 end
 
 
