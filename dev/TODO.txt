@@ -4,15 +4,14 @@ TODO Features:
 
 TODO Improvements:
 ! Multiplayer compatability
-! Create a custom product selection dialog akin to the recipe dialog [A1]
+- Create a custom product selection dialog akin to the recipe dialog [A1]
+    (otherwise, as a band-aid solution, use built-in signal chooser and forbid actual signals)
 - Use ESC as a toggle for the main dialog or cancel on a modal dialog (not sure how, may ask FNEI-author _npo6ka_)
-- Add miner-recipes (ore, oil) (not sure how, may ask FNEI-contributor mentlerd)
+- Add miner-recipes (ore only probably) (not sure how, may ask FNEI-contributor mentlerd)
 
 
 TODO Code Improvements:
-- Generalize modal dialog instruction generation and checking
-- Change subfactory icon selector to signal-type, not item-type
-? reference data.util and ui.util by naming them on import
+- Figure out how to do data migrations on new mod versions
 
 
 TODO Bugs:
@@ -21,19 +20,19 @@ TODO Bugs:
 TODO 0.17:
 - Scaling -> All kinds of sizes seem to be wrong until 0.17, waiting for that to do scaling properly
 - *.style.visible -> *.visible
-- Fancy recipe tooltips using the new fancy text formating
+- Fancy recipe tooltips using the new text formating
 
 
 TODO Post-Launch:
 ! Module-support
 ! Export/Import of whole subfactories and parts of them
 ! DE, FR localisations
-? FNEI-links (alt-click?)
+- Better multiplayer support (ex. shared subfactories)
+? FNEI-links (alt-click?)(needs API from FNEI-author, might already exist)
 ? Add more and/or custom timescales
-? Better multiplayer support (access rights, etc)
 
 
-API wishes:
+API Changes:
 - (probable) let enter work as a way to submit forms, even when a textfield is in focus
 - (posted) have style.padding still available at the control stage for easier changes
 

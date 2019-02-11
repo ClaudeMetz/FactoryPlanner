@@ -43,81 +43,66 @@ end
 
 -- Handles populating the modal dialog to add or edit products
 function open_product_dialog(flow_modal_dialog, args)
-    if args.edit then global["selected_product_id"] = args.product_id end
+    if args.edit then 
+        global["current_activity"] = "editing_product"
+        global["selected_product_id"] = args.product_id
+    end
     create_product_dialog_structure(flow_modal_dialog, {"label.add_product"})
 end
 
--- Handles submission of the product dialog
-function submit_product_dialog(flow_modal_dialog, data)
+-- Handles closing of the product dialog
+function close_product_dialog(flow_modal_dialog, action, data)
     local subfactory_id = global["selected_subfactory_id"]
     local product_id = global["selected_product_id"]
-    if product_id ~= 0 then
-        Product.set_amount_required(subfactory_id, product_id, data.amount_required)
-        global["selected_product_id"] = 0
-    else
-        local product = Product.init(data.product_name, data.amount_required)
-        Subfactory.add(subfactory_id, product)
-    end
-end
 
--- Handles the product deletion process
-function delete_product_dialog()
-    Subfactory.delete(global["selected_subfactory_id"], "Product", global["selected_product_id"])
+    if action == "submit" then
+        if global["current_activity"] == "editing_product" then
+            Product.set_amount_required(subfactory_id, product_id, data.amount_required)
+        else
+            local product = Product.init(data.name, data.amount_required)
+            Subfactory.add(subfactory_id, product)
+        end
+
+    elseif action == "delete" then
+        Subfactory.delete(subfactory_id, "Product", product_id)
+    end
+
     global["selected_product_id"] = 0
 end
 
--- Resets the selected id if the modal dialog is cancelled
-function cleanup_product_dialog()
-    global["selected_product_id"] = 0
-end
 
--- Checks the entered data for errors and returns it if it's all correct, else returns nil
-function check_product_data(flow_modal_dialog)
-    local product_name = flow_modal_dialog["table_product"]["choose-elem-button_product"].elem_value
-    local amount = flow_modal_dialog["table_product"]["textfield_product_amount"].text
-    local instruction_1 = flow_modal_dialog["table_conditions"]["label_product_instruction_1"]
-    local instruction_2 = flow_modal_dialog["table_conditions"]["label_product_instruction_2"]
-    local instruction_3 = flow_modal_dialog["table_conditions"]["label_product_instruction_3"]
-
-    -- Resets all error indicators
-    set_label_color(instruction_1, "white")
-    set_label_color(instruction_2, "white")
-    set_label_color(instruction_3, "white")
-    local error_present = false
-
-    if product_name == nil or amount == "" then
-        set_label_color(instruction_1, "red")
-        error_present = true
-    end
-    
-    if global["selected_product_id"] == 0 and Subfactory.product_exists(global["selected_subfactory_id"], product_name) then
-        set_label_color(instruction_2, "red")
-        error_present = true
-    end
-
-    -- Matches everything that is not numeric
-    if amount ~= "" and (amount:match("[^%d]") or tonumber(amount) <= 0) then
-        set_label_color(instruction_3, "red")
-        error_present = true
-    end
-
-    if error_present then
-        return nil
-    else
-        return {product_name=product_name, amount_required=tonumber(amount)}
-    end
+-- Returns all necessary instructions to create and run conditions on the modal dialog
+function get_product_condition_instructions()
+    return {
+        data = {
+            name = (function(flow_modal_dialog) return flow_modal_dialog["table_product"]["choose-elem-button_product"].elem_value end),
+            amount_required = (function(flow_modal_dialog) return flow_modal_dialog["table_product"]["textfield_product_amount"].text end)
+        },
+        conditions = {
+            [1] = {
+                label = {"label.product_instruction_1"},
+                check = (function(data) return (data.name == nil or data.amount_required == "") end),
+                show_on_edit = false
+            },
+            [2] = {
+                label = {"label.product_instruction_2"},
+                check = (function(data) return (global["selected_product_id"] == 0 and 
+                          Subfactory.product_exists(global["selected_subfactory_id"], data.name)) end),
+                show_on_edit = false
+            },
+            [3] = {
+                label = {"label.product_instruction_3"},
+                check = (function(data) return (data.amount_required ~= "" and (data.amount_required:match("[^%d]") or 
+                          tonumber(data.amount_required) <= 0)) end),
+                show_on_edit = true
+            }
+        }
+    }
 end
 
 -- Fills out the modal dialog to add or edit a product
 function create_product_dialog_structure(flow_modal_dialog, title)
     flow_modal_dialog.parent.caption = title
-
-    -- Conditions
-    local table_conditions = flow_modal_dialog.add{type="table", name="table_conditions", column_count=1}
-    table_conditions.add{type="label", name="label_product_instruction_1", caption={"label.product_instruction_1"}}
-    table_conditions.add{type="label", name="label_product_instruction_2", caption={"label.product_instruction_2"}}
-    table_conditions.add{type="label", name="label_product_instruction_3", caption={"label.product_instruction_3"}}
-    table_conditions.style.bottom_padding = 6
 
     local table_product = flow_modal_dialog.add{type="table", name="table_product", column_count=2}
     table_product.style.bottom_padding = 8
@@ -138,8 +123,6 @@ function create_product_dialog_structure(flow_modal_dialog, title)
         local product = Subfactory.get(global["selected_subfactory_id"], "Product", product_id)
         button_product.elem_value = product.name
         textfield_product_amount.text = product.amount_required
-
-        table_conditions["label_product_instruction_2"].style.visible = false
         button_product.locked = true
     end
 end

@@ -157,13 +157,13 @@ function create_recipe_tree()
     -- Messy tree structure, but avoids modded situations where multiple recipes have the same order
     local sorted_recipe_tree = {}
     local group_name, subgroup_name
-    for _, group in pairsByKeys(unsorted_recipe_tree) do
+    for _, group in ui_util.pairsByKeys(unsorted_recipe_tree) do
         table.insert(sorted_recipe_tree, {name=nil, subgroups={}})
         local table_group = sorted_recipe_tree[#sorted_recipe_tree]
-        for _, subgroup in pairsByKeys(group) do
+        for _, subgroup in ui_util.pairsByKeys(group) do
             table.insert(table_group.subgroups, {name=nil, recipes={}})
             local table_subgroup = table_group.subgroups[#table_group.subgroups]
-            for _, recipe_order in pairsByKeys(subgroup) do
+            for _, recipe_order in ui_util.pairsByKeys(subgroup) do
                 for _, recipe in ipairs(recipe_order) do
                     if not group_name then group_name = recipe.group.name end
                     if not subgroup_name then subgroup_name = recipe.subgroup.name end

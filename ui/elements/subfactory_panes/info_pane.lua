@@ -10,7 +10,7 @@ function refresh_info_pane(player)
 
     -- Timescale
     local timescale = Factory.get_selected_subfactory().timescale
-    local unit = determine_unit(timescale)
+    local unit = ui_util.determine_unit(timescale)
     local table_timescale = flow["flow_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
       caption={"", " ", {"label.timescale"}, ": "}}
@@ -60,37 +60,39 @@ function handle_subfactory_timescale_change(player, timescale)
 end
 
 
+
 -- Handles populating the modal dialog to view or edit notes
 function open_notes_dialog(flow_modal_dialog, args)
     create_notes_dialog_structure(flow_modal_dialog, {"label.notes"})
 end
 
--- Handles submission of the notes dialog
-function submit_notes_dialog(flow_modal_dialog, data)
-    Subfactory.set_notes(global["selected_subfactory_id"], data.notes)
+-- Handles closing of the notes dialog
+function close_notes_dialog(flow_modal_dialog, action, data)
+    if action == "submit" then
+        Subfactory.set_notes(global["selected_subfactory_id"], data.notes)
+    end
 end
 
--- Checks the entered data for errors and returns it if it's all correct, else returns nil
-function check_notes_data(flow_modal_dialog)
-    local notes = flow_modal_dialog["text-box_notes"].text
-    local instruction_1 = flow_modal_dialog["table_conditions"]["label_notes_instruction_1"]
 
-    if #notes > 65536 then
-        set_label_color(instruction_1, "red")
-        return nil
-    else
-        return {notes=notes}
-    end
+-- Returns all necessary instructions to create and run conditions on the modal dialog
+function get_notes_condition_instructions()
+    return {
+        data = {
+            notes = (function(flow_modal_dialog) return flow_modal_dialog["text-box_notes"].text end)
+        },
+        conditions = {
+            [1] = {
+                label = {"label.notes_instruction_1"},
+                check = (function(data) return (#data.notes > 65536) end),
+                show_on_edit = true
+            }
+        }
+    }
 end
 
 -- Fills out the modal dialog to view or edit notes
 function create_notes_dialog_structure(flow_modal_dialog, title)
     flow_modal_dialog.parent.caption = title
-
-    -- Conditions
-    local table_conditions = flow_modal_dialog.add{type="table", name="table_conditions", column_count=1}
-    table_conditions.add{type="label", name="label_notes_instruction_1", caption={"label.notes_instruction_1"}}
-    table_conditions.style.bottom_padding = 6
 
     -- Notes
     local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
