@@ -41,6 +41,7 @@ end
 
 
 function Subfactory.set_icon(id, icon)
+    if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
     get_subfactory(id).icon = icon
 end
 
@@ -99,9 +100,11 @@ end
 
 
 -- Returns true when a product already exists in given subfactory
-function Subfactory.product_exists(id, product_name)
-    for _, product in pairs(get_subfactory(id).Product.datasets) do
-        if product.name == product_name then return true end
+function Subfactory.product_exists(id, item)
+    if item ~= nil then
+        for _, product in pairs(get_subfactory(id).Product.datasets) do
+            if product.name == item.name then return true end
+        end
     end
     return false
 end

@@ -117,7 +117,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
         local id = tonumber(string.match(event.element.name, "%d+"))
         Subfactory.remove_invalid_datasets(id)
-        refresh_subfactory_bar(player)
+        refresh_subfactory_bar(player, true)
 
     -- Changes the timescale of the current subfactory
     elseif string.find(event.element.name, "^fp_button_timescale_%d+$") and is_left_click then

@@ -213,7 +213,7 @@ function run_preliminary_checks(player, product_name)
     local enabled = {}
     local disabled_count = 0
     for _, recipe in pairs(recipes) do
-        if recipe_produces_product(recipe, product_name) then
+        if recipe_produces_product(recipe, product_name) and recipe.category ~= "handcrafting" then
             if recipe.enabled then
                 table.insert(enabled, recipe.name)
             else

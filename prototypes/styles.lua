@@ -40,7 +40,7 @@ for state, y in pairs(icon_state_indexes) do
             monolith_border = 1,
             monolith_image =
             {
-                filename = "__FactoryPlanner__/graphics/icon_backgrounds.png",
+                filename = "__factoryplanner__/graphics/icon_backgrounds.png",
                 priority = "extra-high-no-scale",
                 width = 36,
                 height = 36,
@@ -54,7 +54,7 @@ for state, y in pairs(icon_state_indexes) do
             monolith_border = 1,
             monolith_image =
             {
-                filename = "__FactoryPlanner__/graphics/icon_backgrounds.png",
+                filename = "__factoryplanner__/graphics/icon_backgrounds.png",
                 priority = "extra-high-no-scale",
                 width = 36,
                 height = 36,
@@ -68,7 +68,7 @@ for state, y in pairs(icon_state_indexes) do
             monolith_border = 1,
             monolith_image =
             {
-                filename = "__FactoryPlanner__/graphics/icon_backgrounds.png",
+                filename = "__factoryplanner__/graphics/icon_backgrounds.png",
                 priority = "extra-high-no-scale",
                 width = 36,
                 height = 36,
@@ -113,7 +113,7 @@ data.raw["gui-style"].default["fp_button_icon_clicked"] = {
         monolith_border = 1,
         monolith_image =
         {
-            filename = "__FactoryPlanner__/graphics/icon_backgrounds.png",
+            filename = "__factoryplanner__/graphics/icon_backgrounds.png",
             priority = "extra-high-no-scale",
             width = 36,
             height = 36,
