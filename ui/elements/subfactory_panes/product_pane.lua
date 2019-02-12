@@ -17,9 +17,10 @@ function refresh_product_pane(player)
             local product = Subfactory.get(subfactory_id, "Product", id)
 
             local button = flow["table_products"].add{type="sprite-button", name="fp_sprite-button_product_" .. id, 
-                sprite="item/" .. product.name, number=product.amount_required}
-            button.tooltip = {"", game.item_prototypes[product.name].localised_name, "\n",
-              product.amount_produced, " / ", product.amount_required}
+                sprite=product.item_type .. "/" .. product.name, number=product.amount_required}
+
+            local localised_name = game[product.item_type .. "_prototypes"][product.name].localised_name
+            button.tooltip = {"", localised_name, "\n", product.amount_produced, " / ", product.amount_required}
 
             if product.amount_produced == 0 then
                 button.style = "fp_button_icon_red"
@@ -59,7 +60,7 @@ function close_product_dialog(flow_modal_dialog, action, data)
         if global["current_activity"] == "editing_product" then
             Product.set_amount_required(subfactory_id, product_id, data.amount_required)
         else
-            local product = Product.init(data.name, data.amount_required)
+            local product = Product.init(data.item, data.amount_required)
             Subfactory.add(subfactory_id, product)
         end
 
@@ -75,23 +76,28 @@ end
 function get_product_condition_instructions()
     return {
         data = {
-            name = (function(flow_modal_dialog) return flow_modal_dialog["table_product"]["choose-elem-button_product"].elem_value end),
+            item = (function(flow_modal_dialog) return flow_modal_dialog["table_product"]["choose-elem-button_product"].elem_value end),
             amount_required = (function(flow_modal_dialog) return flow_modal_dialog["table_product"]["textfield_product_amount"].text end)
         },
         conditions = {
             [1] = {
                 label = {"label.product_instruction_1"},
-                check = (function(data) return (data.name == nil or data.amount_required == "") end),
+                check = (function(data) return (data.item == nil or data.amount_required == "") end),
                 show_on_edit = false
             },
             [2] = {
                 label = {"label.product_instruction_2"},
                 check = (function(data) return (global["selected_product_id"] == 0 and 
-                          Subfactory.product_exists(global["selected_subfactory_id"], data.name)) end),
+                          Subfactory.product_exists(global["selected_subfactory_id"], data.item)) end),
                 show_on_edit = false
             },
             [3] = {
                 label = {"label.product_instruction_3"},
+                check = (function(data) return (data.item ~= nil and data.item.type == "virtual") end),
+                show_on_edit = false
+            },
+            [4] = {
+                label = {"label.product_instruction_4"},
                 check = (function(data) return (data.amount_required ~= "" and (data.amount_required:match("[^%d]") or 
                           tonumber(data.amount_required) <= 0)) end),
                 show_on_edit = true
@@ -109,7 +115,7 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     -- Product
     table_product.add{type="label", name="label_product", caption={"label.product"}}
     local button_product = table_product.add{type="choose-elem-button", name="choose-elem-button_product", 
-      elem_type="item"}
+      elem_type="signal"}
 
     -- Amount
     table_product.add{type="label", name="label_product_amount", caption={"", {"label.amount"}, "    "}}
@@ -121,7 +127,7 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     local product_id = global["selected_product_id"]
     if product_id ~= 0 then
         local product = Subfactory.get(global["selected_subfactory_id"], "Product", product_id)
-        button_product.elem_value = product.name
+        button_product.elem_value = {type=product.item_type, name=product.name}
         textfield_product_amount.text = product.amount_required
         button_product.locked = true
     end

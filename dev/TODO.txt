@@ -4,8 +4,6 @@ TODO Features:
 
 TODO Improvements:
 ! Multiplayer compatability
-- Create a custom product selection dialog akin to the recipe dialog [A1]
-    (otherwise, as a band-aid solution, use built-in signal chooser and forbid actual signals)
 - Use ESC as a toggle for the main dialog or cancel on a modal dialog (not sure how, may ask FNEI-author _npo6ka_)
 - Add miner-recipes (ore only probably) (not sure how, may ask FNEI-contributor mentlerd)
 
@@ -27,6 +25,7 @@ TODO Post-Launch:
 ! Module-support
 ! Export/Import of whole subfactories and parts of them
 ! DE, FR localisations
+! Create a custom product selection dialog akin to the recipe dialog [A1]
 - Better multiplayer support (ex. shared subfactories)
 ? FNEI-links (alt-click?)(needs API from FNEI-author, might already exist)
 ? Add more and/or custom timescales

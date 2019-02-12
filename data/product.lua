@@ -1,8 +1,9 @@
 Product = {}
 
-function Product.init(name, amount_required)
+function Product.init(item, amount_required)
     return {
-        name = name,
+        name = item.name,
+        item_type = item.type,
         amount_required = amount_required,
         amount_produced = 0,
         valid = true,
@@ -22,6 +23,15 @@ end
 
 function Product.get_name(subfactory_id)
     return get_product(subfactory_id, id).name
+end
+
+
+function Product.set_item_type(subfactory_id, item_type)
+    get_product(subfactory_id, id).item_type = item_type
+end
+
+function Product.get_item_type(subfactory_id)
+    return get_product(subfactory_id, id).item_type
 end
 
 

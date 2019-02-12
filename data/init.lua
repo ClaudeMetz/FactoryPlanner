@@ -29,11 +29,11 @@ function run_dev_config()
     global["selected_subfactory_id"] = 1
 
     local subfactory_id = global["selected_subfactory_id"]
-    local id = Subfactory.add(subfactory_id, Product.init("electronic-circuit", 400))
+    local id = Subfactory.add(subfactory_id, Product.init({name="electronic-circuit", type="item"}, 400))
     Product.add_to_amount_produced(subfactory_id, id, 600)
-    id = Subfactory.add(subfactory_id, Product.init("advanced-circuit", 200))
+    id = Subfactory.add(subfactory_id, Product.init({name="advanced-circuit", type="item"}, 200))
     Product.add_to_amount_produced(subfactory_id, id, 200)
-    id = Subfactory.add(subfactory_id, Product.init("processing-unit", 100))
+    id = Subfactory.add(subfactory_id, Product.init({name="processing-unit", type="item"}, 100))
     Product.add_to_amount_produced(subfactory_id, id, 60)
-    id = Subfactory.add(subfactory_id, Product.init("uranium-235", 40))
+    id = Subfactory.add(subfactory_id, Product.init({name="uranium-235", type="item"}, 40))
 end

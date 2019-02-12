@@ -1,8 +1,8 @@
 [A1]
 Pro:
-! Allows fluids as well
 - Consistency
-- Hide dublicate products
-- Hide products with no (researched?) recipe at all
+- Hides dublicate products
+- Hides products with no (researched?) recipe at all
+- Avoids signals and uncraftable items
 Contra:
 - Workload -> recipe dialog code is not easily adapted to this use case

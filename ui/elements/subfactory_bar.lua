@@ -7,12 +7,12 @@ function add_subfactory_bar_to(main_dialog, player)
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
     table_subfactories.style.vertical_spacing = 4
 
-    refresh_subfactory_bar(player)
+    refresh_subfactory_bar(player, true)
 end
 
 
 -- Refreshes the subfactory bar by reloading the data
-function refresh_subfactory_bar(player)
+function refresh_subfactory_bar(player, full_refresh)
     local table_subfactories =  player.gui.center["fp_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
@@ -43,9 +43,11 @@ function refresh_subfactory_bar(player)
         end
     end
 
-    refresh_error_bar(player)
-    refresh_subfactory_pane(player)
-    refresh_production_pane(player)
+    if full_refresh then
+        refresh_error_bar(player)
+        refresh_subfactory_pane(player)
+        refresh_production_pane(player)
+    end
 end
 
 -- Attempts to create and insert a new element into the table
@@ -150,7 +152,6 @@ end
 function create_sprite_button(table, name, subfactory)
     local sprite_path = subfactory.icon.type .. "/" .. subfactory.icon.name
     local tooltip = ""
-    log(sprite_path)
     if not table.gui.is_valid_sprite_path(sprite_path) then
         sprite_path = "utility/danger_icon"
         tooltip = {"tooltip.sprite_missing"}
@@ -167,12 +168,13 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
     -- Shift subfactory in the given direction
     if direction ~= nil then
         Factory.shift_subfactory(subfactory_id, direction)
+        refresh_subfactory_bar(player, false)
 
     -- Change selected subfactory
     elseif click == "left" then
         global["selected_subfactory_id"] = subfactory_id
+        refresh_main_dialog(player)
     end
 
     global["current_activity"] = nil
-    refresh_main_dialog(player)
 end

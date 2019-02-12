@@ -53,7 +53,7 @@ end
 -- Refreshes all variable GUI-panes (refresh-hierarchy, subfactory_bar refreshes everything below it)
 function refresh_main_dialog(player)
     refresh_actionbar(player)
-    refresh_subfactory_bar(player)
+    refresh_subfactory_bar(player, true)
 end
 
 -- Constructs the main dialog
