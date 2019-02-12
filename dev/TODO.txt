@@ -5,7 +5,6 @@ TODO Features:
 TODO Improvements:
 ! Multiplayer compatability
 - Use ESC as a toggle for the main dialog or cancel on a modal dialog (not sure how, may ask FNEI-author _npo6ka_)
-- Add miner-recipes (ore only probably) (not sure how, may ask FNEI-contributor mentlerd)
 
 
 TODO Code Improvements:

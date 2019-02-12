@@ -8,6 +8,7 @@ end
 data:extend({{
         type = "recipe",
         name = "fp-space-science-pack",
+        category = "rocket-building",
         enabled = false,
         hidden = true,
         energy_required = 1,

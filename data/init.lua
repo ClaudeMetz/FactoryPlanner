@@ -8,6 +8,8 @@ function data_init()
     global.factory = Factory.init()
 
     global["mods_changed"] = true  -- Prompts the recipe dialog to load the first time
+    global["undesirable_recipes"] = generate_undesirable_recipes()
+    global["all_recipes"] = generate_all_recipes()
 
     global["main_dialog_dimensions"] = {width = 1200, height = nil}
     global["modal_dialog_type"] = nil

@@ -49,8 +49,6 @@ function create_recipe_dialog_structure(player)
     button_bar.add{type="button", name="fp_button_recipe_dialog_cancel", caption={"button-text.cancel"}, 
         style="fp_button_with_spacing"}
 
-    local undesirables = undesirable_recipes()
-
     -- Filter conditions
     local table_filter_conditions = flow_recipe_dialog.add{type="table", name="table_filter_conditions", column_count = 3}
     table_filter_conditions.style.bottom_padding = 6
@@ -104,10 +102,14 @@ function create_recipe_dialog_structure(player)
             table_subgroup.style.horizontal_spacing = 2
             table_subgroup.style.vertical_spacing = 2
             for _, recipe in ipairs(subgroup.recipes) do
-                if undesirables[recipe.name] ~= false and recipe.category ~= "handcrafting" then
+                if global["undesirable_recipes"][recipe.name] ~= false and recipe.category ~= "handcrafting" then
                     -- Recipes
+                    local sprite = "recipe/" .. recipe.name
+                    if string.find(recipe.name, "^impostor%-[a-z-]+$") then
+                        sprite = recipe.item_type .. "/" .. recipe.name:gsub("impostor%-", "")
+                    end
                     local button_recipe = table_subgroup.add{type="sprite-button", name="fp_sprite-button_recipe_" .. recipe.name,
-                      sprite="recipe/" .. recipe.name, style="fp_button_icon_recipe"}
+                      sprite=sprite, style="fp_button_icon_recipe"}
                     if recipe.hidden then button_recipe.style = "fp_button_icon_hidden" end
                     if not recipe.enabled then button_recipe.style = "fp_button_icon_disabled" end
                     button_recipe.tooltip = generate_recipe_tooltip(recipe)
@@ -134,11 +136,9 @@ end
 -- Separate function that extracts, formats and sorts all recipes so they can be displayed
 -- (kinda crazy way to do all this, but not sure how so sort them otherwise)
 function create_recipe_tree()
-    local recipes = game.forces.player.recipes
-
     -- First, categrorize the recipes according to the order of their group, subgroup and themselves
     local unsorted_recipe_tree = {}
-    for _, recipe in pairs(recipes) do
+    for _, recipe in pairs(global["all_recipes"]) do
         if unsorted_recipe_tree[recipe.group.order] == nil then
             unsorted_recipe_tree[recipe.group.order] = {}
         end
@@ -180,27 +180,6 @@ function create_recipe_tree()
     return sorted_recipe_tree
 end
 
--- Returns the names of the recipes that shouldn't be included
-function undesirable_recipes()
-    local undesirables = 
-    {
-        ["small-plane"] = false,
-        ["electric-energy-interface"] = false,
-        ["railgun"] = false,
-        ["railgun-dart"] = false,
-        ["player-port"] = false
-    }
-
-    -- Leaves loaders in if LoaderRedux is loaded
-    if game.active_mods["LoaderRedux"] == nil then
-        undesirables["loader"] = false
-        undesirables["fast-loader"] = false
-        undesirables["express-loader"] = false
-    end
-
-    return undesirables
-end
-
 
 -- Serves the dual-purpose of setting the filter to include disabled recipes if no enabled ones are found
 -- and, if there is only one that matches, to return a recipe name that can be directly added without the modal dialog
@@ -208,11 +187,10 @@ end
 -- (Also, the logic is obtuse, but checks out)
 function run_preliminary_checks(player, product_name)
     local flow_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]["flow_recipe_dialog"]
-    local recipes = game.forces.player.recipes
 
     local enabled = {}
     local disabled_count = 0
-    for _, recipe in pairs(recipes) do
+    for _, recipe in pairs(global["all_recipes"]) do
         if recipe_produces_product(recipe, product_name) and recipe.category ~= "handcrafting" then
             if recipe.enabled then
                 table.insert(enabled, recipe.name)
@@ -237,7 +215,6 @@ function apply_recipe_filter(player)
     local unenabled = flow_recipe_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state
     local hidden = flow_recipe_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_hidden"].state
     local search_term =  flow_recipe_dialog["table_filter_conditions"]["textfield_search_recipe"].text:gsub("%s+", "")
-    local recipes = game.forces.player.recipes
 
     local first_visible_group = nil
     for _, group_element in pairs(flow_recipe_dialog["table_item_groups"].children) do
@@ -247,7 +224,7 @@ function apply_recipe_filter(player)
             local subgroup_visible = false
             for _, recipe_element in pairs(subgroup_element.children) do
                 local recipe_name = string.gsub(recipe_element.name, "fp_sprite%-button_recipe_", "")
-                local recipe = recipes[recipe_name]
+                local recipe = global["all_recipes"][recipe_name]
                 if ((not unenabled) and (not recipe.enabled)) or ((not hidden) and recipe.hidden) or 
                   (not recipe_produces_product(recipe, search_term)) then
                     recipe_element.style.visible = false
@@ -314,19 +291,99 @@ end
 
 -- Returns a formatted tooltip string for the given recipe
 function generate_recipe_tooltip(recipe)
-    local prototypes = {[1] = game.item_prototypes, [2] = game.fluid_prototypes}
-    local tooltip = {"", recipe.localised_name, "\n  ", {"tooltip.crafting_time"}, ":  ", recipe.energy,}
+    local tooltip = recipe.localised_name
+        if recipe.energy ~= nil then tooltip = {"", "\n  ", {"tooltip.crafting_time"}, ":  ", recipe.energy} end
 
     local lists = {"ingredients", "products"}
     for _, item_type in ipairs(lists) do
-        tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
-        local t
-        for _, item in ipairs(recipe[item_type]) do
-            if item.type == "item" then t = 1 else t = 2 end
-            if item.amount == nil then item.amount = item.probability end
-            tooltip = {"", tooltip, "\n    ", item.amount, "x ", prototypes[t][item.name].localised_name}
+        if recipe[item_type] ~= nil then
+            tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
+            for _, item in ipairs(recipe[item_type]) do
+                if item.amount == nil then item.amount = item.probability end
+                tooltip = {"", tooltip, "\n    ", item.amount, "x ", game[item.type .. "_prototypes"][item.name].localised_name}
+            end
         end
     end
 
     return tooltip
+end
+
+
+-- Returns the names of the recipes that shouldn't be included
+function generate_undesirable_recipes()
+    local undesirables = 
+    {
+        ["small-plane"] = false,
+        ["electric-energy-interface"] = false,
+        ["railgun"] = false,
+        ["railgun-dart"] = false,
+        ["player-port"] = false
+    }
+
+    -- Leaves loaders in if LoaderRedux is loaded
+    if game.active_mods["LoaderRedux"] == nil then
+        undesirables["loader"] = false
+        undesirables["fast-loader"] = false
+        undesirables["express-loader"] = false
+    end
+
+    return undesirables
+end
+
+-- Returns all standard recipes + custom mining recipes
+-- Needs expansion once it is clearer how recipes for production work
+-- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
+function generate_all_recipes()
+    local recipes = {}
+    for name, recipe in pairs(game.forces.player.recipes) do recipes[name] = recipe end
+
+    local function base_recipe()
+        return {
+            enabled = true,
+            hidden = false,
+            energy = nil,
+            group = {name="intermediate_products", order="c"},
+            subgroup = {name="mining", order="z"},
+        }
+    end
+
+    for _, proto in pairs(game.entity_prototypes) do
+        -- Adds all mining recipes, including oil and similar. Not sure if oil is helpful.
+        if proto.mineable_properties and proto.resource_category then
+            local recipe = base_recipe()
+            recipe.name = "impostor-" .. proto.name
+            recipe.localised_name = proto.localised_name
+            recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
+            local products = proto.mineable_properties.products
+            recipe.products = products
+            if #products == 1 then recipe.item_type = products[1].type end
+            recipe.order = proto.order
+
+
+            if proto.mineable_properties.required_fluid then
+                table.insert(recipe.ingredients, {
+                    type = "fluid",
+                    name = proto.mineable_properties.required_fluid,
+                    amount = proto.mineable_properties.fluid_amount
+                })
+            end
+
+            recipes[recipe.name] = recipe
+        end
+
+        -- Adds unconditional extraction, like water pumps. Not sure if necessary/useful yet.
+        if proto.fluid then
+            local recipe = base_recipe()
+            recipe.name = "impostor-" .. proto.fluid.name
+            recipe.localised_name = proto.fluid.localised_name
+            recipe.ingredients = nil
+            recipe.products = {{ type = 'fluid', name = proto.fluid.name, amount = 1 }}
+            recipe.item_type = "fluid"
+            recipe.order = proto.order
+
+            recipes[recipe.name] = recipe
+        end
+    end
+
+    return recipes
 end
