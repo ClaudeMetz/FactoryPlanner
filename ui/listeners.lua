@@ -6,6 +6,9 @@ end)
 -- Prompts a recipe dialog reload and a validity check on all subfactories
 script.on_configuration_changed(function()
     global["mods_changed"] = true
+    global["undesirable_recipes"] = generate_undesirable_recipes()
+    global["all_recipes"] = generate_all_recipes()
+    
     Factory.update_validity()
 end)
 
