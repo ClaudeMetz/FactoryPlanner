@@ -47,6 +47,7 @@ function refresh_info_pane(player)
 end
 
 
+
 -- Handles the timescale changing process
 function handle_subfactory_timescale_change(player, timescale)
     if global["current_activity"] == "changing_timescale" then

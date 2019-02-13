@@ -9,7 +9,10 @@ TODO Improvements:
 
 TODO Code Improvements:
 - Figure out how to do data migrations on new mod versions
-
+    -> also needs to destroy and re-create GUI's
+- Remove get methods on classes, only set should be used
+    + setname and setitemtype consolidated into single function
+- Restructure project structure at some point (data separate into classes/calc, ui into dialogs/elements)
 
 TODO Bugs:
 
@@ -21,10 +24,10 @@ TODO 0.17:
 
 
 TODO Post-Launch:
-! Module-support
-! Export/Import of whole subfactories and parts of them
 ! DE, FR localisations
+! Beacon-support
 ! Create a custom product selection dialog akin to the recipe dialog [A1]
+! Import/Export of one/all subfactories (and parts of them?)
 - Better multiplayer support (ex. shared subfactories)
 ? FNEI-links (alt-click?)(needs API from FNEI-author, might already exist)
 ? Add more and/or custom timescales
