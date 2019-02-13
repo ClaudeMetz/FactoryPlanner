@@ -32,6 +32,7 @@ end
 function data_util.shift_position(datasets, main_id, direction, dataset_count)
     local main_dataset = datasets[main_id]
     local main_gui_position = main_dataset.gui_position
+    
     -- Doesn't shift if outer elements are being shifted further outward
     if (main_gui_position == 1 and direction == "negative") or
       (main_gui_position == dataset_count and direction == "positive") then 

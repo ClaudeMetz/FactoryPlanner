@@ -1,9 +1,9 @@
 -- Creates the production pane that displays 
 function add_production_pane_to(main_dialog, player)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
+    flow.style.bottom_padding = 20
     local title = flow.add{type="label", name="label_production_pane_title", caption={"", "  ", {"label.production"}}}
     title.style.top_padding = 8
-    title.style.bottom_padding = 30
     title.style.font = "fp-button-standard"
 
     local table = flow.add{type="table", name="table_production_pane", column_count = 10}
@@ -23,6 +23,13 @@ function refresh_production_pane(player)
     local subfactory_id = global["selected_subfactory_id"]
     if (subfactory_id ~= 0) and Subfactory.is_valid(subfactory_id) then
         flow_production.style.visible = true
+
+        -- Temporary implementation for this
+        if not flow_production["label_production_info"] then
+            flow_production.add{type="label", name="label_production_info", caption=" (Add a product and left-click it to add a recipe.)"}
+        end
+        table_production.style.visible = false
+
         -- create table
     else
         flow_production.style.visible = false

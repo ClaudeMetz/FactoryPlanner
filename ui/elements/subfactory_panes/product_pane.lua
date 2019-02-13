@@ -1,40 +1,31 @@
 require("ui.elements.subfactory_panes.recipe_dialog")
 
--- Constructs the table containing all product buttons
-function refresh_product_pane(player)
-    local flow = player.gui.center["fp_main_dialog"]["table_subfactory_pane"]["flow_products"]
-    if flow["table_products"] == nil then
-        flow.add{type="table", name="table_products", column_count = 6}
-        flow["table_products"].style.left_padding = 10
-        flow["table_products"].style.horizontal_spacing = 10
+-- Returns necessary details to complete the item button for a product
+function get_product_specifics(product)
+    local localised_name = game[product.item_type .. "_prototypes"][product.name].localised_name
+    local tooltip = {"", localised_name, "\n", product.amount_produced, " / ", product.amount_required}
+
+    local style
+    if product.amount_produced == 0 then
+        style = "fp_button_icon_red"
+    elseif product.amount_produced < product.amount_required then
+        style = "fp_button_icon_yellow"
+    elseif product.amount_produced == product.amount_required then
+        style = "fp_button_icon_green"
     else
-        flow["table_products"].clear()
+        style = "fp_button_icon_cyan"
     end
 
-    local subfactory_id = global["selected_subfactory_id"]
-    if Subfactory.get_count(subfactory_id, "Product") ~= 0 then
-        for _, id in ipairs(Subfactory.get_in_order(subfactory_id, "Product")) do
-            local product = Subfactory.get(subfactory_id, "Product", id)
+    return {
+        number = product.amount_required,
+        tooltip = tooltip,
+        style = style
+    }
+end
 
-            local button = flow["table_products"].add{type="sprite-button", name="fp_sprite-button_product_" .. id, 
-                sprite=product.item_type .. "/" .. product.name, number=product.amount_required}
-
-            local localised_name = game[product.item_type .. "_prototypes"][product.name].localised_name
-            button.tooltip = {"", localised_name, "\n", product.amount_produced, " / ", product.amount_required}
-
-            if product.amount_produced == 0 then
-                button.style = "fp_button_icon_red"
-            elseif product.amount_produced < product.amount_required then
-                button.style = "fp_button_icon_yellow"
-            elseif product.amount_produced == product.amount_required then
-                button.style = "fp_button_icon_green"
-            else
-                button.style = "fp_button_icon_cyan"
-            end
-        end
-    end
-
-    local button = flow["table_products"].add{type="button", name="fp_sprite-button_add_product", caption="+"}
+-- Adds the button to add a product to the table
+function append_to_product_table(table)
+    local button = table.add{type="button", name="fp_sprite-button_add_product", caption="+"}
     button.style.height = 36
     button.style.width = 36
     button.style.top_padding = 0
@@ -148,5 +139,6 @@ function handle_product_element_click(player, product_id, click, direction)
             enter_modal_dialog(player, "product", true, true, {edit=true, product_id=product_id})
         end
     end
-    refresh_product_pane(player)
+    
+    refresh_item_table(player, "Product")
 end

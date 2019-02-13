@@ -46,8 +46,8 @@ end
 
 -- Negative amounts subtract
 function Product.add_to_amount_produced(subfactory_id, id, amount)
-    get_product(subfactory_id, id).amount_produced = 
-      get_product(subfactory_id, id).amount_produced + amount
+    local product = get_product(subfactory_id, id)
+    product.amount_produced = product.amount_produced + amount
 end
 
 function Product.get_amount_produced(subfactory_id, id)

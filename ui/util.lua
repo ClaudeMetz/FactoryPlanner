@@ -44,3 +44,16 @@ function ui_util.pairsByKeys(t, f)
     end
     return iter
 end
+
+
+-- Splits given string
+function ui_util.split(s, separator)
+    local r = {}
+    for token in string.gmatch(s, "[^" .. separator .. "]+") do
+        if tonumber(token) ~= nil then
+            token = tonumber(token)
+        end
+        table.insert(r, token) 
+    end
+    return r
+end

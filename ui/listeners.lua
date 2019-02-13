@@ -127,11 +127,6 @@ script.on_event(defines.events.on_gui_click, function(event)
         local timescale = tonumber(string.match(event.element.name, "%d+"))
         handle_subfactory_timescale_change(player, timescale)
 
-    -- Reacts to a product button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_product_%d+$") then
-        local product_id = tonumber(string.match(event.element.name, "%d+"))
-        handle_product_element_click(player, product_id, click, direction)
-
     -- Reacts to a item group button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
         local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
@@ -141,5 +136,10 @@ script.on_event(defines.events.on_gui_click, function(event)
     elseif string.find(event.element.name, "^fp_sprite%-button_recipe_[a-z-]+$") and is_left_click then
         local recipe_name = string.gsub(event.element.name, "fp_sprite%-button_recipe_", "")
         close_recipe_dialog(player, recipe_name)
+    
+    -- Reacts to any subfactory_pane item button being pressed
+    elseif string.find(event.element.name, "^fp_sprite%-button_[a-z-]+_%d+$") then
+        local split_string = ui_util.split(event.element.name, "_")
+        _G["handle_" .. split_string[3] .. "_element_click"](player, split_string[4], click, direction)
     end
 end)
