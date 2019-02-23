@@ -1,8 +1,9 @@
 -- Creates the subfactory bar that includes all current subfactory buttons
 function add_subfactory_bar_to(main_dialog, player)
     local subfactory_bar = main_dialog.add{type="scroll-pane", name="scroll-pane_subfactory_bar", direction="vertical"}
-    subfactory_bar.style.maximal_height = 84
+    subfactory_bar.style.maximal_height = 82
     subfactory_bar.style.bottom_padding = 6
+    --subfactory_bar.style.horizontally_stretchable = true
 
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
     table_subfactories.style.vertical_spacing = 4
@@ -16,7 +17,7 @@ function refresh_subfactory_bar(player, full_refresh)
     local table_subfactories =  player.gui.center["fp_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
-    local max_width = global["main_dialog_dimensions"].width * 0.9
+    local max_width = global["main_dialog_dimensions"].width * 0.875
     local width_remaining = 0
     local current_table_index = 0
     local current_table = nil
@@ -74,7 +75,7 @@ function create_label_element(table, width_remaining, id, subfactory, selected)
         local label = button.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
 
         if selected then
-            button.style = "fp_button_icon_blank"
+            button.style = "fp_button_icon_large_blank"
             button.style.top_padding = 9
             button.style.left_padding = 8
         else
@@ -85,7 +86,7 @@ function create_label_element(table, width_remaining, id, subfactory, selected)
 
         button.style.width = button_width 
         label.ignored_by_interaction = true
-        label.style.font = "fp-label-mono"
+        label.style.font = "fp-font-mono-15p"
         
         return button_width
     end
@@ -100,7 +101,7 @@ function create_sprite_element(table, width_remaining, id, subfactory, selected)
         local button = create_sprite_button(table, "fp_sprite-button_subfactory_" .. id, subfactory)
 
         if selected then
-            button.style = "fp_button_icon_blank"
+            button.style = "fp_button_icon_large_blank"
         else
             button.style.height = 36
             button.style.width = 36
@@ -124,7 +125,7 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
         local label = flow.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
 
         if selected then
-            button.style = "fp_button_icon_blank"
+            button.style = "fp_button_icon_large_blank"
             flow.style.top_padding = 2
             sprite.style.top_padding = 1
         else
@@ -138,10 +139,10 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
         button.tooltip = sprite.tooltip
         flow.ignored_by_interaction = true
 
-        sprite.style = "fp_button_icon_blank"
+        sprite.style = "fp_button_icon_large_blank"
         sprite.style.height = 34
         sprite.style.width = 34
-        label.style.font = "fp-label-mono"
+        label.style.font = "fp-font-mono-15p"
         label.style.top_padding = 7
 
         return button_width
@@ -163,18 +164,24 @@ function create_sprite_button(table, name, subfactory)
 end
 
 
--- Moves selection to the clicked element or shifts it's position left or right
+-- Moves selection to the clicked element, edits it, or shifts it's position left or right
 function handle_subfactory_element_click(player, subfactory_id, click, direction)
     -- Shift subfactory in the given direction
     if direction ~= nil then
         Factory.shift_subfactory(subfactory_id, direction)
         refresh_subfactory_bar(player, false)
+        global["current_activity"] = nil
 
-    -- Change selected subfactory
-    elseif click == "left" then
+    else
         global["selected_subfactory_id"] = subfactory_id
-        refresh_main_dialog(player)
-    end
+        global["current_activity"] = nil
+        -- Change selected subfactory
+        if click == "left" then
+            refresh_main_dialog(player)
 
-    global["current_activity"] = nil
+        -- Edit clicked subfactory
+        elseif click == "right" then
+            enter_modal_dialog(player, "subfactory", true, true, {edit=true})
+        end
+    end
 end

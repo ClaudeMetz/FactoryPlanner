@@ -1,12 +1,12 @@
 -- Returns necessary details to complete the item button for an ingredient
 function get_ingredient_specifics(ingredient)
     local localised_name = game[ingredient.item_type .. "_prototypes"][ingredient.name].localised_name
-    local tooltip = {"", localised_name, "\n", ingredient.amount_required}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(ingredient.amount_required, 4)}
 
     return {
         number = ingredient.amount_required,
         tooltip = tooltip,
-        style = "fp_button_icon_blank"
+        style = "fp_button_icon_large_blank"
     }
 end
 

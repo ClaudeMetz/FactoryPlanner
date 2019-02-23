@@ -1,32 +1,38 @@
 data:extend({
     {
         type = "font",
-        name = "fp-label-supersized",
-        from = "default-bold",
-        size = 26
-    },
-    {
-        type = "font",
-        name = "fp-button-standard",
-        from = "default",
-        size = 16
-    },
-    {
-        type = "font",
-        name = "fp-button-large",
-        from = "default",
-        size = 20
-    },
-    {
-        type = "font",
-        name = "fp-label-large",
+        name = "fp-font-14p",
         from = "default",
         size = 14
     },
     {
         type = "font",
-        name = "fp-label-mono",
+        name = "fp-font-mono-15p",
         from = "default-mono",
         size = 15
+    },
+    {
+        type = "font",
+        name = "fp-font-16p",
+        from = "default",
+        size = 16
+    },
+    {
+        type = "font",
+        name = "fp-font-18p",
+        from = "default",
+        size = 18
+    },
+    {
+        type = "font",
+        name = "fp-font-20p",
+        from = "default",
+        size = 20
+    },
+    {
+        type = "font",
+        name = "fp-font-bold-26p",
+        from = "default-bold",
+        size = 26
     }
 })

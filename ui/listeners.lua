@@ -26,8 +26,17 @@ end)
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local player = game.players[event.player_index]
-    -- Adjusts the toggle-main-dialog-button
-    toggle_button_interface(player)
+
+    -- Toggles the visibility of the toggle-main-dialog-button
+    if event.setting == "fp_display_gui_button" then 
+        toggle_button_interface(player)
+
+    -- Changes the width of the main dialog by regenerating it
+    elseif event.setting == "fp_subfactory_items_per_row" then
+        ui_util.recalculate_main_dialog_dimensions(player)
+        reload_main_dialog(player)
+
+    end
 end)
 
 
@@ -61,6 +70,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     end
 
     local player = game.players[event.player_index]
+    set_hint_message(player, "")
     
     -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
     if event.element.name == "fp_button_toggle_interface" or event.element.name == "fp_button_titlebar_exit"
@@ -85,7 +95,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
     -- Opens the edit-subfactory dialog
     elseif event.element.name == "fp_button_edit_subfactory" and is_left_click then
-        enter_modal_dialog(player, "subfactory", true, false, {edit=true})
+        enter_modal_dialog(player, "subfactory", true, true, {edit=true})
 
     -- Reacts to the delete button being pressed
     elseif event.element.name == "fp_button_delete_subfactory" and is_left_click then
@@ -138,8 +148,8 @@ script.on_event(defines.events.on_gui_click, function(event)
         close_recipe_dialog(player, recipe_name)
     
     -- Reacts to any subfactory_pane item button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_[a-z-]+_%d+$") then
+    elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then
         local split_string = ui_util.split(event.element.name, "_")
-        _G["handle_" .. split_string[3] .. "_element_click"](player, split_string[4], click, direction)
+        _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
     end
 end)

@@ -6,7 +6,7 @@ function Byproduct.init(item)
         item_type = item.type,
         amount_produced = 0,
         valid = true,
-        gui_position = nil,
+        gui_position = 0,
         type = "Byproduct"
     }
 end
@@ -16,17 +16,14 @@ local function get_byproduct(subfactory_id, id)
 end
 
 
-function Byproduct.set_name(subfactory_id, name)
-    get_byproduct(subfactory_id, id).name = name
+function Byproduct.set_item(subfactory_id, item)
+    local self = get_byproduct(subfactory_id, item)
+    self.name = item.name
+    self.item_type = item.type
 end
 
 function Byproduct.get_name(subfactory_id)
     return get_byproduct(subfactory_id, id).name
-end
-
-
-function Byproduct.set_item_type(subfactory_id, item_type)
-    get_byproduct(subfactory_id, id).item_type = item_type
 end
 
 function Byproduct.get_item_type(subfactory_id)

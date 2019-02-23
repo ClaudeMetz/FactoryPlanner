@@ -1,12 +1,12 @@
 -- Returns necessary details to complete the item button for a byproduct
 function get_byproduct_specifics(byproduct)
     local localised_name = game[byproduct.item_type .. "_prototypes"][byproduct.name].localised_name
-    local tooltip = {"", localised_name, "\n", byproduct.amount_produced}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount_produced, 4)}
 
     return {
         number = byproduct.amount_produced,
         tooltip = tooltip,
-        style = "fp_button_icon_red"
+        style = "fp_button_icon_large_red"
     }
 end
 

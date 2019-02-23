@@ -1,19 +1,20 @@
-require("ui.elements.subfactory_panes.recipe_dialog")
+require("ui.dialogs.recipe_dialog")
 
 -- Returns necessary details to complete the item button for a product
 function get_product_specifics(product)
     local localised_name = game[product.item_type .. "_prototypes"][product.name].localised_name
-    local tooltip = {"", localised_name, "\n", product.amount_produced, " / ", product.amount_required}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount_produced, 4), " / ",
+      ui_util.format_number(product.amount_required, 4)}
 
     local style
     if product.amount_produced == 0 then
-        style = "fp_button_icon_red"
+        style = "fp_button_icon_large_red"
     elseif product.amount_produced < product.amount_required then
-        style = "fp_button_icon_yellow"
+        style = "fp_button_icon_large_yellow"
     elseif product.amount_produced == product.amount_required then
-        style = "fp_button_icon_green"
+        style = "fp_button_icon_large_green"
     else
-        style = "fp_button_icon_cyan"
+        style = "fp_button_icon_large_cyan"
     end
 
     return {
@@ -29,7 +30,7 @@ function append_to_product_table(table)
     button.style.height = 36
     button.style.width = 36
     button.style.top_padding = 0
-    button.style.font = "fp-button-large"
+    button.style.font = "fp-font-20p"
 end
 
 
@@ -49,10 +50,9 @@ function close_product_dialog(flow_modal_dialog, action, data)
 
     if action == "submit" then
         if global["current_activity"] == "editing_product" then
-            Product.set_amount_required(subfactory_id, product_id, data.amount_required)
+            Product.set_amount_required(subfactory_id, product_id, tonumber(data.amount_required))
         else
-            local product = Product.init(data.item, data.amount_required)
-            Subfactory.add(subfactory_id, product)
+            Subfactory.add(subfactory_id, Product.init(data.item, tonumber(data.amount_required)))
         end
 
     elseif action == "delete" then
@@ -89,7 +89,7 @@ function get_product_condition_instructions()
             },
             [4] = {
                 label = {"label.product_instruction_4"},
-                check = (function(data) return (data.amount_required ~= "" and (data.amount_required:match("[^%d]") or 
+                check = (function(data) return (data.amount_required ~= "" and (tonumber(data.amount_required) == nil or 
                           tonumber(data.amount_required) <= 0)) end),
                 show_on_edit = true
             }

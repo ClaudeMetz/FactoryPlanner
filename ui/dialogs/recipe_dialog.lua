@@ -8,7 +8,7 @@ function open_recipe_dialog(player, product_id)
     end
 
     frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
-    local product_name = Subfactory.get(global["selected_subfactory_id"], "Product", product_id).name
+    local product_name = Product.get_name(global["selected_subfactory_id"], product_id)
     local recipe_name = run_preliminary_checks(player, product_name)
     -- nil meaning that no single enabled and matching recipe has been found (either 0 or 2+)
     if recipe_name == nil then
@@ -18,22 +18,29 @@ function open_recipe_dialog(player, product_id)
         toggle_main_dialog(player)
         frame_recipe_dialog.style.visible = true
     else
-        game.print("add " .. recipe_name)
-        -- add recipe to subfactory
+        add_line(recipe_name, product_id)
+        refresh_production_pane(player)
     end
 end
 
 -- Handles closing of the recipe dialog
 function close_recipe_dialog(player, recipe_name)
     if recipe_name ~= nil then
-        game.print("add " .. recipe_name)
-        -- add recipe to subfactory
+        add_line(recipe_name, global["selected_product_id"])
     end
 
     global["selected_product_id"] = 0
     change_item_group_selection(player, "logistics")  -- Returns selection to the first item_group for consistency
     player.gui.center["fp_frame_recipe_dialog"].style.visible = false
     toggle_main_dialog(player)
+end
+
+-- Adds (assembly) line to the currently selected floor
+function add_line(recipe_name, product_id)
+    local subfactory_id = global["selected_subfactory_id"]
+    local floor_id = Subfactory.get_selected_floor_id(subfactory_id)
+    local product = Subfactory.get(subfactory_id, "Product", product_id)
+    Floor.add_line(subfactory_id, floor_id, Line.init(global["all_recipes"][recipe_name], product))
 end
 
 
@@ -84,7 +91,7 @@ function create_recipe_dialog_structure(player)
     for _, group in ipairs(formatted_recipes) do
         -- Item groups
         button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group.name,
-          sprite="item-group/" .. group.name, style="fp_button_icon_recipe"}
+          sprite="item-group/" .. group.name, style="fp_button_icon_small_recipe"}
         button_group.style.width = 64
         button_group.style.height = 64
 
@@ -109,9 +116,9 @@ function create_recipe_dialog_structure(player)
                         sprite = recipe.item_type .. "/" .. recipe.name:gsub("impostor%-", "")
                     end
                     local button_recipe = table_subgroup.add{type="sprite-button", name="fp_sprite-button_recipe_" .. recipe.name,
-                      sprite=sprite, style="fp_button_icon_recipe"}
-                    if recipe.hidden then button_recipe.style = "fp_button_icon_hidden" end
-                    if not recipe.enabled then button_recipe.style = "fp_button_icon_disabled" end
+                      sprite=sprite, style="fp_button_icon_small_recipe"}
+                    if recipe.hidden then button_recipe.style = "fp_button_icon_small_hidden" end
+                    if not recipe.enabled then button_recipe.style = "fp_button_icon_small_disabled" end
                     button_recipe.tooltip = generate_recipe_tooltip(recipe)
                     button_recipe.style.visible = false
                     if (#table_subgroup.children_names - 1) % 12 == 0 then  -- new row
@@ -229,9 +236,9 @@ function apply_recipe_filter(player)
                   (not recipe_produces_product(recipe, search_term)) then
                     recipe_element.style.visible = false
                 else
-                    if not recipe.enabled then recipe_element.style = "fp_button_icon_disabled" 
-                    elseif recipe.hidden then recipe_element.style = "fp_button_icon_hidden"
-                    else recipe_element.style = "fp_button_icon_recipe" end
+                    if not recipe.enabled then recipe_element.style = "fp_button_icon_small_disabled" 
+                    elseif recipe.hidden then recipe_element.style = "fp_button_icon_small_hidden"
+                    else recipe_element.style = "fp_button_icon_small_recipe" end
 
                     recipe_element.style.visible = true
                     subgroup_visible = true 
@@ -264,7 +271,7 @@ function change_item_group_selection(player, item_group_name)
         local sprite_button = flow_recipe_dialog["table_item_groups"]
           ["fp_sprite-button_item_group_" .. global["selected_item_group_name"]]
         if sprite_button ~= nil then
-            sprite_button.style = "fp_button_icon_recipe"
+            sprite_button.style = "fp_button_icon_small_recipe"
             sprite_button.ignored_by_interaction = false
             flow_recipe_dialog["scroll-pane_subgroups_" .. global["selected_item_group_name"]].style.visible = false
         end
@@ -292,7 +299,7 @@ end
 -- Returns a formatted tooltip string for the given recipe
 function generate_recipe_tooltip(recipe)
     local tooltip = recipe.localised_name
-        if recipe.energy ~= nil then tooltip = {"", "\n  ", {"tooltip.crafting_time"}, ":  ", recipe.energy} end
+    if recipe.energy ~= nil then tooltip = {"", tooltip, "\n  ", {"tooltip.crafting_time"}, ":  ", recipe.energy} end
 
     local lists = {"ingredients", "products"}
     for _, item_type in ipairs(lists) do
@@ -331,7 +338,7 @@ function generate_undesirable_recipes()
 end
 
 -- Returns all standard recipes + custom mining recipes
--- Needs expansion once it is clearer how recipes for production work
+-- Needs expansion once it is clearer how recipes for production work (+ needs steam recipes)
 -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
 function generate_all_recipes()
     local recipes = {}
@@ -358,7 +365,6 @@ function generate_all_recipes()
             recipe.products = products
             if #products == 1 then recipe.item_type = products[1].type end
             recipe.order = proto.order
-
 
             if proto.mineable_properties.required_fluid then
                 table.insert(recipe.ingredients, {

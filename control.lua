@@ -1,6 +1,6 @@
 require("data.init")
-require("ui.listeners")
-require("ui.elements.main_dialog")
+require("ui.dialogs.main_dialog")
+
 
 -- Returns string of given table, used for debugging
 function dump(o)

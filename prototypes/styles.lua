@@ -16,12 +16,12 @@ data.raw["gui-style"].default["fp_button_with_spacing"] = {
 data.raw["gui-style"].default["fp_button_action"] = {
     type = "button_style",
     parent = "fp_button_with_spacing",
-    font = "fp-button-standard",
+    font = "fp-font-16p",
     height = 29,
     top_padding = 1
 }
 
-data.raw["gui-style"].default["fp_button_speed_selection"] = {
+data.raw["gui-style"].default["fp_button_mini"] = {
     type = "button_style",
     font = "default",
     height = 26,
@@ -79,10 +79,10 @@ for state, y in pairs(icon_state_indexes) do
     }
 end
 
--- Generates all normal-sized styles
-local icons_normal = {"red", "yellow", "green", "cyan", "blank"}
-for _, type in ipairs(icons_normal) do
-    data.raw["gui-style"].default["fp_button_icon_" .. type] = {
+-- Generates all large-sized sprite-button styles
+local icons_large = {"red", "yellow", "green", "cyan", "blank"}
+for _, type in ipairs(icons_large) do
+    data.raw["gui-style"].default["fp_button_icon_large_" .. type] = {
         type = "button_style",
         parent = "fp_button_icon_" .. type .. "_prototype",
         padding = 2,
@@ -91,10 +91,22 @@ for _, type in ipairs(icons_normal) do
     }
 end
 
--- Generates all small-sized styles
+-- Generates all medium-sized sprite-button styles
+local icons_medium = {"green", "blank"}
+for _, type in ipairs(icons_medium) do
+    data.raw["gui-style"].default["fp_button_icon_medium_" .. type] = {
+        type = "button_style",
+        parent = "fp_button_icon_" .. type .. "_prototype",
+        padding = 1,
+        width = 32,
+        height = 32,
+    }
+end
+
+-- Generates all small-sized sprite-button styles
 local icons_small = {"recipe", "disabled", "hidden"}
 for _, type in ipairs(icons_small) do
-    data.raw["gui-style"].default["fp_button_icon_" .. type] = {
+    data.raw["gui-style"].default["fp_button_icon_small_" .. type] = {
         type = "button_style",
         parent = "fp_button_icon_" .. type .. "_prototype",
         padding = 1,
@@ -106,7 +118,7 @@ end
 -- Specific style for a clicked item_group sprite button
 data.raw["gui-style"].default["fp_button_icon_clicked"] = {
     type = "button_style",
-    parent = "fp_button_icon_recipe",
+    parent = "fp_button_icon_small_recipe",
     default_graphical_set =
     {
         type = "monolith",

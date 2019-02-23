@@ -1,11 +1,12 @@
 require("mod-gui")
 require("ui.util")
+require("ui.listeners")
 require("modal_dialog")
-require("actionbar")
-require("subfactory_bar")
-require("error_bar")
-require("subfactory_pane")
-require("production_pane")
+require("ui.elements.actionbar")
+require("ui.elements.subfactory_bar")
+require("ui.elements.error_bar")
+require("ui.elements.subfactory_pane")
+require("ui.elements.production_pane")
 
 
 -- Create the always-present GUI button to open the main dialog + devmode setup
@@ -22,6 +23,7 @@ function gui_init(player)
         }
     end
 
+    ui_util.recalculate_main_dialog_dimensions(player)
     if global["devmode"] then run_dev_config() end
 end
 
@@ -35,12 +37,13 @@ end
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
     local center = player.gui.center
+    local frame_recipe_dialog = center["fp_frame_recipe_dialog"]
+    local recipe_dialog_open = (frame_recipe_dialog ~= nil and frame_recipe_dialog.style.visible)
     -- Won't toggle if a modal dialog is open
-    if not center["fp_frame_modal_dialog"] or not center["fp_frame_recipe_dialog"].style.visible then
+    if not center["fp_frame_modal_dialog"] and not recipe_dialog_open then
         local main_dialog = center["fp_main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)
-            refresh_actionbar(player)
             center["fp_main_dialog"].style.visible = true  -- Strangely isn't set right away
         else
             -- Only refresh it when you make it visible
@@ -56,14 +59,29 @@ function refresh_main_dialog(player)
     refresh_subfactory_bar(player, true)
 end
 
+-- Recreates the main dialog, retaining it's visibility state
+function reload_main_dialog(player)
+    local main_dialog = player.gui.center["fp_main_dialog"]
+    local visibility = main_dialog.style.visible
+    main_dialog.destroy()
+    create_main_dialog(player)
+    player.gui.center["fp_main_dialog"].style.visible = visibility
+end
+
+-- Sets the caption of the general hint next to the main dialog title
+function set_hint_message(player, message)
+    player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"].caption = message
+end
+
 -- Constructs the main dialog
 function create_main_dialog(player)
     local main_dialog = player.gui.center.add{type="frame", name="fp_main_dialog", direction="vertical"}
-    main_dialog.style.width = global["main_dialog_dimensions"].width
+    main_dialog.style.minimal_width = global["main_dialog_dimensions"].width + 36
+    main_dialog.style.minimal_height = global["main_dialog_dimensions"].height
     main_dialog.style.right_padding = 6
 
     add_titlebar_to(main_dialog)
-    add_actionbar_to(main_dialog)
+    add_actionbar_to(main_dialog, player)
     add_subfactory_bar_to(main_dialog, player)
     add_error_bar_to(main_dialog, player)
     add_subfactory_pane_to(main_dialog, player)
@@ -74,11 +92,17 @@ end
 -- Creates the titlebar including name and exit-button
 function add_titlebar_to(main_dialog)
     local titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
-    titlebar.style.top_padding = 4
+    titlebar.style.vertical_align = "center"
     
     titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
-    titlebar["label_titlebar_name"].style.font="fp-label-supersized"
+    titlebar["label_titlebar_name"].style.font="fp-font-bold-26p"
     titlebar["label_titlebar_name"].style.top_padding = 0
+
+    local label_hint = titlebar.add{type="label", name="label_titlebar_hint", caption=""}
+    label_hint.style.font = "fp-font-16p"
+    label_hint.style.top_padding = 4
+    label_hint.style.left_padding = 14
+    ui_util.set_label_color(label_hint, "red")
 
     titlebar.add{type="flow", name="flow_titlebar_spacing", direction="horizontal"}
     titlebar["flow_titlebar_spacing"].style.horizontally_stretchable = true
