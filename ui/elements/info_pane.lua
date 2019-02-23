@@ -9,41 +9,43 @@ function refresh_info_pane(player)
     end
 
     -- Timescale
-    local timescale = Factory.get_selected_subfactory().timescale
-    local unit = ui_util.determine_unit(timescale)
+    local subfactory_id = global["selected_subfactory_id"]
     local table_timescale = flow["flow_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
       caption={"", " ", {"label.timescale"}, ": "}}
     label_timescale_title.style.top_padding = 1
-    label_timescale_title.style.font = "fp-label-large"
+    label_timescale_title.style.font = "fp-font-14p"
 
     if global["current_activity"] == "changing_timescale" then
-        table_timescale.add{type="button", name="fp_button_timescale_1", caption="1s", style="fp_button_speed_selection"}
-        table_timescale.add{type="button", name="fp_button_timescale_60", caption="1m", style="fp_button_speed_selection"}
-        table_timescale.add{type="button", name="fp_button_timescale_3600", caption="1h", style="fp_button_speed_selection"}
+        table_timescale.add{type="button", name="fp_button_timescale_1", caption="1s", style="fp_button_mini"}
+        table_timescale.add{type="button", name="fp_button_timescale_60", caption="1m", style="fp_button_mini"}
+        table_timescale.add{type="button", name="fp_button_timescale_3600", caption="1h", style="fp_button_mini"}
     else            
         -- As unit is limited to presets, timescale will always be displayed as 1
-        local label_timescale = table_timescale.add{type="label", name="label_timescale", caption="1" .. unit .. "   "}
+        local timescale = ui_util.format_timescale(Subfactory.get_timescale(subfactory_id))
+        local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
         label_timescale.style.top_padding = 1
         label_timescale.style.font = "default-bold"
         table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
-          style="fp_button_speed_selection"}
+          style="fp_button_mini"}
     end
 
     -- Power Usage
-    local table_power_usage = flow["flow_info_elements"].add{type="table", name="table_power_usage", column_count=2}
-    table_power_usage.add{type="label", name="label_power_usage_title", caption={"", " ",  {"label.power_usage"}, ": "}}
-    table_power_usage["label_power_usage_title"].style.font = "fp-label-large"
-    local power_usage = "14.7 MW"  -- Placeholder until a later implementation
-    table_power_usage.add{type="label", name="label_power_usage", caption=power_usage .. "/" .. unit}
-    table_power_usage["label_power_usage"].style.font = "default-bold"
+    local table_energy_consumption = flow["flow_info_elements"].add{type="table", name="table_energy_consumption", column_count=2}
+    table_energy_consumption.add{type="label", name="label_energy_consumption_title", caption={"", " ",  {"label.energy_consumption"}, ": "}}
+    table_energy_consumption["label_energy_consumption_title"].style.font = "fp-font-14p"
+    local energy_consumption = ui_util.format_energy_consumption(Subfactory.get_energy_consumption(subfactory_id), 3)
+    local label_energy = table_energy_consumption.add{type="label", name="label_energy_consumption", caption=energy_consumption}
+    label_energy.tooltip = ui_util.format_energy_consumption(Subfactory.get_energy_consumption(subfactory_id), 8)
+    label_energy.style.font = "default-bold"
+    
 
     -- Notes
     local table_notes = flow["flow_info_elements"].add{type="table", name="table_notes", column_count=2}
     table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":   "}}
-    table_notes["label_notes_title"].style.font = "fp-label-large"
+    table_notes["label_notes_title"].style.font = "fp-font-14p"
     table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
-      style="fp_button_speed_selection"}
+      style="fp_button_mini"}
 end
 
 
@@ -97,7 +99,7 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
 
     -- Notes
     local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
-      text=Factory.get_selected_subfactory().notes}
+      text=Subfactory.get_notes(global["selected_subfactory_id"])}
     text_box_notes.focus()
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400

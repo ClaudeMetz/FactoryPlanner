@@ -4,7 +4,7 @@ function Factory.init()
     return {
         subfactories = {},
         subfactory_index = 0,
-        subfactory_count = 0
+        subfactory_counter = 0
     }
 end
 
@@ -12,22 +12,24 @@ end
 function Factory.add_subfactory(subfactory)
     local self = global.factory
     self.subfactory_index = self.subfactory_index + 1
-    self.subfactory_count = self.subfactory_count + 1
-    subfactory.gui_position = self.subfactory_count
+    self.subfactory_counter = self.subfactory_counter + 1
+    subfactory.gui_position = self.subfactory_counter
+    subfactory.id = self.subfactory_index
     self.subfactories[self.subfactory_index] = subfactory
+    Subfactory.add(self.subfactory_index, Floor.init(true))  -- add first floor of the subfactory
     return self.subfactory_index
 end
 
 function Factory.delete_subfactory(subfactory_id)
     local self = global.factory
-    self.subfactory_count = self.subfactory_count - 1
-    data_util.update_positions(self.subfactories, Subfactory.get_gui_position(subfactory_id))
+    self.subfactory_counter = self.subfactory_counter - 1
+    data_util.update_positions(self.subfactories, self.subfactories[subfactory_id].gui_position)
     self.subfactories[subfactory_id] = nil
 end
 
 
 function Factory.get_subfactory_count()
-    return global.factory.subfactory_count
+    return global.factory.subfactory_counter
 end
 
 function Factory.get_subfactory(subfactory_id)
@@ -53,12 +55,12 @@ end
 -- Updates the validity values of all subfactories
 function Factory.update_validity()
     for subfactory_id, _ in pairs(global.factory.subfactories) do
-        Subfactory.update_validity(subfactory_id)
+        Subfactory.check_validity(subfactory_id)
     end
 end
 
 
 function Factory.shift_subfactory(subfactory_id, direction)
     local self = global.factory
-    data_util.shift_position(self.subfactories, subfactory_id, direction, self.subfactory_count)
+    data_util.shift_position(self.subfactories, subfactory_id, direction, self.subfactory_counter)
 end

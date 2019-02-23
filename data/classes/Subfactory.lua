@@ -1,16 +1,18 @@
 Subfactory = {}
 
-local data_types = {"Ingredient", "Product", "Byproduct"}
+local data_types = {"Ingredient", "Product", "Byproduct", "Floor"}
 
 function Subfactory.init(name, icon)
     if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
     local subfactory = {
         name = name,
         icon = icon,
-        timescale = 60,
+        timescale = 60,  -- in seconds
+        energy_consumption = 0,  -- in Watts
         notes = "",
+        selected_floor_id = 0,
         valid = true,
-        gui_position = nil,
+        gui_position = 0,
         type = "Subfactory"
     }
 
@@ -59,6 +61,15 @@ function Subfactory.get_timescale(id)
 end
 
 
+function Subfactory.set_energy_consumption(id, energy_consumption)
+    get_subfactory(id).energy_consumption = energy_consumption
+end
+
+function Subfactory.get_energy_consumption(id)
+    return get_subfactory(id).energy_consumption
+end
+
+
 function Subfactory.set_notes(id, notes)
     get_subfactory(id).notes = notes
 end
@@ -68,12 +79,23 @@ function Subfactory.get_notes(id)
 end
 
 
+function Subfactory.set_selected_floor_id(id, floor_id)
+    get_subfactory(id).selected_floor_id = floor_id
+end
+
+function Subfactory.get_selected_floor_id(id)
+    return get_subfactory(id).selected_floor_id
+end
+
+
 function Subfactory.add(id, dataset)
     local data_table = get_subfactory(id)[dataset.type]
     data_table.index = data_table.index + 1
     data_table.counter = data_table.counter + 1
     dataset.gui_position = data_table.counter
+    dataset.id = data_table.index
     data_table.datasets[data_table.index] = dataset
+    if dataset.type == "Floor" then get_subfactory(id).selected_floor_id = data_table.index end
     return data_table.index
 end
 
@@ -98,6 +120,7 @@ function Subfactory.get_in_order(id, type)
     return data_util.order_by_position(get_subfactory(id)[type].datasets)
 end
 
+-- Get selected floor ?
 
 -- Returns true when a product already exists in given subfactory
 function Subfactory.product_exists(id, item)
@@ -115,7 +138,7 @@ function Subfactory.is_valid(id)
 end
 
 -- Updates validity values of the datasets of all data_types
-function Subfactory.update_validity(id)
+function Subfactory.check_validity(id)
     local subfactory = get_subfactory(id)
     for _, data_type in ipairs(data_types) do
         for dataset_id, _ in pairs(subfactory[data_type].datasets) do
@@ -125,7 +148,7 @@ function Subfactory.update_validity(id)
             end
         end
     end
-    get_subfactory(id).valid = true
+    subfactory.valid = true
 end
 
 -- Removes all invalid datasets from the given subfactory
@@ -133,12 +156,16 @@ function Subfactory.remove_invalid_datasets(id)
     local subfactory = get_subfactory(id)
     for _, data_type in ipairs(data_types) do
         for dataset_id, dataset in pairs(subfactory[data_type].datasets) do
-            if not dataset.valid then
-                Subfactory.delete(id, data_type, dataset_id)
+            if data_type == "Floor" then
+                Floor.remove_invalid_datasets(id, dataset_id)
+            else
+                if not dataset.valid then
+                    Subfactory.delete(id, data_type, dataset_id)
+                end
             end
         end
     end
-    get_subfactory(id).valid = true
+    subfactory.valid = true
 end
 
 

@@ -1,5 +1,13 @@
 ui_util = {}
 
+-- Readjusts the size of the main dialog according to the user setting of number of items per row
+function ui_util.recalculate_main_dialog_dimensions(player)
+    local column_count = settings.get_player_settings(player)["fp_subfactory_items_per_row"].value
+    local width = 880 + ((column_count - 4) * 180)
+    global["main_dialog_dimensions"] = {width = width, height = 1000}
+end
+
+
 -- Sets the font color of the given label / button-label
 function ui_util.set_label_color(ui_element, color)
     if color == "red" then
@@ -18,15 +26,32 @@ function ui_util.set_padding(ui_element, padding)
 end
 
 
--- Determines unit of given timescale, currently limited to presets
-function ui_util.determine_unit(timescale)
+-- Returns string representing the given timescale
+-- (Currently only needs to handle 1 second/minute/hour)
+function ui_util.format_timescale(timescale)
     if timescale == 1 then
-        return "s"
+        return "1s"
     elseif timescale == 60 then
-        return "m"
+        return "1m"
     elseif timescale == 3600 then
-        return "h"
+        return "1h"
     end
+end
+
+-- Formats given number to given number of significant digits
+function ui_util.format_number(number, precision)
+    return ("%." .. precision .. "g"):format(number)
+end
+
+-- Returns string representing the given power 
+function ui_util.format_energy_consumption(energy_consumption, precision)
+    local scale_counter = 1
+    while energy_consumption > 1000 do
+        energy_consumption = energy_consumption / 1000
+        scale_counter = scale_counter + 1
+    end
+    local scale = {"W", "kW", "MW", "GW", "TW", "PW", "EW", "ZW", "YW"}
+    return (ui_util.format_number(energy_consumption, precision) .. " " .. scale[scale_counter])
 end
 
 
@@ -44,7 +69,6 @@ function ui_util.pairsByKeys(t, f)
     end
     return iter
 end
-
 
 -- Splits given string
 function ui_util.split(s, separator)

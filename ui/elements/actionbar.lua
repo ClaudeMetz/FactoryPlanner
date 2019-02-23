@@ -1,10 +1,12 @@
 -- Creates the actionbar including the new-, edit- and delete-buttons
-function add_actionbar_to(main_dialog)
+function add_actionbar_to(main_dialog, player)
     local actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
 
     actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, style="fp_button_action"}
     actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, style="fp_button_action"}
     actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, style="fp_button_action"}
+
+    refresh_actionbar(player)
 end
 
 
@@ -54,9 +56,7 @@ function close_subfactory_dialog(flow_modal_dialog, action, data)
             Subfactory.set_name(subfactory_id, data.name)
             Subfactory.set_icon(subfactory_id, data.icon)
         else
-            local subfactory = Subfactory.init(data.name, data.icon)
-            local subfactory_id = Factory.add_subfactory(subfactory)
-            
+            local subfactory_id = Factory.add_subfactory(Subfactory.init(data.name, data.icon))
             global["selected_subfactory_id"] = subfactory_id
         end
     end
@@ -109,7 +109,7 @@ end
 -- Handles the subfactory deletion process
 function handle_subfactory_deletion(player)
     if global["current_activity"] == "deleting_subfactory" then
-        local subfactory_position = Factory.get_subfactory(global["selected_subfactory_id"]).gui_position
+        local subfactory_position = Subfactory.get_gui_position(global["selected_subfactory_id"])
         local subfactory_count = Factory.get_subfactory_count()
         Factory.delete_subfactory(global["selected_subfactory_id"])
 

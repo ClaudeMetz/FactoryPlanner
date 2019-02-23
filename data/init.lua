@@ -1,9 +1,11 @@
-require("Factory")
-require("Subfactory")
-require("Ingredient")
-require("Product")
-require("Byproduct")
-require("util")
+require("data.util")
+require("data.classes.Factory")
+require("data.classes.Subfactory")
+require("data.classes.Ingredient")
+require("data.classes.Product")
+require("data.classes.Byproduct")
+require("data.classes.Floor")
+require("data.classes.Line")
 
 -- Initiates all global variables
 function data_init()
@@ -13,7 +15,6 @@ function data_init()
     global["undesirable_recipes"] = generate_undesirable_recipes()
     global["all_recipes"] = generate_all_recipes()
 
-    global["main_dialog_dimensions"] = {width = 1200, height = nil}
     global["modal_dialog_type"] = nil
     global["current_activity"] = nil
 

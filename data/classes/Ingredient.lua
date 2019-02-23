@@ -6,7 +6,7 @@ function Ingredient.init(item, amount_required)
         item_type = item.type,
         amount_required = amount_required,
         valid = true,
-        gui_position = nil,
+        gui_position = 0,
         type = "Ingredient"
     }
 end
@@ -16,17 +16,14 @@ local function get_ingredient(subfactory_id, id)
 end
 
 
-function Ingredient.set_name(subfactory_id, name)
-    get_ingredient(subfactory_id, id).name = name
+function Ingredient.set_item(subfactory_id, item)
+    local self = get_ingredient(subfactory_id, item)
+    self.name = item.name
+    self.item_type = item.type
 end
 
 function Ingredient.get_name(subfactory_id)
     return get_ingredient(subfactory_id, id).name
-end
-
-
-function Ingredient.set_item_type(subfactory_id, item_type)
-    get_ingredient(subfactory_id, id).item_type = item_type
 end
 
 function Ingredient.get_item_type(subfactory_id)

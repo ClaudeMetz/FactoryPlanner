@@ -7,7 +7,7 @@ function Product.init(item, amount_required)
         amount_required = amount_required,
         amount_produced = 0,
         valid = true,
-        gui_position = nil,
+        gui_position = 0,
         type = "Product"
     }
 end
@@ -17,20 +17,17 @@ local function get_product(subfactory_id, id)
 end
 
 
-function Product.set_name(subfactory_id, name)
-    get_product(subfactory_id, id).name = name
+function Product.set_item(subfactory_id, id, item)
+    local self = get_product(subfactory_id, id)
+    self.name = item.name
+    self.item_type = item.type
 end
 
-function Product.get_name(subfactory_id)
+function Product.get_name(subfactory_id, id)
     return get_product(subfactory_id, id).name
 end
 
-
-function Product.set_item_type(subfactory_id, item_type)
-    get_product(subfactory_id, id).item_type = item_type
-end
-
-function Product.get_item_type(subfactory_id)
+function Product.get_item_type(subfactory_id, id)
     return get_product(subfactory_id, id).item_type
 end
 

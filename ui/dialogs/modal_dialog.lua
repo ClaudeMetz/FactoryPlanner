@@ -63,7 +63,7 @@ end
 function create_base_modal_dialog(player, condition_data, editing, submit_button, delete_button)
     local frame_modal_dialog = player.gui.center.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
 
-    -- Condition table
+    -- Conditions table
     local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
     table_conditions.style.bottom_padding = 6
     for n, condition in ipairs(condition_data.conditions) do
@@ -72,7 +72,7 @@ function create_base_modal_dialog(player, condition_data, editing, submit_button
         end
     end
 
-    -- Main low to be filled by specific modal dialog creator
+    -- Main flow to be filled by specific modal dialog creator
     local flow_modal_dialog = frame_modal_dialog.add{type="flow", name="flow_modal_dialog", direction="vertical"}
 
     -- Button bar
