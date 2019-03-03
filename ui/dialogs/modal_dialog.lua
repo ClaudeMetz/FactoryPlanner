@@ -1,9 +1,9 @@
 -- Opens a barebone modal dialog and calls upon the given function to populate it
-function enter_modal_dialog(player, dialog_type, submit_button, delete_button, args)
+function enter_modal_dialog(player, dialog_type, dialog_settings, args)
     global["modal_dialog_type"] = dialog_type
     toggle_main_dialog(player)
     local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"]()
-    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, args.edit, submit_button, delete_button)
+    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, args.edit, dialog_settings)
     _G["open_" .. dialog_type .. "_dialog"](flow_modal_dialog, args)
 end
 
@@ -35,57 +35,63 @@ end
 function check_modal_dialog_data(flow_modal_dialog, dialog_type)
     local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"]()
 
-    -- Get data
-    local data = {}
-    for name, f_data in pairs(condition_instructions.data) do
-        data[name] = f_data(flow_modal_dialog)
-    end
-
-    -- Check all conditions
-    local error_found = false
-    local table_conditions = flow_modal_dialog.parent["table_modal_dialog_conditions"]
-    for _, condition_element in ipairs(table_conditions.children) do
-        local n = tonumber(string.match(condition_element.name, "%d+"))
-        if condition_instructions.conditions[n].check(data) then
-            ui_util.set_label_color(condition_element, "red")
-            error_found = true
-        else
-            ui_util.set_label_color(condition_element, "white")
+    if #condition_instructions.conditions ~= 0 then
+        -- Get data
+        local data = {}
+        for name, f_data in pairs(condition_instructions.data) do
+            data[name] = f_data(flow_modal_dialog)
         end
-    end
 
-    if error_found then return nil
-    else return data end
+        -- Check all conditions
+        local error_found = false
+        local table_conditions = flow_modal_dialog.parent["table_modal_dialog_conditions"]
+        for _, condition_element in ipairs(table_conditions.children) do
+            local n = tonumber(string.match(condition_element.name, "%d+"))
+            if condition_instructions.conditions[n].check(data) then
+                ui_util.set_label_color(condition_element, "red")
+                error_found = true
+            else
+                ui_util.set_label_color(condition_element, "white")
+            end
+        end
+
+        if error_found then return nil
+        else return data end
+    else return {} end
 end
 
 
 -- Creates barebones modal dialog
-function create_base_modal_dialog(player, condition_data, editing, submit_button, delete_button)
+function create_base_modal_dialog(player, condition_instructions, editing, dialog_settings)
     local frame_modal_dialog = player.gui.center.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
 
     -- Conditions table
-    local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
-    table_conditions.style.bottom_padding = 6
-    for n, condition in ipairs(condition_data.conditions) do
-        if not (editing and (not condition.show_on_edit)) then
-            table_conditions.add{type="label", name="label_subfactory_instruction_" .. n, caption=condition.label}
+    if #condition_instructions.conditions ~= 0 then
+        local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
+        table_conditions.style.bottom_padding = 6
+        for n, condition in ipairs(condition_instructions.conditions) do
+            if not (editing and (not condition.show_on_edit)) then
+                table_conditions.add{type="label", name="label_subfactory_instruction_" .. n, caption=condition.label}
+            end
         end
     end
 
     -- Main flow to be filled by specific modal dialog creator
-    local flow_modal_dialog = frame_modal_dialog.add{type="flow", name="flow_modal_dialog", direction="vertical"}
+    local flow_modal_dialog = frame_modal_dialog.add{type="scroll-pane", name="flow_modal_dialog", direction="vertical"}
+    flow_modal_dialog.style.maximal_height = 800
 
     -- Button bar
     local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
     button_bar.style.minimal_width = 220
 
-    button_bar.add{type="button", name="fp_button_modal_dialog_cancel", caption={"button-text.cancel"}, 
-        style="fp_button_with_spacing"}
+    local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel", style="fp_button_with_spacing"}
+    if dialog_settings.close then button_cancel.caption = {"button-text.close"}
+    else button_cancel.caption = {"button-text.cancel"} end
 
     local flow_spacer_1 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_1", direction="horizontal"}
     flow_spacer_1.style.horizontally_stretchable = true
 
-    if delete_button then
+    if dialog_settings.delete then
         local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
           caption={"button-text.delete"}, style="fp_button_with_spacing"}
         button_delete.style.font="default-game"
@@ -95,7 +101,7 @@ function create_base_modal_dialog(player, condition_data, editing, submit_button
     local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
     flow_spacer_2.style.horizontally_stretchable = true
 
-    if submit_button then
+    if dialog_settings.submit then
         button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"button-text.submit"}, 
             style="fp_button_with_spacing"}
     end

@@ -134,9 +134,15 @@ function handle_product_element_click(player, product_id, click, direction)
     -- Open modal dialogs
     else
         if click == "left" then
-            open_recipe_dialog(player, product_id)
+            local subfactory_id = global["selected_subfactory_id"]
+            local floor = Subfactory.get(subfactory_id, "Floor", Subfactory.get_selected_floor_id(subfactory_id))
+            if global["devmode"] or floor.level == 1 then
+                open_recipe_dialog(player, product_id)
+            else
+                queue_hint_message(player, {"label.error_product_wrong_floor"})
+            end
         elseif click == "right" then
-            enter_modal_dialog(player, "product", true, true, {edit=true, product_id=product_id})
+            enter_modal_dialog(player, "product", {submit=true, delete=true}, {edit=true, product_id=product_id})
         end
     end
     

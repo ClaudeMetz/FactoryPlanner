@@ -1,5 +1,5 @@
 TODO Features:
-! Info-panel with shortcuts and tutorial + ability to add example subfactory
+! Info-panel with shortcuts and tutorial + ability to add example subfactory + hint that stays until infos are viewed once(?)
 
 
 TODO Improvements:
@@ -9,6 +9,9 @@ TODO Improvements:
 
 TODO Code Improvements:
 - Figure out how to do data migrations on new mod versions -> also needs to destroy and re-create GUI's
+- Complete manual Ore+Oil recipe creation + add rocket building as internal recipe
+- Remove/update associated recipes when deleting products + update products/byproducts split each time
+? Create system to register listeners to gui elements
 
 
 TODO Bugs:
@@ -34,6 +37,8 @@ TODO Post-Launch:
 API Changes:
 - (probable) let enter work as a way to submit forms, even when a textfield is in focus
 - (posted) have style.padding still available at the control stage for easier changes
+- (posted) ability to disable sound on GUI-buttons
+- (posted) ability for code to select text in a textfield
 
 
 MISC:

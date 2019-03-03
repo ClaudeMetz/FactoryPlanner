@@ -2,6 +2,7 @@ Byproduct = {}
 
 function Byproduct.init(item)
     return {
+        id = 0,
         name = item.name,
         item_type = item.type,
         amount_produced = 0,

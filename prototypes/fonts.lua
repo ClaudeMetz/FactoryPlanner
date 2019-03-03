@@ -13,6 +13,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-font-bold-15p",
+        from = "default-bold",
+        size = 15
+    },
+    {
+        type = "font",
         name = "fp-font-16p",
         from = "default",
         size = 16

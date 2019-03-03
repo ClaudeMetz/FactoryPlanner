@@ -38,7 +38,6 @@ function refresh_info_pane(player)
     local label_energy = table_energy_consumption.add{type="label", name="label_energy_consumption", caption=energy_consumption}
     label_energy.tooltip = ui_util.format_energy_consumption(Subfactory.get_energy_consumption(subfactory_id), 8)
     label_energy.style.font = "default-bold"
-    
 
     -- Notes
     local table_notes = flow["flow_info_elements"].add{type="table", name="table_notes", column_count=2}

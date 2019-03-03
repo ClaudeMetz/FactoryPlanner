@@ -2,9 +2,7 @@ data.raw["gui-style"].default["fp_button_exit"] = {
     type = "button_style",
     font = "default-listbox",
     height = 30,
-    width = 30,
-    top_padding = 2,
-    left_padding = 6
+    top_padding = 2
 }
 
 data.raw["gui-style"].default["fp_button_with_spacing"] = {
@@ -79,6 +77,11 @@ for state, y in pairs(icon_state_indexes) do
     }
 end
 
+data.raw["gui-style"].default["fp_button_icon_default_prototype"] = {
+    type = "button_style",
+    parent = "icon_button",
+}
+
 -- Generates all large-sized sprite-button styles
 local icons_large = {"red", "yellow", "green", "cyan", "blank"}
 for _, type in ipairs(icons_large) do
@@ -92,7 +95,7 @@ for _, type in ipairs(icons_large) do
 end
 
 -- Generates all medium-sized sprite-button styles
-local icons_medium = {"green", "blank"}
+local icons_medium = {"default", "hidden", "red", "green", "blank"}
 for _, type in ipairs(icons_medium) do
     data.raw["gui-style"].default["fp_button_icon_medium_" .. type] = {
         type = "button_style",
