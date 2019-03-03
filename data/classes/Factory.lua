@@ -13,10 +13,10 @@ function Factory.add_subfactory(subfactory)
     local self = global.factory
     self.subfactory_index = self.subfactory_index + 1
     self.subfactory_counter = self.subfactory_counter + 1
-    subfactory.gui_position = self.subfactory_counter
     subfactory.id = self.subfactory_index
+    subfactory.gui_position = self.subfactory_counter
     self.subfactories[self.subfactory_index] = subfactory
-    Subfactory.add(self.subfactory_index, Floor.init(true))  -- add first floor of the subfactory
+    Subfactory.add(self.subfactory_index, Floor.init())  -- add first floor of the subfactory
     return self.subfactory_index
 end
 

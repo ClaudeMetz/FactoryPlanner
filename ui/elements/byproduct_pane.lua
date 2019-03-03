@@ -17,10 +17,15 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction)
     if direction ~= nil then
         Subfactory.shift(global["selected_subfactory_id"], "Byproduct", byproduct_id, direction)
 
-    -- Open recipe dialog ?
-    -- Dealing with byproducts will come at a later stage
+    -- Open recipe dialog? Dealing with byproducts will come at a later stage
     elseif click == "left" then
-        --open_recipe_dialog(player, byproduct_id)
+        local subfactory_id = global["selected_subfactory_id"]
+        local floor = Subfactory.get(subfactory_id, "Floor", Subfactory.get_selected_floor_id(subfactory_id))
+        if floor.level == 1 then
+            --open_recipe_dialog(player, byproduct_id)
+        else
+            queue_hint_message(player, {"label.error_byproduct_wrong_floor"})
+        end
     end
 
     refresh_item_table(player, "Byproduct")

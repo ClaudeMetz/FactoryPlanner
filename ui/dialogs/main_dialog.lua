@@ -2,6 +2,7 @@ require("mod-gui")
 require("ui.util")
 require("ui.listeners")
 require("modal_dialog")
+require("preferences_dialog")
 require("ui.elements.actionbar")
 require("ui.elements.subfactory_bar")
 require("ui.elements.error_bar")
@@ -68,10 +69,18 @@ function reload_main_dialog(player)
     player.gui.center["fp_main_dialog"].style.visible = visibility
 end
 
--- Sets the caption of the general hint next to the main dialog title
-function set_hint_message(player, message)
-    player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"].caption = message
+
+-- Queues the caption of the general hint to be displayed on the next refresh
+function queue_hint_message(player, message)
+    global["queued_hint_message"] = message
 end
+
+-- Refreshes the general hint that is displayed next to the main dialog title
+function refresh_hint_message(player)
+    player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"].caption = global["queued_hint_message"]
+    global["queued_hint_message"] = ""
+end
+
 
 -- Constructs the main dialog
 function create_main_dialog(player)
@@ -95,10 +104,10 @@ function add_titlebar_to(main_dialog)
     titlebar.style.vertical_align = "center"
     
     titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
-    titlebar["label_titlebar_name"].style.font="fp-font-bold-26p"
+    titlebar["label_titlebar_name"].style.font = "fp-font-bold-26p"
     titlebar["label_titlebar_name"].style.top_padding = 0
 
-    local label_hint = titlebar.add{type="label", name="label_titlebar_hint", caption=""}
+    local label_hint = titlebar.add{type="label", name="label_titlebar_hint", caption=global["queued_hint_message"]}
     label_hint.style.font = "fp-font-16p"
     label_hint.style.top_padding = 4
     label_hint.style.left_padding = 14
@@ -107,5 +116,9 @@ function add_titlebar_to(main_dialog)
     titlebar.add{type="flow", name="flow_titlebar_spacing", direction="horizontal"}
     titlebar["flow_titlebar_spacing"].style.horizontally_stretchable = true
 
-    titlebar.add{type="button", name="fp_button_titlebar_exit", caption="X", style="fp_button_exit"}
+    titlebar.add{type="button", name="fp_button_titlebar_preferences", caption={"label.preferences"}, style="fp_button_exit"}
+
+    local button_exit = titlebar.add{type="button", name="fp_button_titlebar_exit", caption="X", style="fp_button_exit"}
+    button_exit.style.width = 30
+    button_exit.style.left_padding = 6
 end

@@ -181,7 +181,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
 
         -- Edit clicked subfactory
         elseif click == "right" then
-            enter_modal_dialog(player, "subfactory", true, true, {edit=true})
+            enter_modal_dialog(player, "subfactory", {submit=true, delete=true}, {edit=true})
         end
     end
 end

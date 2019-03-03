@@ -18,7 +18,7 @@ function open_recipe_dialog(player, product_id)
         toggle_main_dialog(player)
         frame_recipe_dialog.style.visible = true
     else
-        add_line(recipe_name, product_id)
+        add_line(player, recipe_name, product_id)
         refresh_production_pane(player)
     end
 end
@@ -26,7 +26,7 @@ end
 -- Handles closing of the recipe dialog
 function close_recipe_dialog(player, recipe_name)
     if recipe_name ~= nil then
-        add_line(recipe_name, global["selected_product_id"])
+        add_line(player, recipe_name, global["selected_product_id"])
     end
 
     global["selected_product_id"] = 0
@@ -36,11 +36,17 @@ function close_recipe_dialog(player, recipe_name)
 end
 
 -- Adds (assembly) line to the currently selected floor
-function add_line(recipe_name, product_id)
+function add_line(player, recipe_name, product_id)
     local subfactory_id = global["selected_subfactory_id"]
     local floor_id = Subfactory.get_selected_floor_id(subfactory_id)
     local product = Subfactory.get(subfactory_id, "Product", product_id)
-    Floor.add_line(subfactory_id, floor_id, Line.init(global["all_recipes"][recipe_name], product))
+    local recipe = global["all_recipes"][recipe_name]
+
+    if Floor.recipe_exists(subfactory_id, floor_id, recipe) then
+        queue_hint_message(player, {"label.error_duplicate_recipe"})
+    else
+        Floor.add_line(subfactory_id, floor_id, Line.init(recipe), product)
+    end
 end
 
 
@@ -343,7 +349,7 @@ end
 function generate_all_recipes()
     local recipes = {}
     for name, recipe in pairs(game.forces.player.recipes) do recipes[name] = recipe end
-
+--[[ 
     local function base_recipe()
         return {
             enabled = true,
@@ -390,6 +396,6 @@ function generate_all_recipes()
             recipes[recipe.name] = recipe
         end
     end
-
+ ]]
     return recipes
 end

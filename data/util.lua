@@ -32,7 +32,7 @@ end
 function data_util.shift_position(datasets, main_id, direction, dataset_count)
     local main_dataset = datasets[main_id]
     local main_gui_position = main_dataset.gui_position
-    
+
     -- Doesn't shift if outer elements are being shifted further outward
     if (main_gui_position == 1 and direction == "negative") or
       (main_gui_position == dataset_count and direction == "positive") then 
@@ -50,4 +50,49 @@ function data_util.shift_position(datasets, main_id, direction, dataset_count)
 
     main_dataset.gui_position = second_gui_position
     second_dataset.gui_position = main_gui_position
+end
+
+
+-- Generates a table containing all machines for all categories
+function data_util.update_all_machines()
+    local categories = {}
+    for _, proto in pairs(game.entity_prototypes) do
+        if proto.crafting_categories and proto.name ~= "player" then
+            for category, enabled in pairs(proto.crafting_categories) do
+                if enabled then
+                    if categories[category] == nil then
+                        categories[category] = {machines = {}, order = {}}
+                    end
+                    local data = categories[category]
+                    
+                    table.insert(data["order"], proto.name)
+                    local machine = {
+                        name = proto.name,
+                        localised_name = proto.localised_name,
+                        position = #data["order"]
+                    }
+                    data["machines"][proto.name] = machine
+
+                    -- Restores user settings if present
+                    local previous_category = global["all_machines"][category]
+                    if previous_category ~= nil and proto.name == previous_category.default_machine_name then
+                        data.default_machine_name = proto.name
+                    end
+                end
+            end
+        end
+    end
+    for _, category in pairs(categories) do
+        if category.default_machine_name == nil then 
+            category.default_machine_name = category.order[1]
+        end
+    end
+
+    global["all_machines"] = categories
+end
+
+-- Returns the default machine for the given category
+function data_util.get_default_machine(category)
+    local data = global["all_machines"][category]
+    return data["machines"][data.default_machine_name]
 end
