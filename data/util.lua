@@ -54,7 +54,7 @@ end
 
 
 -- Generates a table containing all machines for all categories
-function data_util.update_all_machines()
+function data_util.generate_all_machines()
     local categories = {}
     for _, proto in pairs(game.entity_prototypes) do
         if proto.crafting_categories and proto.name ~= "player" then
@@ -72,27 +72,36 @@ function data_util.update_all_machines()
                         position = #data["order"]
                     }
                     data["machines"][proto.name] = machine
-
-                    -- Restores user settings if present
-                    local previous_category = global["all_machines"][category]
-                    if previous_category ~= nil and proto.name == previous_category.default_machine_name then
-                        data.default_machine_name = proto.name
-                    end
                 end
             end
         end
     end
-    for _, category in pairs(categories) do
-        if category.default_machine_name == nil then 
-            category.default_machine_name = category.order[1]
+    return categories
+end
+
+-- Updates default machines for the given player, restoring previous settings
+function data_util.update_default_machines(player)
+    local old_defaults = global.players[player.index].default_machines
+    local new_defaults = {}
+
+    for category, data in pairs(global.all_machines) do
+        if old_defaults[category] ~= nil and data.machines[old_defaults[category]] ~= nil then
+            new_defaults[category] = old_defaults[category]
+        else
+            new_defaults[category] = data.machines[data.order[1]].name
         end
     end
-
-    global["all_machines"] = categories
+    
+    global.players[player.index].default_machines = new_defaults
 end
 
 -- Returns the default machine for the given category
-function data_util.get_default_machine(category)
-    local data = global["all_machines"][category]
-    return data["machines"][data.default_machine_name]
+function data_util.get_default_machine(player, category)
+    local defaults = global.players[player.index].default_machines
+    return global.all_machines[category].machines[defaults[category]]
+end
+
+-- Changes the preferred machine for the given category
+function data_util.set_default_machine(player, category, name)
+    global.players[player.index].default_machines[category] = name
 end

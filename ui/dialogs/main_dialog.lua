@@ -11,7 +11,7 @@ require("ui.elements.production_pane")
 
 
 -- Create the always-present GUI button to open the main dialog + devmode setup
-function gui_init(player)
+function player_gui_init(player)
     local frame_flow = mod_gui.get_frame_flow(player)
     if not frame_flow["fp_button_toggle_interface"] then
         frame_flow.add
@@ -24,8 +24,12 @@ function gui_init(player)
         }
     end
 
+    -- Incorporates the mod setting for the visibility of the toggle-main-dialog-button
+    toggle_button_interface(player)
+    -- Calculates the main dialog size incorporating the relevant user settings
     ui_util.recalculate_main_dialog_dimensions(player)
-    if global["devmode"] then run_dev_config() end
+
+    if global.devmode then run_dev_config(player) end
 end
 
 
@@ -72,29 +76,31 @@ end
 
 -- Queues the caption of the general hint to be displayed on the next refresh
 function queue_hint_message(player, message)
-    global["queued_hint_message"] = message
+    global.players[player.index].queued_hint_message = message
 end
 
 -- Refreshes the general hint that is displayed next to the main dialog title
 function refresh_hint_message(player)
-    player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"].caption = global["queued_hint_message"]
-    global["queued_hint_message"] = ""
+    local player_table = global.players[player.index]
+    player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"].caption = player_table.queued_hint_message
+    player_table.queued_hint_message = ""
 end
 
 
 -- Constructs the main dialog
 function create_main_dialog(player)
+    local main_dialog_dimensions = global.players[player.index].main_dialog_dimensions
     local main_dialog = player.gui.center.add{type="frame", name="fp_main_dialog", direction="vertical"}
-    main_dialog.style.minimal_width = global["main_dialog_dimensions"].width + 36
-    main_dialog.style.minimal_height = global["main_dialog_dimensions"].height
+    main_dialog.style.minimal_width = main_dialog_dimensions.width + 36
+    main_dialog.style.minimal_height = main_dialog_dimensions.height
     main_dialog.style.right_padding = 6
 
     add_titlebar_to(main_dialog)
-    add_actionbar_to(main_dialog, player)
-    add_subfactory_bar_to(main_dialog, player)
-    add_error_bar_to(main_dialog, player)
-    add_subfactory_pane_to(main_dialog, player)
-    add_production_pane_to(main_dialog, player)
+    add_actionbar_to(main_dialog)
+    add_subfactory_bar_to(main_dialog)
+    add_error_bar_to(main_dialog)
+    add_subfactory_pane_to(main_dialog)
+    add_production_pane_to(main_dialog)
 end
 
 
@@ -107,7 +113,8 @@ function add_titlebar_to(main_dialog)
     titlebar["label_titlebar_name"].style.font = "fp-font-bold-26p"
     titlebar["label_titlebar_name"].style.top_padding = 0
 
-    local label_hint = titlebar.add{type="label", name="label_titlebar_hint", caption=global["queued_hint_message"]}
+    local label_hint = titlebar.add{type="label", name="label_titlebar_hint", 
+      caption=global.players[main_dialog.player_index].queued_hint_message}
     label_hint.style.font = "fp-font-16p"
     label_hint.style.top_padding = 4
     label_hint.style.left_padding = 14

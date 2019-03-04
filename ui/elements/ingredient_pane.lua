@@ -13,7 +13,7 @@ end
 -- Shifts clicked element's position left or right
 function handle_ingredient_element_click(player, ingredient_id, click, direction)
     if direction ~= nil then
-        Subfactory.shift(global["selected_subfactory_id"], "Ingredient", ingredient_id, direction)
+        Subfactory.shift(player, global.players[player.index].selected_subfactory_id, "Ingredient", ingredient_id, direction)
         refresh_item_table(player, "Ingredient")
     end
 end

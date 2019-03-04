@@ -1,16 +1,17 @@
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_type, dialog_settings, args)
-    global["modal_dialog_type"] = dialog_type
+    global.players[player.index].modal_dialog_type = dialog_type
     toggle_main_dialog(player)
-    local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"]()
+    local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"](player)
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, args.edit, dialog_settings)
     _G["open_" .. dialog_type .. "_dialog"](flow_modal_dialog, args)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function exit_modal_dialog(player, button)
+    local player_table = global.players[player.index]
     local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog"]["flow_modal_dialog"]
-    local dialog_type = global["modal_dialog_type"]
+    local dialog_type = player_table.modal_dialog_type
 
     if button == "submit" then
         -- First checks if the entered data is correct
@@ -24,8 +25,8 @@ function exit_modal_dialog(player, button)
     end
 
     -- Close modal dialog
-    global["modal_dialog_type"] = nil
-    global["current_activity"] = nil
+    player_table.modal_dialog_type = nil
+    player_table.current_activity = nil
     flow_modal_dialog.parent.destroy()
     toggle_main_dialog(player)
 end
@@ -33,7 +34,8 @@ end
 
 -- Checks the entered data for errors and returns it if it's all correct, else returns nil
 function check_modal_dialog_data(flow_modal_dialog, dialog_type)
-    local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"]()
+    local player = game.players[flow_modal_dialog.player_index]
+    local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"](player)
 
     if #condition_instructions.conditions ~= 0 then
         -- Get data

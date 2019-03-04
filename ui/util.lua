@@ -4,7 +4,7 @@ ui_util = {}
 function ui_util.recalculate_main_dialog_dimensions(player)
     local column_count = settings.get_player_settings(player)["fp_subfactory_items_per_row"].value
     local width = 880 + ((column_count - 4) * 180)
-    global["main_dialog_dimensions"] = {width = width, height = 1000}
+    global.players[player.index].main_dialog_dimensions.width = width
 end
 
 

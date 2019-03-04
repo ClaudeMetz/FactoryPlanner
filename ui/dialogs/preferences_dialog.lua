@@ -41,7 +41,7 @@ function refresh_preferences_dialog(player)
       ["scroll-pane_all_machines"]["table_all_machines"]
     table_all_machines.clear()
 
-    for category, data in pairs(global["all_machines"]) do
+    for category, data in pairs(global.all_machines) do
         if #data.order > 1 then
             table_all_machines.add{type="label", name="label_" .. category, caption="'" .. category .. "':    "}
             local table_machines = table_all_machines.add{type="table", name="table_machines:" .. category,
@@ -50,7 +50,9 @@ function refresh_preferences_dialog(player)
                 local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_preferences_machine_"
                   .. category .. "_" .. machine_name, sprite="entity/" .. machine_name}
                 local tooltip = data.machines[machine_name].localised_name
-                if data.default_machine_name == machine_name then
+
+                local default_machine_name = data_util.get_default_machine(player, category).name
+                if default_machine_name == machine_name then
                     button_machine.style = "fp_button_icon_medium_green"
                     tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
                 else 
@@ -60,10 +62,4 @@ function refresh_preferences_dialog(player)
             end
         end
     end
-end
-
--- Changes the preferred machine for the given category
-function change_machine_preference(player, category, machine_name)
-    global["all_machines"][category].default_machine_name = machine_name
-    refresh_preferences_dialog(player)
 end

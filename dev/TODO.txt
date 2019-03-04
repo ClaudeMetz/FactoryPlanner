@@ -3,7 +3,7 @@ TODO Features:
 
 
 TODO Improvements:
-! Multiplayer compatability
+! Convert to 0.17
 - Use ESC as a toggle for the main dialog or cancel on a modal dialog (not sure how, may ask FNEI-author _npo6ka_)
 
 
@@ -11,6 +11,7 @@ TODO Code Improvements:
 - Figure out how to do data migrations on new mod versions -> also needs to destroy and re-create GUI's
 - Complete manual Ore+Oil recipe creation + add rocket building as internal recipe
 - Remove/update associated recipes when deleting products + update products/byproducts split each time
+- Consolidate generator methods somewhere
 ? Create system to register listeners to gui elements
 
 

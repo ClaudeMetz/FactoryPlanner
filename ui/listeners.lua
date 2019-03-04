@@ -1,26 +1,31 @@
 -- Sets up global data structure of the mod
 script.on_init(function()
-    data_init()
+    global_init()
 end)
 
--- Prompts a recipe dialog reload and a validity check on all subfactories
+-- Prompts a GUI and prototype reload and a validity check on all subfactories
 script.on_configuration_changed(function()
-    global["mods_changed"] = true
-    global["undesirable_recipes"] = generate_undesirable_recipes()
-    global["all_recipes"] = generate_all_recipes()
-    data_util.update_all_machines()
-    
-    Factory.update_validity()
+    handle_configuration_change()
 end)
 
 
 -- Fires when a player loads into a game for the first time
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.players[event.player_index]
-    -- Sets up the always-present GUI button for open/close
-    gui_init(player)
-    -- Incorporates the mod setting for the visibility of the toggle-main-dialog-button
-    toggle_button_interface(player)
+
+    -- Sets up a player in the global table for the new player
+    player_init(player)
+
+    -- Sets up the GUI for the new player
+    player_gui_init(player)
+end)
+
+-- Fires when a player is irreversibly removed from a game
+script.on_event(defines.events.on_player_removed, function(event)
+    local player = game.players[event.player_index]
+
+    -- Removes the player from the global table
+    player_remove(player)
 end)
 
 
@@ -36,7 +41,6 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     elseif event.setting == "fp_subfactory_items_per_row" then
         ui_util.recalculate_main_dialog_dimensions(player)
         reload_main_dialog(player)
-
     end
 end)
 
@@ -137,12 +141,12 @@ script.on_event(defines.events.on_gui_click, function(event)
 
     -- Sets the selected floor to be the parent of the currently selected one
     elseif event.element.name == "fp_button_floor_up" and is_left_click then
-        Subfactory.change_selected_floor(global["selected_subfactory_id"], "up")
+        Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "up")
         refresh_production_pane(player)
 
     -- Sets the selected floor to be the top one
     elseif event.element.name == "fp_button_floor_top" and is_left_click then
-        Subfactory.change_selected_floor(global["selected_subfactory_id"], "top")
+        Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "top")
         refresh_production_pane(player)
 
     -- Reacts to a subfactory button being pressed
@@ -153,7 +157,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- Deletes invalid subfactory items/recipes after the error bar button has been pressed
     elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
         local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
-        Subfactory.remove_invalid_datasets(subfactory_id)
+        Subfactory.remove_invalid_datasets(player, subfactory_id)
         refresh_subfactory_bar(player, true)
 
     -- Changes the timescale of the current subfactory
@@ -194,7 +198,8 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- Reacts to any preferences machine button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_[a-z0-9-]+_[a-z0-9-]+$") then
         local split_string = ui_util.split(event.element.name, "_")
-        change_machine_preference(player, split_string[5], split_string[6])
+        data_util.set_default_machine(player, split_string[5], split_string[6])
+        refresh_preferences_dialog(player)
 
     -- Reacts to any (assembly) line item button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_line_[a-z]+_%d+_[a-z-]+$") and is_left_click then
@@ -208,6 +213,8 @@ script.on_event(defines.events.on_gui_click, function(event)
         refresh_hint_message(player)
     -- Else remove focus from textfield so keyboard shortcuts work (not super reliable)
     elseif not string.find(event.element.name, "^fp_textfield_[a-z0-9-_]+$") then
-        player.gui.center["fp_main_dialog"].focus() 
+        if player.gui.center["fp_main_dialog"] ~= nil then
+            player.gui.center["fp_main_dialog"].focus()
+        end
     end
 end)

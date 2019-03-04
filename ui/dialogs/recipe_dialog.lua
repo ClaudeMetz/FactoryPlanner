@@ -1,18 +1,18 @@
 -- Handles populating the recipe dialog
 function open_recipe_dialog(player, product_id)
     local frame_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]
-    if global["mods_changed"] then
+    if global.players[player.index].reload_recipe_dialog then
         if frame_recipe_dialog ~= nil then frame_recipe_dialog.destroy() end
         frame_recipe_dialog = create_recipe_dialog_structure(player)
-        global["mods_changed"] = false
+        global.players[player.index].reload_recipe_dialog = false
     end
 
     frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
-    local product_name = Product.get_name(global["selected_subfactory_id"], product_id)
+    local product_name = Product.get_name(player, global.players[player.index].selected_subfactory_id, product_id)
     local recipe_name = run_preliminary_checks(player, product_name)
     -- nil meaning that no single enabled and matching recipe has been found (either 0 or 2+)
     if recipe_name == nil then
-        global["selected_product_id"] = product_id
+        global.players[player.index].selected_product_id = product_id
         frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["textfield_search_recipe"].text = product_name
         apply_recipe_filter(player)
         toggle_main_dialog(player)
@@ -26,10 +26,10 @@ end
 -- Handles closing of the recipe dialog
 function close_recipe_dialog(player, recipe_name)
     if recipe_name ~= nil then
-        add_line(player, recipe_name, global["selected_product_id"])
+        add_line(player, recipe_name, global.players[player.index].selected_product_id)
     end
 
-    global["selected_product_id"] = 0
+    global.players[player.index].selected_product_id = 0
     change_item_group_selection(player, "logistics")  -- Returns selection to the first item_group for consistency
     player.gui.center["fp_frame_recipe_dialog"].style.visible = false
     toggle_main_dialog(player)
@@ -37,15 +37,15 @@ end
 
 -- Adds (assembly) line to the currently selected floor
 function add_line(player, recipe_name, product_id)
-    local subfactory_id = global["selected_subfactory_id"]
-    local floor_id = Subfactory.get_selected_floor_id(subfactory_id)
-    local product = Subfactory.get(subfactory_id, "Product", product_id)
-    local recipe = global["all_recipes"][recipe_name]
+    local subfactory_id = global.players[player.index].selected_subfactory_id
+    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+    local product = Subfactory.get(player, subfactory_id, "Product", product_id)
+    local recipe = global.all_recipes[recipe_name]
 
-    if Floor.recipe_exists(subfactory_id, floor_id, recipe) then
+    if Floor.recipe_exists(player, subfactory_id, floor_id, recipe) then
         queue_hint_message(player, {"label.error_duplicate_recipe"})
     else
-        Floor.add_line(subfactory_id, floor_id, Line.init(recipe), product)
+        Floor.add_line(player, subfactory_id, floor_id, Line.init(player, recipe), product)
     end
 end
 
@@ -81,7 +81,7 @@ function create_recipe_dialog_structure(player)
     sprite_button_search.style.width = 36
 
     -- Hides searchbox for users as it doesn't really serve a purpose right now
-    if not global["devmode"] then
+    if not global.devmode then
         table_filter_conditions["label_search_recipe"].style.visible = false
         table_filter_conditions["textfield_search_recipe"].style.visible = false
         table_filter_conditions["fp_sprite-button_search_recipe"].style.visible = false
@@ -115,7 +115,7 @@ function create_recipe_dialog_structure(player)
             table_subgroup.style.horizontal_spacing = 2
             table_subgroup.style.vertical_spacing = 2
             for _, recipe in ipairs(subgroup.recipes) do
-                if global["undesirable_recipes"][recipe.name] ~= false and recipe.category ~= "handcrafting" then
+                if global.undesirable_recipes[recipe.name] ~= false and recipe.category ~= "handcrafting" then
                     -- Recipes
                     local sprite = "recipe/" .. recipe.name
                     if string.find(recipe.name, "^impostor%-[a-z-]+$") then
@@ -151,7 +151,7 @@ end
 function create_recipe_tree()
     -- First, categrorize the recipes according to the order of their group, subgroup and themselves
     local unsorted_recipe_tree = {}
-    for _, recipe in pairs(global["all_recipes"]) do
+    for _, recipe in pairs(global.all_recipes) do
         if unsorted_recipe_tree[recipe.group.order] == nil then
             unsorted_recipe_tree[recipe.group.order] = {}
         end
@@ -203,7 +203,7 @@ function run_preliminary_checks(player, product_name)
 
     local enabled = {}
     local disabled_count = 0
-    for _, recipe in pairs(global["all_recipes"]) do
+    for _, recipe in pairs(global.all_recipes) do
         if recipe_produces_product(recipe, product_name) and recipe.category ~= "handcrafting" then
             if recipe.enabled then
                 table.insert(enabled, recipe.name)
@@ -237,7 +237,7 @@ function apply_recipe_filter(player)
             local subgroup_visible = false
             for _, recipe_element in pairs(subgroup_element.children) do
                 local recipe_name = string.gsub(recipe_element.name, "fp_sprite%-button_recipe_", "")
-                local recipe = global["all_recipes"][recipe_name]
+                local recipe = global.all_recipes[recipe_name]
                 if ((not unenabled) and (not recipe.enabled)) or ((not hidden) and recipe.hidden) or 
                   (not recipe_produces_product(recipe, search_term)) then
                     recipe_element.style.visible = false
@@ -261,7 +261,7 @@ function apply_recipe_filter(player)
 
     if first_visible_group ~= nil then
         -- Set selection to the first item_group that is visible
-        local selected_group = global["selected_item_group_name"]
+        local selected_group = global.players[player.index].selected_item_group_name
         if selected_group == nil or flow_recipe_dialog["table_item_groups"]["fp_sprite-button_item_group_" ..
           selected_group].style.visible == false then
             change_item_group_selection(player, first_visible_group)
@@ -273,18 +273,19 @@ end
 function change_item_group_selection(player, item_group_name)
     local flow_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]["flow_recipe_dialog"]
     -- First, change the currently selected one back to normal, if it exists
-    if global["selected_item_group_name"] ~= nil then
+    local selected_item_group_name = global.players[player.index].selected_item_group_name
+    if selected_item_group_name ~= nil then
         local sprite_button = flow_recipe_dialog["table_item_groups"]
-          ["fp_sprite-button_item_group_" .. global["selected_item_group_name"]]
+          ["fp_sprite-button_item_group_" .. selected_item_group_name]
         if sprite_button ~= nil then
             sprite_button.style = "fp_button_icon_small_recipe"
             sprite_button.ignored_by_interaction = false
-            flow_recipe_dialog["scroll-pane_subgroups_" .. global["selected_item_group_name"]].style.visible = false
+            flow_recipe_dialog["scroll-pane_subgroups_" .. selected_item_group_name].style.visible = false
         end
     end
 
     -- Then, change the clicked one to the selected status
-    global["selected_item_group_name"] = item_group_name
+    global.players[player.index].selected_item_group_name = item_group_name
     local sprite_button = flow_recipe_dialog["table_item_groups"]["fp_sprite-button_item_group_" .. item_group_name]
     sprite_button.style = "fp_button_icon_clicked"
     sprite_button.ignored_by_interaction = true

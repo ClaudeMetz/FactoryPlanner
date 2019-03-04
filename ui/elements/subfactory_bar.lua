@@ -1,5 +1,5 @@
 -- Creates the subfactory bar that includes all current subfactory buttons
-function add_subfactory_bar_to(main_dialog, player)
+function add_subfactory_bar_to(main_dialog)
     local subfactory_bar = main_dialog.add{type="scroll-pane", name="scroll-pane_subfactory_bar", direction="vertical"}
     subfactory_bar.style.maximal_height = 82
     subfactory_bar.style.bottom_padding = 6
@@ -8,25 +8,26 @@ function add_subfactory_bar_to(main_dialog, player)
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
     table_subfactories.style.vertical_spacing = 4
 
-    refresh_subfactory_bar(player, true)
+    refresh_subfactory_bar(game.players[main_dialog.player_index], true)
 end
 
 
 -- Refreshes the subfactory bar by reloading the data
 function refresh_subfactory_bar(player, full_refresh)
+    local player_table = global.players[player.index]
     local table_subfactories =  player.gui.center["fp_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
-    local max_width = global["main_dialog_dimensions"].width * 0.875
+    local max_width = player_table.main_dialog_dimensions.width * 0.875
     local width_remaining = 0
     local current_table_index = 0
     local current_table = nil
 
     -- selected_subfactory_id is 0 when there are no subfactories
-    if global["selected_subfactory_id"] ~= 0 then
-        for _, subfactory_id in ipairs(Factory.get_subfactories_in_order()) do
-            local subfactory = Factory.get_subfactory(subfactory_id)
-            local selected = (global["selected_subfactory_id"] == subfactory_id)
+    if player_table.selected_subfactory_id ~= 0 then
+        for _, subfactory_id in ipairs(Factory.get_subfactories_in_order(player)) do
+            local subfactory = Factory.get_subfactory(player, subfactory_id)
+            local selected = (player_table.selected_subfactory_id == subfactory_id)
             
             -- Tries to insert new element, if it doesn't fit, a new row is created and creation is reattempted
             -- First one is supposed to fail to create the first table
@@ -166,15 +167,17 @@ end
 
 -- Moves selection to the clicked element, edits it, or shifts it's position left or right
 function handle_subfactory_element_click(player, subfactory_id, click, direction)
+    local player_table = global.players[player.index]
+
     -- Shift subfactory in the given direction
     if direction ~= nil then
-        Factory.shift_subfactory(subfactory_id, direction)
+        Factory.shift_subfactory(player, subfactory_id, direction)
         refresh_subfactory_bar(player, false)
-        global["current_activity"] = nil
+        player_table.current_activity = nil
 
     else
-        global["selected_subfactory_id"] = subfactory_id
-        global["current_activity"] = nil
+        player_table.selected_subfactory_id = subfactory_id
+        player_table.current_activity = nil
         -- Change selected subfactory
         if click == "left" then
             refresh_main_dialog(player)
