@@ -1,26 +1,27 @@
 -- Creates the actionbar including the new-, edit- and delete-buttons
-function add_actionbar_to(main_dialog, player)
+function add_actionbar_to(main_dialog)
     local actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
 
     actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, style="fp_button_action"}
     actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, style="fp_button_action"}
     actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, style="fp_button_action"}
 
-    refresh_actionbar(player)
+    refresh_actionbar(game.players[main_dialog.player_index])
 end
 
 
 -- Disables edit and delete buttons if there exist no subfactories
 function refresh_actionbar(player)
+    local player_table = global.players[player.index]
     local actionbar = player.gui.center["fp_main_dialog"]["flow_action_bar"]
     local delete_button = actionbar["fp_button_delete_subfactory"]
 
     -- selected_subfactory_id is always 0 when there are no subfactories
-    local subfactory_exists = (global["selected_subfactory_id"] ~= 0)
+    local subfactory_exists = (player_table.selected_subfactory_id ~= 0)
     actionbar["fp_button_edit_subfactory"].enabled = subfactory_exists
     delete_button.enabled = subfactory_exists
 
-    if global["current_activity"] == "deleting_subfactory" then
+    if player_table.current_activity == "deleting_subfactory" then
         delete_button.caption = {"button-text.delete_confirm"}
         ui_util.set_label_color(delete_button, "red")
     else
@@ -33,10 +34,11 @@ end
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
 function open_subfactory_dialog(flow_modal_dialog, args)
     if args.edit then
-        global["current_activity"] = "editing_subfactory"
+        local player = game.players[flow_modal_dialog.player_index]
+        global.players[player.index].current_activity = "editing_subfactory"
 
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
-        local subfactory = Factory.get_selected_subfactory()
+        local subfactory = Factory.get_selected_subfactory(player)
         local icon = subfactory.icon
         if icon ~= nil then
             if not flow_modal_dialog.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil end
@@ -50,15 +52,21 @@ end
 
 -- Handles submission of the subfactory dialog
 function close_subfactory_dialog(flow_modal_dialog, action, data)
+    local player = game.players[flow_modal_dialog.player_index]
+    local player_table = global.players[player.index]
+
     if action == "submit" then
-        if global["current_activity"] == "editing_subfactory" then
-            local subfactory_id = global["selected_subfactory_id"]
-            Subfactory.set_name(subfactory_id, data.name)
-            Subfactory.set_icon(subfactory_id, data.icon)
+        if player_table.current_activity == "editing_subfactory" then
+            local subfactory_id = player_table.selected_subfactory_id
+            Subfactory.set_name(player, subfactory_id, data.name)
+            Subfactory.set_icon(player, subfactory_id, data.icon)
         else
-            local subfactory_id = Factory.add_subfactory(Subfactory.init(data.name, data.icon))
-            global["selected_subfactory_id"] = subfactory_id
+            local subfactory_id = Factory.add_subfactory(player, Subfactory.init(data.name, data.icon))
+            player_table.selected_subfactory_id = subfactory_id
         end
+    elseif action == "delete" then
+        player_table.current_activity = "deleting_subfactory"  -- a bit of a hack
+        handle_subfactory_deletion(player)
     end
 end
 
@@ -108,17 +116,19 @@ end
 
 -- Handles the subfactory deletion process
 function handle_subfactory_deletion(player)
-    if global["current_activity"] == "deleting_subfactory" then
-        local subfactory_position = Subfactory.get_gui_position(global["selected_subfactory_id"])
-        local subfactory_count = Factory.get_subfactory_count()
-        Factory.delete_subfactory(global["selected_subfactory_id"])
+    local player_table = global.players[player.index]
+
+    if player_table.current_activity == "deleting_subfactory" then
+        local subfactory_position = Subfactory.get_gui_position(player, player_table.selected_subfactory_id)
+        local subfactory_count = Factory.get_subfactory_count(player)
+        Factory.delete_subfactory(player, player_table.selected_subfactory_id)
 
         -- Only if the last subfactory in the list is deleted does the selected subfactory id shift down
         if subfactory_count == subfactory_position then subfactory_position = subfactory_position - 1 end
-        global["selected_subfactory_id"] = Factory.get_subfactory_id_by_position(subfactory_position)
-        global["current_activity"] = nil
+        player_table.selected_subfactory_id = Factory.get_subfactory_id_by_position(player, subfactory_position)
+        player_table.current_activity = nil
     else
-        global["current_activity"] = "deleting_subfactory"
+        player_table.current_activity = "deleting_subfactory"
     end
     refresh_main_dialog(player)
 end

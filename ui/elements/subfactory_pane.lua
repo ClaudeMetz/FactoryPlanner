@@ -4,12 +4,12 @@ require("ui.elements.product_pane")
 require("ui.elements.byproduct_pane")
 
 -- Creates the subfactory pane that includes the products, byproducts and ingredients
-function add_subfactory_pane_to(main_dialog, player)
+function add_subfactory_pane_to(main_dialog)
     local table = main_dialog.add{type="table", name="table_subfactory_pane", column_count = 4}
     table.style.horizontally_stretchable = true
     table.draw_vertical_lines = true
 
-    refresh_subfactory_pane(player)
+    refresh_subfactory_pane(game.players[main_dialog.player_index])
 end
 
 
@@ -21,9 +21,9 @@ function refresh_subfactory_pane(player)
 
     table_subfactory.clear()
     
-    local subfactory_id = global["selected_subfactory_id"]
+    local subfactory_id = global.players[player.index].selected_subfactory_id
     -- selected_subfactory_id is always 0 when there are no subfactories
-    if (subfactory_id ~= 0) and Subfactory.is_valid(subfactory_id) then
+    if (subfactory_id ~= 0) and Subfactory.is_valid(player, subfactory_id) then
         -- Info cell
         add_subfactory_pane_cell_to(table_subfactory, "info")
         refresh_info_pane(player)
@@ -43,7 +43,7 @@ end
 
 -- Constructs the basic structure of a subfactory_pane-cell
 function add_subfactory_pane_cell_to(table, ui_name)
-    local width = (global["main_dialog_dimensions"].width / 4) + 2
+    local width = (global.players[table.player_index].main_dialog_dimensions.width / 4) + 2
     local flow = table.add{type="flow", name="flow_" .. ui_name, direction="vertical"}
     flow.style.width = width
     local label_title = flow.add{type="label", name="label_" .. ui_name .. "_title", caption={"", "  ", {"label." .. ui_name}}}
@@ -65,13 +65,14 @@ end
 -- Refreshes the given kind of item table
 function refresh_item_table(player, class)
     local ui_name = class:gsub("^%u", string.lower)
-    local item_table = player.gui.center["fp_main_dialog"]["table_subfactory_pane"]["flow_" .. ui_name .. "s"]["scroll-pane"]["item_table"]
+    local item_table = player.gui.center["fp_main_dialog"]["table_subfactory_pane"]["flow_" .. ui_name .. "s"]
+      ["scroll-pane"]["item_table"]
     item_table.clear()
 
-    local subfactory_id = global["selected_subfactory_id"]
-    if Subfactory.get_count(subfactory_id, class) ~= 0 then
-        for _, id in ipairs(Subfactory.get_in_order(subfactory_id, class)) do
-            local item = Subfactory.get(subfactory_id, class, id)
+    local subfactory_id = global.players[player.index].selected_subfactory_id
+    if Subfactory.get_count(player, subfactory_id, class) ~= 0 then
+        for _, id in ipairs(Subfactory.get_in_order(player, subfactory_id, class)) do
+            local item = Subfactory.get(player, subfactory_id, class, id)
             local item_specifics = _G["get_" .. ui_name .. "_specifics"](item)
 
             local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" ..

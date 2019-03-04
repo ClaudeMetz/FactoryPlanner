@@ -1,8 +1,8 @@
 -- Creates the error bar
-function add_error_bar_to(main_dialog, player)
+function add_error_bar_to(main_dialog)
     local error_bar = main_dialog.add{type="flow", name="flow_error_bar", direction="vertical"}
     
-    refresh_error_bar(player)
+    refresh_error_bar(game.players[main_dialog.player_index])
 end
 
 -- Refreshes the error_bar
@@ -13,9 +13,9 @@ function refresh_error_bar(player)
 
     flow_error_bar.clear()
 
-    local subfactory_id = global["selected_subfactory_id"]
+    local subfactory_id = global.players[player.index].selected_subfactory_id
     -- selected_subfactory_id is always 0 when there are no subfactories
-    if (subfactory_id ~= 0) and (not Subfactory.is_valid(subfactory_id)) then
+    if (subfactory_id ~= 0) and (not Subfactory.is_valid(player, subfactory_id)) then
         create_error_bar(flow_error_bar, subfactory_id)
         flow_error_bar.style.visible = true
     else

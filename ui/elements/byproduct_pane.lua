@@ -13,14 +13,16 @@ end
 
 -- Opens recipe dialog of clicked element or shifts it's position left or right
 function handle_byproduct_element_click(player, byproduct_id, click, direction)
+    local selected_subfactory_id = global.players[player.index].selected_subfactory_id
+
     -- Shift byproduct in the given direction
     if direction ~= nil then
-        Subfactory.shift(global["selected_subfactory_id"], "Byproduct", byproduct_id, direction)
+        Subfactory.shift(player, selected_subfactory_id, "Byproduct", byproduct_id, direction)
 
     -- Open recipe dialog? Dealing with byproducts will come at a later stage
     elseif click == "left" then
-        local subfactory_id = global["selected_subfactory_id"]
-        local floor = Subfactory.get(subfactory_id, "Floor", Subfactory.get_selected_floor_id(subfactory_id))
+        local floor = Subfactory.get(player, selected_subfactory_id, "Floor", 
+          Subfactory.get_selected_floor_id(player, selected_subfactory_id))
         if floor.level == 1 then
             --open_recipe_dialog(player, byproduct_id)
         else
