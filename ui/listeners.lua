@@ -45,6 +45,14 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 end)
 
 
+-- Sets the custom space science recipe to enabled when rockets are researched
+script.on_event(defines.events.on_research_finished, function(event)
+    if event.research.name == "rocket-silo" then
+        global.all_recipes["fp-space-science-pack"].enabled = true
+    end
+end)
+
+
 -- Fires on pressing of the custom 'Open/Close' shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.players[event.player_index]
@@ -202,9 +210,9 @@ script.on_event(defines.events.on_gui_click, function(event)
         refresh_preferences_dialog(player)
 
     -- Reacts to any (assembly) line item button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_line_[a-z]+_%d+_[a-z-]+$") and is_left_click then
+    elseif string.find(event.element.name, "^fp_sprite%-button_line_[a-z]+_%d+_[a-z0-9-]+$") and is_left_click then
         local split_string = ui_util.split(event.element.name, "_")
-        handle_item_button_click(player, split_string[4], split_string[5], split_string[6])
+        handle_item_button_click(player, event.element.style.name, split_string[4], split_string[5], split_string[6])
         
     else found = false end
 

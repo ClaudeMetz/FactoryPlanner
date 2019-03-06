@@ -117,10 +117,7 @@ function create_recipe_dialog_structure(player)
             for _, recipe in ipairs(subgroup.recipes) do
                 if global.undesirable_recipes[recipe.name] ~= false and recipe.category ~= "handcrafting" then
                     -- Recipes
-                    local sprite = "recipe/" .. recipe.name
-                    if string.find(recipe.name, "^impostor%-[a-z-]+$") then
-                        sprite = recipe.item_type .. "/" .. recipe.name:gsub("impostor%-", "")
-                    end
+                    local sprite = ui_util.get_recipe_sprite(player, recipe)
                     local button_recipe = table_subgroup.add{type="sprite-button", name="fp_sprite-button_recipe_" .. recipe.name,
                       sprite=sprite, style="fp_button_icon_small_recipe"}
                     if recipe.hidden then button_recipe.style = "fp_button_icon_small_hidden" end
@@ -320,83 +317,4 @@ function generate_recipe_tooltip(recipe)
     end
 
     return tooltip
-end
-
-
--- Returns the names of the recipes that shouldn't be included
-function generate_undesirable_recipes()
-    local undesirables = 
-    {
-        ["small-plane"] = false,
-        ["electric-energy-interface"] = false,
-        ["railgun"] = false,
-        ["railgun-dart"] = false,
-        ["player-port"] = false
-    }
-
-    -- Leaves loaders in if LoaderRedux is loaded
-    if game.active_mods["LoaderRedux"] == nil then
-        undesirables["loader"] = false
-        undesirables["fast-loader"] = false
-        undesirables["express-loader"] = false
-    end
-
-    return undesirables
-end
-
--- Returns all standard recipes + custom mining recipes
--- Needs expansion once it is clearer how recipes for production work (+ needs steam recipes)
--- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
-function generate_all_recipes()
-    local recipes = {}
-    for name, recipe in pairs(game.forces.player.recipes) do recipes[name] = recipe end
---[[ 
-    local function base_recipe()
-        return {
-            enabled = true,
-            hidden = false,
-            energy = nil,
-            group = {name="intermediate_products", order="c"},
-            subgroup = {name="mining", order="z"},
-        }
-    end
-
-    for _, proto in pairs(game.entity_prototypes) do
-        -- Adds all mining recipes, including oil and similar. Not sure if oil is helpful.
-        if proto.mineable_properties and proto.resource_category then
-            local recipe = base_recipe()
-            recipe.name = "impostor-" .. proto.name
-            recipe.localised_name = proto.localised_name
-            recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
-            local products = proto.mineable_properties.products
-            recipe.products = products
-            if #products == 1 then recipe.item_type = products[1].type end
-            recipe.order = proto.order
-
-            if proto.mineable_properties.required_fluid then
-                table.insert(recipe.ingredients, {
-                    type = "fluid",
-                    name = proto.mineable_properties.required_fluid,
-                    amount = proto.mineable_properties.fluid_amount
-                })
-            end
-
-            recipes[recipe.name] = recipe
-        end
-
-        -- Adds unconditional extraction, like water pumps. Not sure if necessary/useful yet.
-        if proto.fluid then
-            local recipe = base_recipe()
-            recipe.name = "impostor-" .. proto.fluid.name
-            recipe.localised_name = proto.fluid.localised_name
-            recipe.ingredients = nil
-            recipe.products = {{ type = 'fluid', name = proto.fluid.name, amount = 1 }}
-            recipe.item_type = "fluid"
-            recipe.order = proto.order
-
-            recipes[recipe.name] = recipe
-        end
-    end
- ]]
-    return recipes
 end

@@ -9,10 +9,7 @@ TODO Improvements:
 
 TODO Code Improvements:
 - Figure out how to do data migrations on new mod versions -> also needs to destroy and re-create GUI's
-- Complete manual Ore+Oil recipe creation + add rocket building as internal recipe
 - Remove/update associated recipes when deleting products + update products/byproducts split each time
-- Consolidate generator methods somewhere
-? Create system to register listeners to gui elements
 
 
 TODO Bugs:
@@ -20,8 +17,10 @@ TODO Bugs:
 
 TODO 0.17:
 - Scaling -> All kinds of sizes seem to be wrong until 0.17, waiting for that to do scaling properly
-- *.style.visible -> *.visible
+- *.style.visible -> *.visible, style.align -> style.horizontal-align
 - Fancy recipe tooltips using the new text formating
+- Replace dump with table_to_json() (+api feature request for log to do it automatically)
+- Adjust space science enabling detection listener
 
 
 TODO Post-Launch:
@@ -31,6 +30,7 @@ TODO Post-Launch:
 ! Import/Export of one/all subfactories (and parts of them?)
 - Better multiplayer support (ex. shared subfactories)
 - Un/Re-Do functionality for every user action (with history?)
+- Support fluid mining recipes
 ? FNEI-links (alt-click?)(needs API from FNEI-author, might already exist)
 ? Add more and/or custom timescales
 

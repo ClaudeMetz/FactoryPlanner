@@ -26,6 +26,29 @@ function ui_util.set_padding(ui_element, padding)
 end
 
 
+-- Returns the sprite string of the given recipe
+function ui_util.get_recipe_sprite(player, recipe)
+    local sprite = "recipe/" .. recipe.name
+    if recipe.name == "fp-space-science-pack" then
+        sprite = "recipe/space-science-pack"
+    elseif string.find(recipe.name, "^impostor%-[a-z0-9-]+$") then
+        sprite = recipe.item_type .. "/" .. recipe.name:gsub("impostor%-", "")
+
+        -- If the mining recipe has no sprite, the sprite of the first product is used instead
+        if not player.gui.is_valid_sprite_path(sprite) then
+            local product = recipe.products[1]
+            sprite = product.type .. "/" .. product.name
+        end
+    end
+    return sprite
+end
+
+
+-- Formats given number to given number of significant digits
+function ui_util.format_number(number, precision)
+    return ("%." .. precision .. "g"):format(number)
+end
+
 -- Returns string representing the given timescale
 -- (Currently only needs to handle 1 second/minute/hour)
 function ui_util.format_timescale(timescale)
@@ -36,11 +59,6 @@ function ui_util.format_timescale(timescale)
     elseif timescale == 3600 then
         return "1h"
     end
-end
-
--- Formats given number to given number of significant digits
-function ui_util.format_number(number, precision)
-    return ("%." .. precision .. "g"):format(number)
 end
 
 -- Returns string representing the given power 
@@ -80,4 +98,16 @@ function ui_util.split(s, separator)
         table.insert(r, token) 
     end
     return r
+end
+
+-- Deep-copies given table (seen does not need to be specified when calling it)
+-- (From: https://stackoverflow.com/questions/640642/how-do-you-copy-a-lua-table-by-value)
+function ui_util.copy_table(obj, seen)
+    if type(obj) ~= 'table' then return obj end
+    if seen and seen[obj] then return seen[obj] end
+    local s = seen or {}
+    local res = setmetatable({}, getmetatable(obj))
+    s[obj] = res
+    for k, v in pairs(obj) do res[ui_util.copy_table(k, s)] = ui_util.copy_table(v, s) end
+    return res
 end

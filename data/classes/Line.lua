@@ -2,11 +2,14 @@
 Line = {}
 
 function Line.init(player, recipe)
-    local machine_name = data_util.get_default_machine(player, recipe.category).name
+    local recipe_category = recipe.category
+    if recipe_category == "basic-solid" and #recipe.ingredients > 1 then recipe_category = "complex-solid" end
+    local machine_name = data_util.get_default_machine(player, recipe_category).name
+    
     return {
         id = 0,
         recipe_name = recipe.name,
-        recipe_category = recipe.category,
+        recipe_category = recipe_category,
         percentage = 100,
         machine_name = machine_name,
         energy_consumption = 0,  -- in Watts
