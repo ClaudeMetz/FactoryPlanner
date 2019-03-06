@@ -60,8 +60,8 @@ function refresh_production_pane(player)
 
     refresh_production_table(player)
 
-    game.print("Floors: " .. Subfactory.get_count(player, subfactory_id, "Floor"))
-    game.print("Lines: " .. Floor.get_line_count(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id)))
+    --game.print("Floors: " .. Subfactory.get_count(player, subfactory_id, "Floor"))
+    --game.print("Lines: " .. Floor.get_line_count(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id)))
 end
 
 -- Refreshes the production table by reloading the data
@@ -129,9 +129,11 @@ function create_line_table_row(player, line)
     end
 
     -- Recipe button
+    local recipe = global.all_recipes[line.recipe_name]
+    local sprite = ui_util.get_recipe_sprite(player, recipe)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line_id,
-      sprite="recipe/" .. line.recipe_name, style=style}
-    button_recipe.tooltip = global.all_recipes[line.recipe_name].localised_name
+      sprite=sprite, style=style}
+    button_recipe.tooltip = recipe.localised_name
     
     if level > 1 and gui_position == 1 then
         button_recipe.style = "fp_button_icon_medium_hidden"
@@ -186,9 +188,16 @@ function create_item_flow(table, type, items, line_id, style)
     for _, item in ipairs(items) do
         local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. type .. "_" .. line_id 
           .. "_" .. item.name, sprite=item.type .. "/" .. item.name, style=style}
+
+        -- Special handling for mining recipes
+        local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
+        if type == "ingredient" and item.type == "entity" then 
+            button.style = "fp_button_icon_medium_blank"
+            tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
+        end
+
         if item.amount == nil then item.amount = item.probability end
-        button.tooltip = {"", game[item.type .. "_prototypes"][item.name].localised_name, "\n",
-          ui_util.format_number(item.amount, 8)}
+        button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(item.amount, 8)}
         button.number = item.amount
     end
 end
@@ -293,8 +302,8 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
 end
 
 -- Handles a click on any of the 3 item buttons of a specific line
-function handle_item_button_click(player, type, line_id, item_name)
-    if type == "ingredient" then
+function handle_item_button_click(player, style, type, line_id, item_name)
+    if style ~= "fp_button_icon_medium_blank" and type == "ingredient" then
         game.print("F ME")
     end
 end

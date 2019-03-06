@@ -12,8 +12,8 @@ require("data.classes.Line")
 function global_init()
     global.players = {}
 
-    global.undesirable_recipes = generate_undesirable_recipes()
-    global.all_recipes = generate_all_recipes()
+    global.undesirable_recipes = data_util.generate_undesirable_recipes()
+    global.all_recipes = data_util.generate_all_recipes()
     global.all_machines = data_util.generate_all_machines()
 
     global.devmode = true
@@ -48,8 +48,8 @@ end
 
 -- Runs through all changes that need to be made after the config changed
 function handle_configuration_change()
-    global.undesirable_recipes = generate_undesirable_recipes()
-    global.all_recipes = generate_all_recipes()
+    global.undesirable_recipes = data_util.generate_undesirable_recipes()
+    global.all_recipes = data_util.generate_all_recipes()
     global.all_machines = data_util.generate_all_machines()
     
     for index, player in pairs(game.players) do
