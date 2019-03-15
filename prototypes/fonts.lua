@@ -7,6 +7,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-font-15p",
+        from = "default",
+        size = 15
+    },
+    {
+        type = "font",
         name = "fp-font-mono-15p",
         from = "default-mono",
         size = 15
@@ -25,6 +31,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-font-bold-16p",
+        from = "default-bold",
+        size = 16
+    },
+    {
+        type = "font",
         name = "fp-font-18p",
         from = "default",
         size = 18
@@ -33,6 +45,12 @@ data:extend({
         type = "font",
         name = "fp-font-20p",
         from = "default",
+        size = 20
+    },
+    {
+        type = "font",
+        name = "fp-font-bold-20p",
+        from = "default-bold",
         size = 20
     },
     {

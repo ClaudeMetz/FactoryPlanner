@@ -3,47 +3,32 @@ TODO Features:
 
 
 TODO Improvements:
-! Convert to 0.17
 - Use ESC as a toggle for the main dialog or cancel on a modal dialog (not sure how, may ask FNEI-author _npo6ka_)
 
 
 TODO Code Improvements:
-- Figure out how to do data migrations on new mod versions -> also needs to destroy and re-create GUI's
+- Figure out how to do data migrations on new mod versions
+- Generalize modal dialogs to also be hideable, so they can apply to the recipe and future product dialog
 - Remove/update associated recipes when deleting products + update products/byproducts split each time
+- Improve sprite-button backgrounds across the board
+? Write build- and factorio version-update-scripts
+? Use mouse_button_filters and remove sound from some buttons
 
 
 TODO Bugs:
 
 
-TODO 0.17:
-- Scaling -> All kinds of sizes seem to be wrong until 0.17, waiting for that to do scaling properly
-- *.style.visible -> *.visible, style.align -> style.horizontal-align
-- Fancy recipe tooltips using the new text formating
-- Replace dump with table_to_json() (+api feature request for log to do it automatically)
-- Adjust space science enabling detection listener
-
-
 TODO Post-Launch:
-! DE, FR localisations
-! Module+Beacon-support
 ! Create a custom product selection dialog akin to the recipe dialog [A1]
+! Module+Beacon-support
 ! Import/Export of one/all subfactories (and parts of them?)
+- DE, FR localisations
 - Better multiplayer support (ex. shared subfactories)
-- Un/Re-Do functionality for every user action (with history?)
-- Support fluid mining recipes
+? Un/Re-Do functionality for every user action (with history?)
+? Support fluid mining recipes
 ? FNEI-links (alt-click?)(needs API from FNEI-author, might already exist)
 ? Add more and/or custom timescales
 
 
 API Changes:
 - (probable) let enter work as a way to submit forms, even when a textfield is in focus
-- (posted) have style.padding still available at the control stage for easier changes
-- (posted) ability to disable sound on GUI-buttons
-- (posted) ability for code to select text in a textfield
-
-
-MISC:
-- Count LOC: ( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l
-- Delete most recent local commit: git reset --hard HEAD^
-- Force-replace commit on origin/: git push --force origin
-- Merge develop to master: git checkout master; git merge develop; git push origin master; git checkout develop

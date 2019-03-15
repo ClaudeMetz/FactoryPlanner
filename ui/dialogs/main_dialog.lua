@@ -12,7 +12,7 @@ require("ui.elements.production_pane")
 
 -- Create the always-present GUI button to open the main dialog + devmode setup
 function player_gui_init(player)
-    local frame_flow = mod_gui.get_frame_flow(player)
+    local frame_flow = mod_gui.get_button_flow(player)
     if not frame_flow["fp_button_toggle_interface"] then
         frame_flow.add
         {
@@ -28,49 +28,80 @@ function player_gui_init(player)
     toggle_button_interface(player)
     -- Calculates the main dialog size incorporating the relevant user settings
     ui_util.recalculate_main_dialog_dimensions(player)
+end
 
-    if global.devmode then run_dev_config(player) end
+-- Destroys all GUI's so they are loaded anew the next time they are shown
+function player_gui_reset(player)
+    local guis = {
+        mod_gui.get_button_flow(player),
+        player.gui.center["fp_main_dialog"],
+        player.gui.center["fp_frame_modal_dialog"]
+    }
+    for _, gui in pairs(guis) do 
+        if gui ~= nil and gui.valid then gui.destroy() end
+    end
 end
 
 
 -- Toggles the visibility of the toggle-main-dialog-button
 function toggle_button_interface(player)
     local enable = settings.get_player_settings(player)["fp_display_gui_button"].value
-    mod_gui.get_frame_flow(player)["fp_button_toggle_interface"].style.visible = enable
+    mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
 end
+
 
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
     local center = player.gui.center
     local frame_recipe_dialog = center["fp_frame_recipe_dialog"]
-    local recipe_dialog_open = (frame_recipe_dialog ~= nil and frame_recipe_dialog.style.visible)
+    local recipe_dialog_open = (frame_recipe_dialog ~= nil and frame_recipe_dialog.visible)
     -- Won't toggle if a modal dialog is open
     if not center["fp_frame_modal_dialog"] and not recipe_dialog_open then
         local main_dialog = center["fp_main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)
-            center["fp_main_dialog"].style.visible = true  -- Strangely isn't set right away
+            center["fp_main_dialog"].visible = true  -- Strangely isn't set right away
         else
             -- Only refresh it when you make it visible
-            if not main_dialog.style.visible then refresh_main_dialog(player) end
-            main_dialog.style.visible = (not main_dialog.style.visible)
+            if not main_dialog.visible then refresh_main_dialog(player) end
+            main_dialog.visible = (not main_dialog.visible)
         end
     end
 end
 
 -- Refreshes all variable GUI-panes (refresh-hierarchy, subfactory_bar refreshes everything below it)
-function refresh_main_dialog(player)
-    refresh_actionbar(player)
-    refresh_subfactory_bar(player, true)
+-- Also refreshes the dimensions by reloading the dialog, if the flag is set
+function refresh_main_dialog(player, refresh_dimensions)
+    local main_dialog = player.gui.center["fp_main_dialog"]
+    if refresh_dimensions then
+        ui_util.recalculate_main_dialog_dimensions(player)
+        if main_dialog ~= nil then
+            local visible = main_dialog.visible
+            main_dialog.destroy()
+            toggle_main_dialog(player)
+            player.gui.center["fp_main_dialog"].visible = visible
+        end
+    else
+        if main_dialog ~= nil then
+            refresh_actionbar(player)
+            refresh_subfactory_bar(player, true)
+        end
+    end
 end
 
--- Recreates the main dialog, retaining it's visibility state
-function reload_main_dialog(player)
-    local main_dialog = player.gui.center["fp_main_dialog"]
-    local visibility = main_dialog.style.visible
-    main_dialog.destroy()
-    create_main_dialog(player)
-    player.gui.center["fp_main_dialog"].style.visible = visibility
+-- Constructs the main dialog
+function create_main_dialog(player)
+    local main_dialog_dimensions = global.players[player.index].main_dialog_dimensions
+    local main_dialog = player.gui.center.add{type="frame", name="fp_main_dialog", direction="vertical"}
+    main_dialog.style.minimal_width = main_dialog_dimensions.width
+    main_dialog.style.minimal_height = main_dialog_dimensions.height
+
+    add_titlebar_to(main_dialog)
+    add_actionbar_to(main_dialog)
+    add_subfactory_bar_to(main_dialog)
+    add_error_bar_to(main_dialog)
+    add_subfactory_pane_to(main_dialog)
+    add_production_pane_to(main_dialog)
 end
 
 
@@ -82,50 +113,42 @@ end
 -- Refreshes the general hint that is displayed next to the main dialog title
 function refresh_hint_message(player)
     local player_table = global.players[player.index]
-    player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"].caption = player_table.queued_hint_message
+    local label_hint = player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
+    label_hint.caption = player_table.queued_hint_message
     player_table.queued_hint_message = ""
-end
-
-
--- Constructs the main dialog
-function create_main_dialog(player)
-    local main_dialog_dimensions = global.players[player.index].main_dialog_dimensions
-    local main_dialog = player.gui.center.add{type="frame", name="fp_main_dialog", direction="vertical"}
-    main_dialog.style.minimal_width = main_dialog_dimensions.width + 36
-    main_dialog.style.minimal_height = main_dialog_dimensions.height
-    main_dialog.style.right_padding = 6
-
-    add_titlebar_to(main_dialog)
-    add_actionbar_to(main_dialog)
-    add_subfactory_bar_to(main_dialog)
-    add_error_bar_to(main_dialog)
-    add_subfactory_pane_to(main_dialog)
-    add_production_pane_to(main_dialog)
 end
 
 
 -- Creates the titlebar including name and exit-button
 function add_titlebar_to(main_dialog)
     local titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
-    titlebar.style.vertical_align = "center"
     
-    titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
-    titlebar["label_titlebar_name"].style.font = "fp-font-bold-26p"
-    titlebar["label_titlebar_name"].style.top_padding = 0
+    -- Title
+    local label_title = titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
+    label_title.style.font = "fp-font-bold-26p"
 
+    -- Hint
     local label_hint = titlebar.add{type="label", name="label_titlebar_hint", 
       caption=global.players[main_dialog.player_index].queued_hint_message}
     label_hint.style.font = "fp-font-16p"
-    label_hint.style.top_padding = 4
-    label_hint.style.left_padding = 14
     ui_util.set_label_color(label_hint, "red")
+    label_hint.style.top_margin = 8
+    label_hint.style.left_margin = 14
 
-    titlebar.add{type="flow", name="flow_titlebar_spacing", direction="horizontal"}
-    titlebar["flow_titlebar_spacing"].style.horizontally_stretchable = true
+    -- Spacer
+    local flow_spacer = titlebar.add{type="flow", name="flow_titlebar_spacer", direction="horizontal"}
+    flow_spacer.style.horizontally_stretchable = true
 
-    titlebar.add{type="button", name="fp_button_titlebar_preferences", caption={"label.preferences"}, style="fp_button_exit"}
+    -- Buttonbar
+    local flow_buttonbar = titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}
+    flow_buttonbar.style.top_margin = 4
 
-    local button_exit = titlebar.add{type="button", name="fp_button_titlebar_exit", caption="X", style="fp_button_exit"}
-    button_exit.style.width = 30
-    button_exit.style.left_padding = 6
+    flow_buttonbar.add{type="button", name="fp_button_titlebar_preferences", caption={"label.preferences"},
+      style="fp_button_titlebar"}
+
+    local button_exit = flow_buttonbar.add{type="button", name="fp_button_titlebar_exit", caption="X",
+      style="fp_button_titlebar"}
+    button_exit.style.font = "fp-font-bold-16p"
+    button_exit.style.width = 34
+    button_exit.style.left_margin = 4
 end

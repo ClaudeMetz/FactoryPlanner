@@ -1,3 +1,6 @@
+-- Session variable to deselect previous text as Factorio doesn't do this (yet)
+local previously_selected_textfield = nil
+
 -- Sets up global data structure of the mod
 script.on_init(function()
     global_init()
@@ -18,6 +21,9 @@ script.on_event(defines.events.on_player_created, function(event)
 
     -- Sets up the GUI for the new player
     player_gui_init(player)
+
+    -- Dev stuff
+    run_dev_config(player)
 end)
 
 -- Fires when a player is irreversibly removed from a game
@@ -39,15 +45,14 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
     -- Changes the width of the main dialog by regenerating it
     elseif event.setting == "fp_subfactory_items_per_row" then
-        ui_util.recalculate_main_dialog_dimensions(player)
-        reload_main_dialog(player)
+        refresh_main_dialog(player, true)
     end
 end)
 
 
 -- Sets the custom space science recipe to enabled when rockets are researched
 script.on_event(defines.events.on_research_finished, function(event)
-    if event.research.name == "rocket-silo" then
+    if event.research.name == "space-science-pack" then
         global.all_recipes["fp-space-science-pack"].enabled = true
     end
 end)
@@ -71,8 +76,24 @@ end)
 -- Fires on any changes to a textbox
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.players[event.player_index]
+
+    -- Persists (assembly) line percentage changes (No function call here for latency reasons)
     if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
-        apply_percentage_change(player, event.element)
+        local subfactory_id = global.players[player.index].selected_subfactory_id
+        local line_id = tonumber(string.match(event.element.name, "%d+"))
+        local new_string = event.element.text
+        local new_percentage = tonumber(new_string)
+
+        if new_string == "" then new_percentage = 0 end
+        if new_percentage == nil or new_percentage < 0 then
+            event.element.text = Line.get_percentage(player, subfactory_id, Subfactory.get_selected_floor_id(player,
+            subfactory_id), line_id)
+            queue_hint_message(player, {"label.error_invalid_percentage"})
+        else
+            queue_hint_message(player, "")
+            Line.set_percentage(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id), 
+            line_id, new_percentage)
+        end
         refresh_hint_message(player)
     end
 end)
@@ -216,13 +237,29 @@ script.on_event(defines.events.on_gui_click, function(event)
         
     else found = false end
 
+
     -- Only reset hint if one of this mod's actual controls is pressed
     if found == true then 
         refresh_hint_message(player)
-    -- Else remove focus from textfield so keyboard shortcuts work (not super reliable)
-    elseif not string.find(event.element.name, "^fp_textfield_[a-z0-9-_]+$") then
-        if player.gui.center["fp_main_dialog"] ~= nil then
-            player.gui.center["fp_main_dialog"].focus()
+    else
+        -- Refresh the previously selected textfield so no invalid text remains behind
+        if previously_selected_textfield ~= nil and previously_selected_textfield.valid then
+            local subfactory_id = global.players[player.index].selected_subfactory_id
+            local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
+            previously_selected_textfield.text = Line.get_percentage(player, subfactory_id,
+              Subfactory.get_selected_floor_id(player, subfactory_id), line_id)
+        end
+
+        -- Remove focus from textfield so keyboard shortcuts work (not super reliable)
+        if not string.find(event.element.name, "^fp_textfield_[a-z0-9-_]+$") then
+            if player.gui.center["fp_main_dialog"] ~= nil then
+                player.gui.center["fp_main_dialog"].focus()
+            end
+        
+        -- Select the text of the percentage textfield
+        elseif string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
+            event.element.select_all()
+            previously_selected_textfield = event.element
         end
     end
 end)

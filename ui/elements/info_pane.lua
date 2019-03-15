@@ -1,20 +1,21 @@
 -- Constructs the info pane including timescale settings
 function refresh_info_pane(player)
-    local flow = player.gui.center["fp_main_dialog"]["table_subfactory_pane"]["flow_info"]
+    local flow = player.gui.center["fp_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
+    flow.style.left_margin = 0
 
-    if flow["flow_info_elements"] == nil then
-        flow.add{type="flow", name="flow_info_elements", direction="vertical"}
+    if flow["table_info_elements"] == nil then
+        flow.add{type="table", name="table_info_elements", column_count=1}
+        flow["table_info_elements"].style.vertical_spacing = 6
     else
-        flow["flow_info_elements"].clear()
+        flow["table_info_elements"].clear()
     end
 
     local player_table = global.players[player.index]
 
     -- Timescale
-    local table_timescale = flow["flow_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
+    local table_timescale = flow["table_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
       caption={"", " ", {"label.timescale"}, ": "}}
-    label_timescale_title.style.top_padding = 1
     label_timescale_title.style.font = "fp-font-14p"
 
     if player_table.current_activity == "changing_timescale" then
@@ -25,14 +26,13 @@ function refresh_info_pane(player)
         -- As unit is limited to presets, timescale will always be displayed as 1
         local timescale = ui_util.format_timescale(Subfactory.get_timescale(player, player_table.selected_subfactory_id))
         local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
-        label_timescale.style.top_padding = 1
         label_timescale.style.font = "default-bold"
         table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
           style="fp_button_mini"}
     end
 
     -- Power Usage
-    local table_energy_consumption = flow["flow_info_elements"].add{type="table", name="table_energy_consumption",
+    local table_energy_consumption = flow["table_info_elements"].add{type="table", name="table_energy_consumption",
       column_count=2}
     table_energy_consumption.add{type="label", name="label_energy_consumption_title", 
       caption={"", " ",  {"label.energy_consumption"}, ": "}}
@@ -48,7 +48,7 @@ function refresh_info_pane(player)
     label_energy.style.font = "default-bold"
 
     -- Notes
-    local table_notes = flow["flow_info_elements"].add{type="table", name="table_notes", column_count=2}
+    local table_notes = flow["table_info_elements"].add{type="table", name="table_notes", column_count=2}
     table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":   "}}
     table_notes["label_notes_title"].style.font = "fp-font-14p"
     table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},

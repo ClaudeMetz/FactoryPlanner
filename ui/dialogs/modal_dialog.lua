@@ -53,12 +53,13 @@ function check_modal_dialog_data(flow_modal_dialog, dialog_type)
                 ui_util.set_label_color(condition_element, "red")
                 error_found = true
             else
-                ui_util.set_label_color(condition_element, "white")
+                ui_util.set_label_color(condition_element, "default_label")
             end
         end
 
         if error_found then return nil
         else return data end
+
     else return {} end
 end
 
@@ -70,7 +71,7 @@ function create_base_modal_dialog(player, condition_instructions, editing, dialo
     -- Conditions table
     if #condition_instructions.conditions ~= 0 then
         local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
-        table_conditions.style.bottom_padding = 6
+        table_conditions.style.bottom_margin = 6
         for n, condition in ipairs(condition_instructions.conditions) do
             if not (editing and (not condition.show_on_edit)) then
                 table_conditions.add{type="label", name="label_subfactory_instruction_" .. n, caption=condition.label}
@@ -85,8 +86,13 @@ function create_base_modal_dialog(player, condition_instructions, editing, dialo
     -- Button bar
     local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
     button_bar.style.minimal_width = 220
+    button_bar.style.top_margin = 4
 
-    local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel", style="fp_button_with_spacing"}
+    local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel",
+      style="back_button"}
+    button_cancel.style.maximal_width = 90
+    button_cancel.style.left_padding = 12
+
     if dialog_settings.close then button_cancel.caption = {"button-text.close"}
     else button_cancel.caption = {"button-text.cancel"} end
 
@@ -95,17 +101,19 @@ function create_base_modal_dialog(player, condition_instructions, editing, dialo
 
     if dialog_settings.delete then
         local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
-          caption={"button-text.delete"}, style="fp_button_with_spacing"}
-        button_delete.style.font="default-game"
-        ui_util.set_label_color(button_delete, "red")
+          caption={"button-text.delete"}, style="red_button"}
+        button_delete.style.font = "default-dialog-button"
+        button_delete.style.height = 32
+        button_delete.style.maximal_width = 80
     end
 
     local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
     flow_spacer_2.style.horizontally_stretchable = true
 
     if dialog_settings.submit then
-        button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"button-text.submit"}, 
-            style="fp_button_with_spacing"}
+        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
+          caption={"button-text.submit"}, style="confirm_button"}
+        button_submit.style.maximal_width = 90
     end
 
     return flow_modal_dialog

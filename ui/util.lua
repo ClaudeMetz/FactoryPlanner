@@ -3,7 +3,7 @@ ui_util = {}
 -- Readjusts the size of the main dialog according to the user setting of number of items per row
 function ui_util.recalculate_main_dialog_dimensions(player)
     local column_count = settings.get_player_settings(player)["fp_subfactory_items_per_row"].value
-    local width = 880 + ((column_count - 4) * 180)
+    local width = 880 + ((column_count - 4) * 175)
     global.players[player.index].main_dialog_dimensions.width = width
 end
 
@@ -12,17 +12,13 @@ end
 function ui_util.set_label_color(ui_element, color)
     if color == "red" then
         ui_element.style.font_color = {r = 1, g = 0.2, b = 0.2}
-    elseif color == "white" or color == "default" then
+    elseif color == "dark_red" then
+        ui_element.style.font_color = {r = 0.8, g = 0, b = 0}
+    elseif color == "white" or color == "default_label" then
         ui_element.style.font_color = {r = 1, g = 1, b = 1}
+    elseif color == "black" or color == "default_button" then
+        ui_element.style.font_color = {r = 0, g = 0, b = 0}
     end
-end
-
--- Sets all 4 padding attributes at once
-function ui_util.set_padding(ui_element, padding)
-    ui_element.style.top_padding = padding
-    ui_element.style.right_padding = padding
-    ui_element.style.bottom_padding = padding
-    ui_element.style.left_padding = padding
 end
 
 
@@ -30,7 +26,7 @@ end
 function ui_util.get_recipe_sprite(player, recipe)
     local sprite = "recipe/" .. recipe.name
     if recipe.name == "fp-space-science-pack" then
-        sprite = "recipe/space-science-pack"
+        sprite = "item/space-science-pack"
     elseif string.find(recipe.name, "^impostor%-[a-z0-9-]+$") then
         sprite = recipe.item_type .. "/" .. recipe.name:gsub("impostor%-", "")
 
@@ -110,4 +106,11 @@ function ui_util.copy_table(obj, seen)
     s[obj] = res
     for k, v in pairs(obj) do res[ui_util.copy_table(k, s)] = ui_util.copy_table(v, s) end
     return res
+end
+
+
+-- Custom logging function that also works for tables
+function ilog(value)
+    if type(value) == "table" then log(game.table_to_json(value))
+    else log(value) end
 end

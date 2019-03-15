@@ -5,9 +5,9 @@ require("ui.elements.byproduct_pane")
 
 -- Creates the subfactory pane that includes the products, byproducts and ingredients
 function add_subfactory_pane_to(main_dialog)
-    local table = main_dialog.add{type="table", name="table_subfactory_pane", column_count = 4}
-    table.style.horizontally_stretchable = true
+    local table = main_dialog.add{type="table", name="table_subfactory_pane", column_count=4, style="table"}
     table.draw_vertical_lines = true
+    table.style.maximal_height = 153
 
     refresh_subfactory_pane(game.players[main_dialog.player_index])
 end
@@ -43,23 +43,25 @@ end
 
 -- Constructs the basic structure of a subfactory_pane-cell
 function add_subfactory_pane_cell_to(table, ui_name)
-    local width = (global.players[table.player_index].main_dialog_dimensions.width / 4) + 2
+    local width = ((global.players[table.player_index].main_dialog_dimensions.width - 2*18) / 4)
     local flow = table.add{type="flow", name="flow_" .. ui_name, direction="vertical"}
     flow.style.width = width
-    local label_title = flow.add{type="label", name="label_" .. ui_name .. "_title", caption={"", "  ", {"label." .. ui_name}}}
+    flow.style.vertically_stretchable = true
+    local label_title = flow.add{type="label", name="label_" .. ui_name .. "_title", 
+     caption={"", "  ", {"label." .. ui_name}}}
     label_title.style.font = "fp-font-16p"
-    local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane", direction="vertical"}
-    scroll_pane.style.maximal_height = 116
-    scroll_pane.style.right_padding = 8
+    local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane", direction="vertical",
+      style="fp_scroll_pane_items"}
 
     return scroll_pane
 end
 
 -- Initializes the item table of the given scroll_pane
 function init_item_table(scroll_pane, column_count)
-    local item_table = scroll_pane.add{type="table", name="item_table", column_count = column_count}
-    item_table.style.left_padding = 10
-    item_table.style.horizontal_spacing = 10
+    local item_table = scroll_pane.add{type="table", name="item_table", column_count=column_count}
+    item_table.style.horizontal_spacing = 8
+    item_table.style.vertical_spacing = 4
+    item_table.style.top_margin = 4
 end
 
 -- Refreshes the given kind of item table

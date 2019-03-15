@@ -71,16 +71,21 @@ function data_util.generate_undesirable_recipes()
         undesirables["fast-loader"] = false
         undesirables["express-loader"] = false
     end
-
+    
     return undesirables
 end
 
 -- Returns all standard recipes + custom mining recipes and space science recipe
 function data_util.generate_all_recipes()
     local recipes = {}
+    local undesirables = data_util.generate_undesirable_recipes()
 
     -- Adding all standard recipes
-    for name, recipe in pairs(game.forces.player.recipes) do recipes[name] = recipe end
+    for name, recipe in pairs(game.forces.player.recipes) do
+        if undesirables[name] ~= false and recipe.category ~= "handcrafting" then
+            recipes[name] = recipe
+        end
+    end
 
     -- Adding all (solid) mining recipes
     -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
@@ -161,7 +166,6 @@ function data_util.generate_all_machines()
     local categories = {}
     
     local function generate_category_entry(category, proto)
-        log(category)
         if categories[category] == nil then
             categories[category] = {machines = {}, order = {}}
         end
@@ -177,7 +181,7 @@ function data_util.generate_all_machines()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.crafting_categories and proto.name ~= "player" then
+        if proto.crafting_categories and proto.name ~= "player" and proto.name ~= "escape-pod-assembler" then
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then
                     generate_category_entry(category, proto)

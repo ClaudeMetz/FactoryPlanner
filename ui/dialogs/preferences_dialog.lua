@@ -6,7 +6,7 @@ function open_preferences_dialog(flow_modal_dialog, args)
     local label_preferences_info = flow_modal_dialog.add{type="label", name="label_preferences_info", 
       caption={"label.preferences_info"}}
     label_preferences_info.style.single_line = false
-    label_preferences_info.style.bottom_padding = 6
+    label_preferences_info.style.bottom_margin = 4
 
     -- Machine preferences
     local label_machine_info = flow_modal_dialog.add{type="label", name="label_machines_info", 
@@ -15,11 +15,13 @@ function open_preferences_dialog(flow_modal_dialog, args)
     label_machine_info.tooltip = {"label.preferences_title_machines_tooltip"}
     local scroll_pane_all_machines = flow_modal_dialog.add{type="scroll-pane", name="scroll-pane_all_machines", 
       direction="vertical"}
-    scroll_pane_all_machines.style.horizontally_stretchable = true
     scroll_pane_all_machines.style.maximal_height = 650
+    scroll_pane_all_machines.style.horizontally_stretchable = true
+    scroll_pane_all_machines.horizontal_scroll_policy = "never"
     local table_all_machines = scroll_pane_all_machines.add{type="table", name="table_all_machines", column_count=2}
-    table_all_machines.style.bottom_padding = 6
+    table_all_machines.style.top_margin = 4
     table_all_machines.style.left_padding = 6
+    table_all_machines.style.bottom_padding = 4
 
     refresh_preferences_dialog(flow_modal_dialog.gui.player)
 end
