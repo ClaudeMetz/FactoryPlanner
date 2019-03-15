@@ -26,11 +26,10 @@ end
 
 -- Adds the button to add a product to the table
 function append_to_product_table(table)
-    local button = table.add{type="button", name="fp_sprite-button_add_product", caption="+"}
+    local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
+      style="fp_sprite_button"}
     button.style.height = 36
     button.style.width = 36
-    button.style.top_padding = 0
-    button.style.font = "fp-font-20p"
 end
 
 
@@ -108,7 +107,7 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     flow_modal_dialog.parent.caption = title
 
     local table_product = flow_modal_dialog.add{type="table", name="table_product", column_count=2}
-    table_product.style.bottom_padding = 8
+    table_product.style.bottom_padding = 6
     -- Product
     table_product.add{type="label", name="label_product", caption={"label.product"}}
     local button_product = table_product.add{type="choose-elem-button", name="choose-elem-button_product", 

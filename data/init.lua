@@ -12,33 +12,48 @@ require("data.classes.Line")
 function global_init()
     global.players = {}
 
-    global.undesirable_recipes = data_util.generate_undesirable_recipes()
     global.all_recipes = data_util.generate_all_recipes()
     global.all_machines = data_util.generate_all_machines()
 
     global.devmode = true
 end
 
--- Creates and initiates a new player in the database
+-- Creates and initiates a new player in the database if he doesn't exist yet
 function player_init(player)
-    global.players[player.index] = {}
-    player_table = global.players[player.index]
+    if global.players[player.index] == nil then
+        global.players[player.index] = {}
+        local player_table = global.players[player.index]
 
-    player_table.factory = Factory.init()
-    player_table.main_dialog_dimensions = {width = nil, height = 1000}
-    player_table.reload_recipe_dialog = true
+        player_table.factory = Factory.init()
+        player_table.main_dialog_dimensions = {width = nil, height = 1000}
 
-    player_table.default_machines = {}
-    data_util.update_default_machines(player)
+        player_table.default_machines = {}
+        data_util.update_default_machines(player)
 
-    player_table.modal_dialog_type = nil
-    player_table.current_activity = nil
-    player_table.queued_hint_message = ""
+        player_table.modal_dialog_type = nil
+        player_table.current_activity = nil
+        player_table.queued_hint_message = ""
 
-    player_table.selected_subfactory_id = 0
-    player_table.selected_product_id = 0
-    player_table.selected_item_group_name = nil
-    player_table.selected_line_id = 0
+        player_table.selected_subfactory_id = 0
+        player_table.selected_product_id = 0
+        player_table.selected_item_group_name = nil
+        player_table.selected_line_id = 0
+    end
+end
+
+-- Resets the GUI state of the given player, if there is any
+function player_reset(player)
+    if global.players[player.index] ~= nil then
+        local player_table = global.players[player.index]
+
+        player_table.modal_dialog_type = nil
+        player_table.current_activity = nil
+        player_table.queued_hint_message = ""
+
+        player_table.selected_product_id = 0
+        player_table.selected_item_group_name = nil
+        player_table.selected_line_id = 0
+    end
 end
 
 -- Removes given player irreversibly from the database
@@ -46,18 +61,20 @@ function player_remove(player)
     global.players[player.index] = nil
 end
 
--- Runs through all changes that need to be made after the config changed
+-- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
-    global.undesirable_recipes = data_util.generate_undesirable_recipes()
     global.all_recipes = data_util.generate_all_recipes()
     global.all_machines = data_util.generate_all_machines()
-    
+
     for index, player in pairs(game.players) do
+        player_reset(player)
+        player_gui_reset(player)
+
+        player_init(player)
+        player_gui_init(player)
+
         Factory.update_validity(player)
         data_util.update_default_machines(player)
-        
-        global.players[index].reload_recipe_dialog = true
-        reload_main_dialog(player)
     end
 end
 
@@ -68,7 +85,7 @@ function run_dev_config(player)
 
     Factory.add_subfactory(player, Subfactory.init("", {type="item", name="iron-plate"}))
     Factory.add_subfactory(player, Subfactory.init("Beta", nil))
-    Factory.add_subfactory(player, Subfactory.init("Gamma", {type="item", name="copper-plate"}))
+    Factory.add_subfactory(player, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
     player_table.selected_subfactory_id = 1
 
     local subfactory_id, id = player_table.selected_subfactory_id, nil

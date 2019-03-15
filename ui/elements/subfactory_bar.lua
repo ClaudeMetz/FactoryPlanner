@@ -2,8 +2,9 @@
 function add_subfactory_bar_to(main_dialog)
     local subfactory_bar = main_dialog.add{type="scroll-pane", name="scroll-pane_subfactory_bar", direction="vertical"}
     subfactory_bar.style.maximal_height = 82
-    subfactory_bar.style.bottom_padding = 6
-    --subfactory_bar.style.horizontally_stretchable = true
+    subfactory_bar.style.bottom_margin = 6
+    subfactory_bar.style.horizontally_stretchable = true
+    subfactory_bar.horizontal_scroll_policy = "never"
 
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
     table_subfactories.style.vertical_spacing = 4
@@ -18,7 +19,7 @@ function refresh_subfactory_bar(player, full_refresh)
     local table_subfactories =  player.gui.center["fp_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
-    local max_width = player_table.main_dialog_dimensions.width * 0.875
+    local max_width = player_table.main_dialog_dimensions.width * 0.8
     local width_remaining = 0
     local current_table_index = 0
     local current_table = nil
@@ -35,6 +36,7 @@ function refresh_subfactory_bar(player, full_refresh)
             if width_used == 0 then
                 current_table = table_subfactories.add{type="table", name="table_subfactories_" .. current_table_index, 
                   column_count = 30}
+                current_table.style.horizontal_spacing = 6
                 current_table_index = current_table_index + 1
                 width_remaining = max_width
                 
@@ -68,24 +70,19 @@ end
 
 -- Constructs an element of the subfactory bar if there only is a name
 function create_label_element(table, width_remaining, id, subfactory, selected)
-    local button_width = (#subfactory.name * 10) + 13
+    local button_width = (#subfactory.name * 9) + 16
     if button_width > width_remaining then
         return 0
     else    
         local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. id}
         local label = button.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
 
-        if selected then
-            button.style = "fp_button_icon_large_blank"
-            button.style.top_padding = 9
-            button.style.left_padding = 8
-        else
-            button.style.height = 36
-            button.style.top_padding = 7
-            button.style.left_padding = 6
-        end
+        if selected then button.style = "fp_button_icon_large_blank"
+        else button.style = "fp_button_icon_large_recipe" end
 
-        button.style.width = button_width 
+        button.style.width = button_width
+        button.style.top_padding = 5
+        button.style.left_padding = 7
         label.ignored_by_interaction = true
         label.style.font = "fp-font-mono-15p"
         
@@ -101,13 +98,8 @@ function create_sprite_element(table, width_remaining, id, subfactory, selected)
     else  
         local button = create_sprite_button(table, "fp_sprite-button_subfactory_" .. id, subfactory)
 
-        if selected then
-            button.style = "fp_button_icon_large_blank"
-        else
-            button.style.height = 36
-            button.style.width = 36
-            ui_util.set_padding(button, 0)
-        end
+        if selected then button.style = "fp_button_icon_large_blank"
+        else button.style = "fp_button_icon_large_recipe" end
 
         return button_width
     end
@@ -115,7 +107,7 @@ end
 
 -- Constructs an element of the subfactory bar if there is both a name and an icon
 function create_label_sprite_element(table, width_remaining, id, subfactory, selected)
-    local button_width = (#subfactory.name * 10) + 46
+    local button_width = (#subfactory.name * 9) + 56
     if button_width > width_remaining then
         return 0
     else 
@@ -125,26 +117,22 @@ function create_label_sprite_element(table, width_remaining, id, subfactory, sel
         local sprite = create_sprite_button(flow, "sprite_subfactory_" .. id, subfactory)
         local label = flow.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
 
-        if selected then
-            button.style = "fp_button_icon_large_blank"
-            flow.style.top_padding = 2
-            sprite.style.top_padding = 1
-        else
-            button.style.height = 36
-            flow.style.top_padding = 0
-            sprite.style.top_padding = 0
-        end
+        if selected then button.style = "fp_button_icon_large_blank"
+        else button.style = "fp_button_icon_large_recipe" end
 
+        button.tooltip = sprite.tooltip
         button.style.width = button_width
         button.style.top_padding = 0
-        button.tooltip = sprite.tooltip
         flow.ignored_by_interaction = true
 
         sprite.style = "fp_button_icon_large_blank"
-        sprite.style.height = 34
-        sprite.style.width = 34
+        sprite.style.height = 35
+        sprite.style.width = 35
+        sprite.style.top_padding = 0
+        sprite.style.left_margin = 5
         label.style.font = "fp-font-mono-15p"
-        label.style.top_padding = 7
+        label.style.top_padding = 5
+        label.style.left_padding = 3
 
         return button_width
     end

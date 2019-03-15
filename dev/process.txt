@@ -1,0 +1,17 @@
+New Release:
+- Update info.json
+- Update changelog.txt
+? Update README.md
+- Commit
+? Merge onto master branch
+- Push to Github
+- Cut new release on Github
+- Upload onto Factorio mod-portal
+? Adjust mod-portal screenshots, description
+
+
+MISC:
+- Count LOC: ( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l
+- Delete most recent local commit: git reset --hard HEAD^
+- Force-replace commit on origin/: git push --force origin
+- Merge develop to master: git checkout master; git merge develop; git push origin master; git checkout develop

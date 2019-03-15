@@ -2,9 +2,13 @@
 function add_actionbar_to(main_dialog)
     local actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
 
-    actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, style="fp_button_action"}
-    actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, style="fp_button_action"}
-    actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, style="fp_button_action"}
+    actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, 
+      style="fp_button_action"}
+    actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, 
+      style="fp_button_action"}
+    actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, 
+      style="fp_button_action"}
+    actionbar.style.bottom_margin = 4
 
     refresh_actionbar(game.players[main_dialog.player_index])
 end
@@ -23,10 +27,12 @@ function refresh_actionbar(player)
 
     if player_table.current_activity == "deleting_subfactory" then
         delete_button.caption = {"button-text.delete_confirm"}
-        ui_util.set_label_color(delete_button, "red")
+        delete_button.style.font =  "fp-font-bold-16p"
+        ui_util.set_label_color(delete_button, "dark_red")
     else
         delete_button.caption = {"button-text.delete"}
-        ui_util.set_label_color(delete_button, "white")
+        delete_button.style.font =  "fp-font-16p"
+        ui_util.set_label_color(delete_button, "default_button")
     end
 end
 
@@ -75,8 +81,10 @@ end
 function get_subfactory_condition_instructions()
     return {
         data = {
-            name = (function(flow_modal_dialog) return flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("%s+", "") end),
-            icon = (function(flow_modal_dialog) return flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value end)
+            name = (function(flow_modal_dialog) return 
+              flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("%s+", "") end),
+            icon = (function(flow_modal_dialog) return 
+              flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value end)
         },
         conditions = {
             [1] = {
@@ -110,7 +118,8 @@ function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon
     table_subfactory["textfield_subfactory_name"].focus()
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
-    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="signal", signal=icon}
+    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="signal",
+      signal=icon}
 end
 
 

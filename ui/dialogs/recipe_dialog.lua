@@ -1,11 +1,7 @@
 -- Handles populating the recipe dialog
 function open_recipe_dialog(player, product_id)
     local frame_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]
-    if global.players[player.index].reload_recipe_dialog then
-        if frame_recipe_dialog ~= nil then frame_recipe_dialog.destroy() end
-        frame_recipe_dialog = create_recipe_dialog_structure(player)
-        global.players[player.index].reload_recipe_dialog = false
-    end
+    if frame_recipe_dialog == nil then frame_recipe_dialog = create_recipe_dialog_structure(player) end
 
     frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
     local product_name = Product.get_name(player, global.players[player.index].selected_subfactory_id, product_id)
@@ -16,7 +12,7 @@ function open_recipe_dialog(player, product_id)
         frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["textfield_search_recipe"].text = product_name
         apply_recipe_filter(player)
         toggle_main_dialog(player)
-        frame_recipe_dialog.style.visible = true
+        frame_recipe_dialog.visible = true
     else
         add_line(player, recipe_name, product_id)
         refresh_production_pane(player)
@@ -31,7 +27,7 @@ function close_recipe_dialog(player, recipe_name)
 
     global.players[player.index].selected_product_id = 0
     change_item_group_selection(player, "logistics")  -- Returns selection to the first item_group for consistency
-    player.gui.center["fp_frame_recipe_dialog"].style.visible = false
+    player.gui.center["fp_frame_recipe_dialog"].visible = false
     toggle_main_dialog(player)
 end
 
@@ -54,18 +50,19 @@ end
 function create_recipe_dialog_structure(player)
     local frame_recipe_dialog = player.gui.center.add{type="frame", name="fp_frame_recipe_dialog", direction="vertical"}
     frame_recipe_dialog.caption = {"label.add_recipe"}
-    frame_recipe_dialog.style.visible = false
+    frame_recipe_dialog.visible = false
     local flow_recipe_dialog = frame_recipe_dialog.add{type="flow", name="flow_recipe_dialog", direction="vertical"}
 
     local button_bar = frame_recipe_dialog.add{type="flow", name="flow_recipe_dialog_button_bar", direction="horizontal"}
     button_bar.style.minimal_width = 220
-    button_bar.add{type="button", name="fp_button_recipe_dialog_cancel", caption={"button-text.cancel"}, 
-        style="fp_button_with_spacing"}
+    button_bar.add{type="button", name="fp_button_recipe_dialog_cancel", caption={"button-text.cancel"},
+      style="back_button"}
+    button_bar["fp_button_recipe_dialog_cancel"].style.maximal_width = 90
 
     -- Filter conditions
     local table_filter_conditions = flow_recipe_dialog.add{type="table", name="table_filter_conditions", column_count = 3}
-    table_filter_conditions.style.bottom_padding = 6
-    table_filter_conditions.style.horizontal_spacing = 8
+    table_filter_conditions.style.bottom_margin = 8
+    table_filter_conditions.style.horizontal_spacing = 16
     table_filter_conditions.add{type="label", name="label_filter_conditions", caption={"label.show"}}
     table_filter_conditions.add{type="checkbox", name="fp_checkbox_filter_condition_enabled", 
       caption={"checkbox.unresearched_recipes"}, state=false}
@@ -82,54 +79,53 @@ function create_recipe_dialog_structure(player)
 
     -- Hides searchbox for users as it doesn't really serve a purpose right now
     if not global.devmode then
-        table_filter_conditions["label_search_recipe"].style.visible = false
-        table_filter_conditions["textfield_search_recipe"].style.visible = false
-        table_filter_conditions["fp_sprite-button_search_recipe"].style.visible = false
+        table_filter_conditions["label_search_recipe"].visible = false
+        table_filter_conditions["textfield_search_recipe"].visible = false
+        table_filter_conditions["fp_sprite-button_search_recipe"].visible = false
     end
 
     local table_item_groups = flow_recipe_dialog.add{type="table", name="table_item_groups", column_count=6}
+    table_item_groups.style.bottom_margin = 6
     table_item_groups.style.horizontal_spacing = 3
     table_item_groups.style.vertical_spacing = 3
-    table_item_groups.style.minimal_width = 6 * (64 + 1)
+    table_item_groups.style.minimal_width = 6 * (64 + 8)
 
     local formatted_recipes = create_recipe_tree()
     local scroll_pane_height = 0
     for _, group in ipairs(formatted_recipes) do
         -- Item groups
         button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group.name,
-          sprite="item-group/" .. group.name, style="fp_button_icon_small_recipe"}
-        button_group.style.width = 64
-        button_group.style.height = 64
+          sprite="item-group/" .. group.name, style="fp_button_icon_medium_recipe"}
+        button_group.style.width = 70
+        button_group.style.height = 70
 
         local scroll_pane_subgroups = flow_recipe_dialog.add{type="scroll-pane", name="scroll-pane_subgroups_" .. group.name}
-        scroll_pane_subgroups.style.bottom_padding = 6
+        scroll_pane_subgroups.style.bottom_margin = 4
         scroll_pane_subgroups.style.horizontally_stretchable = true
-        scroll_pane_subgroups.style.visible = false
-        local specific_scroll_pane_height = -20  -- offsets the height-increase on the last row which is superfluous
+        scroll_pane_subgroups.visible = false
+        local specific_scroll_pane_height = 0
         local table_subgroup = scroll_pane_subgroups.add{type="table", name="table_subgroup", column_count=1}
-        table_subgroup.style.vertical_spacing = 4
+        table_subgroup.style.vertical_spacing = 3
         for _, subgroup in ipairs(group.subgroups) do
             -- Item subgroups
             local table_subgroup = table_subgroup.add{type="table", name="table_subgroup_" .. subgroup.name,
               column_count = 12}
             table_subgroup.style.horizontal_spacing = 2
-            table_subgroup.style.vertical_spacing = 2
+            table_subgroup.style.vertical_spacing = 1
             for _, recipe in ipairs(subgroup.recipes) do
-                if global.undesirable_recipes[recipe.name] ~= false and recipe.category ~= "handcrafting" then
-                    -- Recipes
-                    local sprite = ui_util.get_recipe_sprite(player, recipe)
-                    local button_recipe = table_subgroup.add{type="sprite-button", name="fp_sprite-button_recipe_" .. recipe.name,
-                      sprite=sprite, style="fp_button_icon_small_recipe"}
-                    if recipe.hidden then button_recipe.style = "fp_button_icon_small_hidden" end
-                    if not recipe.enabled then button_recipe.style = "fp_button_icon_small_disabled" end
-                    button_recipe.tooltip = generate_recipe_tooltip(recipe)
-                    button_recipe.style.visible = false
-                    if (#table_subgroup.children_names - 1) % 12 == 0 then  -- new row
-                        specific_scroll_pane_height = specific_scroll_pane_height + (28+2)
-                    end
+                -- Recipes
+                local sprite = ui_util.get_recipe_sprite(player, recipe)
+                local button_recipe = table_subgroup.add{type="sprite-button", name="fp_sprite-button_recipe_" .. recipe.name,
+                  sprite=sprite, style="fp_button_icon_medium_recipe"}
+                if recipe.hidden then button_recipe.style = "fp_button_icon_medium_hidden" end
+                if not recipe.enabled then button_recipe.style = "fp_button_icon_medium_disabled" end
+                button_recipe.tooltip = generate_recipe_tooltip(recipe)
+                button_recipe.visible = false
+                if (#table_subgroup.children_names - 1) % 12 == 0 then  -- new row
+                    specific_scroll_pane_height = specific_scroll_pane_height + (32+1)
                 end
             end
-            specific_scroll_pane_height = specific_scroll_pane_height + 4  -- new subgroup
+            specific_scroll_pane_height = specific_scroll_pane_height + 3  -- new subgroup
         end
         scroll_pane_height = math.max(scroll_pane_height, specific_scroll_pane_height)
     end
@@ -237,20 +233,20 @@ function apply_recipe_filter(player)
                 local recipe = global.all_recipes[recipe_name]
                 if ((not unenabled) and (not recipe.enabled)) or ((not hidden) and recipe.hidden) or 
                   (not recipe_produces_product(recipe, search_term)) then
-                    recipe_element.style.visible = false
+                    recipe_element.visible = false
                 else
-                    if not recipe.enabled then recipe_element.style = "fp_button_icon_small_disabled" 
-                    elseif recipe.hidden then recipe_element.style = "fp_button_icon_small_hidden"
-                    else recipe_element.style = "fp_button_icon_small_recipe" end
+                    if not recipe.enabled then recipe_element.style = "fp_button_icon_medium_disabled" 
+                    elseif recipe.hidden then recipe_element.style = "fp_button_icon_medium_hidden"
+                    else recipe_element.style = "fp_button_icon_medium_recipe" end
 
-                    recipe_element.style.visible = true
+                    recipe_element.visible = true
                     subgroup_visible = true 
                     group_visible = true
                 end
             end
-            subgroup_element.style.visible = subgroup_visible
+            subgroup_element.visible = subgroup_visible
         end
-        group_element.style.visible = group_visible
+        group_element.visible = group_visible
         if first_visible_group == nil and group_visible then 
             first_visible_group = group_name 
         end
@@ -260,7 +256,7 @@ function apply_recipe_filter(player)
         -- Set selection to the first item_group that is visible
         local selected_group = global.players[player.index].selected_item_group_name
         if selected_group == nil or flow_recipe_dialog["table_item_groups"]["fp_sprite-button_item_group_" ..
-          selected_group].style.visible == false then
+          selected_group].visible == false then
             change_item_group_selection(player, first_visible_group)
         end
     end
@@ -275,9 +271,9 @@ function change_item_group_selection(player, item_group_name)
         local sprite_button = flow_recipe_dialog["table_item_groups"]
           ["fp_sprite-button_item_group_" .. selected_item_group_name]
         if sprite_button ~= nil then
-            sprite_button.style = "fp_button_icon_small_recipe"
+            sprite_button.style = "fp_button_icon_medium_recipe"
             sprite_button.ignored_by_interaction = false
-            flow_recipe_dialog["scroll-pane_subgroups_" .. selected_item_group_name].style.visible = false
+            flow_recipe_dialog["scroll-pane_subgroups_" .. selected_item_group_name].visible = false
         end
     end
 
@@ -286,7 +282,7 @@ function change_item_group_selection(player, item_group_name)
     local sprite_button = flow_recipe_dialog["table_item_groups"]["fp_sprite-button_item_group_" .. item_group_name]
     sprite_button.style = "fp_button_icon_clicked"
     sprite_button.ignored_by_interaction = true
-    flow_recipe_dialog["scroll-pane_subgroups_" .. item_group_name].style.visible = true
+    flow_recipe_dialog["scroll-pane_subgroups_" .. item_group_name].visible = true
 end
 
 -- Checks whether given recipe produces given product
@@ -311,7 +307,8 @@ function generate_recipe_tooltip(recipe)
             tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
             for _, item in ipairs(recipe[item_type]) do
                 if item.amount == nil then item.amount = item.probability end
-                tooltip = {"", tooltip, "\n    ", item.amount, "x ", game[item.type .. "_prototypes"][item.name].localised_name}
+                tooltip = {"", tooltip, "\n    ", "[", item.type, "=", item.name, "] ", item.amount, "x ",
+                  game[item.type .. "_prototypes"][item.name].localised_name}
             end
         end
     end

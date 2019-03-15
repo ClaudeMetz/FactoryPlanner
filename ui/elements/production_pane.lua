@@ -1,12 +1,10 @@
 -- Creates the production pane that displays 
 function add_production_pane_to(main_dialog)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
-    flow.style.bottom_padding = 20
 
     -- Production titlebar
     local flow_titlebar = flow.add{type="table", name="flow_production_titlebar", column_count = 4}
-    flow_titlebar.style.vertical_align = "center"
-    flow_titlebar.style.top_padding = 8
+    flow_titlebar.style.top_margin = 10
 
     -- Info label
     local info = flow.add{type="label", name="label_production_info", caption={"", " (",  {"label.production_info"}, ")"}}
@@ -15,12 +13,14 @@ function add_production_pane_to(main_dialog)
     local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane_production_pane", direction="vertical"}
     scroll_pane.style.horizontally_stretchable = true
     scroll_pane.style.vertically_stretchable = true
+
     local column_count = 7
     local table = scroll_pane.add{type="table", name="table_production_pane",  column_count=column_count}
-    for i=1, column_count do table.style.column_alignments[i] = "middle-center" end
-    table.style.horizontal_spacing = 15
-    table.style.vertical_spacing = 12
-    table.draw_horizontal_lines = true
+    table.style = "table_with_selection"
+    for i=1, column_count do
+        if i < 5 then table.style.column_alignments[i] = "middle-center"
+        else table.style.column_alignments[i] = "middle-left" end
+    end
 
     refresh_production_pane(game.players[main_dialog.player_index])
 end
@@ -47,7 +47,7 @@ function refresh_production_pane(player)
             local label_level = flow_titlebar.add{type="label", name="label_actionbar_level", 
             caption={"", {"label.level"}, " ", floor_level, "  "}}
             label_level.style.font = "fp-font-bold-15p"
-            label_level.style.top_padding = 1
+            label_level.style.top_padding = 4
 
             if floor_level > 1 then
                 flow_titlebar.add{type="button", name="fp_button_floor_up", caption={"label.go_up"},
@@ -73,16 +73,16 @@ function refresh_production_table(player)
     local subfactory_id = global.players[player.index].selected_subfactory_id
     -- selected_subfactory_id is always 0 when there are no subfactories
     if (subfactory_id ~= 0) and Subfactory.is_valid(player, subfactory_id) then
-        flow_production.style.visible = true
+        flow_production.visible = true
 
         local table_production = flow_production["scroll-pane_production_pane"]["table_production_pane"]
         table_production.clear()
 
         local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
         if Floor.get_line_count(player, subfactory_id, floor_id) == 0 then
-            flow_production["label_production_info"].style.visible = true
+            flow_production["label_production_info"].visible = true
         else
-            flow_production["label_production_info"].style.visible = false
+            flow_production["label_production_info"].visible = false
             
             -- Table titles
             local title_strings = {
@@ -106,7 +106,7 @@ function refresh_production_table(player)
             end
         end
     else
-        flow_production.style.visible = false
+        flow_production.visible = false
     end
 end
 
@@ -143,27 +143,27 @@ function create_line_table_row(player, line)
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line_id,
       text=line.percentage}
-    textfield_percentage.style.minimal_width = 32
-    textfield_percentage.style.align = "center"
+    textfield_percentage.style.width = 40
+    textfield_percentage.style.horizontal_align = "center"
 
     -- Machine button
     local machine_category = global.all_machines[line.recipe_category]
     local table_machines = table_production.add{type="table", name="flow_line_machines_" .. line_id, 
       column_count=#machine_category.order}
-    table_machines.style.horizontal_spacing = 4
-    table_machines.style.align = "center"
+    table_machines.style.horizontal_spacing = 3
+    table_machines.style.horizontal_align = "center"
 
     if player_table.selected_line_id == line_id and player_table.current_activity == "changing_machine" then
         for _, machine_name in ipairs(machine_category.order) do
             local machine = global.all_machines[line.recipe_category].machines[machine_name]
             local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_line_" .. line_id .. 
-              "_machine_" .. machine.name, sprite="entity/" .. machine.name, style="fp_button_icon_medium_default"}
+              "_machine_" .. machine.name, sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe"}
             button_machine.tooltip = machine.localised_name
         end
     else
         local machine = global.all_machines[line.recipe_category].machines[line.machine_name]
         local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line_id,
-          sprite="entity/" .. machine.name, style="fp_button_icon_medium_default"}
+          sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe"}
         button_machine.tooltip = machine.localised_name
     end
 
@@ -236,24 +236,6 @@ function handle_line_recipe_click(player, line_id, click, direction)
     end
 end
 
-
--- Is called to persist (assembly) line percentage changes
-function apply_percentage_change(player, changed_element)
-    local subfactory_id = global.players[player.index].selected_subfactory_id
-    local line_id = tonumber(string.match(changed_element.name, "%d+"))
-
-    local new_percentage = tonumber(changed_element.text)
-    if changed_element.text == "" then new_percentage = 0 end
-    if true and (new_percentage == nil or new_percentage < 0) then
-        changed_element.text = Line.get_percentage(player, subfactory_id, Subfactory.get_selected_floor_id(player,
-          subfactory_id), line_id)
-    	queue_hint_message(player, {"label.error_invalid_percentage"})
-    else
-        queue_hint_message(player, "")
-        Line.set_percentage(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id), 
-          line_id, new_percentage)
-    end
-end
 
 -- Handles the machine changing process
 function handle_machine_change(player, line_id, machine_name, click, direction)
