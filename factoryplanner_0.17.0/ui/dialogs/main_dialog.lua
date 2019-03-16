@@ -31,11 +31,14 @@ function player_gui_init(player)
 end
 
 -- Destroys all GUI's so they are loaded anew the next time they are shown
+-- (Doesn't consider new preserved GUI's, but whatever)
 function player_gui_reset(player)
+    local center = player.gui.center
     local guis = {
         mod_gui.get_button_flow(player),
-        player.gui.center["fp_main_dialog"],
-        player.gui.center["fp_frame_modal_dialog"]
+        center["fp_main_dialog"],
+        center["fp_frame_modal_dialog"],
+        center["fp_frame_modal_dialog_recipe_picker"]
     }
     for _, gui in pairs(guis) do 
         if gui ~= nil and gui.valid then gui.destroy() end
@@ -53,10 +56,8 @@ end
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
     local center = player.gui.center
-    local frame_recipe_dialog = center["fp_frame_recipe_dialog"]
-    local recipe_dialog_open = (frame_recipe_dialog ~= nil and frame_recipe_dialog.visible)
     -- Won't toggle if a modal dialog is open
-    if not center["fp_frame_modal_dialog"] and not recipe_dialog_open then
+    if global.players[player.index].modal_dialog_type == nil then
         local main_dialog = center["fp_main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)

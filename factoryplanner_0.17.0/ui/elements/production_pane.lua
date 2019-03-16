@@ -286,6 +286,6 @@ end
 -- Handles a click on any of the 3 item buttons of a specific line
 function handle_item_button_click(player, style, type, line_id, item_name)
     if style ~= "fp_button_icon_medium_blank" and type == "ingredient" then
-        game.print("F ME")
+        --enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_id=product_id})
     end
 end

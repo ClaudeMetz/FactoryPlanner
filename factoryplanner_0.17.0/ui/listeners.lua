@@ -164,10 +164,6 @@ script.on_event(defines.events.on_gui_click, function(event)
     elseif event.element.name == "fp_sprite-button_search_recipe" and is_left_click then
         apply_recipe_filter(player)
 
-    -- Closes the recipe dialog without a selection having been made
-    elseif event.element.name == "fp_button_recipe_dialog_cancel" and is_left_click then
-        close_recipe_dialog(player, nil)
-
     -- Sets the selected floor to be the parent of the currently selected one
     elseif event.element.name == "fp_button_floor_up" and is_left_click then
         Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "up")
@@ -202,7 +198,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- Reacts to a recipe button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_recipe_[a-z-]+$") and is_left_click then
         local recipe_name = string.gsub(event.element.name, "fp_sprite%-button_recipe_", "")
-        close_recipe_dialog(player, recipe_name)
+        exit_modal_dialog(player, "cancel", {recipe_name=recipe_name})
     
     -- Reacts to any subfactory_pane item button being pressed
     elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then

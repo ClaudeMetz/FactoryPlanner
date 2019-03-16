@@ -1,4 +1,4 @@
-require("ui.dialogs.recipe_dialog")
+require("ui.dialogs.recipe_picker_dialog")
 
 -- Returns necessary details to complete the item button for a product
 function get_product_specifics(product)
@@ -147,7 +147,7 @@ function handle_product_element_click(player, product_id, click, direction)
         if click == "left" then
             local floor = Subfactory.get(player, subfactory_id, "Floor", Subfactory.get_selected_floor_id(player, subfactory_id))
             if global.devmode or floor.level == 1 then
-                open_recipe_dialog(player, product_id)
+                enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_id=product_id})
             else
                 queue_hint_message(player, {"label.error_product_wrong_floor"})
             end

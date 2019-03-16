@@ -24,7 +24,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction)
         local floor = Subfactory.get(player, selected_subfactory_id, "Floor", 
           Subfactory.get_selected_floor_id(player, selected_subfactory_id))
         if floor.level == 1 then
-            --open_recipe_dialog(player, byproduct_id)
+            --enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_id=byproduct_id})
         else
             queue_hint_message(player, {"label.error_byproduct_wrong_floor"})
         end

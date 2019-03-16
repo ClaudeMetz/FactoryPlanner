@@ -1,35 +1,39 @@
 -- Handles populating the recipe dialog
-function open_recipe_dialog(player, product_id)
-    local frame_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]
-    if frame_recipe_dialog == nil then frame_recipe_dialog = create_recipe_dialog_structure(player) end
+function open_recipe_picker_dialog(flow_modal_dialog, args)
+    local player = game.players[flow_modal_dialog.player_index]
+    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_recipe_picker"]["flow_modal_dialog"]
+    if #flow_modal_dialog.children == 0 then create_recipe_picker_dialog_structure(player, flow_modal_dialog) end
 
-    frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
-    local product_name = Product.get_name(player, global.players[player.index].selected_subfactory_id, product_id)
+    flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
+    local product_name = Product.get_name(player, global.players[player.index].selected_subfactory_id, args.product_id)
     local recipe_name = run_preliminary_checks(player, product_name)
     -- nil meaning that no single enabled and matching recipe has been found (either 0 or 2+)
     if recipe_name == nil then
-        global.players[player.index].selected_product_id = product_id
-        frame_recipe_dialog["flow_recipe_dialog"]["table_filter_conditions"]["textfield_search_recipe"].text = product_name
+        global.players[player.index].selected_product_id = args.product_id
+        flow_modal_dialog["table_filter_conditions"]["textfield_search_recipe"].text = product_name
         apply_recipe_filter(player)
-        toggle_main_dialog(player)
-        frame_recipe_dialog.visible = true
     else
-        add_line(player, recipe_name, product_id)
-        refresh_production_pane(player)
+        add_line(player, recipe_name, args.product_id)
+        exit_modal_dialog(player, "cancel")
     end
 end
 
 -- Handles closing of the recipe dialog
-function close_recipe_dialog(player, recipe_name)
-    if recipe_name ~= nil then
-        add_line(player, recipe_name, global.players[player.index].selected_product_id)
+function close_recipe_picker_dialog(flow_modal_dialog, button, data)
+    local player = game.players[flow_modal_dialog.player_index]
+    if data ~= nil and data.recipe_name ~= nil then
+        add_line(player, data.recipe_name, global.players[player.index].selected_product_id)
     end
 
     global.players[player.index].selected_product_id = 0
     change_item_group_selection(player, "logistics")  -- Returns selection to the first item_group for consistency
-    player.gui.center["fp_frame_recipe_dialog"].visible = false
-    toggle_main_dialog(player)
 end
+
+-- No conditions needed for the recipe picker dialog
+function get_recipe_picker_condition_instructions()
+    return {data = {}, conditions = {}}
+end
+
 
 -- Adds (assembly) line to the currently selected floor
 function add_line(player, recipe_name, product_id)
@@ -47,20 +51,11 @@ end
 
 
 -- Creates the modal dialog to choose a recipe
-function create_recipe_dialog_structure(player)
-    local frame_recipe_dialog = player.gui.center.add{type="frame", name="fp_frame_recipe_dialog", direction="vertical"}
-    frame_recipe_dialog.caption = {"label.add_recipe"}
-    frame_recipe_dialog.visible = false
-    local flow_recipe_dialog = frame_recipe_dialog.add{type="flow", name="flow_recipe_dialog", direction="vertical"}
-
-    local button_bar = frame_recipe_dialog.add{type="flow", name="flow_recipe_dialog_button_bar", direction="horizontal"}
-    button_bar.style.minimal_width = 220
-    button_bar.add{type="button", name="fp_button_recipe_dialog_cancel", caption={"button-text.cancel"},
-      style="back_button"}
-    button_bar["fp_button_recipe_dialog_cancel"].style.maximal_width = 90
+function create_recipe_picker_dialog_structure(player, flow_modal_dialog)
+    flow_modal_dialog.parent.caption = {"label.add_recipe"}
 
     -- Filter conditions
-    local table_filter_conditions = flow_recipe_dialog.add{type="table", name="table_filter_conditions", column_count = 3}
+    local table_filter_conditions = flow_modal_dialog.add{type="table", name="table_filter_conditions", column_count = 3}
     table_filter_conditions.style.bottom_margin = 8
     table_filter_conditions.style.horizontal_spacing = 16
     table_filter_conditions.add{type="label", name="label_filter_conditions", caption={"label.show"}}
@@ -84,7 +79,7 @@ function create_recipe_dialog_structure(player)
         table_filter_conditions["fp_sprite-button_search_recipe"].visible = false
     end
 
-    local table_item_groups = flow_recipe_dialog.add{type="table", name="table_item_groups", column_count=6}
+    local table_item_groups = flow_modal_dialog.add{type="table", name="table_item_groups", column_count=6}
     table_item_groups.style.bottom_margin = 6
     table_item_groups.style.horizontal_spacing = 3
     table_item_groups.style.vertical_spacing = 3
@@ -99,7 +94,7 @@ function create_recipe_dialog_structure(player)
         button_group.style.width = 70
         button_group.style.height = 70
 
-        local scroll_pane_subgroups = flow_recipe_dialog.add{type="scroll-pane", name="scroll-pane_subgroups_" .. group.name}
+        local scroll_pane_subgroups = flow_modal_dialog.add{type="scroll-pane", name="scroll-pane_subgroups_" .. group.name}
         scroll_pane_subgroups.style.bottom_margin = 4
         scroll_pane_subgroups.style.horizontally_stretchable = true
         scroll_pane_subgroups.visible = false
@@ -130,9 +125,9 @@ function create_recipe_dialog_structure(player)
         scroll_pane_height = math.max(scroll_pane_height, specific_scroll_pane_height)
     end
     -- Set scroll-pane height to be the same for all item groups
-    for _, child in ipairs(flow_recipe_dialog.children_names) do
+    for _, child in ipairs(flow_modal_dialog.children_names) do
         if string.find(child, "^scroll%-pane_subgroups_[a-z-]+$") then
-            flow_recipe_dialog[child].style.height = math.min(scroll_pane_height, 650)
+            flow_modal_dialog[child].style.height = math.min(scroll_pane_height, 650)
         end
     end
 
@@ -192,7 +187,7 @@ end
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
 -- (Also, the logic is obtuse, but checks out)
 function run_preliminary_checks(player, product_name)
-    local flow_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]["flow_recipe_dialog"]
+    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_recipe_picker"]["flow_modal_dialog"]
 
     local enabled = {}
     local disabled_count = 0
@@ -207,7 +202,7 @@ function run_preliminary_checks(player, product_name)
     end
     
     if #enabled == 0 then
-        flow_recipe_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = true
+        flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = true
     elseif #enabled == 1 and disabled_count == 0 then
         return enabled[1]  -- all other cases return nil
     end
@@ -217,16 +212,16 @@ end
 
 -- Filters the recipes according to their enabled/hidden-attribute and the search-term
 function apply_recipe_filter(player)
-    local flow_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]["flow_recipe_dialog"]
-    local unenabled = flow_recipe_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state
-    local hidden = flow_recipe_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_hidden"].state
-    local search_term =  flow_recipe_dialog["table_filter_conditions"]["textfield_search_recipe"].text:gsub("%s+", "")
+    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_recipe_picker"]["flow_modal_dialog"]
+    local unenabled = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state
+    local hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_hidden"].state
+    local search_term =  flow_modal_dialog["table_filter_conditions"]["textfield_search_recipe"].text:gsub("%s+", "")
 
     local first_visible_group = nil
-    for _, group_element in pairs(flow_recipe_dialog["table_item_groups"].children) do
+    for _, group_element in pairs(flow_modal_dialog["table_item_groups"].children) do
         local group_name = string.gsub(group_element.name, "fp_sprite%-button_item_group_", "")
         local group_visible = false
-        for _, subgroup_element in pairs(flow_recipe_dialog["scroll-pane_subgroups_".. group_name]["table_subgroup"].children) do
+        for _, subgroup_element in pairs(flow_modal_dialog["scroll-pane_subgroups_".. group_name]["table_subgroup"].children) do
             local subgroup_visible = false
             for _, recipe_element in pairs(subgroup_element.children) do
                 local recipe_name = string.gsub(recipe_element.name, "fp_sprite%-button_recipe_", "")
@@ -255,7 +250,7 @@ function apply_recipe_filter(player)
     if first_visible_group ~= nil then
         -- Set selection to the first item_group that is visible
         local selected_group = global.players[player.index].selected_item_group_name
-        if selected_group == nil or flow_recipe_dialog["table_item_groups"]["fp_sprite-button_item_group_" ..
+        if selected_group == nil or flow_modal_dialog["table_item_groups"]["fp_sprite-button_item_group_" ..
           selected_group].visible == false then
             change_item_group_selection(player, first_visible_group)
         end
@@ -264,25 +259,25 @@ end
 
 -- Changes the selected item group to the specified one
 function change_item_group_selection(player, item_group_name)
-    local flow_recipe_dialog = player.gui.center["fp_frame_recipe_dialog"]["flow_recipe_dialog"]
+     local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_recipe_picker"]["flow_modal_dialog"]
     -- First, change the currently selected one back to normal, if it exists
     local selected_item_group_name = global.players[player.index].selected_item_group_name
     if selected_item_group_name ~= nil then
-        local sprite_button = flow_recipe_dialog["table_item_groups"]
+        local sprite_button = flow_modal_dialog["table_item_groups"]
           ["fp_sprite-button_item_group_" .. selected_item_group_name]
         if sprite_button ~= nil then
             sprite_button.style = "fp_button_icon_medium_recipe"
             sprite_button.ignored_by_interaction = false
-            flow_recipe_dialog["scroll-pane_subgroups_" .. selected_item_group_name].visible = false
+            flow_modal_dialog["scroll-pane_subgroups_" .. selected_item_group_name].visible = false
         end
     end
 
     -- Then, change the clicked one to the selected status
     global.players[player.index].selected_item_group_name = item_group_name
-    local sprite_button = flow_recipe_dialog["table_item_groups"]["fp_sprite-button_item_group_" .. item_group_name]
+    local sprite_button = flow_modal_dialog["table_item_groups"]["fp_sprite-button_item_group_" .. item_group_name]
     sprite_button.style = "fp_button_icon_clicked"
     sprite_button.ignored_by_interaction = true
-    flow_recipe_dialog["scroll-pane_subgroups_" .. item_group_name].visible = true
+    flow_modal_dialog["scroll-pane_subgroups_" .. item_group_name].visible = true
 end
 
 -- Checks whether given recipe produces given product
