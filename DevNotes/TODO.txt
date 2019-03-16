@@ -8,7 +8,6 @@ TODO Improvements:
 
 TODO Code Improvements:
 - Figure out how to do data migrations on new mod versions
-- Generalize modal dialogs to also be hideable, so they can apply to the recipe and future product dialog
 - Remove/update associated recipes when deleting products + update products/byproducts split each time
 - Improve sprite-button backgrounds across the board
 ? Write build- and factorio version-update-scripts
