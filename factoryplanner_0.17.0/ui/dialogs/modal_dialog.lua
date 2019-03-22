@@ -1,3 +1,6 @@
+require("preferences_dialog")
+require("recipe_picker_dialog")
+
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_type, dialog_settings, args)
     toggle_main_dialog(player)
@@ -8,6 +11,7 @@ function enter_modal_dialog(player, dialog_type, dialog_settings, args)
     local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"](player)
 
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
+    player.opened = flow_modal_dialog.parent
     _G["open_" .. dialog_type .. "_dialog"](flow_modal_dialog, args)
 end
 
@@ -113,7 +117,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_bar.style.top_margin = 4
 
         local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel",
-        style="back_button"}
+          style="back_button"}
         button_cancel.style.maximal_width = 90
         button_cancel.style.left_padding = 12
 
@@ -125,7 +129,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
         if dialog_settings.delete then
             local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
-            caption={"button-text.delete"}, style="red_button"}
+              caption={"button-text.delete"}, style="red_button"}
             button_delete.style.font = "default-dialog-button"
             button_delete.style.height = 32
             button_delete.style.maximal_width = 80
@@ -136,7 +140,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
         if dialog_settings.submit then
             local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
-            caption={"button-text.submit"}, style="confirm_button"}
+              caption={"button-text.submit"}, style="confirm_button"}
             button_submit.style.maximal_width = 90
         end
     end

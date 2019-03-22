@@ -17,7 +17,7 @@ end
 -- Disables edit and delete buttons if there exist no subfactories
 function refresh_actionbar(player)
     local player_table = global.players[player.index]
-    local actionbar = player.gui.center["fp_main_dialog"]["flow_action_bar"]
+    local actionbar = player.gui.center["fp_frame_main_dialog"]["flow_action_bar"]
     local delete_button = actionbar["fp_button_delete_subfactory"]
 
     -- selected_subfactory_id is always 0 when there are no subfactories
@@ -81,8 +81,9 @@ end
 function get_subfactory_condition_instructions()
     return {
         data = {
-            name = (function(flow_modal_dialog) return 
-              flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("%s+", "") end),
+            name = (function(flow_modal_dialog) return
+                -- Trim whitespace
+              flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1") end),
             icon = (function(flow_modal_dialog) return 
               flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value end)
         },

@@ -4,18 +4,36 @@ Line = {}
 function Line.init(player, recipe)
     local recipe_category = recipe.category
     if recipe_category == "basic-solid" and #recipe.ingredients > 1 then recipe_category = "complex-solid" end
-    local machine_name = data_util.get_default_machine(player, recipe_category).name
+    local default_machine = data_util.get_default_machine(player, recipe_category)
     
+    local function create_item_table(items)
+        local index = 1
+        local table = {}
+        for _, item in pairs(items) do
+            if item.amount == nil then item.amount = item.probability end
+            table[index] = {
+                name = item.name,
+                type = item.type,
+                ratio = item.amount,
+                amount = 0,
+                gui_position = index
+            }
+            index = index + 1
+        end
+        return table
+    end
+
     return {
         id = 0,
         recipe_name = recipe.name,
         recipe_category = recipe_category,
         percentage = 100,
-        machine_name = machine_name,
-        energy_consumption = 0,  -- in Watts
-        products = recipe.products,
-        byproducts = {},
-        ingredients = recipe.ingredients,
+        machine_name = default_machine.name,
+        machine_count = 0,
+        energy_consumption = 0,  -- in Watt
+        products = create_item_table(recipe.products),
+        byproducts = {},  -- left empty until a refresh moves products over
+        ingredients = create_item_table(recipe.ingredients),
         valid = true,
         gui_position = 0,
         type = "Line"
@@ -84,9 +102,7 @@ function Line.check_validity(player, subfactory_id, floor_id, id)
             self.valid = false
         else
             local machine = global.all_machines[self.recipe_category].machines[self.machine_name]
-            if machine == nil then
-                self.valid = false
-            end
+            if machine == nil then self.valid = false end
         end
     end
 

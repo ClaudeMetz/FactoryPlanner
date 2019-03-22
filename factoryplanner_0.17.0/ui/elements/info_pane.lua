@@ -1,6 +1,6 @@
 -- Constructs the info pane including timescale settings
 function refresh_info_pane(player)
-    local flow = player.gui.center["fp_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
+    local flow = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
     flow.style.left_margin = 0
 
     if flow["table_info_elements"] == nil then
@@ -95,7 +95,7 @@ function get_notes_condition_instructions()
         conditions = {
             [1] = {
                 label = {"label.notes_instruction_1"},
-                check = (function(data) return (#data.notes > 65536) end),
+                check = (function(data) return (#data.notes > 50000) end),
                 show_on_edit = true
             }
         }

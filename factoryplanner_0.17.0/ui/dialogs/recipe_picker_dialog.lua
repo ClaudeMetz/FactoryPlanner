@@ -1,52 +1,54 @@
 -- Handles populating the recipe dialog
 function open_recipe_picker_dialog(flow_modal_dialog, args)
     local player = game.players[flow_modal_dialog.player_index]
+    local subfactory_id = global.players[player.index].selected_subfactory_id
+    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+
     local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_recipe_picker"]["flow_modal_dialog"]
     if #flow_modal_dialog.children == 0 then create_recipe_picker_dialog_structure(player, flow_modal_dialog) end
 
-    flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = false
-    local product_name = Product.get_name(player, global.players[player.index].selected_subfactory_id, args.product_id)
-    local recipe_name = run_preliminary_checks(player, product_name)
-    -- nil meaning that no single enabled and matching recipe has been found (either 0 or 2+)
-    if recipe_name == nil then
-        global.players[player.index].selected_product_id = args.product_id
-        flow_modal_dialog["table_filter_conditions"]["textfield_search_recipe"].text = product_name
-        apply_recipe_filter(player)
+    local recipe_name, error, show = run_preliminary_checks(player, args.product_name)
+    if error ~= nil then
+        queue_hint_message(player, error)
+        exit_modal_dialog(player, "cancel", {})
     else
-        add_line(player, recipe_name, args.product_id)
-        exit_modal_dialog(player, "cancel")
+        -- One relevant, enabled, non-duplicate recipe found, add it immediately and exit dialog
+        if recipe_name ~= nil then
+            Floor.add_line(player, subfactory_id, floor_id, Line.init(player, global.all_recipes[recipe_name]))
+            exit_modal_dialog(player, "cancel", {})
+        
+        -- Else show the appropriately filtered dialog
+        else
+            global.players[player.index].selected_product_name = args.product_name
+            flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = show.disabled
+            flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_hidden"].state = show.hidden
+            flow_modal_dialog["table_filter_conditions"]["textfield_search_recipe"].text = args.product_name
+            apply_recipe_filter(player)
+        end
     end
 end
 
 -- Handles closing of the recipe dialog
-function close_recipe_picker_dialog(flow_modal_dialog, button, data)
+function close_recipe_picker_dialog(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
+    local subfactory_id = global.players[player.index].selected_subfactory_id
+    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+
     if data ~= nil and data.recipe_name ~= nil then
-        add_line(player, data.recipe_name, global.players[player.index].selected_product_id)
+        if Floor.recipe_exists(player, subfactory_id, floor_id, global.all_recipes[data.recipe_name]) then
+            queue_hint_message(player, {"label.error_duplicate_recipe"})
+        else
+            Floor.add_line(player, subfactory_id, floor_id, Line.init(player, global.all_recipes[data.recipe_name]))
+        end
     end
 
-    global.players[player.index].selected_product_id = 0
+    global.players[player.index].selected_product_name = nil
     change_item_group_selection(player, "logistics")  -- Returns selection to the first item_group for consistency
 end
 
 -- No conditions needed for the recipe picker dialog
 function get_recipe_picker_condition_instructions()
     return {data = {}, conditions = {}}
-end
-
-
--- Adds (assembly) line to the currently selected floor
-function add_line(player, recipe_name, product_id)
-    local subfactory_id = global.players[player.index].selected_subfactory_id
-    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
-    local product = Subfactory.get(player, subfactory_id, "Product", product_id)
-    local recipe = global.all_recipes[recipe_name]
-
-    if Floor.recipe_exists(player, subfactory_id, floor_id, recipe) then
-        queue_hint_message(player, {"label.error_duplicate_recipe"})
-    else
-        Floor.add_line(player, subfactory_id, floor_id, Line.init(player, recipe), product)
-    end
 end
 
 
@@ -183,32 +185,44 @@ end
 
 
 -- Serves the dual-purpose of setting the filter to include disabled recipes if no enabled ones are found
--- and, if there is only one that matches, to return a recipe name that can be directly added without the modal dialog
+-- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
--- (Also, the logic is obtuse, but checks out)
+-- (The logic is obtuse, but checks out)
 function run_preliminary_checks(player, product_name)
-    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_recipe_picker"]["flow_modal_dialog"]
+    local subfactory_id = global.players[player.index].selected_subfactory_id
+    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
 
-    local enabled = {}
-    local disabled_count = 0
+    -- First determine all relevant recipes and the amount in each category (enabled and hidden)
+    local relevant_recipes = {}
+    local non_disabled_recipe_count = 0
+    local non_hidden_recipe_count = 0
     for _, recipe in pairs(global.all_recipes) do
         if recipe_produces_product(recipe, product_name) and recipe.category ~= "handcrafting" then
-            if recipe.enabled then
-                table.insert(enabled, recipe.name)
-            else
-                disabled_count = disabled_count +1
-            end
+            table.insert(relevant_recipes, recipe)
+            if recipe.enabled then non_disabled_recipe_count = non_disabled_recipe_count + 1 end
+            if not recipe.hidden then non_hidden_recipe_count = non_hidden_recipe_count + 1 end
         end
     end
-    
-    if #enabled == 0 then
-        flow_modal_dialog["table_filter_conditions"]["fp_checkbox_filter_condition_enabled"].state = true
-    elseif #enabled == 1 and disabled_count == 0 then
-        return enabled[1]  -- all other cases return nil
-    end
-    return nil  -- meaning recipe dialog has to be shown
-end
 
+    -- Set filters to the minimum that still shows at least one recipe
+    local show = {disabled = false, hidden = false}
+    if non_disabled_recipe_count == 0 then show.disabled = true end
+    if non_hidden_recipe_count == 0 then show.hidden = true end
+
+    -- Return result, format: return recipe, error-message, show
+    if #relevant_recipes == 0 then
+        return nil, {"label.error_no_relevant_recipe"}, show
+    elseif #relevant_recipes == 1 then
+        local recipe = relevant_recipes[1]
+        if recipe.enabled then
+            return recipe.name, nil, show
+        else
+            return nil, nil, show
+        end
+    else  -- 2+ relevant recipes
+        return nil, nil, show
+    end
+end
 
 -- Filters the recipes according to their enabled/hidden-attribute and the search-term
 function apply_recipe_filter(player)

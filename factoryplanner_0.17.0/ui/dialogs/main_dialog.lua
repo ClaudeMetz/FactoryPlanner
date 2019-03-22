@@ -2,7 +2,6 @@ require("mod-gui")
 require("ui.util")
 require("ui.listeners")
 require("modal_dialog")
-require("preferences_dialog")
 require("ui.elements.actionbar")
 require("ui.elements.subfactory_bar")
 require("ui.elements.error_bar")
@@ -36,7 +35,7 @@ function player_gui_reset(player)
     local center = player.gui.center
     local guis = {
         mod_gui.get_button_flow(player),
-        center["fp_main_dialog"],
+        center["fp_frame_main_dialog"],
         center["fp_frame_modal_dialog"],
         center["fp_frame_modal_dialog_recipe_picker"]
     }
@@ -58,13 +57,17 @@ function toggle_main_dialog(player)
     local center = player.gui.center
     -- Won't toggle if a modal dialog is open
     if global.players[player.index].modal_dialog_type == nil then
-        local main_dialog = center["fp_main_dialog"]
+        local main_dialog = center["fp_frame_main_dialog"]
         if main_dialog == nil then
             create_main_dialog(player)
-            center["fp_main_dialog"].visible = true  -- Strangely isn't set right away
+            center["fp_frame_main_dialog"].visible = true  -- Strangely isn't set right away
+            player.opened = center["fp_frame_main_dialog"]
         else
             -- Only refresh it when you make it visible
-            if not main_dialog.visible then refresh_main_dialog(player) end
+            if not main_dialog.visible then 
+                refresh_main_dialog(player)
+                player.opened = main_dialog
+            end
             main_dialog.visible = (not main_dialog.visible)
         end
     end
@@ -73,14 +76,14 @@ end
 -- Refreshes all variable GUI-panes (refresh-hierarchy, subfactory_bar refreshes everything below it)
 -- Also refreshes the dimensions by reloading the dialog, if the flag is set
 function refresh_main_dialog(player, refresh_dimensions)
-    local main_dialog = player.gui.center["fp_main_dialog"]
+    local main_dialog = player.gui.center["fp_frame_main_dialog"]
     if refresh_dimensions then
         ui_util.recalculate_main_dialog_dimensions(player)
         if main_dialog ~= nil then
             local visible = main_dialog.visible
             main_dialog.destroy()
             toggle_main_dialog(player)
-            player.gui.center["fp_main_dialog"].visible = visible
+            player.gui.center["fp_frame_main_dialog"].visible = visible
         end
     else
         if main_dialog ~= nil then
@@ -93,9 +96,9 @@ end
 -- Constructs the main dialog
 function create_main_dialog(player)
     local main_dialog_dimensions = global.players[player.index].main_dialog_dimensions
-    local main_dialog = player.gui.center.add{type="frame", name="fp_main_dialog", direction="vertical"}
+    local main_dialog = player.gui.center.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
     main_dialog.style.minimal_width = main_dialog_dimensions.width
-    main_dialog.style.minimal_height = main_dialog_dimensions.height
+    main_dialog.style.minimal_height = main_dialog_dimensions.height  -- Not in use currently, production_pane sets height instead
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)
@@ -114,7 +117,7 @@ end
 -- Refreshes the general hint that is displayed next to the main dialog title
 function refresh_hint_message(player)
     local player_table = global.players[player.index]
-    local label_hint = player.gui.center["fp_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
+    local label_hint = player.gui.center["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
     label_hint.caption = player_table.queued_hint_message
     player_table.queued_hint_message = ""
 end

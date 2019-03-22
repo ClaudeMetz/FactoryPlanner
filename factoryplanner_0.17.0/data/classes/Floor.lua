@@ -9,6 +9,12 @@ function Floor.init()
         lines = {},
         line_index = 0,
         line_counter = 0,
+        aggregate = {
+            energy_consumption = 0,
+            products = {},
+            byproducts = {},
+            ingredients = {}
+        },
         valid = true,
         type = "Floor"
     }
@@ -127,6 +133,30 @@ function Floor.recipe_exists(player, subfactory_id, id, recipe)
         end
     end
     return false
+end
+
+
+function Floor.get_aggregate(player, subfactory_id, id)
+    return get_floor(player, subfactory_id, id).aggregate
+end
+
+-- Updates whole floor from top to bottom, including subfloors
+function Floor.update(player, subfactory_id, id)
+    local self = get_floor(player, subfactory_id, id)
+
+    local energy_consumption = 0
+    for _, line_id in ipairs(Floor.get_lines_in_order(player, subfactory_id, id)) do
+        local line = self.lines[line_id]
+        if line.type == "FloorReference" then
+            local aggregate = Floor.get_aggregate(player, subfactory_id, line.floor_id)
+            energy_consumption = energy_consumption + aggregate.energy_consumption
+        else
+            energy_consumption = energy_consumption + line.energy_consumption
+        end
+            
+    end
+
+    self.aggregate.energy_consumption = energy_consumption
 end
 
 

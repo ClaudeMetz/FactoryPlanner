@@ -35,7 +35,7 @@ function player_init(player)
         player_table.queued_hint_message = ""
 
         player_table.selected_subfactory_id = 0
-        player_table.selected_product_id = 0
+        player_table.selected_product_name = nil
         player_table.selected_item_group_name = nil
         player_table.selected_line_id = 0
     end
@@ -50,7 +50,7 @@ function player_reset(player)
         player_table.current_activity = nil
         player_table.queued_hint_message = ""
 
-        player_table.selected_product_id = 0
+        player_table.selected_product_name = nil
         player_table.selected_item_group_name = nil
         player_table.selected_line_id = 0
     end
@@ -67,6 +67,9 @@ function handle_configuration_change()
     global.all_machines = data_util.generate_all_machines()
 
     for index, player in pairs(game.players) do
+        local space_tech = player.force.technologies["space-science-pack"].researched
+        if space_tech then global.all_recipes["fp-space-science-pack"].enabled = true end
+
         player_reset(player)
         player_gui_reset(player)
 
@@ -83,29 +86,29 @@ end
 function run_dev_config(player)
     local player_table = global.players[player.index]
 
-    Factory.add_subfactory(player, Subfactory.init("", {type="item", name="iron-plate"}))
-    Factory.add_subfactory(player, Subfactory.init("Beta", nil))
-    Factory.add_subfactory(player, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
-    player_table.selected_subfactory_id = 1
+    if global.devmode then
+        Factory.add_subfactory(player, Subfactory.init("", {type="item", name="iron-plate"}))
+        Factory.add_subfactory(player, Subfactory.init("Beta", nil))
+        Factory.add_subfactory(player, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
+        player_table.selected_subfactory_id = 1
 
-    local subfactory_id, id = player_table.selected_subfactory_id, nil
+        local subfactory_id, id = player_table.selected_subfactory_id, nil
 
-    id = Subfactory.add(player, subfactory_id, Product.init({name="electronic-circuit", type="item"}, 400))
-    Product.add_to_amount_produced(player, subfactory_id, id, 600)
-    id = Subfactory.add(player, subfactory_id, Product.init({name="advanced-circuit", type="item"}, 200))
-    Product.add_to_amount_produced(player, subfactory_id, id, 200)
-    id = Subfactory.add(player, subfactory_id, Product.init({name="processing-unit", type="item"}, 100))
-    Product.add_to_amount_produced(player, subfactory_id, id, 60)
-    Subfactory.add(player, subfactory_id, Product.init({name="uranium-235", type="item"}, 40))
+        id = Subfactory.add(player, subfactory_id, Product.init({name="electronic-circuit", type="item"}, 400))
+        Product.add_to_amount_produced(player, subfactory_id, id, 600)
+        id = Subfactory.add(player, subfactory_id, Product.init({name="advanced-circuit", type="item"}, 200))
+        Product.add_to_amount_produced(player, subfactory_id, id, 200)
+        id = Subfactory.add(player, subfactory_id, Product.init({name="processing-unit", type="item"}, 100))
+        Product.add_to_amount_produced(player, subfactory_id, id, 60)
+        Subfactory.add(player, subfactory_id, Product.init({name="uranium-235", type="item"}, 40))
 
-    Subfactory.add(player, subfactory_id, Ingredient.init({name="copper-plate", type="item"}, 800))
-    Subfactory.add(player, subfactory_id, Ingredient.init({name="iron-plate", type="item"}, 400))
+        Subfactory.add(player, subfactory_id, Ingredient.init({name="copper-plate", type="item"}, 800))
+        Subfactory.add(player, subfactory_id, Ingredient.init({name="iron-plate", type="item"}, 400))
 
-    id = Subfactory.add(player, subfactory_id, Byproduct.init({name="heavy-oil", type="fluid"}))
-    Byproduct.add_to_amount_produced(player, subfactory_id, id, 600)
-    id = Subfactory.add(player, subfactory_id, Byproduct.init({name="light-oil", type="fluid"}))
-    Byproduct.add_to_amount_produced(player, subfactory_id, id, 750)
+        id = Subfactory.add(player, subfactory_id, Byproduct.init({name="heavy-oil", type="fluid"}, 600))
+        id = Subfactory.add(player, subfactory_id, Byproduct.init({name="light-oil", type="fluid"}, 750))
 
-    Floor.add_line(player, subfactory_id, 1, Line.init(player, global.all_recipes["electronic-circuit"]))
-    Floor.add_line(player, subfactory_id, 1, Line.init(player, global.all_recipes["advanced-circuit"]))
+        Floor.add_line(player, subfactory_id, 1, Line.init(player, global.all_recipes["electronic-circuit"]))
+        Floor.add_line(player, subfactory_id, 1, Line.init(player, global.all_recipes["advanced-circuit"]))
+    end
 end
