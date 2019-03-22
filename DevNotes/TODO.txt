@@ -3,13 +3,14 @@ TODO Features:
 
 
 TODO Improvements:
-- Use ESC as a toggle for the main dialog or cancel on a modal dialog (not sure how, may ask FNEI-author _npo6ka_)
+- Create a custom product selection dialog akin to the recipe dialog [A1]
 
 
 TODO Code Improvements:
-- Figure out how to do data migrations on new mod versions
-- Remove/update associated recipes when deleting products + update products/byproducts split each time
+- Figure out how to do data migrations to new mod versions
 - Improve sprite-button backgrounds across the board
+- Complete validity checks for floors and lines
+- Remove/update associated recipes when deleting products + update products/byproducts split each time
 ? Write build- and factorio version-update-scripts
 ? Use mouse_button_filters and remove sound from some buttons
 
@@ -18,7 +19,6 @@ TODO Bugs:
 
 
 TODO Post-Launch:
-! Create a custom product selection dialog akin to the recipe dialog [A1]
 ! Module+Beacon-support
 ! Import/Export of one/all subfactories (and parts of them?)
 - DE, FR localisations
@@ -31,3 +31,17 @@ TODO Post-Launch:
 
 API Changes:
 - (probable) let enter work as a way to submit forms, even when a textfield is in focus
+- (asked) ability to show number 0 on sprite-buttons
+- (asked) wierd choose-elem-button selection state if locked = true
+- () event for start_hover and stop_hover over elements or buttons only
+
+
+Add an event for hovering over buttons
+
+As a warning, this is not a super necessary feature that needs to be implemented at all costs, but it could make for some nice UI experiences.
+I would like to know, as a modder, when a user hovers over a gui element. Doing this for all elements might be a bit silly/performance heavy, but I feel like adding it for buttons is reasonable, especially since you can now set hovered sprites and such. I imagine it being done by adding two events, one for when the hover starts and one for when it ends.
+
+Now one use case for this could be the following: You are presenting several options to the user, each of which will have different effects on different values. It would be really nice to have the values (which are also on screen) change on hover, so the effects can be visualised immediately, without having to actually change the value. See this as an example:
+
+
+This could enable other things as well, of course. Again, this is not really important, but if the goal is to make nicer GUI's, this is a step in the right direction.

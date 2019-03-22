@@ -5,18 +5,23 @@ function add_production_pane_to(main_dialog)
     -- Production titlebar
     local flow_titlebar = flow.add{type="table", name="flow_production_titlebar", column_count = 4}
     flow_titlebar.style.top_margin = 10
+    flow_titlebar.style.bottom_margin = 4
 
     -- Info label
     local info = flow.add{type="label", name="label_production_info", caption={"", " (",  {"label.production_info"}, ")"}}
+    info.visible = false
 
     -- Main production pane
     local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane_production_pane", direction="vertical"}
+    scroll_pane.style.minimal_height = 585
     scroll_pane.style.horizontally_stretchable = true
     scroll_pane.style.vertically_stretchable = true
 
     local column_count = 7
     local table = scroll_pane.add{type="table", name="table_production_pane",  column_count=column_count}
     table.style = "table_with_selection"
+    table.style.top_padding = 0
+    table.style.left_margin = 4
     for i=1, column_count do
         if i < 5 then table.style.column_alignments[i] = "middle-center"
         else table.style.column_alignments[i] = "middle-left" end
@@ -27,21 +32,26 @@ end
 
 -- Refreshes the prodiction pane (actionbar + table)
 function refresh_production_pane(player)
-    local flow_production = player.gui.center["fp_main_dialog"]["flow_production_pane"]
+    local flow_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
      -- Cuts function short if the production pane hasn't been initialized yet
     if not flow_production then return end
+
+    local flow_titlebar = flow_production["flow_production_titlebar"]
+    flow_titlebar.clear()
 
     local subfactory_id = global.players[player.index].selected_subfactory_id
     -- selected_subfactory_id is always 0 when there are no subfactories
     if (subfactory_id ~= 0) and Subfactory.is_valid(player, subfactory_id) then
-        local flow_titlebar = flow_production["flow_production_titlebar"]
-        flow_titlebar.clear()
-
         local title = flow_titlebar.add{type="label", name="label_production_pane_title", 
           caption={"", "  ", {"label.production"}, " "}}
         title.style.font = "fp-font-20p"
 
         local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+
+        Floor.update(player, subfactory_id, floor_id)---------------------------------------------------
+        Subfactory.update_aggregate(player, subfactory_id)
+        refresh_subfactory_pane(player)
+
         if Floor.get_line_count(player, subfactory_id, floor_id) > 0 then
             local floor_level = Floor.get_level(player, subfactory_id, floor_id)
             local label_level = flow_titlebar.add{type="label", name="label_actionbar_level", 
@@ -59,31 +69,25 @@ function refresh_production_pane(player)
     end
 
     refresh_production_table(player)
-
-    --game.print("Floors: " .. Subfactory.get_count(player, subfactory_id, "Floor"))
-    --game.print("Lines: " .. Floor.get_line_count(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id)))
 end
 
 -- Refreshes the production table by reloading the data
 function refresh_production_table(player)
-    local flow_production = player.gui.center["fp_main_dialog"]["flow_production_pane"]
+    local flow_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
     -- Cuts function short if the production pane hasn't been initialized yet
     if not flow_production then return end
+
+    flow_production["label_production_info"].visible = false
+    local table_production = flow_production["scroll-pane_production_pane"]["table_production_pane"]
+    table_production.clear()
 
     local subfactory_id = global.players[player.index].selected_subfactory_id
     -- selected_subfactory_id is always 0 when there are no subfactories
     if (subfactory_id ~= 0) and Subfactory.is_valid(player, subfactory_id) then
-        flow_production.visible = true
-
-        local table_production = flow_production["scroll-pane_production_pane"]["table_production_pane"]
-        table_production.clear()
-
         local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
         if Floor.get_line_count(player, subfactory_id, floor_id) == 0 then
             flow_production["label_production_info"].visible = true
-        else
-            flow_production["label_production_info"].visible = false
-            
+        else            
             -- Table titles
             local title_strings = {
                 {name="recipe", label={"label.recipe"}},
@@ -105,15 +109,13 @@ function refresh_production_table(player)
                 create_line_table_row(player, line)
             end
         end
-    else
-        flow_production.visible = false
     end
 end
 
 -- Creates a single row of the table containing all (assembly) lines
 function create_line_table_row(player, line)
     local line_id = line.id
-    local table_production = player.gui.center["fp_main_dialog"]["flow_production_pane"]
+    local table_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
       ["scroll-pane_production_pane"]["table_production_pane"]
 
     local player_table = global.players[player.index]
@@ -156,17 +158,13 @@ function create_line_table_row(player, line)
     if player_table.selected_line_id == line_id and player_table.current_activity == "changing_machine" then
         for _, machine_name in ipairs(machine_category.order) do
             local machine = global.all_machines[line.recipe_category].machines[machine_name]
-            local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_line_" .. line_id .. 
-              "_machine_" .. machine.name, sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe"}
-            button_machine.tooltip = machine.localised_name
+            local count = 0  --Items Required/(Crafting Speed/Crafting Time * 60*Output Multiplier)
+            create_machine_button(table_machines, line, machine_name, count, ("_" .. machine.name))
         end
     else
-        local machine = global.all_machines[line.recipe_category].machines[line.machine_name]
-        local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line_id,
-          sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe"}
-        button_machine.tooltip = machine.localised_name
+        create_machine_button(table_machines, line, line.machine_name, line.machine_count, "")
     end
-
+    
     -- Energy label
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line_id,
       caption=ui_util.format_energy_consumption(line.energy_consumption, 3)}
@@ -182,12 +180,22 @@ function create_line_table_row(player, line)
     create_item_flow(table_production, "ingredient", line.ingredients, line_id, "fp_button_icon_medium_green")
 end
 
+-- Creates and places a single machine button
+function create_machine_button(table, line, name, count, name_appendage)
+    local machine = global.all_machines[line.recipe_category].machines[name]
+    local button = table.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_machine"
+      .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe"}
+    button.number = math.ceil(count)
+    button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)}
+end
+
 -- Adds the flow containing all item buttons of the given type in the given style
 function create_item_flow(table, type, items, line_id, style)
     local flow = table.add{type="flow", name="flow_line_" .. type .. "s_" .. line_id, direction="horizontal"}
-    for _, item in ipairs(items) do
+    for _, id in ipairs(data_util.order_by_position(items)) do
+        local item = items[id]
         local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. type .. "_" .. line_id 
-          .. "_" .. item.name, sprite=item.type .. "/" .. item.name, style=style}
+          .. "_" .. id, sprite=item.type .. "/" .. item.name, style=style}
 
         -- Special handling for mining recipes
         local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
@@ -196,7 +204,6 @@ function create_item_flow(table, type, items, line_id, style)
             tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
         end
 
-        if item.amount == nil then item.amount = item.probability end
         button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(item.amount, 8)}
         button.number = item.amount
     end
@@ -284,8 +291,19 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
 end
 
 -- Handles a click on any of the 3 item buttons of a specific line
-function handle_item_button_click(player, style, type, line_id, item_name)
-    if style ~= "fp_button_icon_medium_blank" and type == "ingredient" then
-        --enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_id=product_id})
+function handle_item_button_click(player, style, type, line_id, item_id, click, direction)
+    local player_table = global.players[player.index]
+    local subfactory_id = player_table.selected_subfactory_id
+    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+    local items = Floor.get_line(player, subfactory_id, floor_id, line_id)[type .. "s"]
+
+    -- Shift item in the given direction
+    if direction ~= nil then
+        data_util.shift_position(items, item_id, direction, #items)
+    else
+        if click == "left" and style ~= "fp_button_icon_medium_blank" then
+            enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_name=items[item_id].name})
+        end
     end
+    refresh_production_table(player)
 end

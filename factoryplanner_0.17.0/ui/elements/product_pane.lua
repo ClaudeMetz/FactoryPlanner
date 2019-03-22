@@ -1,5 +1,3 @@
-require("ui.dialogs.recipe_picker_dialog")
-
 -- Returns necessary details to complete the item button for a product
 function get_product_specifics(product)
     local localised_name = game[product.item_type .. "_prototypes"][product.name].localised_name
@@ -35,10 +33,12 @@ end
 
 -- Handles populating the modal dialog to add or edit products
 function open_product_dialog(flow_modal_dialog, args)
-    local player_table = global.players[flow_modal_dialog.player_index]
+    local player = game.players[flow_modal_dialog.player_index]
+    local player_table = global.players[player.index]
     if args.edit then 
         player_table.current_activity = "editing_product"
-        player_table.selected_product_id = args.product_id
+        player_table.selected_product_name = Subfactory.get(player, player_table.selected_subfactory_id, 
+          "Product", args.product_id).name
     end
     create_product_dialog_structure(flow_modal_dialog, {"label.add_product"})
 end
@@ -48,20 +48,20 @@ function close_product_dialog(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
     local player_table = global.players[player.index]
     local subfactory_id = player_table.selected_subfactory_id
-    local product_id = player_table.selected_product_id
+    local product = Subfactory.find_product_by_name(player, subfactory_id, player_table.selected_product_name)
 
     if action == "submit" then
         if player_table.current_activity == "editing_product" then
-            Product.set_amount_required(player, subfactory_id, product_id, tonumber(data.amount_required))
+            Product.set_amount_required(player, subfactory_id, product.id, tonumber(data.amount_required))
         else
             Subfactory.add(player, subfactory_id, Product.init(data.item, tonumber(data.amount_required)))
         end
 
     elseif action == "delete" then
-        Subfactory.delete(player, subfactory_id, "Product", product_id)
+        Subfactory.delete(player, subfactory_id, "Product", product.id)
     end
 
-    player_table.selected_product_id = 0
+    player_table.selected_product_name = nil
 end
 
 
@@ -83,7 +83,7 @@ function get_product_condition_instructions(player)
             },
             [2] = {
                 label = {"label.product_instruction_2"},
-                check = (function(data) return (player_table.selected_product_id == 0 and 
+                check = (function(data) return (player_table.selected_product_name == nil and 
                           Subfactory.product_exists(player, player_table.selected_subfactory_id, data.item)) end),
                 show_on_edit = false
             },
@@ -123,12 +123,13 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     local player = game.players[flow_modal_dialog.player_index]
     local player_table = global.players[player.index]
 
-    local product_id = player_table.selected_product_id
-    if product_id ~= 0 then
-        local product = Subfactory.get(player, player_table.selected_subfactory_id, "Product", product_id)
+    if player_table.selected_product_name ~= nil then
+        local product = Subfactory.find_product_by_name(player, player_table.selected_subfactory_id,
+          player_table.selected_product_name)
         button_product.elem_value = {type=product.item_type, name=product.name}
-        textfield_product_amount.text = product.amount_required
         button_product.locked = true
+        --button_product.enabled = false
+        textfield_product_amount.text = product.amount_required
     end
 end
 
@@ -146,8 +147,9 @@ function handle_product_element_click(player, product_id, click, direction)
     else
         if click == "left" then
             local floor = Subfactory.get(player, subfactory_id, "Floor", Subfactory.get_selected_floor_id(player, subfactory_id))
-            if global.devmode or floor.level == 1 then
-                enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_id=product_id})
+            if floor.level == 1 then
+                local product_name = Product.get_name(player, subfactory_id, product_id)
+                enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_name=product_name})
             else
                 queue_hint_message(player, {"label.error_product_wrong_floor"})
             end

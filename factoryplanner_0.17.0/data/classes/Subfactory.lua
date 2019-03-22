@@ -102,6 +102,34 @@ function Subfactory.change_selected_floor(player, id, step)
 end
 
 
+-- Updates the subfactories calculated data after it was recalculated
+function Subfactory.update_aggregate(player, id)
+    local self = get_subfactory(player, id)
+    local aggregate = Floor.get_aggregate(player, id, 1)
+
+    self.energy_consumption = aggregate.energy_consumption
+
+    Subfactory.delete_all(player, id, "Ingredient")
+    for _, ingredient in pairs(aggregate.ingredients) do
+        local dataset = Ingredient.init(ingredient.name, ingredient.amount)
+        Subfactory.add(player, id, dataset)
+    end
+
+    for id, product in pairs(self["Product"].datasets) do
+        local aggregate_product = aggregate.products[product.name]
+        local amount_produced = 0
+        if aggregate_product ~= nil then amount_produced = aggregate_product.amount_produced end
+        product.amount_produced = amount_produced
+    end
+
+    Subfactory.delete_all(player, id, "Byproduct")
+    for _, byproduct in pairs(aggregate.byproducts) do
+        local dataset = Byproducts.init(byproduct.name, byproduct.amount)
+        Subfactory.add(player, id, dataset)
+    end
+end
+
+
 function Subfactory.add(player, id, dataset)
     local self = get_subfactory(player, id)
     local data_table = self[dataset.type]
@@ -133,6 +161,13 @@ function Subfactory.delete(player, id, type, dataset_id)
     data_table.datasets[dataset_id] = nil
 end
 
+function Subfactory.delete_all(player, id, type)
+    local data_table = get_subfactory(player, id)[type]
+    for dataset_id, _ in pairs(data_table.datasets) do
+        Subfactory.delete(player, id, type, dataset_id)
+    end
+end
+
 
 function Subfactory.get_count(player, id, type)
     return get_subfactory(player, id)[type].counter
@@ -158,6 +193,12 @@ function Subfactory.product_exists(player, id, product)
     return false
 end
 
+-- Finds products by their name (assumes it exists)
+function Subfactory.find_product_by_name(player, id, product_name)
+    for _, p in pairs(get_subfactory(player, id).Product.datasets) do
+        if p.name == product_name then return p end
+    end
+end
 
 function Subfactory.is_valid(player, id)
     return get_subfactory(player, id).valid

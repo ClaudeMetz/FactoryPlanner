@@ -1,11 +1,11 @@
 Byproduct = {}
 
-function Byproduct.init(item)
+function Byproduct.init(item, amount_produced)
     return {
         id = 0,
         name = item.name,
         item_type = item.type,
-        amount_produced = 0,
+        amount_produced = amount_produced,
         valid = true,
         gui_position = 0,
         type = "Byproduct"
@@ -31,12 +31,6 @@ function Byproduct.get_item_type(player, subfactory_id)
     return get_byproduct(player, subfactory_id, id).item_type
 end
 
-
--- Negative amounts subtract
-function Byproduct.add_to_amount_produced(player, subfactory_id, id, amount)
-    local byproduct = get_byproduct(player, subfactory_id, id)
-    byproduct.amount_produced = byproduct.amount_produced + amount
-end
 
 function Byproduct.get_amount_produced(player, subfactory_id, id)
     return get_byproduct(player, subfactory_id, id).amount_produced

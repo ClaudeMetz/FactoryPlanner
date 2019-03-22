@@ -175,6 +175,8 @@ function data_util.generate_all_machines()
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
+            speed = proto.crafting_speed,
+            energy = proto.energy_usage,
             position = #data["order"]
         }
         data["machines"][proto.name] = machine

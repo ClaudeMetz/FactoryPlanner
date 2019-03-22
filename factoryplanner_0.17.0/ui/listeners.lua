@@ -65,9 +65,29 @@ script.on_event("fp_toggle_main_dialog", function(event)
 end)
 
 
+-- Fires on pressing the button to close a dialog
+script.on_event(defines.events.on_gui_closed, function(event)
+    local player = game.players[event.player_index]
+
+	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
+      and string.find(event.element.name, "^fp_.+$") then
+
+        -- Close or hide any modal dialog
+		if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
+			exit_modal_dialog(player, "cancel", {})
+    
+        -- Toggle the main dialog
+		elseif event.element.name == "fp_frame_main_dialog" then
+            toggle_main_dialog(player)
+            
+        end
+	end
+end)
+
 -- Fires on any radiobutton change
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.players[event.player_index]
+
     if string.find(event.element.name, "^fp_checkbox_filter_condition_%l+$") then
         apply_recipe_filter(player)
     end
@@ -115,122 +135,126 @@ script.on_event(defines.events.on_gui_click, function(event)
     local player = game.players[event.player_index]
     local found = true
     
-    -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
-    if event.element.name == "fp_button_toggle_interface" or event.element.name == "fp_button_titlebar_exit"
-        and is_left_click then
-        toggle_main_dialog(player)
+    if string.find(event.element.name, "^fp_.+$") then
 
-    -- Closes the modal dialog straight away
-    elseif event.element.name == "fp_button_modal_dialog_cancel" and is_left_click then
-        exit_modal_dialog(player, "cancel")
+        -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
+        if event.element.name == "fp_button_toggle_interface" or event.element.name == "fp_button_titlebar_exit"
+            and is_left_click then
+            toggle_main_dialog(player)
 
-    -- Closes the modal dialog, calling the appropriate deletion function
-    elseif event.element.name == "fp_button_modal_dialog_delete" and is_left_click then
-        exit_modal_dialog(player, "delete")
+        -- Closes the modal dialog straight away
+        elseif event.element.name == "fp_button_modal_dialog_cancel" and is_left_click then
+            exit_modal_dialog(player, "cancel", {})
 
-    -- Submits the modal dialog, forwarding to the appropriate function
-    elseif event.element.name == "fp_button_modal_dialog_submit" and is_left_click then
-        exit_modal_dialog(player, "submit")
+        -- Closes the modal dialog, calling the appropriate deletion function
+        elseif event.element.name == "fp_button_modal_dialog_delete" and is_left_click then
+            exit_modal_dialog(player, "delete", {})
 
-    -- Opens the preferences dialog
-    elseif event.element.name == "fp_button_titlebar_preferences" and is_left_click then
-        enter_modal_dialog(player, "preferences", {close=true}, {})
-    
-    -- Opens the new-subfactory dialog
-    elseif event.element.name == "fp_button_new_subfactory" and is_left_click then
-        enter_modal_dialog(player, "subfactory", {submit=true}, {edit=false})
+        -- Submits the modal dialog, forwarding to the appropriate function
+        elseif event.element.name == "fp_button_modal_dialog_submit" and is_left_click then
+            exit_modal_dialog(player, "submit", {})
 
-    -- Opens the edit-subfactory dialog
-    elseif event.element.name == "fp_button_edit_subfactory" and is_left_click then
-        enter_modal_dialog(player, "subfactory", {submit=true, delete=true}, {edit=true})
-
-    -- Reacts to the delete button being pressed
-    elseif event.element.name == "fp_button_delete_subfactory" and is_left_click then
-        handle_subfactory_deletion(player)
-
-    -- Enters mode to change the timescale of the current subfactory
-    elseif event.element.name == "fp_button_change_timescale" and is_left_click then
-        handle_subfactory_timescale_change(player, nil)
-
-    -- Opens notes dialog
-    elseif event.element.name == "fp_button_view_notes" and is_left_click then
-        enter_modal_dialog(player, "notes", {submit=true}, {edit=false})
-
-    -- Opens the add-product dialog
-    elseif event.element.name == "fp_sprite-button_add_product" and is_left_click then
-        enter_modal_dialog(player, "product", {submit=true}, {edit=false})
-
-    -- Submits the entered search term in the recipe dialog
-    elseif event.element.name == "fp_sprite-button_search_recipe" and is_left_click then
-        apply_recipe_filter(player)
-
-    -- Sets the selected floor to be the parent of the currently selected one
-    elseif event.element.name == "fp_button_floor_up" and is_left_click then
-        Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "up")
-        refresh_production_pane(player)
-
-    -- Sets the selected floor to be the top one
-    elseif event.element.name == "fp_button_floor_top" and is_left_click then
-        Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "top")
-        refresh_production_pane(player)
-
-    -- Reacts to a subfactory button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
-        local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
-        handle_subfactory_element_click(player, subfactory_id, click, direction)
-
-    -- Deletes invalid subfactory items/recipes after the error bar button has been pressed
-    elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
-        local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
-        Subfactory.remove_invalid_datasets(player, subfactory_id)
-        refresh_subfactory_bar(player, true)
-
-    -- Changes the timescale of the current subfactory
-    elseif string.find(event.element.name, "^fp_button_timescale_%d+$") and is_left_click then
-        local timescale = tonumber(string.match(event.element.name, "%d+"))
-        handle_subfactory_timescale_change(player, timescale)
-
-    -- Reacts to a item group button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
-        local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
-        change_item_group_selection(player, item_group_name)
-
-    -- Reacts to a recipe button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_recipe_[a-z-]+$") and is_left_click then
-        local recipe_name = string.gsub(event.element.name, "fp_sprite%-button_recipe_", "")
-        exit_modal_dialog(player, "cancel", {recipe_name=recipe_name})
-    
-    -- Reacts to any subfactory_pane item button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then
-        local split_string = ui_util.split(event.element.name, "_")
-        _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
-
-    -- Reacts to the recipe button on an (assembly) line being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
-        local line_id = tonumber(string.match(event.element.name, "%d+"))
-        handle_line_recipe_click(player, line_id, click, direction)
-
-    -- Reacts to the machine button on an (assembly) line being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+$") then
-        local line_id = tonumber(string.match(event.element.name, "%d+"))
-        handle_machine_change(player, line_id, nil, click, direction)
+        -- Opens the preferences dialog
+        elseif event.element.name == "fp_button_titlebar_preferences" and is_left_click then
+            enter_modal_dialog(player, "preferences", {close=true}, {})
         
-    -- Changes the machine of the selected (assembly) line
-    elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_machine_[a-z0-9-]+$") then
-        local split_string = ui_util.split(event.element.name, "_")
-        handle_machine_change(player, split_string[4], split_string[6], click, direction)
+        -- Opens the new-subfactory dialog
+        elseif event.element.name == "fp_button_new_subfactory" and is_left_click then
+            enter_modal_dialog(player, "subfactory", {submit=true}, {edit=false})
 
-    -- Reacts to any preferences machine button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_[a-z0-9-]+_[a-z0-9-]+$") then
-        local split_string = ui_util.split(event.element.name, "_")
-        data_util.set_default_machine(player, split_string[5], split_string[6])
-        refresh_preferences_dialog(player)
+        -- Opens the edit-subfactory dialog
+        elseif event.element.name == "fp_button_edit_subfactory" and is_left_click then
+            enter_modal_dialog(player, "subfactory", {submit=true, delete=true}, {edit=true})
 
-    -- Reacts to any (assembly) line item button being pressed
-    elseif string.find(event.element.name, "^fp_sprite%-button_line_[a-z]+_%d+_[a-z0-9-]+$") and is_left_click then
-        local split_string = ui_util.split(event.element.name, "_")
-        handle_item_button_click(player, event.element.style.name, split_string[4], split_string[5], split_string[6])
+        -- Reacts to the delete button being pressed
+        elseif event.element.name == "fp_button_delete_subfactory" and is_left_click then
+            handle_subfactory_deletion(player)
+
+        -- Enters mode to change the timescale of the current subfactory
+        elseif event.element.name == "fp_button_change_timescale" and is_left_click then
+            handle_subfactory_timescale_change(player, nil)
+
+        -- Opens notes dialog
+        elseif event.element.name == "fp_button_view_notes" and is_left_click then
+            enter_modal_dialog(player, "notes", {submit=true}, {edit=false})
+
+        -- Opens the add-product dialog
+        elseif event.element.name == "fp_sprite-button_add_product" and is_left_click then
+            enter_modal_dialog(player, "product", {submit=true}, {edit=false})
+
+        -- Submits the entered search term in the recipe dialog
+        elseif event.element.name == "fp_sprite-button_search_recipe" and is_left_click then
+            apply_recipe_filter(player)
+
+        -- Sets the selected floor to be the parent of the currently selected one
+        elseif event.element.name == "fp_button_floor_up" and is_left_click then
+            Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "up")
+            refresh_production_pane(player)
+
+        -- Sets the selected floor to be the top one
+        elseif event.element.name == "fp_button_floor_top" and is_left_click then
+            Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "top")
+            refresh_production_pane(player)
+
+        -- Reacts to a subfactory button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
+            local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_subfactory_element_click(player, subfactory_id, click, direction)
+
+        -- Deletes invalid subfactory items/recipes after the error bar button has been pressed
+        elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
+            local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
+            Subfactory.remove_invalid_datasets(player, subfactory_id)
+            refresh_subfactory_bar(player, true)
+
+        -- Changes the timescale of the current subfactory
+        elseif string.find(event.element.name, "^fp_button_timescale_%d+$") and is_left_click then
+            local timescale = tonumber(string.match(event.element.name, "%d+"))
+            handle_subfactory_timescale_change(player, timescale)
+
+        -- Reacts to a item group button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
+            local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
+            change_item_group_selection(player, item_group_name)
+
+        -- Reacts to a recipe button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_recipe_[a-z-]+$") and is_left_click then
+            local recipe_name = string.gsub(event.element.name, "fp_sprite%-button_recipe_", "")
+            exit_modal_dialog(player, "cancel", {recipe_name=recipe_name})
         
+        -- Reacts to any subfactory_pane item button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
+
+        -- Reacts to the recipe button on an (assembly) line being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
+            local line_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_line_recipe_click(player, line_id, click, direction)
+
+        -- Reacts to the machine button on an (assembly) line being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_machine$") then
+            local line_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_machine_change(player, line_id, nil, click, direction)
+            
+        -- Changes the machine of the selected (assembly) line
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_machine_[a-z0-9-]+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            handle_machine_change(player, split_string[4], split_string[6], click, direction)
+
+        -- Reacts to any preferences machine button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_[a-z0-9-]+_[a-z0-9-]+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            data_util.set_default_machine(player, split_string[5], split_string[6])
+            refresh_preferences_dialog(player)
+
+        -- Reacts to any (assembly) line item button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_[a-z]+_%d+_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            local style = event.element.style.name
+            handle_item_button_click(player, style, split_string[4], split_string[5], split_string[6], click, direction)
+        
+        end
     else found = false end
 
 
@@ -248,8 +272,8 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Remove focus from textfield so keyboard shortcuts work (not super reliable)
         if not string.find(event.element.name, "^fp_textfield_[a-z0-9-_]+$") then
-            if player.gui.center["fp_main_dialog"] ~= nil then
-                player.gui.center["fp_main_dialog"].focus()
+            if player.gui.center["fp_frame_main_dialog"] ~= nil then
+                player.gui.center["fp_frame_main_dialog"].focus()
             end
         
         -- Select the text of the percentage textfield
