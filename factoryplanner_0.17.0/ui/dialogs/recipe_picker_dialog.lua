@@ -15,6 +15,7 @@ function open_recipe_picker_dialog(flow_modal_dialog, args)
         -- One relevant, enabled, non-duplicate recipe found, add it immediately and exit dialog
         if recipe_name ~= nil then
             Floor.add_line(player, subfactory_id, floor_id, Line.init(player, global.all_recipes[recipe_name]))
+            update_calculations(player, subfactory_id)
             exit_modal_dialog(player, "cancel", {})
         
         -- Else show the appropriately filtered dialog
@@ -35,11 +36,8 @@ function close_recipe_picker_dialog(flow_modal_dialog, action, data)
     local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
 
     if data ~= nil and data.recipe_name ~= nil then
-        if Floor.recipe_exists(player, subfactory_id, floor_id, global.all_recipes[data.recipe_name]) then
-            queue_hint_message(player, {"label.error_duplicate_recipe"})
-        else
-            Floor.add_line(player, subfactory_id, floor_id, Line.init(player, global.all_recipes[data.recipe_name]))
-        end
+        Floor.add_line(player, subfactory_id, floor_id, Line.init(player, global.all_recipes[data.recipe_name]))
+        update_calculations(player, subfactory_id)
     end
 
     global.players[player.index].selected_product_name = nil

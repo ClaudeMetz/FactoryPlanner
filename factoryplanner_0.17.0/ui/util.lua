@@ -60,7 +60,7 @@ end
 -- Returns string representing the given power 
 function ui_util.format_energy_consumption(energy_consumption, precision)
     local scale_counter = 1
-    while energy_consumption > 1000 do
+    while energy_consumption >= 1000 do
         energy_consumption = energy_consumption / 1000
         scale_counter = scale_counter + 1
     end
@@ -96,7 +96,7 @@ function ui_util.split(s, separator)
     return r
 end
 
--- Deep-copies given table (seen does not need to be specified when calling it)
+-- Deep-copies given table ('seen' does not need to be specified when calling it)
 -- (From: https://stackoverflow.com/questions/640642/how-do-you-copy-a-lua-table-by-value)
 function ui_util.copy_table(obj, seen)
     if type(obj) ~= 'table' then return obj end
@@ -106,11 +106,4 @@ function ui_util.copy_table(obj, seen)
     s[obj] = res
     for k, v in pairs(obj) do res[ui_util.copy_table(k, s)] = ui_util.copy_table(v, s) end
     return res
-end
-
-
--- Custom logging function that also works for tables
-function ilog(value)
-    if type(value) == "table" then log(game.table_to_json(value))
-    else log(value) end
 end

@@ -1,5 +1,7 @@
 data_util = {}
 
+data_util.margin_of_error = 0.001
+
 -- Returns given datasets' id's in order by position (-> [gui_position] = id)
 function data_util.order_by_position(datasets)
     local ordered_table = {}
@@ -107,6 +109,7 @@ function data_util.generate_all_recipes()
             recipe.name = "impostor-" .. proto.name
             recipe.localised_name = proto.localised_name
             recipe.category = proto.resource_category
+            recipe.mining_time = proto.mineable_properties.mining_time
             recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
             local products = proto.mineable_properties.products
             recipe.products = products
@@ -146,7 +149,7 @@ function data_util.generate_all_recipes()
         category = "rocket-building",
         enabled = false,
         hidden = false,
-        energy = nil,
+        energy = 0,
         group = {name="intermediate_products", order="c"},
         subgroup = {name="science-pack", order="g"},
         order = "k[fp-space-science-pack]",
@@ -171,12 +174,15 @@ function data_util.generate_all_machines()
         end
         local data = categories[category]
         
+        local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
+        local burner = proto.burner_prototype and true or false
         table.insert(data["order"], proto.name)
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
-            speed = proto.crafting_speed,
+            speed = speed,
             energy = proto.energy_usage,
+            burner = burner,
             position = #data["order"]
         }
         data["machines"][proto.name] = machine
@@ -185,29 +191,24 @@ function data_util.generate_all_machines()
     for _, proto in pairs(game.entity_prototypes) do
         if proto.crafting_categories and proto.name ~= "player" and proto.name ~= "escape-pod-assembler" then
             for category, enabled in pairs(proto.crafting_categories) do
-                if enabled then
-                    generate_category_entry(category, proto)
-                end
+                if enabled then generate_category_entry(category, proto) end
             end
 
         -- Adds mining machines
         elseif proto.resource_categories then
             for category, enabled in pairs(proto.resource_categories) do
-                -- Only supports solid mining recipes for now
+                -- Only supports solid mining recipes for now (no oil etc)
                  if enabled and category ~= "basic-fluid" then
                     generate_category_entry(category, proto)
-                    -- The following makes the complex-solid machines show up after the basic ones
-                    if category == "basic-solid" then categories["complex-solid"] = {} end
+
+                    if category == "basic-solid" then
+                        -- Add separate category for mining with fluids that avoids the burner-miner
+                        if not proto.burner_prototype then generate_category_entry("complex-solid", proto) end
+                    end
                 end
             end
         end
     end
-
-    -- Add separate category for mining with fluids that avoids the burner-miner
-    -- Does not handle the case of multiple different kinds of burner-miners
-    categories["complex-solid"] = ui_util.copy_table(categories["basic-solid"])
-    categories["complex-solid"].machines["burner-mining-drill"] = nil
-    table.remove(categories["complex-solid"].order, 1)
 
     return categories
 end

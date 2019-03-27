@@ -4,7 +4,7 @@ function Ingredient.init(item, amount_required)
     return {
         id = 0,
         name = item.name,
-        item_type = item.type,
+        item_type = item.type or item.item_type,
         amount_required = amount_required,
         valid = true,
         gui_position = 0,

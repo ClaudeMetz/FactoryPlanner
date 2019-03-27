@@ -9,12 +9,8 @@ function Floor.init()
         lines = {},
         line_index = 0,
         line_counter = 0,
-        aggregate = {
-            energy_consumption = 0,
-            products = {},
-            byproducts = {},
-            ingredients = {}
-        },
+        aggregate = Aggregate.init(),
+        aggregate_line = {},  -- invisible line used to store aggregate items
         valid = true,
         type = "Floor"
     }
@@ -88,6 +84,7 @@ function Floor.convert_line_to_floor(player, subfactory_id, id, line_id)
     local floor_reference = {
         id = line_id,
         floor_id = new_floor_id,
+        recipe_name = line.recipe_name,
         gui_position = line.gui_position,
         type = "FloorReference"
     }
@@ -125,38 +122,27 @@ function Floor.get_lines_in_order(player, subfactory_id, id)
 end
 
 
--- Returns true when a recipe already exists on the given floor
-function Floor.recipe_exists(player, subfactory_id, id, recipe)
-    if recipe ~= nil then
-        for _, line in pairs(get_floor(player, subfactory_id, id).lines) do
-            if line.recipe_name == recipe.name then return true end
-        end
-    end
-    return false
-end
-
-
 function Floor.get_aggregate(player, subfactory_id, id)
     return get_floor(player, subfactory_id, id).aggregate
 end
 
--- Updates whole floor from top to bottom, including subfloors
-function Floor.update(player, subfactory_id, id)
+function Floor.get_aggregate_line(player, subfactory_id, id)
+    return get_floor(player, subfactory_id, id).aggregate_line
+end
+
+function Floor.update_aggregate_line(player, subfactory_id, id)
     local self = get_floor(player, subfactory_id, id)
-
-    local energy_consumption = 0
-    for _, line_id in ipairs(Floor.get_lines_in_order(player, subfactory_id, id)) do
-        local line = self.lines[line_id]
-        if line.type == "FloorReference" then
-            local aggregate = Floor.get_aggregate(player, subfactory_id, line.floor_id)
-            energy_consumption = energy_consumption + aggregate.energy_consumption
-        else
-            energy_consumption = energy_consumption + line.energy_consumption
+    -- Random recipe, it doesn't matter here
+    self.aggregate_line = Line.init(player, global.all_recipes["electronic-circuit"], true)
+    self.aggregate_line.byroducts = {datasets = {}, index = 0, counter = 0}
+    local categories = {"products", "byproducts", "ingredients"}
+    for _, category in pairs(categories) do
+        for _, item in pairs(self.aggregate[category]) do
+            local line_item = LineItem.init(item, category)
+            line_item.amount = item.amount
+            LineItem.add_to_list(self.aggregate_line[category], line_item)
         end
-            
     end
-
-    self.aggregate.energy_consumption = energy_consumption
 end
 
 
@@ -199,6 +185,7 @@ function Floor.remove_invalid_datasets(player, subfactory_id, id)
     -- Convert floor to line if no additional recipes remain
     if self.level > 1 and self.line_counter == 1 then
         Floor.convert_floor_to_line(player, subfactory_id, id)
+        -- Recalculate floor?
     end
 
     self.valid = true

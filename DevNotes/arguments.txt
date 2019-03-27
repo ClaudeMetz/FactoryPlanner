@@ -1,8 +1,0 @@
-[A1]
-Pro:
-- Consistency
-- Hides dublicate products
-- Hides products with no (researched?) recipe at all
-- Avoids signals and uncraftable items
-Contra:
-- Workload -> recipe dialog code is not easily adapted to this use case

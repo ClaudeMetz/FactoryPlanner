@@ -25,7 +25,7 @@ end
 -- Adds the button to add a product to the table
 function append_to_product_table(table)
     local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
-      style="fp_sprite_button"}
+      style="fp_sprite_button", tooltip={"tooltip.add_product"}}
     button.style.height = 36
     button.style.width = 36
 end
@@ -48,7 +48,7 @@ function close_product_dialog(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
     local player_table = global.players[player.index]
     local subfactory_id = player_table.selected_subfactory_id
-    local product = Subfactory.find_product_by_name(player, subfactory_id, player_table.selected_product_name)
+    local product = Subfactory.find_by_name(player, subfactory_id, "Product", player_table.selected_product_name)
 
     if action == "submit" then
         if player_table.current_activity == "editing_product" then
@@ -62,6 +62,7 @@ function close_product_dialog(flow_modal_dialog, action, data)
     end
 
     player_table.selected_product_name = nil
+    update_calculations(player, subfactory_id)
 end
 
 
@@ -124,7 +125,7 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     local player_table = global.players[player.index]
 
     if player_table.selected_product_name ~= nil then
-        local product = Subfactory.find_product_by_name(player, player_table.selected_subfactory_id,
+        local product = Subfactory.find_by_name(player, player_table.selected_subfactory_id, "Product",
           player_table.selected_product_name)
         button_product.elem_value = {type=product.item_type, name=product.name}
         button_product.locked = true
