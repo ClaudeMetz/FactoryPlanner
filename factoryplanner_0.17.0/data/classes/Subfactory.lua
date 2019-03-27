@@ -102,31 +102,58 @@ function Subfactory.change_selected_floor(player, id, step)
 end
 
 
--- Updates the subfactories calculated data after it was recalculated
-function Subfactory.update_aggregate(player, id)
+-- Updates the subfactories top level data after it was recalculated
+function Subfactory.update_top_level_data(player, id)
     local self = get_subfactory(player, id)
     local aggregate = Floor.get_aggregate(player, id, 1)
 
     self.energy_consumption = aggregate.energy_consumption
 
-    Subfactory.delete_all(player, id, "Ingredient")
-    for _, ingredient in pairs(aggregate.ingredients) do
-        local dataset = Ingredient.init(ingredient.name, ingredient.amount)
-        Subfactory.add(player, id, dataset)
-    end
-
-    for id, product in pairs(self["Product"].datasets) do
+    -- For products, only the amount_produced can change automatically, no addition/removal possible
+    for _, product in pairs(self["Product"].datasets) do
         local aggregate_product = aggregate.products[product.name]
-        local amount_produced = 0
-        if aggregate_product ~= nil then amount_produced = aggregate_product.amount_produced end
-        product.amount_produced = amount_produced
+        if not aggregate_product then  -- Product amount produced exactly
+            product.amount_produced = product.amount_required
+        else
+            if product.amount_produced > 0 then  -- Product underproduced
+                local amount = product.amount_produced + aggregate_product.amount
+                Aggregate.add_item(aggregate, "ingredients", aggregate_product, amount, false)
+                product.amount_produced = 0
+            else  -- Product overproduced
+                product.amount_produced = product.amount_required + aggregate_product.amount
+            end
+        end
     end
 
-    Subfactory.delete_all(player, id, "Byproduct")
-    for _, byproduct in pairs(aggregate.byproducts) do
-        local dataset = Byproducts.init(byproduct.name, byproduct.amount)
-        Subfactory.add(player, id, dataset)
+    -- For byproducts and ingredients, existence(add/remove) and amount can change, position needs to be preserved
+    local function update_top_level_category(type, aggregate_items, top_level_items)
+        -- Add to or create relevant top level items
+        local touched_items = {}
+        for name, item in pairs(aggregate_items) do
+            local top_level_item = Subfactory.find_by_name(player, id, type, name)
+            if top_level_item == nil then
+                local new_top_level_item = _G[type].init(item, item.amount)
+                Subfactory.add(player, id, new_top_level_item)
+            else
+                if type == "Byproduct" then
+                    top_level_item.amount_produced = item.amount
+                elseif type == "Ingredient" then
+                    top_level_item.amount_required = item.amount
+                end
+            end
+            touched_items[name] = true
+        end
+
+        -- Remove top level items that are not present anymore
+        for item_id, item in pairs(top_level_items) do
+            if not touched_items[item.name] then
+                Subfactory.delete(player, id, type, item_id)
+            end
+        end
     end
+
+    update_top_level_category("Byproduct", aggregate.byproducts, self["Byproduct"].datasets)
+    update_top_level_category("Ingredient", aggregate.ingredients, self["Ingredient"].datasets)
 end
 
 
@@ -161,13 +188,6 @@ function Subfactory.delete(player, id, type, dataset_id)
     data_table.datasets[dataset_id] = nil
 end
 
-function Subfactory.delete_all(player, id, type)
-    local data_table = get_subfactory(player, id)[type]
-    for dataset_id, _ in pairs(data_table.datasets) do
-        Subfactory.delete(player, id, type, dataset_id)
-    end
-end
-
 
 function Subfactory.get_count(player, id, type)
     return get_subfactory(player, id)[type].counter
@@ -193,11 +213,12 @@ function Subfactory.product_exists(player, id, product)
     return false
 end
 
--- Finds products by their name (assumes it exists)
-function Subfactory.find_product_by_name(player, id, product_name)
-    for _, p in pairs(get_subfactory(player, id).Product.datasets) do
-        if p.name == product_name then return p end
+-- Finds items of given type by their name, returns nil if not found
+function Subfactory.find_by_name(player, id, type, name)
+    for _, item in pairs(get_subfactory(player, id)[type].datasets) do
+        if item.name == name then return item end
     end
+    return nil
 end
 
 function Subfactory.is_valid(player, id)

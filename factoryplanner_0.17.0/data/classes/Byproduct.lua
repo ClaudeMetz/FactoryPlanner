@@ -4,7 +4,7 @@ function Byproduct.init(item, amount_produced)
     return {
         id = 0,
         name = item.name,
-        item_type = item.type,
+        item_type = item.type or item.item_type,
         amount_produced = amount_produced,
         valid = true,
         gui_position = 0,

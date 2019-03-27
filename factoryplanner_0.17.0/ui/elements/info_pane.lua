@@ -61,8 +61,10 @@ end
 function handle_subfactory_timescale_change(player, timescale)
     local player_table = global.players[player.index]
     if player_table.current_activity == "changing_timescale" then
-        Subfactory.set_timescale(player, player_table.selected_subfactory_id, timescale)
+        local subfactory_id = player_table.selected_subfactory_id
+        Subfactory.set_timescale(player, subfactory_id, timescale)
         player_table.current_activity = nil
+        update_calculations(player, subfactory_id)
     else
         player_table.current_activity = "changing_timescale"
     end

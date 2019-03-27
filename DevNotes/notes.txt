@@ -1,0 +1,13 @@
+API Changes:
+- (probable) let enter work as a way to submit forms, even when a textfield is in focus
+- (asked) ability to show number 0 on sprite-buttons
+- (asked) wierd choose-elem-button selection state if locked = true
+- (asked) event for start_hover and stop_hover over elements or buttons only
+
+
+[N1]
+[21:38] Klonan: they will have a fuel value greater than 0
+[21:38] Klonan: and a compatible fuel category
+[21:38] Klonan: https://lua-api.factorio.com/latest/LuaItemPrototype.html#LuaItemPrototype.fuel_value
+https://lua-api.factorio.com/latest/LuaItemPrototype.html#LuaItemPrototype.fuel_category
+[21:38] L0771: game.item_prototypes[item].fuel_value and game.item_prototypes[item].fuel_category

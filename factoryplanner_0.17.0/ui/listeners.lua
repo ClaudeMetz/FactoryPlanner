@@ -100,19 +100,23 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     -- Persists (assembly) line percentage changes (No function call here for latency reasons)
     if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
         local subfactory_id = global.players[player.index].selected_subfactory_id
+        local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
         local line_id = tonumber(string.match(event.element.name, "%d+"))
         local new_string = event.element.text
         local new_percentage = tonumber(new_string)
 
-        if new_string == "" then new_percentage = 0 end
         if new_percentage == nil or new_percentage < 0 then
-            event.element.text = Line.get_percentage(player, subfactory_id, Subfactory.get_selected_floor_id(player,
-            subfactory_id), line_id)
+            event.element.text = Line.get_percentage(player, subfactory_id, floor_id, line_id)
             queue_hint_message(player, {"label.error_invalid_percentage"})
         else
+            Line.set_percentage(player, subfactory_id, floor_id, line_id, new_percentage)
             queue_hint_message(player, "")
-            Line.set_percentage(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id), 
-            line_id, new_percentage)
+
+            update_calculations(player, subfactory_id)
+            refresh_production_table(player)
+            
+            player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]["scroll-pane_production_pane"]
+              ["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus()
         end
         refresh_hint_message(player)
     end
@@ -135,7 +139,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     local player = game.players[event.player_index]
     local found = true
     
-    if string.find(event.element.name, "^fp_.+$") then
+    if string.find(event.element.name, "^fp_.+$") then  -- performance improvement
 
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
         if event.element.name == "fp_button_toggle_interface" or event.element.name == "fp_button_titlebar_exit"
@@ -188,13 +192,11 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Sets the selected floor to be the parent of the currently selected one
         elseif event.element.name == "fp_button_floor_up" and is_left_click then
-            Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "up")
-            refresh_production_pane(player)
+            handle_floor_change_click(player, "up")
 
         -- Sets the selected floor to be the top one
         elseif event.element.name == "fp_button_floor_top" and is_left_click then
-            Subfactory.change_selected_floor(player, global.players[player.index].selected_subfactory_id, "top")
-            refresh_production_pane(player)
+            handle_floor_change_click(player, "top")
 
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
@@ -254,30 +256,29 @@ script.on_event(defines.events.on_gui_click, function(event)
             local style = event.element.style.name
             handle_item_button_click(player, style, split_string[4], split_string[5], split_string[6], click, direction)
         
-        end
-    else found = false end
-
+        else found = false end
+    end
 
     -- Only reset hint if one of this mod's actual controls is pressed
     if found == true then 
         refresh_hint_message(player)
     else
-        -- Refresh the previously selected textfield so no invalid text remains behind
-        if previously_selected_textfield ~= nil and previously_selected_textfield.valid then
+        -- Refresh the previously selected textfield so no invalid text remains behind (disabled for now)
+        --[[ if previously_selected_textfield ~= nil and previously_selected_textfield.valid then
             local subfactory_id = global.players[player.index].selected_subfactory_id
             local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
             previously_selected_textfield.text = Line.get_percentage(player, subfactory_id,
               Subfactory.get_selected_floor_id(player, subfactory_id), line_id)
-        end
+        end ]]
 
         -- Remove focus from textfield so keyboard shortcuts work (not super reliable)
         if not string.find(event.element.name, "^fp_textfield_[a-z0-9-_]+$") then
             if player.gui.center["fp_frame_main_dialog"] ~= nil then
                 player.gui.center["fp_frame_main_dialog"].focus()
             end
-        
+        end
         -- Select the text of the percentage textfield
-        elseif string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
+        if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
             event.element.select_all()
             previously_selected_textfield = event.element
         end

@@ -1,43 +1,54 @@
 -- Represents an (assembly) line, uses a single recipe
 Line = {}
 
-function Line.init(player, recipe)
+function Line.init(player, recipe, skip_item_init)
     local recipe_category = recipe.category
-    if recipe_category == "basic-solid" and #recipe.ingredients > 1 then recipe_category = "complex-solid" end
-    local default_machine = data_util.get_default_machine(player, recipe_category)
-    
-    local function create_item_table(items)
-        local index = 1
-        local table = {}
-        for _, item in pairs(items) do
-            if item.amount == nil then item.amount = item.probability end
-            table[index] = {
-                name = item.name,
-                type = item.type,
-                ratio = item.amount,
-                amount = 0,
-                gui_position = index
-            }
-            index = index + 1
+    local recipe_energy = recipe.energy
+    if recipe_category == "basic-solid" then
+        -- Set recipe_energy to mining time for the custom mining recipes
+        for _, ingredient in pairs(recipe.ingredients) do
+            if ingredient.type == "entity" then
+                recipe_energy = recipe.mining_time
+            end
         end
-        return table
-    end
 
-    return {
+        -- Detect recipes that require fluids to mine
+        if #recipe.ingredients > 1 then recipe_category = "complex-solid" end
+    end
+    local default_machine = data_util.get_default_machine(player, recipe_category)
+
+    local line = {
         id = 0,
         recipe_name = recipe.name,
         recipe_category = recipe_category,
+        recipe_energy = recipe_energy,
+        production_ratio = 0,
         percentage = 100,
         machine_name = default_machine.name,
         machine_count = 0,
         energy_consumption = 0,  -- in Watt
-        products = create_item_table(recipe.products),
-        byproducts = {},  -- left empty until a refresh moves products over
-        ingredients = create_item_table(recipe.ingredients),
         valid = true,
         gui_position = 0,
         type = "Line"
     }
+
+    -- Byproducts are included in products and differentiate by their kind-attribute
+    -- for performance reasons (LineItems only, not the aggregate)
+    local categories = {"products", "ingredients"}
+    for _, category in pairs(categories) do
+        line[category] = {
+            datasets = {},
+            index = 0,
+            counter = 0
+        }
+        if not skip_item_init then
+            for _, item in pairs(recipe[category]) do
+                LineItem.add_to_list(line[category], LineItem.init(item, category))
+            end
+        end
+    end
+
+    return line
 end
 
 local function get_line(player, subfactory_id, floor_id, id)
@@ -82,6 +93,35 @@ end
 
 function Line.get_energy_consumption(player, subfactory_id, floor_id, id)
     return get_line(player, subfactory_id, floor_id, id).energy_consumption
+end
+
+
+-- Resets all data to stock (unused line), to be updated afterwards
+function Line.reset(player, subfactory_id, floor_id, id)
+    local self = get_line(player, subfactory_id, floor_id, id)
+    self.energy_consumption = 0
+    self.machine_count = 0
+
+    for product_id, product in pairs(self.products.datasets) do
+        if product.kind == "byproducts" then
+            if product.duplicate then LineItem.delete_from_list(self.products, product_id)
+            else product.kind = "products"; product.amount = 0 end
+        end
+    end
+    for _, ingredient in pairs(self.ingredients.datasets) do ingredient.amount = 0 end
+end
+
+
+function Line.get_item(player, subfactory_id, floor_id, id, type, item_id)
+    local self = get_line(player, subfactory_id, floor_id, id)
+    if self.type == "FloorReference" then self = Floor.get_aggregate_line(player, subfactory_id, self.floor_id) end
+    return self[type].datasets[item_id]
+end
+
+function Line.get_items_in_order(player, subfactory_id, floor_id, id, category)
+    local self = get_line(player, subfactory_id, floor_id, id)
+    if self.type == "FloorReference" then self = Floor.get_aggregate_line(player, subfactory_id, self.floor_id) end
+    return data_util.order_by_position(self[category].datasets)
 end
 
 

@@ -47,10 +47,10 @@ function refresh_production_pane(player)
         title.style.font = "fp-font-20p"
 
         local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
-
-        Floor.update(player, subfactory_id, floor_id)---------------------------------------------------
-        Subfactory.update_aggregate(player, subfactory_id)
-        refresh_subfactory_pane(player)
+        -- Update calculations if they haven't been done at all yet
+        if Subfactory.get(player, subfactory_id, "Floor", floor_id).aggregate.fresh then
+            update_calculations(player, subfactory_id)
+        end
 
         if Floor.get_line_count(player, subfactory_id, floor_id) > 0 then
             local floor_level = Floor.get_level(player, subfactory_id, floor_id)
@@ -85,6 +85,7 @@ function refresh_production_table(player)
     -- selected_subfactory_id is always 0 when there are no subfactories
     if (subfactory_id ~= 0) and Subfactory.is_valid(player, subfactory_id) then
         local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+        
         if Floor.get_line_count(player, subfactory_id, floor_id) == 0 then
             flow_production["label_production_info"].visible = true
         else            
@@ -112,6 +113,16 @@ function refresh_production_table(player)
     end
 end
 
+-- Recalculates the whole sufactory recursively starting from the top floor
+function update_calculations(player, subfactory_id)
+    local floor = Subfactory.get(player, subfactory_id, "Floor", 1)
+    calc.update_floor(player, subfactory_id, floor, nil)
+
+    Subfactory.update_top_level_data(player, subfactory_id)
+    refresh_subfactory_pane(player)
+end
+
+
 -- Creates a single row of the table containing all (assembly) lines
 function create_line_table_row(player, line)
     local line_id = line.id
@@ -120,7 +131,8 @@ function create_line_table_row(player, line)
 
     local player_table = global.players[player.index]
     local subfactory_id = player_table.selected_subfactory_id
-    local level = Floor.get_level(player, subfactory_id, Subfactory.get_selected_floor_id(player, subfactory_id))
+    local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
+    local level = Floor.get_level(player, subfactory_id, floor_id)
     local style = "fp_button_icon_medium_blank"
 
     local gui_position = line.gui_position
@@ -155,10 +167,11 @@ function create_line_table_row(player, line)
     table_machines.style.horizontal_spacing = 3
     table_machines.style.horizontal_align = "center"
 
+    local timescale = Subfactory.get_timescale(player, subfactory_id)
     if player_table.selected_line_id == line_id and player_table.current_activity == "changing_machine" then
         for _, machine_name in ipairs(machine_category.order) do
             local machine = global.all_machines[line.recipe_category].machines[machine_name]
-            local count = 0  --Items Required/(Crafting Speed/Crafting Time * 60*Output Multiplier)
+            local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / timescale
             create_machine_button(table_machines, line, machine_name, count, ("_" .. machine.name))
         end
     else
@@ -170,43 +183,63 @@ function create_line_table_row(player, line)
       caption=ui_util.format_energy_consumption(line.energy_consumption, 3)}
     label_energy.tooltip = ui_util.format_energy_consumption(line.energy_consumption, 8)
 
-    -- Products
-    create_item_flow(table_production, "product", line.products, line_id, "fp_button_icon_medium_blank")
+    -- Item buttons (crappy crappy code structure)
+    -- Products and byproducts
+    local flow_products = table_production.add{type="flow", name="flow_line_products_" .. line_id, 
+      direction="horizontal"}
+    local flow_byproducts = table_production.add{type="flow", name="flow_line_byproducts_" .. line_id, 
+      direction="horizontal"}
 
-    -- Byproducts
-    create_item_flow(table_production, "byproduct", line.byproducts, line_id, "fp_button_icon_medium_red")
+    for _, item_id in ipairs(Line.get_items_in_order(player, subfactory_id, floor_id, line_id, "products")) do
+        local item = Line.get_item(player, subfactory_id, floor_id, line_id, "products", item_id)
+        if item.kind == "products" then
+            create_item_button(flow_products, "product", line, item, "fp_button_icon_medium_blank")
+        elseif item.kind == "byproducts" then
+            create_item_button(flow_byproducts, "product", line, item, "fp_button_icon_medium_red")
+        end
+    end
 
     -- Ingredients
-    create_item_flow(table_production, "ingredient", line.ingredients, line_id, "fp_button_icon_medium_green")
+    local plural_type = "ingredients"
+    local flow = table_production.add{type="flow", name="flow_line_" .. plural_type .. "_" .. line_id, 
+      direction="horizontal"}
+    for _, item_id in ipairs(Line.get_items_in_order(player, subfactory_id, floor_id, line_id, plural_type)) do
+        local item = Line.get_item(player, subfactory_id, floor_id, line_id, plural_type, item_id)
+        create_item_button(flow, "ingredient", line, item, "fp_button_icon_medium_green")
+    end
 end
 
 -- Creates and places a single machine button
-function create_machine_button(table, line, name, count, name_appendage)
+function create_machine_button(gui_table, line, name, count, name_appendage)
     local machine = global.all_machines[line.recipe_category].machines[name]
-    local button = table.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_machine"
+    local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_machine"
       .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe"}
     button.number = math.ceil(count)
     button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)}
 end
 
--- Adds the flow containing all item buttons of the given type in the given style
-function create_item_flow(table, type, items, line_id, style)
-    local flow = table.add{type="flow", name="flow_line_" .. type .. "s_" .. line_id, direction="horizontal"}
-    for _, id in ipairs(data_util.order_by_position(items)) do
-        local item = items[id]
-        local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. type .. "_" .. line_id 
-          .. "_" .. id, sprite=item.type .. "/" .. item.name, style=style}
+function create_item_button(flow, type, line, item, style)
+    local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. type .. "_" .. line.id 
+      .. "_" .. item.id, sprite=item.item_type .. "/" .. item.name, style=style}
 
-        -- Special handling for mining recipes
-        local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
-        if type == "ingredient" and item.type == "entity" then 
-            button.style = "fp_button_icon_medium_blank"
-            tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
-        end
-
-        button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(item.amount, 8)}
-        button.number = item.amount
+    -- Special handling for mining recipes
+    local tooltip_name = game[item.item_type .. "_prototypes"][item.name].localised_name
+    if item.item_type == "entity" then 
+        button.style = "fp_button_icon_medium_blank"
+        tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
     end
+
+    button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(item.amount, 8)}
+    button.number = item.amount
+end
+
+
+-- Handles a click on a button that changes the viewed floor of a subfactory
+function handle_floor_change_click(player, destination)
+    local subfactory_id = global.players[player.index].selected_subfactory_id
+    Subfactory.change_selected_floor(player, subfactory_id, destination)
+    update_calculations(player, subfactory_id)
+    refresh_production_pane(player)
 end
 
 
@@ -222,6 +255,7 @@ function handle_line_recipe_click(player, line_id, click, direction)
         -- Can't shift second line into the first position
         if not(floor.level > 1 and line.gui_position == 2 and direction == "negative") then
             Floor.shift(player, subfactory_id, floor_id, line_id, direction)
+            update_calculations(player, subfactory_id)
             refresh_production_table(player)
         end
 
@@ -233,16 +267,18 @@ function handle_line_recipe_click(player, line_id, click, direction)
             else
                 local new_floor_id = Floor.convert_line_to_floor(player, subfactory_id, floor_id, line_id)
                 Subfactory.set_selected_floor_id(player, subfactory_id, new_floor_id)
+                update_calculations(player, subfactory_id)
             end
 
         -- Remove clicked (assembly) line
         elseif click == "right" then
             Floor.delete_line(player, subfactory_id, floor_id, line_id)
+            update_calculations(player, subfactory_id)
         end
+        
         refresh_production_pane(player)
     end
 end
-
 
 -- Handles the machine changing process
 function handle_machine_change(player, line_id, machine_name, click, direction)
@@ -261,14 +297,16 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
         if direction == "negative" then
             if current_machine_position > 1 then
                 local new_machine_name = current_category_data.order[current_machine_position - 1]
-                Line.set_machine_name(player, subfactory_id, floor_id, line_id, new_machine_name) 
+                Line.set_machine_name(player, subfactory_id, floor_id, line_id, new_machine_name)
+                update_calculations(player, subfactory_id)
             end
 
         -- Change the machine to be one tier higher if possible
         elseif direction == "positive" then
             if current_machine_position < #current_category_data.order then
                 local new_machine_name = current_category_data.order[current_machine_position + 1]
-                Line.set_machine_name(player, subfactory_id, floor_id, line_id, new_machine_name) 
+                Line.set_machine_name(player, subfactory_id, floor_id, line_id, new_machine_name)
+                update_calculations(player, subfactory_id)
             end
 
         -- Display all the options for this machine category
@@ -284,6 +322,7 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
         if click == "left" then
             Line.set_machine_name(player, subfactory_id, floor_id, line_id, machine_name)
             player_table.current_activity = nil
+            update_calculations(player, subfactory_id)
         end
     end
 
@@ -295,14 +334,18 @@ function handle_item_button_click(player, style, type, line_id, item_id, click, 
     local player_table = global.players[player.index]
     local subfactory_id = player_table.selected_subfactory_id
     local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
-    local items = Floor.get_line(player, subfactory_id, floor_id, line_id)[type .. "s"]
+    local items = Floor.get_line(player, subfactory_id, floor_id, line_id)[type .. "s"].datasets
 
     -- Shift item in the given direction
     if direction ~= nil then
         data_util.shift_position(items, item_id, direction, #items)
     else
-        if click == "left" and style ~= "fp_button_icon_medium_blank" then
-            enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_name=items[item_id].name})
+        if click == "left" then
+            if style == "fp_button_icon_medium_green" then
+                enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_name=items[item_id].name})
+            elseif style == "fp_button_icon_medium_red" then
+                -- deal with byproducts later
+            end
         end
     end
     refresh_production_table(player)
