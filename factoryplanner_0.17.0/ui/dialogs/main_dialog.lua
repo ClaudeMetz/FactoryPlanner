@@ -1,4 +1,5 @@
 require("mod-gui")
+require("util")
 require("ui.util")
 require("ui.listeners")
 require("modal_dialog")

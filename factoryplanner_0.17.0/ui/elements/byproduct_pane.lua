@@ -1,10 +1,10 @@
 -- Returns necessary details to complete the item button for a byproduct
 function get_byproduct_specifics(byproduct)
     local localised_name = game[byproduct.item_type .. "_prototypes"][byproduct.name].localised_name
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount_produced, 4)}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount, 4)}
 
     return {
-        number = byproduct.amount_produced,
+        number = byproduct.amount,
         tooltip = tooltip,
         style = "fp_button_icon_large_red"
     }
@@ -13,18 +13,18 @@ end
 
 -- Opens recipe dialog of clicked element or shifts it's position left or right
 function handle_byproduct_element_click(player, byproduct_id, click, direction)
-    local selected_subfactory_id = global.players[player.index].selected_subfactory_id
-
+    local subfactory = global.players[player.index].context.subfactory
+    
     -- Shift byproduct in the given direction
     if direction ~= nil then
-        Subfactory.shift(player, selected_subfactory_id, "Byproduct", byproduct_id, direction)
+        local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
+        Subfactory.shift(subfactory, byproduct, direction)
 
     -- Open recipe dialog? Dealing with byproducts will come at a later stage
     elseif click == "left" then
-        local floor = Subfactory.get(player, selected_subfactory_id, "Floor", 
-          Subfactory.get_selected_floor_id(player, selected_subfactory_id))
+        local floor = global.players[player.index].context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_id=byproduct_id})
+            -- open recipe picker for byproducts
         else
             queue_hint_message(player, {"label.error_byproduct_wrong_floor"})
         end

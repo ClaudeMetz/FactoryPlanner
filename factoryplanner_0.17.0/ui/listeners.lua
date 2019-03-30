@@ -22,7 +22,7 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the GUI for the new player
     player_gui_init(player)
 
-    -- Dev stuff
+    -- Runs setup if developer mode is active
     run_dev_config(player)
 end)
 
@@ -45,6 +45,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
     -- Changes the width of the main dialog by regenerating it
     elseif event.setting == "fp_subfactory_items_per_row" then
+        global.players[player.index].items_per_row = tonumber(event.setting.value)
         refresh_main_dialog(player, true)
     end
 end)
@@ -65,7 +66,7 @@ script.on_event("fp_toggle_main_dialog", function(event)
 end)
 
 
--- Fires on pressing the button to close a dialog
+-- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.players[event.player_index]
 
@@ -96,27 +97,30 @@ end)
 -- Fires on any changes to a textbox
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.players[event.player_index]
+    local player_table = global.players[player.index]
 
     -- Persists (assembly) line percentage changes (No function call here for latency reasons)
     if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
-        local subfactory_id = global.players[player.index].selected_subfactory_id
-        local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)
-        local line_id = tonumber(string.match(event.element.name, "%d+"))
+        local floor = player_table.context.floor
+        local line = Floor.get(floor, "Line", tonumber(string.match(event.element.name, "%d+")))
         local new_string = event.element.text
         local new_percentage = tonumber(new_string)
 
         if new_percentage == nil or new_percentage < 0 then
-            event.element.text = Line.get_percentage(player, subfactory_id, floor_id, line_id)
+            event.element.text = line.percentage
             queue_hint_message(player, {"label.error_invalid_percentage"})
         else
-            Line.set_percentage(player, subfactory_id, floor_id, line_id, new_percentage)
-            queue_hint_message(player, "")
+            line.percentage = new_percentage
+            -- Update related datasets
+            if line.subfloor then line.subfloor.Line[1].percentage = new_percentage
+            elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
-            update_calculations(player, subfactory_id)
+            queue_hint_message(player, "")
+            update_calculations(player, player_table.context.subfactory)
             refresh_production_table(player)
             
             player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]["scroll-pane_production_pane"]
-              ["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus()
+              ["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
         end
         refresh_hint_message(player)
     end
@@ -137,6 +141,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     end
 
     local player = game.players[event.player_index]
+    local player_table = global.players[player.index]
     local found = true
     
     if string.find(event.element.name, "^fp_.+$") then  -- performance improvement
@@ -160,15 +165,16 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the preferences dialog
         elseif event.element.name == "fp_button_titlebar_preferences" and is_left_click then
-            enter_modal_dialog(player, "preferences", {close=true}, {})
+            enter_modal_dialog(player, {type="preferences", close=true})
         
         -- Opens the new-subfactory dialog
         elseif event.element.name == "fp_button_new_subfactory" and is_left_click then
-            enter_modal_dialog(player, "subfactory", {submit=true}, {edit=false})
+            enter_modal_dialog(player, {type="subfactory", submit=true})
 
         -- Opens the edit-subfactory dialog
         elseif event.element.name == "fp_button_edit_subfactory" and is_left_click then
-            enter_modal_dialog(player, "subfactory", {submit=true, delete=true}, {edit=true})
+            local subfactory = player_table.context.subfactory
+            enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
 
         -- Reacts to the delete button being pressed
         elseif event.element.name == "fp_button_delete_subfactory" and is_left_click then
@@ -180,11 +186,11 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens notes dialog
         elseif event.element.name == "fp_button_view_notes" and is_left_click then
-            enter_modal_dialog(player, "notes", {submit=true}, {edit=false})
+            enter_modal_dialog(player, {type="notes", submit=true})
 
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" and is_left_click then
-            enter_modal_dialog(player, "product", {submit=true}, {edit=false})
+            enter_modal_dialog(player, {type="product", submit=true})
 
         -- Submits the entered search term in the recipe dialog
         elseif event.element.name == "fp_sprite-button_search_recipe" and is_left_click then
@@ -198,21 +204,24 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_button_floor_top" and is_left_click then
             handle_floor_change_click(player, "top")
 
+        -- Repairs the current subfactory as well as possible
+        elseif event.element.name == "fp_button_error_bar_repair" and is_left_click then
+            handle_subfactory_repair(player)
+
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_element_click(player, subfactory_id, click, direction)
-
-        -- Deletes invalid subfactory items/recipes after the error bar button has been pressed
-        elseif string.find(event.element.name, "^fp_button_error_bar_%d+$") and is_left_click then
-            local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
-            Subfactory.remove_invalid_datasets(player, subfactory_id)
-            refresh_subfactory_bar(player, true)
-
-        -- Changes the timescale of the current subfactory
+            
+            -- Changes the timescale of the current subfactory
         elseif string.find(event.element.name, "^fp_button_timescale_%d+$") and is_left_click then
             local timescale = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_timescale_change(player, timescale)
+            
+        -- Reacts to any subfactory_pane item button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
 
         -- Reacts to a item group button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
@@ -223,11 +232,6 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_recipe_[a-z-]+$") and is_left_click then
             local recipe_name = string.gsub(event.element.name, "fp_sprite%-button_recipe_", "")
             exit_modal_dialog(player, "cancel", {recipe_name=recipe_name})
-        
-        -- Reacts to any subfactory_pane item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
-            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
 
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
@@ -235,26 +239,24 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_line_recipe_click(player, line_id, click, direction)
 
         -- Reacts to the machine button on an (assembly) line being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_machine$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+$") then
             local line_id = tonumber(string.match(event.element.name, "%d+"))
             handle_machine_change(player, line_id, nil, click, direction)
             
         -- Changes the machine of the selected (assembly) line
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_machine_[a-z0-9-]+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+_[a-z0-9-]+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            handle_machine_change(player, split_string[4], split_string[6], click, direction)
+            handle_machine_change(player, split_string[5], split_string[6], click, direction)
 
         -- Reacts to any preferences machine button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_[a-z0-9-]+_[a-z0-9-]+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            data_util.set_default_machine(player, split_string[5], split_string[6])
-            refresh_preferences_dialog(player)
+            handle_preferences_machine_change(player, split_string[5], split_string[6])
 
         -- Reacts to any (assembly) line item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_[a-z]+_%d+_%d+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            local style = event.element.style.name
-            handle_item_button_click(player, style, split_string[4], split_string[5], split_string[6], click, direction)
+            handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction)
         
         else found = false end
     end

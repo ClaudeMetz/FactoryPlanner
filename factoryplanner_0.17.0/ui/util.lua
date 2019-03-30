@@ -95,15 +95,3 @@ function ui_util.split(s, separator)
     end
     return r
 end
-
--- Deep-copies given table ('seen' does not need to be specified when calling it)
--- (From: https://stackoverflow.com/questions/640642/how-do-you-copy-a-lua-table-by-value)
-function ui_util.copy_table(obj, seen)
-    if type(obj) ~= 'table' then return obj end
-    if seen and seen[obj] then return seen[obj] end
-    local s = seen or {}
-    local res = setmetatable({}, getmetatable(obj))
-    s[obj] = res
-    for k, v in pairs(obj) do res[ui_util.copy_table(k, s)] = ui_util.copy_table(v, s) end
-    return res
-end

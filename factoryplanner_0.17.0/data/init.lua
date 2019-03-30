@@ -1,22 +1,20 @@
-require("data.util")
-require("data.calc")
+require("data.classes.Collection")
+require("data.classes.Item")
 require("data.classes.Factory")
 require("data.classes.Subfactory")
-require("data.classes.Ingredient")
-require("data.classes.Product")
-require("data.classes.Byproduct")
 require("data.classes.Floor")
 require("data.classes.Line")
-require("data.classes.Aggregate")
-require("data.classes.LineItem")
+require("data.util")
+require("data.generator")
+require("data.calc")
 
 
 -- Initiates all factorio-global variables
 function global_init()
     global.players = {}
 
-    global.all_recipes = data_util.generate_all_recipes()
-    global.all_machines = data_util.generate_all_machines()
+    global.all_recipes = generator.all_recipes()
+    global.all_machines = generator.all_machines()
 
     global.devmode = true
 end
@@ -29,18 +27,16 @@ function player_init(player)
 
         player_table.factory = Factory.init()
         player_table.main_dialog_dimensions = {width = nil, height = 1000}
+        player_table.items_per_row = tonumber(settings.get_player_settings(player)["fp_subfactory_items_per_row"].value)
 
         player_table.default_machines = {}
-        data_util.update_default_machines(player)
+        data_util.machines.update_default(player)
 
-        player_table.modal_dialog_type = nil
-        player_table.current_activity = nil
-        player_table.queued_hint_message = ""
-
-        player_table.selected_subfactory_id = 0
-        player_table.selected_product_name = nil
-        player_table.selected_item_group_name = nil
-        player_table.selected_line_id = 0
+        player_table.modal_dialog_type = nil  -- The internal modal dialog type
+        player_table.selected_object = nil  -- The object relevant for a modal dialog
+        player_table.current_activity = nil  -- The current unique main dialog activity
+        player_table.queued_hint_message = ""  -- The next hint message to be displayed
+        player_table.context = data_util.context.create()  -- The currently displayed set of data
     end
 end
 
@@ -50,12 +46,10 @@ function player_reset(player)
         local player_table = global.players[player.index]
 
         player_table.modal_dialog_type = nil
+        player_table.selected_object = nil
         player_table.current_activity = nil
         player_table.queued_hint_message = ""
-
-        player_table.selected_product_name = nil
-        player_table.selected_item_group_name = nil
-        player_table.selected_line_id = 0
+        player_table.context = data_util.context.create()
     end
 end
 
@@ -66,8 +60,8 @@ end
 
 -- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
-    global.all_recipes = data_util.generate_all_recipes()
-    global.all_machines = data_util.generate_all_machines()
+    global.all_recipes = generator.all_recipes()
+    global.all_machines = generator.all_machines()
 
     for index, player in pairs(game.players) do
         local space_tech = player.force.technologies["space-science-pack"].researched
@@ -80,7 +74,7 @@ function handle_configuration_change()
         player_gui_init(player)
 
         Factory.update_validity(player)
-        data_util.update_default_machines(player)
+        data_util.machines.update_default(player)
     end
 end
 
@@ -89,20 +83,22 @@ end
 function run_dev_config(player)
     if global.devmode then
         local player_table = global.players[player.index]
+        local factory = player_table.factory
 
-        Factory.add_subfactory(player, Subfactory.init("", {type="item", name="iron-plate"}))
-        Factory.add_subfactory(player, Subfactory.init("Beta", nil))
-        Factory.add_subfactory(player, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
-        player_table.selected_subfactory_id = 1
+        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}))
+        Factory.add(factory, Subfactory.init("Beta", nil))
+        Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
+        data_util.context.set_subfactory(player, subfactory)
 
-        local subfactory_id, id = player_table.selected_subfactory_id, nil
-        id = Subfactory.add(player, subfactory_id, Product.init({name="electronic-circuit", type="item"}, 400))
-        Product.add_to_amount_produced(player, subfactory_id, id, 600)
-        id = Subfactory.add(player, subfactory_id, Product.init({name="advanced-circuit", type="item"}, 200))
-        Product.add_to_amount_produced(player, subfactory_id, id, 200)
-        Subfactory.add(player, subfactory_id, Product.init({name="uranium-235", type="item"}, 40))
+        local prod1 = Subfactory.add(subfactory, Item.init({name="electronic-circuit", type="item"}, "Product"))
+        prod1.required_amount = 400
+        local prod2 = Subfactory.add(subfactory, Item.init({name="advanced-circuit", type="item"}, "Product"))
+        prod2.required_amount = 100
 
-        Floor.add_line(player, subfactory_id, 1, Line.init(player, global.all_recipes["electronic-circuit"]))
-        Floor.add_line(player, subfactory_id, 1, Line.init(player, global.all_recipes["advanced-circuit"]))
+        local floor = Subfactory.get(subfactory, "Floor", 1)
+        local recipe = global.all_recipes["electronic-circuit"]
+        local machine = data_util.machines.get_default(player, recipe.category)
+        Floor.add(floor, Line.init(recipe, machine))
+        Floor.add(floor, Line.init(global.all_recipes["advanced-circuit"], machine))
     end
 end

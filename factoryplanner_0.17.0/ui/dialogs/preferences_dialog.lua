@@ -1,5 +1,5 @@
 -- Handles populating the preferences dialog
-function open_preferences_dialog(flow_modal_dialog, args)
+function open_preferences_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"label.preferences"}
 
     -- Label
@@ -47,13 +47,13 @@ function refresh_preferences_dialog(player)
         if #data.order > 1 then
             table_all_machines.add{type="label", name="label_" .. category, caption="'" .. category .. "':    "}
             local table_machines = table_all_machines.add{type="table", name="table_machines:" .. category,
-              column_count=#data.order+1}
+              column_count=12}
             for _, machine_name in ipairs(data.order) do
                 local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_preferences_machine_"
                   .. category .. "_" .. machine_name, sprite="entity/" .. machine_name}
                 local tooltip = data.machines[machine_name].localised_name
 
-                local default_machine_name = data_util.get_default_machine(player, category).name
+                local default_machine_name = data_util.machines.get_default(player, category).name
                 if default_machine_name == machine_name then
                     button_machine.style = "fp_button_icon_medium_green"
                     tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
@@ -64,4 +64,11 @@ function refresh_preferences_dialog(player)
             end
         end
     end
+end
+
+
+-- Changes the default machine of the given category
+function handle_preferences_machine_change(player, category, name)
+    data_util.machines.set_default(player, category, name)
+    refresh_preferences_dialog(player)
 end

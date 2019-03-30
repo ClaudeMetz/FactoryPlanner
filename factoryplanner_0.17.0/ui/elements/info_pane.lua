@@ -11,6 +11,7 @@ function refresh_info_pane(player)
     end
 
     local player_table = global.players[player.index]
+    local subfactory = player_table.context.subfactory
 
     -- Timescale
     local table_timescale = flow["table_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
@@ -24,7 +25,7 @@ function refresh_info_pane(player)
         table_timescale.add{type="button", name="fp_button_timescale_3600", caption="1h", style="fp_button_mini"}
     else            
         -- As unit is limited to presets, timescale will always be displayed as 1
-        local timescale = ui_util.format_timescale(Subfactory.get_timescale(player, player_table.selected_subfactory_id))
+        local timescale = ui_util.format_timescale(subfactory.timescale)
         local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
         label_timescale.style.font = "default-bold"
         table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
@@ -38,13 +39,10 @@ function refresh_info_pane(player)
       caption={"", " ",  {"label.energy_consumption"}, ": "}}
     table_energy_consumption["label_energy_consumption_title"].style.font = "fp-font-14p"
 
-    local energy_consumption = ui_util.format_energy_consumption(
-      Subfactory.get_energy_consumption(player, player_table.selected_subfactory_id), 3)
-
+    local energy_consumption = ui_util.format_energy_consumption(subfactory.energy_consumption, 3)
     local label_energy = table_energy_consumption.add{type="label", name="label_energy_consumption",
       caption=energy_consumption}
-    label_energy.tooltip = ui_util.format_energy_consumption(Subfactory.get_energy_consumption(
-      player, player_table.selected_subfactory_id), 8)
+    label_energy.tooltip = ui_util.format_energy_consumption(subfactory.energy_consumption, 8)
     label_energy.style.font = "default-bold"
 
     -- Notes
@@ -61,10 +59,10 @@ end
 function handle_subfactory_timescale_change(player, timescale)
     local player_table = global.players[player.index]
     if player_table.current_activity == "changing_timescale" then
-        local subfactory_id = player_table.selected_subfactory_id
-        Subfactory.set_timescale(player, subfactory_id, timescale)
+        local subfactory = player_table.context.subfactory
+        subfactory.timescale = timescale
         player_table.current_activity = nil
-        update_calculations(player, subfactory_id)
+        update_calculations(player, subfactory)
     else
         player_table.current_activity = "changing_timescale"
     end
@@ -75,15 +73,15 @@ end
 
 
 -- Handles populating the modal dialog to view or edit notes
-function open_notes_dialog(flow_modal_dialog, args)
+function open_notes_dialog(flow_modal_dialog)
     create_notes_dialog_structure(flow_modal_dialog, {"label.notes"})
 end
 
 -- Handles closing of the notes dialog
 function close_notes_dialog(flow_modal_dialog, action, data)
-    local player = game.players[flow_modal_dialog.player_index]
     if action == "submit" then
-        Subfactory.set_notes(player, global.players[player.index].selected_subfactory_id, data.notes)
+        local player_table = global.players[flow_modal_dialog.player_index]
+        player_table.context.subfactory.notes = data.notes
     end
 end
 
@@ -109,9 +107,9 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
     flow_modal_dialog.parent.caption = title
 
     -- Notes
-    local player = game.players[flow_modal_dialog.player_index]
+    local player_table = global.players[flow_modal_dialog.player_index]
     local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
-      text=Subfactory.get_notes(player, global.players[player.index].selected_subfactory_id)}
+      text=player_table.context.subfactory.notes}
     text_box_notes.focus()
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400

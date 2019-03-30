@@ -1,5 +1,5 @@
 -- Handles populating the recipe dialog
-function open_recipe_picker_dialog(flow_modal_dialog, args)
+function open_recipe_picker_dialog(flow_modal_dialog)
     local player = game.players[flow_modal_dialog.player_index]
     local subfactory_id = global.players[player.index].selected_subfactory_id
     local floor_id = Subfactory.get_selected_floor_id(player, subfactory_id)

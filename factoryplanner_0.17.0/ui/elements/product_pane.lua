@@ -1,22 +1,22 @@
 -- Returns necessary details to complete the item button for a product
 function get_product_specifics(product)
-    local localised_name = game[product.item_type .. "_prototypes"][product.name].localised_name
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount_produced, 4), " / ",
-      ui_util.format_number(product.amount_required, 4)}
+    local localised_name = game[product.type .. "_prototypes"][product.name].localised_name
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount, 4), " / ",
+      ui_util.format_number(product.required_amount, 4)}
 
     local style
-    if product.amount_produced == 0 then
+    if product.amount == 0 then
         style = "fp_button_icon_large_red"
-    elseif product.amount_produced < product.amount_required then
+    elseif product.amount < product.required_amount then
         style = "fp_button_icon_large_yellow"
-    elseif product.amount_produced == product.amount_required then
+    elseif product.amount == product.required_amount then
         style = "fp_button_icon_large_green"
     else
         style = "fp_button_icon_large_cyan"
     end
 
     return {
-        number = product.amount_required,
+        number = product.required_amount,
         tooltip = tooltip,
         style = style
     }
@@ -32,14 +32,7 @@ end
 
 
 -- Handles populating the modal dialog to add or edit products
-function open_product_dialog(flow_modal_dialog, args)
-    local player = game.players[flow_modal_dialog.player_index]
-    local player_table = global.players[player.index]
-    if args.edit then 
-        player_table.current_activity = "editing_product"
-        player_table.selected_product_name = Subfactory.get(player, player_table.selected_subfactory_id, 
-          "Product", args.product_id).name
-    end
+function open_product_dialog(flow_modal_dialog)
     create_product_dialog_structure(flow_modal_dialog, {"label.add_product"})
 end
 
@@ -47,22 +40,20 @@ end
 function close_product_dialog(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
     local player_table = global.players[player.index]
-    local subfactory_id = player_table.selected_subfactory_id
-    local product = Subfactory.find_by_name(player, subfactory_id, "Product", player_table.selected_product_name)
+    local subfactory = player_table.context.subfactory
+    local product = player_table.selected_object
 
     if action == "submit" then
-        if player_table.current_activity == "editing_product" then
-            Product.set_amount_required(player, subfactory_id, product.id, tonumber(data.amount_required))
-        else
-            Subfactory.add(player, subfactory_id, Product.init(data.item, tonumber(data.amount_required)))
+        if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
+            product = Subfactory.add(subfactory, Item.init(data.item, "Product"))
         end
+        product.required_amount = data.required_amount
+        update_calculations(player, subfactory)
 
-    elseif action == "delete" then
-        Subfactory.delete(player, subfactory_id, "Product", product.id)
+    elseif action == "delete" then  -- delete can only be pressed if product ~= nil
+        Subfactory.remove(subfactory, product)
+        update_calculations(player, subfactory)
     end
-
-    player_table.selected_product_name = nil
-    update_calculations(player, subfactory_id)
 end
 
 
@@ -73,19 +64,19 @@ function get_product_condition_instructions(player)
         data = {
             item = (function(flow_modal_dialog) return 
               flow_modal_dialog["table_product"]["choose-elem-button_product"].elem_value end),
-            amount_required = (function(flow_modal_dialog) return 
-              flow_modal_dialog["table_product"]["textfield_product_amount"].text end)
+            required_amount = (function(flow_modal_dialog) return 
+               tonumber(flow_modal_dialog["table_product"]["textfield_product_amount"].text) end)
         },
         conditions = {
             [1] = {
                 label = {"label.product_instruction_1"},
-                check = (function(data) return (data.item == nil or data.amount_required == "") end),
+                check = (function(data) return (data.item == nil or data.required_amount == "") end),
                 show_on_edit = true
             },
             [2] = {
                 label = {"label.product_instruction_2"},
-                check = (function(data) return (player_table.selected_product_name == nil and 
-                          Subfactory.product_exists(player, player_table.selected_subfactory_id, data.item)) end),
+                check = (function(data) return (player_table.selected_object == nil and 
+                          Subfactory.get_by_name(player_table.context.subfactory, "Product", data.item.name)) end),
                 show_on_edit = false
             },
             [3] = {
@@ -95,8 +86,8 @@ function get_product_condition_instructions(player)
             },
             [4] = {
                 label = {"label.product_instruction_4"},
-                check = (function(data) return (data.amount_required ~= "" and (tonumber(data.amount_required) == nil or
-                          tonumber(data.amount_required) <= 0)) end),
+                check = (function(data) return (data.required_amount ~= "" and (tonumber(data.required_amount) == nil 
+                          or tonumber(data.required_amount) <= 0)) end),
                 show_on_edit = true
             }
         }
@@ -121,16 +112,12 @@ function create_product_dialog_structure(flow_modal_dialog, title)
     textfield_product_amount.focus()
 
     -- Adjustments if the product is being edited
-    local player = game.players[flow_modal_dialog.player_index]
-    local player_table = global.players[player.index]
-
-    if player_table.selected_product_name ~= nil then
-        local product = Subfactory.find_by_name(player, player_table.selected_subfactory_id, "Product",
-          player_table.selected_product_name)
-        button_product.elem_value = {type=product.item_type, name=product.name}
+    local product = global.players[flow_modal_dialog.player_index].selected_object
+    if product ~= nil then
+        button_product.elem_value = {type=product.type, name=product.name}
         button_product.locked = true
         --button_product.enabled = false
-        textfield_product_amount.text = product.amount_required
+        textfield_product_amount.text = product.required_amount
     end
 end
 
@@ -138,24 +125,22 @@ end
 -- Opens modal dialogs of clicked element or shifts it's position left or right
 function handle_product_element_click(player, product_id, click, direction)
     local player_table = global.players[player.index]
-    local subfactory_id = player_table.selected_subfactory_id
+    local subfactory = player_table.context.subfactory
+    local product = Subfactory.get(subfactory, "Product", product_id)
 
     -- Shift product in the given direction
     if direction ~= nil then
-        Subfactory.shift(player, subfactory_id, "Product", product_id, direction)
+        Subfactory.shift(subfactory, product, direction)
 
-    -- Open modal dialogs
-    else
+    else  -- Open modal dialogs
         if click == "left" then
-            local floor = Subfactory.get(player, subfactory_id, "Floor", Subfactory.get_selected_floor_id(player, subfactory_id))
-            if floor.level == 1 then
-                local product_name = Product.get_name(player, subfactory_id, product_id)
-                enter_modal_dialog(player, "recipe_picker", {preserve=true}, {product_name=product_name})
+            if player_table.context.floor.level == 1 then
+                enter_modal_dialog(player, {type="recipe_picker", object=product, preserve=true})
             else
                 queue_hint_message(player, {"label.error_product_wrong_floor"})
             end
         elseif click == "right" then
-            enter_modal_dialog(player, "product", {submit=true, delete=true}, {edit=true, product_id=product_id})
+            enter_modal_dialog(player, {type="product", object=product, submit=true, delete=true})
         end
     end
     
