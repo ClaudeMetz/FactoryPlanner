@@ -2,17 +2,21 @@ require("preferences_dialog")
 require("recipe_picker_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
-function enter_modal_dialog(player, dialog_type, dialog_settings, args)
+function enter_modal_dialog(player, dialog_settings)
     toggle_main_dialog(player)
-    global.players[player.index].modal_dialog_type = dialog_type
 
-    dialog_settings.edit = args.edit
-    if dialog_settings.preserve then dialog_settings.type = dialog_type end 
-    local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"](player)
+    local player_table = global.players[player.index]
+    player_table.modal_dialog_type = dialog_settings.type
+    player_table.selected_object = dialog_settings.object
+    player_table.current_activity = nil
+
+    dialog_settings.edit = (dialog_settings.object ~= nil)
+    if not dialog_settings.preserve then dialog_settings.type = nil end 
+    local condition_instructions = _G["get_" .. player_table.modal_dialog_type .. "_condition_instructions"](player)
 
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
     player.opened = flow_modal_dialog.parent
-    _G["open_" .. dialog_type .. "_dialog"](flow_modal_dialog, args)
+    _G["open_" .. player_table.modal_dialog_type .. "_dialog"](flow_modal_dialog)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -43,7 +47,7 @@ function exit_modal_dialog(player, button, data)
 
     -- Close modal dialog
     player_table.modal_dialog_type = nil
-    player_table.current_activity = nil
+    player_table.selected_object = nil
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end
     toggle_main_dialog(player)

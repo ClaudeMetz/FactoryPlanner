@@ -14,10 +14,9 @@ function refresh_error_bar(player)
 
     flow_error_bar.clear()
 
-    local subfactory_id = global.players[player.index].selected_subfactory_id
-    -- selected_subfactory_id is always 0 when there are no subfactories
-    if (subfactory_id ~= 0) and (not Subfactory.is_valid(player, subfactory_id)) then
-        create_error_bar(flow_error_bar, subfactory_id)
+    local subfactory = global.players[player.index].context.subfactory
+    if subfactory ~= nil and not subfactory.valid then
+        create_error_bar(flow_error_bar, subfactory.id)
         flow_error_bar.visible = true
     else
         flow_error_bar.visible = false
@@ -31,7 +30,17 @@ function create_error_bar(flow, subfactory_id)
     local table = flow.add{type="table", name="table_error_bar", column_count=2}
     local label_2 = table.add{type="label", name="label_error_bar_2", caption={"", "   ", {"label.error_bar_2"}, " "}}
     label_2.style.font = "fp-font-16p"
-    local button = table.add{type="button", name="fp_button_error_bar_" .. subfactory_id,
+    local button = table.add{type="button", name="fp_button_error_bar_repair",
       caption={"button-text.error_bar_delete"}}
     button.style.font = "fp-font-16p"    
+end
+
+function handle_subfactory_repair(player)
+    local subfactory = global.players[player.index].context.subfactory
+    Subfactory.attempt_repair(subfactory, player)
+
+    update_calculations(player, subfactory)
+    
+    refresh_subfactory_bar(player, true)
+    refresh_production_pane(player)
 end

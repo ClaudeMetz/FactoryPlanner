@@ -24,15 +24,13 @@ function refresh_subfactory_bar(player, full_refresh)
     local current_table_index = 0
     local current_table = nil
 
-    -- selected_subfactory_id is 0 when there are no subfactories
-    if player_table.selected_subfactory_id ~= 0 then
-        for _, subfactory_id in ipairs(Factory.get_subfactories_in_order(player)) do
-            local subfactory = Factory.get_subfactory(player, subfactory_id)
-            local selected = (player_table.selected_subfactory_id == subfactory_id)
-            
+    if player_table.context.subfactory ~= nil then
+        for _, subfactory in ipairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
             -- Tries to insert new element, if it doesn't fit, a new row is created and creation is reattempted
             -- First one is supposed to fail to create the first table
-            local width_used = attempt_element_creation(current_table, width_remaining, subfactory_id, subfactory, selected)
+            local selected = (player_table.context.subfactory.id == subfactory.id)
+            local width_used = attempt_element_creation(current_table, width_remaining, subfactory, selected)
+
             if width_used == 0 then
                 current_table = table_subfactories.add{type="table", name="table_subfactories_" .. current_table_index, 
                   column_count = 30}
@@ -40,7 +38,7 @@ function refresh_subfactory_bar(player, full_refresh)
                 current_table_index = current_table_index + 1
                 width_remaining = max_width
                 
-                attempt_element_creation(current_table, width_remaining, subfactory_id, subfactory, selected)
+                attempt_element_creation(current_table, width_remaining, subfactory, selected)
             else
                 width_remaining = width_remaining - width_used
             end
@@ -56,26 +54,28 @@ end
 
 -- Attempts to create and insert a new element into the table
 -- The creation-function itself decides whether it will fit
-function attempt_element_creation(table, width_remaining, id, subfactory, selected)
+function attempt_element_creation(table, width_remaining, subfactory, selected)
     local width_used
+
     if subfactory.name ~= "" and subfactory.icon == nil then
-        width_used = create_label_element(table, width_remaining, id, subfactory, selected)
+        width_used = create_label_element(table, width_remaining, subfactory, selected)
     elseif subfactory.icon ~= nil and subfactory.name == "" then
-        width_used = create_sprite_element(table, width_remaining, id, subfactory, selected)
+        width_used = create_sprite_element(table, width_remaining, subfactory, selected)
     else
-        width_used = create_label_sprite_element(table, width_remaining, id, subfactory, selected)
+        width_used = create_label_sprite_element(table, width_remaining, subfactory, selected)
     end
+
     return width_used
 end
 
 -- Constructs an element of the subfactory bar if there only is a name
-function create_label_element(table, width_remaining, id, subfactory, selected)
+function create_label_element(table, width_remaining, subfactory, selected)
     local button_width = (#subfactory.name * 9) + 16
     if button_width > width_remaining then
         return 0
     else    
-        local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. id}
-        local label = button.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
+        local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. subfactory.id}
+        local label = button.add{type="label", name="label_subfactory_" .. subfactory.id, caption=subfactory.name}
 
         if selected then button.style = "fp_button_icon_large_blank"
         else button.style = "fp_button_icon_large_recipe" end
@@ -91,12 +91,12 @@ function create_label_element(table, width_remaining, id, subfactory, selected)
 end
 
 -- Constructs an element of the subfactory bar if there only is an icon
-function create_sprite_element(table, width_remaining, id, subfactory, selected)
+function create_sprite_element(table, width_remaining, subfactory, selected)
     local button_width = 36
     if button_width > width_remaining then
         return 0
     else  
-        local button = create_sprite_button(table, "fp_sprite-button_subfactory_" .. id, subfactory)
+        local button = create_sprite_button(table, "fp_sprite-button_subfactory_" .. subfactory.id, subfactory)
 
         if selected then button.style = "fp_button_icon_large_blank"
         else button.style = "fp_button_icon_large_recipe" end
@@ -106,16 +106,16 @@ function create_sprite_element(table, width_remaining, id, subfactory, selected)
 end
 
 -- Constructs an element of the subfactory bar if there is both a name and an icon
-function create_label_sprite_element(table, width_remaining, id, subfactory, selected)
+function create_label_sprite_element(table, width_remaining, subfactory, selected)
     local button_width = (#subfactory.name * 9) + 56
     if button_width > width_remaining then
         return 0
-    else 
-        local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. id}
-        local flow = button.add{type="flow", name="flow_subfactory_" .. id, direction="horizontal"}
+    else
+        local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. subfactory.id}
+        local flow = button.add{type="flow", name="flow_subfactory_" .. subfactory.id, direction="horizontal"}
 
-        local sprite = create_sprite_button(flow, "sprite_subfactory_" .. id, subfactory)
-        local label = flow.add{type="label", name="label_subfactory_" .. id, caption=subfactory.name}
+        local sprite = create_sprite_button(flow, "sprite_subfactory_" .. subfactory.id, subfactory)
+        local label = flow.add{type="label", name="label_subfactory_" .. subfactory.id, caption=subfactory.name}
 
         if selected then button.style = "fp_button_icon_large_blank"
         else button.style = "fp_button_icon_large_recipe" end
@@ -156,23 +156,23 @@ end
 -- Moves selection to the clicked element, edits it, or shifts it's position left or right
 function handle_subfactory_element_click(player, subfactory_id, click, direction)
     local player_table = global.players[player.index]
+    local subfactory = Factory.get(player_table.factory, "Subfactory", subfactory_id)
 
     -- Shift subfactory in the given direction
     if direction ~= nil then
-        Factory.shift_subfactory(player, subfactory_id, direction)
+        Factory.shift(player_table.factory, subfactory, direction)
         refresh_subfactory_bar(player, false)
-        player_table.current_activity = nil
 
     else
-        player_table.selected_subfactory_id = subfactory_id
-        player_table.current_activity = nil
         -- Change selected subfactory
         if click == "left" then
+            data_util.context.set_subfactory(player, subfactory)
+            player_table.current_activity = nil
             refresh_main_dialog(player)
 
         -- Edit clicked subfactory
         elseif click == "right" then
-            enter_modal_dialog(player, "subfactory", {submit=true, delete=true}, {edit=true})
+            enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
         end
     end
 end

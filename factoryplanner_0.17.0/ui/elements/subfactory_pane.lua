@@ -21,20 +21,19 @@ function refresh_subfactory_pane(player)
 
     table_subfactory.clear()
     
-    local subfactory_id = global.players[player.index].selected_subfactory_id
-    -- selected_subfactory_id is always 0 when there are no subfactories
-    if (subfactory_id ~= 0) and Subfactory.is_valid(player, subfactory_id) then
+    local player_table = global.players[player.index]
+    local subfactory = player_table.context.subfactory
+    if subfactory ~= nil and subfactory.valid then
         -- Info cell
         add_subfactory_pane_cell_to(table_subfactory, "info")
         refresh_info_pane(player)
         
-        -- All 3 item cells
-        local column_count = settings.get_player_settings(player)["fp_subfactory_items_per_row"].value
-        local classes = {[1] = "Ingredient", [2] = "Product", [3] = "Byproduct"}
-        for _, class in ipairs(classes) do
+        -- The three item cells
+        local classes = {"Ingredient", "Product", "Byproduct"}
+        for _, class in pairs(classes) do
             local ui_name = class:gsub("^%u", string.lower) .. "s"
             local scroll_pane = add_subfactory_pane_cell_to(table_subfactory, ui_name)
-            if scroll_pane["item_table"] == nil then init_item_table(scroll_pane, column_count) end
+            if scroll_pane["item_table"] == nil then init_item_table(scroll_pane, player_table.items_per_row) end
             refresh_item_table(player, class)
         end
     end
@@ -71,14 +70,13 @@ function refresh_item_table(player, class)
       ["scroll-pane"]["item_table"]
     item_table.clear()
 
-    local subfactory_id = global.players[player.index].selected_subfactory_id
-    if Subfactory.get_count(player, subfactory_id, class) ~= 0 then
-        for _, id in ipairs(Subfactory.get_in_order(player, subfactory_id, class)) do
-            local item = Subfactory.get(player, subfactory_id, class, id)
+    local subfactory = global.players[player.index].context.subfactory
+    if subfactory[class].count > 0 then
+        for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
             local item_specifics = _G["get_" .. ui_name .. "_specifics"](item)
 
             local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" ..
-              ui_name .. "_" .. id, sprite=item.item_type .. "/" .. item.name}
+              ui_name .. "_" .. item.id, sprite=item.type .. "/" .. item.name}
 
             button.number = item_specifics.number
             button.tooltip = item_specifics.tooltip

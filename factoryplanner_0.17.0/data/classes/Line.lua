@@ -1,140 +1,70 @@
--- Represents an (assembly) line, uses a single recipe
+-- 'Class' representing an assembly line producing a single recipe
 Line = {}
 
-function Line.init(player, recipe, skip_item_init)
-    local recipe_category = recipe.category
-    local recipe_energy = recipe.energy
-    if recipe_category == "basic-solid" then
-        -- Set recipe_energy to mining time for the custom mining recipes
-        for _, ingredient in pairs(recipe.ingredients) do
-            if ingredient.type == "entity" then
-                recipe_energy = recipe.mining_time
-            end
-        end
-
-        -- Detect recipes that require fluids to mine
-        if #recipe.ingredients > 1 then recipe_category = "complex-solid" end
-    end
-    local default_machine = data_util.get_default_machine(player, recipe_category)
-
+function Line.init(base_recipe, machine)
     local line = {
-        id = 0,
-        recipe_name = recipe.name,
-        recipe_category = recipe_category,
-        recipe_energy = recipe_energy,
-        production_ratio = 0,
+        recipe_name = base_recipe.name,
+        recipe_category = base_recipe.category,
+        recipe_energy = base_recipe.energy,
         percentage = 100,
-        machine_name = default_machine.name,
+        machine_name = machine.name,
         machine_count = 0,
-        energy_consumption = 0,  -- in Watt
+        energy_consumption = 0,
+        Product = Collection.init(),
+        Byproduct = Collection.init(),
+        Ingredient = Collection.init(),
+        subfloor = nil,
         valid = true,
-        gui_position = 0,
-        type = "Line"
+        class = "Line"
     }
 
-    -- Byproducts are included in products and differentiate by their kind-attribute
-    -- for performance reasons (LineItems only, not the aggregate)
-    local categories = {"products", "ingredients"}
-    for _, category in pairs(categories) do
-        line[category] = {
-            datasets = {},
-            index = 0,
-            counter = 0
-        }
-        if not skip_item_init then
-            for _, item in pairs(recipe[category]) do
-                LineItem.add_to_list(line[category], LineItem.init(item, category))
-            end
-        end
+    for _, product in pairs(base_recipe.products) do
+        Line.add(line, Item.init(product, "Product"))
+    end
+    for _, ingredient in pairs(base_recipe.ingredients) do
+        Line.add(line, Item.init(ingredient, "Ingredient"))
     end
 
     return line
 end
 
-local function get_line(player, subfactory_id, floor_id, id)
-    return global.players[player.index].factory.subfactories[subfactory_id].Floor.datasets[floor_id].lines[id]
+function Line.add(self, object)
+    object.parent = self
+    return Collection.add(self[object.class], object)
 end
 
-
-function Line.get_recipe_name(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).recipe_name
+function Line.remove(self, dataset)
+    Collection.remove(self[dataset.class], dataset)
 end
 
-function Line.set_recipe_category(player, subfactory_id, floor_id, id, recipe_category)
-    get_line(player, subfactory_id, floor_id, id).recipe_category = recipe_category
+function Line.get(self, class, dataset_id)
+    return Collection.get(self[class], dataset_id)
 end
 
-function Line.get_recipe_category(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).recipe_category
+function Line.get_in_order(self, class)
+    return Collection.get_in_order(self[class])
 end
 
-
-function Line.set_percentage(player, subfactory_id, floor_id, id, percentage)
-    get_line(player, subfactory_id, floor_id, id).percentage = percentage
+function Line.shift(self, dataset, direction)
+    Collection.shift(self[dataset.class], dataset, direction)
 end
 
-function Line.get_percentage(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).percentage
-end
-
-
-function Line.set_machine_name(player, subfactory_id, floor_id, id, machine_name)
-    get_line(player, subfactory_id, floor_id, id).machine_name = machine_name
-end
-
-function Line.get_machine_name(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).machine_name
-end
-
-
-function Line.set_energy_consumption(player, subfactory_id, floor_id, id, energy_consumption)
-    get_line(player, subfactory_id, floor_id, id).energy_consumption = energy_consumption
-end
-
-function Line.get_energy_consumption(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).energy_consumption
-end
-
-
--- Resets all data to stock (unused line), to be updated afterwards
-function Line.reset(player, subfactory_id, floor_id, id)
-    local self = get_line(player, subfactory_id, floor_id, id)
-    self.energy_consumption = 0
-    self.machine_count = 0
-
-    for product_id, product in pairs(self.products.datasets) do
-        if product.kind == "byproducts" then
-            if product.duplicate then LineItem.delete_from_list(self.products, product_id)
-            else product.kind = "products"; product.amount = 0 end
+-- Update the validity of associated Items, recipe and machine of this line
+function Line.update_validity(self)
+    self.valid = true
+    
+    -- Validate Items
+    local classes = {"Product", "Byproduct", "Ingredient"}
+    for _, class in pairs(classes) do
+        for _, dataset in pairs(self[class].datasets) do
+            if not _G[class].update_validity(dataset) then
+                self.valid = false
+            end
         end
     end
-    for _, ingredient in pairs(self.ingredients.datasets) do ingredient.amount = 0 end
-end
 
-
-function Line.get_item(player, subfactory_id, floor_id, id, type, item_id)
-    local self = get_line(player, subfactory_id, floor_id, id)
-    if self.type == "FloorReference" then self = Floor.get_aggregate_line(player, subfactory_id, self.floor_id) end
-    return self[type].datasets[item_id]
-end
-
-function Line.get_items_in_order(player, subfactory_id, floor_id, id, category)
-    local self = get_line(player, subfactory_id, floor_id, id)
-    if self.type == "FloorReference" then self = Floor.get_aggregate_line(player, subfactory_id, self.floor_id) end
-    return data_util.order_by_position(self[category].datasets)
-end
-
-
-function Line.is_valid(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).valid
-end
-
--- Determines and sets the validity of given Line
-function Line.check_validity(player, subfactory_id, floor_id, id)
-    local self = get_line(player, subfactory_id, floor_id, id)
+    -- Validate the recipe and machine
     local recipe = global.all_recipes[self.recipe_name]
-
-    self.valid = true
     if recipe == nil then
         self.valid = false
     else
@@ -149,33 +79,46 @@ function Line.check_validity(player, subfactory_id, floor_id, id)
     return self.valid
 end
 
--- Attempts to repair missing machines
-function Line.attempt_repair(player, subfactory_id, floor_id, id)
-    local self = get_line(player, subfactory_id, floor_id, id)
-    local recipe = global.all_recipes[self.recipe_name]
+-- Tries to repair all associated datasets, removing the unrepairable ones
+-- (In general, Line Items are not repairable and can only be deleted)
+function Line.attempt_repair(self, player)
+    self.valid = true
 
-    if recipe == nil then
-        return false
-    else
-        if recipe.category ~= self.recipe_category then
-            self.recipe_category = recipe.category
-            self.machine_name = data_util.get_default_machine(player, recipe.category).name
-        else
-            local machine = global.all_machines[self.recipe_category].machines[self.machine_name]
-            if machine == nil then
-                self.machine_name = data_util.get_default_machine(player, recipe.category).name
+    -- Remove invalid Items
+    local classes = {"Product", "Byproduct", "Ingredient"}
+    for _, class in pairs(classes) do
+        for _, dataset in pairs(self[class].datasets) do
+            if not dataset.valid then
+                Subfactory.remove(self, dataset)
             end
         end
-        self.valid = true
-        return self.valid
     end
-end
 
+    -- Attempt to repair the line
+    local recipe = global.all_recipes[self.recipe_name]
+    if recipe == nil then
+        self.valid = false
+    else
+        if self.subfloor then
+            -- Attempt to repair the subfloor, if this fails, remove it
+            if not self.subfloor.valid and not Floor.attempt_repair(self.subfloor, player) then
+                Subfactory.remove(self.subfloor.subfactory, self.subfloor)
+                self.valid = false
+            end
+        else
+            -- Attempt to repair an invalid machine
+            -- (This is only done when there is no subfloor because it would become too complicated otherwise)
+            if recipe.category ~= self.recipe_category then
+                local machine = data_util.machines.get_default(player, recipe.category)
+                Floor.replace(self.parent, self, Line.init(recipe, machine))
+            else
+                local machine = global.all_machines[self.recipe_category].machines[self.machine_name]
+                if machine == nil then
+                    self.machine_name = data_util.machines.get_default(player, recipe.category).name
+                end
+            end
+        end
+    end
 
-function Line.set_gui_position(player, subfactory_id, floor_id, id, gui_position)
-    get_line(player, subfactory_id, floor_id, id).gui_position = gui_position
-end
-
-function Line.get_gui_position(player, subfactory_id, floor_id, id)
-    return get_line(player, subfactory_id, floor_id, id).gui_position
+    return self.valid
 end
