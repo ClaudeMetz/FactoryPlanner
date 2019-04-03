@@ -13,7 +13,8 @@ require("data.calc")
 function global_init()
     global.players = {}
 
-    global.all_recipes = generator.all_recipes()
+    global.all_items = generator.all_items()
+    -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
 
     global.devmode = true
@@ -31,6 +32,9 @@ function player_init(player)
 
         player_table.default_machines = {}
         data_util.machines.update_default(player)
+
+        -- Creates recipes if there are none for the force of this player
+        global.all_recipes = generator.all_recipes(false)
 
         player_table.modal_dialog_type = nil  -- The internal modal dialog type
         player_table.selected_object = nil  -- The object relevant for a modal dialog
@@ -60,12 +64,13 @@ end
 
 -- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
-    global.all_recipes = generator.all_recipes()
+    global.all_items = generator.all_items()
+    global.all_recipes = generator.all_recipes(true)
     global.all_machines = generator.all_machines()
 
     for index, player in pairs(game.players) do
         local space_tech = player.force.technologies["space-science-pack"].researched
-        if space_tech then global.all_recipes["fp-space-science-pack"].enabled = true end
+        if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
 
         player_reset(player)
         player_gui_reset(player)
@@ -73,7 +78,7 @@ function handle_configuration_change()
         player_init(player)
         player_gui_init(player)
 
-        Factory.update_validity(player)
+        Factory.update_validity(global.players[player.index].factory, player)
         data_util.machines.update_default(player)
     end
 end
@@ -96,9 +101,9 @@ function run_dev_config(player)
         prod2.required_amount = 100
 
         local floor = Subfactory.get(subfactory, "Floor", 1)
-        local recipe = global.all_recipes["electronic-circuit"]
+        local recipe = global.all_recipes[player.force.name]["electronic-circuit"]
         local machine = data_util.machines.get_default(player, recipe.category)
         Floor.add(floor, Line.init(recipe, machine))
-        Floor.add(floor, Line.init(global.all_recipes["advanced-circuit"], machine))
+        Floor.add(floor, Line.init(global.all_recipes[player.force.name]["advanced-circuit"], machine))
     end
 end

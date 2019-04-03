@@ -21,6 +21,15 @@ function ui_util.set_label_color(ui_element, color)
     end
 end
 
+-- Returns the sprite string of the given item
+-- (kinda really hacky, but the item prototypes are a mess)
+function ui_util.get_item_sprite(player, item)
+    if pcall(function () local a = item.type end) then
+        return ("item/" .. item.name)
+    else
+         return ("fluid/" .. item.name)
+    end
+end
 
 -- Returns the sprite string of the given recipe
 function ui_util.get_recipe_sprite(player, recipe)
@@ -28,7 +37,7 @@ function ui_util.get_recipe_sprite(player, recipe)
     if recipe.name == "fp-space-science-pack" then
         sprite = "item/space-science-pack"
     elseif string.find(recipe.name, "^impostor%-[a-z0-9-]+$") then
-        sprite = recipe.item_type .. "/" .. recipe.name:gsub("impostor%-", "")
+        sprite = recipe.type .. "/" .. recipe.name:gsub("impostor%-", "")
 
         -- If the mining recipe has no sprite, the sprite of the first product is used instead
         if not player.gui.is_valid_sprite_path(sprite) then

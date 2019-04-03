@@ -127,7 +127,7 @@ function create_line_table_row(player, line)
     local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
 
     -- Recipe button
-    local recipe = global.all_recipes[line.recipe_name]
+    local recipe = global.all_recipes[player.force.name][line.recipe_name]
     local sprite = ui_util.get_recipe_sprite(player, recipe)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
       sprite=sprite, style=style}
@@ -258,7 +258,7 @@ function handle_line_recipe_click(player, line_id, click, direction)
 
         -- Remove clicked (assembly) line
         elseif click == "right" then
-            Floor.delete(floor, line)
+            Floor.remove(floor, line)
             update_calculations(player, subfactory)
         end
         
@@ -276,7 +276,7 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
     -- Local function to centralize machine changing instructions
     local function set_machine(machine_name)
         line.machine_name = machine_name
-        if line.subfloor then line.subfloor.Line[1].machine_name = machine_name
+        if line.subfloor then Floor.get(line.subfloor, "Line", 1).machine_name = machine_name
         elseif line.id == 1 and floor.origin_line then floor.origin_line.machine_name = machine_name end
         update_calculations(player, subfactory)
     end
@@ -330,7 +330,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
             if item.class == "Ingredient" then
                 enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
             elseif item.class == "Byproduct" then
-                -- deal with byproducts later
+                enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
             end
         end
     end

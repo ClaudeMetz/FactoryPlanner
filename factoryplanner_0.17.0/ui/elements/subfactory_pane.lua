@@ -1,7 +1,4 @@
 require("ui.elements.info_pane")
-require("ui.elements.ingredient_pane")
-require("ui.elements.product_pane")
-require("ui.elements.byproduct_pane")
 
 -- Creates the subfactory pane that includes the products, byproducts and ingredients
 function add_subfactory_pane_to(main_dialog)
@@ -86,4 +83,124 @@ function refresh_item_table(player, class)
 
     local append_function = _G["append_to_" .. ui_name .. "_table"]
     if append_function ~= nil then append_function(item_table) end
+end
+
+
+-- **** INGREDIENTS ****
+-- Returns necessary details to complete the item button for an ingredient
+function get_ingredient_specifics(ingredient)
+    local localised_name = game[ingredient.type .. "_prototypes"][ingredient.name].localised_name
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(ingredient.amount, 4)}
+
+    return {
+        number = ingredient.amount,
+        tooltip = tooltip,
+        style = "fp_button_icon_large_blank"
+    }
+end
+
+-- Shifts clicked element's position left or right
+function handle_ingredient_element_click(player, ingredient_id, click, direction)
+    if direction ~= nil then
+        local subfactory = global.players[player.index].context.subfactory
+        local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
+        Subfactory.shift(subfactory, ingredient, direction)
+        refresh_item_table(player, "Ingredient")
+    end
+end
+
+
+-- **** PRODUCTS ****
+-- Returns necessary details to complete the item button for a product
+function get_product_specifics(product)
+    local localised_name = game[product.type .. "_prototypes"][product.name].localised_name
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount, 4), " / ",
+      ui_util.format_number(product.required_amount, 4)}
+
+    local style
+    if product.amount == 0 then
+        style = "fp_button_icon_large_red"
+    elseif product.amount < product.required_amount then
+        style = "fp_button_icon_large_yellow"
+    elseif product.amount == product.required_amount then
+        style = "fp_button_icon_large_green"
+    else
+        style = "fp_button_icon_large_cyan"
+    end
+
+    return {
+        number = product.required_amount,
+        tooltip = tooltip,
+        style = style
+    }
+end
+
+-- Adds the button to add a product to the table
+function append_to_product_table(table)
+    local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
+      style="fp_sprite_button", tooltip={"tooltip.add_product"}}
+    button.style.height = 36
+    button.style.width = 36
+end
+
+-- Opens modal dialogs of clicked element or shifts it's position left or right
+function handle_product_element_click(player, product_id, click, direction)
+    local player_table = global.players[player.index]
+    local subfactory = player_table.context.subfactory
+    local product = Subfactory.get(subfactory, "Product", product_id)
+
+    -- Shift product in the given direction
+    if direction ~= nil then
+        Subfactory.shift(subfactory, product, direction)
+
+    else  -- Open modal dialogs
+        if click == "left" then
+            if player_table.context.floor.level == 1 then
+                enter_modal_dialog(player, {type="recipe_picker", object=product, preserve=true})
+            else
+                queue_hint_message(player, {"label.error_product_wrong_floor"})
+            end
+        elseif click == "right" then
+            enter_modal_dialog(player, {type="item_picker", object=product, preserve=true, submit=true, delete=true})
+        end
+    end
+    
+    refresh_item_table(player, "Product")
+end
+
+
+-- **** BYPRODUCTS ****
+-- Returns necessary details to complete the item button for a byproduct
+function get_byproduct_specifics(byproduct)
+    local localised_name = game[byproduct.type .. "_prototypes"][byproduct.name].localised_name
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount, 4)}
+
+    return {
+        number = byproduct.amount,
+        tooltip = tooltip,
+        style = "fp_button_icon_large_red"
+    }
+end
+
+
+-- Opens recipe dialog of clicked element or shifts it's position left or right
+function handle_byproduct_element_click(player, byproduct_id, click, direction)
+    local subfactory = global.players[player.index].context.subfactory
+    local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
+    
+    -- Shift byproduct in the given direction
+    if direction ~= nil then
+        Subfactory.shift(subfactory, byproduct, direction)
+
+    -- Open recipe dialog? Dealing with byproducts will come at a later stage
+    elseif click == "left" then
+        local floor = global.players[player.index].context.floor
+        if floor.level == 1 then
+            enter_modal_dialog(player, {type="recipe_picker", object=byproduct, preserve=true})
+        else
+            queue_hint_message(player, {"label.error_byproduct_wrong_floor"})
+        end
+    end
+
+    refresh_item_table(player, "Byproduct")
 end

@@ -50,21 +50,21 @@ function Line.shift(self, dataset, direction)
 end
 
 -- Update the validity of associated Items, recipe and machine of this line
-function Line.update_validity(self)
+function Line.update_validity(self, player)
     self.valid = true
     
     -- Validate Items
     local classes = {"Product", "Byproduct", "Ingredient"}
     for _, class in pairs(classes) do
         for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].update_validity(dataset) then
+            if not _G[class].update_validity(dataset, player) then
                 self.valid = false
             end
         end
     end
 
     -- Validate the recipe and machine
-    local recipe = global.all_recipes[self.recipe_name]
+    local recipe = global.all_recipes[player.force.name][self.recipe_name]
     if recipe == nil then
         self.valid = false
     else
@@ -95,7 +95,7 @@ function Line.attempt_repair(self, player)
     end
 
     -- Attempt to repair the line
-    local recipe = global.all_recipes[self.recipe_name]
+    local recipe = global.all_recipes[player.force.name][self.recipe_name]
     if recipe == nil then
         self.valid = false
     else

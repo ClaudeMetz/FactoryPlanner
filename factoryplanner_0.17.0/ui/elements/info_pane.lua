@@ -85,7 +85,6 @@ function close_notes_dialog(flow_modal_dialog, action, data)
     end
 end
 
-
 -- Returns all necessary instructions to create and run conditions on the modal dialog
 function get_notes_condition_instructions()
     return {

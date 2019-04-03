@@ -1,4 +1,7 @@
 require("preferences_dialog")
+require("subfactory_dialog")
+require("prototype_picker_dialog")
+require("item_picker_dialog")
 require("recipe_picker_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
@@ -10,11 +13,9 @@ function enter_modal_dialog(player, dialog_settings)
     player_table.selected_object = dialog_settings.object
     player_table.current_activity = nil
 
-    dialog_settings.edit = (dialog_settings.object ~= nil)
-    if not dialog_settings.preserve then dialog_settings.type = nil end 
     local condition_instructions = _G["get_" .. player_table.modal_dialog_type .. "_condition_instructions"](player)
-
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
+    
     player.opened = flow_modal_dialog.parent
     _G["open_" .. player_table.modal_dialog_type .. "_dialog"](flow_modal_dialog)
 end
@@ -23,9 +24,10 @@ end
 function exit_modal_dialog(player, button, data)
     local player_table = global.players[player.index]
     local dialog_type = player_table.modal_dialog_type
+    
     local center = player.gui.center
-    local flow_modal_dialog, preserve
-
+    local flow_modal_dialog, preserve = nil, false
+    -- If no normal modal dialog exists, a preserved one has to be open
     if player.gui.center["fp_frame_modal_dialog"] == nil then
         flow_modal_dialog = center["fp_frame_modal_dialog_" .. dialog_type]["flow_modal_dialog"]
         preserve = true
@@ -92,20 +94,28 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
     local flow_modal_dialog
 
     local frame_name = "fp_frame_modal_dialog"
-    if dialog_settings.type ~= nil then frame_name = frame_name .. "_" .. dialog_settings.type end
+    if dialog_settings.preserve then frame_name = frame_name .. "_" .. dialog_settings.type end
+    
+    if center[frame_name] ~= nil then  -- Meaning an existing preserved dialog is being opened
+        -- Reset condition label colors
+        local table_conditions = center[frame_name]["table_modal_dialog_conditions"]
+        for _, child in pairs(table_conditions.children) do
+            ui_util.set_label_color(child, "default_label")
+        end
 
-    if center[frame_name] ~= nil then
+        -- Show preserved modal dialog
         center[frame_name].visible = true
         flow_modal_dialog = center[frame_name]["flow_modal_dialog"]
     else
         frame_modal_dialog = center.add{type="frame", name=frame_name, direction="vertical"}
 
         -- Conditions table
+        local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
         if #condition_instructions.conditions ~= 0 then
-            local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
             table_conditions.style.bottom_margin = 6
             for n, condition in ipairs(condition_instructions.conditions) do
-                if not (dialog_settings.edit and (not condition.show_on_edit)) then
+                local currently_editing = (dialog_settings.object ~= nil)
+                if not (currently_editing and (not condition.show_on_edit)) then
                     table_conditions.add{type="label", name="label_subfactory_instruction_" .. n, caption=condition.label}
                 end
             end
@@ -131,23 +141,24 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         local flow_spacer_1 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_1", direction="horizontal"}
         flow_spacer_1.style.horizontally_stretchable = true
 
-        if dialog_settings.delete then
-            local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
-              caption={"button-text.delete"}, style="red_button"}
-            button_delete.style.font = "default-dialog-button"
-            button_delete.style.height = 32
-            button_delete.style.maximal_width = 80
-        end
+        local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
+          caption={"button-text.delete"}, style="red_button"}
+        button_delete.style.font = "default-dialog-button"
+        button_delete.style.height = 32
+        button_delete.style.maximal_width = 80
 
         local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
         flow_spacer_2.style.horizontally_stretchable = true
 
-        if dialog_settings.submit then
-            local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
-              caption={"button-text.submit"}, style="confirm_button"}
-            button_submit.style.maximal_width = 90
-        end
+        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
+          caption={"button-text.submit"}, style="confirm_button"}
+        button_submit.style.maximal_width = 90
     end
+
+    -- Adjust visibility of the submit and delete buttons
+    local button_bar = center[frame_name]["flow_modal_dialog_button_bar"]
+    button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false
+    button_bar["fp_button_modal_dialog_delete"].visible = dialog_settings.delete or false
 
     return flow_modal_dialog
 end
