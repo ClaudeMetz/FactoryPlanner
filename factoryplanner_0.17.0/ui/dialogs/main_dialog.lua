@@ -38,6 +38,7 @@ function player_gui_reset(player)
         mod_gui.get_button_flow(player),
         center["fp_frame_main_dialog"],
         center["fp_frame_modal_dialog"],
+        center["fp_frame_modal_dialog_item_picker"],
         center["fp_frame_modal_dialog_recipe_picker"]
     }
     for _, gui in pairs(guis) do 

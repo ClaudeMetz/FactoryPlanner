@@ -61,13 +61,13 @@ function Floor.shift(self, dataset, direction)
 end
 
 -- Update validity of this floor and its subfloors
-function Floor.update_validity(self)
+function Floor.update_validity(self, player)
     self.valid = true
 
     local classes = {"Line"}
     for _, class in pairs(classes) do
         for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].update_validity(dataset) then
+            if not _G[class].update_validity(dataset, player) then
                 self.valid = false
             end
         end

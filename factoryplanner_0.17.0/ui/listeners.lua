@@ -53,8 +53,10 @@ end)
 
 -- Sets the custom space science recipe to enabled when rockets are researched
 script.on_event(defines.events.on_research_finished, function(event)
+    local player = game.players[event.player_index]
+    
     if event.research.name == "space-science-pack" then
-        global.all_recipes["fp-space-science-pack"].enabled = true
+        global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true
     end
 end)
 
@@ -89,8 +91,8 @@ end)
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.players[event.player_index]
 
-    if string.find(event.element.name, "^fp_checkbox_filter_condition_%l+$") then
-        apply_recipe_filter(player)
+    if string.find(event.element.name, "^fp_checkbox_picker_filter_condition_%l+$") then
+        picker.apply_filter(player, "recipe", false, get_search_function(global.players[player.index].selected_object))
     end
 end)
 
@@ -112,7 +114,7 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         else
             line.percentage = new_percentage
             -- Update related datasets
-            if line.subfloor then line.subfloor.Line[1].percentage = new_percentage
+            if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
             elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
             queue_hint_message(player, "")
@@ -123,6 +125,9 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
               ["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
         end
         refresh_hint_message(player)
+    elseif event.element.name == "fp_textfield_picker_search_bar" then
+        local object_type = string.gsub(player_table.modal_dialog_type, "_picker", "")
+        picker.apply_filter(player, object_type, false, get_search_function(global.players[player.index].selected_object))
     end
 end)
 
@@ -142,6 +147,12 @@ script.on_event(defines.events.on_gui_click, function(event)
 
     local player = game.players[event.player_index]
     local player_table = global.players[player.index]
+
+    local object_type  -- Not always relevant, but useful in some places
+    if player_table.modal_dialog_type ~= nil then
+        object_type = string.gsub(player_table.modal_dialog_type, "_picker", "")
+    end
+
     local found = true
     
     if string.find(event.element.name, "^fp_.+$") then  -- performance improvement
@@ -190,11 +201,11 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" and is_left_click then
-            enter_modal_dialog(player, {type="product", submit=true})
+            enter_modal_dialog(player, {type="item_picker", preserve=true, submit=true})
 
         -- Submits the entered search term in the recipe dialog
         elseif event.element.name == "fp_sprite-button_search_recipe" and is_left_click then
-            apply_recipe_filter(player)
+            picker.apply_filter(player, object_type, false, get_search_function(player_table.selected_object))
 
         -- Sets the selected floor to be the parent of the currently selected one
         elseif event.element.name == "fp_button_floor_up" and is_left_click then
@@ -226,12 +237,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a item group button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
             local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
-            change_item_group_selection(player, item_group_name)
+            picker.select_item_group(player, object_type, item_group_name)
 
-        -- Reacts to a recipe button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_recipe_[a-z-]+$") and is_left_click then
-            local recipe_name = string.gsub(event.element.name, "fp_sprite%-button_recipe_", "")
-            exit_modal_dialog(player, "cancel", {recipe_name=recipe_name})
+        -- Reacts to a picker object button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-z-]+$") and is_left_click then
+            _G["handle_picker_" .. object_type .. "_click"](player, event.element)
 
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then

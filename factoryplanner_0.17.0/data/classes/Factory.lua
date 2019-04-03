@@ -35,12 +35,15 @@ function Factory.shift(self, dataset, direction)
 end
 
 -- Updates the validity of the factory from top to bottom
-function Factory.update_validity(self)
+function Factory.update_validity(self, player)
     self.valid = true
     
-    for _, subfactory in pairs(self.Subfactory.datasets) do
-        if not Subfactory.update_validity(subfactory) then
-            self.valid = false
+    local classes = {"Subfactory"}
+     for _, class in pairs(classes) do
+        for _, dataset in pairs(self[class].datasets) do
+            if not _G[class].attempt_repair(dataset, player) then
+                self.valid = false
+            end
         end
     end
 end

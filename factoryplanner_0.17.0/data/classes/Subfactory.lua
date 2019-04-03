@@ -58,13 +58,13 @@ end
 
 -- Updates the validity of the whole subfactory
 -- Floors can be checked in any order and separately without problem
-function Subfactory.update_validity(self)
+function Subfactory.update_validity(self, player)
     self.valid = true
     
     local classes = {"Product", "Byproduct", "Ingredient", "Floor"}
     for _, class in pairs(classes) do
         for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].update_validity(dataset) then
+            if not _G[class].update_validity(dataset, player) then
                 self.valid = false
             end
         end

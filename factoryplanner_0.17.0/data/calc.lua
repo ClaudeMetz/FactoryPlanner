@@ -23,7 +23,7 @@ function calc.update_floor(player, subfactory_id, floor, required_products)
         if line.type == "FloorReference" then
             -- First, search for relevant products that this subfloor produces
             local required_products = {}
-            for _, product in pairs(global.all_recipes[line.recipe_name].products) do
+            for _, product in pairs(global.all_recipes[player.force.name][line.recipe_name].products) do
                 local aggregate_product = new_aggregate.products[product.name]
                 if aggregate_product ~= nil and aggregate_product.item_type ~= "entity" then
                     product.amount_required = (-1 * aggregate_product.amount)
