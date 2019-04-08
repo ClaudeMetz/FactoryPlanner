@@ -90,7 +90,7 @@ function run_preliminary_checks(player, product_name, search_function)
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
         local recipe = relevant_recipes[1]
-        if recipe.enabled then
+        if recipe.enabled or not global.players[player.index].settings.show_disabled_recipe then
             return recipe, nil, show
         else
             return nil, nil, show

@@ -28,7 +28,9 @@ function player_init(player)
 
         player_table.factory = Factory.init()
         player_table.main_dialog_dimensions = {width = nil, height = 1000}
-        player_table.items_per_row = tonumber(settings.get_player_settings(player)["fp_subfactory_items_per_row"].value)
+
+        player_table.settings = {}
+        reload_settings(player)
 
         player_table.default_machines = {}
         data_util.machines.update_default(player)
@@ -60,6 +62,14 @@ end
 -- Removes given player irreversibly from the database
 function player_remove(player)
     global.players[player.index] = nil
+end
+
+-- Writes the current user mod settings to their player_table
+function reload_settings(player)
+    local settings = settings.get_player_settings(player)
+    local settings_table = global.players[player.index].settings
+    settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
+    settings_table.show_disabled_recipe = settings["fp_show_disabled_recipe"].value
 end
 
 -- Runs through all updates that need to be made after the config changed
