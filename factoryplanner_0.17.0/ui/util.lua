@@ -21,14 +21,22 @@ function ui_util.set_label_color(ui_element, color)
     end
 end
 
--- Returns the sprite string of the given item
--- (kinda really hacky, but the item prototypes are a mess)
-function ui_util.get_item_sprite(player, item)
-    if pcall(function () local a = item.type end) then
-        return ("item/" .. item.name)
+
+-- Returns the type of the given prototype (item/fluid)
+function ui_util.get_prototype_type(proto)
+    local index = global.all_items.index
+    if index[proto.name] ~= "dupe" then
+        return index[proto.name]
     else
-         return ("fluid/" .. item.name)
+        -- Fall-back to the slow (and awful) method if the name is both an item and fluid
+        if pcall(function () local a = proto.type end) then return "item"
+        else return "fluid" end
     end
+end
+
+-- Returns the sprite string of the given item
+function ui_util.get_item_sprite(player, item)
+    return (ui_util.get_prototype_type(item) .. "/" .. item.name)
 end
 
 -- Returns the sprite string of the given recipe

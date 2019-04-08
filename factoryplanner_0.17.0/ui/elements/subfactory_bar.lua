@@ -9,7 +9,7 @@ function add_subfactory_bar_to(main_dialog)
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
     table_subfactories.style.vertical_spacing = 4
 
-    refresh_subfactory_bar(game.players[main_dialog.player_index], true)
+    refresh_subfactory_bar(game.get_player(main_dialog.player_index), true)
 end
 
 
@@ -164,9 +164,9 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
         refresh_subfactory_bar(player, false)
 
     else
+        data_util.context.set_subfactory(player, subfactory)
         -- Change selected subfactory
         if click == "left" then
-            data_util.context.set_subfactory(player, subfactory)
             player_table.current_activity = nil
             refresh_main_dialog(player)
 

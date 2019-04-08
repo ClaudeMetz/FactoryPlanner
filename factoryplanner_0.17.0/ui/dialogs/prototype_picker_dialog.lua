@@ -97,7 +97,7 @@ end
 
 -- Refreshes the actual picker panel, for the given object type and with the given visibility
 function picker.refresh_picker_panel(flow, object_type, visible)
-    local player = game.players[flow.player_index]
+    local player = game.get_player(flow.player_index)
 
     local flow_picker_panel = flow["flow_picker_panel"]
     if flow_picker_panel == nil then

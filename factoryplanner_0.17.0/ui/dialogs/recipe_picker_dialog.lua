@@ -1,6 +1,6 @@
 -- Handles populating the recipe picker dialog
 function open_recipe_picker_dialog(flow_modal_dialog)
-    local player = game.players[flow_modal_dialog.player_index]
+    local player = game.get_player(flow_modal_dialog.player_index)
     local player_table = global.players[player.index]
     local product = player_table.selected_object
 
@@ -106,11 +106,6 @@ function get_picker_recipes(player)
     return global.all_recipes[player.force.name]
 end
 
--- Returns the name that should be used for the picker buttons
-function get_recipe_picker_name(player, recipe)
-    return recipe.name
-end
-
 -- Generates the tooltip string for the given recipe
 function generate_recipe_tooltip(recipe)
     local tooltip = recipe.localised_name
@@ -125,7 +120,7 @@ function generate_recipe_tooltip(recipe)
             for _, item in ipairs(recipe[item_type]) do
                 if item.amount == nil then item.amount = item.probability end
                 tooltip = {"", tooltip, "\n    ", "[", item.type, "=", item.name, "] ", item.amount, "x ",
-                    game[item.type .. "_prototypes"][item.name].localised_name}
+                  game[item.type .. "_prototypes"][item.name].localised_name}
             end
         end
     end

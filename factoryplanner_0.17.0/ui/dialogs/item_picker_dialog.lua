@@ -1,6 +1,6 @@
 -- Handles populating the item picker dialog
 function open_item_picker_dialog(flow_modal_dialog)
-    local player = game.players[flow_modal_dialog.player_index]
+    local player = game.get_player(flow_modal_dialog.player_index)
     local player_table = global.players[player.index]
     local product = player_table.selected_object
 
@@ -18,7 +18,7 @@ end
 
 -- Handles closing of the item picker dialog
 function close_item_picker_dialog(flow_modal_dialog, action, data)
-    local player = game.players[flow_modal_dialog.player_index]
+    local player = game.get_player(flow_modal_dialog.player_index)
     local player_table = global.players[player.index]
     local subfactory = player_table.context.subfactory
     local product = player_table.selected_object
@@ -27,9 +27,9 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
             local split_sprite = ui_util.split(data.item_sprite, "/")
             local item = global.all_items[split_sprite[1]][split_sprite[2]]
-            product = Subfactory.add(subfactory, Item.init(item, "Product"))
+            product = Subfactory.add(subfactory, Item.init(item, split_sprite[1], "Product", 0))
         end
-        product.required_amount = data.required_amount
+        product.required_amount = tonumber(data.required_amount)
         update_calculations(player, subfactory)
 
     elseif action == "delete" then  -- delete can only be pressed if product ~= nil
@@ -117,11 +117,6 @@ function get_picker_items()
         end
     end
     return items
-end
-
--- Returns the name that should be used for the picker buttons
-function get_item_picker_name(player, item)
-    return ui_util.get_item_sprite(player, item)
 end
 
 -- Generates the tooltip string for the given item

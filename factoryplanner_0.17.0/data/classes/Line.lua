@@ -10,6 +10,7 @@ function Line.init(base_recipe, machine)
         machine_name = machine.name,
         machine_count = 0,
         energy_consumption = 0,
+        production_ratio = 0,
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
@@ -19,10 +20,10 @@ function Line.init(base_recipe, machine)
     }
 
     for _, product in pairs(base_recipe.products) do
-        Line.add(line, Item.init(product, "Product"))
+        Line.add(line, Item.init(product, nil, "Product", 0))
     end
     for _, ingredient in pairs(base_recipe.ingredients) do
-        Line.add(line, Item.init(ingredient, "Ingredient"))
+        Line.add(line, Item.init(ingredient, nil, "Ingredient", 0))
     end
 
     return line

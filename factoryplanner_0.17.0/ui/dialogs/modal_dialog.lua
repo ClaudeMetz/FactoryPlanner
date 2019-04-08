@@ -58,7 +58,7 @@ end
 
 -- Checks the entered form data for errors and returns it if it's all correct, else returns nil
 function check_modal_dialog_data(flow_modal_dialog, dialog_type)
-    local player = game.players[flow_modal_dialog.player_index]
+    local player = game.get_player(flow_modal_dialog.player_index)
     local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"](player)
 
     if #condition_instructions.conditions ~= 0 then

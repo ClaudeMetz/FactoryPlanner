@@ -9,8 +9,10 @@ function open_subfactory_dialog(flow_modal_dialog)
         local subfactory = player_table.selected_object
         local icon = subfactory.icon
         if icon ~= nil then
-            if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil end
+            if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
+            elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
         end
+        
         
         create_subfactory_dialog_structure(flow_modal_dialog, {"label.edit_subfactory"}, subfactory.name, icon)
     else

@@ -8,7 +8,8 @@ data_util = {
 function data_util.context.create()
     return {
         subfactory = nil,
-        floor = nil        
+        floor = nil,
+        line = nil
     }
 end
 

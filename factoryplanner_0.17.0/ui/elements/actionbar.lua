@@ -10,7 +10,7 @@ function add_actionbar_to(main_dialog)
       style="fp_button_action"}
     actionbar.style.bottom_margin = 4
 
-    refresh_actionbar(game.players[main_dialog.player_index])
+    refresh_actionbar(game.get_player(main_dialog.player_index))
 end
 
 
