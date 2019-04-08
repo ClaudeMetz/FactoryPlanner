@@ -201,6 +201,14 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_button_view_notes" and is_left_click then
             enter_modal_dialog(player, {type="notes", submit=true})
 
+        -- Sets all machines of the current subfactory to the preferred ones
+        elseif event.element.name == "fp_button_set_prefmachines_subfactory" and is_left_click then
+            handle_set_prefmachines_click(player, "subfactory")
+
+        -- Sets all machines of the current floor to the preferred ones
+        elseif event.element.name == "fp_button_set_prefmachines_floor" and is_left_click then
+            handle_set_prefmachines_click(player, "floor")
+
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" and is_left_click then
             enter_modal_dialog(player, {type="item_picker", preserve=true, submit=true})
