@@ -169,9 +169,18 @@ end
 
 -- Returns all relevant items and fluids
 function generator.all_items()
-    local items = {}
+    local items = { index = {} }
+
+    -- local function so generator. doesn't have this
+    local function add_to_index(item_name, type)
+        if items.index[item_name] == nil then
+            items.index[item_name] = type
+        else
+            items.index[item_name] = "dupe"
+        end
+    end
+
     local undesirables = undesirable_items()
-    local itemtypes = {}
     -- Adding all standard items minus the undesirable ones
     local types = {"item", "fluid"}
     for _, type in pairs(types) do
@@ -182,6 +191,7 @@ function generator.all_items()
             elseif undesirables.types[item.type] == nil and undesirables.items[item_name] == nil then
                 items[type][item_name] = item
             end
+            add_to_index(item_name, type)
         end
     end
     
@@ -223,12 +233,12 @@ function generator.all_machines()
         -- Adds mining machines
         elseif proto.resource_categories then
             for category, enabled in pairs(proto.resource_categories) do
-                -- Only supports solid mining recipes for now (no oil etc)
+                -- Only supports solid mining recipes for now (no oil etc.)
                 if enabled and category ~= "basic-fluid" then
                     generate_category_entry(category, proto)
 
+                    -- Add separate category for mining with fluids that avoids the burner-miner
                     if category == "basic-solid" then
-                        -- Add separate category for mining with fluids that avoids the burner-miner
                         if not proto.burner_prototype then generate_category_entry("complex-solid", proto) end
                     end
                 end

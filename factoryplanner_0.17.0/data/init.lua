@@ -17,7 +17,7 @@ function global_init()
     -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
 
-    global.devmode = true
+    --global.devmode = true
 end
 
 -- Creates and initiates a new player in the database if he doesn't exist yet
@@ -95,15 +95,16 @@ function run_dev_config(player)
         Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
         data_util.context.set_subfactory(player, subfactory)
 
-        local prod1 = Subfactory.add(subfactory, Item.init({name="electronic-circuit", type="item"}, "Product"))
+        local prod1 = Subfactory.add(subfactory, Item.init({name="electronic-circuit", type="item"}, nil, "Product", 0))
         prod1.required_amount = 400
-        local prod2 = Subfactory.add(subfactory, Item.init({name="advanced-circuit", type="item"}, "Product"))
+        local prod2 = Subfactory.add(subfactory, Item.init({name="heavy-oil", type="fluid"}, nil, "Product", 0))
         prod2.required_amount = 100
+        local prod3 = Subfactory.add(subfactory, Item.init({name="uranium-235", type="item"}, nil, "Product", 0))
+        prod3.required_amount = 10
 
         local floor = Subfactory.get(subfactory, "Floor", 1)
         local recipe = global.all_recipes[player.force.name]["electronic-circuit"]
         local machine = data_util.machines.get_default(player, recipe.category)
         Floor.add(floor, Line.init(recipe, machine))
-        Floor.add(floor, Line.init(global.all_recipes[player.force.name]["advanced-circuit"], machine))
     end
 end

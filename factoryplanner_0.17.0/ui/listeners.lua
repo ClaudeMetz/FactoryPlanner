@@ -6,7 +6,7 @@ script.on_init(function()
     global_init()
 end)
 
--- Prompts a GUI and prototype reload and a validity check on all subfactories
+-- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
 script.on_configuration_changed(function()
     handle_configuration_change()
 end)
@@ -14,7 +14,7 @@ end)
 
 -- Fires when a player loads into a game for the first time
 script.on_event(defines.events.on_player_created, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
 
     -- Sets up a player in the global table for the new player
     player_init(player)
@@ -28,7 +28,7 @@ end)
 
 -- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
 
     -- Removes the player from the global table
     player_remove(player)
@@ -37,7 +37,7 @@ end)
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
 
     -- Toggles the visibility of the toggle-main-dialog-button
     if event.setting == "fp_display_gui_button" then 
@@ -53,7 +53,7 @@ end)
 
 -- Sets the custom space science recipe to enabled when rockets are researched
 script.on_event(defines.events.on_research_finished, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
     
     if event.research.name == "space-science-pack" then
         global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true
@@ -63,14 +63,14 @@ end)
 
 -- Fires on pressing of the custom 'Open/Close' shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
     toggle_main_dialog(player)
 end)
 
 
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
       and string.find(event.element.name, "^fp_.+$") then
@@ -89,7 +89,7 @@ end)
 
 -- Fires on any radiobutton change
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
 
     if string.find(event.element.name, "^fp_checkbox_picker_filter_condition_%l+$") then
         picker.apply_filter(player, "recipe", false, get_search_function(global.players[player.index].selected_object))
@@ -98,7 +98,7 @@ end)
 
 -- Fires on any changes to a textbox
 script.on_event(defines.events.on_gui_text_changed, function(event)
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
     local player_table = global.players[player.index]
 
     -- Persists (assembly) line percentage changes (No function call here for latency reasons)
@@ -145,7 +145,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.control and not event.shift then direction = "negative" end
     end
 
-    local player = game.players[event.player_index]
+    local player = game.get_player(event.player_index)
     local player_table = global.players[player.index]
 
     local object_type  -- Not always relevant, but useful in some places
@@ -230,17 +230,17 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_subfactory_timescale_change(player, timescale)
             
         -- Reacts to any subfactory_pane item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z-]+_%d+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z0-9-]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
 
         -- Reacts to a item group button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z-]+$") and is_left_click then
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-]+$") and is_left_click then
             local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
             picker.select_item_group(player, object_type, item_group_name)
 
         -- Reacts to a picker object button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-z-]+$") and is_left_click then
+        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-z0-9-]+$") and is_left_click then
             _G["handle_picker_" .. object_type .. "_click"](player, event.element)
 
         -- Reacts to the recipe button on an (assembly) line being pressed

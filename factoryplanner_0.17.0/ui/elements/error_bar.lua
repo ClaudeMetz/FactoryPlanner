@@ -3,7 +3,7 @@ function add_error_bar_to(main_dialog)
     local error_bar = main_dialog.add{type="flow", name="flow_error_bar", direction="vertical"}
     error_bar.style.top_margin = 6
     
-    refresh_error_bar(game.players[main_dialog.player_index])
+    refresh_error_bar(game.get_player(main_dialog.player_index))
 end
 
 -- Refreshes the error_bar

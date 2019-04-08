@@ -27,7 +27,7 @@ function add_production_pane_to(main_dialog)
         else table.style.column_alignments[i] = "middle-left" end
     end
 
-    refresh_production_pane(game.players[main_dialog.player_index])
+    refresh_production_pane(game.get_player(main_dialog.player_index))
 end
 
 -- Refreshes the prodiction pane (actionbar + table)
@@ -107,10 +107,10 @@ function refresh_production_table(player)
 end
 
 
--- Recalculates the whole sufactory recursively starting from the top floor
+-- Updates the whole subfactory calculations from top to bottom
+-- (doesn't refresh the production table so calling functions can refresh at the appropriate point for themselves)
 function update_calculations(player, subfactory)
-    local floor = Subfactory.get(subfactory, "Floor", 1)
-    --calc.update_floor(player, subfactory_id, floor, nil)
+    calc.update(player, subfactory)
     refresh_subfactory_pane(player)
 end
 
@@ -142,7 +142,7 @@ function create_line_table_row(player, line)
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
       text=line.percentage}
-    textfield_percentage.style.width = 40
+    textfield_percentage.style.width = 45
     textfield_percentage.style.horizontal_align = "center"
 
     -- Machine button
@@ -152,10 +152,11 @@ function create_line_table_row(player, line)
     table_machines.style.horizontal_spacing = 3
     table_machines.style.horizontal_align = "center"
 
-    if player_table.selected_line_id == line_id and player_table.current_activity == "changing_machine" then
+    local context_line = player_table.context.line
+    if context_line ~= nil and context_line.id == line.id and player_table.current_activity == "changing_machine" then
         for _, machine_name in ipairs(machine_category.order) do
             local machine = global.all_machines[line.recipe_category].machines[machine_name]
-            local count = 0--(line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
+            local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
             create_machine_button(table_machines, line, machine_name, count, ("_" .. machine.name))
         end
     else
@@ -303,6 +304,7 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
             -- Changing machines only makes sense if there are more than one in it's category
             if #current_category_data.order > 1 then
                 player_table.current_activity = "changing_machine"
+                player_table.context.line = line  -- won't be reset after use, but that doesn't matter
             end
         end
     else

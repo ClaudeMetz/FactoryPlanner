@@ -6,7 +6,7 @@ function add_subfactory_pane_to(main_dialog)
     table.draw_vertical_lines = true
     table.style.maximal_height = 153
 
-    refresh_subfactory_pane(game.players[main_dialog.player_index])
+    refresh_subfactory_pane(game.get_player(main_dialog.player_index))
 end
 
 
@@ -90,6 +90,8 @@ end
 -- Returns necessary details to complete the item button for an ingredient
 function get_ingredient_specifics(ingredient)
     local localised_name = game[ingredient.type .. "_prototypes"][ingredient.name].localised_name
+    -- Special handling for mining recipes
+    if ingredient.type == "entity" then localised_name = {"", {"label.raw"}, " ", localised_name} end
     local tooltip = {"", localised_name, "\n", ui_util.format_number(ingredient.amount, 4)}
 
     return {
