@@ -17,7 +17,7 @@ function global_init()
     -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
 
-    --global.devmode = true
+    global.devmode = true
 end
 
 -- Creates and initiates a new player in the database if he doesn't exist yet

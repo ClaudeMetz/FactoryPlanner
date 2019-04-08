@@ -1,6 +1,5 @@
 TODO New Features:
 ! Info-panel with shortcuts and tutorial + ability to add example subfactory + hint that stays until infos are viewed once(?)
-- Button to set all machines of current subfactory (or floor?) to the current machines
 - Choose favorite fuel that gets added on burner recipes [N1]
 - Indication of how many belts/inserters are needed
 
@@ -14,12 +13,12 @@ TODO Code Improvements:
 - Improve how the percentage textfield selection works (+ current activity reset detection)
 - Fix main dialog height layout problems
 - Fix Item window not adjusting size to biggest item group
-- Add a non-red hint (indicate tutorial, useless recipes)
+- Add a non-red hint (indicate tutorial, useless recipes, unresearched recipes)
 - Add second click to delete lines with subfloors
 - Add warning message to picker dialogs
-- Avoid scientific notation on item tooltips (happens when amount>10k)
-? Use mouse_button_filters and remove sound from some buttons
-? Write build- and factorio version-update-scripts
+- Avoid scientific notation on item tooltips (happens when amount>=10k)
+- Use mouse_button_filters and remove sound from some buttons
+- Write build- and factorio version-update-scripts
 
 
 TODO Bug Fixes:
@@ -34,7 +33,7 @@ TODO Post-Launch:
 - Ability to import (by dragging over it?) some existing machines as a subfactory
 - DE, FR localisations
 - Better multiplayer support (ex. shared subfactories)
+? FNEI-links (alt-click?) (needs API from FNEI-author, might already exist)
 ? Un/Re-Do functionality for every user action (with history?)
 ? Support fluid mining/steam generation recipes
-? FNEI-links (alt-click?) (needs API from FNEI-author, might already exist)
 ? Add more and/or custom timescales

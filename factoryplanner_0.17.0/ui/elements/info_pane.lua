@@ -47,10 +47,19 @@ function refresh_info_pane(player)
 
     -- Notes
     local table_notes = flow["table_info_elements"].add{type="table", name="table_notes", column_count=2}
-    table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":   "}}
+    table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":  "}}
     table_notes["label_notes_title"].style.font = "fp-font-14p"
     table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
       style="fp_button_mini"}
+
+    -- Setting preferred machines
+    local table_notes = flow["table_info_elements"].add{type="table", name="table_set_prefmachines", column_count=3}
+    table_notes.add{type="label", name="label_prefmachines_title", caption={"", " ",  {"label.set_preferred_machines"}, ":  "}}
+    table_notes["label_prefmachines_title"].style.font = "fp-font-14p"
+    table_notes.add{type="button", name="fp_button_set_prefmachines_subfactory", caption={"button-text.subfactory"}, 
+      style="fp_button_mini", tooltip={"tooltip.set_preferred_machines_subfactory"}}
+    table_notes.add{type="button", name="fp_button_set_prefmachines_floor", caption={"button-text.floor"}, 
+      style="fp_button_mini", tooltip={"tooltip.set_preferred_machines_floor"}}
 end
 
 
@@ -112,4 +121,28 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
     text_box_notes.focus()
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400
+end
+
+
+-- Sets the machines of all lines in the given scope to the currently preferred ones
+function handle_set_prefmachines_click(player, scope)
+    local player_table = global.players[player.index]
+
+    -- Sets all machines on given floor to the currently preferred ones
+    local function set_machines_on_floor(floor)
+        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            line.machine_name = data_util.machines.get_default(player, line.recipe_category).name
+        end
+    end
+
+    if scope == "subfactory" then
+        for _, floor in ipairs(Subfactory.get_in_order(player_table.context.subfactory, "Floor")) do
+            set_machines_on_floor(floor)
+        end
+    else  -- scope == "floor"
+        set_machines_on_floor(player_table.context.floor)
+    end
+
+    update_calculations(player, player_table.context.subfactory)
+    refresh_production_table(player)
 end
