@@ -39,13 +39,15 @@ end)
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local player = game.get_player(event.player_index)
 
+    -- Reload all user mod settings
+    reload_settings(player)
+
     -- Toggles the visibility of the toggle-main-dialog-button
     if event.setting == "fp_display_gui_button" then 
         toggle_button_interface(player)
 
-    -- Changes the width of the main dialog by regenerating it
+    -- Changes the width of the main dialog. so it needs to be refreshed
     elseif event.setting == "fp_subfactory_items_per_row" then
-        global.players[player.index].items_per_row = tonumber(event.setting.value)
         refresh_main_dialog(player, true)
     end
 end)

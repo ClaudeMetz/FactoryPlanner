@@ -2,9 +2,9 @@ ui_util = {}
 
 -- Readjusts the size of the main dialog according to the user setting of number of items per row
 function ui_util.recalculate_main_dialog_dimensions(player)
-    local column_count = settings.get_player_settings(player)["fp_subfactory_items_per_row"].value
-    local width = 880 + ((column_count - 4) * 175)
-    global.players[player.index].main_dialog_dimensions.width = width
+    local player_table = global.players[player.index]
+    local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
+    player_table.main_dialog_dimensions.width = width
 end
 
 

@@ -30,7 +30,7 @@ function refresh_subfactory_pane(player)
         for _, class in pairs(classes) do
             local ui_name = class:gsub("^%u", string.lower) .. "s"
             local scroll_pane = add_subfactory_pane_cell_to(table_subfactory, ui_name)
-            if scroll_pane["item_table"] == nil then init_item_table(scroll_pane, player_table.items_per_row) end
+            if scroll_pane["item_table"] == nil then init_item_table(scroll_pane, player_table.settings.items_per_row) end
             refresh_item_table(player, class)
         end
     end

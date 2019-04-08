@@ -1,6 +1,5 @@
 TODO New Features:
 ! Info-panel with shortcuts and tutorial + ability to add example subfactory + hint that stays until infos are viewed once(?)
-- Add a setting to choose whether one disabled recipe should bring up the dialog
 - Button to set all machines of current subfactory (or floor?) to the current machines
 - Choose favorite fuel that gets added on burner recipes [N1]
 - Indication of how many belts/inserters are needed
@@ -16,15 +15,15 @@ TODO Code Improvements:
 - Fix main dialog height layout problems
 - Fix Item window not adjusting size to biggest item group
 - Add a non-red hint (indicate tutorial, useless recipes)
+- Add second click to delete lines with subfloors
 - Add warning message to picker dialogs
+- Avoid scientific notation on item tooltips (happens when amount>10k)
 ? Use mouse_button_filters and remove sound from some buttons
 ? Write build- and factorio version-update-scripts
 
 
 TODO Bug Fixes:
 ! Byproduct recipes don't work/are not recognized
-- items per row setting change crashes
-- Avoid scientific notation on item tooltips (happens when amount>10k)
 - Ingredient limit for machines is optional, but still possible; this is not respected
 
 
