@@ -1,3 +1,4 @@
+require("tutorial_dialog")
 require("preferences_dialog")
 require("subfactory_dialog")
 require("prototype_picker_dialog")

@@ -115,16 +115,3 @@ data.raw["gui-style"].default["fp_button_icon_clicked"] = {
         scale = 1
     }
 }
-
-
--- Custom sprites
-data:extend({
-    {
-        type = "sprite",
-        name = "fp_sprite_plus",
-        filename = "__factoryplanner__/graphics/plus.png",
-        priority = "extra-high-no-scale",
-        width = 32,
-        height = 32
-    }
-})

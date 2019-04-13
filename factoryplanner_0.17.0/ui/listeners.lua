@@ -23,7 +23,7 @@ script.on_event(defines.events.on_player_created, function(event)
     player_gui_init(player)
 
     -- Runs setup if developer mode is active
-    run_dev_config(player)
+    data_util.run_dev_config(player)
 end)
 
 -- Fires when a player is irreversibly removed from a game
@@ -175,6 +175,14 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Submits the modal dialog, forwarding to the appropriate function
         elseif event.element.name == "fp_button_modal_dialog_submit" and is_left_click then
             exit_modal_dialog(player, "submit", {})
+
+        -- Opens the tutorial dialog
+        elseif event.element.name == "fp_button_titlebar_tutorial" and is_left_click then
+            enter_modal_dialog(player, {type="tutorial", close=true})
+
+        -- Opens the tutorial dialog
+        elseif event.element.name == "fp_button_tutorial_add_example" and is_left_click then
+            handle_add_example_subfactory_click(player)
 
         -- Opens the preferences dialog
         elseif event.element.name == "fp_button_titlebar_preferences" and is_left_click then
