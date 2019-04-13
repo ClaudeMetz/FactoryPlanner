@@ -216,8 +216,7 @@ function handle_floor_change_click(player, destination)
     elseif destination == "top" then
         selected_floor = Subfactory.get(subfactory, "Floor", 1)
     end
-    subfactory.selected_floor = selected_floor
-    player_table.context.floor = selected_floor
+    data_util.context.set_floor(player, selected_floor)
 
     -- Remove floor if no recipes have been added to it
     if floor.level > 1 and floor.Line.count == 1 then
@@ -254,8 +253,7 @@ function handle_line_recipe_click(player, line_id, click, direction)
                 line.subfloor = Subfactory.add(subfactory, subfloor)
                 update_calculations(player, subfactory)
             end
-            subfactory.selected_floor = line.subfloor
-            player_table.context.floor = line.subfloor
+            data_util.context.set_floor(player, line.subfloor)
 
         -- Remove clicked (assembly) line
         elseif click == "right" then

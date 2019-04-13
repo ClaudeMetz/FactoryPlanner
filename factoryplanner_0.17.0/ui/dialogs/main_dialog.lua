@@ -149,6 +149,8 @@ function add_titlebar_to(main_dialog)
     local flow_buttonbar = titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}
     flow_buttonbar.style.top_margin = 4
 
+    flow_buttonbar.add{type="button", name="fp_button_titlebar_tutorial", caption={"label.tutorial"},
+      style="fp_button_titlebar"}
     flow_buttonbar.add{type="button", name="fp_button_titlebar_preferences", caption={"label.preferences"},
       style="fp_button_titlebar"}
 
@@ -156,5 +158,5 @@ function add_titlebar_to(main_dialog)
       style="fp_button_titlebar"}
     button_exit.style.font = "fp-font-bold-16p"
     button_exit.style.width = 34
-    button_exit.style.left_margin = 4
+    button_exit.style.left_margin = 2
 end

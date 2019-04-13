@@ -92,29 +92,3 @@ function handle_configuration_change()
         data_util.machines.update_default(player)
     end
 end
-
-
--- Initiates the data table with some values for development purposes
-function run_dev_config(player)
-    if global.devmode then
-        local player_table = global.players[player.index]
-        local factory = player_table.factory
-
-        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}))
-        Factory.add(factory, Subfactory.init("Beta", nil))
-        Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
-        data_util.context.set_subfactory(player, subfactory)
-
-        local prod1 = Subfactory.add(subfactory, Item.init({name="electronic-circuit", type="item"}, nil, "Product", 0))
-        prod1.required_amount = 400
-        local prod2 = Subfactory.add(subfactory, Item.init({name="heavy-oil", type="fluid"}, nil, "Product", 0))
-        prod2.required_amount = 100
-        local prod3 = Subfactory.add(subfactory, Item.init({name="uranium-235", type="item"}, nil, "Product", 0))
-        prod3.required_amount = 10
-
-        local floor = Subfactory.get(subfactory, "Floor", 1)
-        local recipe = global.all_recipes[player.force.name]["electronic-circuit"]
-        local machine = data_util.machines.get_default(player, recipe.category)
-        Floor.add(floor, Line.init(recipe, machine))
-    end
-end

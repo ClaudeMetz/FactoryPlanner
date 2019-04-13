@@ -1,5 +1,4 @@
 TODO New Features:
-! Info-panel with shortcuts and tutorial + ability to add example subfactory + hint that stays until infos are viewed once(?)
 - Choose favorite fuel that gets added on burner recipes [N1]
 - Indication of how many belts/inserters are needed
 
@@ -18,7 +17,7 @@ TODO Code Improvements:
 - Add warning message to picker dialogs
 - Avoid scientific notation on item tooltips (happens when amount>=10k)
 - Use mouse_button_filters and remove sound from some buttons
-- Write build- and factorio version-update-scripts
+- Write build- and factorio-version-update-scripts
 
 
 TODO Bug Fixes:
