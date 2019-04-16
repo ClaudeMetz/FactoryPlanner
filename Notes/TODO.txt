@@ -17,7 +17,6 @@ TODO Code Improvements:
 - Add warning message to picker dialogs
 - Avoid scientific notation on item tooltips (happens when amount>=10k)
 - Use mouse_button_filters and remove sound from some buttons
-- Write build- and factorio-version-update-scripts
 
 
 TODO Bug Fixes:
