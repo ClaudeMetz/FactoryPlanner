@@ -14,6 +14,7 @@ function Subfactory.init(name, icon)
         Floor = Collection.init(),
         selected_floor = nil,
         valid = true,
+        mod_version = global.mod_version,
         class = "Subfactory"
     }
 

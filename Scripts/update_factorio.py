@@ -40,6 +40,13 @@ new_factorio_path = Path(cwd / ("Factorio_" + new_factorio_version))
 zip_file_path.unlink()
 print("- ZIP file extracted")
 
+# Update settings
+config_path = new_factorio_path / "config"
+config_path.mkdir()
+with ((config_path / "config.ini").open("w")) as config_file:
+    config_file.write(SETTINGS)
+print("- settings updated")
+
 # Replace symlinks
 factorio_exe_path = new_factorio_path / "bin" / "x64" / "factorio.exe"
 symlink_path = cwd / "Factorio"
@@ -59,14 +66,13 @@ symlink_path = factorio_mod_path / (MODNAME + "_" + mod_version)
 subprocess.run(["mklink", "/J", str(symlink_path), str(mod_path), ">nul"], shell=True)
 print("- mod symlink created")
 
-# Update settings
-config_path = new_factorio_path / "config"
-config_path.mkdir()
-with ((config_path / "config.ini").open("w")) as config_file:
-    config_file.write(SETTINGS)
-print("- settings updated")
+# Copy over other mods
+old_mod_path = old_factorio_path / "mods"
+for mod in old_mod_path.glob("*.zip"):
+    shutil.copy(str(mod), str(factorio_mod_path / mod.parts[-1]))
+print("- other mods moved over")
 
 # Remove old version
-(old_factorio_path / "mods" / (MODNAME + "_" + mod_version)).rmdir()
+(old_mod_path / (MODNAME + "_" + mod_version)).rmdir()
 shutil.rmtree(old_factorio_path)
 print("- old version removed")

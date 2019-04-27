@@ -1,13 +1,8 @@
-New Release:
-- Update info.json
-- Update changelog.txt
-? Update README.md
-- Commit
-? Merge onto master branch
-- Push to Github
-- Cut new release on Github
-- Upload onto Factorio mod-portal
-? Adjust mod-portal screenshots, description
+Release:
+- Merge all changes into master, checkout master
+- Run build_release script
+- Remove develop branch, if used
+- Checkout new develop branch and run new_changelog_entry script
 
 
 MISC:
@@ -15,3 +10,4 @@ MISC:
 - Delete most recent local commit: git reset --hard HEAD^
 - Force-replace commit on origin/: git push --force origin
 - Merge develop to master: git checkout master; git merge develop; git push origin master; git checkout develop
+- Remove local and remote branch: git branch -d develop; git push origin --delete develop

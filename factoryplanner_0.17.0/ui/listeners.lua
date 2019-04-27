@@ -1,3 +1,7 @@
+require("ui.util")
+require("ui.dialogs.main_dialog")
+require("ui.dialogs.modal_dialog")
+
 -- Session variable to deselect previous text as Factorio doesn't do this (yet)
 local previously_selected_textfield = nil
 

@@ -5,6 +5,7 @@ function Factory.init()
     return {
         Subfactory = Collection.init(),
         valid = true,
+        mod_version = global.mod_version,
         class = "Factory"
     }
 end

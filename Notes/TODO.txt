@@ -7,7 +7,7 @@ TODO Feature Improvements:
 
 
 TODO Code Improvements:
-- Figure out how to do data migrations to new mod versions + Test subfactory-validation
+- Test overall on_config_changed global data validation
 - Improve sprite-button backgrounds across the board (+rename style from recipe->object?)
 - Improve how the percentage textfield selection works (+ current activity reset detection)
 - Fix main dialog height layout problems
@@ -17,11 +17,15 @@ TODO Code Improvements:
 - Add warning message to picker dialogs
 - Avoid scientific notation on item tooltips (happens when amount>=10k)
 - Use mouse_button_filters and remove sound from some buttons
+- Redo data.util subfactory generation with general methods/definitions
+- Add a linebreak to production table if window width is exceeded
+- Add simple picker dialog that pops up if changing machines needs to show more than a certain amount of buttons
 
 
 TODO Bug Fixes:
 ! Byproduct recipes don't work/are not recognized
 - Ingredient limit for machines is optional, but still possible; this is not respected
+- Doesn't adjust to UI-scaling-settings at all
 
 
 TODO Post-Launch:
