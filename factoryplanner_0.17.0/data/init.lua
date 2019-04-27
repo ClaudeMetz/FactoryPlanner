@@ -7,10 +7,13 @@ require("data.classes.Line")
 require("data.util")
 require("data.generator")
 require("data.calc")
+require("migrations.handler")
 
 
 -- Initiates all factorio-global variables
 function global_init()
+    global.mod_version = game.active_mods["factoryplanner"]
+
     global.players = {}
 
     global.all_items = generator.all_items()
@@ -46,7 +49,7 @@ function player_init(player)
     end
 end
 
--- Resets the GUI state of the given player, if there is any
+-- Resets the GUI state of the given player, if he exists
 function player_reset(player)
     if global.players[player.index] ~= nil then
         local player_table = global.players[player.index]
@@ -74,6 +77,8 @@ end
 
 -- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
+    global.mod_version = game.active_mods["factoryplanner"]
+
     global.all_items = generator.all_items()
     global.all_recipes = generator.all_recipes(true)
     global.all_machines = generator.all_machines()
@@ -88,7 +93,9 @@ function handle_configuration_change()
         player_init(player)
         player_gui_init(player)
 
-        Factory.update_validity(global.players[player.index].factory, player)
+        local factory = global.players[player.index].factory
+        attempt_factory_migration(factory)
+        Factory.update_validity(factory, player)
         data_util.machines.update_default(player)
     end
 end

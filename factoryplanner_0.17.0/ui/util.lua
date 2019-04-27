@@ -28,7 +28,7 @@ function ui_util.get_prototype_type(proto)
     if index[proto.name] ~= "dupe" then
         return index[proto.name]
     else
-        -- Fall-back to the slow (and awful) method if the name is both an item and fluid
+        -- Fall-back to the slow (and awful) method if the name describes both an item and fluid
         if pcall(function () local a = proto.type end) then return "item"
         else return "fluid" end
     end

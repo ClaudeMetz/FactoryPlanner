@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
 
 # This script will build the zipped version of the mod that is ready for release on the mod portal
-# It will also first bump versions and the changelog(, and commit and push to github at the end -> doesn't work atm)
+# It will also first bump versions and the changelog, and commit and push the changes to github
 # This should be run in the directory that contains your factorio installation as well as the mod project folder
 # You can set a modname, although this only works if the filestructure is the same as my factoryplanner mod
+# Requires GitPython to be installed (>pip install gitpython)
 
 from pathlib import Path
+import git
 import itertools
 import json
 import subprocess
 from datetime import datetime
 import shutil
-import os
 
 # Script config
 MODNAME = "factoryplanner"
 
 # Some git setup
 cwd = Path.cwd()
-""" os.chdir(cwd / MODNAME)
-subprocess.run(["git", "checkout", "master"], shell=True)
-os.chdir(Path.cwd() / "..") """
+repo = git.Repo(cwd / MODNAME)
 
 # Determine path and version-number
 mod_folder_path = list(itertools.islice((cwd / MODNAME).glob(MODNAME + "_*"), 1))[0]
@@ -79,23 +78,10 @@ shutil.make_archive(zipfile_path, "zip", new_mod_folder_path)
 print("- zip archive created")
 
 # Commit and push to GitHub
-""" os.chdir(cwd / MODNAME)
-subprocess.run(["git", "add", "-A"], shell=True)
-subprocess.run(["git", "commit", "-m", "Release " + new_version], shell=True)
-subprocess.run(["git", "push", "origin", "master"], shell=True)
-os.chdir(Path.cwd() / "..")
-print("- changes committed and pushed") """
-
-# Update changelog file for further development
-new_changelog_entry = ("-----------------------------------------------------------------------------------------------"
-                       "----\nVersion: 0.17.00\nDate: 00. 00. 0000\n  Features:\n    - \n  Changes:\n    -\n  Bugfixes:"
-                       "\n    - \n\n")
-with (new_changelog_path.open("r")) as changelog:
-    old_changelog = changelog.readlines()
-old_changelog.insert(0, new_changelog_entry)
-with (new_changelog_path.open("w")) as changelog:
-    changelog.writelines(old_changelog)
-print("- changelog updated for further development")
+repo.git.add("-A")
+repo.git.commit(m="Release " + new_version)
+repo.git.push("origin")
+print("- changes committed and pushed")
 
 # Update workspace
 workspace_path = cwd / "fp.code-workspace"
