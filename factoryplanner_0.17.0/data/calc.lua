@@ -70,10 +70,11 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 end
             end
 
+            -- Set production ratio to calculate machine_counts for all available machines when needed
+            line_aggregate.production_ratio = production_ratio
+
             -- If the recipe is not useless, calculate all remaining item amounts
             if production_ratio > 0 then
-                line.production_ratio = production_ratio  -- Used for calculating machine_counts for all available machines
-
                 -- Byproducts
                 for _, byproduct in pairs(calc.aggregate.get_in_order(line_aggregate, "Byproduct")) do
                     byproduct.amount = calculate_produced_amount(byproduct, production_ratio)
@@ -124,6 +125,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
 
             else  -- Reset the product counts
                 for _, product in pairs(calc.aggregate.get_in_order(line_aggregate, "Product")) do product.amount = 0 end
+                --queue_message(player, {"label.hint_useless_recipe"}, "hint")
             end
             
             calc.update_line(line, line_aggregate)
@@ -166,6 +168,7 @@ end
 function calc.update_line(line, result)
     line.energy_consumption = result.energy_consumption
     line.machine_count = result.machine_count
+    line.production_ratio = result.production_ratio
 
     classes = {"Product", "Byproduct", "Ingredient"}
     for _, class in pairs(classes) do
@@ -315,7 +318,10 @@ end
 -- Incorporates given line into given aggregate
 function calc.aggregate.incorporate_line(aggregate, line)
     aggregate.energy_consumption = aggregate.energy_consumption + line.energy_consumption
-    if line.gui_position == 1 then aggregate.machine_count = line.machine_count end
+    if line.gui_position == 1 then 
+        aggregate.machine_count = line.machine_count
+        aggregate.production_ratio = line.production_ratio
+    end
 
     for _, product in pairs(Line.get_in_order(line, "Product")) do
         calc.aggregate.add(aggregate, calc.aggregate.item_init(product, nil, "Product", -product.amount))

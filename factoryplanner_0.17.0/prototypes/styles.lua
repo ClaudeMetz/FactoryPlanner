@@ -1,3 +1,14 @@
+data.raw["gui-style"]["default"]["fp_footer_filler"] = {
+    type = "frame_style",
+    height = 32,
+    graphical_set = data.raw["gui-style"]["default"]["draggable_space"].graphical_set,
+    use_header_filler = false,
+    horizontally_stretchable = "on"
+
+    --left_margin = data.raw["gui-style"]["default"]["draggable_space"].left_margin,
+    --right_margin = data.raw["gui-style"]["default"]["draggable_space"].right_margin,
+}
+
 data.raw["gui-style"].default["fp_button_titlebar"] = {
     type = "button_style",
     font = "fp-font-15p",
@@ -24,10 +35,17 @@ data.raw["gui-style"].default["fp_sprite_button"] = {
     padding = 0
 }
 
-data.raw["gui-style"].default["fp_sprite_button_machine"] = {
+data.raw["gui-style"].default["fp_subfactory_sprite_button"] = {
     type = "button_style",
     parent = "fp_sprite_button",
-    size = 32
+    height = 38
+}
+
+data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
+    type = "button_style",
+    parent = "fp_button_icon_large_blank",
+    height = 38,
+    minimal_width = 0
 }
 
 data.raw["gui-style"].default["fp_scroll_pane_items"] = {
@@ -106,6 +124,24 @@ data.raw["gui-style"].default["fp_button_icon_clicked"] = {
     type = "button_style",
     parent = "fp_button_icon_medium_recipe",
     default_graphical_set =
+    {
+        filename = "__factoryplanner__/graphics/icon_backgrounds.png",
+        priority = "extra-high-no-scale",
+        position = {74, 0},
+        size = 36,
+        border = 1,
+        scale = 1
+    },
+    hovered_graphical_set =
+    {
+        filename = "__factoryplanner__/graphics/icon_backgrounds.png",
+        priority = "extra-high-no-scale",
+        position = {74, 0},
+        size = 36,
+        border = 1,
+        scale = 1
+    },
+    clicked_graphical_set =
     {
         filename = "__factoryplanner__/graphics/icon_backgrounds.png",
         priority = "extra-high-no-scale",

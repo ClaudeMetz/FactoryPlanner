@@ -1,8 +1,9 @@
 Release:
 - Merge all changes into master, checkout master
-- Run build_release script
 - Remove develop branch, if used
-- Checkout new develop branch and run new_changelog_entry script
+- Run build_release-script
+- Checkout new develop branch
+- Run new_changelog_entry-script
 
 
 MISC:

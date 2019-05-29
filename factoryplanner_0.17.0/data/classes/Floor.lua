@@ -64,17 +64,8 @@ end
 
 -- Update validity of this floor and its subfloors
 function Floor.update_validity(self, player)
-    self.valid = true
-
-    local classes = {"Line"}
-    for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].update_validity(dataset, player) then
-                self.valid = false
-            end
-        end
-    end
-
+    local classes = {Line = "Line"}
+    self.valid = data_util.run_validation_updates(player, self, classes)
     return self.valid
 end
 
@@ -82,19 +73,13 @@ end
 function Floor.attempt_repair(self, player)
     self.valid = true
     
-    local classes = {"Line"}
-    for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not dataset.valid and not _G[class].attempt_repair(dataset, player) then
-                Floor.remove(self, dataset)
-            end
-        end
-    end
+    local classes = {Line = "Line"}
+    data_util.run_invalid_dataset_removal(player, self, classes, true)
 
     -- Remove floor if there are no recipes except the top one left
     if self.level > 1 and self.Line.count == 1 then
         self.valid = false
     end
 
-    return self.valid
+    return self.valid  -- Note success here so Line can remove subfloors if it was unsuccessful
 end

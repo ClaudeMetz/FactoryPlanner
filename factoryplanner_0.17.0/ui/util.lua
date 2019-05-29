@@ -14,6 +14,8 @@ function ui_util.set_label_color(ui_element, color)
         ui_element.style.font_color = {r = 1, g = 0.2, b = 0.2}
     elseif color == "dark_red" then
         ui_element.style.font_color = {r = 0.8, g = 0, b = 0}
+    elseif color == "yellow" then
+        ui_element.style.font_color = {r = 0.8, g = 0.8, b = 0}
     elseif color == "white" or color == "default_label" then
         ui_element.style.font_color = {r = 1, g = 1, b = 1}
     elseif color == "black" or color == "default_button" then
@@ -62,8 +64,7 @@ function ui_util.format_number(number, precision)
     return ("%." .. precision .. "g"):format(number)
 end
 
--- Returns string representing the given timescale
--- (Currently only needs to handle 1 second/minute/hour)
+-- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
 function ui_util.format_timescale(timescale)
     if timescale == 1 then
         return "1s"
@@ -76,12 +77,14 @@ end
 
 -- Returns string representing the given power 
 function ui_util.format_energy_consumption(energy_consumption, precision)
+    local scale = {"W", "kW", "MW", "GW", "TW", "PW", "EW", "ZW", "YW"}
     local scale_counter = 1
-    while energy_consumption >= 1000 do
+
+    while scale_counter < #scale and energy_consumption >= 1000 do
         energy_consumption = energy_consumption / 1000
         scale_counter = scale_counter + 1
     end
-    local scale = {"W", "kW", "MW", "GW", "TW", "PW", "EW", "ZW", "YW"}
+
     return (ui_util.format_number(energy_consumption, precision) .. " " .. scale[scale_counter])
 end
 

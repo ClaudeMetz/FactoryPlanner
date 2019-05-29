@@ -6,13 +6,16 @@
 # You can set a modname, although this only works if the filestructure is the same as my factoryplanner mod
 # Requires GitPython to be installed (>pip install gitpython)
 
-from pathlib import Path
-import git
+import fileinput
 import itertools
 import json
+import re
+import shutil
 import subprocess
 from datetime import datetime
-import shutil
+from pathlib import Path
+
+import git
 
 # Script config
 MODNAME = "factoryplanner"
@@ -42,30 +45,40 @@ new_symlink_path = Path(factorio_mod_folder_path, MODNAME + "_" + new_version)
 subprocess.run(["mklink", "/J", str(new_symlink_path), str(new_mod_folder_path), ">nul"], shell=True)
 print("- mod folder symlink updated")
 
+# Disable devmode if it is active
+tmp_path = new_mod_folder_path / "data" / "tmp"
+init_file_path = new_mod_folder_path / "data" / "init.lua"
+with tmp_path.open("w") as new_file, init_file_path.open("r") as old_file:
+    for line in old_file:
+        line = re.sub(r"global\.devmode = true", "--global.devmode = true", line)
+        new_file.write(line)
+init_file_path.unlink()
+tmp_path.rename(init_file_path)
+print("- devmode disabled")
+
 # Bump info.json version
-with (new_mod_folder_path / "info.json").open("r") as file:
+info_json_path = new_mod_folder_path / "info.json"
+with info_json_path.open("r") as file:
     data = json.load(file)
 data["version"] = new_version
-with (new_mod_folder_path / "info.json").open("w") as file:
+with info_json_path.open("w") as file:
     json.dump(data, file, indent=4)
 print("- info.json version bumped")
 
 # Update changelog file for release
-tmp_path = Path(new_mod_folder_path / "tmp")
+tmp_path = new_mod_folder_path / "tmp"
 old_changelog_path = new_mod_folder_path / "changelog.txt"
-
-with (tmp_path.open("w")) as new_file:
-    with (old_changelog_path).open("r") as old_file:
-        changes = 0  # Only changes the first changelog entry
-        for line in old_file:
-            if changes < 2 and "Version" in line:
-                new_file.write("Version: " + new_version + "\n")
-                changes += 1
-            elif changes < 2 and "Date" in line:
-                new_file.write("Date: " + datetime.today().strftime("%d. %m. %Y") + "\n")
-                changes += 1
-            else:
-                new_file.write(line)
+with tmp_path.open("w") as new_file, old_changelog_path.open("r") as old_file:
+    changes = 0  # Only changes the first changelog entry
+    for line in old_file:
+        if changes < 2 and "Version" in line:
+            new_file.write("Version: " + new_version + "\n")
+            changes += 1
+        elif changes < 2 and "Date" in line:
+            new_file.write("Date: " + datetime.today().strftime("%d. %m. %Y") + "\n")
+            changes += 1
+        else:
+            new_file.write(line)
 
 old_changelog_path.unlink()
 new_changelog_path = new_mod_folder_path / "changelog.txt"
@@ -85,9 +98,9 @@ print("- changes committed and pushed")
 
 # Update workspace
 workspace_path = cwd / "fp.code-workspace"
-with (workspace_path.open("r")) as ws:
+with workspace_path.open("r") as ws:
     workspace = ws.readlines()
-with (workspace_path.open("w")) as ws:
+with workspace_path.open("w") as ws:
     for line in workspace:
         ws.write(line.replace("factoryplanner_" + old_version, "factoryplanner_" + new_version))
 print("- workspace updated")

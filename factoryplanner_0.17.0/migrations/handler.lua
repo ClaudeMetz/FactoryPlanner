@@ -40,7 +40,7 @@ function determine_migrations(previous_version)
     
     local found = false
     for _, migration in ipairs(migration_masterlist()) do
-        if previous_version < migration.version then found = true end
+        if compare_versions(previous_version, migration.version) then found = true end
         if found then table.insert(migrations, migration.version) end
     end
 
@@ -54,4 +54,22 @@ function apply_migrations(migrations, object)
         local migration_functions = _G["migration_" .. internal_name]
         migration_functions[object.class](object)
     end
+end
+
+-- Compares two mod versions, returns true if v1 is an earlier version than v2 (v1 < v2)
+-- Version numbers have to be of the same structure: same amount of numbers, separated by a '.'
+local function compare_versions(v1, v2)
+    local split_v1 = ui_util.split(v1, ".")
+    local split_v2 = ui_util.split(v2, ".")
+
+    for i = 1, #split_v1 do
+        if split_v1[i] == split_v2[i] then
+            -- continue
+        elseif split_v1[i] < split_v2[i] then
+            return true
+        else
+            return false
+        end
+    end
+    return false  -- return false if both versions are the same
 end

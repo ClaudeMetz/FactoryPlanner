@@ -5,10 +5,10 @@
 # This should be run in the directory that contains the old version of factorio, as well as the new, zipped one
 # You can set a modname, although this only works if the filestructure is the same as my factoryplanner mod
 
-from pathlib import Path
 import itertools
-import subprocess
 import shutil
+import subprocess
+from pathlib import Path
 
 # Script config
 MODNAME = "factoryplanner"
@@ -18,6 +18,7 @@ autosave-interval=0
 check-updates=false
 [sound]
 music-volume=0.000000
+wind-volume=0.000000
 [interface]
 show-tips-and-tricks=false
 [graphics]
@@ -68,9 +69,18 @@ print("- mod symlink created")
 
 # Copy over other mods
 old_mod_path = old_factorio_path / "mods"
+shutil.copy(str(old_mod_path / "mod-list.json"), str(factorio_mod_path / "mod-list.json"))
 for mod in old_mod_path.glob("*.zip"):
     shutil.copy(str(mod), str(factorio_mod_path / mod.parts[-1]))
 print("- other mods moved over")
+
+# Copy over saves
+old_saves_path = old_factorio_path / "saves"
+new_saves_path = new_factorio_path  / "saves"
+new_saves_path.mkdir()
+for save in old_saves_path.glob("*.zip"):
+    shutil.copy(str(save), str(new_saves_path / save.parts[-1]))
+print("- saves moved over")
 
 # Remove old version
 (old_mod_path / (MODNAME + "_" + mod_version)).rmdir()

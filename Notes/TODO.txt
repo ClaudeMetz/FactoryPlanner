@@ -1,41 +1,35 @@
 TODO New Features:
+! Add a proper way to deal with byproducts
 - Choose favorite fuel that gets added on burner recipes [N1]
 - Indication of how many belts/inserters are needed
 
 
 TODO Feature Improvements:
+? Remove some double recipes in angels mods (plates)
+? Make removing a top level product also remove associated recipes
 
 
 TODO Code Improvements:
-- Test overall on_config_changed global data validation
-- Improve sprite-button backgrounds across the board (+rename style from recipe->object?)
-- Improve how the percentage textfield selection works (+ current activity reset detection)
-- Fix main dialog height layout problems
-- Fix Item window not adjusting size to biggest item group
-- Add a non-red hint (indicate tutorial, useless recipes, unresearched recipes)
-- Add second click to delete lines with subfloors
-- Add warning message to picker dialogs
-- Avoid scientific notation on item tooltips (happens when amount>=10k)
-- Use mouse_button_filters and remove sound from some buttons
-- Redo data.util subfactory generation with general methods/definitions
+- Add thumbnail, screenshots, text for README.md, info.json, (and add licence to zipfile in build script if needed)
+
+- Add picker tooltips that explain status of hovered item/recipe (needs better all_items data structure)
+  (might be helped by indexing all items regardless of type, and proving the index and a type+name index)
+  (recipe sprite detecting for custom recipes might be streamlined too with better prototype definitions)
 - Add a linebreak to production table if window width is exceeded
-- Add simple picker dialog that pops up if changing machines needs to show more than a certain amount of buttons
+- Improve number formating (vary precision on use case, avoid scientific notation) (see base.util!)
+- Re-organize and consolidate styles.lua, redo style choices for subfactory_bar from the ground up
+- Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
 
 
 TODO Bug Fixes:
-! Byproduct recipes don't work/are not recognized
-- Ingredient limit for machines is optional, but still possible; this is not respected
-- Doesn't adjust to UI-scaling-settings at all
 
 
 TODO Post-Launch:
 ! Import/Export of one/all subfactories (and parts of them?)
 ! Module+Beacon-support
-! Ability to calculate based on number of machines instead of amount
-- Ability to import (by dragging over it?) some existing machines as a subfactory
-- DE, FR localisations
 - Better multiplayer support (ex. shared subfactories)
+? Ability to calculate based on number of machines instead of amount
+? Localisations (DE, FR, others)
 ? FNEI-links (alt-click?) (needs API from FNEI-author, might already exist)
-? Un/Re-Do functionality for every user action (with history?)
 ? Support fluid mining/steam generation recipes
 ? Add more and/or custom timescales

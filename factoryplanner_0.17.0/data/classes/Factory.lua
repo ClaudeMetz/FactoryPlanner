@@ -37,14 +37,6 @@ end
 
 -- Updates the validity of the factory from top to bottom
 function Factory.update_validity(self, player)
-    self.valid = true
-    
-    local classes = {"Subfactory"}
-     for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].attempt_repair(dataset, player) then
-                self.valid = false
-            end
-        end
-    end
+    local classes = {Subfactory = "Subfactory"}
+    self.valid = data_util.run_validation_updates(player, self, classes)
 end

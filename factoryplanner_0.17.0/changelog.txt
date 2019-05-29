@@ -2,4 +2,4 @@
 Version: 0.17.0
 Date: 01. 01. 2019
   Features:
-    - Initial Release
+    - Initial beta release 🙌

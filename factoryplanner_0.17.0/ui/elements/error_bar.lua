@@ -31,7 +31,7 @@ function create_error_bar(flow, subfactory_id)
     local label_2 = table.add{type="label", name="label_error_bar_2", caption={"", "   ", {"label.error_bar_2"}, " "}}
     label_2.style.font = "fp-font-16p"
     local button = table.add{type="button", name="fp_button_error_bar_repair",
-      caption={"button-text.error_bar_delete"}}
+      caption={"button-text.error_bar_delete"}, mouse_button_filter={"left"}}
     button.style.font = "fp-font-16p"    
 end
 

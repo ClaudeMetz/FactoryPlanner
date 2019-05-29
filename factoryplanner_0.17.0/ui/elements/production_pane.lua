@@ -8,20 +8,23 @@ function add_production_pane_to(main_dialog)
     flow_titlebar.style.bottom_margin = 4
 
     -- Info label
-    local info = flow.add{type="label", name="label_production_info", caption={"", " (",  {"label.production_info"}, ")"}}
+    local info = flow.add{type="label", name="label_production_info", caption={"", "   (",  {"label.production_info"}, ")"}}
     info.visible = false
 
     -- Main production pane
     local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane_production_pane", direction="vertical"}
-    scroll_pane.style.minimal_height = 585
+    scroll_pane.style.minimal_height = 630
+    scroll_pane.style.left_margin = 4
+    scroll_pane.style.extra_left_margin_when_activated = -4
+    scroll_pane.style.extra_top_margin_when_activated = -4
     scroll_pane.style.horizontally_stretchable = true
     scroll_pane.style.vertically_stretchable = true
 
     local column_count = 7
     local table = scroll_pane.add{type="table", name="table_production_pane",  column_count=column_count}
     table.style = "table_with_selection"
-    table.style.top_padding = 0
-    table.style.left_margin = 4
+    table.style.top_margin = 0
+    table.style.left_margin = 6
     for i=1, column_count do
         if i < 5 then table.style.column_alignments[i] = "middle-center"
         else table.style.column_alignments[i] = "middle-left" end
@@ -45,6 +48,7 @@ function refresh_production_pane(player)
         local title = flow_titlebar.add{type="label", name="label_production_pane_title", 
           caption={"", "  ", {"label.production"}, " "}}
         title.style.font = "fp-font-20p"
+        title.style.top_padding = 2
 
         local floor = player_table.context.floor
         if floor.Line.count > 0 then
@@ -55,9 +59,9 @@ function refresh_production_pane(player)
 
             if floor.level > 1 then
                 flow_titlebar.add{type="button", name="fp_button_floor_up", caption={"label.go_up"},
-                  style="fp_button_mini"}
+                  style="fp_button_mini", mouse_button_filter={"left"}}
                 flow_titlebar.add{type="button", name="fp_button_floor_top", caption={"label.to_the_top"},
-                  style="fp_button_mini"}
+                  style="fp_button_mini", mouse_button_filter={"left"}}
             end
         end
     end
@@ -72,7 +76,8 @@ function refresh_production_table(player)
     if not flow_production then return end
 
     flow_production["label_production_info"].visible = false
-    local table_production = flow_production["scroll-pane_production_pane"]["table_production_pane"]
+    local scroll_pane_production = flow_production["scroll-pane_production_pane"]
+    local table_production = scroll_pane_production["table_production_pane"]
     table_production.clear()
 
     local player_table = global.players[player.index]
@@ -81,8 +86,11 @@ function refresh_production_table(player)
         local floor = player_table.context.floor
 
         if floor.Line.count == 0 then
+            scroll_pane_production.visible = false
             flow_production["label_production_info"].visible = true
-        else            
+        else
+            scroll_pane_production.visible = true
+            
             -- Table titles
             local title_strings = {
                 {name="recipe", label={"label.recipe"}},
@@ -111,7 +119,9 @@ end
 -- (doesn't refresh the production table so calling functions can refresh at the appropriate point for themselves)
 function update_calculations(player, subfactory)
     calc.update(player, subfactory)
-    refresh_subfactory_pane(player)
+    if player.gui.center["fp_frame_main_dialog"] ~= nil then
+        refresh_subfactory_pane(player)
+    end
 end
 
 
@@ -130,8 +140,14 @@ function create_line_table_row(player, line)
     local recipe = global.all_recipes[player.force.name][line.recipe_name]
     local sprite = ui_util.get_recipe_sprite(player, recipe)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
-      sprite=sprite, style=style}
-    button_recipe.tooltip = recipe.localised_name
+      sprite=sprite, tooltip=recipe.localised_name, mouse_button_filter={"left-and-right"}}
+    if line.subfloor then
+        if player_table.current_activity == "deleting_line" and player_table.context.line.id == line.id then
+            button_recipe.style = "fp_button_icon_medium_red"
+        else
+            button_recipe.style = "fp_button_icon_medium_green"
+        end
+    else button_recipe.style = "fp_button_icon_medium_blank" end
     
     -- Make the first line of every subfloor uninteractable, it stays constant
     if floor.level > 1 and line.gui_position == 1 then
@@ -178,7 +194,8 @@ end
 function create_machine_button(gui_table, line, name, count, name_appendage)
     local machine = global.all_machines[line.recipe_category].machines[name]
     local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id
-      .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe"}
+      .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe", 
+      mouse_button_filter={"left"}}
     button.number = math.ceil(count)
     button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)}
 end
@@ -188,18 +205,20 @@ function create_item_button_flow(gui_table, line, class, style)
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id, direction="horizontal"}
     
     for _, item in ipairs(Line.get_in_order(line, class)) do
-        local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-          .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=style}
+        if item.amount == 0 or item.amount > global.margin_of_error then
+            local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
+            .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=style, mouse_button_filter={"left-and-right"}}
 
-        -- Special handling for mining recipes
-        local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
-        if item.type == "entity" then 
-            button.style = "fp_button_icon_medium_blank"
-            tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
+            -- Special handling for mining recipes
+            local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
+            if item.type == "entity" then 
+                button.style = "fp_button_icon_medium_blank"
+                tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
+            end
+
+            button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(item.amount, 8)}
+            button.number = item.amount
         end
-
-        button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(item.amount, 8)}
-        button.number = item.amount
     end
 end
 
@@ -234,7 +253,7 @@ function handle_line_recipe_click(player, line_id, click, direction)
     local subfactory = player_table.context.subfactory
     local floor = player_table.context.floor
     local line = Floor.get(floor, "Line", line_id)
-
+    
     -- Shift (assembly) line in the given direction
     if direction ~= nil then
         -- Can't shift second line into the first position on subfloors
@@ -244,7 +263,7 @@ function handle_line_recipe_click(player, line_id, click, direction)
             update_calculations(player, subfactory)
             refresh_production_table(player)
         end
-
+        
     else
         -- Attaches a subfloor to this line
         if click == "left" then
@@ -254,15 +273,81 @@ function handle_line_recipe_click(player, line_id, click, direction)
                 update_calculations(player, subfactory)
             end
             data_util.context.set_floor(player, line.subfloor)
-
-        -- Remove clicked (assembly) line
+            
+            -- Handle removal of clicked (assembly) line
         elseif click == "right" then
-            Floor.remove(floor, line)
-            update_calculations(player, subfactory)
+            if line.subfloor == nil then
+                Floor.remove(floor, line)
+                update_calculations(player, subfactory)
+            else
+                if player_table.current_activity == "deleting_line" then
+                    Floor.remove(floor, line)
+                    update_calculations(player, subfactory)
+                    player_table.current_activity = nil
+                else
+                    player_table.current_activity = "deleting_line"
+                    player_table.context.line = line
+                end
+            end
         end
         
-        refresh_production_pane(player)
     end
+
+    if player_table.current_activity ~= "deleting_line" then
+        player_table.current_activity = nil
+    end
+    
+    refresh_main_dialog(player)
+end
+
+-- Handles the changing of the percentage textfield
+function handle_percentage_change(player, element)
+    local player_table = global.players[player.index]
+    local floor = player_table.context.floor
+    local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
+    local new_percentage = tonumber(element.text)  -- returns nil if text is not a number
+
+    if new_percentage == nil or new_percentage < 0 then
+        --element.text = line.percentage
+        queue_message(player, {"label.error_invalid_percentage"}, "warning")
+    else
+        line.percentage = new_percentage
+
+        -- Update related datasets
+        if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
+        elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
+
+        local scroll_pane = element.parent.parent
+        update_calculations(player, player_table.context.subfactory)
+        player_table.current_activity = nil
+        refresh_main_dialog(player)
+        
+        scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
+    end
+
+    refresh_message(player)
+end
+
+-- Handles clicks on percentage textfields to improve user experience
+-- (Uses session variable previously_selected_textfield defined in listeners.lua)
+function handle_percentage_textfield_click(player, element)
+    if previously_selected_textfield ~= nil and previously_selected_textfield.valid then
+        previously_selected_textfield.select(0, 0)
+        local floor = global.players[player.index].context.floor
+        local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
+        local line = Floor.get(floor, "Line", line_id)
+        previously_selected_textfield.text = line.percentage
+    end
+    
+    element.select_all()
+    previously_selected_textfield = element
+end
+
+-- Local function to centralize machine changing instructions
+local function set_machine(floor, line, machine_name)
+    line.machine_name = machine_name
+    if line.subfloor then Floor.get(line.subfloor, "Line", 1).machine_name = machine_name
+    elseif line.id == 1 and floor.origin_line then floor.origin_line.machine_name = machine_name end
 end
 
 -- Handles the machine changing process
@@ -272,14 +357,6 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
     local floor = player_table.context.floor
     local line = Floor.get(floor, "Line", line_id)
 
-    -- Local function to centralize machine changing instructions
-    local function set_machine(machine_name)
-        line.machine_name = machine_name
-        if line.subfloor then Floor.get(line.subfloor, "Line", 1).machine_name = machine_name
-        elseif line.id == 1 and floor.origin_line then floor.origin_line.machine_name = machine_name end
-        update_calculations(player, subfactory)
-    end
-
       -- machine_name being nil means the user wants to change the machine of this (assembly) line
     if machine_name == nil then
         local current_category_data = global.all_machines[line.recipe_category]
@@ -288,32 +365,67 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
         -- Change the machine to be one tier lower if possible
         if direction == "negative" then
             if current_machine_position > 1 then
-                set_machine(current_category_data.order[current_machine_position - 1])
+                set_machine(floor, line, current_category_data.order[current_machine_position - 1])
+                update_calculations(player, subfactory)
             end
 
         -- Change the machine to be one tier higher if possible
         elseif direction == "positive" then
             if current_machine_position < #current_category_data.order then
-                set_machine(current_category_data.order[current_machine_position + 1])
+                set_machine(floor, line, current_category_data.order[current_machine_position + 1])
+                update_calculations(player, subfactory)
             end
 
         -- Display all the options for this machine category
         elseif click == "left" then
             -- Changing machines only makes sense if there are more than one in it's category
-            if #current_category_data.order > 1 then
-                player_table.current_activity = "changing_machine"
+            local possible_machine_count = #current_category_data.order
+            if possible_machine_count > 1 then
+                if possible_machine_count < 5 then
+                    player_table.current_activity = "changing_machine"
+                    player_table.context.line = line  -- won't be reset after use, but that doesn't matter
+                else
+                    -- Open a chooser dialog presenting all machine choices
+                    local recipe = global.all_recipes[player.force.name][line.recipe_name]
+                    player_table.modal_data = {
+                        title = {"label.machine"},
+                        text = {"", "Choose a machine for the recipe '", recipe.localised_name, "':"},
+                        choices = {},
+                        reciever_name = "machine"
+                    }
+                    for index, machine_name in ipairs(current_category_data.order) do
+                        local machine = global.all_machines[line.recipe_category].machines[machine_name]
+                        local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
+                        player_table.modal_data.choices[index] = {
+                            name = machine.name,
+                            tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
+                            sprite = "entity/" .. machine.name,
+                            number = count
+                        }
+                    end
+
+                    enter_modal_dialog(player, {type="chooser"})
+                end
                 player_table.context.line = line  -- won't be reset after use, but that doesn't matter
             end
         end
     else
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
-            set_machine(machine_name)
+            set_machine(floor, line, machine_name)
             player_table.current_activity = nil
+            update_calculations(player, subfactory)
         end
     end
 
     refresh_main_dialog(player)
+end
+
+-- Recieves the result of a chooser user choice and applies it
+function apply_chooser_machine_choice(player, machine_name)
+    local player_table = global.players[player.index]
+    set_machine(player_table.context.floor, player_table.context.line, machine_name)
+    update_calculations(player, player_table.context.subfactory)
 end
 
 -- Handles a click on any of the 3 item buttons of a specific line
@@ -330,7 +442,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
             if item.class == "Ingredient" then
                 enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
             elseif item.class == "Byproduct" then
-                enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
+                --enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
             end
         end
     end

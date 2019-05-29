@@ -26,15 +26,6 @@ function open_preferences_dialog(flow_modal_dialog)
     refresh_preferences_dialog(flow_modal_dialog.gui.player)
 end
 
--- No additional action needs to be taken when the preferences dialog is closed
-function close_preferences_dialog(flow_modal_dialog, action, data)
-end
-
--- No conditions needed for the preferences dialog
-function get_preferences_condition_instructions()
-    return {data = {}, conditions = {}}
-end
-
 
 -- Creates the modal dialog to change your preferences
 function refresh_preferences_dialog(player)
@@ -50,7 +41,7 @@ function refresh_preferences_dialog(player)
               column_count=12}
             for _, machine_name in ipairs(data.order) do
                 local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_preferences_machine_"
-                  .. category .. "_" .. machine_name, sprite="entity/" .. machine_name}
+                  .. category .. "_" .. machine_name, sprite="entity/" .. machine_name, mouse_button_filter={"left"}}
                 local tooltip = data.machines[machine_name].localised_name
 
                 local default_machine_name = data_util.machines.get_default(player, category).name

@@ -2,5 +2,5 @@
 :: That allows the python script to be more generally applicable
 ECHO OFF
 cd ..\..
-python .\factoryplanner\Scripts\build_release.py
+python .\factoryplanner\Scripts\code\build_release.py
 PAUSE

@@ -1,9 +1,11 @@
 require("tutorial_dialog")
 require("preferences_dialog")
 require("subfactory_dialog")
+require("notes_dialog")
 require("prototype_picker_dialog")
 require("item_picker_dialog")
 require("recipe_picker_dialog")
+require("chooser_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
@@ -13,8 +15,9 @@ function enter_modal_dialog(player, dialog_settings)
     player_table.modal_dialog_type = dialog_settings.type
     player_table.selected_object = dialog_settings.object
     player_table.current_activity = nil
-
-    local condition_instructions = _G["get_" .. player_table.modal_dialog_type .. "_condition_instructions"](player)
+    
+    local conditions_function = _G["get_" .. player_table.modal_dialog_type .. "_condition_instructions"]
+    local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
     
     player.opened = flow_modal_dialog.parent
@@ -35,24 +38,29 @@ function exit_modal_dialog(player, button, data)
     else
         flow_modal_dialog = center["fp_frame_modal_dialog"]["flow_modal_dialog"]
     end
-
+    
+    local closing_function = _G["close_" .. dialog_type .. "_dialog"]
     if button == "submit" then
         -- First checks if the entered form data is correct
         local form_data = check_modal_dialog_data(flow_modal_dialog, dialog_type)
         if form_data ~= nil then  -- meaning correct form data has been entered
             for name, dataset in pairs(form_data) do data[name] = dataset end
-            _G["close_" .. dialog_type .. "_dialog"](flow_modal_dialog, button, data)
+            closing_function(flow_modal_dialog, button, data)  -- can't be nil in this case
         else return end  -- so the modal dialog doesn't close
 
     elseif button == "delete" or button == "cancel" then
-        _G["close_" .. dialog_type .. "_dialog"](flow_modal_dialog, button, data)
+        if closing_function ~= nil then closing_function(flow_modal_dialog, button, data) end
     end
-
+    
     -- Close modal dialog
     player_table.modal_dialog_type = nil
     player_table.selected_object = nil
+    player_table.modal_data = nil
+    player_table.context.line = nil
+    
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end
+
     toggle_main_dialog(player)
 end
 
@@ -60,9 +68,10 @@ end
 -- Checks the entered form data for errors and returns it if it's all correct, else returns nil
 function check_modal_dialog_data(flow_modal_dialog, dialog_type)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local condition_instructions = _G["get_" .. dialog_type .. "_condition_instructions"](player)
+    local conditions_function = _G["get_" .. dialog_type .. "_condition_instructions"]
+    local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
 
-    if #condition_instructions.conditions ~= 0 then
+    if condition_instructions ~= nil then
         -- Get form data
         local form_data = {}
         for name, f_data in pairs(condition_instructions.data) do
@@ -112,7 +121,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
         -- Conditions table
         local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
-        if #condition_instructions.conditions ~= 0 then
+        if condition_instructions ~= nil then
             table_conditions.style.bottom_margin = 6
             for n, condition in ipairs(condition_instructions.conditions) do
                 local currently_editing = (dialog_settings.object ~= nil)
@@ -132,34 +141,34 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_bar.style.top_margin = 4
 
         local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel",
-          style="back_button"}
+          style="back_button", mouse_button_filter={"left"}}
         button_cancel.style.maximal_width = 90
         button_cancel.style.left_padding = 12
+        button_cancel.style.right_margin = 8
 
         if dialog_settings.close then button_cancel.caption = {"button-text.close"}
         else button_cancel.caption = {"button-text.cancel"} end
 
-        local flow_spacer_1 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_1", direction="horizontal"}
-        flow_spacer_1.style.horizontally_stretchable = true
+        button_bar.add{type="frame", name="frame_modal_dialog_spacer_1", direction="horizontal",
+          style="fp_footer_filler"}
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
-          caption={"button-text.delete"}, style="red_button"}
+          caption={"button-text.delete"}, style="red_button", mouse_button_filter={"left"}}
         button_delete.style.font = "default-dialog-button"
         button_delete.style.height = 32
         button_delete.style.maximal_width = 80
 
-        local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
-        flow_spacer_2.style.horizontally_stretchable = true
-
         local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
-          caption={"button-text.submit"}, style="confirm_button"}
+          caption={"button-text.submit"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.maximal_width = 90
+        button_submit.style.left_margin = 8
     end
 
-    -- Adjust visibility of the submit and delete buttons
+    -- Adjust visibility of the submit and delete buttons and the spacer
     local button_bar = center[frame_name]["flow_modal_dialog_button_bar"]
-    button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false
     button_bar["fp_button_modal_dialog_delete"].visible = dialog_settings.delete or false
+    button_bar["frame_modal_dialog_spacer_1"].visible = not (dialog_settings.delete or false)
+    button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false
 
     return flow_modal_dialog
 end
