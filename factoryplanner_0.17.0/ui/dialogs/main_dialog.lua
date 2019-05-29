@@ -16,7 +16,8 @@ function player_gui_init(player)
             name = "fp_button_toggle_interface",
             caption = "FP",
             tooltip = {"tooltip.open_main_dialog"},
-            style = mod_gui.button_style
+            style = mod_gui.button_style,
+            mouse_button_filter = {"left"}
         }
     end
 
@@ -56,17 +57,24 @@ function toggle_main_dialog(player)
     -- Won't toggle if a modal dialog is open
     if global.players[player.index].modal_dialog_type == nil then
         local main_dialog = center["fp_frame_main_dialog"]
+
+        -- Create and open main dialog, if it doesn't exist yet
         if main_dialog == nil then
-            create_main_dialog(player)
-            center["fp_frame_main_dialog"].visible = true  -- Strangely isn't set right away
-            player.opened = center["fp_frame_main_dialog"]
+            main_dialog = create_main_dialog(player, true)
+            refresh_message(player)
+            player.opened = main_dialog
+
+        -- Otherwise, toggle it
         else
-            -- Only refresh it when you make it visible
-            if not main_dialog.visible then 
-                refresh_main_dialog(player)
+            if main_dialog.visible then
+                main_dialog.visible = false
+                player.opened = nil
+            else
+                -- Only refresh it when you make it visible
+                refresh_main_dialog(player, false)
+                main_dialog.visible = true
                 player.opened = main_dialog
             end
-            main_dialog.visible = (not main_dialog.visible)
         end
     end
 end
@@ -80,8 +88,7 @@ function refresh_main_dialog(player, refresh_dimensions)
         if main_dialog ~= nil then
             local visible = main_dialog.visible
             main_dialog.destroy()
-            toggle_main_dialog(player)
-            player.gui.center["fp_frame_main_dialog"].visible = visible
+            create_main_dialog(player, visible)
         end
     else
         if main_dialog ~= nil then
@@ -92,11 +99,12 @@ function refresh_main_dialog(player, refresh_dimensions)
 end
 
 -- Constructs the main dialog
-function create_main_dialog(player)
+function create_main_dialog(player, visible)
     local main_dialog_dimensions = global.players[player.index].main_dialog_dimensions
     local main_dialog = player.gui.center.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
+    main_dialog.visible = visible
     main_dialog.style.minimal_width = main_dialog_dimensions.width
-    main_dialog.style.minimal_height = main_dialog_dimensions.height  -- Not in use currently, production_pane sets height instead
+    main_dialog.style.minimal_height = main_dialog_dimensions.height
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)
@@ -104,20 +112,35 @@ function create_main_dialog(player)
     add_error_bar_to(main_dialog)
     add_subfactory_pane_to(main_dialog)
     add_production_pane_to(main_dialog)
+
+    return main_dialog
 end
 
 
--- Queues the caption of the general hint to be displayed on the next refresh
-function queue_hint_message(player, message)
-    global.players[player.index].queued_hint_message = message
+-- Queues the caption of the general message to be displayed on the next refresh
+function queue_message(player, message, type)
+    global.players[player.index].queued_message = {string=message, type=type}
 end
 
--- Refreshes the general hint that is displayed next to the main dialog title
-function refresh_hint_message(player)
+-- Refreshes the general messge that is displayed next to the main dialog title
+function refresh_message(player)
     local player_table = global.players[player.index]
     local label_hint = player.gui.center["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
-    label_hint.caption = player_table.queued_hint_message
-    player_table.queued_hint_message = ""
+    
+    if player_table.queued_message ~= nil then
+
+        if player_table.queued_message.type == "warning" then
+            ui_util.set_label_color(label_hint, "red")
+            label_hint.caption = player_table.queued_message.string
+        elseif player_table.queued_message.type == "hint" and player_table.settings.show_hints then 
+            ui_util.set_label_color(label_hint, "yellow")
+            label_hint.caption = player_table.queued_message.string
+        end
+
+        player_table.queued_message = nil
+    else
+        label_hint.caption = ""
+    end
 end
 
 
@@ -130,10 +153,8 @@ function add_titlebar_to(main_dialog)
     label_title.style.font = "fp-font-bold-26p"
 
     -- Hint
-    local label_hint = titlebar.add{type="label", name="label_titlebar_hint", 
-      caption=global.players[main_dialog.player_index].queued_hint_message}
+    local label_hint = titlebar.add{type="label", name="label_titlebar_hint"}
     label_hint.style.font = "fp-font-16p"
-    ui_util.set_label_color(label_hint, "red")
     label_hint.style.top_margin = 8
     label_hint.style.left_margin = 14
 
@@ -146,12 +167,12 @@ function add_titlebar_to(main_dialog)
     flow_buttonbar.style.top_margin = 4
 
     flow_buttonbar.add{type="button", name="fp_button_titlebar_tutorial", caption={"label.tutorial"},
-      style="fp_button_titlebar"}
+      style="fp_button_titlebar", mouse_button_filter={"left"}}
     flow_buttonbar.add{type="button", name="fp_button_titlebar_preferences", caption={"label.preferences"},
-      style="fp_button_titlebar"}
+      style="fp_button_titlebar", mouse_button_filter={"left"}}
 
     local button_exit = flow_buttonbar.add{type="button", name="fp_button_titlebar_exit", caption="X",
-      style="fp_button_titlebar"}
+      style="fp_button_titlebar", mouse_button_filter={"left"}}
     button_exit.style.font = "fp-font-bold-16p"
     button_exit.style.width = 34
     button_exit.style.left_margin = 2

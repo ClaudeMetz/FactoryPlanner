@@ -9,6 +9,7 @@ function open_item_picker_dialog(flow_modal_dialog)
     
     local product_bar = refresh_product_bar(flow_modal_dialog, product)
     picker.refresh_search_bar(flow_modal_dialog, "", (product == nil))
+    picker.refresh_warning_label(flow_modal_dialog, "")
     picker.refresh_picker_panel(flow_modal_dialog, "item", (product == nil))
     if product ~= nil then product_bar["textfield_product_amount"].focus() end
     
@@ -66,11 +67,18 @@ end
 
 -- Reacts to a picker item button being pressed
 function handle_picker_item_click(player, button)
-    if button.style.name ~= "fp_button_icon_medium_disabled" then  -- don't accept duplicate products
+    local flow_modal_dialog = button.parent.parent.parent.parent.parent  -- lol
+    if button.style.name == "fp_button_icon_medium_disabled" then  -- don't accept duplicate products
+        --picker.refresh_warning_label(flow_modal_dialog, {"label.error_duplicate_product"})
+    else
+        --picker.refresh_warning_label(flow_modal_dialog, "")
+        
         local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_item_picker"]["flow_modal_dialog"]
         flow_modal_dialog["table_product_bar"]["fp_sprite-button_product"].sprite = button.sprite
         flow_modal_dialog["table_product_bar"]["textfield_product_amount"].focus()
     end
+
+    --picker.apply_filter(player, "item", false, nil)
 end
 
 
@@ -120,6 +128,6 @@ function get_picker_items()
 end
 
 -- Generates the tooltip string for the given item
-function generate_item_tooltip(item)
+function generate_item_tooltip(item, already_exists)
     return item.localised_name
 end

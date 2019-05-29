@@ -20,16 +20,19 @@ function refresh_info_pane(player)
     label_timescale_title.style.font = "fp-font-14p"
 
     if player_table.current_activity == "changing_timescale" then
-        table_timescale.add{type="button", name="fp_button_timescale_1", caption="1s", style="fp_button_mini"}
-        table_timescale.add{type="button", name="fp_button_timescale_60", caption="1m", style="fp_button_mini"}
-        table_timescale.add{type="button", name="fp_button_timescale_3600", caption="1h", style="fp_button_mini"}
+        table_timescale.add{type="button", name="fp_button_timescale_1", caption="1s", style="fp_button_mini", 
+          mouse_button_filter={"left"}}
+        table_timescale.add{type="button", name="fp_button_timescale_60", caption="1m", style="fp_button_mini",
+          mouse_button_filter={"left"}}
+        table_timescale.add{type="button", name="fp_button_timescale_3600", caption="1h", style="fp_button_mini", 
+          mouse_button_filter={"left"}}
     else            
         -- As unit is limited to presets, timescale will always be displayed as 1
         local timescale = ui_util.format_timescale(subfactory.timescale)
         local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
         label_timescale.style.font = "default-bold"
         table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
-          style="fp_button_mini"}
+          style="fp_button_mini", mouse_button_filter={"left"}}
     end
 
     -- Power Usage
@@ -50,18 +53,17 @@ function refresh_info_pane(player)
     table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":  "}}
     table_notes["label_notes_title"].style.font = "fp-font-14p"
     table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
-      style="fp_button_mini"}
+      style="fp_button_mini", mouse_button_filter={"left"}}
 
     -- Setting preferred machines
     local table_notes = flow["table_info_elements"].add{type="table", name="table_set_prefmachines", column_count=3}
     table_notes.add{type="label", name="label_prefmachines_title", caption={"", " ",  {"label.set_preferred_machines"}, ":  "}}
     table_notes["label_prefmachines_title"].style.font = "fp-font-14p"
     table_notes.add{type="button", name="fp_button_set_prefmachines_subfactory", caption={"button-text.subfactory"}, 
-      style="fp_button_mini", tooltip={"tooltip.set_preferred_machines_subfactory"}}
+      style="fp_button_mini", tooltip={"tooltip.set_preferred_machines_subfactory"}, mouse_button_filter={"left"}}
     table_notes.add{type="button", name="fp_button_set_prefmachines_floor", caption={"button-text.floor"}, 
-      style="fp_button_mini", tooltip={"tooltip.set_preferred_machines_floor"}}
+      style="fp_button_mini", tooltip={"tooltip.set_preferred_machines_floor"}, mouse_button_filter={"left"}}
 end
-
 
 
 -- Handles the timescale changing process
@@ -80,50 +82,6 @@ function handle_subfactory_timescale_change(player, timescale)
 end
 
 
-
--- Handles populating the modal dialog to view or edit notes
-function open_notes_dialog(flow_modal_dialog)
-    create_notes_dialog_structure(flow_modal_dialog, {"label.notes"})
-end
-
--- Handles closing of the notes dialog
-function close_notes_dialog(flow_modal_dialog, action, data)
-    if action == "submit" then
-        local player_table = global.players[flow_modal_dialog.player_index]
-        player_table.context.subfactory.notes = data.notes
-    end
-end
-
--- Returns all necessary instructions to create and run conditions on the modal dialog
-function get_notes_condition_instructions()
-    return {
-        data = {
-            notes = (function(flow_modal_dialog) return flow_modal_dialog["text-box_notes"].text end)
-        },
-        conditions = {
-            [1] = {
-                label = {"label.notes_instruction_1"},
-                check = (function(data) return (#data.notes > 50000) end),
-                show_on_edit = true
-            }
-        }
-    }
-end
-
--- Fills out the modal dialog to view or edit notes
-function create_notes_dialog_structure(flow_modal_dialog, title)
-    flow_modal_dialog.parent.caption = title
-
-    -- Notes
-    local player_table = global.players[flow_modal_dialog.player_index]
-    local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
-      text=player_table.context.subfactory.notes}
-    text_box_notes.focus()
-    text_box_notes.style.width = 600
-    text_box_notes.style.height = 400
-end
-
-
 -- Sets the machines of all lines in the given scope to the currently preferred ones
 function handle_set_prefmachines_click(player, scope)
     local player_table = global.players[player.index]
@@ -131,7 +89,11 @@ function handle_set_prefmachines_click(player, scope)
     -- Sets all machines on given floor to the currently preferred ones
     local function set_machines_on_floor(floor)
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            line.machine_name = data_util.machines.get_default(player, line.recipe_category).name
+            machine_name = data_util.machines.get_default(player, line.recipe_category).name
+            line.machine_name = machine_name
+            if line.subfloor ~= nil then
+                Floor.get(line.subfloor, "Line", 1).machine_name = machine_name
+            end
         end
     end
 

@@ -94,3 +94,25 @@ function Collection.shift(self, main_dataset, direction)
     main_dataset.gui_position = secondary_gui_position
     secondary_dataset.gui_position = main_gui_position
 end
+
+-- Updates the validity of all datasets in this Collection
+function Collection.update_validity(self, player, class)
+    local valid = true
+    for _, dataset in pairs(self.datasets) do
+        if not _G[class].update_validity(dataset, player) then
+            valid = false
+        end
+    end
+    return valid
+end
+
+-- Removes any invalid datasets from the Collection
+function Collection.remove_invalid_datasets(self, player, parent, attempt_repair)
+    for _, dataset in pairs(self.datasets) do
+        if not dataset.valid then
+            if not (attempt_repair and _G[dataset.class].attempt_repair(dataset, player)) then
+                _G[parent.class].remove(parent, dataset)
+            end
+        end
+    end
+end

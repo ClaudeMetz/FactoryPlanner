@@ -21,6 +21,7 @@ function global_init()
     global.all_machines = generator.all_machines()
 
     global.devmode = true
+    global.margin_of_error = 1e-10
 end
 
 -- Creates and initiates a new player in the database if he doesn't exist yet
@@ -41,24 +42,20 @@ function player_init(player)
         -- Creates recipes if there are none for the force of this player
         global.all_recipes = generator.all_recipes(false)
 
-        player_table.modal_dialog_type = nil  -- The internal modal dialog type
-        player_table.selected_object = nil  -- The object relevant for a modal dialog
-        player_table.current_activity = nil  -- The current unique main dialog activity
-        player_table.queued_hint_message = ""  -- The next hint message to be displayed
-        player_table.context = data_util.context.create()  -- The currently displayed set of data
+       reset_gui_state(player)
+       queue_message(player, {"label.hint_tutorial"}, "hint")
     end
 end
 
 -- Resets the GUI state of the given player, if he exists
 function player_reset(player)
-    if global.players[player.index] ~= nil then
-        local player_table = global.players[player.index]
+    local player_table = global.players[player.index]
+    if player_table ~= nil then
+        reset_gui_state(player)
 
-        player_table.modal_dialog_type = nil
-        player_table.selected_object = nil
-        player_table.current_activity = nil
-        player_table.queued_hint_message = ""
-        player_table.context = data_util.context.create()
+        -- If any subfactories exist, select the first one
+        local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
+        if #subfactories > 0 then data_util.context.set_subfactory(player, subfactories[1]) end
     end
 end
 
@@ -71,8 +68,22 @@ end
 function reload_settings(player)
     local settings = settings.get_player_settings(player)
     local settings_table = global.players[player.index].settings
+
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
+    settings_table.show_hints = settings["fp_show_hints"].value
     settings_table.show_disabled_recipe = settings["fp_show_disabled_recipe"].value
+end
+
+-- (Re)sets the GUI state of the given player
+function reset_gui_state(player)
+    local player_table = global.players[player.index]
+
+    player_table.modal_dialog_type = nil  -- The internal modal dialog type
+    player_table.selected_object = nil  -- The object relevant for a modal dialog
+    player_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    player_table.current_activity = nil  -- The current unique main dialog activity
+    player_table.queued_message = nil  -- The next general message to be displayed
+    player_table.context = data_util.context.create(player)  -- The currently displayed set of data
 end
 
 -- Runs through all updates that need to be made after the config changed
@@ -97,5 +108,9 @@ function handle_configuration_change()
         attempt_factory_migration(factory)
         Factory.update_validity(factory, player)
         data_util.machines.update_default(player)
+
+        for _, subfactory in ipairs(Factory.get_in_order(factory, "Subfactory")) do
+            if subfactory.valid then update_calculations(player, subfactory) end
+        end
     end
 end

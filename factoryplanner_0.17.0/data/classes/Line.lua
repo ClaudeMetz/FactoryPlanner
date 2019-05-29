@@ -52,23 +52,16 @@ end
 
 -- Update the validity of associated Items, recipe and machine of this line
 function Line.update_validity(self, player)
-    self.valid = true
-    
     -- Validate Items
-    local classes = {"Product", "Byproduct", "Ingredient"}
-    for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].update_validity(dataset, player) then
-                self.valid = false
-            end
-        end
-    end
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
+    self.valid = data_util.run_validation_updates(player, self, classes)
 
     -- Validate the recipe and machine
     local recipe = global.all_recipes[player.force.name][self.recipe_name]
     if recipe == nil then
         self.valid = false
     else
+        self.recipe_energy = recipe.energy  -- update energy in case it changed
         if recipe.category ~= self.recipe_category then
             self.valid = false
         else
@@ -84,16 +77,10 @@ end
 -- (In general, Line Items are not repairable and can only be deleted)
 function Line.attempt_repair(self, player)
     self.valid = true
-
+    
     -- Remove invalid Items
-    local classes = {"Product", "Byproduct", "Ingredient"}
-    for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not dataset.valid then
-                Subfactory.remove(self, dataset)
-            end
-        end
-    end
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
+    data_util.run_invalid_dataset_removal(player, self, classes, false)
 
     -- Attempt to repair the line
     local recipe = global.all_recipes[player.force.name][self.recipe_name]
@@ -107,8 +94,7 @@ function Line.attempt_repair(self, player)
                 self.valid = false
             end
         else
-            -- Attempt to repair an invalid machine
-            -- (This is only done when there is no subfloor because it would become too complicated otherwise)
+            -- Repair an invalid machine (Only when there is no subfloor for simplicity)
             if recipe.category ~= self.recipe_category then
                 local machine = data_util.machines.get_default(player, recipe.category)
                 Floor.replace(self.parent, self, Line.init(recipe, machine))

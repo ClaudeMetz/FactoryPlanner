@@ -11,7 +11,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
 
     local recipe, error, show = run_preliminary_checks(player, product.name, search_function)
     if error ~= nil then
-        queue_hint_message(player, error)
+        queue_message(player, error, "warning")
         exit_modal_dialog(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
@@ -19,12 +19,13 @@ function open_recipe_picker_dialog(flow_modal_dialog)
             local machine = data_util.machines.get_default(player, recipe.category)
             Floor.add(player_table.context.floor, Line.init(recipe, machine))
             update_calculations(player, player_table.context.subfactory)
+            if show.message ~= nil then queue_message(player, show.message.string, show.message.type) end
             exit_modal_dialog(player, "cancel", {})
         
-        -- Otherwise, show the appropriately filtered dialog
-        else
+        else  -- Otherwise, show the appropriately filtered dialog
             picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
             picker.refresh_search_bar(flow_modal_dialog, product.name, false)
+            picker.refresh_warning_label(flow_modal_dialog, "")
             flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state = show.disabled
             flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state = show.hidden
             picker.refresh_picker_panel(flow_modal_dialog, "recipe", true)
@@ -35,14 +36,6 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     end
 end
 
--- No additional action needs to be taken when the recipe picker dialog is closed
-function close_recipe_picker_dialog(flow_modal_dialog, action, data)
-end
-
--- No conditions needed for the recipe picker dialog
-function get_recipe_picker_condition_instructions()
-    return {data = {}, conditions = {}}
-end
 
 -- Reacts to a picker recipe button being pressed
 function handle_picker_recipe_click(player, button)
@@ -77,7 +70,7 @@ function run_preliminary_checks(player, product_name, search_function)
     
     -- Set filters to the minimum that still shows at least one recipe if one exists
     -- This is probably stupidly done and could be simplified, I just can't work out how right now
-    local show = {disabled = false, hidden = false}
+    local show = {disabled = false, hidden = false, message = nil}
     if (#relevant_recipes - disabled_recipes_count - hidden_recipes_count + disabled_hidden_recipes_count) == 0 then
         show.disabled = true
         if disabled_recipes_count - disabled_hidden_recipes_count == 0 then
@@ -86,11 +79,15 @@ function run_preliminary_checks(player, product_name, search_function)
     end
     
     -- Return result, format: return recipe, error-message, show
+    local show_disabled_recipe = global.players[player.index].settings.show_disabled_recipe
     if #relevant_recipes == 0 then
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
         local recipe = relevant_recipes[1]
-        if recipe.enabled or not global.players[player.index].settings.show_disabled_recipe then
+        if recipe.enabled then
+            return recipe, nil, show
+        elseif not show_disabled_recipe then
+            show.message={string={"label.hint_disabled_recipe"}, type="hint"}
             return recipe, nil, show
         else
             return nil, nil, show

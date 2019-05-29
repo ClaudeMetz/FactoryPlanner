@@ -71,13 +71,15 @@ function refresh_item_table(player, class)
     if subfactory[class].count > 0 then
         for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
             local item_specifics = _G["get_" .. ui_name .. "_specifics"](item)
+            
+            if item_specifics.number > global.margin_of_error then
+                local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
+                .. item.id, sprite=item.type .. "/" .. item.name, mouse_button_filter={"left-and-right"}}
 
-            local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" ..
-              ui_name .. "_" .. item.id, sprite=item.type .. "/" .. item.name}
-
-            button.number = item_specifics.number
-            button.tooltip = item_specifics.tooltip
-            button.style = item_specifics.style
+                button.number = item_specifics.number
+                button.tooltip = item_specifics.tooltip
+                button.style = item_specifics.style
+            end
         end
     end
 
@@ -140,7 +142,7 @@ end
 -- Adds the button to add a product to the table
 function append_to_product_table(table)
     local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
-      style="fp_sprite_button", tooltip={"tooltip.add_product"}}
+      style="fp_sprite_button", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"}}
     button.style.height = 36
     button.style.width = 36
 end
@@ -160,7 +162,7 @@ function handle_product_element_click(player, product_id, click, direction)
             if player_table.context.floor.level == 1 then
                 enter_modal_dialog(player, {type="recipe_picker", object=product, preserve=true})
             else
-                queue_hint_message(player, {"label.error_product_wrong_floor"})
+                queue_message(player, {"label.error_product_wrong_floor"}, "warning")
             end
         elseif click == "right" then
             enter_modal_dialog(player, {type="item_picker", object=product, preserve=true, submit=true, delete=true})
@@ -198,9 +200,9 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction)
     elseif click == "left" then
         local floor = global.players[player.index].context.floor
         if floor.level == 1 then
-            enter_modal_dialog(player, {type="recipe_picker", object=byproduct, preserve=true})
+            --enter_modal_dialog(player, {type="recipe_picker", object=byproduct, preserve=true})
         else
-            queue_hint_message(player, {"label.error_byproduct_wrong_floor"})
+            --queue_message(player, {"label.error_byproduct_wrong_floor"}, "warning")
         end
     end
 

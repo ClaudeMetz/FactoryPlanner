@@ -10,11 +10,22 @@ function open_tutorial_dialog(flow_modal_dialog)
     table_tutorial.style.bottom_margin = 8
 
     -- Example subfactory
-    local button_add_example = table_tutorial.add{type="button", name="fp_button_tutorial_add_example",
-      caption={"button-text.create_example"}, tooltip={"tooltip.example_subfactory"}}
-    button_add_example.style.left_margin = 8
-    button_add_example.style.top_margin = 8
-    button_add_example.style.bottom_margin = 16
+    local other_mods_active = table_size(game.active_mods) > 2
+    local table_example_subfactory = table_tutorial.add{type="table", name="table_example_subfactory", column_count=2}
+
+    local button_example_subfactory = table_example_subfactory.add{type="button", name="fp_button_tutorial_add_example",
+      caption={"button-text.create_example"}, tooltip={"tooltip.example_subfactory"}, mouse_button_filter={"left"}}
+    button_example_subfactory.style.left_margin = 8
+    button_example_subfactory.style.top_margin = 8
+    button_example_subfactory.style.bottom_margin = 16
+    button_example_subfactory.enabled = not other_mods_active
+
+    local label_example_subfactory = table_example_subfactory.add{type="label", name="label_example_subfactory", 
+      caption={"label.example_subfactory_info"}}
+    label_example_subfactory.style.left_margin = 8
+    label_example_subfactory.style.bottom_margin = 8
+    ui_util.set_label_color(label_example_subfactory, "yellow")
+    label_example_subfactory.visible = other_mods_active
     
     -- General Tips
     local interface_title = table_tutorial.add{type="label", name="label_interface_title", 
@@ -37,7 +48,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     protips_title.style.font = "fp-font-bold-20p"
 
     local protip_names = {"hovering", "list_ordering", "machine_changing", "machine_preferences", "interface_width",
-      "recursive_subfloors", "recipe_consolidation"}
+      "recipe_consolidation", "recursive_subfloors"}
     for _, name in ipairs(protip_names) do
         local label = table_tutorial.add{type="label", name="label_tutorial_" .. name, 
           caption={"", "- ", {"tip.pro_" .. name}}}
@@ -46,18 +57,10 @@ function open_tutorial_dialog(flow_modal_dialog)
     end
 end
 
--- No additional action needs to be taken when the tutorial dialog is closed
-function close_tutorial_dialog(flow_modal_dialog, action, data)
-end
-
--- No conditions needed for the tutorial dialog
-function get_tutorial_condition_instructions()
-    return {data = {}, conditions = {}}
-end
-
 
 -- Creates the example subfactory and shows it to the user
 function handle_add_example_subfactory_click(player)
+    log(table_size(game.active_mods))
     local subfactory = data_util.add_example_subfactory(player)
     update_calculations(player, subfactory)
     exit_modal_dialog(player, "cancel", {})

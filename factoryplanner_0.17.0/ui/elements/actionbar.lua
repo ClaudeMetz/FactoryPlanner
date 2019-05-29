@@ -1,13 +1,14 @@
 -- Creates the actionbar including the new-, edit- and delete-buttons
 function add_actionbar_to(main_dialog)
     local actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
+    actionbar.style.left_margin = 6
 
     actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, 
-      style="fp_button_action"}
+      style="fp_button_action", mouse_button_filter={"left"}}
     actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, 
-      style="fp_button_action"}
+      style="fp_button_action", mouse_button_filter={"left"}}
     actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, 
-      style="fp_button_action"}
+      style="fp_button_action", mouse_button_filter={"left"}}
     actionbar.style.bottom_margin = 4
 
     refresh_actionbar(game.get_player(main_dialog.player_index))

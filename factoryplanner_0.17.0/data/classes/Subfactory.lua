@@ -27,6 +27,12 @@ function Subfactory.init(name, icon)
     return subfactory
 end
 
+-- Exceptionally, a setter method to centralize edge-case handling
+function Subfactory.set_icon(subfactory, icon)
+    if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
+    subfactory.icon = icon
+end
+
 function Subfactory.add(self, object)
     object.parent = self
     return Collection.add(self[object.class], object)
@@ -60,41 +66,20 @@ end
 -- Updates the validity of the whole subfactory
 -- Floors can be checked in any order and separately without problem
 function Subfactory.update_validity(self, player)
-    self.valid = true
-    
-    local classes = {"Product", "Byproduct", "Ingredient", "Floor"}
-    for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not _G[class].update_validity(dataset, player) then
-                self.valid = false
-            end
-        end
-    end
-
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Floor = "Floor"}
+    self.valid = data_util.run_validation_updates(player, self, classes)
     return self.valid
 end
 
 -- Tries to repair all associated datasets, removing the unrepairable ones
 -- (In general, Subfactory Items are not repairable and can only be deleted)
 function Subfactory.attempt_repair(self, player)
-    local classes = {"Product", "Byproduct", "Ingredient"}
-    for _, class in pairs(classes) do
-        for _, dataset in pairs(self[class].datasets) do
-            if not dataset.valid then
-                Subfactory.remove(self, dataset)
-            end
-        end
-    end
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
+    data_util.run_invalid_dataset_removal(player, self, classes, false)
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
-    -- Return value is not caught here because the top level floor won't be removed
+    -- (Return value is not caught here because the top level floor won't be removed)
     Floor.attempt_repair(Subfactory.get(self, "Floor", 1), player)
 
     self.valid = true
-end
-
--- Exceptionally, a setter method to centralize edge-case handling
-function Subfactory.set_icon(subfactory, icon)
-    if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
-    subfactory.icon = icon
 end

@@ -110,7 +110,7 @@ function generator.all_recipes(reset)
             }
        end
     end
- 
+
     return recipes
 end
 
@@ -199,6 +199,15 @@ function generator.all_items()
 end
 
 
+-- Returns the names of the 'machines' that shouldn't be included
+local function undesirable_machines()
+    return {
+        ["character"] = false,
+        ["escape-pod-assembler"] = false,
+        ["farl_player"] = false
+    }
+end
+
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
     local categories = {}
@@ -209,13 +218,14 @@ function generator.all_machines()
         end
         local data = categories[category]
         
-        -- If it is a miner, set speed to mining_speed so the machine_count formula works out
+        -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local burner = proto.burner_prototype and true or false
         table.insert(data["order"], proto.name)
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
+            ingredient_count = proto.ingredient_count,
             speed = speed,
             energy = proto.energy_usage,
             burner = burner,
@@ -224,8 +234,9 @@ function generator.all_machines()
         data["machines"][proto.name] = machine
     end
 
+    local undesirables = undesirable_machines()
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.crafting_categories and proto.name ~= "player" and proto.name ~= "escape-pod-assembler" then
+        if proto.crafting_categories and undesirables[proto.name] == nil then
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then generate_category_entry(category, proto) end
             end

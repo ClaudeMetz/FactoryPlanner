@@ -8,7 +8,7 @@ data:extend({
     {
         type = "font",
         name = "fp-font-15p",
-        from = "default",
+        from = "default-semibold",
         size = 15
     },
     {

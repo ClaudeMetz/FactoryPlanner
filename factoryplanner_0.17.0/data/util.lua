@@ -5,7 +5,7 @@ data_util = {
 
 -- **** CONTEXT ****
 -- Creates a blank context referencing which part of the Factory is currently displayed
-function data_util.context.create()
+function data_util.context.create(player)
     return {
         subfactory = nil,
         floor = nil,
@@ -60,31 +60,103 @@ end
 
 
 -- **** MISC ****
+-- Updates validity of every class specified by the classes parameter
+function data_util.run_validation_updates(player, parent, classes)
+    local valid = true
+    for type, class in pairs(classes) do
+        if not Collection.update_validity(parent[type], player, class) then
+            valid = false
+        end
+    end
+    return valid
+end
+
+-- Removes all invalid datasets of every class specified by the classes parameter
+function data_util.run_invalid_dataset_removal(player, parent, classes, attempt_repair)
+    for type, class in pairs(classes) do
+        Collection.remove_invalid_datasets(parent[type], player, parent, attempt_repair)
+    end
+end
+
+-- Following are a couple helper functions for populating (sub)factories
+-- Adds all given products to the given subfactory (table definition see above)
+local function add_products(subfactory, products)
+    for _, product in ipairs(products) do
+        local dataset = Subfactory.add(subfactory, Item.init({name=product.name, type=product.type}, nil, "Product", product.amount))
+        dataset.required_amount = product.required_amount
+    end
+end
+
+-- Adds all given recipes to the floor, recursively calling itself in case of subfloors
+-- Needs an appropriately formated recipes table (see definitions above)
+local function construct_floor(player, floor, recipes)
+    -- Adds a line containing the given recipe to the current floor
+    local function add_line(recipe_data)
+        local recipe = global.all_recipes[player.force.name][recipe_data.recipe]
+        local machine_category = global.all_machines[recipe.category]
+        local machine = machine_category.machines[machine_category.order[recipe_data.machine]]
+        return Floor.add(floor, Line.init(recipe, machine))
+    end
+    
+    for _, recipe_data in ipairs(recipes) do
+        if #recipe_data == 0 then  -- Meaning this isn't a whole subfloor
+            add_line(recipe_data)
+        else
+            -- First, it adds the top-level line to the floor
+            local line = add_line(recipe_data[1])
+            local subfloor = Floor.init(line)
+            line.subfloor = Subfactory.add(floor.parent, subfloor)
+            
+            -- Then, it creates a subfloor with the remaining recipes
+            table.remove(recipe_data, 1)
+            construct_floor(player, line.subfloor, recipe_data)
+        end
+    end
+end
+
+
 -- Initiates the data table with some values for development purposes
 function data_util.run_dev_config(player)
     if global.devmode then
         local player_table = global.players[player.index]
         local factory = player_table.factory
 
+        -- Subfactories
         local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}))
+        data_util.context.set_subfactory(player, subfactory)
         Factory.add(factory, Subfactory.init("Beta", nil))
         Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
-        data_util.context.set_subfactory(player, subfactory)
 
-        local prod1 = Subfactory.add(subfactory, Item.init({name="electronic-circuit", type="item"}, nil, "Product", 0))
-        prod1.required_amount = 400
-        local prod2 = Subfactory.add(subfactory, Item.init({name="heavy-oil", type="fluid"}, nil, "Product", 0))
-        prod2.required_amount = 100
-        local prod3 = Subfactory.add(subfactory, Item.init({name="uranium-235", type="item"}, nil, "Product", 0))
-        prod3.required_amount = 10
+        -- Products
+        local products = {
+            {
+                name = "electronic-circuit",
+                type = "item",
+                amount = 0,
+                required_amount = 400
+            },
+            {
+                name = "heavy-oil",
+                type = "fluid",
+                amount = 0,
+                required_amount = 100
+            },
+            {
+                name = "uranium-235",
+                type = "item",
+                amount = 0,
+                required_amount = 10
+            }
+        }
+        add_products(subfactory, products)
 
-        local floor = Subfactory.get(subfactory, "Floor", 1)
-        local recipe = global.all_recipes[player.force.name]["electronic-circuit"]
-        local machine = data_util.machines.get_default(player, recipe.category)
-        Floor.add(floor, Line.init(recipe, machine))
+        -- Floors
+        local recipes = {
+            {recipe="electronic-circuit", machine=1}
+        }
+        construct_floor(player, player_table.context.floor, recipes)
     end
 end
-
 
 -- Adds an example subfactory for new users to explore (returns that subfactory)
 function data_util.add_example_subfactory(player)
@@ -93,7 +165,6 @@ function data_util.add_example_subfactory(player)
     local subfactory = Factory.add(factory, Subfactory.init("Example", {type="item", name="automation-science-pack"}))
     data_util.context.set_subfactory(player, subfactory)
     
-
     -- Products
     local products = {
         {
@@ -115,67 +186,36 @@ function data_util.add_example_subfactory(player)
             required_amount = 60
         }
     }
-
-    for _, product in ipairs(products) do
-        local dataset = Subfactory.add(subfactory, Item.init({name=product.name, type=product.type}, nil, "Product", product.amount))
-        dataset.required_amount = product.required_amount
-    end
+    add_products(subfactory, products)
     
-
-    -- Recipes
-    -- Adds all given recipes to the floor, recursively calling itself in case of subfloors
-    local function construct_floor(floor, recipes)
-        -- Adds a line containing the given recipe to the current floor
-        local function add_line(recipe_name)
-            local recipe = global.all_recipes[player.force.name][recipe_name]
-            local machine = data_util.machines.get_default(player, recipe.category)
-            return Floor.add(floor, Line.init(recipe, machine))
-        end
-        
-        for _, recipe_name in ipairs(recipes) do
-            if type(recipe_name) == "table" then
-                -- First, it adds the top-level line to the floor, then creates a subfloor with the remaining recipes
-                local line = add_line(recipe_name[1])
-                local subfloor = Floor.init(line)
-                line.subfloor = Subfactory.add(subfactory, subfloor)
-                
-                table.remove(recipe_name, 1)
-                construct_floor(line.subfloor, recipe_name)
-            else
-                add_line(recipe_name)
-            end
-        end
-    end
-    
+    -- Recipes    
     -- This table describes the desired hierarchical structure of the subfactory
     -- (Order is important; sub-tables represent their own subfloors (recursively))
     local recipes = {
-        "automation-science-pack",
+        {recipe="automation-science-pack", machine=2},
         {
-            "logistic-science-pack",
-            "transport-belt",
-            "inserter"
+            {recipe="logistic-science-pack", machine=2},
+            {recipe="transport-belt", machine=1},
+            {recipe="inserter", machine=1}
         },
         {
-            "military-science-pack",
-            "grenade",
-            "stone-wall",
-            "piercing-rounds-magazine",
-            "firearm-magazine"
+            {recipe="military-science-pack", machine=2},
+            {recipe="grenade", machine=2},
+            {recipe="stone-wall", machine=1},
+            {recipe="piercing-rounds-magazine", machine=1},
+            {recipe="firearm-magazine", machine=1}
         }, 
-        "iron-gear-wheel",
+        {recipe="iron-gear-wheel", machine=1},
         {
-            "electronic-circuit",
-            "copper-cable"
+            {recipe="electronic-circuit", machine=1},
+            {recipe="copper-cable", machine=1}
         }, 
-        "steel-plate",
-        "stone-brick",
-        "impostor-stone",
-        "impostor-coal"
+        {recipe="steel-plate", machine=2},
+        {recipe="stone-brick", machine=2},
+        {recipe="impostor-stone", machine=2},
+        {recipe="impostor-coal", machine=2}
     }
-
-    construct_floor(player_table.context.floor, recipes)
-
+    construct_floor(player, player_table.context.floor, recipes)
     
     return subfactory
 end
