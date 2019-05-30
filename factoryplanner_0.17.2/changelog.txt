@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.2
+Date: 30. 05. 2019
   Bugfixes:
     - Fixed an issue where products could have negative amounts
     - Improved compatability with Angel's mods
