@@ -5,12 +5,10 @@ TODO New Features:
 
 
 TODO Feature Improvements:
-? Remove some double recipes in angels mods (plates)
-? Make removing a top level product also remove associated recipes
 
 
 TODO Code Improvements:
-- Add thumbnail, screenshots, text for README.md, info.json, (and add licence to zipfile in build script if needed)
+- Add thumbnail, screenshots, text for README.md, info.json
 
 - Add picker tooltips that explain status of hovered item/recipe (needs better all_items data structure)
   (might be helped by indexing all items regardless of type, and proving the index and a type+name index)

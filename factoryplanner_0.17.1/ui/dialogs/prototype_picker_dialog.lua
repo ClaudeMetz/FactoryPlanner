@@ -128,31 +128,35 @@ function picker.refresh_picker_panel(flow, object_type, visible)
 
         local formatted_objects = picker.create_object_tree(_G["get_picker_" .. object_type .. "s"](player))
         for _, group in ipairs(formatted_objects) do
-            -- Item groups
-            button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group.name,
-              sprite="item-group/" .. group.name, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
-            button_group.tooltip = group.localised_name
-            button_group.style.width = 70
-            button_group.style.height = 70
+            if group.name ~= "creative-mod_creative-tools" then
+                -- Item groups
+                button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group.name,
+                  sprite="item-group/" .. group.name, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
+                button_group.style.width = 70
+                button_group.style.height = 70
+                button_group.tooltip = group.localised_name
+                if global.devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group.name} end
 
-            local scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", name="scroll-pane_subgroups_"
-              .. group.name}
-            scroll_pane_subgroups.style.bottom_margin = 4
-            scroll_pane_subgroups.style.horizontally_stretchable = true
-            local table_subgroup = scroll_pane_subgroups.add{type="table", name="table_subgroup", column_count=1}
-            table_subgroup.style.vertical_spacing = 3
-            for _, subgroup in ipairs(group.subgroups) do
-                -- Item subgroups
-                local table_subgroup = table_subgroup.add{type="table", name="table_subgroup_" .. subgroup.name,
-                  column_count = 12}
-                table_subgroup.style.horizontal_spacing = 2
-                table_subgroup.style.vertical_spacing = 1
-                for _, object in ipairs(subgroup.objects) do
-                    -- Objects
-                    local sprite = ui_util["get_" .. object_type .. "_sprite"](player, object)
-                    local button_object = table_subgroup.add{type="sprite-button", name="fp_sprite-button_picker_object_"
-                      .. object.name, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
-                    button_object.tooltip = _G["generate_" .. object_type .. "_tooltip"](object)
+                local scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", name="scroll-pane_subgroups_"
+                  .. group.name}
+                scroll_pane_subgroups.style.bottom_margin = 4
+                scroll_pane_subgroups.style.horizontally_stretchable = true
+                local table_subgroup = scroll_pane_subgroups.add{type="table", name="table_subgroup", column_count=1}
+                table_subgroup.style.vertical_spacing = 3
+                for _, subgroup in ipairs(group.subgroups) do
+                    -- Item subgroups
+                    local table_subgroup = table_subgroup.add{type="table", name="table_subgroup_" .. subgroup.name,
+                    column_count = 12}
+                    table_subgroup.style.horizontal_spacing = 2
+                    table_subgroup.style.vertical_spacing = 1
+                    for _, object in ipairs(subgroup.objects) do
+                        -- Objects
+                        local sprite = ui_util["get_" .. object_type .. "_sprite"](player, object)
+                        local button_object = table_subgroup.add{type="sprite-button", name="fp_sprite-button_picker_object_"
+                          .. object.name, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
+                        button_object.tooltip = _G["generate_" .. object_type .. "_tooltip"](object)
+                        if global.devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
+                    end
                 end
             end
         end
@@ -227,7 +231,7 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
                     -- Set visibility of objects (and item-groups) appropriately
                     if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden) 
                       or not search_function(recipe, search_term) then
-                        visible = false
+                        --visible = false
                     end
                 end
 

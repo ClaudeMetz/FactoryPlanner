@@ -245,7 +245,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
 
         -- Reacts to a item group button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-]+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-_]+$") then
             local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
             picker.select_item_group(player, object_type, item_group_name)
 
