@@ -157,7 +157,7 @@ function calc.update_subfactory(subfactory, result)
         local result_product = calc.aggregate.get(result, "Product", product)
 
         if result_product == nil then product.amount = 0
-        else product.amount = product.required_amount - result_product.amount end
+        else product.amount = math.max(product.required_amount - result_product.amount, 0) end
     end
     
     calc.update_item_collection(subfactory, "Byproduct", result)

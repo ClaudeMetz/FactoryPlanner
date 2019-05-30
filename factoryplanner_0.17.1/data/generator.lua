@@ -8,7 +8,8 @@ local function undesirable_recipes()
         ["electric-energy-interface"] = false,
         ["railgun"] = false,
         ["railgun-dart"] = false,
-        ["player-port"] = false
+        ["player-port"] = false,
+        ["infinity-chest"] = false
     }
 
     -- Leaves loaders in if LoaderRedux is loaded
@@ -142,7 +143,15 @@ local function undesirable_items()
             ["simple-entity-with-force"] = false,
             ["simple-entity-with-owner"] = false,
             ["infinity-chest"] = false,
-            ["infinity-pipe"] = false
+            ["infinity-pipe"] = false,
+            
+            -- Angels items without recipes
+            ["angels-void"] = false,
+            ["water-void"] = false,
+            ["angels-plate-iron"] = false,
+            ["angels-plate-copper"] = false,
+            ["angels-wire-copper"] = false,
+            ["angels-plate-steel"] = false
         },
         types = {
             ["blueprint"] = false,

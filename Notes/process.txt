@@ -1,8 +1,7 @@
 Release:
 - Merge all changes into master, checkout master
-- Remove develop branch, if used
-- Run build_release-script
-- Checkout new develop branch
+- Close VS Code, run build_release-script
+- Checkout new develop branch, if desired
 - Run new_changelog_entry-script
 
 
