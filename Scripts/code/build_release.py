@@ -87,7 +87,7 @@ print("- changelog updated for release")
 
 # Create zip archive (stealthily include the LICENSE)
 tmp_license_path = new_mod_folder_path / "LICENSE.md"
-shutil.copy(str(cwd / "LICENSE.md"), str(tmp_license_path))
+shutil.copy(str(cwd / MODNAME / "LICENSE.md"), str(tmp_license_path))
 zipfile_path = Path(cwd, MODNAME, "Releases", MODNAME + "_" + new_version)
 shutil.make_archive(zipfile_path, "zip", new_mod_folder_path)
 (tmp_license_path).unlink()
