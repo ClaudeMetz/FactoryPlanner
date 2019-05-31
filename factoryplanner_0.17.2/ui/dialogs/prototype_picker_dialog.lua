@@ -231,7 +231,7 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
                     -- Set visibility of objects (and item-groups) appropriately
                     if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden) 
                       or not search_function(recipe, search_term) then
-                        --visible = false
+                        visible = false
                     end
                 end
 

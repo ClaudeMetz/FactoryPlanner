@@ -2,14 +2,13 @@ TODO New Features:
 ! Add a proper way to deal with byproducts
 - Choose favorite fuel that gets added on burner recipes [N1]
 - Indication of how many belts/inserters are needed
+? Add some keyboard shortcuts
 
 
 TODO Feature Improvements:
 
 
 TODO Code Improvements:
-- Add thumbnail, screenshots, text for README.md, info.json
-
 - Add picker tooltips that explain status of hovered item/recipe (needs better all_items data structure)
   (might be helped by indexing all items regardless of type, and proving the index and a type+name index)
   (recipe sprite detecting for custom recipes might be streamlined too with better prototype definitions)
