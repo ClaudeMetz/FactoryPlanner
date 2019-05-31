@@ -20,7 +20,7 @@ function global_init()
     -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
 
-    --global.devmode = true
+    ----global.devmode = true
     global.margin_of_error = 1e-10
 end
 
