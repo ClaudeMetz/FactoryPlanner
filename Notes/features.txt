@@ -1,2 +1,51 @@
-[F1]
-- BLA
+[F1] Import/Export
+- To export, select all the subfactories that you want to export from a list
+- To import, select all the subfactories you want to import from the available ones
+- Show validity on import
+
+[F2] Module+Beacon
+- UI and UX will be challenging
+- Ability to set all modules that a machine supports right on it
+- Ability to add which beacons affect each machine
+- Have ability for predefined module and beacon configurations (?)
+
+[F3] Multiplayer Cooperation
+- Share subfactories between all players on a map
+- Distinct visuals for them in the interface, but custom order for everyone
+- Read/write-access regulation probably needed?
+- Simultaneous change of subfactories might need to be handled?
+
+[F4] Calculation Overhaul
+- Handle all complicated scenarios (cycles, multiple recipes for the same product simultaneously
+  input based calculations, etc)
+- Probably needs a linear algebra approach, which will be hard (see [N2] for hints)
+- First step should be to create a clean interface for both a cleaner implementation of
+  the calculations and as a way for others to try their luck [N3]
+
+[F5] Machine Fuel [N1]
+- Have burners show their fuel consumtion
+- Fuel used will be a preference, but adjustable on each recipe by hand
+
+[F6] Belt Hints
+- Have a toggleable alternative view that shows belt numbers insead of item numbers on item buttons
+- Will be changeable by button and keyboard shortcut
+- Item buttons will display the number as well as the belt that is used for the calculation
+- Belt used will be a preference that applies globally
+
+[F7] Inserter Hints
+- Show an approximation for how many inserters are needed for every item (probably on tooltip)
+- Might show a different metric, like item/s, as inserter throughput is hard to approximate
+
+[F8] Dealing with Byproducts
+- Have ability to add recipes that use byproducts as inputs and get incorporated in the calculations
+- First step should be solvable without a new calculation model
+
+[F9] Bring Subfactories Together
+- New view that presents an idealized view of your factory (maybe multiple of those views)
+- Let's the user set production goals, and raw resources or planned subfactories as inputs
+- Useful as a high-level overview to see what you currently got
+
+[F10] Net Energy Calculation
+- Gives you the net energy output of a specified subfactory
+- Set up a normal production line, with the addition of an energy producer consuming your product
+- Might consider inserter energy usage as well

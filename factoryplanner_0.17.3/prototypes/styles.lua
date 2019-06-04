@@ -4,7 +4,6 @@ data.raw["gui-style"]["default"]["fp_footer_filler"] = {
     graphical_set = data.raw["gui-style"]["default"]["draggable_space"].graphical_set,
     use_header_filler = false,
     horizontally_stretchable = "on"
-
     --left_margin = data.raw["gui-style"]["default"]["draggable_space"].left_margin,
     --right_margin = data.raw["gui-style"]["default"]["draggable_space"].right_margin,
 }

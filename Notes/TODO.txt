@@ -1,32 +1,18 @@
 TODO New Features:
-! Add a proper way to deal with byproducts
-- Choose favorite fuel that gets added on burner recipes [N1]
-- Indication of how many belts/inserters are needed
-? Add some keyboard shortcuts
+- Calculate with machines as input instead of products
+- Support steam generation recipes
 
 
 TODO Feature Improvements:
+- Add a linebreak to production table if window width is exceeded
+- Improve number formating (vary precision on use case, avoid scientific notation) (see base.util!)
+- Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
+- Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
 TODO Code Improvements:
-- Add picker tooltips that explain status of hovered item/recipe (needs better all_items data structure)
-  (might be helped by indexing all items regardless of type, and proving the index and a type+name index)
-  (recipe sprite detecting for custom recipes might be streamlined too with better prototype definitions)
-- Add a linebreak to production table if window width is exceeded
-- Improve number formating (vary precision on use case, avoid scientific notation) (see base.util!)
-- Re-organize and consolidate styles.lua, redo style choices for subfactory_bar from the ground up
-- Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
+- identify all gui elements by unique id or sth, not by string splitting.
+- identify item, recipes and machines by id, not name
 
 
 TODO Bug Fixes:
-
-
-TODO Post-Launch:
-! Import/Export of one/all subfactories (and parts of them?)
-! Module+Beacon-support
-- Better multiplayer support (ex. shared subfactories)
-? Ability to calculate based on number of machines instead of amount
-? Localisations (DE, FR, others)
-? FNEI-links (alt-click?) (needs API from FNEI-author, might already exist)
-? Support fluid mining/steam generation recipes
-? Add more and/or custom timescales
