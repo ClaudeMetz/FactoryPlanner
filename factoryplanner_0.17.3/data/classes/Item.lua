@@ -11,7 +11,7 @@ function Item.init(base_item, item_type, class, amount)
         valid = true,
         class = class
     }
-
+    
     if item_type then item.type = item_type
     else item.type = base_item.type end
 
@@ -19,6 +19,9 @@ function Item.init(base_item, item_type, class, amount)
 end
 
 function Item.update_validity(self)
-    self.valid = (global.all_items[self.type][self.name] ~= nil)
+    -- Check entity ores in assembly lines correctly
+    local type = (self.type == "entity") and "item" or self.type
+
+    self.valid = (global.all_items[type][self.name] ~= nil)
     return self.valid
 end
