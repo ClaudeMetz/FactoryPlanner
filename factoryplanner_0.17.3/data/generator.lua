@@ -211,9 +211,7 @@ end
 -- Returns the names of the 'machines' that shouldn't be included
 local function undesirable_machines()
     return {
-        ["character"] = false,
-        ["escape-pod-assembler"] = false,
-        ["farl_player"] = false
+        ["escape-pod-assembler"] = false
     }
 end
 
@@ -245,7 +243,7 @@ function generator.all_machines()
 
     local undesirables = undesirable_machines()
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.crafting_categories and undesirables[proto.name] == nil then
+        if proto.crafting_categories and proto.energy_usage ~= nil and undesirables[proto.name] == nil then
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then generate_category_entry(category, proto) end
             end
