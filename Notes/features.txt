@@ -49,3 +49,10 @@
 - Gives you the net energy output of a specified subfactory
 - Set up a normal production line, with the addition of an energy producer consuming your product
 - Might consider inserter energy usage as well
+
+[F11] Calculate based on #machines
+- Use a number of machines per item as basis for calculation
+- Making it a setting only on top level products should make it easier
+- Should probably be implemented as a mode switch that automatically converts the values overview
+- Switching should preserve the most accurate value used in case you switch back
+- Might not be easy to incorporate into calc as it overwrites machines

@@ -1,5 +1,4 @@
 TODO New Features:
-- Calculate with machines as input instead of products
 - Support steam generation recipes
 
 

@@ -31,7 +31,7 @@ data:extend({
         type = "bool-setting",
         name = "fp_show_disabled_recipe",
         setting_type = "runtime-per-user",
-        default_value = true,
+        default_value = false,
         order = "d",
         localised_name = {"mod-setting-name.fp_show_disabled_recipe"},
         localised_description = {"mod-setting-description.fp_show_disabled_recipe"}

@@ -2,9 +2,9 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Now remembers your recipe-filter preferences
   Changes:
-    -
+    - The setting 'Show disabled recipes' is now unchecked by default
   Bugfixes:
     - 
 
