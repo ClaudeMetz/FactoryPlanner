@@ -37,6 +37,16 @@ function open_recipe_picker_dialog(flow_modal_dialog)
 end
 
 
+-- Reacts to either the disabled or hidden radiobutton being pressed
+function handle_filter_radiobutton_click(player, type, state)
+    local player_table = global.players[player.index]
+
+    -- Remember the user selection for this type of filter
+    player_table.recipe_filter_preferences[type] = state
+
+    picker.apply_filter(player, "recipe", false, get_search_function(player_table.selected_object))
+end
+
 -- Reacts to a picker recipe button being pressed
 function handle_picker_recipe_click(player, button)
     local player_table = global.players[player.index]
@@ -54,39 +64,33 @@ end
 -- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
 function run_preliminary_checks(player, product_name, search_function)
+    local player_table = global.players[player.index]
+
     -- First determine all relevant recipes and the amount in each category (enabled and hidden)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
-    local hidden_recipes_count = 0
-    local disabled_hidden_recipes_count = 0
     for _, recipe in pairs(global.all_recipes[player.force.name]) do
         if search_function(recipe, product_name) and recipe.category ~= "handcrafting" then
             table.insert(relevant_recipes, recipe)
             if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
-            if recipe.hidden then hidden_recipes_count = hidden_recipes_count + 1 end
-            if not recipe.enabled and recipe.hidden then disabled_hidden_recipes_count = disabled_hidden_recipes_count + 1 end
         end
     end
     
-    -- Set filters to the minimum that still shows at least one recipe if one exists
-    -- This is probably stupidly done and could be simplified, I just can't work out how right now
-    local show = {disabled = false, hidden = false, message = nil}
-    if (#relevant_recipes - disabled_recipes_count - hidden_recipes_count + disabled_hidden_recipes_count) == 0 then
-        show.disabled = true
-        if disabled_recipes_count - disabled_hidden_recipes_count == 0 then
-            show.hidden = true
-        end
+    -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
+    local user_prefs = player_table.recipe_filter_preferences
+    local show = {disabled = user_prefs.disabled, hidden = user_prefs.hidden, message = nil}
+    if not user_prefs.disabled and (#relevant_recipes - disabled_recipes_count) == 0 then
+        show.disabled = true  -- avoids showing no recipes if there are some disabled ones
     end
     
     -- Return result, format: return recipe, error-message, show
-    local show_disabled_recipe = global.players[player.index].settings.show_disabled_recipe
     if #relevant_recipes == 0 then
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
         local recipe = relevant_recipes[1]
         if recipe.enabled then
             return recipe, nil, show
-        elseif not show_disabled_recipe then
+        elseif not player_table.settings.show_disabled_recipe then
             show.message={string={"label.hint_disabled_recipe"}, type="hint"}
             return recipe, nil, show
         else

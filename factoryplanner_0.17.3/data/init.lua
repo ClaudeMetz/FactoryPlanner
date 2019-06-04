@@ -83,6 +83,7 @@ function reset_gui_state(player)
     player_table.modal_data = nil  -- Data that can be set for a modal dialog to use
     player_table.current_activity = nil  -- The current unique main dialog activity
     player_table.queued_message = nil  -- The next general message to be displayed
+    player_table.recipe_filter_preferences = {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     player_table.context = data_util.context.create(player)  -- The currently displayed set of data
 end
 

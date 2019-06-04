@@ -98,9 +98,13 @@ end)
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
 
-    -- Applies the appropriate filter to a picker dialog
-    if string.find(event.element.name, "^fp_checkbox_picker_filter_condition_%l+$") then
-        picker.apply_filter(player, "recipe", false, get_search_function(global.players[player.index].selected_object))
+    -- Applies the disabled filter to a picker dialog
+    if event.element.name == "fp_checkbox_picker_filter_condition_disabled" then
+        handle_filter_radiobutton_click(player, "disabled", event.element.state)
+
+    -- Applies the hidden filter to a picker dialog
+    elseif event.element.name == "fp_checkbox_picker_filter_condition_hidden" then
+        handle_filter_radiobutton_click(player, "hidden", event.element.state)
     end
 end)
 
