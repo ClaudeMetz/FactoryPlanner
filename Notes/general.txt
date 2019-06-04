@@ -3,7 +3,7 @@ API Changes:
 - (asked) event for start_hover and stop_hover over elements or buttons only
 
 Bugs:
-- () Textfields with .horizontal_align = "center" have their cursor in the wrong place often
+- (meh) Textfields with .horizontal_align = "center" have their cursor in the wrong place often
 
 
 [N1] Items useable as fuel in burners
@@ -13,3 +13,9 @@ Bugs:
   https://lua-api.factorio.com/latest/LuaItemPrototype.html#LuaItemPrototype.fuel_category
   [21:38] L0771: game.item_prototypes[item].fuel_value and game.item_prototypes[item].fuel_category
 - Need to handle special case of burner burning fuel also producing said fuel (mining drills mining coal)
+
+[N2] Linear calculation for recipes
+- http://kirkmcdonald.github.io/posts/calculation.html
+
+[N3] Calculation interface explanation
+- https://gist.github.com/alercah/f285ca050b8857768e0b30188e3edd51

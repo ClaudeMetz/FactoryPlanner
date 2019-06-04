@@ -32,7 +32,7 @@ split_old_version[-1] = str(int(split_old_version[-1]) + 1)
 new_version = ".".join(split_old_version)
 
 # Bump mod folder version
-new_mod_folder_path = Path(MODNAME, MODNAME + "_" + new_version)
+new_mod_folder_path = (cwd / MODNAME / (MODNAME + "_" + new_version))
 mod_folder_path.rename(new_mod_folder_path)
 print("- mod folder version bumped")
 
@@ -89,8 +89,8 @@ print("- changelog updated for release")
 tmp_license_path = new_mod_folder_path / "LICENSE.md"
 shutil.copy(str(cwd / MODNAME / "LICENSE.md"), str(tmp_license_path))
 zipfile_path = Path(cwd, MODNAME, "Releases", MODNAME + "_" + new_version)
-shutil.make_archive(zipfile_path, "zip", new_mod_folder_path)
-(tmp_license_path).unlink()
+shutil.make_archive(str(zipfile_path), "zip", str(cwd / MODNAME), str(new_mod_folder_path.parts[-1]))
+tmp_license_path.unlink()
 print("- zip archive created")
 
 # Commit and push to GitHub
