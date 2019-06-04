@@ -195,8 +195,7 @@ function create_machine_button(gui_table, line, name, count, name_appendage)
     local machine = global.all_machines[line.recipe_category].machines[name]
     local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id
       .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe", 
-      mouse_button_filter={"left"}}
-    button.number = math.ceil(count)
+      mouse_button_filter={"left"}, number=math.ceil(count)}
     button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)}
 end
 
@@ -400,7 +399,7 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
                             name = machine.name,
                             tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
                             sprite = "entity/" .. machine.name,
-                            number = count
+                            number = math.ceil(count)
                         }
                     end
 

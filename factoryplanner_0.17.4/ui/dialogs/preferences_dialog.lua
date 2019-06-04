@@ -38,7 +38,7 @@ function refresh_preferences_dialog(player)
         if #data.order > 1 then
             table_all_machines.add{type="label", name="label_" .. category, caption="'" .. category .. "':    "}
             local table_machines = table_all_machines.add{type="table", name="table_machines:" .. category,
-              column_count=12}
+              column_count=8}
             for _, machine_name in ipairs(data.order) do
                 local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_preferences_machine_"
                   .. category .. "_" .. machine_name, sprite="entity/" .. machine_name, mouse_button_filter={"left"}}
