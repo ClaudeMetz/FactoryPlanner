@@ -56,6 +56,7 @@ function generator.all_recipes(reset)
                     local recipe = mining_recipe()
                     recipe.name = "impostor-" .. proto.name
                     recipe.localised_name = proto.localised_name
+                    recipe.order = proto.order
                     recipe.category = proto.resource_category
                     -- Set energy to mining time so the forumla for the machine_count works out
                     recipe.energy = proto.mineable_properties.mining_time
@@ -63,8 +64,8 @@ function generator.all_recipes(reset)
                     local products = proto.mineable_properties.products
                     recipe.products = products
                     if #products == 1 then recipe.type = products[1].type end
-                    recipe.order = proto.order
 
+                    -- Add mining fluid, if required
                     if proto.mineable_properties.required_fluid then
                         table.insert(recipe.ingredients, {
                             type = "fluid",
@@ -76,7 +77,21 @@ function generator.all_recipes(reset)
 
                     recipes[force_name][recipe.name] = recipe
                 end
+                
 
+                -- Adds a recipe for producing (vanilla) steam
+                local recipe = mining_recipe()
+                recipe.name = "impostor-steam"
+                recipe.localised_name = {"fluid-name.steam"}   -- official locale
+                recipe.category = "steam"
+                recipe.type = "entity"
+                recipe.order = "z"
+                recipe.energy = 1
+                recipe.ingredients = {{type="fluid", name="water", amount=60}}
+                recipe.products = {{type="fluid", name="steam", amount=60}}
+                recipes[force_name][recipe.name] = recipe
+
+                    
                 -- Adds unconditional extraction, like water pumps. Not sure if necessary/useful yet.
                 --[[ if proto.fluid then
                     local recipe = base_recipe()
@@ -101,7 +116,7 @@ function generator.all_recipes(reset)
                 hidden = false,
                 energy = 0,
                 group = {name="intermediate_products", order="c"},
-                subgroup = {name="science-pack", order="g"},
+                subgroup = {name="science-pack", order="z"},
                 order = "k[fp-space-science-pack]",
                 ingredients = {
                     {type="item", name="rocket-part", amount=100},
@@ -151,7 +166,9 @@ local function undesirable_items()
             ["angels-plate-iron"] = false,
             ["angels-plate-copper"] = false,
             ["angels-wire-copper"] = false,
-            ["angels-plate-steel"] = false
+            ["angels-plate-steel"] = false,
+            
+            ["void"] = false
         },
         types = {
             ["blueprint"] = false,
@@ -224,21 +241,23 @@ function generator.all_machines()
             categories[category] = {machines = {}, order = {}}
         end
         local data = categories[category]
+        table.insert(data["order"], proto.name)
         
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local burner = proto.burner_prototype and true or false
-        table.insert(data["order"], proto.name)
+        local energy = proto.energy_usage or proto.max_energy_usage
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
             ingredient_count = proto.ingredient_count,
             speed = speed,
-            energy = proto.energy_usage,
+            energy = energy,
             burner = burner,
             position = #data["order"]
         }
         data["machines"][proto.name] = machine
+        return machine
     end
 
     local undesirables = undesirable_machines()
@@ -259,6 +278,27 @@ function generator.all_machines()
                     if category == "basic-solid" then
                         if not proto.burner_prototype then generate_category_entry("complex-solid", proto) end
                     end
+                end
+            end
+        end
+
+        -- Adds machines that produce steam
+        for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
+            if fluidbox.production_type == "output" and fluidbox.filter
+              and fluidbox.filter.name == "steam" then
+                -- Exclude any boilers that use heat as their energy source
+                if proto.burner_prototype or proto.electric_energy_source_prototype then
+                    local machine = generate_category_entry("steam", proto)
+
+                    -- Find the corresponding input fluidbox
+                    local input_fluidbox = nil
+                    for _, fb in ipairs(proto.fluidbox_prototypes) do
+                        if fb.production_type == "input-output" then input_fluidbox = fb end
+                    end
+                    
+                    temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
+                    energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
+                    machine.speed = machine.energy / energy_per_unit
                 end
             end
         end

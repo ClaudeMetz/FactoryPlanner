@@ -55,4 +55,10 @@
 - Making it a setting only on top level products should make it easier
 - Should probably be implemented as a mode switch that automatically converts the values overview
 - Switching should preserve the most accurate value used in case you switch back
+- Have it switch all of them or only select ones, creating a mix of both? Might be too complicated
 - Might not be easy to incorporate into calc as it overwrites machines
+
+[F12] Floor library
+- Have a library that the user can fill with floors to be re-used in subfactories
+- Create them there (?) or include existing ones, then plop them into place
+- Might be linked with canonical version, so changes carry over (probably needs to be case-by-case)
