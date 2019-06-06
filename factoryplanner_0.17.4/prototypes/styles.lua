@@ -40,6 +40,27 @@ data.raw["gui-style"].default["fp_subfactory_sprite_button"] = {
     height = 38
 }
 
+data.raw["gui-style"].default["fp_view_selection_button"] = {
+    type = "button_style",
+    parent = "button",
+    width = 90,
+    clicked_vertical_offset = 0
+}
+
+data.raw["gui-style"].default["fp_view_selection_button_pressed"] = {
+    type = "button_style",
+    parent = "fp_view_selection_button",
+    default_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+    hovered_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+    left_click_sound = {}
+}
+
 data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
     type = "button_style",
     parent = "fp_button_icon_large_blank",
@@ -54,6 +75,11 @@ data.raw["gui-style"].default["fp_scroll_pane_items"] = {
     maximal_height = 124,
     left_margin = 12,
     right_padding = 12
+}
+
+data.raw["gui-style"].default["fp_preferences_title_label"] = {
+    type = "label_style",
+    font = "fp-font-bold-15p"
 }
 
 

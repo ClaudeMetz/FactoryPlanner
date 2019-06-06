@@ -78,6 +78,18 @@ function data_util.run_invalid_dataset_removal(player, parent, classes, attempt_
     end
 end
 
+-- Updates the preferred belt, preventing it from being invalid
+function data_util.update_preferred_belt(player)
+    local player_table = global.players[player.index]
+    if global.all_belts[player_table.preferred_belt_name] == nil then
+        -- Select the first available belt as the new preferred one
+        for name, _ in pairs(global.all_belts) do
+            player_table.preferred_belt_name = name
+            break
+        end
+    end
+end
+
 -- Following are a couple helper functions for populating (sub)factories
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)

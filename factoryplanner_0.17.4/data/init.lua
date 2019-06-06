@@ -19,6 +19,7 @@ function global_init()
     global.all_items = generator.all_items()
     -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
+    global.all_belts = generator.all_belts()
 
     global.devmode = true
     global.margin_of_error = 1e-10
@@ -38,6 +39,8 @@ function player_init(player)
 
         player_table.default_machines = {}
         data_util.machines.update_default(player)
+        player_table.preferred_belt_name = nil
+        data_util.update_preferred_belt(player)
 
         -- Creates recipes if there are none for the force of this player
         global.all_recipes = generator.all_recipes(false)
@@ -72,6 +75,7 @@ function reload_settings(player)
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.show_hints = settings["fp_show_hints"].value
     settings_table.show_disabled_recipe = settings["fp_show_disabled_recipe"].value
+    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
 end
 
 -- (Re)sets the GUI state of the given player
@@ -82,6 +86,7 @@ function reset_gui_state(player)
     player_table.selected_object = nil  -- The object relevant for a modal dialog
     player_table.modal_data = nil  -- Data that can be set for a modal dialog to use
     player_table.current_activity = nil  -- The current unique main dialog activity
+    player_table.view_state = nil  -- The state of the production views
     player_table.queued_message = nil  -- The next general message to be displayed
     player_table.recipe_filter_preferences = {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     player_table.context = data_util.context.create(player)  -- The currently displayed set of data
@@ -94,6 +99,7 @@ function handle_configuration_change()
     global.all_items = generator.all_items()
     global.all_recipes = generator.all_recipes(true)
     global.all_machines = generator.all_machines()
+    global.all_belts = generator.all_belts()
 
     for index, player in pairs(game.players) do
         local space_tech = player.force.technologies["space-science-pack"].researched
@@ -109,6 +115,7 @@ function handle_configuration_change()
         attempt_factory_migration(factory)
         Factory.update_validity(factory, player)
         data_util.machines.update_default(player)
+        data_util.update_preferred_belt(player)
 
         for _, subfactory in ipairs(Factory.get_in_order(factory, "Subfactory")) do
             if subfactory.valid then update_calculations(player, subfactory) end

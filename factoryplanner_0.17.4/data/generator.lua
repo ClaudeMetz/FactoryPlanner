@@ -306,3 +306,18 @@ function generator.all_machines()
 
     return categories
 end
+
+-- Generates a table containing all available transport belts
+function generator.all_belts()
+    local belts = {}
+    for _, proto in pairs(game.entity_prototypes) do
+        if proto.type == "transport-belt" then
+            belts[proto.name] = {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                throughput = proto.belt_speed * 480
+            }
+        end
+    end
+    return belts
+end

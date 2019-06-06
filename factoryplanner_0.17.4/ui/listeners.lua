@@ -54,6 +54,12 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     -- Changes the width of the main dialog. so it needs to be refreshed
     elseif event.setting == "fp_subfactory_items_per_row" then
         refresh_main_dialog(player, true)
+
+    -- Refreshes the view selection buttons appropriately
+    elseif event.setting == "fp_view_belts_or_lanes" then
+        ui_util.view_state.refresh(global.players[player.index], true)
+        refresh_production_pane(player)
+
     end
 end)
 
@@ -68,10 +74,17 @@ script.on_event(defines.events.on_research_finished, function(event)
 end)
 
 
--- Fires on pressing of the custom 'Open/Close' shortcut
+-- Fires on pressing of the 'Open/Close' keyboard shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)
     toggle_main_dialog(player)
+end)
+
+-- Fires on pressing of the keyboard shortcut to cycle production views
+script.on_event("fp_cycle_production_views", function(event)
+    local player = game.get_player(event.player_index)
+    ui_util.view_state.change(global.players[player.index], nil)
+    refresh_production_pane(player)
 end)
 
 
@@ -262,6 +275,12 @@ script.on_event(defines.events.on_gui_click, function(event)
             local element_name = string.gsub(event.element.name, "fp_sprite%-button_chooser_element_", "")
             handle_chooser_element_click(player, element_name)
 
+        -- Reacts to a change of the production pane view
+        elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-z0-9-_]+$") then
+            local view_name = string.gsub(event.element.name, "fp_button_production_titlebar_view_", "")
+            ui_util.view_state.change(player_table, view_name)
+            refresh_production_pane(player)
+
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
             local line_id = tonumber(string.match(event.element.name, "%d+"))
@@ -281,6 +300,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_[a-z0-9-]+_[a-z0-9-]+$") then
             local split_string = ui_util.split(event.element.name, "_")
             handle_preferences_machine_change(player, split_string[5], split_string[6])
+
+        -- Reacts to any preferences belt button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_belt_[a-z0-9-_]+$") then
+            local belt_name = string.gsub(event.element.name, "fp_sprite%-button_preferences_belt_", "")
+            handle_preferences_belt_change(player, belt_name)
 
         -- Reacts to any (assembly) line item button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then

@@ -26,15 +26,12 @@
 - Have burners show their fuel consumtion
 - Fuel used will be a preference, but adjustable on each recipe by hand
 
-[F6] Belt Hints
-- Have a toggleable alternative view that shows belt numbers insead of item numbers on item buttons
-- Will be changeable by button and keyboard shortcut
-- Item buttons will display the number as well as the belt that is used for the calculation
-- Belt used will be a preference that applies globally
-
 [F7] Inserter Hints
-- Show an approximation for how many inserters are needed for every item (probably on tooltip)
-- Might show a different metric, like item/s, as inserter throughput is hard to approximate
+- Show an approximation for how many inserters are needed for every item
+- Shown on tooltip for all the desired inserters
+- For products/byproducts, show Machine->Belt and Machine->Chest
+- For Ingredients, show Belt->Machine and Chest->Machine
+- Might be hard to calculate, an approximation should be fine though
 
 [F8] Dealing with Byproducts
 - Have ability to add recipes that use byproducts as inputs and get incorporated in the calculations
@@ -56,7 +53,6 @@
 - Should probably be implemented as a mode switch that automatically converts the values overview
 - Switching should preserve the most accurate value used in case you switch back
 - Have it switch all of them or only select ones, creating a mix of both? Might be too complicated
-- Might not be easy to incorporate into calc as it overwrites machines
 
 [F12] Floor library
 - Have a library that the user can fill with floors to be re-used in subfactories

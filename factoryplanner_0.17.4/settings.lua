@@ -35,5 +35,15 @@ data:extend({
         order = "d",
         localised_name = {"mod-setting-name.fp_show_disabled_recipe"},
         localised_description = {"mod-setting-description.fp_show_disabled_recipe"}
+    },
+    {
+        type = "string-setting",
+        name = "fp_view_belts_or_lanes",
+        setting_type = "runtime-per-user",
+        default_value = "Belts",
+        allowed_values = {"Belts", "Lanes"},
+        order = "e",
+        localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
+        localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
     }
 })
