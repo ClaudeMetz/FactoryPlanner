@@ -43,6 +43,7 @@ end)
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local player = game.get_player(event.player_index)
+    local player_table = global.players[player.index]
 
     -- Reload all user mod settings
     reload_settings(player)
@@ -57,7 +58,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
     -- Refreshes the view selection buttons appropriately
     elseif event.setting == "fp_view_belts_or_lanes" then
-        ui_util.view_state.refresh(global.players[player.index], true)
+        reload_settings(player)
+        ui_util.view_state.refresh(player_table, true)
         refresh_production_pane(player)
 
     end

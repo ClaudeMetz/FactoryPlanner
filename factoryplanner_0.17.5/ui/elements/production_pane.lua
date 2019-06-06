@@ -84,31 +84,38 @@ function refresh_production_pane(player)
     if not flow_production then return end
 
     local table_titlebar = flow_production["table_production_titlebar"]
+    table_titlebar.visible = false
+
     local player_table = global.players[player.index]
     local subfactory = player_table.context.subfactory
-    local floor = player_table.context.floor
-
+    
     -- Configure Floor labels and buttons
-    if subfactory ~= nil and subfactory.valid and floor.Line.count > 0 then
-        table_titlebar["label_production_titlebar_level"].caption = {"", {"label.level"}, " ", floor.level, "  "}
-        table_titlebar["table_production_titlebar_navigation"].visible = (floor.level > 1)
-    end
+    if subfactory ~= nil and subfactory.valid then
+        table_titlebar.visible = true
 
-    -- Configure view buttons
-    if player_table.view_state == nil then ui_util.view_state.refresh(player_table) end
-    local table_view = table_titlebar["table_production_titlebar_view_selection"]
-
-    for _, view in ipairs(player_table.view_state) do
-        local button = table_view["fp_button_production_titlebar_view_" .. view.name]
-        if view.name == "belts_or_lanes" then
-            local flow = button["flow_belts_or_lanes"]
-            flow["label_belts_or_lanes"].caption = view.caption
-            flow["sprite_belts_or_lanes"].sprite = "entity/" .. player_table.preferred_belt_name
-        else
-            button.caption = view.caption
+        local floor = player_table.context.floor
+        if floor.Line.count > 0 then
+            table_titlebar["label_production_titlebar_level"].caption = {"", {"label.level"}, " ", floor.level, "  "}
         end
-        button.enabled = view.enabled
-        button.style = view.selected and "fp_view_selection_button_pressed" or "fp_view_selection_button"
+        table_titlebar["table_production_titlebar_navigation"].visible = (floor.level > 1)
+
+        -- Configure view buttons
+        local table_view = table_titlebar["table_production_titlebar_view_selection"]
+        table_view.visible = (floor.Line.count > 0)
+        
+        if player_table.view_state == nil then ui_util.view_state.refresh(player_table) end
+        for _, view in ipairs(player_table.view_state) do
+            local button = table_view["fp_button_production_titlebar_view_" .. view.name]
+            if view.name == "belts_or_lanes" then
+                local flow = button["flow_belts_or_lanes"]
+                flow["label_belts_or_lanes"].caption = view.caption
+                flow["sprite_belts_or_lanes"].sprite = "entity/" .. player_table.preferred_belt_name
+            else
+                button.caption = view.caption
+            end
+            button.enabled = view.enabled
+            button.style = view.selected and "fp_view_selection_button_pressed" or "fp_view_selection_button"
+        end
     end
 
     refresh_production_table(player)
@@ -261,7 +268,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             end
 
             local number = nil
-            local view = ui_util.view_state.get_selected(player_table)
+            local view = ui_util.view_state.selected_state(player_table)
             if view.name == "items_per_timescale" then
                 number = item.amount
             elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
