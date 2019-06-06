@@ -72,6 +72,7 @@ function handle_subfactory_timescale_change(player, timescale)
     if player_table.current_activity == "changing_timescale" then
         local subfactory = player_table.context.subfactory
         subfactory.timescale = timescale
+        ui_util.view_state.refresh(player_table, true)
         player_table.current_activity = nil
         update_calculations(player, subfactory)
     else

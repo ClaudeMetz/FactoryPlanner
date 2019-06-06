@@ -194,6 +194,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
                 subfactory.selected_floor = Subfactory.get(subfactory, "Floor", 1)
             end
             
+            ui_util.view_state.refresh(player_table, true)
             player_table.current_activity = nil
             refresh_main_dialog(player)
 
