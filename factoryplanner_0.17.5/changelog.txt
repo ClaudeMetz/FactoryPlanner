@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.5
+Date: 06. 06. 2019
   Features:
     - Added support for 3 different production views: Items/timescale, Belts or Lanes, and Items/s
     - Added recipes for producing steam
