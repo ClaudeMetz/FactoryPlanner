@@ -21,7 +21,7 @@ function global_init()
     global.all_machines = generator.all_machines()
     global.all_belts = generator.all_belts()
 
-    global.devmode = true
+    --global.devmode = true
     global.margin_of_error = 1e-10
 end
 
@@ -69,12 +69,13 @@ end
 
 -- Writes the current user mod settings to their player_table
 function reload_settings(player)
-    local settings = settings.get_player_settings(player)
+    global.players[player.index].settings = {}
     local settings_table = global.players[player.index].settings
-
+    
+    local settings = settings.get_player_settings(player)
+    settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.show_hints = settings["fp_show_hints"].value
-    settings_table.show_disabled_recipe = settings["fp_show_disabled_recipe"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
 end
 
@@ -88,7 +89,8 @@ function reset_gui_state(player)
     player_table.current_activity = nil  -- The current unique main dialog activity
     player_table.view_state = nil  -- The state of the production views
     player_table.queued_message = nil  -- The next general message to be displayed
-    player_table.recipe_filter_preferences = {disabled = false, hidden = false}  -- The preferred state of both recipe filters
+    player_table.recipe_filter_preferences = 
+      {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     player_table.context = data_util.context.create(player)  -- The currently displayed set of data
 end
 
@@ -105,6 +107,8 @@ function handle_configuration_change()
         local space_tech = player.force.technologies["space-science-pack"].researched
         if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
 
+        reload_settings(player)
+
         player_reset(player)
         player_gui_reset(player)
 
@@ -114,6 +118,7 @@ function handle_configuration_change()
         local factory = global.players[player.index].factory
         attempt_factory_migration(factory)
         Factory.update_validity(factory, player)
+
         data_util.machines.update_default(player)
         data_util.update_preferred_belt(player)
 

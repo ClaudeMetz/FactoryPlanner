@@ -34,6 +34,7 @@ end
 
 -- Replaces the dataset with the new object in-place
 function Collection.replace(self, dataset, object)
+    object.parent = dataset.parent
     object.id = dataset.id
     object.gui_position = dataset.gui_position
     self.datasets[dataset.id] = object

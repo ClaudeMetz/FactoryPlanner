@@ -58,8 +58,6 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
     -- Refreshes the view selection buttons appropriately
     elseif event.setting == "fp_view_belts_or_lanes" then
-        reload_settings(player)
-        ui_util.view_state.refresh(player_table, true)
         refresh_production_pane(player)
 
     end
@@ -85,7 +83,7 @@ end)
 -- Fires on pressing of the keyboard shortcut to cycle production views
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
-    ui_util.view_state.change(global.players[player.index], nil)
+    change_view_state(player, nil)
     refresh_production_pane(player)
 end)
 
@@ -280,7 +278,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a change of the production pane view
         elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-z0-9-_]+$") then
             local view_name = string.gsub(event.element.name, "fp_button_production_titlebar_view_", "")
-            ui_util.view_state.change(player_table, view_name)
+            change_view_state(player, view_name)
             refresh_production_pane(player)
 
         -- Reacts to the recipe button on an (assembly) line being pressed

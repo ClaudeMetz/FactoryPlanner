@@ -88,14 +88,10 @@ function run_preliminary_checks(player, product_name, search_function)
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
         local recipe = relevant_recipes[1]
-        if recipe.enabled then
-            return recipe, nil, show
-        elseif not player_table.settings.show_disabled_recipe then
+        if not recipe.enabled then  -- Show hint if adding unresearched recipe
             show.message={string={"label.hint_disabled_recipe"}, type="hint"}
-            return recipe, nil, show
-        else
-            return nil, nil, show
         end
+        return recipe, nil, show
     else  -- 2+ relevant recipes
         return nil, nil, show
     end

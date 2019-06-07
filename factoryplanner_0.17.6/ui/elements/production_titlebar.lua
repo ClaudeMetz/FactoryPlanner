@@ -83,37 +83,40 @@ end
 
 -- Refreshes the production pane (titlebar + table)
 function refresh_production_pane(player)
-    local flow_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
-     -- Cuts function short if the production pane hasn't been initialized yet
-    if not flow_production then return end
-
-    local table_titlebar = flow_production["table_production_titlebar"]
-    table_titlebar.visible = false
+    local main_dialog = player.gui.center["fp_frame_main_dialog"]
+    -- Cuts function short if the approriate GUI's haven't been initialized yet
+    if not (main_dialog and main_dialog["flow_production_pane"]) then return end
 
     local player_table = global.players[player.index]
     local subfactory = player_table.context.subfactory
-    
-    -- Configure Floor labels and buttons
-    if subfactory ~= nil and subfactory.valid then
-        table_titlebar.visible = true
 
+    local table_titlebar = main_dialog["flow_production_pane"]["table_production_titlebar"]
+    local table_view = table_titlebar["table_production_titlebar_view_selection"]
+    -- Only show the titlebar if a valid subfactory is shown
+    table_titlebar.visible = (subfactory ~= nil and subfactory.valid)
+
+    -- Configure Floor labels and buttons
+    if subfactory ~= nil and subfactory.valid then        
         local floor = player_table.context.floor
+
+        table_titlebar["table_production_titlebar_navigation"].visible = (floor.level > 1)
         if floor.Line.count > 0 then
             table_titlebar["label_production_titlebar_level"].caption = {"", {"label.level"}, " ", floor.level, "  "}
         end
-        table_titlebar["table_production_titlebar_navigation"].visible = (floor.level > 1)
 
         -- Configure view buttons
-        local table_view = table_titlebar["table_production_titlebar_view_selection"]
         table_view.visible = (floor.Line.count > 0)
         
-        if player_table.view_state == nil then ui_util.view_state.refresh(player_table) end
+        -- Update the dynamic parts of the view state buttons
+        refresh_view_state(player_table, subfactory)
         for _, view in ipairs(player_table.view_state) do
             local button = table_view["fp_button_production_titlebar_view_" .. view.name]
+
             if view.name == "belts_or_lanes" then
                 local flow = button["flow_belts_or_lanes"]
                 flow["label_belts_or_lanes"].caption = view.caption
                 flow["sprite_belts_or_lanes"].sprite = "entity/" .. player_table.preferred_belt_name
+                flow.style.left_padding = (player_table.settings.belts_or_lanes == "Belts") and 6 or 4
             else
                 button.caption = view.caption
             end
@@ -148,4 +151,90 @@ function handle_floor_change_click(player, destination)
 
     update_calculations(player, subfactory)
     refresh_production_pane(player)
+end
+
+
+-- Refreshes the current view state
+function refresh_view_state(player_table, subfactory)
+    local timescale = ui_util.format_timescale(subfactory.timescale, true)
+    local view_state = {
+        [1] = {
+            name = "items_per_timescale",
+            caption = {"", {"button-text.items"}, "/", timescale},
+            enabled = true,
+            selected = true
+        },
+        [2] = {
+            name = "belts_or_lanes",
+            caption = (player_table.settings.belts_or_lanes == "Belts") 
+                and {"button-text.belts"} or {"button-text.lanes"},
+            enabled = true,
+            selected = false
+        },
+        [3] = {
+            name = "items_per_second",
+            caption = {"", {"button-text.items"}, "/s"},
+            enabled = (timescale ~= "s"),
+            selected = false
+        },
+        selected_view_id = 1
+    }
+
+    -- Conserves the selection state from the previous view_state, if available
+    if player_table.view_state ~= nil then
+        local id_to_select = nil
+        for i, view in ipairs(player_table.view_state) do
+            if view.selected then id_to_select = i
+            else view_state[i].selected = false end
+        end
+        correct_view_state(view_state, id_to_select)
+    end
+
+    player_table.view_state = view_state
+end
+
+-- Sets the current view to the given view (If no view if provided, it sets it to the next enabled one)
+function change_view_state(player, view_name)
+    local player_table = global.players[player.index]
+
+    -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
+    local main_dialog = player.gui.center["fp_frame_main_dialog"]
+    if not main_dialog then return end
+    local table_view_selection = main_dialog["flow_production_pane"]["table_production_titlebar"]
+      ["table_production_titlebar_view_selection"]
+    if not (main_dialog["flow_production_pane"] and main_dialog["flow_production_pane"]["table_production_titlebar"]
+     and table_view_selection) then return end
+
+    -- Only change the view_state if it exists and is visible
+    if player_table.view_state ~= nil and table_view_selection.visible == true then
+        local id_to_select = nil
+        for i, view in ipairs(player_table.view_state) do
+            -- Move selection on by one if no view_name is provided
+            if view_name == nil and view.selected then
+                view.selected = false
+                id_to_select = (i % #player_table.view_state) + 1
+                break
+
+            else
+                -- Otherwise, select the given view
+                if view.name == view_name then id_to_select = i
+                else view.selected = false end
+            end
+        end
+        correct_view_state(player_table.view_state, id_to_select)
+    end
+end
+
+-- Moves on the selection until it is on an enabled state (at least 1 view needs to be enabled)
+function correct_view_state(view_state, id_to_select)
+    while true do
+        view = view_state[id_to_select]
+        if view.enabled then
+            view.selected = true
+            view_state.selected_view_id = id_to_select
+            break
+        else
+            id_to_select = (id_to_select % #view_state) + 1
+        end
+    end
 end
