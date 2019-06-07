@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Bugfixes:
+    - Fixed crash when hitting TAB before you opened the interface for the first time
+    - Fixed belt icon being oversized on the views selection
+    - Fixed crash related to machines that produce steam
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.6
 Date: 06. 06. 2019
   Bugfixes:

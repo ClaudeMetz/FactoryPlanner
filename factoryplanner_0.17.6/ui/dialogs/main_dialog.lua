@@ -3,7 +3,8 @@ require("ui.elements.actionbar")
 require("ui.elements.subfactory_bar")
 require("ui.elements.error_bar")
 require("ui.elements.subfactory_pane")
-require("ui.elements.production_pane")
+require("ui.elements.production_titlebar")
+require("ui.elements.production_table")
 
 
 -- Create the always-present GUI button to open the main dialog + devmode setup
