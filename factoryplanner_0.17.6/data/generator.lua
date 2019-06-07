@@ -288,17 +288,23 @@ function generator.all_machines()
               and fluidbox.filter.name == "steam" then
                 -- Exclude any boilers that use heat as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
-                    local machine = generate_category_entry("steam", proto)
-
                     -- Find the corresponding input fluidbox
                     local input_fluidbox = nil
                     for _, fb in ipairs(proto.fluidbox_prototypes) do
-                        if fb.production_type == "input-output" then input_fluidbox = fb end
+                        if fb.production_type == "input-output" or fb.production_type == "input" then
+                            input_fluidbox = fb
+                            break
+                        end
                     end
-                    
-                    temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
-                    energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
-                    machine.speed = machine.energy / energy_per_unit
+
+                    -- Add the machine if it has a valid input fluidbox
+                    if input_fluidbox ~= nil then
+                        local machine = generate_category_entry("steam", proto)
+                        
+                        temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
+                        energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
+                        machine.speed = machine.energy / energy_per_unit
+                    end
                 end
             end
         end

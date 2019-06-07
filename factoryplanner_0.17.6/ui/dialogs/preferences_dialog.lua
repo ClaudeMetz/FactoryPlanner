@@ -15,7 +15,7 @@ function open_preferences_dialog(flow_modal_dialog)
 
     local scroll_pane_all_machines = flow_modal_dialog.add{type="scroll-pane", name="scroll-pane_all_machines", 
       direction="vertical"}
-    scroll_pane_all_machines.style.maximal_height = 650
+    scroll_pane_all_machines.style.maximal_height = 640
     scroll_pane_all_machines.style.horizontally_stretchable = true
     scroll_pane_all_machines.horizontal_scroll_policy = "never"
 

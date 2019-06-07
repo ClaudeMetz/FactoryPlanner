@@ -1,4 +1,5 @@
 TODO New Features:
+- Add an option to show whether machine numbers are perfect or rounded up
 
 
 TODO Feature Improvements:
@@ -11,8 +12,9 @@ TODO Feature Improvements:
 TODO Code Improvements:
 - Use settings consistently everwhere (game settings vs global.settings)
 - Redo the view selection, it's a mess right now
-- identify all gui elements by unique id or sth, not by string splitting.
 - identify item, recipes and machines by id, not name
+- Rework how machines are handled to be less clunky
+? identify all gui elements by unique id or sth, not by string splitting.
 
 
 TODO Bug Fixes:
