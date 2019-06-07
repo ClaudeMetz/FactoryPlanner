@@ -47,7 +47,7 @@ end
 
 -- Toggles the visibility of the toggle-main-dialog-button
 function toggle_button_interface(player)
-    local enable = settings.get_player_settings(player)["fp_display_gui_button"].value
+    local enable = global.players[player.index].settings.show_gui_button
     mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
 end
 

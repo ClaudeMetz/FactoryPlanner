@@ -3,17 +3,15 @@ TODO New Features:
 
 
 TODO Feature Improvements:
-- Add a linebreak to production table if window width is exceeded
 - Improve number formating (vary precision on use case, avoid scientific notation) (see base.util!)
+- Add a linebreak to production table if window width is exceeded
 - Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
 - Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
 TODO Code Improvements:
-- Use settings consistently everwhere (game settings vs global.settings)
-- Redo the view selection, it's a mess right now
-- identify item, recipes and machines by id, not name
 - Rework how machines are handled to be less clunky
+- identify item, recipes and machines by id, not name
 ? identify all gui elements by unique id or sth, not by string splitting.
 
 

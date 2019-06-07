@@ -28,7 +28,7 @@ function refresh_info_pane(player)
           mouse_button_filter={"left"}}
     else            
         -- As unit is limited to presets, timescale will always be displayed as 1
-        local timescale = ui_util.format_timescale(subfactory.timescale)
+        local timescale = ui_util.format_timescale(subfactory.timescale, false)
         local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
         label_timescale.style.font = "default-bold"
         table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
@@ -72,7 +72,6 @@ function handle_subfactory_timescale_change(player, timescale)
     if player_table.current_activity == "changing_timescale" then
         local subfactory = player_table.context.subfactory
         subfactory.timescale = timescale
-        ui_util.view_state.refresh(player_table, true)
         player_table.current_activity = nil
         update_calculations(player, subfactory)
     else

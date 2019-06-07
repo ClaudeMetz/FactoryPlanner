@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
+  Changes:
+    - Removed the 'show disabled recipe' setting
   Bugfixes:
     - Fixed crash when hitting TAB before you opened the interface for the first time
     - Fixed belt icon being oversized on the views selection

@@ -33,7 +33,6 @@ function close_subfactory_dialog(flow_modal_dialog, action, data)
         else
             local subfactory = Factory.add(player_table.factory, Subfactory.init(data.name, data.icon))
             data_util.context.set_subfactory(player, subfactory)
-            ui_util.view_state.refresh(player_table)
         end
     elseif action == "delete" then
         player_table.current_activity = "deleting_subfactory"  -- a bit of a hack
