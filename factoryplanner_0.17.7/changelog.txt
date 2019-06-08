@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Bugfixes:
+    - Fixed a crash on launch
+    - Fixed a crash when entering certain characters into the item search field
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.7
 Date: 08. 06. 2019
   Changes:
