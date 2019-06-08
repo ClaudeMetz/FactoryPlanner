@@ -214,7 +214,7 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if not string.find(object_name, search_term) then
+                    if not string.find(string.lower(object_name), string.lower(search_term), 1, true) then
                         visible = false
                     end
 

@@ -21,7 +21,7 @@ function global_init()
     global.all_machines = generator.all_machines()
     global.all_belts = generator.all_belts()
 
-    ----global.devmode = true
+    --global.devmode = true
     global.margin_of_error = 1e-10
 end
 
@@ -103,17 +103,19 @@ function handle_configuration_change()
     global.all_machines = generator.all_machines()
     global.all_belts = generator.all_belts()
 
+    -- Runs through all players, even new ones (those with no player_table etc)
     for index, player in pairs(game.players) do
         local space_tech = player.force.technologies["space-science-pack"].researched
         if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
 
-        reload_settings(player)
+        -- These two make sure that after them, the player exists for sure
+        player_reset(player)  -- only runs if player exists already
+        player_init(player)  -- only runs if player doesn't exist yet
 
-        player_reset(player)
-        player_gui_reset(player)
+        reload_settings(player)  -- reloads settings for players, old and new
 
-        player_init(player)
-        player_gui_init(player)
+        player_gui_reset(player)  -- Destroys all existing GUI's
+        player_gui_init(player)  -- Initializes some parts of the GUI
 
         local factory = global.players[player.index].factory
         attempt_factory_migration(factory)
