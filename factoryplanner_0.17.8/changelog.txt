@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Changes:
+    - The percentage field on a recipe now properly supports decimals
+  Bugfixes:
+    - Fixed a crash if there was any mining recipe with multiple products
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.8
 Date: 08. 06. 2019
   Bugfixes:

@@ -40,6 +40,19 @@ data.raw["gui-style"].default["fp_subfactory_sprite_button"] = {
     height = 38
 }
 
+data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
+    type = "button_style",
+    parent = "fp_subfactory_sprite_button",
+    default_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+    hovered_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    }
+}
+
 data.raw["gui-style"].default["fp_view_selection_button"] = {
     type = "button_style",
     parent = "button",
@@ -47,7 +60,7 @@ data.raw["gui-style"].default["fp_view_selection_button"] = {
     clicked_vertical_offset = 0
 }
 
-data.raw["gui-style"].default["fp_view_selection_button_pressed"] = {
+data.raw["gui-style"].default["fp_view_selection_button_selected"] = {
     type = "button_style",
     parent = "fp_view_selection_button",
     default_graphical_set = {
@@ -61,12 +74,6 @@ data.raw["gui-style"].default["fp_view_selection_button_pressed"] = {
     left_click_sound = {}
 }
 
-data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
-    type = "button_style",
-    parent = "fp_button_icon_large_blank",
-    height = 38,
-    minimal_width = 0
-}
 
 data.raw["gui-style"].default["fp_scroll_pane_items"] = {
     type = "scroll_pane_style",

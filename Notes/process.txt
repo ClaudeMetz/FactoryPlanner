@@ -8,5 +8,6 @@ MISC:
 - Count LOC: ( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l
 - Delete most recent local commit: git reset --hard HEAD^
 - Force-replace commit on origin/: git push --force origin
-- Merge develop to master: git checkout master; git merge develop; git push origin master; git checkout develop
+- Merge develop to master: git checkout master; git merge develop
+- Add local branch to remote repo: git push -u origin develop
 - Remove local and remote branch: git branch -d develop; git push origin --delete develop

@@ -32,7 +32,7 @@ function generator.all_recipes(reset)
             enabled = true,
             hidden = false,
             group = {name="intermediate_products", order="c"},
-            subgroup = {name="mining", order="z"},
+            subgroup = {name="mining", order="z"}
         }
     end
     
@@ -63,7 +63,6 @@ function generator.all_recipes(reset)
                     recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
                     local products = proto.mineable_properties.products
                     recipe.products = products
-                    if #products == 1 then recipe.type = products[1].type end
 
                     -- Add mining fluid, if required
                     if proto.mineable_properties.required_fluid then
@@ -84,7 +83,6 @@ function generator.all_recipes(reset)
                 recipe.name = "impostor-steam"
                 recipe.localised_name = {"fluid-name.steam"}   -- official locale
                 recipe.category = "steam"
-                recipe.type = "entity"
                 recipe.order = "z"
                 recipe.energy = 1
                 recipe.ingredients = {{type="fluid", name="water", amount=60}}

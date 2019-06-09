@@ -121,7 +121,7 @@ function refresh_production_pane(player)
                 button.caption = view.caption
             end
             button.enabled = view.enabled
-            button.style = view.selected and "fp_view_selection_button_pressed" or "fp_view_selection_button"
+            button.style = view.selected and "fp_view_selection_button_selected" or "fp_view_selection_button"
         end
     end
 
