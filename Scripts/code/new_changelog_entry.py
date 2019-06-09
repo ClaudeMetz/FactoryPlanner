@@ -14,7 +14,7 @@ MODNAME = "factoryplanner"
 mod_path = list(itertools.islice((Path.cwd() / MODNAME).glob(MODNAME + "_*"), 1))[0]
 changelog_path = mod_path / "changelog.txt"
 new_changelog_entry = ("-----------------------------------------------------------------------------------------------"
-                       "----\nVersion: 0.17.00\nDate: 00. 00. 0000\n  Features:\n    - \n  Changes:\n    -\n  Bugfixes:"
+                       "----\nVersion: 0.17.00\nDate: 00. 00. 0000\n  Features:\n    - \n  Changes:\n    - \n  Bugfixes:"
                        "\n    - \n\n")
 with (changelog_path.open("r")) as changelog:
     old_changelog = changelog.readlines()

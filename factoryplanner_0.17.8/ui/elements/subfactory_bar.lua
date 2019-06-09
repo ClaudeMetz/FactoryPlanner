@@ -71,7 +71,7 @@ end
 
 -- Constructs an element of the subfactory bar if there only is a name
 function create_label_element(table, width_remaining, subfactory, selected)
-    local button_width = (#subfactory.name * 9) + 18
+    local button_width = (#subfactory.name * 9) + 20
     if button_width > width_remaining then
         return 0
     else    
@@ -79,20 +79,14 @@ function create_label_element(table, width_remaining, subfactory, selected)
           mouse_button_filter={"left-and-right"}}
         local label = button.add{type="label", name="label_subfactory_" .. subfactory.id, caption=subfactory.name}
 
-        if selected then
-            button.style = "fp_subfactory_sprite_button_selected"
-            button.style.top_padding = 7
-            button.style.left_padding = 9
-        else
-            button.style = "fp_subfactory_sprite_button"
-            label.style.font_color = {}  -- black
-            button.style.top_padding = 4
-            button.style.left_padding = 6
-        end
-
+        button.style = selected and "fp_subfactory_sprite_button_selected" or "fp_subfactory_sprite_button"
         button.style.width = button_width
-        label.ignored_by_interaction = true
+        button.style.top_padding = 4
+        button.style.left_padding = 6
+        
         label.style.font = "fp-font-mono-15p"
+        label.style.font_color = {}  -- black
+        label.ignored_by_interaction = true
         
         return button_width
     end
@@ -106,14 +100,7 @@ function create_sprite_element(table, width_remaining, subfactory, selected)
     else  
         local button = create_sprite_button(table, "fp_sprite-button_subfactory_" .. subfactory.id, subfactory)
 
-        if selected then 
-            button.style = "fp_subfactory_sprite_button_selected"
-            button.style.top_padding = 3
-            button.style.bottom_padding = 3
-        else 
-            button.style = "fp_subfactory_sprite_button"
-        end
-
+        button.style = selected and "fp_subfactory_sprite_button_selected" or "fp_subfactory_sprite_button"
         button.style.width = button_width
         
         return button_width
@@ -122,36 +109,31 @@ end
 
 -- Constructs an element of the subfactory bar if there is both a name and an icon
 function create_label_sprite_element(table, width_remaining, subfactory, selected)
-    local button_width = (#subfactory.name * 9) + 58
+    local button_width = (#subfactory.name * 9) + 60
     if button_width > width_remaining then
         return 0
     else
         local button = table.add{type="sprite-button", name="fp_sprite-button_subfactory_" .. subfactory.id,
           mouse_button_filter={"left-and-right"}}
         local flow = button.add{type="flow", name="flow_subfactory_" .. subfactory.id, direction="horizontal"}
-
         local sprite = create_sprite_button(flow, "sprite_subfactory_" .. subfactory.id, subfactory)
         local label = flow.add{type="label", name="label_subfactory_" .. subfactory.id, caption=subfactory.name}
 
-        if selected then 
-            button.style = "fp_subfactory_sprite_button_selected"
-            flow.style.left_padding = 3
-        else 
-            button.style = "fp_subfactory_sprite_button"
-            label.style.font_color = {}  -- black
-            flow.style.top_padding = -2
-        end
-
+        button.style = selected and "fp_subfactory_sprite_button_selected" or "fp_subfactory_sprite_button"
         button.tooltip = sprite.tooltip
         button.style.width = button_width
-        flow.ignored_by_interaction = true
 
+        flow.ignored_by_interaction = true
+        flow.style.top_padding = -2
+        
         sprite.style = "fp_button_icon_large_blank"
         sprite.style.height = 34
         sprite.style.width = 34
         sprite.style.top_padding = 1
         sprite.style.left_margin = 5
+
         label.style.font = "fp-font-mono-15p"
+        label.style.font_color = {}  -- black
         label.style.top_padding = 5
         label.style.left_padding = 3
 

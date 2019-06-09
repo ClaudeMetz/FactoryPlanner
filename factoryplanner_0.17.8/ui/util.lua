@@ -44,17 +44,19 @@ end
 -- Returns the sprite string of the given recipe
 function ui_util.get_recipe_sprite(player, recipe)
     local sprite = "recipe/" .. recipe.name
+
+    -- Handle custom recipes separately
     if recipe.name == "fp-space-science-pack" then
         sprite = "item/space-science-pack"
     elseif string.find(recipe.name, "^impostor%-[a-z0-9-_]+$") then
-        sprite = recipe.type .. "/" .. recipe.name:gsub("impostor%-", "")
-
-        -- If the mining recipe has no sprite, the sprite of the first product is used instead
-        if not player.gui.is_valid_sprite_path(sprite) then
-            local product = recipe.products[1]
-            sprite = product.type .. "/" .. product.name
+        -- If the impostor recipe has exactly one product, use it's sprite
+        if #recipe.products == 1 then
+            sprite = recipe.products[1].type .. "/" .. recipe.products[1].name
+        else  -- Otherwise (0 or 2+ products), use the first ingredient's sprite
+            sprite = recipe.ingredients[1].type .. "/" .. recipe.ingredients[1].name
         end
     end
+
     return sprite
 end
 

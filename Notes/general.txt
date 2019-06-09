@@ -19,3 +19,6 @@ Bugs:
 
 [N3] Calculation interface explanation
 - https://gist.github.com/alercah/f285ca050b8857768e0b30188e3edd51
+
+[N4] Inserter throughput estimation
+https://mods.factorio.com/mod/SeablockPlanningTools

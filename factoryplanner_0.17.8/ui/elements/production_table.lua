@@ -114,7 +114,7 @@ function create_machine_button(gui_table, line, name, count, name_appendage)
     local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id
       .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe", 
       mouse_button_filter={"left"}, number=math.ceil(count)}
-    button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)}
+    button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4), " ", {"tooltip.machines"}}
 end
 
 -- Creates the flow containing all line items of the given type
@@ -227,8 +227,9 @@ function handle_percentage_change(player, element)
     local new_percentage = tonumber(element.text)  -- returns nil if text is not a number
 
     if new_percentage == nil or new_percentage < 0 then
-        --element.text = line.percentage
         queue_message(player, {"label.error_invalid_percentage"}, "warning")
+    elseif string.find(element.text, "^%d+%.$") then
+        -- Do nothing to allow people to enter decimal numbers
     else
         line.percentage = new_percentage
 
