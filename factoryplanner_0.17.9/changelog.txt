@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.9
+Date: 09. 06. 2019
   Changes:
     - The percentage field on a recipe now properly supports decimals
   Bugfixes:
