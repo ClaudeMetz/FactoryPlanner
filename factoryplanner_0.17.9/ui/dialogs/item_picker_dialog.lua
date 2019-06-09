@@ -67,7 +67,7 @@ end
 
 -- Reacts to a picker item button being pressed
 function handle_picker_item_click(player, button)
-    local flow_modal_dialog = button.parent.parent.parent.parent.parent  -- lol
+    local flow_modal_dialog = button.parent.parent.parent.parent.parent  -- ¯\_(ツ)_/¯
     if button.style.name == "fp_button_icon_medium_disabled" then  -- don't accept duplicate products
         --picker.refresh_warning_label(flow_modal_dialog, {"label.error_duplicate_product"})
     else

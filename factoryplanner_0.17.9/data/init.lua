@@ -21,7 +21,7 @@ function global_init()
     global.all_machines = generator.all_machines()
     global.all_belts = generator.all_belts()
 
-    --global.devmode = true
+    global.devmode = true
     global.margin_of_error = 1e-10
 end
 

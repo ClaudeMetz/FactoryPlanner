@@ -251,7 +251,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_element_click(player, subfactory_id, click, direction)
             
-            -- Changes the timescale of the current subfactory
+        -- Changes the timescale of the current subfactory
         elseif string.find(event.element.name, "^fp_button_timescale_%d+$") then
             local timescale = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_timescale_change(player, timescale)
@@ -259,7 +259,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to any subfactory_pane item button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z0-9-]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
+            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, event.alt)
 
         -- Reacts to a item group button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-_]+$") then
@@ -284,7 +284,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
             local line_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_line_recipe_click(player, line_id, click, direction)
+            handle_line_recipe_click(player, line_id, click, direction, event.alt)
 
         -- Reacts to the machine button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+$") then
@@ -309,7 +309,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to any (assembly) line item button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction)
+            handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
         
         end
 

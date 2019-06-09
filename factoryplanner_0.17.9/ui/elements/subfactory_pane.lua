@@ -103,11 +103,14 @@ function get_ingredient_specifics(ingredient)
     }
 end
 
--- Shifts clicked element's position left or right
-function handle_ingredient_element_click(player, ingredient_id, click, direction)
-    if direction ~= nil then
-        local subfactory = global.players[player.index].context.subfactory
-        local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
+-- Opens clicked element in FNEI or shifts it left or right
+function handle_ingredient_element_click(player, ingredient_id, click, direction, alt)
+    local subfactory = global.players[player.index].context.subfactory
+    local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
+
+    if alt then  -- Open item in FNEI
+        ui_util.fnei.show_item(ingredient, click)
+    elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(subfactory, ingredient, direction)
         refresh_item_table(player, "Ingredient")
     end
@@ -147,14 +150,16 @@ function append_to_product_table(table)
     button.style.width = 36
 end
 
--- Opens modal dialogs of clicked element or shifts it's position left or right
-function handle_product_element_click(player, product_id, click, direction)
+-- Handles click on a subfactory pane product button
+function handle_product_element_click(player, product_id, click, direction, alt)
     local player_table = global.players[player.index]
     local subfactory = player_table.context.subfactory
     local product = Subfactory.get(subfactory, "Product", product_id)
 
-    -- Shift product in the given direction
-    if direction ~= nil then
+    if alt then  -- Open item in FNEI
+        ui_util.fnei.show_item(product, click)
+
+    elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(subfactory, product, direction)
 
     else  -- Open modal dialogs
@@ -187,13 +192,15 @@ function get_byproduct_specifics(byproduct)
 end
 
 
--- Opens recipe dialog of clicked element or shifts it's position left or right
-function handle_byproduct_element_click(player, byproduct_id, click, direction)
+-- Handles click on a subfactory pane byproduct button
+function handle_byproduct_element_click(player, byproduct_id, click, direction, alt)
     local subfactory = global.players[player.index].context.subfactory
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
     
-    -- Shift byproduct in the given direction
-    if direction ~= nil then
+    if alt then  -- Open item in FNEI
+        ui_util.fnei.show_item(byproduct, click)
+
+    elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(subfactory, byproduct, direction)
 
     -- Open recipe dialog? Dealing with byproducts will come at a later stage
