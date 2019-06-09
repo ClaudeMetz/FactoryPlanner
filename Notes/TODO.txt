@@ -30,7 +30,6 @@ TODO Quick List:
 - add round-up indication stuff
 - improve number formatting
 - add search field to recipe selection
-- FNEI stuff
 - (machines rework? (+ingredient limit)) (develop general structure for these prototypes)
 - burner fuel consumption calculation
 - check whether pyanodon correction is still needed

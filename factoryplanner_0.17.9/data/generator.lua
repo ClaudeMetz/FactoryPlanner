@@ -61,8 +61,9 @@ function generator.all_recipes(reset)
                     -- Set energy to mining time so the forumla for the machine_count works out
                     recipe.energy = proto.mineable_properties.mining_time
                     recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
-                    local products = proto.mineable_properties.products
-                    recipe.products = products
+                    recipe.products = proto.mineable_properties.products
+                    -- Conforming to the real LuaRecipe prototype
+                    recipe.prototype = { main_product = recipe.products[1] }
 
                     -- Add mining fluid, if required
                     if proto.mineable_properties.required_fluid then
@@ -87,6 +88,7 @@ function generator.all_recipes(reset)
                 recipe.energy = 1
                 recipe.ingredients = {{type="fluid", name="water", amount=60}}
                 recipe.products = {{type="fluid", name="steam", amount=60}}
+                recipe.prototype = { main_product = recipe.products[1] }
                 recipes[force_name][recipe.name] = recipe
 
                     

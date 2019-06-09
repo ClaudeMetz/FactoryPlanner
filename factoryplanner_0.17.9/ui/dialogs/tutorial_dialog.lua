@@ -48,7 +48,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     protips_title.style.font = "fp-font-bold-20p"
 
     local protip_names = {"hovering", "list_ordering", "machine_changing", "machine_preferences", "interface_width",
-      "recipe_consolidation", "recursive_subfloors"}
+      "fnei", "recipe_consolidation", "recursive_subfloors"}
     for _, name in ipairs(protip_names) do
         local label = table_tutorial.add{type="label", name="label_tutorial_" .. name, 
           caption={"", "- ", {"tip.pro_" .. name}}}

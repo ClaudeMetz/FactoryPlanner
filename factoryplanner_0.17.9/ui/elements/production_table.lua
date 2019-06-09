@@ -167,16 +167,20 @@ end
 
 
 -- Handles any clicks on the recipe icon of an (assembly) line
-function handle_line_recipe_click(player, line_id, click, direction)
+function handle_line_recipe_click(player, line_id, click, direction, alt)
     local player_table = global.players[player.index]
     local subfactory = player_table.context.subfactory
     local floor = player_table.context.floor
     local line = Floor.get(floor, "Line", line_id)
     
-    -- Shift (assembly) line in the given direction
-    if direction ~= nil then
+    
+    if alt then  -- Open item in FNEI
+        local recipe = global.all_recipes[player.force.name][line.recipe_name]
+        ui_util.fnei.show_recipe(recipe, Line.get_in_order(line, "Product"))
+
+    elseif direction ~= nil then  -- Shift (assembly) line in the given direction
         -- Can't shift second line into the first position on subfloors
-        -- (Top line is ignores interaction, so no special handling there)
+        -- (Top line ignores interaction, so no special handling there)
         if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) then
             Floor.shift(floor, line, direction)
             update_calculations(player, subfactory)
@@ -349,13 +353,14 @@ function apply_chooser_machine_choice(player, machine_name)
 end
 
 -- Handles a click on any of the 3 item buttons of a specific line
-function handle_item_button_click(player, line_id, class, item_id, click, direction)
+function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
     local player_table = global.players[player.index]
     local line = Floor.get(player_table.context.floor, "Line", line_id)
     local item = Line.get(line, class, item_id)
 
-    -- Shift item in the given direction
-    if direction ~= nil then
+    if alt then  -- Open item in FNEI
+        ui_util.fnei.show_item(item, click)
+    elseif direction ~= nil then  -- Shift item in the given direction
         Line.shift(line, item, direction)
     else
         if click == "left" and item.type ~= "entity" then
