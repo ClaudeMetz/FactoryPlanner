@@ -70,7 +70,7 @@ function run_preliminary_checks(player, product_name, search_function)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
     for _, recipe in pairs(global.all_recipes[player.force.name]) do
-        if search_function(recipe, product_name) and recipe.category ~= "handcrafting" then
+        if search_function(recipe, product_name) then
             table.insert(relevant_recipes, recipe)
             if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
         end

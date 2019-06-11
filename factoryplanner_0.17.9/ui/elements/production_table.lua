@@ -59,6 +59,8 @@ function create_line_table_row(player, line)
     local sprite = ui_util.get_recipe_sprite(player, recipe)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
       sprite=sprite, tooltip=recipe.localised_name, mouse_button_filter={"left-and-right"}}
+    if global.devmode == true then button_recipe.tooltip = {"", recipe.localised_name, "\n", recipe.name} end
+
     if line.subfloor then
         if player_table.current_activity == "deleting_line" and player_table.context.line.id == line.id then
             button_recipe.style = "fp_button_icon_medium_red"
@@ -145,7 +147,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
                 number = item.amount / player_table.context.subfactory.timescale
             end
             
-            button.number = number
+            button.number = ("%.4g"):format(number)
             if number ~= nil then 
                 button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 8), " ", view.caption}
             else 
@@ -191,6 +193,7 @@ function handle_line_recipe_click(player, line_id, click, direction)
                 line.subfloor = Subfactory.add(subfactory, subfloor)
                 update_calculations(player, subfactory)
             end
+            player_table.current_activity = nil
             data_util.context.set_floor(player, line.subfloor)
             
             -- Handle removal of clicked (assembly) line
@@ -210,10 +213,6 @@ function handle_line_recipe_click(player, line_id, click, direction)
             end
         end
         
-    end
-
-    if player_table.current_activity ~= "deleting_line" then
-        player_table.current_activity = nil
     end
     
     refresh_main_dialog(player)

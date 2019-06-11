@@ -57,7 +57,7 @@ function apply_migrations(migrations, object)
 end
 
 -- Compares two mod versions, returns true if v1 is an earlier version than v2 (v1 < v2)
--- Version numbers have to be of the same structure: same amount of numbers, separated by a '.'
+-- Version numbers have to be of the same structure: equal amount of numbers, separated by a '.'
 local function compare_versions(v1, v2)
     local split_v1 = ui_util.split(v1, ".")
     local split_v2 = ui_util.split(v2, ".")
