@@ -1,5 +1,8 @@
 -- Constructs the info pane including timescale settings
 function refresh_info_pane(player)
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+
     local flow = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
     flow.style.left_margin = 0
 
@@ -9,17 +12,14 @@ function refresh_info_pane(player)
     else
         flow["table_info_elements"].clear()
     end
-
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-
+    
     -- Timescale
     local table_timescale = flow["table_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
       caption={"", " ", {"label.timescale"}, ": "}}
     label_timescale_title.style.font = "fp-font-14p"
 
-    if player_table.current_activity == "changing_timescale" then
+    if ui_state.current_activity == "changing_timescale" then
         table_timescale.add{type="button", name="fp_button_timescale_1", caption="1s", style="fp_button_mini", 
           mouse_button_filter={"left"}}
         table_timescale.add{type="button", name="fp_button_timescale_60", caption="1m", style="fp_button_mini",
@@ -68,14 +68,14 @@ end
 
 -- Handles the timescale changing process
 function handle_subfactory_timescale_change(player, timescale)
-    local player_table = global.players[player.index]
-    if player_table.current_activity == "changing_timescale" then
-        local subfactory = player_table.context.subfactory
+    local ui_state = get_ui_state(player)
+    if ui_state.current_activity == "changing_timescale" then
+        local subfactory = ui_state.context.subfactory
         subfactory.timescale = timescale
-        player_table.current_activity = nil
+        ui_state.current_activity = nil
         update_calculations(player, subfactory)
     else
-        player_table.current_activity = "changing_timescale"
+        ui_state.current_activity = "changing_timescale"
     end
 
     refresh_main_dialog(player)
@@ -84,7 +84,7 @@ end
 
 -- Sets the machines of all lines in the given scope to the currently preferred ones
 function handle_set_prefmachines_click(player, scope)
-    local player_table = global.players[player.index]
+    local context = get_context(player)
 
     -- Sets all machines on given floor to the currently preferred ones
     local function set_machines_on_floor(floor)
@@ -98,13 +98,13 @@ function handle_set_prefmachines_click(player, scope)
     end
 
     if scope == "subfactory" then
-        for _, floor in ipairs(Subfactory.get_in_order(player_table.context.subfactory, "Floor")) do
+        for _, floor in ipairs(Subfactory.get_in_order(context.subfactory, "Floor")) do
             set_machines_on_floor(floor)
         end
     else  -- scope == "floor"
-        set_machines_on_floor(player_table.context.floor)
+        set_machines_on_floor(context.floor)
     end
 
-    update_calculations(player, player_table.context.subfactory)
+    update_calculations(player, context.subfactory)
     refresh_production_table(player)
 end

@@ -9,52 +9,86 @@ require("data.generator")
 require("data.calc")
 require("migrations.handler")
 
+-- Margin of error for floating poing calculations
+margin_of_error = 1e-10
+devmode = true
 
 -- Initiates all factorio-global variables
 function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
-
     global.players = {}
+    run_generators(false)
+end
 
+-- Runs through all updates that need to be made after the config changed
+function handle_configuration_change()
+    -- Migrate global and reset generator tables
+    attempt_global_migration()
+    run_generators(true)
+
+    -- Runs through all players, even new ones (those with no player_table)
+    for index, player in pairs(game.players) do
+        attempt_player_table_migration(player)
+
+        update_player_table(player)
+
+        player_gui_reset(player)  -- Destroys all existing GUI's
+        player_gui_init(player)  -- Initializes some parts of the GUI
+        
+        local factory = global.players[player.index].factory
+        Factory.update_validity(factory, player)
+
+        -- Update calculations in case some recipes changed
+        for _, subfactory in ipairs(Factory.get_in_order(factory, "Subfactory")) do
+            if subfactory.valid then update_calculations(player, subfactory) end
+        end
+
+        -- Update custom space science recipe state
+        local space_tech = player.force.technologies["space-science-pack"].researched
+        if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
+    end
+end
+
+-- Updates all generator variables
+function run_generators(include_recipes)
     global.all_items = generator.all_items()
-    -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
     global.all_belts = generator.all_belts()
 
-    global.devmode = true
-    global.margin_of_error = 1e-10
+    if include_recipes then
+        global.all_recipes = generator.all_recipes(true)
+    end
 end
 
--- Creates and initiates a new player in the database if he doesn't exist yet
-function player_init(player)
-    if global.players[player.index] == nil then
+-- Makes sure that the given player has a player_table and a reset gui state
+function update_player_table(player)
+    local function reload_data()
+        reload_settings(player)  -- reloads the settings of the player
+        reload_preferences(player) -- reloads and adjusts the player's preferences
+        reset_ui_state(player)  -- Resets the player's UI state
+    end
+
+    local player_table = global.players[player.index]
+    if player_table == nil then  -- new player
         global.players[player.index] = {}
         local player_table = global.players[player.index]
+        player_table.mod_version = global.mod_version
 
         player_table.factory = Factory.init()
-        player_table.main_dialog_dimensions = {width = nil, height = 1000}
 
         player_table.settings = {}
-        reload_settings(player)
+        player_table.preferences = {}
+        player_table.ui_state = {}
 
-        player_table.default_machines = {}
-        data_util.machines.update_default(player)
-        player_table.preferred_belt_name = nil
-        data_util.update_preferred_belt(player)
+        reload_data()
 
         -- Creates recipes if there are none for the force of this player
         global.all_recipes = generator.all_recipes(false)
 
-       reset_gui_state(player)
-       queue_message(player, {"label.hint_tutorial"}, "hint")
-    end
-end
+        queue_message(player, {"label.hint_tutorial"}, "hint")
 
--- Resets the GUI state of the given player, if he exists
-function player_reset(player)
-    local player_table = global.players[player.index]
-    if player_table ~= nil then
-        reset_gui_state(player)
+    else  -- existing player, only need to update
+        reload_data()
 
         -- If any subfactories exist, select the first one
         local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
@@ -62,13 +96,9 @@ function player_reset(player)
     end
 end
 
--- Removes given player irreversibly from the database
-function player_remove(player)
-    global.players[player.index] = nil
-end
-
 -- Writes the current user mod settings to their player_table
 function reload_settings(player)
+    -- Delete the whole table first in case a setting got removed
     global.players[player.index].settings = {}
     local settings_table = global.players[player.index].settings
     
@@ -79,53 +109,51 @@ function reload_settings(player)
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
 end
 
--- (Re)sets the GUI state of the given player
-function reset_gui_state(player)
-    local player_table = global.players[player.index]
-
-    player_table.modal_dialog_type = nil  -- The internal modal dialog type
-    player_table.selected_object = nil  -- The object relevant for a modal dialog
-    player_table.modal_data = nil  -- Data that can be set for a modal dialog to use
-    player_table.current_activity = nil  -- The current unique main dialog activity
-    player_table.view_state = nil  -- The state of the production views
-    player_table.queued_message = nil  -- The next general message to be displayed
-    player_table.recipe_filter_preferences = 
-      {disabled = false, hidden = false}  -- The preferred state of both recipe filters
-    player_table.context = data_util.context.create(player)  -- The currently displayed set of data
+-- Reloads the user preferences, incorporating previous preferences if possible
+-- preferences members: {default_machines, preferred_belt_name}
+function reload_preferences(player)
+    -- These functions handle initializing their preferences attribute themselves
+    data_util.machines.update_default(player)
+    data_util.update_preferred_belt(player)
 end
 
--- Runs through all updates that need to be made after the config changed
-function handle_configuration_change()
-    global.mod_version = game.active_mods["factoryplanner"]
+-- (Re)sets the UI state of the given player
+function reset_ui_state(player)
+    -- Delete the whole table first in case ui_state parameter got removed
+    global.players[player.index].ui_state = {}
+    local ui_state_table = global.players[player.index].ui_state
 
-    global.all_items = generator.all_items()
-    global.all_recipes = generator.all_recipes(true)
-    global.all_machines = generator.all_machines()
-    global.all_belts = generator.all_belts()
+    ui_util.recalculate_main_dialog_dimensions(player)
 
-    -- Runs through all players, even new ones (those with no player_table etc)
-    for index, player in pairs(game.players) do
-        local space_tech = player.force.technologies["space-science-pack"].researched
-        if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
+    ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
+    ui_state_table.selected_object = nil  -- The object relevant for a modal dialog
+    ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    ui_state_table.current_activity = nil  -- The current unique main dialog activity
+    ui_state_table.view_state = nil  -- The state of the production views
+    ui_state_table.queued_message = nil  -- The next general message to be displayed
+    ui_state_table.recipe_filter_preferences = 
+      {disabled = false, hidden = false}  -- The preferred state of both recipe filters
+    ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
+end
 
-        -- These two make sure that after them, the player exists for sure
-        player_reset(player)  -- only runs if player exists already
-        player_init(player)  -- only runs if player doesn't exist yet
+-- Returns the player table for the given player
+function get_table(player)
+    return global.players[player.index]
+end
 
-        reload_settings(player)  -- reloads settings for players, old and new
+function get_settings(player)
+    return global.players[player.index].settings
+end
 
-        player_gui_reset(player)  -- Destroys all existing GUI's
-        player_gui_init(player)  -- Initializes some parts of the GUI
+function get_preferences(player)
+    return global.players[player.index].preferences
+end
 
-        local factory = global.players[player.index].factory
-        attempt_factory_migration(factory)
-        Factory.update_validity(factory, player)
+function get_ui_state(player)
+    return global.players[player.index].ui_state
+end
 
-        data_util.machines.update_default(player)
-        data_util.update_preferred_belt(player)
-
-        for _, subfactory in ipairs(Factory.get_in_order(factory, "Subfactory")) do
-            if subfactory.valid then update_calculations(player, subfactory) end
-        end
-    end
+-- The context is part of the ui state, but used frequently enough to warrant a getter
+function get_context(player)
+    return global.players[player.index].ui_state.context
 end

@@ -16,20 +16,20 @@ end
 
 -- Refreshes the subfactory bar by reloading the data
 function refresh_subfactory_bar(player, full_refresh)
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
     local table_subfactories =  player.gui.center["fp_frame_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
-    local max_width = player_table.main_dialog_dimensions.width * 0.8
+    local max_width = ui_state.main_dialog_dimensions.width * 0.8
     local width_remaining = 0
     local current_table_index = 0
     local current_table = nil
 
-    if player_table.context.subfactory ~= nil then
-        for _, subfactory in ipairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
+    if ui_state.context.subfactory ~= nil then
+        for _, subfactory in ipairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
             -- Tries to insert new element, if it doesn't fit, a new row is created and creation is reattempted
             -- First one is supposed to fail to create the first table
-            local selected = (player_table.context.subfactory.id == subfactory.id)
+            local selected = (ui_state.context.subfactory.id == subfactory.id)
             local width_used = attempt_element_creation(current_table, width_remaining, subfactory, selected)
 
             if width_used == 0 then
@@ -158,16 +158,16 @@ end
 
 -- Moves selection to the clicked element, edits it, or shifts it's position left or right
 function handle_subfactory_element_click(player, subfactory_id, click, direction)
-    local player_table = global.players[player.index]
-    local subfactory = Factory.get(player_table.factory, "Subfactory", subfactory_id)
+    local ui_state = get_ui_state(player)
+    local subfactory = Factory.get(ui_state.context.factory, "Subfactory", subfactory_id)
 
     -- Shift subfactory in the given direction
     if direction ~= nil then
-        Factory.shift(player_table.factory, subfactory, direction)
+        Factory.shift(ui_state.context.factory, subfactory, direction)
         refresh_subfactory_bar(player, false)
 
     else
-        old_subfactory = player_table.context.subfactory
+        old_subfactory = ui_state.context.subfactory
         data_util.context.set_subfactory(player, subfactory)
         -- Change selected subfactory
         if click == "left" then
@@ -176,7 +176,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
                 subfactory.selected_floor = Subfactory.get(subfactory, "Floor", 1)
             end
             
-            player_table.current_activity = nil
+            ui_state.current_activity = nil
             refresh_main_dialog(player)
 
         -- Edit clicked subfactory

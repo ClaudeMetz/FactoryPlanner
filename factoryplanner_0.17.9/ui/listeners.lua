@@ -21,8 +21,8 @@ end)
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
-    -- Sets up a player in the global table for the new player
-    player_init(player)
+    -- Sets up the player_table for the new player
+    update_player_table(player)
 
     -- Sets up the GUI for the new player
     player_gui_init(player)
@@ -33,17 +33,14 @@ end)
 
 -- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
-    local player = game.get_player(event.player_index)
-
     -- Removes the player from the global table
-    player_remove(player)
+    global.players[event.player_index] = nil
 end)
 
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local player = game.get_player(event.player_index)
-    local player_table = global.players[player.index]
 
     -- Reload all user mod settings
     reload_settings(player)
@@ -124,23 +121,23 @@ end)
 -- Fires on any changes to a textbox
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.get_player(event.player_index)
-    local player_table = global.players[player.index]
-
+    
     -- Persists (assembly) line percentage changes
     if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
         handle_percentage_change(player, event.element)
-
-    -- Actives the instant filter based on user serachfield text entry
+        
+        -- Actives the instant filter based on user serachfield text entry
     elseif event.element.name == "fp_textfield_picker_search_bar" then
-        local object_type = string.gsub(player_table.modal_dialog_type, "_picker", "")
-        picker.apply_filter(player, object_type, false, get_search_function(player_table.selected_object))
+        local ui_state = get_ui_state(player)
+        local object_type = string.gsub(ui_state.modal_dialog_type, "_picker", "")
+        picker.apply_filter(player, object_type, false, get_search_function(ui_state.selected_object))
     end
 end)
 
 -- Fires on any click on a GUI element
 script.on_event(defines.events.on_gui_click, function(event)
     local player = game.get_player(event.player_index)
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
     
     -- Determine click type and direction
     local click, direction = nil, nil
@@ -154,8 +151,8 @@ script.on_event(defines.events.on_gui_click, function(event)
     end
 
     -- Determine object type (not always relevant, but useful in some places)
-    local object_type = (player_table.modal_dialog_type ~= nil) and 
-      string.gsub(player_table.modal_dialog_type, "_picker", "") or nil
+    local object_type = (ui_state.modal_dialog_type ~= nil) and 
+      string.gsub(ui_state.modal_dialog_type, "_picker", "") or nil
 
     -- Handle the actual click
     if string.find(event.element.name, "^fp_.+$") then
@@ -207,7 +204,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the edit-subfactory dialog
         elseif event.element.name == "fp_button_edit_subfactory" then
-            local subfactory = player_table.context.subfactory
+            local subfactory = ui_state.context.subfactory
             enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
 
         -- Reacts to the delete button being pressed

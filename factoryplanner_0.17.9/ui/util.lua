@@ -2,11 +2,12 @@ ui_util = {
     fnei = {}
 }
 
--- Readjusts the size of the main dialog according to the user setting of number of items per row
+-- Readjusts the size of the main dialog according to the user settings
 function ui_util.recalculate_main_dialog_dimensions(player)
-    local player_table = global.players[player.index]
+    local player_table = get_table(player)
+
     local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
-    player_table.main_dialog_dimensions.width = width
+    player_table.ui_state.main_dialog_dimensions = {width = width, height = 1000}
 end
 
 

@@ -87,8 +87,9 @@ function refresh_production_pane(player)
     -- Cuts function short if the approriate GUI's haven't been initialized yet
     if not (main_dialog and main_dialog["flow_production_pane"]) then return end
 
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
+    local player_table = get_table(player)
+    local ui_state = player_table.ui_state
+    local subfactory = ui_state.context.subfactory
 
     local table_titlebar = main_dialog["flow_production_pane"]["table_production_titlebar"]
     local table_view = table_titlebar["table_production_titlebar_view_selection"]
@@ -97,7 +98,7 @@ function refresh_production_pane(player)
 
     -- Configure Floor labels and buttons
     if subfactory ~= nil and subfactory.valid then        
-        local floor = player_table.context.floor
+        local floor = ui_state.context.floor
 
         table_titlebar["table_production_titlebar_navigation"].visible = (floor.level > 1)
         if floor.Line.count > 0 then
@@ -108,14 +109,14 @@ function refresh_production_pane(player)
         table_view.visible = (floor.Line.count > 0)
         
         -- Update the dynamic parts of the view state buttons
-        refresh_view_state(player_table, subfactory)
-        for _, view in ipairs(player_table.view_state) do
+        refresh_view_state(player, subfactory)
+        for _, view in ipairs(ui_state.view_state) do
             local button = table_view["fp_button_production_titlebar_view_" .. view.name]
 
             if view.name == "belts_or_lanes" then
                 local flow = button["flow_belts_or_lanes"]
                 flow["label_belts_or_lanes"].caption = view.caption
-                flow["sprite_belts_or_lanes"].sprite = "entity/" .. player_table.preferred_belt_name
+                flow["sprite_belts_or_lanes"].sprite = "entity/" .. player_table.preferences.preferred_belt_name
                 flow.style.left_padding = (player_table.settings.belts_or_lanes == "Belts") and 6 or 4
             else
                 button.caption = view.caption
@@ -131,9 +132,9 @@ end
 
 -- Handles a click on a button that changes the viewed floor of a subfactory
 function handle_floor_change_click(player, destination)
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-    local floor = player_table.context.floor
+    local context = get_context(player)
+    local subfactory = context.subfactory
+    local floor = context.floor
 
     local selected_floor = nil
     if destination == "up" then
@@ -155,7 +156,8 @@ end
 
 
 -- Refreshes the current view state
-function refresh_view_state(player_table, subfactory)
+function refresh_view_state(player, subfactory)
+    local player_table = get_table(player)
     local timescale = ui_util.format_timescale(subfactory.timescale, true)
     local view_state = {
         [1] = {
@@ -181,21 +183,21 @@ function refresh_view_state(player_table, subfactory)
     }
 
     -- Conserves the selection state from the previous view_state, if available
-    if player_table.view_state ~= nil then
+    if player_table.ui_state.view_state ~= nil then
         local id_to_select = nil
-        for i, view in ipairs(player_table.view_state) do
+        for i, view in ipairs(player_table.ui_state.view_state) do
             if view.selected then id_to_select = i
             else view_state[i].selected = false end
         end
         correct_view_state(view_state, id_to_select)
     end
 
-    player_table.view_state = view_state
+    player_table.ui_state.view_state = view_state
 end
 
 -- Sets the current view to the given view (If no view if provided, it sets it to the next enabled one)
 function change_view_state(player, view_name)
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
 
     -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
     local main_dialog = player.gui.center["fp_frame_main_dialog"]
@@ -206,13 +208,13 @@ function change_view_state(player, view_name)
      and table_view_selection) then return end
 
     -- Only change the view_state if it exists and is visible
-    if player_table.view_state ~= nil and table_view_selection.visible == true then
+    if ui_state.view_state ~= nil and table_view_selection.visible == true then
         local id_to_select = nil
-        for i, view in ipairs(player_table.view_state) do
+        for i, view in ipairs(ui_state.view_state) do
             -- Move selection on by one if no view_name is provided
             if view_name == nil and view.selected then
                 view.selected = false
-                id_to_select = (i % #player_table.view_state) + 1
+                id_to_select = (i % #ui_state.view_state) + 1
                 break
 
             else
@@ -221,7 +223,7 @@ function change_view_state(player, view_name)
                 else view.selected = false end
             end
         end
-        correct_view_state(player_table.view_state, id_to_select)
+        correct_view_state(ui_state.view_state, id_to_select)
     end
 end
 

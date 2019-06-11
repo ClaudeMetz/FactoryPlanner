@@ -135,7 +135,7 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                 button_group.style.width = 70
                 button_group.style.height = 70
                 button_group.tooltip = group.localised_name
-                if global.devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group.name} end
+                if devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group.name} end
 
                 local scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", name="scroll-pane_subgroups_"
                   .. group.name}
@@ -155,7 +155,7 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                         local button_object = table_subgroup.add{type="sprite-button", name="fp_sprite-button_picker_object_"
                           .. object.name, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
                         button_object.tooltip = _G["generate_" .. object_type .. "_tooltip"](object)
-                        if global.devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
+                        if devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
                     end
                 end
             end
@@ -179,7 +179,7 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
         disabled = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state
         hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state
     else
-        for _, product in pairs(Subfactory.get_in_order(global.players[player.index].context.subfactory, "Product")) do
+        for _, product in pairs(Subfactory.get_in_order(get_context(player).subfactory, "Product")) do
             existing_products[product.name] = true
         end
     end
