@@ -14,7 +14,7 @@ function refresh_error_bar(player)
 
     flow_error_bar.clear()
 
-    local subfactory = global.players[player.index].context.subfactory
+    local subfactory = get_context(player).subfactory
     if subfactory ~= nil and not subfactory.valid then
         create_error_bar(flow_error_bar, subfactory.id)
         flow_error_bar.visible = true
@@ -36,7 +36,7 @@ function create_error_bar(flow, subfactory_id)
 end
 
 function handle_subfactory_repair(player)
-    local subfactory = global.players[player.index].context.subfactory
+    local subfactory = get_context(player).subfactory
     Subfactory.attempt_repair(subfactory, player)
 
     update_calculations(player, subfactory)

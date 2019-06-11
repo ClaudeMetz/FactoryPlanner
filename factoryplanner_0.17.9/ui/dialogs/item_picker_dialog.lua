@@ -1,8 +1,7 @@
 -- Handles populating the item picker dialog
 function open_item_picker_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local player_table = global.players[player.index]
-    local product = player_table.selected_object
+    local product = get_ui_state(player).selected_object
 
     flow_modal_dialog.parent.caption = product == nil and {"label.add_product"} or {"label.edit_product"}
     flow_modal_dialog.style.bottom_margin = 8
@@ -20,9 +19,9 @@ end
 -- Handles closing of the item picker dialog
 function close_item_picker_dialog(flow_modal_dialog, action, data)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-    local product = player_table.selected_object
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+    local product = ui_state.selected_object
 
     if action == "submit" then
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
@@ -41,7 +40,6 @@ end
 
 -- Returns all necessary instructions to create and run conditions on the modal dialog
 function get_item_picker_condition_instructions(player)
-   local player_table = global.players[player.index]
     return {
         data = {
             item_sprite = (function(flow_modal_dialog) return
@@ -67,13 +65,12 @@ end
 
 -- Reacts to a picker item button being pressed
 function handle_picker_item_click(player, button)
-    local flow_modal_dialog = button.parent.parent.parent.parent.parent  -- ¯\_(ツ)_/¯
+    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_item_picker"]["flow_modal_dialog"]
     if button.style.name == "fp_button_icon_medium_disabled" then  -- don't accept duplicate products
         --picker.refresh_warning_label(flow_modal_dialog, {"label.error_duplicate_product"})
     else
         --picker.refresh_warning_label(flow_modal_dialog, "")
         
-        local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_item_picker"]["flow_modal_dialog"]
         flow_modal_dialog["table_product_bar"]["fp_sprite-button_product"].sprite = button.sprite
         flow_modal_dialog["table_product_bar"]["textfield_product_amount"].focus()
     end

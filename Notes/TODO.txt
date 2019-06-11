@@ -21,10 +21,6 @@ TODO Bug Fixes:
 
 TODO Quick List:
 - make discussion post asking about module+beacon features
-- redo player_table structure regarding preferences and in general
-  Redo it from the ground up to make it more readable
-- add 'util' functions for setting/getting ui_state, settings, preferences
-- add appropriate player_table migration + check migration correctness
 - add preference to not show barreling recipes
 - improve %-textfield selection (+enlarge textbox? dynamically?)
 - add round-up indication stuff
@@ -32,5 +28,5 @@ TODO Quick List:
 - add search field to recipe selection
 - (machines rework? (+ingredient limit)) (develop general structure for these prototypes)
 - burner fuel consumption calculation
-- check whether pyanodon correction is still needed
 - add way to set height of GUI
+-- RENAME MIGRATION STUFF

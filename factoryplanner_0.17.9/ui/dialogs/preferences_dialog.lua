@@ -76,7 +76,7 @@ function refresh_preferences_dialog(player)
           .. belt.name, sprite="entity/" .. belt.name, mouse_button_filter={"left"}}
         local tooltip = belt.localised_name
 
-        local preferred_belt_name = global.players[player.index].preferred_belt_name
+        local preferred_belt_name = get_preferences(player).preferred_belt_name
         if preferred_belt_name == belt.name then
             button_belt.style = "fp_button_icon_medium_green"
             tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
@@ -96,6 +96,6 @@ end
 
 -- Changes the preferred belt
 function handle_preferences_belt_change(player, name)
-    global.players[player.index].preferred_belt_name = name
+    get_preferences(player).preferred_belt_name = name
     refresh_preferences_dialog(player)
 end

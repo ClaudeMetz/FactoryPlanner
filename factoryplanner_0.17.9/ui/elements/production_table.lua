@@ -9,12 +9,9 @@ function refresh_production_table(player)
     local table_production = scroll_pane_production["table_production_pane"]
     table_production.clear()
 
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-    if subfactory ~= nil and subfactory.valid then
-        local floor = player_table.context.floor
-
-        if floor.Line.count == 0 then
+    local context = get_context(player)
+    if context.subfactory ~= nil and context.subfactory.valid then
+        if context.floor.Line.count == 0 then
             scroll_pane_production.visible = false
             flow_production["label_production_info"].visible = true
         else
@@ -36,7 +33,7 @@ function refresh_production_table(player)
             end
 
             -- Table rows
-            for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
                 create_line_table_row(player, line)
             end
         end
@@ -48,9 +45,10 @@ function create_line_table_row(player, line)
     local table_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
       ["scroll-pane_production_pane"]["table_production_pane"]
 
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-    local floor = player_table.context.floor
+    local player_table = get_table(player)
+    local ui_state = player_table.ui_state
+    local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
 
     local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
 
@@ -60,7 +58,7 @@ function create_line_table_row(player, line)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
       sprite=sprite, tooltip=recipe.localised_name, mouse_button_filter={"left-and-right"}}
     if line.subfloor then
-        if player_table.current_activity == "deleting_line" and player_table.context.line.id == line.id then
+        if ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id then
             button_recipe.style = "fp_button_icon_medium_red"
         else
             button_recipe.style = "fp_button_icon_medium_green"
@@ -86,8 +84,8 @@ function create_line_table_row(player, line)
     table_machines.style.horizontal_spacing = 3
     table_machines.style.horizontal_align = "center"
 
-    local context_line = player_table.context.line
-    if context_line ~= nil and context_line.id == line.id and player_table.current_activity == "changing_machine" then
+    local context_line = ui_state.context.line
+    if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
         for _, machine_name in ipairs(machine_category.order) do
             local machine = global.all_machines[line.recipe_category].machines[machine_name]
             local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
@@ -122,7 +120,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id, direction="horizontal"}
     
     for _, item in ipairs(Line.get_in_order(line, class)) do
-        if item.amount == 0 or item.amount > global.margin_of_error then
+        if item.amount == 0 or item.amount > margin_of_error then
             local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
             .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=style, mouse_button_filter={"left-and-right"}}
 
@@ -134,15 +132,15 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             end
 
             local number = nil
-            local view = player_table.view_state[player_table.view_state.selected_view_id]
+            local view = player_table.ui_state.view_state[player_table.ui_state.view_state.selected_view_id]
             if view.name == "items_per_timescale" then
                 number = item.amount
             elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
-                local throughput = global.all_belts[player_table.preferred_belt_name].throughput
+                local throughput = global.all_belts[player_table.preferences.preferred_belt_name].throughput
                 local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
                 number = item.amount / divisor / 60
             elseif view.name == "items_per_second" then
-                number = item.amount / player_table.context.subfactory.timescale
+                number = item.amount / player_table.ui_state.context.subfactory.timescale
             end
             
             button.number = number
@@ -168,9 +166,9 @@ end
 
 -- Handles any clicks on the recipe icon of an (assembly) line
 function handle_line_recipe_click(player, line_id, click, direction, alt)
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-    local floor = player_table.context.floor
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
     
     
@@ -203,30 +201,30 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
                 Floor.remove(floor, line)
                 update_calculations(player, subfactory)
             else
-                if player_table.current_activity == "deleting_line" then
+                if ui_state.current_activity == "deleting_line" then
                     Floor.remove(floor, line)
                     update_calculations(player, subfactory)
-                    player_table.current_activity = nil
+                    ui_state.current_activity = nil
                 else
-                    player_table.current_activity = "deleting_line"
-                    player_table.context.line = line
+                    ui_state.current_activity = "deleting_line"
+                    ui_state.context.line = line
                 end
             end
         end
         
     end
 
-    if player_table.current_activity ~= "deleting_line" then
-        player_table.current_activity = nil
-    end
+    --[[ if ui_state.current_activity ~= "deleting_line" then
+        ui_state.current_activity = nil
+    end ]]
     
     refresh_main_dialog(player)
 end
 
 -- Handles the changing of the percentage textfield
 function handle_percentage_change(player, element)
-    local player_table = global.players[player.index]
-    local floor = player_table.context.floor
+    local ui_state = get_ui_state(player)
+    local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
     local new_percentage = tonumber(element.text)  -- returns nil if text is not a number
 
@@ -242,8 +240,8 @@ function handle_percentage_change(player, element)
         elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
         local scroll_pane = element.parent.parent
-        update_calculations(player, player_table.context.subfactory)
-        player_table.current_activity = nil
+        update_calculations(player, ui_state.context.subfactory)
+        ui_state.current_activity = nil
         refresh_main_dialog(player)
         
         scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
@@ -257,7 +255,7 @@ end
 function handle_percentage_textfield_click(player, element)
     if previously_selected_textfield ~= nil and previously_selected_textfield.valid then
         previously_selected_textfield.select(0, 0)
-        local floor = global.players[player.index].context.floor
+        local floor = get_context(player).floor
         local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
         local line = Floor.get(floor, "Line", line_id)
         previously_selected_textfield.text = line.percentage
@@ -276,9 +274,9 @@ end
 
 -- Handles the machine changing process
 function handle_machine_change(player, line_id, machine_name, click, direction)
-    local player_table = global.players[player.index]
-    local subfactory = player_table.context.subfactory
-    local floor = player_table.context.floor
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
 
       -- machine_name being nil means the user wants to change the machine of this (assembly) line
@@ -306,12 +304,12 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
             local possible_machine_count = #current_category_data.order
             if possible_machine_count > 1 then
                 if possible_machine_count < 5 then
-                    player_table.current_activity = "changing_machine"
-                    player_table.context.line = line  -- won't be reset after use, but that doesn't matter
+                    ui_state.current_activity = "changing_machine"
+                    ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                 else
                     -- Open a chooser dialog presenting all machine choices
                     local recipe = global.all_recipes[player.force.name][line.recipe_name]
-                    player_table.modal_data = {
+                    ui_state.modal_data = {
                         title = {"label.machine"},
                         text = {"", "Choose a machine for the recipe '", recipe.localised_name, "':"},
                         choices = {},
@@ -320,7 +318,7 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
                     for index, machine_name in ipairs(current_category_data.order) do
                         local machine = global.all_machines[line.recipe_category].machines[machine_name]
                         local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
-                        player_table.modal_data.choices[index] = {
+                        ui_state.modal_data.choices[index] = {
                             name = machine.name,
                             tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
                             sprite = "entity/" .. machine.name,
@@ -330,14 +328,14 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
 
                     enter_modal_dialog(player, {type="chooser"})
                 end
-                player_table.context.line = line  -- won't be reset after use, but that doesn't matter
+                ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
             end
         end
     else
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
             set_machine(floor, line, machine_name)
-            player_table.current_activity = nil
+            ui_state.current_activity = nil
             update_calculations(player, subfactory)
         end
     end
@@ -347,15 +345,14 @@ end
 
 -- Recieves the result of a chooser user choice and applies it
 function apply_chooser_machine_choice(player, machine_name)
-    local player_table = global.players[player.index]
-    set_machine(player_table.context.floor, player_table.context.line, machine_name)
-    update_calculations(player, player_table.context.subfactory)
+    local context = get_context(player)
+    set_machine(context.floor, context.line, machine_name)
+    update_calculations(player, context.subfactory)
 end
 
 -- Handles a click on any of the 3 item buttons of a specific line
 function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
-    local player_table = global.players[player.index]
-    local line = Floor.get(player_table.context.floor, "Line", line_id)
+    local line = Floor.get(get_context(player).floor, "Line", line_id)
     local item = Line.get(line, class, item_id)
 
     if alt then  -- Open item in FNEI
