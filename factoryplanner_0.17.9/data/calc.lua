@@ -40,10 +40,10 @@ function calc.update_floor(player, subfactory, floor, aggregate)
             -- Some local functions to avoid too many parameters needing to be passed
             local function calculate_production_ratio(item)
                 local product = calc.aggregate.get(aggregate, "Product", item)
-                if item.net then 
+                if item.net then
                     if item.net > 0 then return (math.abs(product.amount) * (line.percentage / 100)) / item.net
                     else return 0 end
-                else 
+                else
                     return (math.abs(product.amount) * (line.percentage / 100)) / item.ratio
                 end
             end
@@ -58,10 +58,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
             if item_count == 0 then
                 -- recipe is useless, do nothing
             elseif item_count == 1 then
-                -- Using a loop is pretty hacky but what you gonna do
-                for _, product in pairs(calc.aggregate.get_in_order(line_aggregate, "Product")) do
-                    production_ratio = calculate_production_ratio(product)
-                end
+                production_ratio = calculate_production_ratio(calc.aggregate.get_in_order(line_aggregate, "Product")[1])
             else  -- 2+ relevant Products
                 -- Determine the highest production ratio needed to fulfill demand
                 for _, product in pairs(calc.aggregate.get_in_order(line_aggregate, "Product")) do
@@ -263,10 +260,15 @@ end
 function calc.aggregate.item_init(base_item, item_type, class, amount)
     local item = Item.init(base_item, item_type, class, amount)
 
-    if base_item.class then item.ratio = base_item.ratio
-    elseif base_item.amount == nil then item.ratio = base_item.probability
-    else item.ratio = base_item.amount end
-
+    if base_item.class then 
+        item.ratio = base_item.ratio
+    else
+        if base_item.amount ~= nil then
+            item.ratio = base_item.amount
+        else
+            item.ratio = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
+        end
+    end
     return item
 end
 

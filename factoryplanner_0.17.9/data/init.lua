@@ -16,12 +16,12 @@ function global_init()
 
     global.players = {}
 
-    global.all_items = generator.all_items()
-    -- Recipes are generated on player init because they depend on their force
     global.all_machines = generator.all_machines()
+    -- Recipes are generated on player init because they depend on their force
+    global.all_items = generator.all_items()
     global.all_belts = generator.all_belts()
 
-    --global.devmode = true
+    global.devmode = true
     global.margin_of_error = 1e-10
 end
 
@@ -98,9 +98,9 @@ end
 function handle_configuration_change()
     global.mod_version = game.active_mods["factoryplanner"]
 
-    global.all_items = generator.all_items()
-    global.all_recipes = generator.all_recipes(true)
     global.all_machines = generator.all_machines()
+    global.all_recipes = generator.all_recipes(true)
+    global.all_items = generator.all_items()
     global.all_belts = generator.all_belts()
 
     -- Runs through all players, even new ones (those with no player_table etc)

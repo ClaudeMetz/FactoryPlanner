@@ -42,7 +42,8 @@ function generator.all_recipes(reset)
 
             -- Adding all standard recipes minus the undesirable ones
             for recipe_name, recipe in pairs(force.recipes) do
-                if undesirables[recipe_name] == nil and recipe.category ~= "handcrafting" then
+                -- Avoid any recipes that are undesirable or have no machine to produce them
+                if undesirables[recipe_name] == nil and global.all_machines[recipe.category] ~= nil then
                     recipes[force_name][recipe_name] = recipe
                 end
             end
@@ -157,16 +158,9 @@ local function undesirable_items()
             ["simple-entity-with-owner"] = false,
             ["infinity-chest"] = false,
             ["infinity-pipe"] = false,
-            
-            -- Angels items without recipes
-            ["angels-void"] = false,
-            ["water-void"] = false,
-            ["angels-plate-iron"] = false,
-            ["angels-plate-copper"] = false,
-            ["angels-wire-copper"] = false,
-            ["angels-plate-steel"] = false,
-            
             ["void"] = false
+        },
+        fluids = {
         },
         types = {
             ["blueprint"] = false,
@@ -210,7 +204,7 @@ function generator.all_items()
     for _, type in pairs(types) do
         items[type] = {}
         for item_name, item in pairs(game[type .. "_prototypes"]) do
-            if type == "fluid" then
+            if type == "fluid" and undesirables.fluids[item_name] == nil then
                 items[type][item_name] = item
             elseif undesirables.types[item.type] == nil and undesirables.items[item_name] == nil then
                 items[type][item_name] = item

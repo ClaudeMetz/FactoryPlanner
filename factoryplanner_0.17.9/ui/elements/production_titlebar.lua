@@ -149,8 +149,9 @@ function handle_floor_change_click(player, destination)
         Subfactory.remove(subfactory, floor)
     end
 
+    player_table.current_activity = nil
     update_calculations(player, subfactory)
-    refresh_production_pane(player)
+    refresh_main_dialog(player)
 end
 
 
