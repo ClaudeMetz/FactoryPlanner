@@ -4,29 +4,22 @@ TODO New Features:
 
 
 TODO Feature Improvements:
-- Improve number formating (vary precision on use case, avoid scientific notation) (see base.util!)
-- Add a linebreak to production table if window width is exceeded
 - Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
-- Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
+- Add a linebreak to production table if window width is exceeded
+? Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
 TODO Code Improvements:
+- Add script way to switch between git branches with different mod versions
 - Rework how machines are handled to be less clunky
 - identify item, recipes and machines by id, not name
-? identify all gui elements by unique id or sth, not by string splitting.
 
 
 TODO Bug Fixes:
 
 
 TODO Quick List:
-- make discussion post asking about module+beacon features
-- add preference to not show barreling recipes
-- improve %-textfield selection (+enlarge textbox? dynamically?)
-- add round-up indication stuff
-- improve number formatting
-- add search field to recipe selection
 - (machines rework? (+ingredient limit)) (develop general structure for these prototypes)
 - burner fuel consumption calculation
-- add way to set height of GUI
+- add round-up indication stuff
 -- RENAME MIGRATION STUFF

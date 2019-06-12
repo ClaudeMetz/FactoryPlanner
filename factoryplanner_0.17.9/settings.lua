@@ -12,11 +12,21 @@ data:extend({
         type = "int-setting",
         name = "fp_subfactory_items_per_row",
         setting_type = "runtime-per-user",
-        default_value = 7,
+        default_value = 8,
         allowed_values = {5, 6, 7, 8, 9},
         order = "b",
         localised_name = {"mod-setting-name.fp_subfactory_items_per_row"},
         localised_description = {"mod-setting-description.fp_subfactory_items_per_row"}
+    },
+    {
+        type = "int-setting",
+        name = "fp_floor_recipes_at_once",
+        setting_type = "runtime-per-user",
+        default_value = 14,
+        allowed_values = {8, 10, 12, 14, 16},
+        order = "c",
+        localised_name = {"mod-setting-name.fp_floor_recipes_at_once"},
+        localised_description = {"mod-setting-description.fp_floor_recipes_at_once"}
     },
     {
         type = "string-setting",
@@ -24,7 +34,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "Belts",
         allowed_values = {"Belts", "Lanes"},
-        order = "c",
+        order = "d",
         localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
         localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
     },
@@ -33,7 +43,7 @@ data:extend({
         name = "fp_show_hints",
         setting_type = "runtime-per-user",
         default_value = true,
-        order = "d",
+        order = "e",
         localised_name = {"mod-setting-name.fp_show_hints"},
         localised_description = {"mod-setting-description.fp_show_hints"}
     }

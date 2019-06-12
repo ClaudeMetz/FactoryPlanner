@@ -115,9 +115,9 @@ function generator.all_recipes(reset)
                 enabled = false,
                 hidden = false,
                 energy = 0,
-                group = {name="intermediate_products", order="c"},
-                subgroup = {name="science-pack", order="z"},
-                order = "k[fp-space-science-pack]",
+                group = {name="intermediate-products", order="c"},
+                subgroup = {name="science-pack", order="g"},
+                order = "x[fp-space-science-pack]",
                 ingredients = {
                     {type="item", name="rocket-part", amount=100},
                     {type="item", name="satellite", amount=1}

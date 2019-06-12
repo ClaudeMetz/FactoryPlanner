@@ -5,6 +5,7 @@ function add_subfactory_bar_to(main_dialog)
     subfactory_bar.style.bottom_margin = 8
     subfactory_bar.style.left_margin = 6
     subfactory_bar.style.horizontally_stretchable = true
+    subfactory_bar.style.vertically_squashable = false
     subfactory_bar.horizontal_scroll_policy = "never"
 
     local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}

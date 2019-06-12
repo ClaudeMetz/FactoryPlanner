@@ -2,9 +2,11 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI.
+    - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI
+    - Added a preference to ignore barreling recipes
+    - Added a setting to change the height of the main interface
   Changes:
-    - 
+    - Improved number formatting in several places
   Bugfixes:
     - 
 

@@ -7,7 +7,8 @@ function ui_util.recalculate_main_dialog_dimensions(player)
     local player_table = get_table(player)
 
     local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
-    player_table.ui_state.main_dialog_dimensions = {width = width, height = 1000}
+    local height = 395 + (player_table.settings.recipes_at_once * 39)
+    player_table.ui_state.main_dialog_dimensions = {width = width, height = height}
 end
 
 

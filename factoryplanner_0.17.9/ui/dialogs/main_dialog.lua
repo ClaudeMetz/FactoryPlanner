@@ -103,7 +103,7 @@ function create_main_dialog(player, visible)
     local main_dialog = player.gui.center.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
     main_dialog.visible = visible
     main_dialog.style.minimal_width = main_dialog_dimensions.width
-    main_dialog.style.minimal_height = main_dialog_dimensions.height
+    main_dialog.style.height = main_dialog_dimensions.height
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)

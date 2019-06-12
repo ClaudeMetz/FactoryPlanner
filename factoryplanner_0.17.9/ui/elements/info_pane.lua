@@ -45,7 +45,7 @@ function refresh_info_pane(player)
     local energy_consumption = ui_util.format_energy_consumption(subfactory.energy_consumption, 3)
     local label_energy = table_energy_consumption.add{type="label", name="label_energy_consumption",
       caption=energy_consumption}
-    label_energy.tooltip = ui_util.format_energy_consumption(subfactory.energy_consumption, 8)
+    label_energy.tooltip = ui_util.format_energy_consumption(subfactory.energy_consumption, 6)
     label_energy.style.font = "default-bold"
 
     -- Notes
