@@ -147,10 +147,10 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
                 number = item.amount / player_table.context.subfactory.timescale
             end
             
-            button.number = ("%.4g"):format(number)
-            if number ~= nil then 
+            if number ~= nil then
+                button.number = ("%.4g"):format(number)
                 button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 8), " ", view.caption}
-            else 
+            else
                 button.tooltip = tooltip_name 
             end
         end
