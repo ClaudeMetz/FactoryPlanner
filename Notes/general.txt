@@ -3,7 +3,6 @@ API Changes:
 - (asked) event for start_hover and stop_hover over elements or buttons only
 
 Bugs:
-- (meh) Textfields with .horizontal_align = "center" have their cursor in the wrong place often
 
 
 [N1] Items useable as fuel in burners

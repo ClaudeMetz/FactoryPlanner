@@ -74,7 +74,7 @@ function create_line_table_row(player, line)
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
       text=line.percentage}
-    textfield_percentage.style.width = 45
+    textfield_percentage.style.width = 55
     textfield_percentage.style.horizontal_align = "center"
 
     -- Machine button
@@ -112,7 +112,7 @@ function create_machine_button(gui_table, line, name, count, name_appendage)
     local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id
       .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe", 
       mouse_button_filter={"left"}, number=math.ceil(count)}
-    button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4), " ", {"tooltip.machines"}}
+    button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 6), " ", {"tooltip.machines"}}
 end
 
 -- Creates the flow containing all line items of the given type
@@ -145,7 +145,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             
             button.number = number
             if number ~= nil then 
-                button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 8), " ", view.caption}
+                button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 6), " ", view.caption}
             else 
                 button.tooltip = tooltip_name 
             end
@@ -244,6 +244,7 @@ function handle_percentage_change(player, element)
         ui_state.current_activity = nil
         refresh_main_dialog(player)
         
+        -- Refocus the textfield after the table is reloaded
         scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
     end
 
@@ -253,15 +254,15 @@ end
 -- Handles clicks on percentage textfields to improve user experience
 -- (Uses session variable previously_selected_textfield defined in listeners.lua)
 function handle_percentage_textfield_click(player, element)
-    if previously_selected_textfield ~= nil and previously_selected_textfield.valid then
-        previously_selected_textfield.select(0, 0)
-        local floor = get_context(player).floor
+    -- Replaces the previously selected textfields text in case it is invalid
+    -- (also unselects it, which the base game does not yet do)
+    if previously_selected_textfield ~= nil and previously_selected_textfield.valid
+      and previously_selected_textfield.index ~= element.index then
         local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
-        local line = Floor.get(floor, "Line", line_id)
+        local line = Floor.get(get_context(player).floor, "Line", line_id)
         previously_selected_textfield.text = line.percentage
     end
-    
-    element.select_all()
+
     previously_selected_textfield = element
 end
 
@@ -320,7 +321,7 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
                         local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
                         ui_state.modal_data.choices[index] = {
                             name = machine.name,
-                            tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
+                            tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 6)},
                             sprite = "entity/" .. machine.name,
                             number = math.ceil(count)
                         }

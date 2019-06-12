@@ -4,8 +4,7 @@ function add_production_pane_to(main_dialog)
 
     -- Production titlebar
     local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=5}
-    table_titlebar.style.top_margin = 10
-    table_titlebar.style.bottom_margin = 4
+    table_titlebar.style.bottom_margin = 8
 
     -- Title
     local title = table_titlebar.add{type="label", name="label_production_pane_title", 
@@ -61,17 +60,17 @@ function add_production_pane_to(main_dialog)
 
     -- Main production pane
     local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane_production_pane", direction="vertical"}
-    scroll_pane.style.minimal_height = 630
     scroll_pane.style.left_margin = 4
     scroll_pane.style.extra_left_margin_when_activated = -4
     scroll_pane.style.extra_top_margin_when_activated = -4
     scroll_pane.style.horizontally_stretchable = true
-    scroll_pane.style.vertically_stretchable = true
+    scroll_pane.style.vertically_squashable = true
 
     local column_count = 7
     local table = scroll_pane.add{type="table", name="table_production_pane",  column_count=column_count}
     table.style = "table_with_selection"
-    table.style.top_margin = 0
+    table.style.horizontal_spacing = 16
+    table.style.top_padding = 0
     table.style.left_margin = 6
     for i=1, column_count do
         if i < 5 then table.style.column_alignments[i] = "middle-center"
@@ -201,14 +200,14 @@ function change_view_state(player, view_name)
 
     -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
     local main_dialog = player.gui.center["fp_frame_main_dialog"]
-    if not main_dialog then return end
+    if not main_dialog or not main_dialog.visible then return end
     local table_view_selection = main_dialog["flow_production_pane"]["table_production_titlebar"]
       ["table_production_titlebar_view_selection"]
     if not (main_dialog["flow_production_pane"] and main_dialog["flow_production_pane"]["table_production_titlebar"]
      and table_view_selection) then return end
 
     -- Only change the view_state if it exists and is visible
-    if ui_state.view_state ~= nil and table_view_selection.visible == true then
+    if ui_state.view_state ~= nil and table_view_selection.visible then
         local id_to_select = nil
         for i, view in ipairs(ui_state.view_state) do
             -- Move selection on by one if no view_name is provided

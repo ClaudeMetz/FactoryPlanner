@@ -50,7 +50,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         toggle_button_interface(player)
 
     -- Changes the width of the main dialog. so it needs to be refreshed
-    elseif event.setting == "fp_subfactory_items_per_row" then
+    elseif event.setting == "fp_subfactory_items_per_row" or
+      event.setting == "fp_floor_recipes_at_once" then
         refresh_main_dialog(player, true)
 
     -- Refreshes the view selection buttons appropriately
@@ -115,6 +116,11 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     -- Applies the hidden filter to a picker dialog
     elseif event.element.name == "fp_checkbox_picker_filter_condition_hidden" then
         handle_filter_radiobutton_click(player, "hidden", event.element.state)
+    
+    -- Changes the preference to ignore barreling
+    elseif event.element.name == "fp_checkbox_preferences_ignore_barreling" then
+        get_preferences(player).ignore_barreling_recipes = event.element.state
+
     end
 end)
 
@@ -161,13 +167,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
                 handle_percentage_textfield_click(player, event.element)
             end
-            
-        else
-            -- Remove focus from textfield so keyboard shortcuts work (not super reliable)
-            local main_dialog = player.gui.center["fp_frame_main_dialog"]
-            if main_dialog ~= nil then main_dialog.focus() end
         end
-
 
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
         if event.element.name == "fp_button_toggle_interface" 

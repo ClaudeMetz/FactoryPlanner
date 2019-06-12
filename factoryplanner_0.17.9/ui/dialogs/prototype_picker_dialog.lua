@@ -183,6 +183,8 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
             existing_products[product.name] = true
         end
     end
+
+    local preferences = get_preferences(player)
     
     local first_visible_group = nil
     local visible_group_count = 0
@@ -229,7 +231,9 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden) 
+                    if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden)
+                      or (preferences.ignore_barreling_recipes
+                      and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel"))
                       or not search_function(recipe, search_term) then
                         visible = false
                     end
