@@ -33,7 +33,7 @@ end
 function player_gui_reset(player)
     local center = player.gui.center
     local guis = {
-        mod_gui.get_button_flow(player),
+        mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
         center["fp_frame_main_dialog"],
         center["fp_frame_modal_dialog"],
         center["fp_frame_modal_dialog_item_picker"],

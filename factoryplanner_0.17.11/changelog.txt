@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Bugfixes:
+    - Fixed Factory Planner accidentally deleting the mod buttons of other mods in the top right corner
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.11
 Date: 12. 06. 2019
   Bugfixes:
