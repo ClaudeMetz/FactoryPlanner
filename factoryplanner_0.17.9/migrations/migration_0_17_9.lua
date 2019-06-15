@@ -1,8 +1,11 @@
-migration_0_17_10 = {}
+migration_0_17_9 = {}
 
-function migration_0_17_10.global()
+function migration_0_17_9.global()
     global.devmode = nil
     global.margin_of_error = nil
+    
+    global.all_belts = generator.all_belts()
+    global.all_machines = generator.all_machines()
 
     -- Add mod version and player_index for the first time to the player_table
     for player_index, player_table in pairs(global.players) do
@@ -11,7 +14,7 @@ function migration_0_17_10.global()
     end
 end
 
-function migration_0_17_10.player_table(player, player_table)
+function migration_0_17_9.player_table(player, player_table)
     player_table.preferences = {}
     player_table.ui_state = {}
 
@@ -30,14 +33,19 @@ function migration_0_17_10.player_table(player, player_table)
     player_table.queued_message = nil
 end
 
-function migration_0_17_10.subfactory(player, subfactory)
+function migration_0_17_9.subfactory(player, subfactory)
     for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+            local category_id = global.all_machines.map[line.recipe_category]
+            line.category_id = category_id
             line.recipe_category = nil
-            line.category_id = nil
-
+            if category_id ~= nil then
+                local machine_id = global.all_machines.categories[category_id].map[line.machine_name]
+                line.machine_id = machine_id
+            else
+                line.machine_id = nil
+            end
             line.machine_name = nil
-            line.machine_id = nil
         end
     end
 end

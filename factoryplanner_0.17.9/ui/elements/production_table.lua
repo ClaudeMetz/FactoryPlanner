@@ -139,7 +139,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             if view.name == "items_per_timescale" then
                 number = item.amount
             elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
-                local throughput = global.all_belts[player_table.preferences.preferred_belt_name].throughput
+                local throughput = global.all_belts.belts[player_table.preferences.preferred_belt_id].throughput
                 local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
                 number = item.amount / divisor / 60
             elseif view.name == "items_per_second" then

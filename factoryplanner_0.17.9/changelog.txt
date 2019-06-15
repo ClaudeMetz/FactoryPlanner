@@ -9,8 +9,6 @@ Date: 00. 00. 0000
     - Added a setting to change the height of the main interface
   Changes:
     - Improved number formatting in several places
-  Bugfixes:
-    - 
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.9

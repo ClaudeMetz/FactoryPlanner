@@ -64,13 +64,13 @@ function refresh_preferences_dialog(player)
     local table_all_belts = flow_modal_dialog["table_all_belts"]
     table_all_belts.clear()
 
-    for _, belt in pairs(global.all_belts) do
+    for belt_id, belt in pairs(global.all_belts.belts) do
         local button_belt = table_all_belts.add{type="sprite-button", name="fp_sprite-button_preferences_belt_"
-          .. belt.name, sprite="entity/" .. belt.name, mouse_button_filter={"left"}}
+          .. belt_id, sprite="entity/" .. belt.name, mouse_button_filter={"left"}}
         local tooltip = belt.localised_name
 
-        local preferred_belt_name = get_preferences(player).preferred_belt_name
-        if preferred_belt_name == belt.name then
+        local preferred_belt_id = get_preferences(player).preferred_belt_id
+        if preferred_belt_id == belt_id then
             button_belt.style = "fp_button_icon_medium_green"
             tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
         else 
@@ -113,7 +113,7 @@ function handle_preferences_machine_change(player, category_id, id)
 end
 
 -- Changes the preferred belt
-function handle_preferences_belt_change(player, name)
-    get_preferences(player).preferred_belt_name = name
+function handle_preferences_belt_change(player, id)
+    get_preferences(player).preferred_belt_id = id
     refresh_preferences_dialog(player)
 end

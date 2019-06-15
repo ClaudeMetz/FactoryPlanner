@@ -18,12 +18,9 @@ TODO Code Improvements:
 
 
 TODO Bug Fixes:
-- Uncomment loader machine section, change util.base_data.default_machines() to use
-  the global machine table, and set preferences.default_machines to reuse previous prefs
 
 
 TODO Quick List:
-- do the same for belts
 - burner fuel consumption calculation
 -- RENAME MIGRATION STUFF
 -- TEST TEST TEST

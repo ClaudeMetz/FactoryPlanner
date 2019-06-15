@@ -12,7 +12,7 @@ require("migrations.handler")
 
 -- Margin of error for floating poing calculations
 margin_of_error = 1e-10
---devmode = true
+devmode = true
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -112,10 +112,8 @@ end
 function reload_preferences(player)
     local preferences = global.players[player.index].preferences
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
-    preferences.default_machines = data_util.base_data.default_machines()
-
-    -- These functions handle initializing their preferences attribute themselves
-    data_util.update_preferred_belt(player)
+    preferences.preferred_belt_id = preferences.preferred_belt_id or data_util.base_data.preferred_belt()
+    preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines()
 end
 
 -- (Re)sets the UI state of the given player

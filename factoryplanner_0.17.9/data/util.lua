@@ -35,9 +35,10 @@ end
 -- **** MACHINES ****
 -- Changes the preferred machine for the given category
 function data_util.machines.set_default(player, category_id, machine_id)
-    get_preferences(player).default_machines.machines[category_id] = machine_id
+    local preferences = get_preferences(player)
+    preferences.default_machines.machines[category_id] = machine_id
     local machine = global.all_machines.categories[category_id].machines[machine_id]
-    get_preferences(player).default_machines.map[machine.name] = category_id
+    preferences.default_machines.map[machine.name] = category_id
 end
 
 -- Returns the default machine for the given category
@@ -99,12 +100,16 @@ end
 -- Creates the default structure for default_machines
 function data_util.base_data.default_machines()
     local default_machines = {machines = {}, map = {}}
-    local all_machines = generator.all_machines()
-    for category_id, category in ipairs(all_machines.categories) do
+    for category_id, category in ipairs(global.all_machines.categories) do
         default_machines.machines[category_id] = category.machines[1].id
         default_machines.map[category.name] = category_id
     end
     return default_machines
+end
+
+-- Returns the default preferred belt
+function data_util.base_data.preferred_belt()
+    return global.all_belts.belts[1].id
 end
 
 
@@ -127,15 +132,6 @@ function data_util.run_invalid_dataset_removal(player, parent, classes, attempt_
     end
 end
 
--- Updates the preferred belt, preventing it from being invalid
-function data_util.update_preferred_belt(player)
-    local preferences = get_preferences(player)
-    if preferences.preferred_belt_name == nil or 
-      global.all_belts[preferences.preferred_belt_name] == nil then
-        preferences.preferred_belt_name = next(global.all_belts)
-    end
-end
-
 -- Following are a couple helper functions for populating (sub)factories
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
@@ -151,7 +147,7 @@ local function construct_floor(player, floor, recipes)
     -- Adds a line containing the given recipe to the current floor
     local function add_line(recipe_data)
         local recipe = global.all_recipes[player.force.name][recipe_data.recipe]
-        local category_id = global.all_machines.map[base_recipe.category]
+        local category_id = global.all_machines.map[recipe.category]
         local machine = global.all_machines.categories[category_id].machines[recipe_data.machine_id]
         return Floor.add(floor, Line.init(player, recipe, machine))
     end

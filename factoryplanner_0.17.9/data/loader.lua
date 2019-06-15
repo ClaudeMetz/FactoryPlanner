@@ -1,24 +1,49 @@
 loader = {
-    machines = {}
+    machines = {},
+    belts = {}
 }
 
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function loader.setup()
+    loader.belts.setup()
     loader.machines.setup()
 
     global.all_items = generator.all_items()
-    global.all_belts = generator.all_belts()
     global.all_recipes = generator.all_recipes()
 end
 
 -- Updates the relevant data of the given player to fit the new data
 function loader.run(player_table)
+    loader.belts.run(player_table)
     loader.machines.run(player_table)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
 function loader.finish()
+    loader.belts.finish()
     loader.machines.finish()
+end
+
+
+function loader.belts.setup()
+    belts = {}
+    belts.new = generator.all_belts()
+end
+
+function loader.belts.run(player_table)
+    local preferences = player_table.preferences
+    local old_belt = global.all_belts.belts[preferences.preferred_belt_id]
+    local new_belt_id = belts.new.map[old_belt.name]
+    if new_belt_id ~= nil then
+        preferences.preferred_belt_id = new_belt_id
+    else
+        preferences.preferred_belt_id = belts.new.belts[1].id
+    end   
+end
+
+function loader.belts.finish()
+    global.all_belts = belts.new
+    belts = nil
 end
 
 
@@ -29,26 +54,33 @@ end
 
 function loader.machines.run(player_table)
     -- Update line data
-    --[[ for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
+    for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
         for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
             for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+                local category_found = false
                 local old_category = global.all_machines.categories[line.category_id]
-                local new_category_id = machines.new.map[old_category.name]
-                if new_category_id == nil then
+                if old_category ~= nil then
+                    local new_category_id = machines.new.map[old_category.name]
+                    if new_category_id ~= nil then
+                        local old_machine = old_category.machines[line.machine_id]
+                        if old_machine ~= nil then
+                            line.category_id = new_category_id
+                            -- machine_id might still be nil here
+                            line.machine_id = machines.new.categories[new_category_id].map[old_machine.name]
+                            category_found = true
+                        end
+                    end
+                end
+                if not category_found then  -- Reset category and machine if no match is found
                     line.category_id = nil
                     line.machine_id = nil
-                else
-                    local old_machine = old_category.machines[line.machine_id]
-                    line.category_id = new_category_id
-                    -- machine_id might still be nil here
-                    line.machine_id = machines.new.categories[new_category_id].map[old_machine.name]
                 end
             end
         end
-    end ]]
+    end
 
     -- Update default machines
-    --[[ local preferences = player_table.preferences
+    local preferences = player_table.preferences
     local default_machines = {machines = {}, map = {}}
 
     for new_category_id, new_category in ipairs(machines.new.categories) do
@@ -70,7 +102,7 @@ function loader.machines.run(player_table)
         end
     end
 
-    preferences.default_machines = default_machines ]]
+    preferences.default_machines = default_machines
 end
 
 function loader.machines.finish()
