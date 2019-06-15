@@ -39,11 +39,11 @@ function generator.all_recipes()
     for force_name, force in pairs(game.forces) do
         if recipes[force_name] == nil then 
             recipes[force_name] = {}
-
             -- Adding all standard recipes minus the undesirable ones
             for recipe_name, recipe in pairs(force.recipes) do
                 -- Avoid any recipes that are undesirable or have no machine to produce them
-                if undesirables[recipe_name] == nil and global.all_machines[recipe.category] ~= nil then
+                local category_id = global.all_machines.map[recipe.category]
+                if undesirables[recipe_name] == nil and category_id ~= nil then
                     recipes[force_name][recipe_name] = recipe
                 end
             end
@@ -160,7 +160,8 @@ local function undesirable_items()
             ["simple-entity-with-owner"] = false,
             ["infinity-chest"] = false,
             ["infinity-pipe"] = false,
-            ["void"] = false
+            ["void"] = false,
+            ["angels-void"] = false
         },
         fluids = {
         },
@@ -200,18 +201,28 @@ function generator.all_items()
         end
     end
 
+    -- Create a table containing each item that has at least one recipe
+    local craftable_products = {}
+    for _, recipe in pairs(global.all_recipes["player"]) do
+        for _, product in ipairs(recipe.products) do
+            craftable_products[product.name] = true
+        end
+    end
+    
     local undesirables = undesirable_items()
     -- Adding all standard items minus the undesirable ones
     local types = {"item", "fluid"}
     for _, type in pairs(types) do
         items[type] = {}
         for item_name, item in pairs(game[type .. "_prototypes"]) do
-            if type == "fluid" and undesirables.fluids[item_name] == nil then
-                items[type][item_name] = item
-            elseif undesirables.types[item.type] == nil and undesirables.items[item_name] == nil then
-                items[type][item_name] = item
+            if craftable_products[item_name] then
+                if type == "fluid" and undesirables.fluids[item_name] == nil then
+                    items[type][item_name] = item
+                elseif undesirables.types[item.type] == nil and undesirables.items[item_name] == nil then
+                    items[type][item_name] = item
+                end
+                add_to_index(item_name, type)
             end
-            add_to_index(item_name, type)
         end
     end
     

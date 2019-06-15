@@ -1,6 +1,6 @@
-migration_0_17_9 = {}
+migration_0_17_13 = {}
 
-function migration_0_17_9.global()
+function migration_0_17_13.global()
     global.devmode = nil
     global.margin_of_error = nil
     
@@ -15,7 +15,7 @@ function migration_0_17_9.global()
     end
 end
 
-function migration_0_17_9.player_table(player, player_table)
+function migration_0_17_13.player_table(player, player_table)
     player_table.preferences = {}
     player_table.ui_state = {}
 
@@ -34,7 +34,7 @@ function migration_0_17_9.player_table(player, player_table)
     player_table.queued_message = nil
 end
 
-function migration_0_17_9.subfactory(player, subfactory)
+function migration_0_17_13.subfactory(player, subfactory)
     for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             local category_id = global.all_machines.map[line.recipe_category]

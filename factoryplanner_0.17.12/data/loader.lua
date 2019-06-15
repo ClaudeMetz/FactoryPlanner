@@ -13,8 +13,7 @@ function loader.setup()
         _G[data_type].new = _G["generator"]["all_" .. data_type]()
     end
 
-    global.all_items = generator.all_items()
-    global.all_recipes = generator.all_recipes()
+    
 end
 
 -- Updates the relevant data of the given player to fit the new data
@@ -30,6 +29,9 @@ function loader.finish()
         global["all_" .. data_type] = _G[data_type].new
         _G[data_type] = nil
     end
+
+    global.all_recipes = generator.all_recipes()
+    global.all_items = generator.all_items()
 end
 
 

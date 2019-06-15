@@ -23,5 +23,3 @@ TODO Bug Fixes:
 
 
 TODO Quick List:
--- RENAME MIGRATION STUFF
--- TEST TEST TEST

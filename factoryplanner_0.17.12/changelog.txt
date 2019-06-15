@@ -1,3 +1,4 @@
+---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
@@ -6,6 +7,7 @@ Date: 00. 00. 0000
       The type of fuel is adjutable in preferences or per line (left-click it).
     - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI
     - Ingredient limits on assemblers are now respected
+    - Now optionally hides all items that don't have a recipe
     - Added a preference to ignore barreling recipes
     - Added a setting to change the height of the main interface
   Changes:
