@@ -135,7 +135,7 @@ function create_label_sprite_element(table, width_remaining, subfactory, selecte
 
         label.style.font = "fp-font-mono-15p"
         label.style.font_color = {}  -- black
-        label.style.top_padding = 5
+        label.style.top_padding = 6
         label.style.left_padding = 3
 
         return button_width

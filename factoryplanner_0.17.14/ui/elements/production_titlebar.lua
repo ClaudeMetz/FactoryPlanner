@@ -132,9 +132,9 @@ end
 
 -- Handles a click on a button that changes the viewed floor of a subfactory
 function handle_floor_change_click(player, destination)
-    local context = get_context(player)
-    local subfactory = context.subfactory
-    local floor = context.floor
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
 
     local selected_floor = nil
     if destination == "up" then
@@ -150,7 +150,7 @@ function handle_floor_change_click(player, destination)
         Subfactory.remove(subfactory, floor)
     end
 
-    player_table.current_activity = nil
+    ui_state.current_activity = nil
     update_calculations(player, subfactory)
     refresh_main_dialog(player)
 end

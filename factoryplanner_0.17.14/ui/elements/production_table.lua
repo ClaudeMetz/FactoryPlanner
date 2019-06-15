@@ -139,15 +139,16 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             end
 
             local number = nil
+            local timescale = player_table.ui_state.context.subfactory.timescale
             local view = player_table.ui_state.view_state[player_table.ui_state.view_state.selected_view_id]
             if view.name == "items_per_timescale" then
                 number = item.amount
             elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
                 local throughput = global.all_belts.belts[player_table.preferences.preferred_belt_id].throughput
                 local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
-                number = item.amount / divisor / 60
+                number = item.amount / divisor / timescale
             elseif view.name == "items_per_second" then
-                number = item.amount / player_table.ui_state.context.subfactory.timescale
+                number = item.amount / timescale
             end
             
             if number ~= nil then
@@ -200,7 +201,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
                 line.subfloor = Subfactory.add(subfactory, subfloor)
                 update_calculations(player, subfactory)
             end
-            player_table.current_activity = nil
+            ui_state.current_activity = nil
             data_util.context.set_floor(player, line.subfloor)
             
             -- Handle removal of clicked (assembly) line
@@ -356,31 +357,35 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         Line.shift(line, item, direction)
     else
         if click == "right" and item.fuel then
-            local ui_state = get_ui_state(player)
-            local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
-            -- Setup chooser dialog
-            ui_state.modal_data = {
-                title = {"label.fuel"},
-                text = {"", {"label.chooser_fuel"}, " '", machine.localised_name, "':"},
-                choices = {},
-                reciever_name = "fuel"
-            }
+            if line.subfloor ~= nil then
+                queue_message(player, {"label.error_fuel_on_subfloor"}, "warning")
+            else
+                local ui_state = get_ui_state(player)
+                local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
+                -- Setup chooser dialog
+                ui_state.modal_data = {
+                    title = {"label.fuel"},
+                    text = {"", {"label.chooser_fuel"}, " '", machine.localised_name, "':"},
+                    choices = {},
+                    reciever_name = "fuel"
+                }
 
-            -- Fill chooser dialog with elements
-            for fuel_id, fuel in pairs(global.all_fuels.fuels) do
-                local energy_consumption = line.machine_count * (machine.energy * 60)
-                local count = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value)
-                  * ui_state.context.subfactory.timescale
-                table.insert(ui_state.modal_data.choices, {
-                    name = fuel_id,
-                    tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 6)},
-                    sprite = fuel.type .. "/" .. fuel.name,
-                    number = math.ceil(count)
-                })
+                -- Fill chooser dialog with elements
+                for fuel_id, fuel in pairs(global.all_fuels.fuels) do
+                    local energy_consumption = line.machine_count * (machine.energy * 60)
+                    local count = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value)
+                      * ui_state.context.subfactory.timescale
+                    table.insert(ui_state.modal_data.choices, {
+                        name = fuel_id,
+                        tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 6)},
+                        sprite = fuel.type .. "/" .. fuel.name,
+                        number = math.ceil(count)
+                    })
+                end
+
+                enter_modal_dialog(player, {type="chooser"})
+                ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
             end
-
-            enter_modal_dialog(player, {type="chooser"})
-            ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
 
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.type ~= "entity" then
