@@ -227,7 +227,7 @@ function data_util.run_dev_config(player)
 
         -- Floors
         local recipes = {
-            {recipe="electronic-circuit", machine_id=1}
+            --{recipe="electronic-circuit", machine_id=1}
         }
         construct_floor(player, context.floor, recipes)
     end

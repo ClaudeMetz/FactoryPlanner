@@ -1,5 +1,5 @@
 --require("migration_0_17_0")
-require("migration_0_17_9")
+require("migration_0_17_13")
 
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
@@ -9,7 +9,7 @@ require("migration_0_17_9")
 function migration_masterlist()
     return {
         --[0] = {version="0.17.0"},
-        [1] = {version="0.17.9"}
+        [1] = {version="0.17.13"}
     }
 end
 
