@@ -1,38 +1,27 @@
 TODO New Features:
 - Add an option to show whether machine numbers are perfect or rounded up
+- Add a toggleable comment field to each (assembly) line
 - Add some keyboard shortcuts that make sense
-? Add a way to sort the recipes on a floor by order of decreasing complexity
+- Add the ability to set the product amount on a line permanently, ignoring previous requirements
+? Add fluid mining recipes
 
 
 TODO Feature Improvements:
-- Improve number formating (vary precision on use case, avoid scientific notation) (see base.util!)
 - Add a linebreak to production table if window width is exceeded
-- Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
-- Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
+? Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
 TODO Code Improvements:
-- Rework how machines are handled to be less clunky
-- identify item, recipes and machines by id, not name
-? identify all gui elements by unique id or sth, not by string splitting.
+- Loader should not irrevoquably destroy data / if the user saves then loads with the mods
+  re-enabled, the subfactories should just show up like they did before
+- Add script way to switch between git branches with different mod versions
+- Find a way to test migrations reliably before the mod version is bumped
+- identify item, recipes by id, not name
 
 
 TODO Bug Fixes:
 
 
 TODO Quick List:
-- make discussion post asking about module+beacon features
-- redo player_table structure regarding preferences and in general
-  Redo it from the ground up to make it more readable
-- add 'util' functions for setting/getting ui_state, settings, preferences
-- add appropriate player_table migration + check migration correctness
-- add preference to not show barreling recipes
-- improve %-textfield selection (+enlarge textbox? dynamically?)
-- add round-up indication stuff
-- improve number formatting
-- add search field to recipe selection
-- FNEI stuff
-- (machines rework? (+ingredient limit)) (develop general structure for these prototypes)
-- burner fuel consumption calculation
-- check whether pyanodon correction is still needed
-- add way to set height of GUI
+-- RENAME MIGRATION STUFF
+-- TEST TEST TEST

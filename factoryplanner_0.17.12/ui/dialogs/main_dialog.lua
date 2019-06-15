@@ -24,8 +24,6 @@ function player_gui_init(player)
 
     -- Incorporates the mod setting for the visibility of the toggle-main-dialog-button
     toggle_button_interface(player)
-    -- Calculates the main dialog size incorporating the relevant user settings
-    ui_util.recalculate_main_dialog_dimensions(player)
 end
 
 -- Destroys all GUI's so they are loaded anew the next time they are shown
@@ -47,7 +45,7 @@ end
 
 -- Toggles the visibility of the toggle-main-dialog-button
 function toggle_button_interface(player)
-    local enable = global.players[player.index].settings.show_gui_button
+    local enable = get_settings(player).show_gui_button
     mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
 end
 
@@ -56,7 +54,7 @@ end
 function toggle_main_dialog(player)
     local center = player.gui.center
     -- Won't toggle if a modal dialog is open
-    if global.players[player.index].modal_dialog_type == nil then
+    if get_ui_state(player).modal_dialog_type == nil then
         local main_dialog = center["fp_frame_main_dialog"]
 
         -- Create and open main dialog, if it doesn't exist yet
@@ -101,11 +99,11 @@ end
 
 -- Constructs the main dialog
 function create_main_dialog(player, visible)
-    local main_dialog_dimensions = global.players[player.index].main_dialog_dimensions
+    local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
     local main_dialog = player.gui.center.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
     main_dialog.visible = visible
     main_dialog.style.minimal_width = main_dialog_dimensions.width
-    main_dialog.style.minimal_height = main_dialog_dimensions.height
+    main_dialog.style.height = main_dialog_dimensions.height
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)
@@ -120,25 +118,24 @@ end
 
 -- Queues the caption of the general message to be displayed on the next refresh
 function queue_message(player, message, type)
-    global.players[player.index].queued_message = {string=message, type=type}
+    get_ui_state(player).queued_message = {string=message, type=type}
 end
 
 -- Refreshes the general messge that is displayed next to the main dialog title
 function refresh_message(player)
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
     local label_hint = player.gui.center["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
     
-    if player_table.queued_message ~= nil then
-
-        if player_table.queued_message.type == "warning" then
+    if ui_state.queued_message ~= nil then
+        if ui_state.queued_message.type == "warning" then
             ui_util.set_label_color(label_hint, "red")
-            label_hint.caption = player_table.queued_message.string
-        elseif player_table.queued_message.type == "hint" and player_table.settings.show_hints then 
+            label_hint.caption = ui_state.queued_message.string
+        elseif ui_state.queued_message.type == "hint" and get_settings(player).show_hints then 
             ui_util.set_label_color(label_hint, "yellow")
-            label_hint.caption = player_table.queued_message.string
+            label_hint.caption = ui_state.queued_message.string
         end
 
-        player_table.queued_message = nil
+        ui_state.queued_message = nil
     else
         label_hint.caption = ""
     end

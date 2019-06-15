@@ -1,10 +1,14 @@
-ui_util = {}
+ui_util = {
+    fnei = {}
+}
 
--- Readjusts the size of the main dialog according to the user setting of number of items per row
+-- Readjusts the size of the main dialog according to the user settings
 function ui_util.recalculate_main_dialog_dimensions(player)
-    local player_table = global.players[player.index]
+    local player_table = get_table(player)
+
     local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
-    player_table.main_dialog_dimensions.width = width
+    local height = 395 + (player_table.settings.recipes_at_once * 39)
+    player_table.ui_state.main_dialog_dimensions = {width = width, height = height}
 end
 
 
@@ -119,4 +123,35 @@ function ui_util.split(s, separator)
         table.insert(r, token) 
     end
     return r
+end
+
+-- **** FNEI ****
+-- This indicates the version of the FNEI remote interface this is compatible with
+local fnei_version = 1
+
+-- Opens FNEI to show the given item
+-- Mirrors FNEI's distinction between left and right clicks
+function ui_util.fnei.show_item(item, click)
+    if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
+        local action_type = (click == "left") and "craft" or "usage"
+        remote.call("fnei", "show_item", action_type, item.type, item.name)
+    end
+end
+
+-- Opens FNEI to show the given recipe
+-- Attempts to show an appropriate item context, if possible
+function ui_util.fnei.show_recipe(recipe, line_products)
+    if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
+        if recipe.prototype.main_product then
+            local product = recipe.prototype.main_product
+            remote.call("fnei", "show_recipe", recipe.name, product.type, product.name)
+        elseif #line_products == 1 then
+            local product = line_products[1]
+            remote.call("fnei", "show_recipe", recipe.name, product.type, product.name)
+        else
+            -- The functionality to show a recipe without context does not exist (yet) in FNEI,
+            -- so for now, this case will not show any recipe
+            -- remote.call("fnei", "show_recipe", recipe.name)
+        end
+    end
 end

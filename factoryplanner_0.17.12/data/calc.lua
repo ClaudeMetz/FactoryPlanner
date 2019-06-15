@@ -112,12 +112,23 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 end
 
                 -- Machines (Same for machines and miners because the machine and line values are adjusted beforehand)
-                local machine = global.all_machines[line.recipe_category].machines[line.machine_name]
+                local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
                 line_aggregate.machine_count = (production_ratio / (machine.speed / line.recipe_energy)) / subfactory.timescale
 
                 -- Energy consumption
-                if not machine.burner then
-                    line_aggregate.energy_consumption = line_aggregate.machine_count * (machine.energy * 60)
+                local energy_consumption = line_aggregate.machine_count * (machine.energy * 60)
+                if machine.burner == nil then
+                    line_aggregate.energy_consumption = energy_consumption
+                elseif machine.burner.categories["chemical"] then
+                    line.fuel_id = line.fuel_id or get_preferences(player).preferred_fuel_id
+                    local fuel = global.all_fuels.fuels[line.fuel_id]
+                    local fuel_amount = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value) * subfactory.timescale
+                    local fuel_item = global.all_items[fuel.type][fuel.name]
+                    
+                    -- How this is added is silly and needs to be fixed with the future proper interface
+                    local item = Item.init(fuel_item, fuel.type, "Ingredient", fuel_amount)
+                    item.fuel = true
+                    calc.aggregate.add(line_aggregate, calc.aggregate.item_init(item, nil, "Ingredient", fuel_amount))
                 end
 
             else  -- Reset the product counts
@@ -191,7 +202,9 @@ function calc.update_item_collection(object, class, result)
     for _, result_item in pairs(calc.aggregate.get_in_order(result, class)) do
         if not result_item.touched then
             if not (object.class == "Subfactory" and result_item.amount == 0) then
-                _G[object.class].add(object, Item.init(result_item, result_item.type, class, result_item.amount))
+                local item = Item.init(result_item, result_item.type, class, result_item.amount)
+                item.fuel = result_item.fuel
+                _G[object.class].add(object, item)
             end
         end
     end
@@ -259,6 +272,7 @@ end
 -- Creates a special item to be put in an aggregate
 function calc.aggregate.item_init(base_item, item_type, class, amount)
     local item = Item.init(base_item, item_type, class, amount)
+    item.fuel = base_item.fuel
 
     if base_item.class then 
         item.ratio = base_item.ratio
@@ -276,10 +290,10 @@ end
 function calc.aggregate.add(aggregate, aggregate_object)
     local collection = aggregate[aggregate_object.class][aggregate_object.type]
     local aggregate_item = collection.datasets[collection.map[aggregate_object.name]]
-
+    
     if aggregate_item ~= nil then
         aggregate_item.amount = aggregate_item.amount + aggregate_object.amount
-
+        
         if not aggregate_item.main and aggregate_item.amount == 0 then
             calc.aggregate.remove(aggregate, aggregate_item)
         end

@@ -1,12 +1,11 @@
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
 function open_subfactory_dialog(flow_modal_dialog)
     local player = game.players[flow_modal_dialog.player_index]
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
     
-    if player_table.selected_object ~= nil then  -- Meaning this is an edit
-
+    if ui_state.selected_object ~= nil then  -- Meaning this is an edit
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
-        local subfactory = player_table.selected_object
+        local subfactory = ui_state.selected_object
         local icon = subfactory.icon
         if icon ~= nil then
             if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
@@ -23,19 +22,19 @@ end
 -- Handles submission of the subfactory dialog
 function close_subfactory_dialog(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
 
     if action == "submit" then
-        local subfactory = player_table.selected_object
+        local subfactory = ui_state.selected_object
         if subfactory ~= nil then
             subfactory.name = data.name
             Subfactory.set_icon(subfactory, data.icon)  -- Exceptional setter for edge case handling
         else
-            local subfactory = Factory.add(player_table.factory, Subfactory.init(data.name, data.icon))
+            local subfactory = Factory.add(ui_state.context.factory, Subfactory.init(data.name, data.icon))
             data_util.context.set_subfactory(player, subfactory)
         end
     elseif action == "delete" then
-        player_table.current_activity = "deleting_subfactory"  -- a bit of a hack
+        ui_state.current_activity = "deleting_subfactory"  -- a bit of a hack
         handle_subfactory_deletion(player)
     end
 end

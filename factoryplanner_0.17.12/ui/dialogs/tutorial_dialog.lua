@@ -48,7 +48,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     protips_title.style.font = "fp-font-bold-20p"
 
     local protip_names = {"hovering", "list_ordering", "machine_changing", "machine_preferences", "interface_width",
-      "recipe_consolidation", "recursive_subfloors"}
+      "fnei", "recipe_consolidation", "recursive_subfloors"}
     for _, name in ipairs(protip_names) do
         local label = table_tutorial.add{type="label", name="label_tutorial_" .. name, 
           caption={"", "- ", {"tip.pro_" .. name}}}
@@ -60,7 +60,6 @@ end
 
 -- Creates the example subfactory and shows it to the user
 function handle_add_example_subfactory_click(player)
-    log(table_size(game.active_mods))
     local subfactory = data_util.add_example_subfactory(player)
     update_calculations(player, subfactory)
     exit_modal_dialog(player, "cancel", {})
