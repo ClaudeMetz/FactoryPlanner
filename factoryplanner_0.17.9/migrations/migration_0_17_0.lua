@@ -5,8 +5,8 @@ migration_0_17_0 = {}
 function migration_0_17_0.global()
 end
 
-function migration_0_17_0.player_table(player_table)
+function migration_0_17_0.player_table(player, player_table)
 end
 
-function migration_0_17_0.subfactory(subfactory)
+function migration_0_17_0.subfactory(player, subfactory)
 end

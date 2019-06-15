@@ -326,3 +326,10 @@ function picker.select_item_group(player, object_type, item_group_name)
         end
     end
 end
+
+-- Handles a new search term in the search bar
+function picker.search(player)
+    local ui_state = get_ui_state(player)
+    local object_type = string.gsub(ui_state.modal_dialog_type, "_picker", "")
+    picker.apply_filter(player, object_type, false, get_search_function(ui_state.selected_object))
+end

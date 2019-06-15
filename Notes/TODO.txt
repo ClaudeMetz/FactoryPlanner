@@ -1,25 +1,29 @@
 TODO New Features:
 - Add an option to show whether machine numbers are perfect or rounded up
+- Add a toggleable comment field to each (assembly) line
 - Add some keyboard shortcuts that make sense
+- Add the ability to set the product amount on a line permanently, ignoring previous requirements
+? Add fluid mining recipes
 
 
 TODO Feature Improvements:
-- Ingredient limit for machines is optional, but still possible; this is not respected (needs machines data rework)
 - Add a linebreak to production table if window width is exceeded
 ? Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
 TODO Code Improvements:
 - Add script way to switch between git branches with different mod versions
-- Rework how machines are handled to be less clunky
-- identify item, recipes and machines by id, not name
+- Find a way to test migrations reliably before the mod version is bumped
+- identify item, recipes by id, not name
 
 
 TODO Bug Fixes:
+- Uncomment loader machine section, change util.base_data.default_machines() to use
+  the global machine table, and set preferences.default_machines to reuse previous prefs
 
 
 TODO Quick List:
-- (machines rework? (+ingredient limit)) (develop general structure for these prototypes)
+- do the same for belts
 - burner fuel consumption calculation
-- add round-up indication stuff
 -- RENAME MIGRATION STUFF
+-- TEST TEST TEST

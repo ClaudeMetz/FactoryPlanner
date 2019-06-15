@@ -23,7 +23,7 @@ local function undesirable_recipes()
 end
 
 -- Returns all standard recipes + custom mining recipes and space science recipe
-function generator.all_recipes(reset)
+function generator.all_recipes()
     local recipes = {}
     local undesirables = undesirable_recipes()
 
@@ -37,7 +37,7 @@ function generator.all_recipes(reset)
     end
     
     for force_name, force in pairs(game.forces) do
-        if reset or recipes[force_name] == nil then 
+        if recipes[force_name] == nil then 
             recipes[force_name] = {}
 
             -- Adding all standard recipes minus the undesirable ones
@@ -234,15 +234,28 @@ end
 
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
-    local categories = {}
-    
-    local function generate_category_entry(category, proto)
-        if categories[category] == nil then
-            categories[category] = {machines = {}, order = {}}
+    local all_machines = nil
+
+    local function add_machine(category_name, machine)
+        if all_machines == nil then all_machines = {categories = {}, map = {}} end
+
+        if all_machines.map[category_name] == nil then 
+            table.insert(all_machines.categories, {machines = {}, map = {}})
+            all_machines.map[category_name] = #all_machines.categories
+            all_machines.categories[#all_machines.categories].id = #all_machines.categories
+            all_machines.categories[#all_machines.categories].name = category_name
         end
-        local data = categories[category]
-        table.insert(data["order"], proto.name)
-        
+
+        local category_entry = all_machines.categories[all_machines.map[category_name]]
+        table.insert(category_entry.machines, machine)
+        category_entry.map[machine.name] = #category_entry.machines
+        machine.id = #category_entry.machines
+        machine.category_id = category_entry.id
+
+        return all_machines
+    end
+    
+    local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local burner = proto.burner_prototype and true or false
@@ -250,13 +263,12 @@ function generator.all_machines()
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
-            ingredient_count = proto.ingredient_count,
+            ingredient_limit = proto.ingredient_count,
             speed = speed,
             energy = energy,
-            burner = burner,
-            position = #data["order"]
+            burner = burner
         }
-        data["machines"][proto.name] = machine
+        all_machines = add_machine(category, machine)
         return machine
     end
 
@@ -309,8 +321,8 @@ function generator.all_machines()
             end
         end
     end
-
-    return categories
+    
+    return all_machines
 end
 
 -- Generates a table containing all available transport belts

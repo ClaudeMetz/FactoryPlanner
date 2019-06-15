@@ -18,9 +18,10 @@ function refresh_subfactory_pane(player)
     -- Cuts function short if the subfactory pane hasn't been initialized yet
     if not table_subfactory then return end
 
-    table_subfactory.clear()
-    
     local subfactory = get_context(player).subfactory
+    table_subfactory.visible = (subfactory ~= nil and subfactory.valid)
+    
+    table_subfactory.clear()
     if subfactory ~= nil and subfactory.valid then
         -- Info cell
         add_subfactory_pane_cell_to(player, table_subfactory, "info")

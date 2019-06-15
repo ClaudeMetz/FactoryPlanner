@@ -83,17 +83,17 @@ function refresh_preferences_dialog(player)
     local table_all_machines = flow_modal_dialog["scroll-pane_all_machines"]["table_all_machines"]
     table_all_machines.clear()
 
-    for category, data in pairs(global.all_machines) do
-        if #data.order > 1 then
-            table_all_machines.add{type="label", name="label_" .. category, caption="'" .. category .. "':    "}
-            local table_machines = table_all_machines.add{type="table", name="table_machines:" .. category, column_count=8}
-            for _, machine_name in ipairs(data.order) do
+    for category_id, category in ipairs(global.all_machines.categories) do
+        if #category.machines > 1 then
+            table_all_machines.add{type="label", name="label_" .. category_id, caption="'" .. category.name .. "':    "}
+            local table_machines = table_all_machines.add{type="table", name="table_machines_" .. category_id, column_count=8}
+            for machine_id, machine in ipairs(category.machines) do
                 local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_preferences_machine_"
-                  .. category .. "_" .. machine_name, sprite="entity/" .. machine_name, mouse_button_filter={"left"}}
-                local tooltip = data.machines[machine_name].localised_name
+                  .. category_id .. "_" .. machine_id, sprite="entity/" .. machine.name, mouse_button_filter={"left"}}
+                local tooltip = machine.localised_name
 
-                local default_machine_name = data_util.machines.get_default(player, category).name
-                if default_machine_name == machine_name then
+                local default_machine_id = data_util.machines.get_default(player, category_id)
+                if default_machine_id == machine_id then
                     button_machine.style = "fp_button_icon_medium_green"
                     tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
                 else 
@@ -107,8 +107,8 @@ end
 
 
 -- Changes the default machine of the given category
-function handle_preferences_machine_change(player, category, name)
-    data_util.machines.set_default(player, category, name)
+function handle_preferences_machine_change(player, category_id, id)
+    data_util.machines.set_default(player, category_id, id)
     refresh_preferences_dialog(player)
 end
 

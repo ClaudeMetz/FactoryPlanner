@@ -6,40 +6,45 @@ require("data.classes.Floor")
 require("data.classes.Line")
 require("data.util")
 require("data.generator")
+require("data.loader")
 require("data.calc")
 require("migrations.handler")
 
 -- Margin of error for floating poing calculations
 margin_of_error = 1e-10
-devmode = true
+--devmode = true
 
 -- Initiates all factorio-global variables
 function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
-    run_generators(false)
+
+    -- Run through the loader without need to apply (run) it on any player
+    loader.setup()
+    loader.finish()
 end
 
 -- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
-    -- Migrate global and reset generator tables
-    attempt_global_migration()
-    run_generators(true)
+    loader.setup()  -- Setup loader
+    attempt_global_migration()  -- Migrate global
 
     -- Runs through all players, even new ones (those with no player_table)
     for index, player in pairs(game.players) do
-        attempt_player_table_migration(player)
+        local player_table = global.players[index]
 
-        update_player_table(player)
+        attempt_player_table_migration(player)  -- Migrate player_table data
+        update_player_table(player)  -- Create or update the player table
+        loader.run(player_table)  -- Run the loader on the player
 
         player_gui_reset(player)  -- Destroys all existing GUI's
         player_gui_init(player)  -- Initializes some parts of the GUI
         
-        local factory = global.players[player.index].factory
-        Factory.update_validity(factory, player)
+        -- Update validity of the whole factory (no repair yet)
+        Factory.update_validity(player_table.factory, player)
 
         -- Update calculations in case some recipes changed
-        for _, subfactory in ipairs(Factory.get_in_order(factory, "Subfactory")) do
+        for _, subfactory in ipairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
             if subfactory.valid then update_calculations(player, subfactory) end
         end
 
@@ -47,18 +52,11 @@ function handle_configuration_change()
         local space_tech = player.force.technologies["space-science-pack"].researched
         if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
     end
+
+    -- Complete loader process by saving new data to global
+    loader.finish()
 end
 
--- Updates all generator variables
-function run_generators(include_recipes)
-    global.all_items = generator.all_items()
-    global.all_machines = generator.all_machines()
-    global.all_belts = generator.all_belts()
-
-    if include_recipes then
-        global.all_recipes = generator.all_recipes(true)
-    end
-end
 
 -- Makes sure that the given player has a player_table and a reset gui state
 function update_player_table(player)
@@ -72,6 +70,7 @@ function update_player_table(player)
     if player_table == nil then  -- new player
         global.players[player.index] = {}
         local player_table = global.players[player.index]
+        player_table.index = player.index
         player_table.mod_version = global.mod_version
 
         player_table.factory = Factory.init()
@@ -79,7 +78,6 @@ function update_player_table(player)
         player_table.settings = {}
         player_table.preferences = {}
         player_table.ui_state = {}
-
         reload_data()
 
         -- Creates recipes if there are none for the force of this player
@@ -111,14 +109,13 @@ function reload_settings(player)
 end
 
 -- Reloads the user preferences, incorporating previous preferences if possible
--- preferences members: {default_machines, preferred_belt_name}
 function reload_preferences(player)
     local preferences = global.players[player.index].preferences
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
+    preferences.default_machines = data_util.base_data.default_machines()
 
     -- These functions handle initializing their preferences attribute themselves
     data_util.update_preferred_belt(player)
-    data_util.machines.update_default(player)
 end
 
 -- (Re)sets the UI state of the given player
@@ -139,6 +136,7 @@ function reset_ui_state(player)
       {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
 end
+
 
 -- Returns the player table for the given player
 function get_table(player)

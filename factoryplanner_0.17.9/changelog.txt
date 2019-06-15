@@ -2,7 +2,9 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
+    - (This release is experimental. It also loses your preferences, my apologies)
     - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI
+    - Ingredient limits on assemblers are now respected
     - Added a preference to ignore barreling recipes
     - Added a setting to change the height of the main interface
   Changes:

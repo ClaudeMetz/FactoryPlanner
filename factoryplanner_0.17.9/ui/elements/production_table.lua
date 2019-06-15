@@ -78,21 +78,21 @@ function create_line_table_row(player, line)
     textfield_percentage.style.horizontal_align = "center"
 
     -- Machine button
-    local machine_category = global.all_machines[line.recipe_category]
+    local category = global.all_machines.categories[line.category_id]
     local table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
-      column_count=#machine_category.order}
+      column_count=#category.machines}
     table_machines.style.horizontal_spacing = 3
     table_machines.style.horizontal_align = "center"
 
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        for _, machine_name in ipairs(machine_category.order) do
-            local machine = global.all_machines[line.recipe_category].machines[machine_name]
+        for machine_id, machine in ipairs(category.machines) do
             local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
-            create_machine_button(table_machines, line, machine_name, count, ("_" .. machine.name))
+            create_machine_button(table_machines, line, machine, count, true)
         end
     else
-        create_machine_button(table_machines, line, line.machine_name, line.machine_count, "")
+        local machine = category.machines[line.machine_id]
+        create_machine_button(table_machines, line, machine, line.machine_count, false)
     end
     
     -- Energy label
@@ -107,12 +107,15 @@ function create_line_table_row(player, line)
 end
 
 -- Creates and places a single machine button
-function create_machine_button(gui_table, line, name, count, name_appendage)
-    local machine = global.all_machines[line.recipe_category].machines[name]
-    local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id
-      .. name_appendage, sprite="entity/" .. name, style="fp_button_icon_medium_recipe", 
-      mouse_button_filter={"left"}, number=math.ceil(count)}
-    button.tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 6), " ", {"tooltip.machines"}}
+function create_machine_button(gui_table, line, machine, count, append_machine_id)
+    local player = game.get_player(gui_table.player_index)
+    if data_util.machines.is_applicable(player, line.category_id, machine.id, line.recipe_name) then
+        local appendage = (append_machine_id) and ("_" .. machine.id) or ""
+        gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
+        sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe", number=math.ceil(count),
+        mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 6), " ",
+        {"tooltip.machines"}}}
+    end
 end
 
 -- Creates the flow containing all line items of the given type
@@ -230,8 +233,8 @@ function handle_percentage_change(player, element)
 
     if new_percentage == nil or new_percentage < 0 then
         queue_message(player, {"label.error_invalid_percentage"}, "warning")
-    elseif string.find(element.text, "^%d+%.$") then
-        -- Do nothing to allow people to enter decimal numbers
+    elseif string.find(element.text, "^%d+%.0*$") then
+        -- Allow people to enter decimal numbers
     else
         line.percentage = new_percentage
 
@@ -267,48 +270,36 @@ function handle_percentage_textfield_click(player, element)
 end
 
 -- Local function to centralize machine changing instructions
-local function set_machine(floor, line, machine_name)
-    line.machine_name = machine_name
-    if line.subfloor then Floor.get(line.subfloor, "Line", 1).machine_name = machine_name
-    elseif line.id == 1 and floor.origin_line then floor.origin_line.machine_name = machine_name end
+local function set_machine(floor, line, machine_id)
+    line.machine_id = machine_id
+    if line.subfloor then Floor.get(line.subfloor, "Line", 1).machine_id = machine_id
+    elseif line.id == 1 and floor.origin_line then floor.origin_line.machine_id = machine_id end
 end
 
 -- Handles the machine changing process
-function handle_machine_change(player, line_id, machine_name, click, direction)
+function handle_machine_change(player, line_id, machine_id, click, direction)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
 
-      -- machine_name being nil means the user wants to change the machine of this (assembly) line
-    if machine_name == nil then
-        local current_category_data = global.all_machines[line.recipe_category]
-        local current_machine_position = current_category_data.machines[line.machine_name].position
-
-        -- Change the machine to be one tier lower if possible
-        if direction == "negative" then
-            if current_machine_position > 1 then
-                set_machine(floor, line, current_category_data.order[current_machine_position - 1])
-                update_calculations(player, subfactory)
-            end
-
-        -- Change the machine to be one tier higher if possible
-        elseif direction == "positive" then
-            if current_machine_position < #current_category_data.order then
-                set_machine(floor, line, current_category_data.order[current_machine_position + 1])
-                update_calculations(player, subfactory)
-            end
+    -- machine_id being nil means the user wants to change the machine of this (assembly) line
+    if machine_id == nil then
+        -- Change the machine to be one tier lower/higher if possible
+        if direction ~= nil then
+            data_util.machines.change_machine(player, line, nil, direction)
+            update_calculations(player, subfactory)
 
         -- Display all the options for this machine category
         elseif click == "left" then
+            local category = global.all_machines.categories[line.category_id]
+            
             -- Changing machines only makes sense if there are more than one in it's category
-            local possible_machine_count = #current_category_data.order
-            if possible_machine_count > 1 then
-                if possible_machine_count < 5 then
+            if #category.machines > 1 then
+                if #category.machines < 5 then  -- if there are more than 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
-                    ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                else
-                    -- Open a chooser dialog presenting all machine choices
+
+                else  -- Open a chooser dialog presenting all machine choices
                     local recipe = global.all_recipes[player.force.name][line.recipe_name]
                     ui_state.modal_data = {
                         title = {"label.machine"},
@@ -316,26 +307,28 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
                         choices = {},
                         reciever_name = "machine"
                     }
-                    for index, machine_name in ipairs(current_category_data.order) do
-                        local machine = global.all_machines[line.recipe_category].machines[machine_name]
-                        local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
-                        ui_state.modal_data.choices[index] = {
-                            name = machine.name,
-                            tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 6)},
-                            sprite = "entity/" .. machine.name,
-                            number = math.ceil(count)
-                        }
+                    for machine_id, machine in ipairs(category.machines) do
+                        if data_util.machines.is_applicable(player, category.id, machine_id, recipe.name) then
+                            local count = (line.production_ratio / (machine.speed / line.recipe_energy)) / subfactory.timescale
+                            table.insert(ui_state.modal_data.choices, {
+                                name = machine_id,
+                                tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 6)},
+                                sprite = "entity/" .. machine.name,
+                                number = math.ceil(count)
+                            })
+                        end
                     end
 
                     enter_modal_dialog(player, {type="chooser"})
                 end
+
                 ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
             end
         end
     else
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
-            set_machine(floor, line, machine_name)
+            data_util.machines.change_machine(player, line, machine_id, nil)
             ui_state.current_activity = nil
             update_calculations(player, subfactory)
         end
@@ -345,9 +338,9 @@ function handle_machine_change(player, line_id, machine_name, click, direction)
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_chooser_machine_choice(player, machine_name)
+function apply_chooser_machine_choice(player, machine_id)
     local context = get_context(player)
-    set_machine(context.floor, context.line, machine_name)
+    data_util.machines.change_machine(player, context.line, machine_id, nil)
     update_calculations(player, context.subfactory)
 end
 
