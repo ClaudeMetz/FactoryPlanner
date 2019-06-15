@@ -23,7 +23,7 @@ local function undesirable_recipes()
 end
 
 -- Returns all standard recipes + custom mining recipes and space science recipe
-function generator.all_recipes(reset)
+function generator.all_recipes()
     local recipes = {}
     local undesirables = undesirable_recipes()
 
@@ -37,7 +37,7 @@ function generator.all_recipes(reset)
     end
     
     for force_name, force in pairs(game.forces) do
-        if reset or recipes[force_name] == nil then 
+        if recipes[force_name] == nil then 
             recipes[force_name] = {}
 
             -- Adding all standard recipes minus the undesirable ones
@@ -62,8 +62,9 @@ function generator.all_recipes(reset)
                     -- Set energy to mining time so the forumla for the machine_count works out
                     recipe.energy = proto.mineable_properties.mining_time
                     recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
-                    local products = proto.mineable_properties.products
-                    recipe.products = products
+                    recipe.products = proto.mineable_properties.products
+                    -- Conforming to the real LuaRecipe prototype
+                    recipe.prototype = { main_product = recipe.products[1] }
 
                     -- Add mining fluid, if required
                     if proto.mineable_properties.required_fluid then
@@ -88,6 +89,7 @@ function generator.all_recipes(reset)
                 recipe.energy = 1
                 recipe.ingredients = {{type="fluid", name="water", amount=60}}
                 recipe.products = {{type="fluid", name="steam", amount=60}}
+                recipe.prototype = { main_product = recipe.products[1] }
                 recipes[force_name][recipe.name] = recipe
 
                     
@@ -114,9 +116,9 @@ function generator.all_recipes(reset)
                 enabled = false,
                 hidden = false,
                 energy = 0,
-                group = {name="intermediate_products", order="c"},
-                subgroup = {name="science-pack", order="z"},
-                order = "k[fp-space-science-pack]",
+                group = {name="intermediate-products", order="c"},
+                subgroup = {name="science-pack", order="g"},
+                order = "x[fp-space-science-pack]",
                 ingredients = {
                     {type="item", name="rocket-part", amount=100},
                     {type="item", name="satellite", amount=1}
@@ -226,29 +228,48 @@ end
 
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
-    local categories = {}
-    
-    local function generate_category_entry(category, proto)
-        if categories[category] == nil then
-            categories[category] = {machines = {}, order = {}}
+    local all_machines = nil
+
+    local function add_machine(category_name, machine)
+        if all_machines == nil then all_machines = {categories = {}, map = {}} end
+
+        if all_machines.map[category_name] == nil then 
+            table.insert(all_machines.categories, {machines = {}, map = {}})
+            all_machines.map[category_name] = #all_machines.categories
+            all_machines.categories[#all_machines.categories].id = #all_machines.categories
+            all_machines.categories[#all_machines.categories].name = category_name
         end
-        local data = categories[category]
-        table.insert(data["order"], proto.name)
-        
+
+        local category_entry = all_machines.categories[all_machines.map[category_name]]
+        table.insert(category_entry.machines, machine)
+        category_entry.map[machine.name] = #category_entry.machines
+        machine.id = #category_entry.machines
+        machine.category_id = category_entry.id
+
+        return all_machines
+    end
+    
+    local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
+        local ingredient_limit = proto.ingredient_count or 255
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
-        local burner = proto.burner_prototype and true or false
         local energy = proto.energy_usage or proto.max_energy_usage
+        local burner = nil
+        if proto.burner_prototype then
+            burner = {
+                categories = proto.burner_prototype.fuel_categories,
+                effectivity = proto.burner_prototype.effectivity
+            }
+        end
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
-            ingredient_count = proto.ingredient_count,
+            ingredient_limit = ingredient_limit,
             speed = speed,
             energy = energy,
-            burner = burner,
-            position = #data["order"]
+            burner = burner
         }
-        data["machines"][proto.name] = machine
+        all_machines = add_machine(category, machine)
         return machine
     end
 
@@ -301,21 +322,49 @@ function generator.all_machines()
             end
         end
     end
-
-    return categories
+    
+    return all_machines
 end
+
+
+local function insert_object(t, name, object)
+    table.insert(t[name], object)
+    local id = #t[name]
+    t[name][id].id = id
+    t.map[object.name] = id
+end
+
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
-    local belts = {}
+    local all_belts = {belts = {}, map = {}}
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
-            belts[proto.name] = {
+            insert_object(all_belts, "belts", {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 throughput = proto.belt_speed * 480
-            }
+            })
         end
     end
-    return belts
+    return all_belts
+end
+
+
+-- Generates a table containing all fuels that can be used in a burner
+-- (only supports chemical fuels for now)
+function generator.all_fuels()
+    local all_fuels = {fuels = {}, map = {}}
+    for _, proto in pairs(game.item_prototypes) do
+        if proto.fuel_value and proto.fuel_category == "chemical" then
+            insert_object(all_fuels, "fuels", {
+                name = proto.name,
+                type = proto.type,
+                localised_name = proto.localised_name,
+                fuel_category = proto.fuel_category,
+                fuel_value = proto.fuel_value
+            })
+        end
+    end
+    return all_fuels
 end

@@ -21,8 +21,8 @@ end)
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
-    -- Sets up a player in the global table for the new player
-    player_init(player)
+    -- Sets up the player_table for the new player
+    update_player_table(player)
 
     -- Sets up the GUI for the new player
     player_gui_init(player)
@@ -33,17 +33,14 @@ end)
 
 -- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
-    local player = game.get_player(event.player_index)
-
     -- Removes the player from the global table
-    player_remove(player)
+    global.players[event.player_index] = nil
 end)
 
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local player = game.get_player(event.player_index)
-    local player_table = global.players[player.index]
 
     -- Reload all user mod settings
     reload_settings(player)
@@ -53,7 +50,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         toggle_button_interface(player)
 
     -- Changes the width of the main dialog. so it needs to be refreshed
-    elseif event.setting == "fp_subfactory_items_per_row" then
+    elseif event.setting == "fp_subfactory_items_per_row" or
+      event.setting == "fp_floor_recipes_at_once" then
         refresh_main_dialog(player, true)
 
     -- Refreshes the view selection buttons appropriately
@@ -118,29 +116,33 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     -- Applies the hidden filter to a picker dialog
     elseif event.element.name == "fp_checkbox_picker_filter_condition_hidden" then
         handle_filter_radiobutton_click(player, "hidden", event.element.state)
+    
+    -- Changes the preference to ignore barreling
+    elseif event.element.name == "fp_checkbox_preferences_ignore_barreling" then
+        get_preferences(player).ignore_barreling_recipes = event.element.state
+
     end
 end)
 
 -- Fires on any changes to a textbox
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.get_player(event.player_index)
-    local player_table = global.players[player.index]
-
+    
     -- Persists (assembly) line percentage changes
     if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
         handle_percentage_change(player, event.element)
-
+        
     -- Actives the instant filter based on user serachfield text entry
     elseif event.element.name == "fp_textfield_picker_search_bar" then
-        local object_type = string.gsub(player_table.modal_dialog_type, "_picker", "")
-        picker.apply_filter(player, object_type, false, get_search_function(player_table.selected_object))
+        picker.search(player)
+
     end
 end)
 
 -- Fires on any click on a GUI element
 script.on_event(defines.events.on_gui_click, function(event)
     local player = game.get_player(event.player_index)
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
     
     -- Determine click type and direction
     local click, direction = nil, nil
@@ -154,23 +156,17 @@ script.on_event(defines.events.on_gui_click, function(event)
     end
 
     -- Determine object type (not always relevant, but useful in some places)
-    local object_type = (player_table.modal_dialog_type ~= nil) and 
-      string.gsub(player_table.modal_dialog_type, "_picker", "") or nil
+    local object_type = (ui_state.modal_dialog_type ~= nil) and 
+      string.gsub(ui_state.modal_dialog_type, "_picker", "") or nil
 
     -- Handle the actual click
     if string.find(event.element.name, "^fp_.+$") then
         -- Handle clicks on textfields to improve user experience
-        if string.find(event.element.name, "^fp_textfield_[a-z0-9-_]+$") then
+        if string.find(event.element.name, "^fp_textfield_[a-z0-9_]+$") then
             if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
                 handle_percentage_textfield_click(player, event.element)
             end
-            
-        else
-            -- Remove focus from textfield so keyboard shortcuts work (not super reliable)
-            local main_dialog = player.gui.center["fp_frame_main_dialog"]
-            if main_dialog ~= nil then main_dialog.focus() end
         end
-
 
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
         if event.element.name == "fp_button_toggle_interface" 
@@ -207,7 +203,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the edit-subfactory dialog
         elseif event.element.name == "fp_button_edit_subfactory" then
-            local subfactory = player_table.context.subfactory
+            local subfactory = ui_state.context.subfactory
             enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
 
         -- Reacts to the delete button being pressed
@@ -251,32 +247,32 @@ script.on_event(defines.events.on_gui_click, function(event)
             local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_element_click(player, subfactory_id, click, direction)
             
-            -- Changes the timescale of the current subfactory
+        -- Changes the timescale of the current subfactory
         elseif string.find(event.element.name, "^fp_button_timescale_%d+$") then
             local timescale = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_timescale_change(player, timescale)
             
         -- Reacts to any subfactory_pane item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z0-9-]+_%d+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z0-9-]+_%d+$") then  --
             local split_string = ui_util.split(event.element.name, "_")
-            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction)
+            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, event.alt)
 
         -- Reacts to a item group button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-_]+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-_]+$") then  --
             local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
             picker.select_item_group(player, object_type, item_group_name)
 
         -- Reacts to a picker object button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-z0-9-]+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-z0-9-]+$") then  --
             _G["handle_picker_" .. object_type .. "_click"](player, event.element)
 
         -- Reacts to a chooser element button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_[a-z0-9-]+$") then
-            local element_name = string.gsub(event.element.name, "fp_sprite%-button_chooser_element_", "")
-            handle_chooser_element_click(player, element_name)
+        elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_%d+$") then
+            local element_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_chooser_element_click(player, element_id)
 
         -- Reacts to a change of the production pane view
-        elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-z0-9-_]+$") then
+        elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-z_]+$") then
             local view_name = string.gsub(event.element.name, "fp_button_production_titlebar_view_", "")
             change_view_state(player, view_name)
             refresh_production_pane(player)
@@ -284,7 +280,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
             local line_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_line_recipe_click(player, line_id, click, direction)
+            handle_line_recipe_click(player, line_id, click, direction, event.alt)
 
         -- Reacts to the machine button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+$") then
@@ -292,24 +288,29 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_machine_change(player, line_id, nil, click, direction)
             
         -- Changes the machine of the selected (assembly) line
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+_[a-z0-9-]+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
             handle_machine_change(player, split_string[5], split_string[6], click, direction)
 
         -- Reacts to any preferences machine button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_[a-z0-9-]+_[a-z0-9-]+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_%d+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
             handle_preferences_machine_change(player, split_string[5], split_string[6])
 
         -- Reacts to any preferences belt button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_belt_[a-z0-9-_]+$") then
-            local belt_name = string.gsub(event.element.name, "fp_sprite%-button_preferences_belt_", "")
-            handle_preferences_belt_change(player, belt_name)
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_belt_%d+$") then
+            local belt_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_preferences_belt_change(player, belt_id)
+
+        -- Reacts to any preferences fuel button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_fuel_%d+$") then
+            local fuel_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_preferences_fuel_change(player, fuel_id)
 
         -- Reacts to any (assembly) line item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then  --
             local split_string = ui_util.split(event.element.name, "_")
-            handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction)
+            handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
         
         end
 

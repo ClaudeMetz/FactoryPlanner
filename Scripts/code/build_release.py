@@ -50,7 +50,7 @@ tmp_path = new_mod_folder_path / "data" / "tmp"
 init_file_path = new_mod_folder_path / "data" / "init.lua"
 with tmp_path.open("w") as new_file, init_file_path.open("r") as old_file:
     for line in old_file:
-        line = re.sub(r"global\.devmode = true", "--global.devmode = true", line)
+        line = re.sub(r"devmode = true", "--devmode = true", line)
         new_file.write(line)
 init_file_path.unlink()
 tmp_path.rename(init_file_path)

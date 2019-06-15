@@ -6,8 +6,8 @@ end
 -- Handles closing of the notes dialog
 function close_notes_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
-        local player_table = global.players[flow_modal_dialog.player_index]
-        player_table.context.subfactory.notes = data.notes
+        local player = game.get_player(flow_modal_dialog.player_index)
+        get_context(player).subfactory.notes = data.notes
     end
 end
 
@@ -32,9 +32,9 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
     flow_modal_dialog.parent.caption = title
 
     -- Notes
-    local player_table = global.players[flow_modal_dialog.player_index]
+    local player = game.get_player(flow_modal_dialog.player_index)
     local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
-      text=player_table.context.subfactory.notes}
+      text=get_context(player).subfactory.notes}
     text_box_notes.focus()
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400

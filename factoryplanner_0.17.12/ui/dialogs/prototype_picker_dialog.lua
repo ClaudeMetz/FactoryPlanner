@@ -135,7 +135,7 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                 button_group.style.width = 70
                 button_group.style.height = 70
                 button_group.tooltip = group.localised_name
-                if global.devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group.name} end
+                if devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group.name} end
 
                 local scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", name="scroll-pane_subgroups_"
                   .. group.name}
@@ -155,7 +155,7 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                         local button_object = table_subgroup.add{type="sprite-button", name="fp_sprite-button_picker_object_"
                           .. object.name, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
                         button_object.tooltip = _G["generate_" .. object_type .. "_tooltip"](object)
-                        if global.devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
+                        if devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
                     end
                 end
             end
@@ -179,10 +179,12 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
         disabled = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state
         hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state
     else
-        for _, product in pairs(Subfactory.get_in_order(global.players[player.index].context.subfactory, "Product")) do
+        for _, product in pairs(Subfactory.get_in_order(get_context(player).subfactory, "Product")) do
             existing_products[product.name] = true
         end
     end
+
+    local preferences = get_preferences(player)
     
     local first_visible_group = nil
     local visible_group_count = 0
@@ -229,7 +231,9 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden) 
+                    if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden)
+                      or (preferences.ignore_barreling_recipes
+                      and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel"))
                       or not search_function(recipe, search_term) then
                         visible = false
                     end
@@ -321,4 +325,11 @@ function picker.select_item_group(player, object_type, item_group_name)
             scroll_pane_items.visible = false
         end
     end
+end
+
+-- Handles a new search term in the search bar
+function picker.search(player)
+    local ui_state = get_ui_state(player)
+    local object_type = string.gsub(ui_state.modal_dialog_type, "_picker", "")
+    picker.apply_filter(player, object_type, false, get_search_function(ui_state.selected_object))
 end

@@ -11,23 +11,23 @@ require("chooser_dialog")
 function enter_modal_dialog(player, dialog_settings)
     toggle_main_dialog(player)
 
-    local player_table = global.players[player.index]
-    player_table.modal_dialog_type = dialog_settings.type
-    player_table.selected_object = dialog_settings.object
-    player_table.current_activity = nil
+    local ui_state = get_ui_state(player)
+    ui_state.modal_dialog_type = dialog_settings.type
+    ui_state.selected_object = dialog_settings.object
+    ui_state.current_activity = nil
     
-    local conditions_function = _G["get_" .. player_table.modal_dialog_type .. "_condition_instructions"]
+    local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
     local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
     
     player.opened = flow_modal_dialog.parent
-    _G["open_" .. player_table.modal_dialog_type .. "_dialog"](flow_modal_dialog)
+    _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function exit_modal_dialog(player, button, data)
-    local player_table = global.players[player.index]
-    local dialog_type = player_table.modal_dialog_type
+    local ui_state = get_ui_state(player)
+    local dialog_type = ui_state.modal_dialog_type
     
     local center = player.gui.center
     local flow_modal_dialog, preserve = nil, false
@@ -53,10 +53,10 @@ function exit_modal_dialog(player, button, data)
     end
     
     -- Close modal dialog
-    player_table.modal_dialog_type = nil
-    player_table.selected_object = nil
-    player_table.modal_data = nil
-    player_table.context.line = nil
+    ui_state.modal_dialog_type = nil
+    ui_state.selected_object = nil
+    ui_state.modal_data = nil
+    ui_state.context.line = nil
     
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end

@@ -1,3 +1,16 @@
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - (This release is experimental. It also loses your preferences, my apologies)
+    - Now calculates the fuel consumed by burner machines for you. 
+      The type of fuel is adjutable in preferences or per line (left-click it).
+    - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI
+    - Ingredient limits on assemblers are now respected
+    - Added a preference to ignore barreling recipes
+    - Added a setting to change the height of the main interface
+  Changes:
+    - Improved number formatting in several places
+
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.12
 Date: 13. 06. 2019

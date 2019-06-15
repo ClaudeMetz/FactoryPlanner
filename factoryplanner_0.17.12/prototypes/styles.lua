@@ -14,6 +14,13 @@ data.raw["gui-style"].default["fp_button_titlebar"] = {
     height = 34
 }
 
+data.raw["gui-style"].default["fp_preferences_table"] = {
+    type = "table_style",
+    top_margin = 4,
+    left_margin = 16,
+    bottom_padding = 8
+}
+
 data.raw["gui-style"].default["fp_button_action"] = {
     type = "button_style",
     font = "fp-font-16p"
@@ -142,7 +149,7 @@ for _, type in ipairs(icons_large) do
 end
 
 -- Generates all medium-sized sprite-button styles
-local icons_medium = {"default", "recipe", "disabled", "hidden", "red", "green", "blank"}
+local icons_medium = {"default", "recipe", "disabled", "hidden", "cyan", "red", "green", "blank"}
 for _, type in ipairs(icons_medium) do
     data.raw["gui-style"].default["fp_button_icon_medium_" .. type] = {
         type = "button_style",

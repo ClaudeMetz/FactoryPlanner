@@ -1,8 +1,8 @@
 -- Handles populating the recipe picker dialog
 function open_recipe_picker_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local player_table = global.players[player.index]
-    local product = player_table.selected_object
+    local ui_state = get_ui_state(player)
+    local product = ui_state.selected_object
 
     flow_modal_dialog.parent.caption = {"label.add_recipe"}
     flow_modal_dialog.style.bottom_margin = 8
@@ -16,9 +16,8 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
         if recipe ~= nil then
-            local machine = data_util.machines.get_default(player, recipe.category)
-            Floor.add(player_table.context.floor, Line.init(recipe, machine))
-            update_calculations(player, player_table.context.subfactory)
+            Floor.add(ui_state.context.floor, Line.init(player, recipe))
+            update_calculations(player, ui_state.context.subfactory)
             if show.message ~= nil then queue_message(player, show.message.string, show.message.type) end
             exit_modal_dialog(player, "cancel", {})
         
@@ -39,23 +38,22 @@ end
 
 -- Reacts to either the disabled or hidden radiobutton being pressed
 function handle_filter_radiobutton_click(player, type, state)
-    local player_table = global.players[player.index]
+    local ui_state = get_ui_state(player)
 
     -- Remember the user selection for this type of filter
-    player_table.recipe_filter_preferences[type] = state
+    ui_state.recipe_filter_preferences[type] = state
 
-    picker.apply_filter(player, "recipe", false, get_search_function(player_table.selected_object))
+    picker.apply_filter(player, "recipe", false, get_search_function(ui_state.selected_object))
 end
 
 -- Reacts to a picker recipe button being pressed
 function handle_picker_recipe_click(player, button)
-    local player_table = global.players[player.index]
+    local context = get_context(player)
     local recipe_name = string.gsub(button.name, "fp_sprite%-button_picker_object_", "")
     local recipe = global.all_recipes[player.force.name][recipe_name]
     
-    local machine = data_util.machines.get_default(player, recipe.category)
-    Floor.add(player_table.context.floor, Line.init(recipe, machine))
-    update_calculations(player, player_table.context.subfactory)
+    Floor.add(context.floor, Line.init(player, recipe))
+    update_calculations(player, context.subfactory)
     exit_modal_dialog(player, "cancel", {})
 end
 
@@ -64,20 +62,20 @@ end
 -- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
 function run_preliminary_checks(player, product_name, search_function)
-    local player_table = global.players[player.index]
-
     -- First determine all relevant recipes and the amount in each category (enabled and hidden)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
     for _, recipe in pairs(global.all_recipes[player.force.name]) do
-        if search_function(recipe, product_name) then
+        if search_function(recipe, product_name)
+          and not (get_preferences(player).ignore_barreling_recipes
+          and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
             table.insert(relevant_recipes, recipe)
             if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
         end
     end
     
     -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
-    local user_prefs = player_table.recipe_filter_preferences
+    local user_prefs = get_ui_state(player).recipe_filter_preferences
     local show = {disabled = user_prefs.disabled, hidden = user_prefs.hidden, message = nil}
     if not user_prefs.disabled and (#relevant_recipes - disabled_recipes_count) == 0 then
         show.disabled = true  -- avoids showing no recipes if there are some disabled ones
