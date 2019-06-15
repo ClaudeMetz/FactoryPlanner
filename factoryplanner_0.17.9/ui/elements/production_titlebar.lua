@@ -36,7 +36,7 @@ function add_production_pane_to(main_dialog)
       tooltip={"", {"tooltip.items_per_timescale"}, "\n", {"tooltip.cycle_production_views"}}}
 
     local button_bl = table_view_selection.add{type="button", name="fp_button_production_titlebar_view_belts_or_lanes",
-    tooltip={"", {"tooltip.belts_or_lanes"}, "\n", {"tooltip.cycle_production_views"}}}
+      tooltip={"", {"tooltip.belts_or_lanes"}, "\n", {"tooltip.cycle_production_views"}}}
     local flow_bl = button_bl.add{type="flow", name="flow_belts_or_lanes", direction="horizontal"}
     flow_bl.ignored_by_interaction = true
     flow_bl.style.height = 20

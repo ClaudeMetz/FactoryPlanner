@@ -115,7 +115,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 end
 
                 -- Machines (Same for machines and miners because the machine and line values are adjusted beforehand)
-                local machine = global.all_machines[line.recipe_category].machines[line.machine_name]
+                local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
                 line_aggregate.machine_count = (production_ratio / (machine.speed / line.recipe_energy)) / subfactory.timescale
 
                 -- Energy consumption

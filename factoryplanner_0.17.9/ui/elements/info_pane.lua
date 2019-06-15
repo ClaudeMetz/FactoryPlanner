@@ -89,10 +89,9 @@ function handle_set_prefmachines_click(player, scope)
     -- Sets all machines on given floor to the currently preferred ones
     local function set_machines_on_floor(floor)
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            machine_name = data_util.machines.get_default(player, line.recipe_category).name
-            line.machine_name = machine_name
+            data_util.machines.change_machine(player, line, nil, nil)
             if line.subfloor ~= nil then
-                Floor.get(line.subfloor, "Line", 1).machine_name = machine_name
+                Floor.get(line.subfloor, "Line", 1).machine_id = line.machine_id
             end
         end
     end

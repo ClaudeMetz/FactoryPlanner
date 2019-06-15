@@ -16,8 +16,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
         if recipe ~= nil then
-            local machine = data_util.machines.get_default(player, recipe.category)
-            Floor.add(ui_state.context.floor, Line.init(recipe, machine))
+            Floor.add(ui_state.context.floor, Line.init(player, recipe))
             update_calculations(player, ui_state.context.subfactory)
             if show.message ~= nil then queue_message(player, show.message.string, show.message.type) end
             exit_modal_dialog(player, "cancel", {})
@@ -53,8 +52,7 @@ function handle_picker_recipe_click(player, button)
     local recipe_name = string.gsub(button.name, "fp_sprite%-button_picker_object_", "")
     local recipe = global.all_recipes[player.force.name][recipe_name]
     
-    local machine = data_util.machines.get_default(player, recipe.category)
-    Floor.add(context.floor, Line.init(recipe, machine))
+    Floor.add(context.floor, Line.init(player, recipe))
     update_calculations(player, context.subfactory)
     exit_modal_dialog(player, "cancel", {})
 end
@@ -68,7 +66,9 @@ function run_preliminary_checks(player, product_name, search_function)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
     for _, recipe in pairs(global.all_recipes[player.force.name]) do
-        if search_function(recipe, product_name) and recipe.category ~= "handcrafting" then
+        if search_function(recipe, product_name) and recipe.category ~= "handcrafting"
+          and not (get_preferences(player).ignore_barreling_recipes
+          and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
             table.insert(relevant_recipes, recipe)
             if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
         end

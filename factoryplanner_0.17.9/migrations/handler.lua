@@ -17,34 +17,34 @@ end
 function attempt_global_migration()
     local migrations = determine_migrations(global.mod_version)
     
-    apply_migrations(migrations, "global", nil)
+    apply_migrations(migrations, "global", nil, nil)
     global.mod_version = game.active_mods["factoryplanner"]
 end
 
 -- Applies any appropriate migrations to the given factory
 function attempt_player_table_migration(player)
     local player_table = get_table(player)
-    local migrations = determine_migrations(player_table.mod_version)
-    
-    -- General migrations
     if player_table ~= nil then  -- don't apply migrations to new players
-        apply_migrations(migrations, "player_table", player_table)
-    end
+        local migrations = determine_migrations(player_table.mod_version)
+        
+        -- General migrations
+        apply_migrations(migrations, "player_table", player, player_table)
 
-    -- Factory migrations
-    for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
-        attempt_subfactory_migration(subfactory, migrations)
-    end
+        -- Factory migrations
+        for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
+            attempt_subfactory_migration(player, subfactory, migrations)
+        end
 
-    player_table.mod_version = global.mod_version
+        player_table.mod_version = global.mod_version
+    end
 end
 
 -- Applies any appropriate migrations to the given subfactory
-function attempt_subfactory_migration(subfactory, migrations)
+function attempt_subfactory_migration(player, subfactory, migrations)
     -- if migrations~=nil, it forgoes re-checking itself to avoid repeated checks
     local migrations = migrations or determine_migrations(subfactory.mod_version)
 
-    apply_migrations(migrations, "subfactory", subfactory)
+    apply_migrations(migrations, "subfactory", player, subfactory)
     subfactory.mod_version = global.mod_version
 end
 
@@ -63,11 +63,11 @@ function determine_migrations(previous_version)
 end
 
 -- Applies given migrations to the object
-function apply_migrations(migrations, name, object)
+function apply_migrations(migrations, name, player, object)
     for _, migration in ipairs(migrations) do
         local internal_version = migration:gsub("%.", "_")
         local f = _G["migration_" .. internal_version][name]
-        if f ~= nil then f(object) end
+        if f ~= nil then f(player, object) end
     end
 end
 
