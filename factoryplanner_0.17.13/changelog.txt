@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.13
+Date: 15. 06. 2019
   Features:
     - (This release is experimental. It also loses your preferences, my apologies)
     - Now calculates the fuel consumed by burner machines for you. 
