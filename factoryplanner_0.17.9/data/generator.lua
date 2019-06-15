@@ -260,7 +260,13 @@ function generator.all_machines()
         local ingredient_limit = proto.ingredient_count or 255
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy = proto.energy_usage or proto.max_energy_usage
-        local burner = proto.burner_prototype and true or false
+        local burner = nil
+        if proto.burner_prototype then
+            burner = {
+                categories = proto.burner_prototype.fuel_categories,
+                effectivity = proto.burner_prototype.effectivity
+            }
+        end
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
@@ -326,20 +332,45 @@ function generator.all_machines()
     return all_machines
 end
 
+
+local function insert_object(t, name, object)
+    table.insert(t[name], object)
+    local id = #t[name]
+    t[name][id].id = id
+    t.map[object.name] = id
+end
+
+
 -- Generates a table containing all available transport belts
 function generator.all_belts()
     local all_belts = {belts = {}, map = {}}
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
-            table.insert(all_belts.belts, {
+            insert_object(all_belts, "belts", {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 throughput = proto.belt_speed * 480
             })
-            local belt_id = #all_belts.belts
-            all_belts.belts[belt_id].id = belt_id
-            all_belts.map[proto.name] = belt_id
         end
     end
     return all_belts
+end
+
+
+-- Generates a table containing all fuels that can be used in a burner
+-- (only supports chemical fuels for now)
+function generator.all_fuels()
+    local all_fuels = {fuels = {}, map = {}}
+    for _, proto in pairs(game.item_prototypes) do
+        if proto.fuel_value and proto.fuel_category == "chemical" then
+            insert_object(all_fuels, "fuels", {
+                name = proto.name,
+                type = proto.type,
+                localised_name = proto.localised_name,
+                fuel_category = proto.fuel_category,
+                fuel_value = proto.fuel_value
+            })
+        end
+    end
+    return all_fuels
 end

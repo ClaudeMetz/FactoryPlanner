@@ -1,12 +1,17 @@
 loader = {
     machines = {},
-    belts = {}
+    belts = {},
+    fuels = {}
 }
+
+local data_types = {"machines", "belts", "fuels"}
 
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function loader.setup()
-    loader.belts.setup()
-    loader.machines.setup()
+    for _, data_type in ipairs(data_types) do
+        _G[data_type] = {}
+        _G[data_type].new = _G["generator"]["all_" .. data_type]()
+    end
 
     global.all_items = generator.all_items()
     global.all_recipes = generator.all_recipes()
@@ -14,21 +19,19 @@ end
 
 -- Updates the relevant data of the given player to fit the new data
 function loader.run(player_table)
-    loader.belts.run(player_table)
-    loader.machines.run(player_table)
+    for _, data_type in ipairs(data_types) do
+        _G["loader"][data_type]["run"](player_table)
+    end
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
 function loader.finish()
-    loader.belts.finish()
-    loader.machines.finish()
+    for _, data_type in ipairs(data_types) do
+        global["all_" .. data_type] = _G[data_type].new
+        _G[data_type] = nil
+    end
 end
 
-
-function loader.belts.setup()
-    belts = {}
-    belts.new = generator.all_belts()
-end
 
 function loader.belts.run(player_table)
     local preferences = player_table.preferences
@@ -41,16 +44,6 @@ function loader.belts.run(player_table)
     end   
 end
 
-function loader.belts.finish()
-    global.all_belts = belts.new
-    belts = nil
-end
-
-
-function loader.machines.setup()
-    machines = {}
-    machines.new = generator.all_machines()
-end
 
 function loader.machines.run(player_table)
     -- Update line data
@@ -105,7 +98,38 @@ function loader.machines.run(player_table)
     preferences.default_machines = default_machines
 end
 
-function loader.machines.finish()
-    global.all_machines = machines.new
-    machines = nil
+
+function loader.fuels.run(player_table)
+    local preferences = player_table.preferences
+
+    -- Update preferred fuel
+    local old_fuel = global.all_fuels.fuels[preferences.preferred_fuel_id]
+    local new_fuel_id = fuels.new.map[old_fuel.name]
+    if new_fuel_id ~= nil then
+        preferences.preferred_fuel_id = new_fuel_id
+    else
+        local coal_id = fuels.new.map["coal"]
+        if coal_id ~= nil then
+            preferences.preferred_fuel_id = coal_id
+        else
+            preferences.preferred_fuel_id = fuels.new.fuels[1].id
+        end
+    end
+
+    -- Update line data
+    for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
+        for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
+            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+                if line.fuel_id ~= nil then
+                    local old_fuel = global.all_fuels.fuels[line.fuel_id]
+                    local new_fuel_id = fuels.new.map[old_fuel.name]
+                    if new_fuel_id ~= nil then
+                        line.fuel_id = new_fuel_id
+                    else
+                        line.fuel_id = nil
+                    end
+                end
+            end
+        end
+    end
 end

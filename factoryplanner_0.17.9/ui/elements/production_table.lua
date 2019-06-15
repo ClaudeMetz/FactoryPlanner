@@ -112,9 +112,9 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
     if data_util.machines.is_applicable(player, line.category_id, machine.id, line.recipe_name) then
         local appendage = (append_machine_id) and ("_" .. machine.id) or ""
         gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
-        sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe", number=math.ceil(count),
-        mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 6), " ",
-        {"tooltip.machines"}}}
+          sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe", number=math.ceil(count),
+          mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 6), " ",
+          {"tooltip.machines"}}}
     end
 end
 
@@ -123,9 +123,11 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id, direction="horizontal"}
     
     for _, item in ipairs(Line.get_in_order(line, class)) do
+        local s = (item.fuel) and "fp_button_icon_medium_cyan" or style
+
         if item.amount == 0 or item.amount > margin_of_error then
             local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-            .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=style, mouse_button_filter={"left-and-right"}}
+              .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=s, mouse_button_filter={"left-and-right"}}
 
             -- Special handling for mining recipes
             local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
@@ -303,7 +305,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                     local recipe = global.all_recipes[player.force.name][line.recipe_name]
                     ui_state.modal_data = {
                         title = {"label.machine"},
-                        text = {"", "Choose a machine for the recipe '", recipe.localised_name, "':"},
+                        text = {"", {"label.chooser_machine"}, " '", recipe.localised_name, "':"},
                         choices = {},
                         reciever_name = "machine"
                     }
@@ -354,7 +356,35 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
     elseif direction ~= nil then  -- Shift item in the given direction
         Line.shift(line, item, direction)
     else
-        if click == "left" and item.type ~= "entity" then
+        if click == "right" and item.fuel then
+            local ui_state = get_ui_state(player)
+            local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
+            -- Setup chooser dialog
+            ui_state.modal_data = {
+                title = {"label.fuel"},
+                text = {"", {"label.chooser_fuel"}, " '", machine.localised_name, "':"},
+                choices = {},
+                reciever_name = "fuel"
+            }
+
+            -- Fill chooser dialog with elements
+            for fuel_id, fuel in pairs(global.all_fuels.fuels) do
+                local energy_consumption = line.machine_count * (machine.energy * 60)
+                local count = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value)
+                  * ui_state.context.subfactory.timescale
+                table.insert(ui_state.modal_data.choices, {
+                    name = fuel_id,
+                    tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 6)},
+                    sprite = fuel.type .. "/" .. fuel.name,
+                    number = math.ceil(count)
+                })
+            end
+
+            enter_modal_dialog(player, {type="chooser"})
+            ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+
+        -- Pick recipe to produce said ingredient
+        elseif click == "left" and item.type ~= "entity" then
             if item.class == "Ingredient" then
                 enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
             elseif item.class == "Byproduct" then
@@ -364,4 +394,11 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
     end
     
     refresh_production_table(player)
+end
+
+-- Recieves the result of a chooser user choice and applies it
+function apply_chooser_fuel_choice(player, fuel_id)
+    local context = get_context(player)
+    context.line.fuel_id = fuel_id
+    update_calculations(player, context.subfactory)
 end

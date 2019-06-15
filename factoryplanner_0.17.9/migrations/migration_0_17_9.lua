@@ -5,6 +5,7 @@ function migration_0_17_9.global()
     global.margin_of_error = nil
     
     global.all_belts = generator.all_belts()
+    global.all_fuels = generator.all_fuels()
     global.all_machines = generator.all_machines()
 
     -- Add mod version and player_index for the first time to the player_table

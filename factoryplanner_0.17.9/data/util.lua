@@ -112,6 +112,15 @@ function data_util.base_data.preferred_belt()
     return global.all_belts.belts[1].id
 end
 
+-- Returns the default preferred belt (tries to choose coal)
+function data_util.base_data.preferred_fuel()
+    if global.all_fuels.map["coal"] then
+        return global.all_fuels.map["coal"]
+    else
+        return global.all_fuels.fuels[1].id
+    end
+end
+
 
 -- **** MISC ****
 -- Updates validity of every class specified by the classes parameter
@@ -204,6 +213,12 @@ function data_util.run_dev_config(player)
             {
                 name = "steam",
                 type = "fluid",
+                amount = 0,
+                required_amount = 100
+            },
+            {
+                name = "iron-plate",
+                type = "item",
                 amount = 0,
                 required_amount = 100
             }

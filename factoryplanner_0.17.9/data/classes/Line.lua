@@ -10,6 +10,7 @@ function Line.init(player, base_recipe, machine)
         machine_id = nil,
         machine_count = 0,
         energy_consumption = 0,
+        fuel_id = nil,  -- gets set on first use, then stays set
         production_ratio = 0,
         Product = Collection.init(),
         Byproduct = Collection.init(),
@@ -70,7 +71,7 @@ function Line.update_validity(self, player)
         self.valid = false
     else
         -- When not category_id or machine_id are not set, a migration made them invalid
-        if self.category_id == nil or self.machine_id == nil then
+        if self.category_id == nil or self.machine_id == nil or self.fuel_id == nil then
             self.valid = false
         -- The ingredient_limit of the machine might have changed, reset the machine in that case
         elseif not data_util.machines.is_applicable(player, self.category_id, self.machine_id, self.recipe_name) then
@@ -103,11 +104,17 @@ function Line.attempt_repair(self, player)
             Subfactory.remove(self.subfloor.parent, self.subfloor)
             self.valid = false
 
-        -- Repair an invalid machine
-        elseif self.category_id == nil then  -- Replace line with a new one (which includes a valid category)
-            Floor.replace(self.parent, self, Line.init(player, recipe))
-        elseif self.machine_id == nil then  -- Set the machine to the default one
-            data_util.machines.change_machine(player, self, nil, nil)
+        else
+            -- Repair an invalid machine
+            if self.category_id == nil then  -- Replace line with a new one (which includes a valid category)
+                Floor.replace(self.parent, self, Line.init(player, recipe))
+            elseif self.machine_id == nil then  -- Set the machine to the default one
+                data_util.machines.change_machine(player, self, nil, nil)
+            end
+
+            if self.fuel_id == nil then  -- tries to use coal, uses the first one otherwise
+                self.fuel_id = data_util.base_data.preferred_fuel()
+            end
         end
     end
 
