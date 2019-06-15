@@ -257,13 +257,14 @@ function generator.all_machines()
     
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
+        local ingredient_limit = proto.ingredient_count or 255
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
-        local burner = proto.burner_prototype and true or false
         local energy = proto.energy_usage or proto.max_energy_usage
+        local burner = proto.burner_prototype and true or false
         local machine = {
             name = proto.name,
             localised_name = proto.localised_name,
-            ingredient_limit = proto.ingredient_count,
+            ingredient_limit = ingredient_limit,
             speed = speed,
             energy = energy,
             burner = burner
@@ -327,15 +328,18 @@ end
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
-    local belts = {}
+    local all_belts = {belts = {}, map = {}}
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
-            belts[proto.name] = {
+            table.insert(all_belts.belts, {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 throughput = proto.belt_speed * 480
-            }
+            })
+            local belt_id = #all_belts.belts
+            all_belts.belts[belt_id].id = belt_id
+            all_belts.map[proto.name] = belt_id
         end
     end
-    return belts
+    return all_belts
 end

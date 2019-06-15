@@ -115,7 +115,8 @@ function refresh_production_pane(player)
             if view.name == "belts_or_lanes" then
                 local flow = button["flow_belts_or_lanes"]
                 flow["label_belts_or_lanes"].caption = view.caption
-                flow["sprite_belts_or_lanes"].sprite = "entity/" .. player_table.preferences.preferred_belt_name
+                local preferred_belt = global.all_belts.belts[player_table.preferences.preferred_belt_id]
+                flow["sprite_belts_or_lanes"].sprite = "entity/" .. preferred_belt.name
                 flow.style.left_padding = (player_table.settings.belts_or_lanes == "Belts") and 6 or 4
             else
                 button.caption = view.caption

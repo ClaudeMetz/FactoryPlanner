@@ -298,9 +298,9 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_preferences_machine_change(player, split_string[5], split_string[6])
 
         -- Reacts to any preferences belt button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_belt_[a-z0-9-_]+$") then  --
-            local belt_name = string.gsub(event.element.name, "fp_sprite%-button_preferences_belt_", "")
-            handle_preferences_belt_change(player, belt_name)
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_belt_%d+$") then
+            local belt_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_preferences_belt_change(player, belt_id)
 
         -- Reacts to any (assembly) line item button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then  --
