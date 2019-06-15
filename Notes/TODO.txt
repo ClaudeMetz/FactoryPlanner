@@ -8,6 +8,7 @@ TODO New Features:
 
 TODO Feature Improvements:
 - Add a linebreak to production table if window width is exceeded
+? Make fuel of a subfloor changeable at the parent line
 ? Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
@@ -20,6 +21,4 @@ TODO Code Improvements:
 
 
 TODO Bug Fixes:
-
-
-TODO Quick List:
+- Having coal as an ingredient and a fuel on a subfloor gives the wrong numbers on the parent line
