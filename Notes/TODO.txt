@@ -12,6 +12,8 @@ TODO Feature Improvements:
 
 
 TODO Code Improvements:
+- Loader should not irrevoquably destroy data / if the user saves then loads with the mods
+  re-enabled, the subfactories should just show up like they did before
 - Add script way to switch between git branches with different mod versions
 - Find a way to test migrations reliably before the mod version is bumped
 - identify item, recipes by id, not name
@@ -21,6 +23,5 @@ TODO Bug Fixes:
 
 
 TODO Quick List:
-- burner fuel consumption calculation
 -- RENAME MIGRATION STUFF
 -- TEST TEST TEST

@@ -113,6 +113,7 @@ function reload_preferences(player)
     local preferences = global.players[player.index].preferences
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.preferred_belt_id = preferences.preferred_belt_id or data_util.base_data.preferred_belt()
+    preferences.preferred_fuel_id = preferences.preferred_fuel_id or data_util.base_data.preferred_fuel()
     preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines()
 end
 

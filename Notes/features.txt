@@ -22,10 +22,6 @@
 - First step should be to create a clean interface for both a cleaner implementation of
   the calculations and as a way for others to try their luck [N3]
 
-[F5] Machine Fuel [N1]
-- Have burners show their fuel consumtion
-- Fuel used will be a preference, but adjustable on each recipe by hand
-
 [F7] Inserter Hints [N4]
 - Show an approximation for how many inserters are needed for every item
 - Shown on tooltip for all the desired inserters

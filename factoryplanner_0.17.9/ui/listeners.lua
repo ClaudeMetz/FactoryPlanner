@@ -302,6 +302,11 @@ script.on_event(defines.events.on_gui_click, function(event)
             local belt_id = tonumber(string.match(event.element.name, "%d+"))
             handle_preferences_belt_change(player, belt_id)
 
+        -- Reacts to any preferences fuel button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_fuel_%d+$") then
+            local fuel_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_preferences_fuel_change(player, fuel_id)
+
         -- Reacts to any (assembly) line item button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then  --
             local split_string = ui_util.split(event.element.name, "_")
