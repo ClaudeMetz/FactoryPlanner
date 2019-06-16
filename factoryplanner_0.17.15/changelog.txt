@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.15
+Date: 16. 06. 2019
   Changes:
     - You can now change the fuel of all subfloors by changing it on the parent line
     - Improved the number formatting yet again
