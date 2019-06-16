@@ -31,10 +31,10 @@ function handle_configuration_change()
 
     -- Runs through all players, even new ones (those with no player_table)
     for index, player in pairs(game.players) do
-        local player_table = global.players[index]
-
         attempt_player_table_migration(player)  -- Migrate player_table data
-        update_player_table(player)  -- Create or update the player table
+        update_player_table(player)  -- Create or update player_table
+        
+        local player_table = global.players[index]
         loader.run(player_table)  -- Run the loader on the player
 
         player_gui_reset(player)  -- Destroys all existing GUI's
