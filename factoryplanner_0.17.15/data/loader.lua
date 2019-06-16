@@ -10,7 +10,7 @@ local data_types = {"machines", "belts", "fuels"}
 function loader.setup()
     for _, data_type in ipairs(data_types) do
         _G[data_type] = {}
-        _G[data_type].new = _G["generator"]["all_" .. data_type]()
+        _G[data_type].new = generator["all_" .. data_type]()
     end
 
     
@@ -19,7 +19,7 @@ end
 -- Updates the relevant data of the given player to fit the new data
 function loader.run(player_table)
     for _, data_type in ipairs(data_types) do
-        _G["loader"][data_type]["run"](player_table)
+        loader[data_type].run(player_table)
     end
 end
 
