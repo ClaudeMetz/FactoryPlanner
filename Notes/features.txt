@@ -7,50 +7,54 @@
 - UI and UX will be challenging
 - Ability to set all modules that a machine supports right on it
 - Ability to add which beacons affect each machine
-- Have ability for predefined module and beacon configurations (?)
+- Have ability for predefined module and beacon configurations
 
-[F3] Multiplayer Cooperation
-- Share subfactories between all players on a map
-- Distinct visuals for them in the interface, but custom order for everyone
-- Read/write-access regulation probably needed?
-- Simultaneous change of subfactories might need to be handled?
-
-[F4] Calculation Overhaul
-- Handle all complicated scenarios (cycles, multiple recipes for the same product simultaneously
-  input based calculations, etc)
-- Probably needs a linear algebra approach, which will be hard (see [N2] for hints)
-- First step should be to create a clean interface for both a cleaner implementation of
-  the calculations and as a way for others to try their luck [N3]
-
-[F7] Inserter Hints [N4]
-- Show an approximation for how many inserters are needed for every item
-- Shown on tooltip for all the desired inserters
-- For products/byproducts, show Machine->Belt and Machine->Chest
-- For Ingredients, show Belt->Machine and Chest->Machine
-- Might be hard to calculate, an approximation should be fine though
-
-[F8] Dealing with Byproducts
+[F3] Dealing with Byproducts
 - Have ability to add recipes that use byproducts as inputs and get incorporated in the calculations
 - First step should be solvable without a new calculation model
 
-[F9] Bring Subfactories Together
-- New view that presents an idealized view of your factory (maybe multiple of those views)
-- Let's the user set production goals, and raw resources or planned subfactories as inputs
-- Useful as a high-level overview to see what you currently got
-
-[F10] Net Energy Calculation
-- Gives you the net energy output of a specified subfactory
-- Set up a normal production line, with the addition of an energy producer consuming your product
-- Might consider inserter energy usage as well
-
-[F11] Calculate based on #machines
+[F4] Calculate based on #machines
 - Use a number of machines per item as basis for calculation
 - Making it a setting only on top level products should make it easier
 - Should probably be implemented as a mode switch that automatically converts the values overview
 - Switching should preserve the most accurate value used in case you switch back
 - Have it switch all of them or only select ones, creating a mix of both? Might be too complicated
 
-[F12] Floor library
+[F5] Multiplayer Cooperation
+- Share subfactories between all players on a map
+- Distinct visuals for them in the interface, but custom order for everyone
+- Read/write-access regulation probably needed?
+- Simultaneous change of subfactories might need to be handled?
+
+[F6] Calculation-Interface [N3]
+- Clean, independent interface to read subfactory data and write it back
+- Should handle all the nitty gritty data structure stuff and be as simple to use as possible
+- Useful for implementing an calculation model independent of the data structures that are in place
+- This allows for a cleaner internal implementation and for other people to try their luck
+
+[F7] Calculation Overhaul
+- Handle all complicated scenarios (cycles, multiple recipes for the same product simultaneously
+  input based calculations, etc)
+- Probably needs a linear algebra approach, which will be hard (see [N2] for hints)
+
+[F8] Net Energy Calculation
+- Gives you the net energy output of a specified subfactory
+- Set up a normal production line, with the addition of an energy producer consuming your product
+- Might consider inserter energy usage as well
+
+[F9] Bring Subfactories Together
+- New view that presents an idealized view of your factory (maybe multiple of those views)
+- Let's the user set production goals, and raw resources or planned subfactories as inputs
+- Useful as a high-level overview to see what you currently got
+
+[F10] Inserter Hints [N4]
+- Show an approximation for how many inserters are needed for every item
+- Shown on tooltip for all the desired inserters
+- For products/byproducts, show Machine->Belt and Machine->Chest
+- For Ingredients, show Belt->Machine and Chest->Machine
+- Might be hard to calculate, an approximation should be fine though
+
+[F11] Floor library
 - Have a library that the user can fill with floors to be re-used in subfactories
 - Create them there (?) or include existing ones, then plop them into place
 - Might be linked with canonical version, so changes carry over (probably needs to be case-by-case)

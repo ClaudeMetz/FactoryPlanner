@@ -8,8 +8,7 @@ local function undesirable_recipes()
         ["electric-energy-interface"] = false,
         ["railgun"] = false,
         ["railgun-dart"] = false,
-        ["player-port"] = false,
-        ["infinity-chest"] = false
+        ["player-port"] = false
     }
 
     -- Leaves loaders in if LoaderRedux is loaded
@@ -132,62 +131,6 @@ function generator.all_recipes()
 end
 
 
--- Returns the names of the items that shouldn't be included
-local function undesirable_items()
-    local undesirables = {
-        items = {
-            ["compilatron-chest"] = false,
-            ["small-plane"] = false,
-            ["dummy-steel-axe"] = false,
-            ["electric-energy-interface"] = false,
-            ["escape-pod-power"] = false,
-            ["heat-interface"] = false,
-            ["escape-pod-assembler"] = false,
-            ["escape-pod-lab"] = false,
-            ["raw-fish"] = false,
-            ["pollution"] = false,
-            ["coin"] = false,
-            ["tank-machine-gun"] = false,
-            ["tank-flamethrower"] = false,
-            ["railgun"] = false,
-            ["artillery-wagon-cannon"] = false,
-            ["tank-cannon"] = false,
-            ["railgun-dart"] = false,
-            ["artillery-targeting-remote"] = false,
-            ["computer"] = false,
-            ["player-port"] = false,
-            ["simple-entity-with-force"] = false,
-            ["simple-entity-with-owner"] = false,
-            ["infinity-chest"] = false,
-            ["infinity-pipe"] = false,
-            ["void"] = false,
-            ["angels-void"] = false
-        },
-        fluids = {
-        },
-        types = {
-            ["blueprint"] = false,
-            ["blueprint-book"] = false,
-            ["copy-paste-tool"] = false,
-            ["deconstruction-item"] = false,
-            ["item-with-inventory"] = false,
-            ["item-with-label"] = false,
-            ["item-with-tags"] = false,
-            ["selection-tool"] = false,
-            ["upgrade-item"] = false
-        }
-    }
-
-    -- Leaves loaders in if LoaderRedux is loaded
-    if game.active_mods["LoaderRedux"] == nil then
-        undesirables.items["loader"] = false
-        undesirables.items["fast-loader"] = false
-        undesirables.items["express-loader"] = false
-    end
-
-    return undesirables
-end
-
 -- Returns all relevant items and fluids
 function generator.all_items()
     local items = { index = {} }
@@ -202,6 +145,8 @@ function generator.all_items()
     end
 
     -- Create a table containing each item that has at least one recipe
+    -- Use of the force "player" here is hack that will be fixed when recipe/item data is reworked
+    -- (No need for undesirable item settings because removing the recipes removes the item)
     local craftable_products = {}
     for _, recipe in pairs(global.all_recipes["player"]) do
         for _, product in ipairs(recipe.products) do
@@ -209,24 +154,39 @@ function generator.all_items()
         end
     end
     
-    local undesirables = undesirable_items()
     -- Adding all standard items minus the undesirable ones
     local types = {"item", "fluid"}
     for _, type in pairs(types) do
         items[type] = {}
         for item_name, item in pairs(game[type .. "_prototypes"]) do
-            if craftable_products[item_name] then
-                if type == "fluid" and undesirables.fluids[item_name] == nil then
-                    items[type][item_name] = item
-                elseif undesirables.types[item.type] == nil and undesirables.items[item_name] == nil then
-                    items[type][item_name] = item
-                end
+            if global.all_fuels.map[item_name] or craftable_products[item_name] then
+                items[type][item_name] = item
                 add_to_index(item_name, type)
             end
         end
     end
     
     return items
+end
+
+-- Maps all items to the recipes that produce them ([item_name] = {[recipe_name] = true})
+-- This optimizes the recipe filtering process for the recipe picker
+function generator.item_recipe_map()
+    local map = {}
+
+    -- Use of the force "player" here is hack that will be fixed when recipe/item data is reworked
+    for recipe_name, recipe in pairs(global.all_recipes["player"]) do
+        if recipe.valid then 
+            for _, product in ipairs(recipe.products) do
+                if map[product.name] == nil then
+                    map[product.name] = {}
+                end
+                map[product.name][recipe_name] = true
+            end
+        end
+    end
+    
+    return map
 end
 
 

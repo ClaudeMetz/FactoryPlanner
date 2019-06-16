@@ -13,7 +13,7 @@ function open_item_picker_dialog(flow_modal_dialog)
     if product ~= nil then product_bar["textfield_product_amount"].focus() end
     
     picker.select_item_group(player, "item", "logistics")
-    picker.apply_filter(player, "item", true, nil)
+    picker.apply_filter(player, "item", true)
 end
 
 -- Handles closing of the item picker dialog
@@ -75,7 +75,7 @@ function handle_picker_item_click(player, button)
         flow_modal_dialog["table_product_bar"]["textfield_product_amount"].focus()
     end
 
-    --picker.apply_filter(player, "item", false, nil)
+    --picker.apply_filter(player, "item", false)
 end
 
 

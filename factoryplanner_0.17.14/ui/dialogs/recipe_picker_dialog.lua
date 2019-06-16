@@ -7,9 +7,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"label.add_recipe"}
     flow_modal_dialog.style.bottom_margin = 8
 
-    local search_function = get_search_function(product)
-
-    local recipe, error, show = run_preliminary_checks(player, product.name, search_function)
+    local recipe, error, show = run_preliminary_checks(player, product.name)
     if error ~= nil then
         queue_message(player, error, "warning")
         exit_modal_dialog(player, "cancel", {})
@@ -30,7 +28,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
             picker.refresh_picker_panel(flow_modal_dialog, "recipe", true)
 
             picker.select_item_group(player, "recipe", "logistics")
-            picker.apply_filter(player, "recipe", true, search_function)
+            picker.apply_filter(player, "recipe", true)
         end
     end
 end
@@ -43,7 +41,7 @@ function handle_filter_radiobutton_click(player, type, state)
     -- Remember the user selection for this type of filter
     ui_state.recipe_filter_preferences[type] = state
 
-    picker.apply_filter(player, "recipe", false, get_search_function(ui_state.selected_object))
+    picker.apply_filter(player, "recipe", false)
 end
 
 -- Reacts to a picker recipe button being pressed
@@ -61,16 +59,18 @@ end
 -- Serves the dual-purpose of setting the filter to include disabled recipes if no enabled ones are found
 -- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
-function run_preliminary_checks(player, product_name, search_function)
+function run_preliminary_checks(player, product_name)
     -- First determine all relevant recipes and the amount in each category (enabled and hidden)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
-    for _, recipe in pairs(global.all_recipes[player.force.name]) do
-        if search_function(recipe, product_name)
-          and not (get_preferences(player).ignore_barreling_recipes
-          and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
-            table.insert(relevant_recipes, recipe)
-            if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
+    if item_recipe_map[product_name] ~= nil then  -- this being nil means that the item has no recipes
+        for _, recipe in pairs(global.all_recipes[player.force.name]) do
+            if item_recipe_map[product_name][recipe.name]
+            and not (get_preferences(player).ignore_barreling_recipes
+            and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
+                table.insert(relevant_recipes, recipe)
+                if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
+            end
         end
     end
     
@@ -121,34 +121,4 @@ function generate_recipe_tooltip(recipe)
     end
 
     return tooltip
-end
-
-
--- Returns the appropriate search function for the given object
-function get_search_function(object)
-    if object == nil then return nil end
-    if object.class == "Product" or object.class == "Ingredient" then return _G["recipe_produces_product"]
-    elseif object.class == "Byproduct" then return _G["recipe_consumes_product"] end
-end
-
--- Checks whether given recipe produces given product
-function recipe_produces_product(recipe, product_name)
-    if product_name == "" then return true end
-    for _, product in ipairs(recipe.products) do
-        if product.name == product_name then
-            return true
-        end
-    end
-    return false
-end
-
--- Checks whether given recipe consumes given (by)product
-function recipe_consumes_product(recipe, product_name)
-    if product_name == "" then return true end
-    for _, product in ipairs(recipe.ingredients) do
-        if product.name == product_name then
-            return true
-        end
-    end
-    return false
 end
