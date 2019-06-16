@@ -67,7 +67,21 @@ end
 
 -- Formats given number to given number of significant digits
 function ui_util.format_number(number, precision)
-    return ("%." .. precision .. "g"):format(number)
+    -- To avoid scientific notation, chop off the decimals points for big numbers
+    if (number / (10 ^ precision)) > 1 then
+        return ("%d"):format(number)
+    else
+        -- Decrease significant digts for every zero after the decimal point
+        if number ~= 0 and number < 1 then
+            local n = number
+            while n < 1 do
+                precision = precision - 1
+                n = n * 10
+            end        
+        end
+        -- Show the number in the shortest possible way
+        return ("%." .. precision .. "g"):format(number)
+    end
 end
 
 -- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)

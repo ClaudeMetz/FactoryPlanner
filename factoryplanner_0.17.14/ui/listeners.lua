@@ -16,6 +16,10 @@ script.on_configuration_changed(function()
     handle_configuration_change()
 end)
 
+-- Creates a lua-global variable containing the item_recipe_map for faster recipe picker searches
+script.on_load(function()
+    item_recipe_map = generator.item_recipe_map()
+end)
 
 -- Fires when a player loads into a game for the first time
 script.on_event(defines.events.on_player_created, function(event)
@@ -267,9 +271,9 @@ script.on_event(defines.events.on_gui_click, function(event)
             _G["handle_picker_" .. object_type .. "_click"](player, event.element)
 
         -- Reacts to a chooser element button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_%d+$") then
-            local element_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_chooser_element_click(player, element_id)
+        elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
+            local element_name = string.gsub(event.element.name, "fp_sprite%-button_chooser_element_", "")
+            handle_chooser_element_click(player, element_name)
 
         -- Reacts to a change of the production pane view
         elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-z_]+$") then

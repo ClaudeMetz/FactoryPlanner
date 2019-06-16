@@ -3,8 +3,10 @@ API Changes:
 - (asked) event for start_hover and stop_hover over elements or buttons only
 
 
-Bugs:
+Factorio Bugs:
 
+
+Notes:
 
 [N2] Linear calculation for recipes
 - http://kirkmcdonald.github.io/posts/calculation.html

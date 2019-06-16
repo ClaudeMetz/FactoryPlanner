@@ -32,6 +32,9 @@ function loader.finish()
 
     global.all_recipes = generator.all_recipes()
     global.all_items = generator.all_items()
+
+    -- Re-runs the table creation that runs on_load to incorporate the migrated datasets
+    item_recipe_map = generator.item_recipe_map()
 end
 
 

@@ -168,7 +168,7 @@ end
 
 -- Applies filters to the object picker, optionally also (re)applies an appropriate button style
 -- (This function is not object-type-agnostic for performance reasons (minimizing function calls))
-function picker.apply_filter(player, object_type, apply_button_style, search_function)
+function picker.apply_filter(player, object_type, apply_button_style)
     local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_" .. object_type .. "_picker"]["flow_modal_dialog"]
     local search_term = flow_modal_dialog["table_search_bar"]["fp_textfield_picker_search_bar"].text:gsub("^%s*(.-)%s*$", "%1")
     local warning_label = flow_modal_dialog["label_warning_message"]
@@ -231,10 +231,10 @@ function picker.apply_filter(player, object_type, apply_button_style, search_fun
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if (not disabled and not recipe.enabled) or (not hidden and recipe.hidden)
+                    if item_recipe_map[search_term][recipe.name] == nil
+                      or (not disabled and not recipe.enabled) or (not hidden and recipe.hidden)
                       or (preferences.ignore_barreling_recipes
-                      and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel"))
-                      or not search_function(recipe, search_term) then
+                      and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
                         visible = false
                     end
                 end
@@ -331,5 +331,5 @@ end
 function picker.search(player)
     local ui_state = get_ui_state(player)
     local object_type = string.gsub(ui_state.modal_dialog_type, "_picker", "")
-    picker.apply_filter(player, object_type, false, get_search_function(ui_state.selected_object))
+    picker.apply_filter(player, object_type, false)
 end

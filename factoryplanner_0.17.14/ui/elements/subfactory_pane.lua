@@ -96,7 +96,7 @@ function get_ingredient_specifics(ingredient)
     local localised_name = game[ingredient.type .. "_prototypes"][ingredient.name].localised_name
     -- Special handling for mining recipes
     if ingredient.type == "entity" then localised_name = {"", {"label.raw"}, " ", localised_name} end
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(ingredient.amount, 6)}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(ingredient.amount, 4)}
 
     return {
         number = ingredient.amount,
@@ -123,8 +123,8 @@ end
 -- Returns necessary details to complete the item button for a product
 function get_product_specifics(product)
     local localised_name = game[product.type .. "_prototypes"][product.name].localised_name
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount, 6), " / ",
-      ui_util.format_number(product.required_amount, 6)}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount, 4), " / ",
+      ui_util.format_number(product.required_amount, 4)}
 
     local style
     if product.amount == 0 then
@@ -183,7 +183,7 @@ end
 -- Returns necessary details to complete the item button for a byproduct
 function get_byproduct_specifics(byproduct)
     local localised_name = game[byproduct.type .. "_prototypes"][byproduct.name].localised_name
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount, 6)}
+    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount, 4)}
 
     return {
         number = byproduct.amount,

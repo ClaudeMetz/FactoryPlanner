@@ -1,8 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Changes:
+    - You can now change the fuel of all subfloors by changing it on the parent line
+    - Improved the number formatting yet again
+  Bugfixes:
+    - Fixed a crash when setting the fuel type on a recipe to wood
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.14
 Date: 16. 06. 2019
   Bugfixes:
-    - Fixed the number-of-belts/lanes-calculation to be correct now
+    - Corrected the number-of-belts/lanes-calculation
     - Fixed a couple of crashes when going between floors
 
 ---------------------------------------------------------------------------------------------------
@@ -11,10 +20,10 @@ Date: 15. 06. 2019
   Features:
     - (This release is experimental. It also loses your preferences, my apologies)
     - Now calculates the fuel consumed by burner machines for you
-      The type of fuel is adjutable in preferences or per line (tight-click it)
+      The type of fuel is adjutable in preferences or per line (right-click it)
     - Now links to FNEI. Alt-click on any item or recipe to see it in FNEI
     - Ingredient limits on assemblers are now respected
-    - Now optionally hides all items that don't have a recipe
+    - Now hides all items that don't have a recipe
     - Added a preference to ignore barreling recipes
     - Added a setting to change the height of the main interface
   Changes:

@@ -100,7 +100,7 @@ function create_line_table_row(player, line)
     -- Energy label
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_energy_consumption(line.energy_consumption, 3)}
-    label_energy.tooltip = ui_util.format_energy_consumption(line.energy_consumption, 6)
+    label_energy.tooltip = ui_util.format_energy_consumption(line.energy_consumption, 5)
 
     -- Item buttons
     create_item_button_flow(player_table, table_production, line, "Product", "fp_button_icon_medium_blank")
@@ -115,7 +115,7 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
         local appendage = (append_machine_id) and ("_" .. machine.id) or ""
         gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
           sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe", number=math.ceil(count),
-          mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 6), " ",
+          mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 4), " ",
           {"tooltip.machines"}}}
     end
 end
@@ -153,7 +153,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             
             if number ~= nil then
                 button.number = ("%.4g"):format(number)
-                button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 6), " ", view.caption}
+                button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 4), " ", view.caption}
             else
                 button.tooltip = tooltip_name 
             end
@@ -314,7 +314,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                             local count = (line.production_ratio / (machine.speed / line.recipe_energy)) / subfactory.timescale
                             table.insert(ui_state.modal_data.choices, {
                                 name = machine_id,
-                                tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 6)},
+                                tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
                                 sprite = "entity/" .. machine.name,
                                 number = math.ceil(count)
                             })
@@ -357,35 +357,47 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         Line.shift(line, item, direction)
     else
         if click == "right" and item.fuel then
-            if line.subfloor ~= nil then
-                queue_message(player, {"label.error_fuel_on_subfloor"}, "warning")
+            local ui_state = get_ui_state(player)
+            -- Setup chooser dialog
+            ui_state.modal_data = {
+                title = {"label.fuel"},
+                choices = {},
+                reciever_name = "fuel"
+            }
+
+            local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
+            -- Set different message depending on whether this fuel is on a line with a subfloor or not
+            if line.subfloor == nil then
+                ui_state.modal_data.text = {"", {"label.chooser_fuel_line"}, " '", machine.localised_name, "':"}
             else
-                local ui_state = get_ui_state(player)
-                local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
-                -- Setup chooser dialog
-                ui_state.modal_data = {
-                    title = {"label.fuel"},
-                    text = {"", {"label.chooser_fuel"}, " '", machine.localised_name, "':"},
-                    choices = {},
-                    reciever_name = "fuel"
-                }
-
-                -- Fill chooser dialog with elements
-                for fuel_id, fuel in pairs(global.all_fuels.fuels) do
-                    local energy_consumption = line.machine_count * (machine.energy * 60)
-                    local count = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value)
-                      * ui_state.context.subfactory.timescale
-                    table.insert(ui_state.modal_data.choices, {
-                        name = fuel_id,
-                        tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 6)},
-                        sprite = fuel.type .. "/" .. fuel.name,
-                        number = math.ceil(count)
-                    })
-                end
-
-                enter_modal_dialog(player, {type="chooser"})
-                ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+                local fuel = global.all_fuels.fuels[global.all_fuels.map[item.name]]
+                ui_state.modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", fuel.localised_name, "':"}
             end
+
+            -- Fill chooser dialog with elements
+            for new_fuel_id, fuel in pairs(global.all_fuels.fuels) do
+                local count, tooltip
+                if line.subfloor == nil then
+                    local energy_consumption = line.machine_count * (machine.energy * 60)
+                    count = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value)
+                    * ui_state.context.subfactory.timescale
+                    tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 4)}
+                else
+                    count = nil
+                    tooltip = fuel.localised_name
+                end
+                
+                local old_fuel_id = global.all_fuels.map[item.name]
+                table.insert(ui_state.modal_data.choices, {
+                    name = old_fuel_id .. "_" .. new_fuel_id,  -- incorporate old fuel id for later use
+                    tooltip = tooltip,
+                    sprite = fuel.type .. "/" .. fuel.name,
+                    number = count
+                })
+            end
+
+            ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+            enter_modal_dialog(player, {type="chooser"})
 
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.type ~= "entity" then
@@ -401,8 +413,38 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_chooser_fuel_choice(player, fuel_id)
+function apply_chooser_fuel_choice(player, fuel_element_name)
+    -- Sets the given fuel_id on the given line
+    local function apply_fuel_to_line(line, fuel_id)
+        line.fuel_id = fuel_id
+        if line.id == 1 and line.parent and line.parent.level > 1 then
+            line.parent.origin_line.fuel_id = fuel_id
+        end
+    end
+    
+    -- Sets the given fuel_id to all relevant lines on the given floor and all it's subfloors
+    local function apply_fuel_to_floor(floor, old_fuel_id, new_fuel_id)
+        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            if line.subfloor == nil then
+                if line.fuel_id == old_fuel_id then
+                    apply_fuel_to_line(line, new_fuel_id)
+                end
+            else
+                apply_fuel_to_floor(line.subfloor, old_fuel_id, new_fuel_id)
+            end
+        end
+    end
+
+    -- Get the old and new fuel_id from the element_name
+    local split = ui_util.split(fuel_element_name, "_")
+    local old_fuel_id, new_fuel_id = tonumber(split[1]), tonumber(split[2])
+    
     local context = get_context(player)
-    context.line.fuel_id = fuel_id
+    if context.line.subfloor == nil then
+        apply_fuel_to_line(context.line, new_fuel_id)
+    else
+        apply_fuel_to_floor(context.line.subfloor, old_fuel_id, new_fuel_id)
+    end
+
     update_calculations(player, context.subfactory)
 end

@@ -120,6 +120,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 if machine.burner == nil then
                     line_aggregate.energy_consumption = energy_consumption
                 elseif machine.burner.categories["chemical"] then
+                    -- Only applies to lines without subfloor (lines with subfloor shouldn't have a fuel_id)
                     line.fuel_id = line.fuel_id or get_preferences(player).preferred_fuel_id
                     local fuel = global.all_fuels.fuels[line.fuel_id]
                     local fuel_amount = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value) * subfactory.timescale
