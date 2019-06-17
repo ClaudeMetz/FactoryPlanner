@@ -1,21 +1,18 @@
 TODO New Features:
 - Add an option to show whether machine numbers are perfect or rounded up
-- Add a toggleable comment field to each (assembly) line
-- Add the ability to set the product amount on a line permanently, ignoring previous requirements
-? Add fluid mining recipes
+? Add the ability to set the product amount on a line permanently, ignoring previous requirements
 
 
 TODO Feature Improvements:
 - Add a linebreak to the production table if the scroll pane width is exceeded
-? Add more info on picker tooltips: product already exists, (not researched, hidden,) etc
 
 
 TODO Code Improvements:
 - Loader should not irrevoquably destroy data / if the user saves then loads with the mods
   re-enabled, the subfactories should just show up like they did before
+  (also, repairs should run automatically if caused by migrations)
 - Add script way to switch between git branches with different mod versions
 - Find a way to test migrations reliably before the mod version is bumped
-- identify items & recipes by id, not name
 
 
 TODO Bug Fixes:

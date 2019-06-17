@@ -16,8 +16,12 @@ function Floor.init(line)
     -- The top floor is initialised with Floor.init(nil)
     floor.level = line and (line.parent.level + 1) or 1
 
+    -- If a line is given, add it as the first line of the new floor
+    -- (This means that this floor is the subfloor of the given line)
     if line ~= nil then
-        Floor.add(floor, util.table.deepcopy(line))
+        local subline = util.table.deepcopy(line)
+        subline.comment = nil
+        Floor.add(floor, subline)
     end
 
     return floor

@@ -74,7 +74,7 @@ function refresh_item_table(player, class)
         for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
             local item_specifics = _G["get_" .. ui_name .. "_specifics"](item)
             
-            if item_specifics.number > margin_of_error then
+            if item_specifics.number == 0 or item_specifics.number > margin_of_error then
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
                 .. item.id, sprite=item.type .. "/" .. item.name, mouse_button_filter={"left-and-right"}}
 
@@ -137,8 +137,9 @@ function get_product_specifics(product)
         style = "fp_button_icon_large_cyan"
     end
 
+    local number = (product.required_amount < margin_of_error) and 0 or product.required_amount
     return {
-        number = product.required_amount,
+        number = number,
         tooltip = tooltip,
         style = style
     }

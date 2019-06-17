@@ -66,17 +66,6 @@ function add_production_pane_to(main_dialog)
     scroll_pane.style.horizontally_stretchable = true
     scroll_pane.style.vertically_squashable = true
 
-    local column_count = 7
-    local table = scroll_pane.add{type="table", name="table_production_pane",  column_count=column_count}
-    table.style = "table_with_selection"
-    table.style.horizontal_spacing = 16
-    table.style.top_padding = 0
-    table.style.left_margin = 6
-    for i=1, column_count do
-        if i < 5 then table.style.column_alignments[i] = "middle-center"
-        else table.style.column_alignments[i] = "middle-left" end
-    end
-
     refresh_production_pane(game.get_player(main_dialog.player_index))
 end
 

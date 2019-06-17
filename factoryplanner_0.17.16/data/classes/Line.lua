@@ -15,6 +15,7 @@ function Line.init(player, base_recipe, machine)
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
+        comment = nil,
         subfloor = nil,
         valid = true,
         class = "Line"

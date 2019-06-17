@@ -10,9 +10,8 @@ require("data.loader")
 require("data.calc")
 require("migrations.handler")
 
--- Margin of error for floating poing calculations
-margin_of_error = 1e-10
-----devmode = true
+margin_of_error = 1e-8  -- Margin of error for floating poing calculations
+devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -112,6 +111,7 @@ end
 function reload_preferences(player)
     local preferences = global.players[player.index].preferences
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
+    preferences.enable_recipe_comments = preferences.enable_recipe_comments or false
     preferences.preferred_belt_id = preferences.preferred_belt_id or data_util.base_data.preferred_belt()
     preferences.preferred_fuel_id = preferences.preferred_fuel_id or data_util.base_data.preferred_fuel()
     preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines()

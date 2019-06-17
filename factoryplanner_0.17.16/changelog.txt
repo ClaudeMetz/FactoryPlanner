@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - Now has a preference to enable comments for every recipe line
+  Bugfixes:
+    - Fixed mining recipes not showing up
+    - Fixed a crash when formatting very small/big numbers for display
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.16
 Date: 16. 06. 2019
   Bugfixes:
