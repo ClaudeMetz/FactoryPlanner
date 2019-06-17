@@ -71,14 +71,20 @@ function ui_util.format_number(number, precision)
     if (number / (10 ^ precision)) > 1 then
         return ("%d"):format(number)
     else
-        -- Decrease significant digts for every zero after the decimal point
-        if number ~= 0 and number < 1 then
+        -- Set very small numbers to 0
+        if number < (0.1 ^ precision) then
+            number = 0
+            
+        -- Decrease significant digits for every zero after the decimal point
+        -- This keeps the number of digits after the decimal point constant
+        elseif number < 1 then
             local n = number
             while n < 1 do
                 precision = precision - 1
                 n = n * 10
             end        
         end
+        
         -- Show the number in the shortest possible way
         return ("%." .. precision .. "g"):format(number)
     end

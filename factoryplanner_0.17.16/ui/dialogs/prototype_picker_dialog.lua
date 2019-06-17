@@ -231,10 +231,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if item_recipe_map[search_term][recipe.name] == nil
-                      or (not disabled and not recipe.enabled) or (not hidden and recipe.hidden)
-                      or (preferences.ignore_barreling_recipes
-                      and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
+                    if not recipe_produces_product(player, recipe, nil, search_term) then
                         visible = false
                     end
                 end

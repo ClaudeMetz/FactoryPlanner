@@ -31,7 +31,8 @@ function generator.all_recipes()
             enabled = true,
             hidden = false,
             group = {name="intermediate_products", order="c"},
-            subgroup = {name="mining", order="z"}
+            subgroup = {name="mining", order="z"},
+            valid = true
         }
     end
     
@@ -77,37 +78,21 @@ function generator.all_recipes()
 
                     recipes[force_name][recipe.name] = recipe
                 end
-                
-
-                -- Adds a recipe for producing (vanilla) steam
-                local recipe = mining_recipe()
-                recipe.name = "impostor-steam"
-                recipe.localised_name = {"fluid-name.steam"}   -- official locale
-                recipe.category = "steam"
-                recipe.order = "z"
-                recipe.energy = 1
-                recipe.ingredients = {{type="fluid", name="water", amount=60}}
-                recipe.products = {{type="fluid", name="steam", amount=60}}
-                recipe.prototype = { main_product = recipe.products[1] }
-                recipes[force_name][recipe.name] = recipe
-
-                    
-                -- Adds unconditional extraction, like water pumps. Not sure if necessary/useful yet.
-                --[[ if proto.fluid then
-                    local recipe = base_recipe()
-                    recipe.name = "impostor-" .. proto.fluid.name
-                    recipe.localised_name = proto.fluid.localised_name
-                    recipe.category = proto.resource_category
-                    recipe.ingredients = nil
-                    recipe.products = {{ type = 'fluid', name = proto.fluid.name, amount = 1 }}
-                    recipe.item_type = "fluid"
-                    recipe.order = proto.order
-
-                    recipes[recipe.name] = recipe
-                end ]]
             end
             
-            -- Adding convenient space science recipe
+            -- Adds a recipe for producing (vanilla) steam
+            local recipe = mining_recipe()
+            recipe.name = "impostor-steam"
+            recipe.localised_name = {"fluid-name.steam"}   -- official locale
+            recipe.category = "steam"
+            recipe.order = "z"
+            recipe.energy = 1
+            recipe.ingredients = {{type="fluid", name="water", amount=60}}
+            recipe.products = {{type="fluid", name="steam", amount=60}}
+            recipe.prototype = { main_product = recipe.products[1] }
+            recipes[force_name][recipe.name] = recipe
+            
+            -- Adds a convenient space science recipe
             recipes[force_name]["fp-space-science-pack"] = {
                 name = "fp-space-science-pack",
                 localised_name = {"item-name.space-science-pack"},  -- official locale
@@ -122,9 +107,10 @@ function generator.all_recipes()
                     {type="item", name="rocket-part", amount=100},
                     {type="item", name="satellite", amount=1}
                 },
-                products = {{type="item", name="space-science-pack", amount=1000}}
+                products = {{type="item", name="space-science-pack", amount=1000}},
+                valid = true
             }
-       end
+        end
     end
 
     return recipes
@@ -172,16 +158,20 @@ end
 -- Maps all items to the recipes that produce them ([item_name] = {[recipe_name] = true})
 -- This optimizes the recipe filtering process for the recipe picker
 function generator.item_recipe_map()
-    local map = {}
+    local map = {
+        item = {},
+        fluid = {},
+        entity = {}
+    }
 
     -- Use of the force "player" here is hack that will be fixed when recipe/item data is reworked
     for recipe_name, recipe in pairs(global.all_recipes["player"]) do
-        if recipe.valid then 
+        if recipe.valid then
             for _, product in ipairs(recipe.products) do
-                if map[product.name] == nil then
-                    map[product.name] = {}
+                if map[product.type][product.name] == nil then
+                    map[product.type][product.name] = {}
                 end
-                map[product.name][recipe_name] = true
+                map[product.type][product.name][recipe_name] = true
             end
         end
     end

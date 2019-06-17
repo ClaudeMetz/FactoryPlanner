@@ -7,7 +7,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"label.add_recipe"}
     flow_modal_dialog.style.bottom_margin = 8
 
-    local recipe, error, show = run_preliminary_checks(player, product.name)
+    local recipe, error, show = run_preliminary_checks(player, product)
     if error ~= nil then
         queue_message(player, error, "warning")
         exit_modal_dialog(player, "cancel", {})
@@ -59,15 +59,13 @@ end
 -- Serves the dual-purpose of setting the filter to include disabled recipes if no enabled ones are found
 -- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
-function run_preliminary_checks(player, product_name)
+function run_preliminary_checks(player, product)
     -- First determine all relevant recipes and the amount in each category (enabled and hidden)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
-    if item_recipe_map[product_name] ~= nil then  -- this being nil means that the item has no recipes
+    if item_recipe_map[product.type][product.name] ~= nil then  -- this being nil means that the item has no recipes
         for _, recipe in pairs(global.all_recipes[player.force.name]) do
-            if item_recipe_map[product_name][recipe.name]
-            and not (get_preferences(player).ignore_barreling_recipes
-            and (recipe.subgroup.name == "empty-barrel" or recipe.subgroup.name == "fill-barrel")) then
+            if recipe_produces_product(player, recipe, product.type, product.name) then
                 table.insert(relevant_recipes, recipe)
                 if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
             end
@@ -121,4 +119,27 @@ function generate_recipe_tooltip(recipe)
     end
 
     return tooltip
+end
+
+-- Returns true when the given recipe produces the given product
+-- (Tries all types if no product type is given)
+function recipe_produces_product(player, recipe, product_type, product_name)
+    -- Exclude barreling recipes according to preference
+    if (get_preferences(player).ignore_barreling_recipes and (recipe.subgroup.name == "empty-barrel"
+      or recipe.subgroup.name == "fill-barrel")) then
+        return false
+    else
+        if product_type ~= nil then
+            return item_recipe_map[product_type][product_name][recipe.name] 
+        else
+            local product_types = {"item", "fluid", "entity"}
+            for _, type in ipairs(product_types) do
+                if item_recipe_map[type][product_name] ~= nil 
+                  and item_recipe_map[type][product_name][recipe.name] then
+                    return true
+                end
+            end
+            return false  -- return false if no product is found
+        end
+    end
 end

@@ -7,6 +7,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-font-14p-semi",
+        from = "default-semibold",
+        size = 14
+    },
+    {
+        type = "font",
         name = "fp-font-15p",
         from = "default-semibold",
         size = 15

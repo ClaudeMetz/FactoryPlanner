@@ -125,6 +125,10 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     elseif event.element.name == "fp_checkbox_preferences_ignore_barreling" then
         get_preferences(player).ignore_barreling_recipes = event.element.state
 
+    -- Changes the preference to show line comments
+    elseif event.element.name == "fp_checkbox_preferences_enable_recipe_comments" then
+        get_preferences(player).enable_recipe_comments = event.element.state
+
     end
 end)
 
@@ -135,6 +139,10 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     -- Persists (assembly) line percentage changes
     if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
         handle_percentage_change(player, event.element)
+
+    -- Persists (assembly) line comment changes
+    elseif string.find(event.element.name, "^fp_textfield_line_comment_%d+$") then
+        handle_comment_change(player, event.element)
         
     -- Actives the instant filter based on user serachfield text entry
     elseif event.element.name == "fp_textfield_picker_search_bar" then
@@ -167,9 +175,19 @@ script.on_event(defines.events.on_gui_click, function(event)
     if string.find(event.element.name, "^fp_.+$") then
         -- Handle clicks on textfields to improve user experience
         if string.find(event.element.name, "^fp_textfield_[a-z0-9_]+$") then
-            if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
-                handle_percentage_textfield_click(player, event.element)
+            -- Replaces the previously selected textfields text in case it is invalid (for percentage textfields)
+            -- (also unselects it, which the base game does not yet do)
+            if previously_selected_textfield ~= nil and previously_selected_textfield.valid
+              and previously_selected_textfield.index ~= event.element.index then
+                -- A reset is only needed on percentage textfields
+                if string.find(previously_selected_textfield.name, "^fp_textfield_line_percentage_%d+$") then
+                    local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
+                    local line = Floor.get(get_context(player).floor, "Line", line_id)
+                    previously_selected_textfield.text = line.percentage
+                end
             end
+
+            previously_selected_textfield = event.element
         end
 
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
@@ -241,6 +259,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Sets the selected floor to be the top one
         elseif event.element.name == "fp_button_floor_top" then
             handle_floor_change_click(player, "top")
+
+        -- Clears all the comments on the current floor
+        elseif event.element.name == "fp_button_production_clear_comments" then
+            clear_recipe_comments(player)
 
         -- Repairs the current subfactory as well as possible
         elseif event.element.name == "fp_button_error_bar_repair" then

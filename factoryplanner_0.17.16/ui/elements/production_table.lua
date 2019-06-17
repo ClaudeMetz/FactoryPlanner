@@ -6,8 +6,23 @@ function refresh_production_table(player)
 
     flow_production["label_production_info"].visible = false
     local scroll_pane_production = flow_production["scroll-pane_production_pane"]
+    local preferences = get_preferences(player)
+
+    -- Production table needs to be destroyed to change it's column count
     local table_production = scroll_pane_production["table_production_pane"]
-    table_production.clear()
+    if table_production ~= nil then table_production.destroy() end
+    
+    local column_count = preferences.enable_recipe_comments and 8 or 7
+    local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
+      column_count=column_count}
+    table_production.style = "table_with_selection"
+    table_production.style.horizontal_spacing = 16
+    table_production.style.top_padding = 0
+    table_production.style.left_margin = 6
+    for i=1, column_count do
+        if i < 5 then table_production.style.column_alignments[i] = "middle-center"
+        else table_production.style.column_alignments[i] = "middle-left" end
+    end
 
     local context = get_context(player)
     if context.subfactory ~= nil and context.subfactory.valid then
@@ -27,9 +42,25 @@ function refresh_production_table(player)
                 {name="byproducts", label={"label.byproducts"}},
                 {name="ingredients", label={"label.ingredients"}}
             }
+
             for _, title in ipairs(title_strings) do
                 local title = table_production.add{type="label", name="label_title_" .. title.name, caption=title.label}
                 title.style.font = "fp-font-16p"
+            end
+
+            -- If enabled, add the comment column and it's clear button
+            if preferences.enable_recipe_comments then
+                local flow = table_production.add{type="flow", name="flow_comment_clear", direction="horizontal"}
+                flow.style.vertical_align = "center"
+                local title = flow.add{type="label", name="label_title_comment", caption={"", {"label.comment"}, " "}}
+                title.style.font = "fp-font-16p"
+                local button = flow.add{type="button", name="fp_button_production_clear_comments",
+                  caption={"button-text.clear"},  tooltip={"tooltip.clear_recipe_comments"}, style="fp_button_mini",
+                  mouse_button_filter={"left"}}
+                button.style.font = "fp-font-14p-semi"
+                button.style.height = 20
+                button.style.left_padding = 1
+                button.style.right_padding = 1
             end
 
             -- Table rows
@@ -106,6 +137,13 @@ function create_line_table_row(player, line)
     create_item_button_flow(player_table, table_production, line, "Product", "fp_button_icon_medium_blank")
     create_item_button_flow(player_table, table_production, line, "Byproduct", "fp_button_icon_medium_red")
     create_item_button_flow(player_table, table_production, line, "Ingredient", "fp_button_icon_medium_green")
+
+    -- Comment textfield
+    if get_preferences(player).enable_recipe_comments then
+        local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
+          text=(line.comment or "")}
+        textfield_comment.style.width = 160
+    end
 end
 
 -- Creates and places a single machine button
@@ -127,36 +165,34 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
     for _, item in ipairs(Line.get_in_order(line, class)) do
         local s = (item.fuel) and "fp_button_icon_medium_cyan" or style
 
-        if item.amount == 0 or item.amount > margin_of_error then
-            local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-              .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=s, mouse_button_filter={"left-and-right"}}
+        local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
+            .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=s, mouse_button_filter={"left-and-right"}}
 
-            -- Special handling for mining recipes
-            local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
-            if item.type == "entity" then 
-                button.style = "fp_button_icon_medium_blank"
-                tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
-            end
+        -- Special handling for mining recipes
+        local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
+        if item.type == "entity" then 
+            button.style = "fp_button_icon_medium_blank"
+            tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
+        end
 
-            local number = nil
-            local timescale = player_table.ui_state.context.subfactory.timescale
-            local view = player_table.ui_state.view_state[player_table.ui_state.view_state.selected_view_id]
-            if view.name == "items_per_timescale" then
-                number = item.amount
-            elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
-                local throughput = global.all_belts.belts[player_table.preferences.preferred_belt_id].throughput
-                local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
-                number = item.amount / divisor / timescale
-            elseif view.name == "items_per_second" then
-                number = item.amount / timescale
-            end
-            
-            if number ~= nil then
-                button.number = ("%.4g"):format(number)
-                button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 4), " ", view.caption}
-            else
-                button.tooltip = tooltip_name 
-            end
+        local number = nil
+        local timescale = player_table.ui_state.context.subfactory.timescale
+        local view = player_table.ui_state.view_state[player_table.ui_state.view_state.selected_view_id]
+        if view.name == "items_per_timescale" then
+            number = item.amount
+        elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
+            local throughput = global.all_belts.belts[player_table.preferences.preferred_belt_id].throughput
+            local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
+            number = item.amount / divisor / timescale
+        elseif view.name == "items_per_second" then
+            number = item.amount / timescale
+        end
+        
+        if number ~= nil then
+            button.number = ("%.4g"):format(number)
+            button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 4), " ", view.caption}
+        else
+            button.tooltip = tooltip_name 
         end
     end
 end
@@ -169,6 +205,16 @@ function update_calculations(player, subfactory)
     if player.gui.center["fp_frame_main_dialog"] ~= nil then
         refresh_subfactory_pane(player)
     end
+end
+
+
+-- Clears all comments on the current floor
+function clear_recipe_comments(player)
+    local floor = get_context(player).floor
+    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+        line.comment = nil
+    end
+    refresh_production_pane(player)
 end
 
 
@@ -256,20 +302,6 @@ function handle_percentage_change(player, element)
     refresh_message(player)
 end
 
--- Handles clicks on percentage textfields to improve user experience
--- (Uses session variable previously_selected_textfield defined in listeners.lua)
-function handle_percentage_textfield_click(player, element)
-    -- Replaces the previously selected textfields text in case it is invalid
-    -- (also unselects it, which the base game does not yet do)
-    if previously_selected_textfield ~= nil and previously_selected_textfield.valid
-      and previously_selected_textfield.index ~= element.index then
-        local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
-        local line = Floor.get(get_context(player).floor, "Line", line_id)
-        previously_selected_textfield.text = line.percentage
-    end
-
-    previously_selected_textfield = element
-end
 
 -- Local function to centralize machine changing instructions
 local function set_machine(floor, line, machine_id)
@@ -447,4 +479,11 @@ function apply_chooser_fuel_choice(player, fuel_element_name)
     end
 
     update_calculations(player, context.subfactory)
+end
+
+
+-- Handles the changing of the comment textfield
+function handle_comment_change(player, element)
+    local line = Floor.get(get_context(player).floor, "Line", tonumber(string.match(element.name, "%d+")))
+    line.comment = element.text
 end

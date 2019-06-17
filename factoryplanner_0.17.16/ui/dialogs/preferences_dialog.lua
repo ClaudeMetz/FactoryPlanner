@@ -19,7 +19,11 @@ function open_preferences_dialog(flow_modal_dialog)
 
     -- Ignore barreling recipes
     table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_ignore_barreling", state=false,
-      caption={"", " ", {"label.preferences_ignore_barreling"}}}
+      caption={"", " ", {"label.preferences_ignore_barreling"}}, tooltip={"tooltip.preferences_ignore_barreling"}}
+
+    -- Show line comments
+    table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_enable_recipe_comments", state=false,
+      caption={"", " ", {"label.preferences_enable_recipe_comments"}}, tooltip={"tooltip.preferences_enable_recipe_comments"}}
 
 
     -- Belt preferences
@@ -57,6 +61,7 @@ function refresh_preferences_dialog(player)
     -- General preferences
     local table_general_prefs = flow_modal_dialog["table_general_preferences"]
     table_general_prefs["fp_checkbox_preferences_ignore_barreling"].state = preferences.ignore_barreling_recipes
+    table_general_prefs["fp_checkbox_preferences_enable_recipe_comments"].state = preferences.enable_recipe_comments
 
     -- Belt preferences
     local table_all_belts = flow_modal_dialog["table_all_belts"]
