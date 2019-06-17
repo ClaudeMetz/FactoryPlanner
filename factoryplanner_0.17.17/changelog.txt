@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.17
+Date: 17. 06. 2019
   Features:
     - Now has a preference to enable comments for every recipe line
   Bugfixes:
