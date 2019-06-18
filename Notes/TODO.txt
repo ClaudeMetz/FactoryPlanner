@@ -12,6 +12,7 @@ TODO Code Improvements:
   re-enabled, the subfactories should just show up like they did before
   (also, repairs should run automatically if caused by migrations)
 - Add script way to switch between git branches with different mod versions
+  (also add a confirm action before running scripts)
 - Find a way to test migrations reliably before the mod version is bumped
 
 
