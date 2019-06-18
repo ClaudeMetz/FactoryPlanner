@@ -1,6 +1,7 @@
-Release:
-- Merge all changes into master, checkout master
-- Close VS Code, run build_release-script
+Release Proceedure:
+- Merge all changes into master
+- Close VS Code and Factorio, run build_release-script
+- Upload new release zip-file to the mod portal
 - For each new feature branch, run new_changelog_entry-script
 
 

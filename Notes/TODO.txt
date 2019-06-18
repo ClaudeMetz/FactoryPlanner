@@ -1,6 +1,6 @@
 TODO New Features:
-- Add an option to show whether machine numbers are perfect or rounded up
 ? Add the ability to set the product amount on a line permanently, ignoring previous requirements
+  Not sure how to do this / how it would impact other things / what uses it would have
 
 
 TODO Feature Improvements:
@@ -14,4 +14,6 @@ TODO Code Improvements:
 
 
 TODO Bug Fixes:
-- Having coal as an ingredient and a fuel on a subfloor gives the wrong numbers on the parent line
+? Having coal as an ingredient and a fuel on a subfloor gives the wrong numbers on the parent line
+  Fixing this is a lot of work, calc needs to be changed in all places pretty much
+  Might not be worth to fix until the proper interface and/or overhaul happened

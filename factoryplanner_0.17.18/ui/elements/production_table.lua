@@ -151,10 +151,30 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
     local player = game.get_player(gui_table.player_index)
     if data_util.machines.is_applicable(player, line.category_id, machine.id, line.recipe_name) then
         local appendage = (append_machine_id) and ("_" .. machine.id) or ""
-        gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
+        local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
           sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe", number=math.ceil(count),
           mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 4), " ",
           {"tooltip.machines"}}}
+
+        -- Add overlay to indicate if machine the machine count is rounded or not
+        local rounding_threshold =  get_settings(player).indicate_rounding
+        if rounding_threshold > 0 then  -- it being 0 means the setting is disabled
+            local sprite = "fp_sprite_red_arrow_up"
+            if (math.ceil(count) - count) < rounding_threshold then
+                sprite = "fp_sprite_red_circle"
+            elseif (count - math.floor(count)) < rounding_threshold then
+                sprite = "fp_sprite_red_circle"
+                button.number = math.floor(count)
+            end
+
+            local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite,
+              ignored_by_interaction=true}
+            overlay.resize_to_sprite = false
+            overlay.style.height = 15
+            overlay.style.width = 15
+            overlay.style.top_padding = 1
+            overlay.style.left_padding = 2
+        end
     end
 end
 
