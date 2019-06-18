@@ -11,7 +11,7 @@ require("data.calc")
 require("migrations.handler")
 
 margin_of_error = 1e-8  -- Margin of error for floating poing calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()

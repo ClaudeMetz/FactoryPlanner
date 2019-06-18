@@ -211,8 +211,8 @@ function data_util.run_dev_config(player)
                 required_amount = 10
             },
             {
-                name = "steam",
-                type = "fluid",
+                name = "grenade",
+                type = "item",
                 amount = 0,
                 required_amount = 100
             },

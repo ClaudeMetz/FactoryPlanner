@@ -372,9 +372,9 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_chooser_machine_choice(player, machine_id)
+function apply_chooser_machine_choice(player, element_name)
     local context = get_context(player)
-    data_util.machines.change_machine(player, context.line, machine_id, nil)
+    data_util.machines.change_machine(player, context.line, tonumber(element_name), nil)
     update_calculations(player, context.subfactory)
 end
 
