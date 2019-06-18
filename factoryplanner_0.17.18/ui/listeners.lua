@@ -58,8 +58,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
       event.setting == "fp_floor_recipes_at_once" then
         refresh_main_dialog(player, true)
 
-    -- Refreshes the view selection buttons appropriately
-    elseif event.setting == "fp_view_belts_or_lanes" then
+    -- Refreshes the view selection or recipe machine buttons appropriately
+    elseif event.setting == "fp_view_belts_or_lanes" or event.setting == "fp_indicate_rounding" then
         refresh_production_pane(player)
 
     end
@@ -279,17 +279,17 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_subfactory_timescale_change(player, timescale)
             
         -- Reacts to any subfactory_pane item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-z0-9-]+_%d+$") then  --
+        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-zA-Z0-9-]+_%d+$") then  --
             local split_string = ui_util.split(event.element.name, "_")
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, event.alt)
 
         -- Reacts to a item group button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-z0-9-_]+$") then  --
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-zA-Z0-9-_]+$") then  --
             local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
             picker.select_item_group(player, object_type, item_group_name)
 
         -- Reacts to a picker object button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-z0-9-]+$") then  --
+        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-zA-Z0-9-]+$") then  --
             _G["handle_picker_" .. object_type .. "_click"](player, event.element)
 
         -- Reacts to a chooser element button being pressed
@@ -298,7 +298,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_chooser_element_click(player, element_name)
 
         -- Reacts to a change of the production pane view
-        elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-z_]+$") then
+        elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-zA-Z-_]+$") then
             local view_name = string.gsub(event.element.name, "fp_button_production_titlebar_view_", "")
             change_view_state(player, view_name)
             refresh_production_pane(player)
@@ -334,7 +334,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_preferences_fuel_change(player, fuel_id)
 
         -- Reacts to any (assembly) line item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then  --
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z-]+_%d+$") then  --
             local split_string = ui_util.split(event.element.name, "_")
             handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
         

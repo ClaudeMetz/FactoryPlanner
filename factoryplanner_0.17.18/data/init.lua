@@ -11,7 +11,7 @@ require("data.calc")
 require("migrations.handler")
 
 margin_of_error = 1e-8  -- Margin of error for floating poing calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -69,8 +69,9 @@ function update_player_table(player)
     if player_table == nil then  -- new player
         global.players[player.index] = {}
         local player_table = global.players[player.index]
-        player_table.index = player.index
+
         player_table.mod_version = global.mod_version
+        player_table.index = player.index
 
         player_table.factory = Factory.init()
 
@@ -105,6 +106,7 @@ function reload_settings(player)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.show_hints = settings["fp_show_hints"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
 end
 
 -- Reloads the user preferences, incorporating previous preferences if possible
