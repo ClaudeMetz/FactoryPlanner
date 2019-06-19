@@ -12,8 +12,6 @@ function loader.setup()
         _G[data_type] = {}
         _G[data_type].new = generator["all_" .. data_type]()
     end
-
-    
 end
 
 -- Updates the relevant data of the given player to fit the new data

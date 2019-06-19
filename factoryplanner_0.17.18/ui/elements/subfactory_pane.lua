@@ -93,14 +93,9 @@ end
 -- **** INGREDIENTS ****
 -- Returns necessary details to complete the item button for an ingredient
 function get_ingredient_specifics(ingredient)
-    local localised_name = game[ingredient.type .. "_prototypes"][ingredient.name].localised_name
-    -- Special handling for mining recipes
-    if ingredient.type == "entity" then localised_name = {"", {"label.raw"}, " ", localised_name} end
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(ingredient.amount, 4)}
-
     return {
         number = ingredient.amount,
-        tooltip = tooltip,
+        tooltip = generate_item_tooltip(ingredient),
         style = "fp_button_icon_large_blank"
     }
 end
@@ -122,10 +117,6 @@ end
 -- **** PRODUCTS ****
 -- Returns necessary details to complete the item button for a product
 function get_product_specifics(product)
-    local localised_name = game[product.type .. "_prototypes"][product.name].localised_name
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(product.amount, 4), " / ",
-      ui_util.format_number(product.required_amount, 4)}
-
     local style
     if product.amount == 0 then
         style = "fp_button_icon_large_red"
@@ -140,7 +131,7 @@ function get_product_specifics(product)
     local number = (product.required_amount < margin_of_error) and 0 or product.required_amount
     return {
         number = number,
-        tooltip = tooltip,
+        tooltip = generate_item_tooltip(product),
         style = style
     }
 end
@@ -183,12 +174,9 @@ end
 -- **** BYPRODUCTS ****
 -- Returns necessary details to complete the item button for a byproduct
 function get_byproduct_specifics(byproduct)
-    local localised_name = game[byproduct.type .. "_prototypes"][byproduct.name].localised_name
-    local tooltip = {"", localised_name, "\n", ui_util.format_number(byproduct.amount, 4)}
-
     return {
         number = byproduct.amount,
-        tooltip = tooltip,
+        tooltip = generate_item_tooltip(byproduct),
         style = "fp_button_icon_large_red"
     }
 end
@@ -216,4 +204,19 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
     end
 
     refresh_item_table(player, "Byproduct")
+end
+
+
+-- Generates an appropriate tooltip for the given item
+function generate_item_tooltip(item)
+    local localised_name
+    -- Special handling for mining recipes
+    if item.type == "entity" then
+        -- 'item'-type only works here because the only entity items are ores currently
+        localised_name = global.all_items["item"][item.name].localised_name
+        localised_name = {"", {"label.raw"}, " ", localised_name}
+    else
+        localised_name = global.all_items[item.type][item.name].localised_name
+    end
+    return {"", localised_name, "\n", ui_util.format_number(item.amount, 4)}
 end

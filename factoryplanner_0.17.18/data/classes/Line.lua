@@ -68,7 +68,7 @@ function Line.update_validity(self, player)
 
     -- Validate the recipe and machine
     local recipe = global.all_recipes[player.force.name][self.recipe_name]
-    if recipe == nil then
+    if recipe == nil or not recipe.valid then
         self.valid = false
     else
         -- When not category_id or machine_id are not set, a migration made them invalid
@@ -97,7 +97,7 @@ function Line.attempt_repair(self, player)
 
     -- Attempt to repair the line
     local recipe = global.all_recipes[player.force.name][self.recipe_name]
-    if recipe == nil then
+    if recipe == nil or not recipe.valid then
         self.valid = false
     else
         -- Attempt to repair the subfloor, if this fails, remove it
