@@ -3,6 +3,8 @@ Version: 0.17.00
 Date: 00. 00. 0000
   Features:
     - Now has a setting that lets you indicate whether a machine number is rounded up or not
+  Bugfixes:
+    - Fixed a couple of crashes related to mining recipes and ores
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.18
