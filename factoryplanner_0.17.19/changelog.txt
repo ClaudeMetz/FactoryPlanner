@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.19
+Date: 19. 06. 2019
   Features:
     - Now has a setting that lets you indicate whether a machine number is rounded up or not
   Bugfixes:
