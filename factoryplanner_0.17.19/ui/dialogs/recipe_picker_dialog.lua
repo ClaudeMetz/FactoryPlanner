@@ -111,8 +111,11 @@ function generate_recipe_tooltip(recipe)
         if recipe[item_type] ~= nil then
             tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
             for _, item in ipairs(recipe[item_type]) do
-                if item.amount == nil then item.amount = item.probability end
-                tooltip = {"", tooltip, "\n    ", "[", item.type, "=", item.name, "] ", item.amount, "x ",
+                -- Determine the actual amount of items that are consumed/produced
+                -- (This function incidentally handles ingredients as well)
+                produced_amount = data_util.determine_product_amount(item)
+            
+                tooltip = {"", tooltip, "\n    ", "[", item.type, "=", item.name, "] ", produced_amount, "x ",
                   game[item.type .. "_prototypes"][item.name].localised_name}
             end
         end

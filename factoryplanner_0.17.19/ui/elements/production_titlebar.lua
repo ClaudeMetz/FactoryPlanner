@@ -44,7 +44,7 @@ function add_production_pane_to(main_dialog)
     local sprite_bl = flow_bl.add{type="sprite", name="sprite_belts_or_lanes"}
     sprite_bl.style.height = 20
     sprite_bl.style.width = 20
-    sprite_bl.style.stretch_image_to_widget_size = true
+    sprite_bl.resize_to_sprite = false
     local label_bl = flow_bl.add{type="label", name="label_belts_or_lanes"}
     ui_util.set_label_color(label_bl, "black")
     label_bl.style.font = "default-semibold"

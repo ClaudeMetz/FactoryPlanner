@@ -278,11 +278,8 @@ function calc.aggregate.item_init(base_item, item_type, class, amount)
     if base_item.class then 
         item.ratio = base_item.ratio
     else
-        if base_item.amount ~= nil then
-            item.ratio = base_item.amount
-        else
-            item.ratio = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
-        end
+        -- (This function incidentally handles ingredients as well)
+        item.ratio = data_util.determine_product_amount(base_item)
     end
     return item
 end

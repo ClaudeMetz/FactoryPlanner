@@ -141,6 +141,19 @@ function data_util.run_invalid_dataset_removal(player, parent, classes, attempt_
     end
 end
 
+
+-- Determines the actual amount of items that a recipe_product produces
+function data_util.determine_product_amount(base_product)
+    if base_product.amount_max ~= nil and base_product.amount_min ~= nil then
+        return ((base_product.amount_max + base_product.amount_min) / 2) * base_product.probability
+    elseif base_product.probability ~= nil then
+        return base_product.amount * base_product.probability
+    else
+        return base_product.amount
+    end
+end
+
+
 -- Following are a couple helper functions for populating (sub)factories
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
@@ -197,7 +210,7 @@ function data_util.run_dev_config(player)
                 type = "item",
                 amount = 0,
                 required_amount = 400
-            },
+            }--[[ ,
             {
                 name = "heavy-oil",
                 type = "fluid",
@@ -221,7 +234,7 @@ function data_util.run_dev_config(player)
                 type = "item",
                 amount = 0,
                 required_amount = 100
-            }
+            } ]]
         }
         add_products(subfactory, products)
 

@@ -95,7 +95,7 @@ end
 function get_ingredient_specifics(ingredient)
     return {
         number = ingredient.amount,
-        tooltip = generate_item_tooltip(ingredient),
+        tooltip = generate_top_level_item_tooltip(ingredient),
         style = "fp_button_icon_large_blank"
     }
 end
@@ -129,9 +129,11 @@ function get_product_specifics(product)
     end
 
     local number = (product.required_amount < margin_of_error) and 0 or product.required_amount
+    local tooltip = {"", generate_top_level_item_tooltip(product), " / ",
+      ui_util.format_number(product.required_amount, 4)}
     return {
         number = number,
-        tooltip = generate_item_tooltip(product),
+        tooltip = tooltip,
         style = style
     }
 end
@@ -176,7 +178,7 @@ end
 function get_byproduct_specifics(byproduct)
     return {
         number = byproduct.amount,
-        tooltip = generate_item_tooltip(byproduct),
+        tooltip = generate_top_level_item_tooltip(byproduct),
         style = "fp_button_icon_large_red"
     }
 end
@@ -208,8 +210,8 @@ end
 
 
 -- Generates an appropriate tooltip for the given item
-function generate_item_tooltip(item)
-    local localised_name
+function generate_top_level_item_tooltip(item)
+    local localised_name = nil
     -- Special handling for mining recipes
     if item.type == "entity" then
         -- 'item'-type only works here because the only entity items are ores currently

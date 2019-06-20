@@ -26,6 +26,6 @@ def update_changelog():
 
 
 if __name__ == "__main__":
-    proceed = input("Sure to update the changelog dialog? (y/n): ")
+    proceed = input("Sure to update the changelog? (y/n): ")
     if proceed == "y":
         update_changelog()
