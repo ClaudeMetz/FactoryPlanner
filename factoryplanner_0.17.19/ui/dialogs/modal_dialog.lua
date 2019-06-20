@@ -9,7 +9,7 @@ require("chooser_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
-    toggle_main_dialog(player)
+    toggle_main_dialog(player, true)
 
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
@@ -61,7 +61,7 @@ function exit_modal_dialog(player, button, data)
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end
 
-    toggle_main_dialog(player)
+    toggle_main_dialog(player, true)
 end
 
 

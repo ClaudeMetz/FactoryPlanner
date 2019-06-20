@@ -51,29 +51,38 @@ end
 
 
 -- Toggles the main dialog open and closed
-function toggle_main_dialog(player)
+function toggle_main_dialog(player, keep_paused)
     local center = player.gui.center
     -- Won't toggle if a modal dialog is open
     if get_ui_state(player).modal_dialog_type == nil then
         local main_dialog = center["fp_frame_main_dialog"]
+        local open = nil
 
         -- Create and open main dialog, if it doesn't exist yet
         if main_dialog == nil then
             main_dialog = create_main_dialog(player, true)
             refresh_message(player)
-            player.opened = main_dialog
+            open = true
 
         -- Otherwise, toggle it
         else
             if main_dialog.visible then
-                main_dialog.visible = false
-                player.opened = nil
+                open = false
             else
                 -- Only refresh it when you make it visible
                 refresh_main_dialog(player, false)
-                main_dialog.visible = true
-                player.opened = main_dialog
+                open = true
             end
+        end
+
+        main_dialog.visible = open
+        player.opened = open and main_dialog or nil
+        -- Don't pause in multiplayer or when the setting is disabled
+        if game.is_multiplayer() or not get_settings(player).pause_on_interface then
+            game.tick_paused = false
+        else
+            -- Keep the game paused if a modal dialog is opened
+            game.tick_paused = keep_paused and true or open
         end
     end
 end

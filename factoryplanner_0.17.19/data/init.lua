@@ -102,9 +102,10 @@ function reload_settings(player)
     
     local settings = settings.get_player_settings(player)
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
+    settings_table.show_hints = settings["fp_show_hints"].value
+    settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
-    settings_table.show_hints = settings["fp_show_hints"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
 end
