@@ -157,26 +157,34 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
           {"tooltip.machines"}}}
 
         -- Add overlay to indicate if machine the machine count is rounded or not
-        local rounding_threshold =  get_settings(player).indicate_rounding
-        if rounding_threshold > 0 then  -- it being 0 means the setting is disabled
-            local sprite = "fp_sprite_red_arrow_up"
-            if (math.ceil(count) - count) < rounding_threshold then
-                sprite = "fp_sprite_red_circle"
-            elseif (count - math.floor(count)) < rounding_threshold then
-                sprite = "fp_sprite_red_circle"
-                button.number = math.floor(count)
-            end
+        add_rounding_overlay(player, button, {count = count})
+    end
+end
 
-            local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite,
-              ignored_by_interaction=true}
+-- Function that adds the rounding indication to the given button
+function add_rounding_overlay(player, button, data)
+    -- Add overlay to indicate if machine the machine count is rounded or not
+    local rounding_threshold =  get_settings(player).indicate_rounding
+    if rounding_threshold > 0 then  -- it being 0 means the setting is disabled
+        local sprite = nil
+        if data.count ~= 0 and data.count ~= math.floor(data.count) then
+            if (data.count - math.floor(data.count)) < rounding_threshold then
+                sprite = "fp_sprite_red_arrow_down"
+                button.number = math.floor(data.count)
+            elseif (math.ceil(data.count) - data.count) > rounding_threshold then
+                sprite = "fp_sprite_green_arrow_up"
+            end
+        end
+
+        if sprite ~= nil then
+            local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite}
             overlay.resize_to_sprite = false
-            overlay.style.height = 15
-            overlay.style.width = 15
-            overlay.style.top_padding = 1
-            overlay.style.left_padding = 2
+            overlay.style.height = 10
+            overlay.style.width = 10
         end
     end
 end
+
 
 -- Creates the flow containing all line items of the given type
 function create_item_button_flow(player_table, gui_table, line, class, style)
@@ -301,7 +309,8 @@ function handle_percentage_change(player, element)
 
     if new_percentage == nil or new_percentage < 0 then
         queue_message(player, {"label.error_invalid_percentage"}, "warning")
-    elseif string.find(element.text, "^%d+%.0*$") then
+    -- Two separate patterns are needed here as Lua doesn't allow applying modifiers on patterns (no "(01)?")
+    elseif string.find(element.text, "^%d+%.$") or string.find(element.text, "^%d+%.[0-9]*0$") then
         -- Allow people to enter decimal numbers
     else
         line.percentage = new_percentage
@@ -359,7 +368,8 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                         title = {"label.machine"},
                         text = {"", {"label.chooser_machine"}, " '", recipe.localised_name, "':"},
                         choices = {},
-                        reciever_name = "machine"
+                        reciever_name = "machine",
+                        effects_function = add_rounding_overlay
                     }
                     for machine_id, machine in ipairs(category.machines) do
                         if data_util.machines.is_applicable(player, category.id, machine_id, recipe.name) then
@@ -368,6 +378,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                                 name = machine_id,
                                 tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
                                 sprite = "entity/" .. machine.name,
+                                count = count,
                                 number = math.ceil(count)
                             })
                         end
@@ -414,7 +425,8 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
             ui_state.modal_data = {
                 title = {"label.fuel"},
                 choices = {},
-                reciever_name = "fuel"
+                reciever_name = "fuel",
+                effects_function = nil
             }
 
             local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]

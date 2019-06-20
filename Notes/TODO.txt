@@ -1,4 +1,5 @@
 TODO New Features:
+- pause game when viewing the interface
 ? Add the ability to set the product amount on a line permanently, ignoring previous requirements
   Not sure how to do this / how it would impact other things / what uses it would have
 
@@ -13,6 +14,7 @@ TODO Code Improvements:
   (also, repairs should run automatically if caused by migrations)
   redo item generation, it is all kinds of wrong
 - add a logging function that ignores parent fields
+- Move to a proper planning tool (Trello or similar)
 
 
 TODO Bug Fixes:

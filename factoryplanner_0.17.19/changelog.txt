@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - Improved how the machine rounding indicators work
+  Bugfixes:
+    - Fixed certain probabilistic recipes not being calculated correctly
+    - Fixed the top level item tooltips not displaying
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.19
 Date: 19. 06. 2019
   Features:
