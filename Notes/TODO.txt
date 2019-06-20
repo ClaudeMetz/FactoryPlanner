@@ -1,5 +1,4 @@
 TODO New Features:
-- pause game when viewing the interface
 ? Add the ability to set the product amount on a line permanently, ignoring previous requirements
   Not sure how to do this / how it would impact other things / what uses it would have
 
