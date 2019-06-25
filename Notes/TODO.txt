@@ -8,11 +8,12 @@ TODO Feature Improvements:
 
 
 TODO Code Improvements:
-- Loader should not irrevoquably destroy data / if the user saves then loads with the mods
-  re-enabled, the subfactories should just show up like they did before
-  (also, repairs should run automatically if caused by migrations)
-  redo item generation, it is all kinds of wrong
-- add a logging function that ignores parent fields
+- restructure project folder structure
+- add a logging function that ignores parent (and similar) fields
+- add stashing and stash popping to the checkout_branch script
+- top level items should adjust according to the view too
+- Improve user warning/hint display: more messages, add priorities (and expiration time?)
+- Improve refreshing stuff to make any sense at all (just refresh the whole damn thing)
 
 
 TODO Bug Fixes:

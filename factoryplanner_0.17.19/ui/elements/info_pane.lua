@@ -82,16 +82,16 @@ function handle_subfactory_timescale_change(player, timescale)
 end
 
 
--- Sets the machines of all lines in the given scope to the currently preferred ones
+-- Sets the machines of all lines in the given scope to the default ones
 function handle_set_prefmachines_click(player, scope)
     local context = get_context(player)
 
-    -- Sets all machines on given floor to the currently preferred ones
+    -- Sets all machines on given floor to the default ones
     local function set_machines_on_floor(floor)
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            data_util.machines.change_machine(player, line, nil, nil)
+            data_util.machine.change(player, line, nil, nil)
             if line.subfloor ~= nil then
-                Floor.get(line.subfloor, "Line", 1).machine_id = line.machine_id
+                Floor.get(line.subfloor, "Line", 1).machine = line.machine
             end
         end
     end

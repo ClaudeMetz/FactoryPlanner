@@ -76,7 +76,7 @@ function refresh_item_table(player, class)
             
             if item_specifics.number == 0 or item_specifics.number > margin_of_error then
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
-                .. item.id, sprite=item.type .. "/" .. item.name, mouse_button_filter={"left-and-right"}}
+                  .. item.id, sprite=item.sprite, mouse_button_filter={"left-and-right"}}
 
                 button.number = item_specifics.number
                 button.tooltip = item_specifics.tooltip
@@ -107,6 +107,7 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
 
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(ingredient, click)
+        
     elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(subfactory, ingredient, direction)
         refresh_item_table(player, "Ingredient")
@@ -211,12 +212,10 @@ end
 function generate_item_tooltip(item)
     local localised_name
     -- Special handling for mining recipes
-    if item.type == "entity" then
-        -- 'item'-type only works here because the only entity items are ores currently
-        localised_name = global.all_items["item"][item.name].localised_name
-        localised_name = {"", {"label.raw"}, " ", localised_name}
+    if item.proto.type == "entity" then
+        localised_name = {"", {"label.raw"}, " ", item.proto.localised_name}
     else
-        localised_name = global.all_items[item.type][item.name].localised_name
+        localised_name = item.proto.localised_name
     end
     return {"", localised_name, "\n", ui_util.format_number(item.amount, 4)}
 end
