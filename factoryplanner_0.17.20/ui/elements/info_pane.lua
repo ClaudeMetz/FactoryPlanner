@@ -76,9 +76,8 @@ function handle_subfactory_timescale_change(player, timescale)
         update_calculations(player, subfactory)
     else
         ui_state.current_activity = "changing_timescale"
+        refresh_main_dialog(player)
     end
-
-    refresh_main_dialog(player)
 end
 
 
@@ -105,5 +104,4 @@ function handle_set_prefmachines_click(player, scope)
     end
 
     update_calculations(player, context.subfactory)
-    refresh_production_table(player)
 end
