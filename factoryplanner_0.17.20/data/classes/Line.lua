@@ -1,39 +1,36 @@
 -- 'Class' representing an assembly line producing a single recipe
 Line = {}
 
-function Line.init(player, base_recipe, machine)
+function Line.init(player, recipe, machine)
     local line = {
-        recipe_name = base_recipe.name,
-        recipe_energy = base_recipe.energy,
+        recipe = recipe,
+        machine = nil,
         percentage = 100,
-        category_id = nil,
-        machine_id = nil,
-        machine_count = 0,
-        energy_consumption = 0,
-        fuel_id = nil,  -- gets set on first use, then stays set
         production_ratio = 0,
+        energy_consumption = 0,
+        fuel = nil,  -- gets set on first use, then stays set
+        comment = nil,
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
-        comment = nil,
         subfloor = nil,
         valid = true,
         class = "Line"
     }
     
-    if machine ~= nil then  -- If given a machine, it gets used
-        line.category_id = machine.category_id
-        data_util.machines.change_machine(player, line, machine.id, nil)
-    else  -- Otherwise, it takes the default machine for the given recipe
-        line.category_id = global.all_machines.map[base_recipe.category]
-        data_util.machines.change_machine(player, line, nil, nil)
+    -- If machine is specified, it gets used, otherwise it'll fall back to the default
+    if machine == nil then
+        -- Hack together a pseudo-category for machine.change to use to find the default
+        line.machine = {category = { id = global.all_machines.map[recipe.proto.category] } }
+    end
+    data_util.machine.change(player, line, machine, nil)
+
+    for _, product in pairs(recipe.proto.products) do
+        Line.add(line, Item.init_by_item(product, "Product", 0))
     end
 
-    for _, product in pairs(base_recipe.products) do
-        Line.add(line, Item.init(product, nil, "Product", 0))
-    end
-    for _, ingredient in pairs(base_recipe.ingredients) do
-        Line.add(line, Item.init(ingredient, nil, "Ingredient", 0))
+    for _, ingredient in pairs(recipe.proto.ingredients) do
+        Line.add(line, Item.init_by_item(ingredient, "Ingredient", 0))
     end
 
     return line
@@ -60,27 +57,35 @@ function Line.shift(self, dataset, direction)
     Collection.shift(self[dataset.class], dataset, direction)
 end
 
--- Update the validity of associated Items, recipe and machine of this line
-function Line.update_validity(self, player)
+-- Update the validity of values associated tp this line
+function Line.update_validity(self)
+    self.valid = true
+
     -- Validate Items
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    self.valid = data_util.run_validation_updates(player, self, classes)
-
-    -- Validate the recipe and machine
-    local recipe = global.all_recipes[player.force.name][self.recipe_name]
-    if recipe == nil or not recipe.valid then
+    if not data_util.run_validation_updates(self, classes) then
         self.valid = false
-    else
-        -- When not category_id or machine_id are not set, a migration made them invalid
-        if self.category_id == nil or self.machine_id == nil or self.fuel_id == nil then
-            self.valid = false
-        -- The ingredient_limit of the machine might have changed, reset the machine in that case
-        elseif not data_util.machines.is_applicable(player, self.category_id, self.machine_id, self.recipe_name) then
-            self.machine_id = nil
+    end
+
+    -- Validate Recipe
+    if not Recipe.update_validity(self.recipe) then
+        self.valid = false
+    end
+
+    -- Validate Machine
+    if not Machine.update_validity(self.machine) or not data_util.machine.is_applicable(self.machine, self.recipe) then
+        self.valid = false
+    end
+
+    -- Validate Fuel
+    if self.fuel ~= nil then
+        local new_fuel_id = new.all_fuels.map[self.fuel.name]
+        if new_fuel_id ~= nil then
+            self.fuel = new.all_fuels.fuels[new_fuel_id]
+        else
+            self.fuel = self.fuel.name
             self.valid = false
         end
-
-        self.recipe_energy = recipe.energy  -- update energy in case it changed
     end
 
     return self.valid
@@ -90,33 +95,46 @@ end
 -- (In general, Line Items are not repairable and can only be deleted)
 function Line.attempt_repair(self, player)
     self.valid = true
-    
-    -- Remove invalid Items
+
+    -- Repair Items
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    data_util.run_invalid_dataset_removal(player, self, classes, false)
+    data_util.run_invalid_dataset_repair(player, self, classes)
 
-    -- Attempt to repair the line
-    local recipe = global.all_recipes[player.force.name][self.recipe_name]
-    if recipe == nil or not recipe.valid then
+    -- Repair Recipe
+    if not self.recipe.valid and not Recipe.attempt_repair(self.recipe) then
         self.valid = false
-    else
-        -- Attempt to repair the subfloor, if this fails, remove it
-        if self.subfloor and not self.subfloor.valid and not Floor.attempt_repair(self.subfloor, player) then
-            Subfactory.remove(self.subfloor.parent, self.subfloor)
-            self.valid = false
+    end
 
+    -- Repair Machine
+    if not self.machine.valid and not Machine.attempt_repair(self.machine) then
+        -- No category means that it could not be repaired
+        if self.machine.category == nil then
+            -- If the line is still valid here, it has a valid recipe
+            if self.valid then
+                -- Replace this line with a new one (with a new category)
+                Floor.replace(self.parent, self, Line.init(player, self.recipe, nil))
+            end
         else
-            -- Repair an invalid machine
-            if self.category_id == nil then  -- Replace line with a new one (which includes a valid category)
-                Floor.replace(self.parent, self, Line.init(player, recipe))
-            elseif self.machine_id == nil then  -- Set the machine to the default one
-                data_util.machines.change_machine(player, self, nil, nil)
-            end
-
-            if self.fuel_id == nil then  -- tries to use coal, uses the first one otherwise
-                self.fuel_id = data_util.base_data.preferred_fuel()
-            end
+            -- Set the machine to the default one
+            data_util.machine.change(player, self, nil, nil)
         end
+    end
+
+    -- Repair Fuel
+    if self.fuel ~= nil and type(self.fuel) == "string" then
+        local current_fuel_id = global.all_fuels.map[self.fuel]
+        if current_fuel_id ~= nil then
+            self.fuel = global.all_fuels.fuels[current_fuel_id]
+        else
+            -- If it is not found, set it to the default
+            self.fuel = data_util.base_data.preferred_fuel(global)
+        end
+    end
+
+    -- Repair Subfloor
+    if self.subfloor and not self.subfloor.valid and not Floor.attempt_repair(self.subfloor, player) then
+        Subfactory.remove(self.subfloor.parent, self.subfloor)
+        self.valid = false
     end
 
     return self.valid

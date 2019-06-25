@@ -28,25 +28,13 @@ function ui_util.set_label_color(ui_element, color)
 end
 
 
--- Returns the type of the given prototype (item/fluid)
-function ui_util.get_prototype_type(proto)
-    local index = global.all_items.index
-    if index[proto.name] ~= "dupe" then
-        return index[proto.name]
-    else
-        -- Fall-back to the slow (and awful) method if the name describes both an item and fluid
-        if pcall(function () local a = proto.type end) then return "item"
-        else return "fluid" end
-    end
-end
-
 -- Returns the sprite string of the given item
-function ui_util.get_item_sprite(player, item)
-    return (ui_util.get_prototype_type(item) .. "/" .. item.name)
+function ui_util.generate_item_sprite(item)
+    return (item.type .. "/" .. item.name)
 end
 
 -- Returns the sprite string of the given recipe
-function ui_util.get_recipe_sprite(player, recipe)
+function ui_util.generate_recipe_sprite(recipe)
     local sprite = "recipe/" .. recipe.name
 
     -- Handle custom recipes separately
@@ -154,7 +142,7 @@ local fnei_version = 1
 function ui_util.fnei.show_item(item, click)
     if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
         local action_type = (click == "left") and "craft" or "usage"
-        remote.call("fnei", "show_item", action_type, item.type, item.name)
+        remote.call("fnei", "show_item", action_type, item.proto.type, item.proto.name)
     end
 end
 
@@ -162,8 +150,8 @@ end
 -- Attempts to show an appropriate item context, if possible
 function ui_util.fnei.show_recipe(recipe, line_products)
     if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
-        if recipe.prototype.main_product then
-            local product = recipe.prototype.main_product
+        if recipe.proto.main_product then
+            local product = recipe.proto.main_product
             remote.call("fnei", "show_recipe", recipe.name, product.type, product.name)
         elseif #line_products == 1 then
             local product = line_products[1]

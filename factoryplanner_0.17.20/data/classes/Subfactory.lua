@@ -65,9 +65,9 @@ end
 
 -- Updates the validity of the whole subfactory
 -- Floors can be checked in any order and separately without problem
-function Subfactory.update_validity(self, player)
+function Subfactory.update_validity(self)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Floor = "Floor"}
-    self.valid = data_util.run_validation_updates(player, self, classes)
+    self.valid = data_util.run_validation_updates(self, classes)
     return self.valid
 end
 
@@ -75,7 +75,7 @@ end
 -- (In general, Subfactory Items are not repairable and can only be deleted)
 function Subfactory.attempt_repair(self, player)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    data_util.run_invalid_dataset_removal(player, self, classes, false)
+    data_util.run_invalid_dataset_repair(player, self, classes)
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     -- (Return value is not caught here because the top level floor won't be removed)

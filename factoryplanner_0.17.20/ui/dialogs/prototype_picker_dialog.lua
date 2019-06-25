@@ -71,10 +71,12 @@ function picker.create_object_tree(objects)
             unsorted_object_tree[object.group.order] = {}
         end
         local group = unsorted_object_tree[object.group.order]
+
         if group[object.subgroup.order] == nil then
             group[object.subgroup.order] = {}
         end
         local subgroup = group[object.subgroup.order]
+
         if subgroup[object.order] == nil then
             subgroup[object.order] = {}
         end
@@ -126,21 +128,24 @@ function picker.refresh_picker_panel(flow, object_type, visible)
         table_item_groups.style.vertical_spacing = 3
         table_item_groups.style.minimal_width = 6 * (64 + 9)
 
-        local formatted_objects = picker.create_object_tree(_G["get_picker_" .. object_type .. "s"](player))
+        local formatted_objects = picker.create_object_tree(_G["get_picker_" .. object_type .. "s"]())
         for _, group in ipairs(formatted_objects) do
-            if group.name ~= "creative-mod_creative-tools" then
+            local object_groups = item_groups[object_type]
+            local group_proto = object_groups.groups[object_groups.map[group.name]]
+            if group_proto ~= nil then  -- ignore undesirable item groups
                 -- Item groups
-                button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group.name,
-                  sprite="item-group/" .. group.name, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
+                button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group_proto.id,
+                sprite=group_proto.sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
                 button_group.style.width = 70
                 button_group.style.height = 70
-                button_group.tooltip = group.localised_name
-                if devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group.name} end
+                button_group.tooltip = group_proto.localised_name
+                if devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group_proto.name} end
 
                 local scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", name="scroll-pane_subgroups_"
-                  .. group.name}
+                .. group_proto.id}
                 scroll_pane_subgroups.style.bottom_margin = 4
                 scroll_pane_subgroups.style.horizontally_stretchable = true
+
                 local table_subgroup = scroll_pane_subgroups.add{type="table", name="table_subgroup", column_count=1}
                 table_subgroup.style.vertical_spacing = 3
                 for _, subgroup in ipairs(group.subgroups) do
@@ -151,9 +156,10 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                     table_subgroup.style.vertical_spacing = 1
                     for _, object in ipairs(subgroup.objects) do
                         -- Objects
-                        local sprite = ui_util["get_" .. object_type .. "_sprite"](player, object)
+                        local identifier = _G["generate_" .. object_type .. "_identifier"](object)
+                        local sprite = ui_util["generate_" .. object_type .. "_sprite"](object)
                         local button_object = table_subgroup.add{type="sprite-button", name="fp_sprite-button_picker_object_"
-                          .. object.name, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
+                        .. identifier, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
                         button_object.tooltip = _G["generate_" .. object_type .. "_tooltip"](object)
                         if devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
                     end
@@ -180,11 +186,12 @@ function picker.apply_filter(player, object_type, apply_button_style)
         hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state
     else
         for _, product in pairs(Subfactory.get_in_order(get_context(player).subfactory, "Product")) do
-            existing_products[product.name] = true
+            existing_products[product.proto.name] = true
         end
     end
 
     local preferences = get_preferences(player)
+    local force_recipes = player.force.recipes
     
     local first_visible_group = nil
     local visible_group_count = 0
@@ -195,44 +202,51 @@ function picker.apply_filter(player, object_type, apply_button_style)
         group_element.style.width = 70
         group_element.style.height = 70
 
-        local group_name = string.gsub(group_element.name, "fp_sprite%-button_item_group_", "")
+        local group_id = tonumber(string.match(group_element.name, "%d+"))
         local group_visible = false
         local specific_scroll_pane_height = 0
         local subgroup_count = 0
-        local subgroup_elements = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_".. group_name]
+        local subgroup_elements = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_".. group_id]
           ["table_subgroup"].children
         for _, subgroup_element in pairs(subgroup_elements) do
             local subgroup_visible = false
             local object_count = 0
             for _, object_element in pairs(subgroup_element.children) do
-                local object_name = string.gsub(object_element.name, "fp_sprite%-button_picker_object_", "")
+                local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_object_", "")
+                local object = _G["get_" .. object_type](identifier)
                 
-                local visible = true
+                local visible = false
                 if object_type == "item" then
                     -- (Re)apply an appropriate button style if need be
                     if apply_button_style then
-                        if existing_products[object_name] then object_element.style = "fp_button_icon_medium_disabled"
+                        if existing_products[object.name] then object_element.style = "fp_button_icon_medium_disabled"
                         else object_element.style = "fp_button_icon_medium_recipe" end
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if not string.find(string.lower(object_name), string.lower(search_term), 1, true) then
-                        visible = false
+                    if string.find(string.lower(object.name), string.lower(search_term), 1, true) and not object.hidden then
+                        visible = true
                     end
 
                 elseif object_type == "recipe" then
-                    local recipe = global.all_recipes[player.force.name][object_name]
-
                     -- (Re)apply an appropriate button style if need be
-                    if apply_button_style then
+                    local recipe = force_recipes[object.name]
+                    -- If recipe is nil, the button will be hidden anyways
+                    if apply_button_style and recipe ~= nil then
                         if not recipe.enabled then object_element.style = "fp_button_icon_medium_disabled" 
-                        elseif recipe.hidden then object_element.style = "fp_button_icon_medium_hidden"
+                        elseif object.hidden then object_element.style = "fp_button_icon_medium_hidden"
                         else object_element.style = "fp_button_icon_medium_recipe" end
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
-                    if not recipe_produces_product(player, recipe, nil, search_term) then
-                        visible = false
+                    if recipe_produces_product(player, object, nil, search_term) then
+                        -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
+                        -- recipe ~= nil and not (not disabled and not recipe.enabled) and not (not hidden and object.hidden)
+                        if recipe ~= nil and (disabled or recipe.enabled) and (hidden or not object.hidden) then
+                            visible = true
+                        elseif is_custom_recipe(object) then
+                            visible = true
+                        end
                     end
                 end
 
@@ -256,13 +270,13 @@ function picker.apply_filter(player, object_type, apply_button_style)
         
         if group_visible then
             visible_group_count = visible_group_count + 1
-            if first_visible_group == nil then first_visible_group = group_name end
+            if first_visible_group == nil then first_visible_group = group_id end
         end
         total_group_count = total_group_count + 1
     end
 
     -- Set selection to the first item group that is visible, respecting a previous selection
-    local previously_selected_group = picker.get_selected_item_group_name(player, object_type)
+    local previously_selected_group = picker.get_selected_item_group(player, object_type)
     if (previously_selected_group == nil) or (not previously_selected_group.visible and first_visible_group ~= nil) then
         picker.select_item_group(player, object_type, first_visible_group)
     end
@@ -283,7 +297,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
     scroll_pane_height = scroll_pane_height + (math.ceil(total_group_count / 6) * 70)
     local picker_panel_height = math.min(scroll_pane_height, 700) - (group_row_count) * 70 - warning_label_height
     for _, child in ipairs(flow_picker_panel.children_names) do
-        if string.find(child, "^scroll%-pane_subgroups_[a-z-]+$") then
+        if string.find(child, "^scroll%-pane_subgroups_%d+$") then
             flow_picker_panel[child].style.height = picker_panel_height
         end
     end
@@ -291,7 +305,7 @@ end
 
 
 -- Returns the name of the currently selected item group, else if none is selected
-function picker.get_selected_item_group_name(player, object_type)
+function picker.get_selected_item_group(player, object_type)
     local picker_panel = player.gui.center["fp_frame_modal_dialog_" .. object_type .. "_picker"]
       ["flow_modal_dialog"]["flow_picker_panel"]
 
@@ -303,16 +317,16 @@ function picker.get_selected_item_group_name(player, object_type)
     return nil
 end
 
--- Changes the selected item group to be the one specified by the given name
-function picker.select_item_group(player, object_type, item_group_name)
+-- Changes the selected item group to be the one specified by the given id
+function picker.select_item_group(player, object_type, item_group_id)
     local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_" .. object_type .. "_picker"]
       ["flow_modal_dialog"]
     picker.refresh_warning_label(flow_modal_dialog, "")
 
     for _, group_button in pairs(flow_modal_dialog["flow_picker_panel"]["table_item_groups"].children) do
-        local name = string.gsub(group_button.name, "fp_sprite%-button_item_group_", "")
-        local scroll_pane_items = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_" .. name]
-        if name == item_group_name then
+        local id = tonumber(string.match(group_button.name, "%d+"))
+        local scroll_pane_items = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_" .. id]
+        if id == item_group_id then
             group_button.style = "fp_button_icon_clicked"
             group_button.mouse_button_filter = {"middle"}  -- Makes the button not click on normal clicks
             scroll_pane_items.visible = true

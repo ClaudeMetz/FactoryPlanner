@@ -26,8 +26,9 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
             local split_sprite = ui_util.split(data.item_sprite, "/")
-            local item = global.all_items[split_sprite[1]][split_sprite[2]]
-            product = Subfactory.add(subfactory, Item.init(item, split_sprite[1], "Product", 0))
+            local fake_item = {type=split_sprite[1], name=split_sprite[2]}  -- a bit hacky
+            local item = get_item(generate_item_identifier(fake_item))
+            product = Subfactory.add(subfactory, Item.init_by_proto(item, "Product", 0))
         end
         product.required_amount = tonumber(data.required_amount)
         update_calculations(player, subfactory)
@@ -83,7 +84,7 @@ end
 function refresh_product_bar(flow, product)
     local sprite, required_amount
     if product ~= nil then  -- Adjustments if the product is being edited
-        sprite = product.type .. "/" .. product.name
+        sprite = product.sprite
         required_amount = product.required_amount
     end
 
@@ -116,12 +117,27 @@ function get_picker_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
     local types = {"item", "fluid"}
+    local all_items = global.all_items
     for _, type in pairs(types) do
-        for _, item in pairs(global.all_items[type]) do
+        for _, item in pairs(all_items.types[all_items.map[type]].items) do
             table.insert(items, item)
         end
     end
     return items
+end
+
+-- Returns the string identifier for the given item
+function generate_item_identifier(item)
+    local all_items = global.all_items
+    local type_id = all_items.map[item.type]
+    local item_id = all_items.types[type_id].map[item.name]
+    return (type_id .. "_" .. item_id)
+end
+
+-- Returns the item described by the identifier
+function get_item(identifier)
+    local split_ident = ui_util.split(identifier, "_")
+    return global.all_items.types[split_ident[1]].items[split_ident[2]]
 end
 
 -- Generates the tooltip string for the given item

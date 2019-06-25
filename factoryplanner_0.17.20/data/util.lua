@@ -1,6 +1,7 @@
 data_util = {
     context = {},
-    machines = {},
+    machine = {},
+    item = {},
     base_data = {}
 }
 
@@ -34,62 +35,75 @@ end
 
 -- **** MACHINES ****
 -- Changes the preferred machine for the given category
-function data_util.machines.set_default(player, category_id, machine_id)
+function data_util.machine.set_default(player, category_id, machine_id)
     local preferences = get_preferences(player)
-    preferences.default_machines.machines[category_id] = machine_id
     local machine = global.all_machines.categories[category_id].machines[machine_id]
+    preferences.default_machines.categories[category_id] = machine
     preferences.default_machines.map[machine.name] = category_id
 end
 
 -- Returns the default machine for the given category
-function data_util.machines.get_default(player, category_id)
-    return get_preferences(player).default_machines.machines[category_id]
+function data_util.machine.get_default(player, category)
+    return get_preferences(player).default_machines.categories[category.id]
 end
 
 -- Returns whether the given machine can produce the given recipe (ingredient limit)
-function data_util.machines.is_applicable(player, category_id, machine_id, recipe_name)
-    local machine = global.all_machines.categories[category_id].machines[machine_id]
-    local recipe = global.all_recipes[player.force.name][recipe_name]
-    return (#recipe.ingredients <= machine.ingredient_limit)
+function data_util.machine.is_applicable(machine, recipe)
+    return (#recipe.proto.ingredients <= machine.proto.ingredient_limit)
 end
 
 -- Changes the machine either to the given machine or moves it in the given direction
--- If neither machine_id or direction is given, it applies the default machine for the category
-function data_util.machines.change_machine(player, line, machine_id, direction)
+-- If neither machine or direction is given, it applies the default machine for the category
+function data_util.machine.change(player, line, machine, direction)
     -- Set the machine to the default one
-    if machine_id == nil and direction == nil then
-        local default_machine_id = data_util.machines.get_default(player, line.category_id)
-        data_util.machines.change_machine(player, line, default_machine_id, nil)
+    if machine == nil and direction == nil then
+        local default_machine = data_util.machine.get_default(player, line.machine.category)
+        data_util.machine.change(player, line, default_machine, nil)
 
     -- Set machine directly
-    elseif machine_id ~= nil and direction == nil then
+    elseif machine ~= nil and direction == nil then
+        local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
         -- Try setting a higher tier machine until it sticks or nothing happens
-        -- Probably crashes if no machine fits at all (unlikely)
-        if not data_util.machines.is_applicable(player, line.category_id, machine_id, line.recipe_name) then
-            data_util.machines.change_machine(player, line, machine_id, "positive")
+        -- Crashes if no machine fits at all (unlikely)
+        if not data_util.machine.is_applicable(machine, line.recipe) then
+            data_util.machine.change(player, line, machine, "positive")
 
         else
-            line.machine_id = machine_id
+            line.machine = machine
             if line.parent then  -- if no parent exists, nothing is overwritten anyway
                 if line.subfloor then
-                    Floor.get(line.subfloor, "Line", 1).machine_id = machine_id
+                    Floor.get(line.subfloor, "Line", 1).machine = machine
                 elseif line.id == 1 and line.parent.origin_line then
-                    line.parent.origin_line.machine_id = machine_id
+                    line.parent.origin_line.machine = machine
                 end
             end
         end
 
     -- Bump machine in the given direction (takes given machine, if available)
     elseif direction ~= nil then
-        machine_id = machine_id or line.machine_id
-        local category = global.all_machines.categories[line.category_id]
+        local category, proto
+        if machine ~= nil then
+            if machine.proto then
+                category = machine.category
+                proto = machine.proto
+            else
+                category = global.all_machines.categories[global.all_machines.map[machine.category]]
+                proto = machine
+            end
+        else
+            category = line.machine.category
+            proto = line.machine.proto
+        end
+        
         if direction == "positive" then
-            if machine_id < #category.machines then
-                data_util.machines.change_machine(player, line, machine_id + 1, nil)
+            if proto.id < #category.machines then
+                local new_machine = category.machines[proto.id + 1]
+                data_util.machine.change(player, line, new_machine, nil)
             end
         else  -- direction == "negative"
-            if machine_id > 1 then
-                data_util.machines.change_machine(player, line, machine_id - 1, nil)
+            if proto.id > 1 then
+                local new_machine = category.machines[proto.id - 1]
+                data_util.machine.change(player, line, new_machine, nil)
             end
         end
     end
@@ -98,46 +112,47 @@ end
 
 -- **** BASE DATA ****
 -- Creates the default structure for default_machines
-function data_util.base_data.default_machines()
-    local default_machines = {machines = {}, map = {}}
-    for category_id, category in ipairs(global.all_machines.categories) do
-        default_machines.machines[category_id] = category.machines[1].id
+function data_util.base_data.default_machines(table)
+    local default_machines = {categories = {}, map = {}}
+    for category_id, category in pairs(table.all_machines.categories) do
+        default_machines.categories[category_id] = category.machines[1]
         default_machines.map[category.name] = category_id
     end
     return default_machines
 end
 
 -- Returns the default preferred belt
-function data_util.base_data.preferred_belt()
-    return global.all_belts.belts[1].id
+function data_util.base_data.preferred_belt(table)
+    return table.all_belts.belts[1]
 end
 
 -- Returns the default preferred belt (tries to choose coal)
-function data_util.base_data.preferred_fuel()
-    if global.all_fuels.map["coal"] then
-        return global.all_fuels.map["coal"]
+function data_util.base_data.preferred_fuel(table)
+    local fuels = table.all_fuels
+    if fuels.map["coal"] then
+        return fuels.fuels[fuels.map["coal"]]
     else
-        return global.all_fuels.fuels[1].id
+        return fuels.fuels[1]
     end
 end
 
 
 -- **** MISC ****
 -- Updates validity of every class specified by the classes parameter
-function data_util.run_validation_updates(player, parent, classes)
+function data_util.run_validation_updates(parent, classes)
     local valid = true
     for type, class in pairs(classes) do
-        if not Collection.update_validity(parent[type], player, class) then
+        if not Collection.update_validity(parent[type], class) then
             valid = false
         end
     end
     return valid
 end
 
--- Removes all invalid datasets of every class specified by the classes parameter
-function data_util.run_invalid_dataset_removal(player, parent, classes, attempt_repair)
+-- Tries to repair every specified class, deletes them if this is unsuccessfull
+function data_util.run_invalid_dataset_repair(player, parent, classes)
     for type, class in pairs(classes) do
-        Collection.remove_invalid_datasets(parent[type], player, parent, attempt_repair)
+        Collection.repair_invalid_datasets(parent[type], player, parent)
     end
 end
 
@@ -158,7 +173,8 @@ end
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
     for _, product in ipairs(products) do
-        local dataset = Subfactory.add(subfactory, Item.init({name=product.name, type=product.type}, nil, "Product", product.amount))
+        local item = Item.init_by_item(product, "Product", product.amount)
+        local dataset = Subfactory.add(subfactory, item)
         dataset.required_amount = product.required_amount
     end
 end
@@ -168,9 +184,9 @@ end
 local function construct_floor(player, floor, recipes)
     -- Adds a line containing the given recipe to the current floor
     local function add_line(recipe_data)
-        local recipe = global.all_recipes[player.force.name][recipe_data.recipe]
-        local category_id = global.all_machines.map[recipe.category]
-        local machine = global.all_machines.categories[category_id].machines[recipe_data.machine_id]
+        local recipe = Recipe.init(global.all_recipes.map[recipe_data.recipe])
+        local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
+        local machine = category.machines[category.map[recipe_data.machine]]
         return Floor.add(floor, Line.init(player, recipe, machine))
     end
     
@@ -237,10 +253,10 @@ function data_util.run_dev_config(player)
             } ]]
         }
         add_products(subfactory, products)
-
+        
         -- Floors
         local recipes = {
-            --{recipe="electronic-circuit", machine_id=1}
+            {recipe="electronic-circuit", machine="assembling-machine-1"}
         }
         construct_floor(player, context.floor, recipes)
     end
@@ -281,28 +297,28 @@ function data_util.add_example_subfactory(player)
     -- This table describes the desired hierarchical structure of the subfactory
     -- (Order is important; sub-tables represent their own subfloors (recursively))
     local recipes = {
-        {recipe="automation-science-pack", machine_id=2},
+        {recipe="automation-science-pack", machine_id="assembling-machine-2"},
         {
-            {recipe="logistic-science-pack", machine_id=2},
-            {recipe="transport-belt", machine_id=1},
-            {recipe="inserter", machine_id=1}
+            {recipe="logistic-science-pack", machine_id="assembling-machine-2"},
+            {recipe="transport-belt", machine_id="assembling-machine-1"},
+            {recipe="inserter", machine_id="assembling-machine-1"}
         },
         {
-            {recipe="military-science-pack", machine_id=2},
-            {recipe="grenade", machine_id=2},
-            {recipe="stone-wall", machine_id=1},
-            {recipe="piercing-rounds-magazine", machine_id=1},
-            {recipe="firearm-magazine", machine_id=1}
+            {recipe="military-science-pack", machine_id="assembling-machine-2"},
+            {recipe="grenade", machine_id="assembling-machine-2"},
+            {recipe="stone-wall", machine_id="assembling-machine-1"},
+            {recipe="piercing-rounds-magazine", machine_id="assembling-machine-1"},
+            {recipe="firearm-magazine", machine_id="assembling-machine-1"}
         }, 
-        {recipe="iron-gear-wheel", machine_id=1},
+        {recipe="iron-gear-wheel", machine_id="assembling-machine-1"},
         {
-            {recipe="electronic-circuit", machine_id=1},
-            {recipe="copper-cable", machine_id=1}
+            {recipe="electronic-circuit", machine_id="assembling-machine-1"},
+            {recipe="copper-cable", machine_id="assembling-machine-1"}
         }, 
-        {recipe="steel-plate", machine_id=2},
-        {recipe="stone-brick", machine_id=2},
-        {recipe="impostor-stone", machine_id=2},
-        {recipe="impostor-coal", machine_id=2}
+        {recipe="steel-plate", machine_id="steel-furnace"},
+        {recipe="stone-brick", machine_id="steel-furnace"},
+        {recipe="impostor-stone", machine_id="electric-mining-drill"},
+        {recipe="impostor-coal", machine_id="electric-mining-drill "}
     }
     construct_floor(player, context.floor, recipes)
     
