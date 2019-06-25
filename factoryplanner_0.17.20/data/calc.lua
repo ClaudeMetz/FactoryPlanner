@@ -114,7 +114,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
 
                 -- Energy consumption
                 local energy_consumption = line_aggregate.machine_count * (line.machine.proto.energy * 60)
-                local burner = line.machine.burner
+                local burner = line.machine.proto.burner
                 if burner == nil then
                     line_aggregate.energy_consumption = energy_consumption
                 elseif burner.categories["chemical"] then

@@ -81,7 +81,7 @@ function Floor.attempt_repair(self, player)
     data_util.run_invalid_dataset_repair(player, self, classes)
 
     -- Remove floor if there are no recipes except the top one left
-    if self.level > 1 and self.Line.count == 1 then
+    if self.level > 1 and self.Line.count <= 1 then
         self.valid = false
     end
 

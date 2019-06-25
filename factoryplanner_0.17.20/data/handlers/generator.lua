@@ -213,10 +213,10 @@ end
 
 -- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_name] = true})
 -- This optimizes the recipe filtering process for the recipe picker
--- (Uses global table as it is always run once that is in place)
 function generator.item_recipe_map()
     local map = {}
 
+    if not global.all_recipes.recipes then return end
     for _, recipe in pairs(global.all_recipes.recipes) do
         for _, product in ipairs(recipe.products) do
             if map[product.type] == nil then
@@ -258,17 +258,24 @@ function generator.item_groups()
         }
     end
 
+    if not global.all_items.types then return end
     for _, type in pairs(global.all_items.types) do
         for _, item in pairs(type.items) do
-            if not groups.item.map[item.group.name] and undesirables.item[item.group.name] == nil then
-                insert_proto(groups.item, "groups", create_group(item.group))
+            -- Don't continue if groups are invalid; this is the case when the configuration changed, and
+            -- this function will be re-run once the global tables are updated
+            if item.group.valid then
+                if not groups.item.map[item.group.name] and undesirables.item[item.group.name] == nil then
+                    insert_proto(groups.item, "groups", create_group(item.group))
+                end
             end
         end
     end
 
     for _, recipe in pairs(global.all_recipes.recipes) do
-        if not groups.recipe.map[recipe.group.name] and undesirables.recipe[recipe.group.name] == nil then
-            insert_proto(groups.recipe, "groups", create_group(recipe.group))
+        if recipe.group.valid then
+            if not groups.recipe.map[recipe.group.name] and undesirables.recipe[recipe.group.name] == nil then
+                insert_proto(groups.recipe, "groups", create_group(recipe.group))
+            end
         end
     end
 

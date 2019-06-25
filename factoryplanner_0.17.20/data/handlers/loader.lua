@@ -69,66 +69,10 @@ function loader.fuels.run(player_table)
     else
         preferences.preferred_fuel = data_util.base_data.preferred_fuel(new)
     end
-
-    --[[ -- Update line data
-    for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
-        for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
-            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-                if line.fuel_id ~= nil then
-                    local old_fuel = global.all_fuels.fuels[line.fuel_id]
-                    local new_fuel_id = fuels.new.map[old_fuel.name]
-                    if new_fuel_id ~= nil then
-                        line.fuel_id = new_fuel_id
-                    else
-                        line.fuel_id = nil
-                    end
-                end
-            end
-        end
-    end ]]
 end
 
 
 function loader.machines.run(player_table)
-    --[[ -- Update line data
-    for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
-        for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
-            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-                -- Old categories and machines always exist at this point
-                local old_category_name, old_machine_name
-
-                if type(line.category_id) == "string" then
-                    -- When the category is a string, the machine must be too
-                    old_category_name = line.category_id
-                    old_machine_name = line.machine_id
-                else
-                    local old_category = global.all_machines.categories[line.category_id]
-                    old_category_name = old_category.name
-                    
-                    if type(line.machine_id) == "string" then
-                        old_machine_name = line.machine_id
-                    else
-                        old_machine_name = old_category.machines[line.machine_id].name
-                    end
-                end
-
-                local new_category_id = machines.new.map[old_category_name]
-                if new_category_id == nil then  -- both category and machine are 'invalid'
-                    line.category_id = old_category_name
-                    line.machine_id = old_machine_name
-                else  -- the category is valid
-                    line.category_id = new_category_id
-                    local new_machine_id = machines.new.categories[new_category_id].map[old_machine_name]
-                    if new_machine_id == nil then  -- only the machine is 'invalid'
-                        line.machine_id = old_machine_name
-                    else  -- both the machine and category are valid
-                        line.machine_id = new_machine_id
-                    end
-                end
-            end
-        end
-    end ]]
-
     -- Update default machines
     local preferences = player_table.preferences
     local default_machines = {categories = {}, map = {}}

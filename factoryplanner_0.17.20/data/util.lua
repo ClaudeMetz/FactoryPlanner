@@ -152,7 +152,7 @@ end
 -- Tries to repair every specified class, deletes them if this is unsuccessfull
 function data_util.run_invalid_dataset_repair(player, parent, classes)
     for type, class in pairs(classes) do
-        Collection.repair_invalid_datasets(parent[type], player, parent)
+        Collection.repair_invalid_datasets(parent[type], player, class, parent)
     end
 end
 
@@ -166,6 +166,20 @@ function data_util.determine_product_amount(base_product)
     else
         return base_product.amount
     end
+end
+
+-- Logs given table shallowly, excluding the parent attribute
+function data_util.log(table)
+    local s = "\n{\n"
+    for name, value in pairs(table) do
+        if type(value) == "table" then
+            s = s .. "  " .. name .. " = table\n"
+        else
+            s = s .. "  " .. name .. " = " .. tostring(value) .. "\n"
+        end
+    end
+    s = s .. "}"
+    log(s)
 end
 
 

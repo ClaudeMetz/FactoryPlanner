@@ -20,16 +20,26 @@ function Machine.init_by_ids(category_id, id)
     Machine.init_by_proto(proto)
 end
 
+-- Updates the given machine with a new proto
+function Machine.update(self, proto)
+    self.proto = proto
+    self.sprite = ("entity/" .. proto.name)
+end
+
 
 -- Update the validity of this machine
 function Machine.update_validity(self)
-    local new_category_id = new.all_machines.map[self.category.name]
+    local category_name = (type(self.category) == "string") and self.category or self.category.name
+    local new_category_id = new.all_machines.map[category_name]
+
     if new_category_id ~= nil then
         self.category = new.all_machines.categories[new_category_id]
 
-        new_machine_id = self.category.map[self.proto.name]
+        local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
+        local new_machine_id = self.category.map[proto_name]
+
         if new_machine_id ~= nil then
-            self.proto = self.category.machines[new_machine_id]
+            Machine.update(self, self.category.machines[new_machine_id])
             self.valid = true
         else
             self.proto = self.proto.name
@@ -49,7 +59,7 @@ end
 function Machine.attempt_repair(self, player)
     -- First, try and repair the category if necessary
     if type(self.category) == "string" then
-        local current_category_id = global.all_machines.map[self.category.name]
+        local current_category_id = global.all_machines.map[self.category]
         if current_category_id ~= nil then
             self.category = global.all_machines.categories[current_category_id]
         else  -- delete immediately if no matching type can be found
@@ -61,8 +71,7 @@ function Machine.attempt_repair(self, player)
     -- At this point, category is always valid (and proto is always a string)
     local current_machine_id = self.category.map[self.proto]
     if current_machine_id ~= nil then
-        self.proto = self.category.machines[current_machine_id]
-        self.sprite = ("entity/" .. proto.name)
+        Machine.update(self, self.category.machines[current_machine_id])
         self.valid = true
     else
         self.valid = false

@@ -60,6 +60,11 @@ end
 -- Update the validity of values associated tp this line
 function Line.update_validity(self)
     self.valid = true
+    
+    -- Validate Recipe
+    if not Recipe.update_validity(self.recipe) then
+        self.valid = false
+    end
 
     -- Validate Items
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
@@ -67,19 +72,19 @@ function Line.update_validity(self)
         self.valid = false
     end
 
-    -- Validate Recipe
-    if not Recipe.update_validity(self.recipe) then
-        self.valid = false
-    end
-
     -- Validate Machine
-    if not Machine.update_validity(self.machine) or not data_util.machine.is_applicable(self.machine, self.recipe) then
+    if not Machine.update_validity(self.machine) then
+        self.valid = false
+    -- If the machine is valid, it might still not be applicable
+    elseif self.recipe.valid and not data_util.machine.is_applicable(self.machine, self.recipe) then
         self.valid = false
     end
 
     -- Validate Fuel
     if self.fuel ~= nil then
-        local new_fuel_id = new.all_fuels.map[self.fuel.name]
+        local fuel_name = (type(self.fuel) == "string") and self.fuel or self.fuel.name
+        local new_fuel_id = new.all_fuels.map[fuel_name]
+
         if new_fuel_id ~= nil then
             self.fuel = new.all_fuels.fuels[new_fuel_id]
         else
@@ -95,18 +100,18 @@ end
 -- (In general, Line Items are not repairable and can only be deleted)
 function Line.attempt_repair(self, player)
     self.valid = true
-
-    -- Repair Items
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    data_util.run_invalid_dataset_repair(player, self, classes)
-
+    
     -- Repair Recipe
     if not self.recipe.valid and not Recipe.attempt_repair(self.recipe) then
         self.valid = false
     end
 
+    -- Repair Items
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
+    data_util.run_invalid_dataset_repair(player, self, classes)
+
     -- Repair Machine
-    if not self.machine.valid and not Machine.attempt_repair(self.machine) then
+    if self.valid and not self.machine.valid and not Machine.attempt_repair(self.machine) then
         -- No category means that it could not be repaired
         if self.machine.category == nil then
             -- If the line is still valid here, it has a valid recipe
@@ -121,7 +126,7 @@ function Line.attempt_repair(self, player)
     end
 
     -- Repair Fuel
-    if self.fuel ~= nil and type(self.fuel) == "string" then
+    if self.valid and self.fuel ~= nil and type(self.fuel) == "string" then
         local current_fuel_id = global.all_fuels.map[self.fuel]
         if current_fuel_id ~= nil then
             self.fuel = global.all_fuels.fuels[current_fuel_id]
@@ -131,10 +136,9 @@ function Line.attempt_repair(self, player)
         end
     end
 
-    -- Repair Subfloor
+    -- Repair subfloor (continues through recursively)
     if self.subfloor and not self.subfloor.valid and not Floor.attempt_repair(self.subfloor, player) then
         Subfactory.remove(self.subfloor.parent, self.subfloor)
-        self.valid = false
     end
 
     return self.valid

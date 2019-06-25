@@ -108,9 +108,9 @@ function Collection.update_validity(self, class)
 end
 
 -- Removes any invalid, unrepairable datasets from the Collection
-function Collection.repair_invalid_datasets(self, player, parent)
+function Collection.repair_invalid_datasets(self, player, class, parent)
     for _, dataset in pairs(self.datasets) do
-        if not dataset.valid and not _G[dataset.class].attempt_repair(dataset, player) then
+        if not dataset.valid and not _G[class].attempt_repair(dataset, player) then
             _G[parent.class].remove(parent, dataset)
         end
     end
