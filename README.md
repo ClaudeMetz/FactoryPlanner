@@ -8,4 +8,4 @@ It enables players to plan out their production in detail, specifying the recipe
 
 Something very similar has already been done by [Helmod](https://mods.factorio.com/mod/helmod). One major goal of this was to provide an experience that is more intuitive and convenient than that of Helmod. In addition, it should have better performance and allow for more complex recipes to be calculated correctly. Not all of these goals have been reached, and there are still some major features missing, but in due time, the mod will improve to meet more of it's goals.
 
-Suggestions and bug reports go to the [Mod Page](https://mods.factorio.com/mod/factoryplanner/discussion) on the mod portal for now.
+There is a public [Trello board](https://trello.com/b/0FP7eMlu/factory-planner) that contains an overview of features and bugs. Suggestions and bug reports go to the [Mod Portal](https://mods.factorio.com/mod/factoryplanner/discussion) for now.
