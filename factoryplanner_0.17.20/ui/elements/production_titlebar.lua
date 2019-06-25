@@ -140,7 +140,6 @@ function handle_floor_change_click(player, destination)
 
     ui_state.current_activity = nil
     update_calculations(player, subfactory)
-    refresh_main_dialog(player)
 end
 
 

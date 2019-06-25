@@ -229,7 +229,7 @@ end
 function update_calculations(player, subfactory)
     calc.update(player, subfactory)
     if player.gui.center["fp_frame_main_dialog"] ~= nil then
-        refresh_subfactory_pane(player)
+        refresh_main_dialog(player)
     end
 end
 
@@ -261,7 +261,6 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
         if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) then
             Floor.shift(floor, line, direction)
             update_calculations(player, subfactory)
-            refresh_production_table(player)
         end
         
     else
@@ -274,6 +273,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
             end
             ui_state.current_activity = nil
             data_util.context.set_floor(player, line.subfloor)
+            refresh_main_dialog(player)
             
             -- Handle removal of clicked (assembly) line
         elseif click == "right" then
@@ -283,18 +283,16 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
             else
                 if ui_state.current_activity == "deleting_line" then
                     Floor.remove(floor, line)
-                    update_calculations(player, subfactory)
                     ui_state.current_activity = nil
+                    update_calculations(player, subfactory)
                 else
                     ui_state.current_activity = "deleting_line"
                     ui_state.context.line = line
+                    refresh_main_dialog(player)
                 end
             end
         end
-        
     end
-    
-    refresh_main_dialog(player)
 end
 
 -- Handles the changing of the percentage textfield
@@ -317,9 +315,8 @@ function handle_percentage_change(player, element)
         elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
         local scroll_pane = element.parent.parent
-        update_calculations(player, ui_state.context.subfactory)
         ui_state.current_activity = nil
-        refresh_main_dialog(player)
+        update_calculations(player, ui_state.context.subfactory)
         
         -- Refocus the textfield after the table is reloaded
         scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
@@ -386,8 +383,6 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
             update_calculations(player, subfactory)
         end
     end
-
-    refresh_main_dialog(player)
 end
 
 -- Recieves the result of a chooser user choice and applies it
