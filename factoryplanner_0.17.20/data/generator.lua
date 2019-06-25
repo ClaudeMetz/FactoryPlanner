@@ -1,5 +1,30 @@
 generator = {}
 
+-- Inserts given prototype into given table t and adds it to t's map
+-- Example: type = "recipes"
+local function insert_proto(t, type_name, proto)
+    table.insert(t[type_name], proto)
+    local id = #t[type_name]
+    t[type_name][id].id = id
+    t.map[proto.name] = id
+end
+
+-- Inserts given proto into a two layers deep table t
+-- (category and type are generic terms here, describing the first and second level of t)
+-- Example: category_name = "categories", category = "steam", type_name = "machines"
+local function deep_insert_proto(t, category_name, category, type_name, proto)
+    if t.map[category] == nil then
+        table.insert(t[category_name], {[type_name] = {}, map = {}, name = category})
+        local id = #t[category_name]
+        t[category_name][id].id = id
+        t.map[category] = id
+    end
+
+    local category_entry = t[category_name][t.map[category]]
+    insert_proto(category_entry, type_name, proto)
+end
+
+
 -- Returns the names of the recipes that shouldn't be included
 local function undesirable_recipes()
     local undesirables = 
@@ -21,162 +46,233 @@ local function undesirable_recipes()
     return undesirables
 end
 
--- Returns all standard recipes + custom mining recipes and space science recipe
+-- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
-    local recipes = {}
-    local undesirables = undesirable_recipes()
-
+    local all_recipes = {recipes = {}, map = {}}
+    
     local function mining_recipe()
         return {
             enabled = true,
             hidden = false,
             group = {name="intermediate_products", order="c"},
-            subgroup = {name="mining", order="z"},
-            valid = true
+            subgroup = {name="mining", order="z"}
         }
     end
     
-    for force_name, force in pairs(game.forces) do
-        if recipes[force_name] == nil then 
-            recipes[force_name] = {}
-            -- Adding all standard recipes minus the undesirable ones
-            for recipe_name, recipe in pairs(force.recipes) do
-                -- Avoid any recipes that are undesirable or have no machine to produce them
-                local category_id = global.all_machines.map[recipe.category]
-                if undesirables[recipe_name] == nil and category_id ~= nil then
-                    recipes[force_name][recipe_name] = recipe
-                end
-            end
-
-            -- Adding all (solid) mining recipes
-            -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
-            for _, proto in pairs(game.entity_prototypes) do
-                -- Adds all mining recipes. Only supports solids for now.
-                if proto.mineable_properties and proto.resource_category and 
-                  proto.mineable_properties.products[1].type ~= "fluid" then
-                    local recipe = mining_recipe()
-                    recipe.name = "impostor-" .. proto.name
-                    recipe.localised_name = proto.localised_name
-                    recipe.order = proto.order
-                    recipe.category = proto.resource_category
-                    -- Set energy to mining time so the forumla for the machine_count works out
-                    recipe.energy = proto.mineable_properties.mining_time
-                    recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
-                    recipe.products = proto.mineable_properties.products
-                    -- Conforming to the real LuaRecipe prototype
-                    recipe.prototype = { main_product = recipe.products[1] }
-
-                    -- Add mining fluid, if required
-                    if proto.mineable_properties.required_fluid then
-                        table.insert(recipe.ingredients, {
-                            type = "fluid",
-                            name = proto.mineable_properties.required_fluid,
-                            amount = proto.mineable_properties.fluid_amount
-                        })
-                        recipe.category = "complex-solid"
-                    end
-
-                    recipes[force_name][recipe.name] = recipe
-                end
-            end
-            
-            -- Adds a recipe for producing (vanilla) steam
-            local recipe = mining_recipe()
-            recipe.name = "impostor-steam"
-            recipe.localised_name = {"fluid-name.steam"}   -- official locale
-            recipe.category = "steam"
-            recipe.order = "z"
-            recipe.energy = 1
-            recipe.ingredients = {{type="fluid", name="water", amount=60}}
-            recipe.products = {{type="fluid", name="steam", amount=60}}
-            recipe.prototype = { main_product = recipe.products[1] }
-            recipes[force_name][recipe.name] = recipe
-            
-            -- Adds a convenient space science recipe
-            recipes[force_name]["fp-space-science-pack"] = {
-                name = "fp-space-science-pack",
-                localised_name = {"item-name.space-science-pack"},  -- official locale
-                category = "rocket-building",
-                enabled = false,
-                hidden = false,
-                energy = 0,
-                group = {name="intermediate-products", order="c"},
-                subgroup = {name="science-pack", order="g"},
-                order = "x[fp-space-science-pack]",
-                ingredients = {
-                    {type="item", name="rocket-part", amount=100},
-                    {type="item", name="satellite", amount=1}
-                },
-                products = {{type="item", name="space-science-pack", amount=1000}},
-                valid = true
+    local undesirables = undesirable_recipes()
+    -- Adding all standard recipes minus the undesirable ones
+    for recipe_name, proto in pairs(game.recipe_prototypes) do
+        -- Avoid any recipes that are undesirable or have no machine to produce them
+        local category_id = new.all_machines.map[proto.category]
+        if undesirables[recipe_name] == nil and category_id ~= nil then
+            local recipe = {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                category = proto.category,
+                energy = proto.energy,
+                ingredients = proto.ingredients,
+                products = proto.products,
+                main_product = proto.main_product,
+                enabled = proto.enabled,
+                hidden = proto.hidden,
+                order = proto.order,
+                group = proto.group,
+                subgroup = proto.subgroup
             }
+            insert_proto(all_recipes, "recipes", recipe)
         end
     end
 
-    return recipes
+    -- Adding all (solid) mining recipes
+    -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
+    for _, proto in pairs(game.entity_prototypes) do
+        -- Adds all mining recipes. Only supports solids for now.
+        if proto.mineable_properties and proto.resource_category and 
+            proto.mineable_properties.products[1].type ~= "fluid" then
+            local recipe = mining_recipe()
+            recipe.name = "impostor-" .. proto.name
+            recipe.localised_name = proto.localised_name
+            recipe.order = proto.order
+            recipe.category = proto.resource_category
+            -- Set energy to mining time so the forumla for the machine_count works out
+            recipe.energy = proto.mineable_properties.mining_time
+            recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
+            recipe.products = proto.mineable_properties.products
+            recipe.main_product = recipe.products[1]
+
+            -- Add mining fluid, if required
+            if proto.mineable_properties.required_fluid then
+                table.insert(recipe.ingredients, {
+                    type = "fluid",
+                    name = proto.mineable_properties.required_fluid,
+                    amount = proto.mineable_properties.fluid_amount
+                })
+                recipe.category = "complex-solid"
+            end
+
+            insert_proto(all_recipes, "recipes", recipe)
+        end
+    end
+    
+    -- Adds a recipe for producing (vanilla) steam
+    local steam_recipe = mining_recipe()
+    steam_recipe.name = "impostor-steam"
+    steam_recipe.localised_name = {"fluid-name.steam"}   -- official locale
+    steam_recipe.category = "steam"
+    steam_recipe.order = "z"
+    steam_recipe.energy = 1
+    steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
+    steam_recipe.products = {{type="fluid", name="steam", amount=60}}
+    steam_recipe.main_product = steam_recipe.products[1]
+    insert_proto(all_recipes, "recipes", steam_recipe)
+    
+    -- Adds a convenient space science recipe
+    local rocket_recipe = {
+        name = "fp-space-science-pack",
+        localised_name = {"item-name.space-science-pack"},  -- official locale
+        category = "rocket-building",
+        enabled = false,
+        hidden = false,
+        energy = 0,
+        group = {name="intermediate-products", order="c"},
+        subgroup = {name="science-pack", order="g"},
+        order = "x[fp-space-science-pack]",
+        ingredients = {
+            {type="item", name="rocket-part", amount=100},
+            {type="item", name="satellite", amount=1}
+        },
+        products = {{type="item", name="space-science-pack", amount=1000}}
+    }
+    insert_proto(all_recipes, "recipes", rocket_recipe)
+    
+    return all_recipes
 end
 
 
+-- Returns the names of the recipes that shouldn't be included
+local function undesirable_items()
+    return {
+        item = {
+        },
+        fluid = {
+        },
+        entity = {
+        }
+    }
+end
+
 -- Returns all relevant items and fluids
 function generator.all_items()
-    local items = { index = {} }
+    local all_items = {types = {}, map = {}}
 
-    -- local function so generator. doesn't have this
-    local function add_to_index(item_name, type)
-        if items.index[item_name] == nil then
-            items.index[item_name] = type
-        else
-            items.index[item_name] = "dupe"
+    local function add_item(table, item)
+        if table[item.type] == nil then
+            table[item.type] = {}
         end
+        table[item.type][item.name] = true
     end
 
-    -- Create a table containing each item that has at least one recipe
-    -- Use of the force "player" here is hack that will be fixed when recipe/item data is reworked
-    -- (No need for undesirable item settings because removing the recipes removes the item)
-    local craftable_products = {}
-    for _, recipe in pairs(global.all_recipes["player"]) do
-        for _, product in ipairs(recipe.products) do
-            craftable_products[product.name] = true
+    -- Create a table containing every item that is either a product or an ingredient to at least one recipe
+    local relevant_items = {}
+    for _, recipe in pairs(new.all_recipes.recipes) do
+        for _, product in pairs(recipe.products) do
+            add_item(relevant_items, product)
+        end
+        for _, ingredient in pairs(recipe.ingredients) do
+            add_item(relevant_items, ingredient)
         end
     end
     
     -- Adding all standard items minus the undesirable ones
-    local types = {"item", "fluid"}
-    for _, type in pairs(types) do
-        items[type] = {}
-        for item_name, item in pairs(game[type .. "_prototypes"]) do
-            if global.all_fuels.map[item_name] or craftable_products[item_name] then
-                items[type][item_name] = item
-                add_to_index(item_name, type)
+    local undesirables = undesirable_items()
+    for type, item_table in pairs(relevant_items) do
+        for item_name, _ in pairs(item_table) do
+            if not undesirables[type][item_name] then
+                local proto = game[type .. "_prototypes"][item_name]
+                local hidden = false  -- "entity" types are never hidden
+                if type == "item" then hidden = proto.has_flag("hidden")
+                elseif type == "fluid" then hidden = proto.hidden end
+                if not hidden then  -- exclude hidden items
+                    local item = {
+                        type = type,
+                        name = proto.name,
+                        localised_name = proto.localised_name,
+                        order = proto.order,
+                        group = proto.group,
+                        subgroup = proto.subgroup
+                    }
+                    deep_insert_proto(all_items, "types", type, "items", item)
+                end
             end
         end
     end
     
-    return items
+    return all_items
 end
 
--- Maps all items to the recipes that produce them ([item_name] = {[recipe_name] = true})
--- This optimizes the recipe filtering process for the recipe picker
-function generator.item_recipe_map()
-    local map = {
-        item = {},
-        fluid = {},
-        entity = {}
-    }
 
-    -- Use of the force "player" here is hack that will be fixed when recipe/item data is reworked
-    for recipe_name, recipe in pairs(global.all_recipes["player"]) do
-        if recipe.valid then
-            for _, product in ipairs(recipe.products) do
-                if map[product.type][product.name] == nil then
-                    map[product.type][product.name] = {}
-                end
-                map[product.type][product.name][recipe_name] = true
+-- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_name] = true})
+-- This optimizes the recipe filtering process for the recipe picker
+-- (Uses global table as it is always run once that is in place)
+function generator.item_recipe_map()
+    local map = {}
+
+    for _, recipe in pairs(global.all_recipes.recipes) do
+        for _, product in ipairs(recipe.products) do
+            if map[product.type] == nil then
+                map[product.type] = {}
             end
+            if map[product.type][product.name] == nil then
+                map[product.type][product.name] = {}
+            end
+            map[product.type][product.name][recipe.name] = true
         end
     end
     
     return map
+end
+
+
+-- Returns the names of the item groups that shouldn't be included
+local function undesirable_item_groups()
+    return {
+        item = {
+            ["creative-mod_creative-tools"] = false
+        },
+        recipe = {
+            ["creative-mod_creative-tools"] = false
+        }
+    }
+end
+
+-- Returns a table containing all item groups for both items and recipes for easier reference
+function generator.item_groups()
+    local groups = {item = {groups={}, map={}}, recipe = {groups={}, map={}}}
+    local undesirables = undesirable_item_groups()
+
+    local function create_group(proto)
+        return {
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = "item-group/" .. proto.name
+        }
+    end
+
+    for _, type in pairs(global.all_items.types) do
+        for _, item in pairs(type.items) do
+            if not groups.item.map[item.group.name] and undesirables.item[item.group.name] == nil then
+                insert_proto(groups.item, "groups", create_group(item.group))
+            end
+        end
+    end
+
+    for _, recipe in pairs(global.all_recipes.recipes) do
+        if not groups.recipe.map[recipe.group.name] and undesirables.recipe[recipe.group.name] == nil then
+            insert_proto(groups.recipe, "groups", create_group(recipe.group))
+        end
+    end
+
+    return groups
 end
 
 
@@ -189,26 +285,7 @@ end
 
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
-    local all_machines = nil
-
-    local function add_machine(category_name, machine)
-        if all_machines == nil then all_machines = {categories = {}, map = {}} end
-
-        if all_machines.map[category_name] == nil then 
-            table.insert(all_machines.categories, {machines = {}, map = {}})
-            all_machines.map[category_name] = #all_machines.categories
-            all_machines.categories[#all_machines.categories].id = #all_machines.categories
-            all_machines.categories[#all_machines.categories].name = category_name
-        end
-
-        local category_entry = all_machines.categories[all_machines.map[category_name]]
-        table.insert(category_entry.machines, machine)
-        category_entry.map[machine.name] = #category_entry.machines
-        machine.id = #category_entry.machines
-        machine.category_id = category_entry.id
-
-        return all_machines
-    end
+    local all_machines = {categories = {}, map = {}}
     
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
@@ -224,13 +301,13 @@ function generator.all_machines()
         end
         local machine = {
             name = proto.name,
+            category = category,
             localised_name = proto.localised_name,
             ingredient_limit = ingredient_limit,
             speed = speed,
             energy = energy,
             burner = burner
         }
-        all_machines = add_machine(category, machine)
         return machine
     end
 
@@ -238,7 +315,10 @@ function generator.all_machines()
     for _, proto in pairs(game.entity_prototypes) do
         if proto.crafting_categories and proto.energy_usage ~= nil and undesirables[proto.name] == nil then
             for category, enabled in pairs(proto.crafting_categories) do
-                if enabled then generate_category_entry(category, proto) end
+                if enabled then 
+                    local machine = generate_category_entry(category, proto)
+                    deep_insert_proto(all_machines, "categories", category, "machines", machine)
+                end
             end
 
         -- Adds mining machines
@@ -246,11 +326,15 @@ function generator.all_machines()
             for category, enabled in pairs(proto.resource_categories) do
                 -- Only supports solid mining recipes for now (no oil etc.)
                 if enabled and category ~= "basic-fluid" then
-                    generate_category_entry(category, proto)
+                    local machine = generate_category_entry(category, proto)
+                    deep_insert_proto(all_machines, "categories", category, "machines", machine)
 
                     -- Add separate category for mining with fluids that avoids the burner-miner
                     if category == "basic-solid" then
-                        if not proto.burner_prototype then generate_category_entry("complex-solid", proto) end
+                        if not proto.burner_prototype then
+                            local machine = generate_category_entry("complex-solid", proto)
+                            deep_insert_proto(all_machines, "categories", "complex-solid", "machines", machine)
+                        end
                     end
                 end
             end
@@ -278,6 +362,8 @@ function generator.all_machines()
                         temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
                         energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy / energy_per_unit
+
+                        deep_insert_proto(all_machines, "categories", "steam", "machines", machine)
                     end
                 end
             end
@@ -288,21 +374,14 @@ function generator.all_machines()
 end
 
 
-local function insert_object(t, name, object)
-    table.insert(t[name], object)
-    local id = #t[name]
-    t[name][id].id = id
-    t.map[object.name] = id
-end
-
-
 -- Generates a table containing all available transport belts
 function generator.all_belts()
     local all_belts = {belts = {}, map = {}}
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
-            insert_object(all_belts, "belts", {
+            insert_proto(all_belts, "belts", {
                 name = proto.name,
+                sprite = "entity/" .. proto.name,
                 localised_name = proto.localised_name,
                 throughput = proto.belt_speed * 480
             })
@@ -318,9 +397,10 @@ function generator.all_fuels()
     local all_fuels = {fuels = {}, map = {}}
     for _, proto in pairs(game.item_prototypes) do
         if proto.fuel_value and proto.fuel_category == "chemical" then
-            insert_object(all_fuels, "fuels", {
+            insert_proto(all_fuels, "fuels", {
                 name = proto.name,
                 type = proto.type,
+                sprite = proto.type .. "/" .. proto.name,
                 localised_name = proto.localised_name,
                 fuel_category = proto.fuel_category,
                 fuel_value = proto.fuel_value

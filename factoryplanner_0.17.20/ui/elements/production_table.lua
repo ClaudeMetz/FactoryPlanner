@@ -81,14 +81,12 @@ function create_line_table_row(player, line)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
 
-    local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
-
     -- Recipe button
-    local recipe = global.all_recipes[player.force.name][line.recipe_name]
-    local sprite = ui_util.get_recipe_sprite(player, recipe)
+    local recipe = line.recipe
+    local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
-      sprite=sprite, tooltip=recipe.localised_name, mouse_button_filter={"left-and-right"}}
-    if global.devmode == true then button_recipe.tooltip = {"", recipe.localised_name, "\n", recipe.name} end
+      sprite=recipe.sprite, tooltip=recipe.proto.localised_name, mouse_button_filter={"left-and-right"}}
+    if global.devmode == true then button_recipe.tooltip = {"", recipe.proto.localised_name, "\n", recipe.proto.name} end
 
     if line.subfloor then
         if ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id then
@@ -111,21 +109,21 @@ function create_line_table_row(player, line)
     textfield_percentage.style.horizontal_align = "center"
 
     -- Machine button
-    local category = global.all_machines.categories[line.category_id]
     local table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
-      column_count=#category.machines}
+      column_count=#line.machine.category.machines}
     table_machines.style.horizontal_spacing = 3
     table_machines.style.horizontal_align = "center"
 
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        for machine_id, machine in ipairs(category.machines) do
-            local count = (line.production_ratio / (machine.speed / line.recipe_energy) ) / subfactory.timescale
+        for _, machine in ipairs(line.machine.category.machines) do
+            local count = (line.production_ratio / (machine.speed / line.recipe.energy) ) / subfactory.timescale
+            -- Create temporary machine class for consistency
+            local machine = Machine.init_by_proto(machine)
             create_machine_button(table_machines, line, machine, count, true)
         end
     else
-        local machine = category.machines[line.machine_id]
-        create_machine_button(table_machines, line, machine, line.machine_count, false)
+        create_machine_button(table_machines, line, line.machine, line.machine.count, false)
     end
     
     -- Energy label
@@ -149,11 +147,11 @@ end
 -- Creates and places a single machine button
 function create_machine_button(gui_table, line, machine, count, append_machine_id)
     local player = game.get_player(gui_table.player_index)
-    if data_util.machines.is_applicable(player, line.category_id, machine.id, line.recipe_name) then
-        local appendage = (append_machine_id) and ("_" .. machine.id) or ""
+    if data_util.machine.is_applicable(machine, line.recipe) then
+        local appendage = (append_machine_id) and ("_" .. machine.proto.id) or ""
         local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
-          sprite="entity/" .. machine.name, style="fp_button_icon_medium_recipe", number=math.ceil(count),
-          mouse_button_filter={"left"}, tooltip={"", machine.localised_name, "\n", ui_util.format_number(count, 4), " ",
+          sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(count),
+          mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4), " ",
           {"tooltip.machines"}}}
 
         -- Add overlay to indicate if machine the machine count is rounded or not
@@ -194,11 +192,11 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
         local s = (item.fuel) and "fp_button_icon_medium_cyan" or style
 
         local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-            .. "_" .. item.id, sprite=item.type .. "/" .. item.name, style=s, mouse_button_filter={"left-and-right"}}
+           .. "_" .. item.id, sprite=item.sprite, style=s, mouse_button_filter={"left-and-right"}}
 
         -- Special handling for mining recipes
-        local tooltip_name = game[item.type .. "_prototypes"][item.name].localised_name
-        if item.type == "entity" then 
+        local tooltip_name = item.proto.localised_name
+        if item.proto.type == "entity" then 
             button.style = "fp_button_icon_medium_blank"
             tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
         end
@@ -209,7 +207,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
         if view.name == "items_per_timescale" then
             number = item.amount
         elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
-            local throughput = global.all_belts.belts[player_table.preferences.preferred_belt_id].throughput
+            local throughput = player_table.preferences.preferred_belt.throughput
             local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
             number = item.amount / divisor / timescale
         elseif view.name == "items_per_second" then
@@ -255,8 +253,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
     
     
     if alt then  -- Open item in FNEI
-        local recipe = global.all_recipes[player.force.name][line.recipe_name]
-        ui_util.fnei.show_recipe(recipe, Line.get_in_order(line, "Product"))
+        ui_util.fnei.show_recipe(line.recipe, Line.get_in_order(line, "Product"))
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
         -- Can't shift second line into the first position on subfloors
@@ -332,53 +329,43 @@ function handle_percentage_change(player, element)
 end
 
 
--- Local function to centralize machine changing instructions
-local function set_machine(floor, line, machine_id)
-    line.machine_id = machine_id
-    if line.subfloor then Floor.get(line.subfloor, "Line", 1).machine_id = machine_id
-    elseif line.id == 1 and floor.origin_line then floor.origin_line.machine_id = machine_id end
-end
-
 -- Handles the machine changing process
 function handle_machine_change(player, line_id, machine_id, click, direction)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
-
+    
     -- machine_id being nil means the user wants to change the machine of this (assembly) line
     if machine_id == nil then
         -- Change the machine to be one tier lower/higher if possible
         if direction ~= nil then
-            data_util.machines.change_machine(player, line, nil, direction)
+            data_util.machine.change(player, line, nil, direction)
             update_calculations(player, subfactory)
 
         -- Display all the options for this machine category
-        elseif click == "left" then
-            local category = global.all_machines.categories[line.category_id]
-            
+        elseif click == "left" then            
             -- Changing machines only makes sense if there are more than one in it's category
-            if #category.machines > 1 then
-                if #category.machines < 5 then  -- if there are more than 4 machines, no picker is needed
+            if #line.machine.category.machines > 1 then
+                if #line.machine.category.machines < 5 then  -- if there are more than 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
 
                 else  -- Open a chooser dialog presenting all machine choices
-                    local recipe = global.all_recipes[player.force.name][line.recipe_name]
                     ui_state.modal_data = {
                         title = {"label.machine"},
-                        text = {"", {"label.chooser_machine"}, " '", recipe.localised_name, "':"},
+                        text = {"", {"label.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
                         choices = {},
                         reciever_name = "machine",
                         effects_function = add_rounding_overlay
                     }
-                    for machine_id, machine in ipairs(category.machines) do
-                        if data_util.machines.is_applicable(player, category.id, machine_id, recipe.name) then
-                            local count = (line.production_ratio / (machine.speed / line.recipe_energy)) / subfactory.timescale
+                    for machine_id, machine in ipairs(line.machine.category.machines) do
+                        local machine = Machine.init_by_proto(machine)
+                        if data_util.machine.is_applicable(machine, line.recipe) then
+                            local count = (line.production_ratio / (machine.proto.speed / line.recipe.energy)) / subfactory.timescale
                             table.insert(ui_state.modal_data.choices, {
                                 name = machine_id,
-                                tooltip = {"", machine.localised_name, "\n", ui_util.format_number(count, 4)},
-                                sprite = "entity/" .. machine.name,
-                                count = count,
+                                tooltip = {"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4)},
+                                sprite = "entity/" .. machine.proto.name,
                                 number = math.ceil(count)
                             })
                         end
@@ -393,7 +380,8 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
     else
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
-            data_util.machines.change_machine(player, line, machine_id, nil)
+            local new_machine = global.all_machines.categories[line.machine.category.id].machines[machine_id]
+            data_util.machine.change(player, line, new_machine, nil)
             ui_state.current_activity = nil
             update_calculations(player, subfactory)
         end
@@ -405,7 +393,8 @@ end
 -- Recieves the result of a chooser user choice and applies it
 function apply_chooser_machine_choice(player, element_name)
     local context = get_context(player)
-    data_util.machines.change_machine(player, context.line, tonumber(element_name), nil)
+    local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(element_name)]
+    data_util.machine.change(player, context.line, machine, nil)
     update_calculations(player, context.subfactory)
 end
 
@@ -416,8 +405,10 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(item, click)
+
     elseif direction ~= nil then  -- Shift item in the given direction
         Line.shift(line, item, direction)
+        
     else
         if click == "right" and item.fuel then
             local ui_state = get_ui_state(player)
@@ -429,29 +420,27 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                 effects_function = nil
             }
 
-            local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
             -- Set different message depending on whether this fuel is on a line with a subfloor or not
             if line.subfloor == nil then
-                ui_state.modal_data.text = {"", {"label.chooser_fuel_line"}, " '", machine.localised_name, "':"}
+                ui_state.modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.localised_name, "':"}
             else
-                local fuel = global.all_fuels.fuels[global.all_fuels.map[item.name]]
-                ui_state.modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", fuel.localised_name, "':"}
+                ui_state.modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", line.fuel.localised_name, "':"}
             end
 
             -- Fill chooser dialog with elements
+            local old_fuel_id = global.all_fuels.map[item.proto.name]
             for new_fuel_id, fuel in pairs(global.all_fuels.fuels) do
                 local count, tooltip
                 if line.subfloor == nil then
-                    local energy_consumption = line.machine_count * (machine.energy * 60)
-                    count = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value)
-                    * ui_state.context.subfactory.timescale
-                    tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 4)}
+                    local energy_consumption = line.machine.count * (line.machine.energy * 60)
+                      count = ((energy_consumption / line.machine.burner.effectivity) / line.fuel.fuel_value)
+                      * ui_state.context.subfactory.timescale
+                    tooltip = {"", line.fuel.localised_name, "\n", ui_util.format_number(count, 4)}
                 else
                     count = nil
-                    tooltip = fuel.localised_name
+                    tooltip = line.fuel.localised_name
                 end
                 
-                local old_fuel_id = global.all_fuels.map[item.name]
                 table.insert(ui_state.modal_data.choices, {
                     name = old_fuel_id .. "_" .. new_fuel_id,  -- incorporate old fuel id for later use
                     tooltip = tooltip,
@@ -464,7 +453,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
             enter_modal_dialog(player, {type="chooser"})
 
         -- Pick recipe to produce said ingredient
-        elseif click == "left" and item.type ~= "entity" then
+        elseif click == "left" and item.proto.type ~= "entity" then
             if item.class == "Ingredient" then
                 enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
             elseif item.class == "Byproduct" then
@@ -479,35 +468,37 @@ end
 -- Recieves the result of a chooser user choice and applies it
 function apply_chooser_fuel_choice(player, fuel_element_name)
     -- Sets the given fuel_id on the given line
-    local function apply_fuel_to_line(line, fuel_id)
-        line.fuel_id = fuel_id
+    local function apply_fuel_to_line(line, fuel)
+        line.fuel = fuel
         if line.id == 1 and line.parent and line.parent.level > 1 then
-            line.parent.origin_line.fuel_id = fuel_id
+            line.parent.origin_line.fuel = fuel
         end
     end
     
     -- Sets the given fuel_id to all relevant lines on the given floor and all it's subfloors
-    local function apply_fuel_to_floor(floor, old_fuel_id, new_fuel_id)
+    local function apply_fuel_to_floor(floor, old_fuel, new_fuel)
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
             if line.subfloor == nil then
-                if line.fuel_id == old_fuel_id then
-                    apply_fuel_to_line(line, new_fuel_id)
+                if line.fuel == old_fuel then
+                    apply_fuel_to_line(line, new_fuel)
                 end
             else
-                apply_fuel_to_floor(line.subfloor, old_fuel_id, new_fuel_id)
+                apply_fuel_to_floor(line.subfloor, old_fuel, new_fuel)
             end
         end
     end
 
     -- Get the old and new fuel_id from the element_name
     local split = ui_util.split(fuel_element_name, "_")
-    local old_fuel_id, new_fuel_id = tonumber(split[1]), tonumber(split[2])
+    local fuels = global.all_fuels.fuels
+    local old_fuel = fuels[tonumber(split[1])]
+    local new_fuel = fuels[tonumber(split[2])]
     
     local context = get_context(player)
     if context.line.subfloor == nil then
-        apply_fuel_to_line(context.line, new_fuel_id)
+        apply_fuel_to_line(context.line, new_fuel)
     else
-        apply_fuel_to_floor(context.line.subfloor, old_fuel_id, new_fuel_id)
+        apply_fuel_to_floor(context.line.subfloor, old_fuel, new_fuel)
     end
 
     update_calculations(player, context.subfactory)

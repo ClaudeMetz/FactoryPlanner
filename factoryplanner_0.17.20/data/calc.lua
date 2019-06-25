@@ -1,5 +1,5 @@
 -- This file contains all code relating to calculating the production values for a subfactory
--- Also, this code sucks and I hate it
+-- Also, this code sucks and I hate it (this code has become really awful)
 calc = {
     aggregate = {}
 }
@@ -9,7 +9,7 @@ function calc.update(player, subfactory)
     -- Get products that need to be produced
     local required_products = calc.aggregate.init()
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local aggregate_item = calc.aggregate.item_init(product, nil, "Product", product.required_amount)
+        local aggregate_item = calc.aggregate.item_init(product, "Product", product.required_amount)
         aggregate_item.main = true
         calc.aggregate.add(required_products, aggregate_item)
     end
@@ -27,11 +27,9 @@ end
 -- Gets passed a partially filled aggregate containing the main products for this floor
 function calc.update_floor(player, subfactory, floor, aggregate)
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-        local recipe = global.all_recipes[player.force.name][line.recipe_name]
-
         -- If a line has a subfloor, it is calculated first, to then adjust the line itself with the subfloor result
         if line.subfloor ~= nil then
-            local subfloor_aggregate = calc.aggregate.init_with_recipe(aggregate, recipe, true, true)
+            local subfloor_aggregate = calc.aggregate.init_with_recipe(aggregate, line.recipe, true, true)
             local subfloor_result = calc.update_floor(player, subfactory, line.subfloor, subfloor_aggregate)
             calc.update_line(line, subfloor_result)
 
@@ -52,7 +50,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 return (item.ratio * production_ratio)
             end
 
-            local line_aggregate, item_count = calc.aggregate.init_with_recipe(aggregate, recipe, false, false)
+            local line_aggregate, item_count = calc.aggregate.init_with_recipe(aggregate, line.recipe, false, false)
             
             local production_ratio = 0
             if item_count == 0 then
@@ -86,7 +84,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                     if product.amount > aggregate_product.amount then
                         local overflow_amount = product.amount - aggregate_product.amount
                         product.amount = aggregate_product.amount
-                        calc.aggregate.add(line_aggregate, calc.aggregate.item_init(product, nil, "Byproduct", overflow_amount))
+                        calc.aggregate.add(line_aggregate, calc.aggregate.item_init(product, "Byproduct", overflow_amount))
                     end
                 end
                 
@@ -111,25 +109,23 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                     end
                 end
 
-                -- Machines (Same for machines and miners because the machine and line values are adjusted beforehand)
-                local machine = global.all_machines.categories[line.category_id].machines[line.machine_id]
-                line_aggregate.machine_count = (production_ratio / (machine.speed / line.recipe_energy)) / subfactory.timescale
+                -- Machine count (Same calculation for machines and miners because the machine and line values are adjusted beforehand)
+                line_aggregate.machine_count = (production_ratio / (line.machine.proto.speed / line.recipe.energy)) / subfactory.timescale
 
                 -- Energy consumption
-                local energy_consumption = line_aggregate.machine_count * (machine.energy * 60)
-                if machine.burner == nil then
+                local energy_consumption = line_aggregate.machine_count * (line.machine.proto.energy * 60)
+                local burner = line.machine.burner
+                if burner == nil then
                     line_aggregate.energy_consumption = energy_consumption
-                elseif machine.burner.categories["chemical"] then
-                    -- Only applies to lines without subfloor (lines with subfloor shouldn't have a fuel_id)
-                    line.fuel_id = line.fuel_id or get_preferences(player).preferred_fuel_id
-                    local fuel = global.all_fuels.fuels[line.fuel_id]
-                    local fuel_amount = ((energy_consumption / machine.burner.effectivity) / fuel.fuel_value) * subfactory.timescale
-                    local fuel_item = global.all_items[fuel.type][fuel.name]
+                elseif burner.categories["chemical"] then
+                    -- Only applies to lines without subfloor (lines with subfloor shouldn't have fuel)
+                    line.fuel = line.fuel or get_preferences(player).preferred_fuel
+                    local fuel_amount = ((energy_consumption / burner.effectivity) / line.fuel.fuel_value) * subfactory.timescale
                     
                     -- How this is added is silly and needs to be fixed with the future proper interface
-                    local item = Item.init(fuel_item, fuel.type, "Ingredient", fuel_amount)
+                    local item = Item.init_by_proto(line.fuel, "Ingredient", fuel_amount)
                     item.fuel = true
-                    calc.aggregate.add(line_aggregate, calc.aggregate.item_init(item, nil, "Ingredient", fuel_amount))
+                    calc.aggregate.add(line_aggregate, calc.aggregate.item_init(item, "Ingredient", fuel_amount))
                 end
 
             else  -- Reset the product counts
@@ -146,7 +142,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
     -- At the end, transform all outstanding (non-main) Products into Ingredients
     for _, product in pairs(calc.aggregate.get_in_order(aggregate, "Product")) do
         if not product.main then  -- main Products stay products to be transfered to a top-level Product
-            calc.aggregate.add(aggregate, calc.aggregate.item_init(product, nil, "Ingredient", product.amount))
+            calc.aggregate.add(aggregate, calc.aggregate.item_init(product, "Ingredient", product.amount))
             calc.aggregate.remove(aggregate, product)
         elseif floor.level > 1 then  -- the top floor does it's own processing related to the subfactory
             product.amount = product.required_amount - product.amount
@@ -176,7 +172,7 @@ end
 -- Updates a line with the results from its subfloor, conserving previous ordering
 function calc.update_line(line, result)
     line.energy_consumption = result.energy_consumption
-    line.machine_count = result.machine_count
+    line.machine.count = result.machine_count
     line.production_ratio = result.production_ratio
 
     classes = {"Product", "Byproduct", "Ingredient"}
@@ -203,7 +199,7 @@ function calc.update_item_collection(object, class, result)
     for _, result_item in pairs(calc.aggregate.get_in_order(result, class)) do
         if not result_item.touched then
             if not (object.class == "Subfactory" and result_item.amount == 0) then
-                local item = Item.init(result_item, result_item.type, class, result_item.amount)
+                local item = Item.init_by_item(result_item, class, result_item.amount)
                 item.fuel = result_item.fuel
                 _G[object.class].add(object, item)
             end
@@ -239,10 +235,10 @@ function calc.aggregate.init_with_recipe(main_aggregate, recipe, products_only, 
     local item_count = 0
     
     -- Products and Byproducts
-    for _, product in pairs(recipe.products) do
+    for _, product in pairs(recipe.proto.products) do
         local main_product = calc.aggregate.get(main_aggregate, "Product", product)
         if main_product ~= nil and main_product.type ~= "entity" then
-            local aggregate_product = calc.aggregate.item_init(product, nil, "Product", main_product.amount)
+            local aggregate_product = calc.aggregate.item_init(product, "Product", main_product.amount)
             if main then
                 aggregate_product.main = true
                 aggregate_product.required_amount = main_product.amount
@@ -252,18 +248,18 @@ function calc.aggregate.init_with_recipe(main_aggregate, recipe, products_only, 
             calc.aggregate.add(aggregate, aggregate_product)
         elseif not products_only then
             --item_count = item_count + 1
-            calc.aggregate.add(aggregate, calc.aggregate.item_init(product, nil, "Byproduct", 0))
+            calc.aggregate.add(aggregate, calc.aggregate.item_init(product, "Byproduct", 0))
         end
     end
     
     -- Ingredients
     if not products_only then
-        for _, ingredient in pairs(recipe.ingredients) do
+        for _, ingredient in pairs(recipe.proto.ingredients) do
             -- Check for recipes with the same items as both ingredients and products
             local product = calc.aggregate.get(aggregate, "Product", ingredient)
             if product and ingredient.type ~= "entity" then product.net = product.ratio - ingredient.amount end
             --item_count = item_count + 1
-            calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, nil, "Ingredient", 0))
+            calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, "Ingredient", 0))
         end
     end
     
@@ -271,8 +267,15 @@ function calc.aggregate.init_with_recipe(main_aggregate, recipe, products_only, 
 end
 
 -- Creates a special item to be put in an aggregate
-function calc.aggregate.item_init(base_item, item_type, class, amount)
-    local item = Item.init(base_item, item_type, class, amount)
+function calc.aggregate.item_init(base_item, class, amount)
+    local item
+    if base_item.proto then
+        item = Item.init_by_proto(base_item.proto, class, amount)
+    else
+        item = Item.init_by_item(base_item, class, amount)
+    end
+    item.type = item.proto.type
+    item.name = item.proto.name
     item.fuel = base_item.fuel
 
     if base_item.class then 
@@ -309,8 +312,12 @@ end
 
 -- Returns given item from the aggregate
 function calc.aggregate.get(aggregate, class, object)
-    local collection = aggregate[class][object.type]
-    return collection.datasets[collection.map[object.name]]
+    local t, name = object.type, object.name
+    if not object.type or type(object.type) == "table" then
+        t, name = object.proto.type, object.proto.name
+    end
+    local collection = aggregate[class][t]
+    return collection.datasets[collection.map[name]]
 end
 
 -- Returns items from all 3 types in one list
@@ -333,16 +340,16 @@ end
 function calc.aggregate.incorporate_line(aggregate, line)
     aggregate.energy_consumption = aggregate.energy_consumption + line.energy_consumption
     if line.gui_position == 1 then 
-        aggregate.machine_count = line.machine_count
+        aggregate.machine_count = line.machine.count
         aggregate.production_ratio = line.production_ratio
     end
 
     for _, product in pairs(Line.get_in_order(line, "Product")) do
-        calc.aggregate.add(aggregate, calc.aggregate.item_init(product, nil, "Product", -product.amount))
+        calc.aggregate.add(aggregate, calc.aggregate.item_init(product, "Product", -product.amount))
     end
 
     for _, byproduct in pairs(Line.get_in_order(line, "Byproduct")) do
-        calc.aggregate.add(aggregate, calc.aggregate.item_init(byproduct, nil, "Byproduct", byproduct.amount))
+        calc.aggregate.add(aggregate, calc.aggregate.item_init(byproduct, "Byproduct", byproduct.amount))
     end
 
     -- Ingredients get added as Products, minus the Byproducts being used up
@@ -359,7 +366,7 @@ function calc.aggregate.balance_byproducts_and_ingredients(aggregate, ingredient
             calc.aggregate.remove(aggregate, aggregate_byproduct)
 
         elseif ingredient.amount > aggregate_byproduct.amount then  -- remove byproduct, add less of the ingredient
-            calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, nil, "Product",
+            calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, "Product",
                 ingredient.amount - aggregate_byproduct.amount))
             calc.aggregate.remove(aggregate, aggregate_byproduct)
 
@@ -367,6 +374,6 @@ function calc.aggregate.balance_byproducts_and_ingredients(aggregate, ingredient
             aggregate_byproduct.amount = aggregate_byproduct.amount - ingredient.amount
         end
     else  -- add the ingredient in full
-        calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, nil, "Product", ingredient.amount))
+        calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, "Product", ingredient.amount))
     end
 end

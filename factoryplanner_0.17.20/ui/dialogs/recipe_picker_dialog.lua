@@ -7,21 +7,21 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"label.add_recipe"}
     flow_modal_dialog.style.bottom_margin = 8
 
-    local recipe, error, show = run_preliminary_checks(player, product)
+    local recipe_id, error, show = run_preliminary_checks(player, product)
     if error ~= nil then
         queue_message(player, error, "warning")
         exit_modal_dialog(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
-        if recipe ~= nil then
-            Floor.add(ui_state.context.floor, Line.init(player, recipe))
+        if recipe_id ~= nil then
+            Floor.add(ui_state.context.floor, Line.init(player, Recipe.init(recipe_id), nil))
             update_calculations(player, ui_state.context.subfactory)
             if show.message ~= nil then queue_message(player, show.message.string, show.message.type) end
             exit_modal_dialog(player, "cancel", {})
         
         else  -- Otherwise, show the appropriately filtered dialog
             picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
-            picker.refresh_search_bar(flow_modal_dialog, product.name, false)
+            picker.refresh_search_bar(flow_modal_dialog, product.proto.name, false)
             picker.refresh_warning_label(flow_modal_dialog, "")
             flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state = show.disabled
             flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state = show.hidden
@@ -47,10 +47,9 @@ end
 -- Reacts to a picker recipe button being pressed
 function handle_picker_recipe_click(player, button)
     local context = get_context(player)
-    local recipe_name = string.gsub(button.name, "fp_sprite%-button_picker_object_", "")
-    local recipe = global.all_recipes[player.force.name][recipe_name]
+    local recipe_id = tonumber(string.match(button.name, "%d+"))
     
-    Floor.add(context.floor, Line.init(player, recipe))
+    Floor.add(context.floor, Line.init(player, Recipe.init(recipe_id)))
     update_calculations(player, context.subfactory)
     exit_modal_dialog(player, "cancel", {})
 end
@@ -60,14 +59,23 @@ end
 -- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
 function run_preliminary_checks(player, product)
+    local force_recipes = player.force.recipes
     -- First determine all relevant recipes and the amount in each category (enabled and hidden)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
-    if item_recipe_map[product.type][product.name] ~= nil then  -- this being nil means that the item has no recipes
-        for _, recipe in pairs(global.all_recipes[player.force.name]) do
-            if recipe_produces_product(player, recipe, product.type, product.name) then
-                table.insert(relevant_recipes, recipe)
-                if not recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
+    if item_recipe_map[product.proto.type][product.proto.name] ~= nil then  -- this being nil means that the item has no recipes
+        for recipe_id, recipe in pairs(global.all_recipes.recipes) do
+            local force_recipe = force_recipes[recipe.name]
+            if recipe_produces_product(player, recipe, product.proto.type, product.proto.name) then
+                -- Only add recipes that exist on the current force
+                if force_recipe ~= nil then
+                    table.insert(relevant_recipes, recipe_id)
+                    if not force_recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
+            
+                -- Add custom recipes by default
+                elseif is_custom_recipe(recipe) then
+                    table.insert(relevant_recipes, recipe_id)
+                end
             end
         end
     end
@@ -83,11 +91,11 @@ function run_preliminary_checks(player, product)
     if #relevant_recipes == 0 then
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
-        local recipe = relevant_recipes[1]
-        if not recipe.enabled then  -- Show hint if adding unresearched recipe
+        local recipe_id = relevant_recipes[1]
+        if not force_recipes.enabled then  -- Show hint if adding unresearched recipe
             show.message={string={"label.hint_disabled_recipe"}, type="hint"}
         end
-        return recipe, nil, show
+        return recipe_id, nil, show
     else  -- 2+ relevant recipes
         return nil, nil, show
     end
@@ -95,8 +103,18 @@ end
 
 
 -- Returns all recipes
-function get_picker_recipes(player)
-    return global.all_recipes[player.force.name]
+function get_picker_recipes()
+    return global.all_recipes.recipes
+end
+
+-- Returns the string identifier for the given recipe
+function generate_recipe_identifier(recipe)
+    return recipe.id
+end
+
+-- Returns the recipe described by the identifier
+function get_recipe(identifier)
+    return global.all_recipes.recipes[tonumber(identifier)]
 end
 
 -- Generates the tooltip string for the given recipe
@@ -125,24 +143,31 @@ function generate_recipe_tooltip(recipe)
 end
 
 -- Returns true when the given recipe produces the given product
--- (Tries all types if no product type is given)
 function recipe_produces_product(player, recipe, product_type, product_name)
     -- Exclude barreling recipes according to preference
     if (get_preferences(player).ignore_barreling_recipes and (recipe.subgroup.name == "empty-barrel"
       or recipe.subgroup.name == "fill-barrel")) then
         return false
     else
+        -- Checks specific type, if it is given
         if product_type ~= nil then
-            return item_recipe_map[product_type][product_name][recipe.name] 
+            return (item_recipe_map[product_type][product_name][recipe.name] ~= nil)
+            
+        -- Otherwise, looks through all types
         else
-            local product_types = {"item", "fluid", "entity"}
+            local product_types = {"item", "fluid"}
             for _, type in ipairs(product_types) do
                 if item_recipe_map[type][product_name] ~= nil 
-                  and item_recipe_map[type][product_name][recipe.name] then
+                  and item_recipe_map[type][product_name][recipe.name] ~= nil then
                     return true
                 end
             end
             return false  -- return false if no product is found
         end
     end
+end
+
+-- Returns true if this recipe is a custom one
+function is_custom_recipe(recipe)
+    return (string.match(recipe.name, "^fp-.*") or string.match(recipe.name, "^impostor-.*"))
 end
