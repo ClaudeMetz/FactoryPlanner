@@ -6,11 +6,11 @@ require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
+require("data.handlers.migrator")
+require("data.handlers.generator")
+require("data.handlers.loader")
 require("data.util")
-require("data.generator")
-require("data.loader")
 require("data.calc")
-require("migrations.handler")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
 devmode = true  -- Enables certain conveniences for development

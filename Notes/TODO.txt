@@ -9,7 +9,6 @@ TODO Feature Improvements:
 
 TODO Code Improvements:
 - Move to a proper planning tool (Trello or similar)
-- restructure project folder structure
 - add a logging function that ignores parent (and similar) fields
 - add stashing and stash popping to the checkout_branch script
 - top level items should adjust according to the view too
