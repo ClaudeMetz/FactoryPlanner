@@ -97,23 +97,21 @@ function Collection.shift(self, main_dataset, direction)
 end
 
 -- Updates the validity of all datasets in this Collection
-function Collection.update_validity(self, player, class)
+function Collection.update_validity(self, class)
     local valid = true
     for _, dataset in pairs(self.datasets) do
-        if not _G[class].update_validity(dataset, player) then
+        if not _G[class].update_validity(dataset) then
             valid = false
         end
     end
     return valid
 end
 
--- Removes any invalid datasets from the Collection
-function Collection.remove_invalid_datasets(self, player, parent, attempt_repair)
+-- Removes any invalid, unrepairable datasets from the Collection
+function Collection.repair_invalid_datasets(self, player, parent)
     for _, dataset in pairs(self.datasets) do
-        if not dataset.valid then
-            if not (attempt_repair and _G[dataset.class].attempt_repair(dataset, player)) then
-                _G[parent.class].remove(parent, dataset)
-            end
+        if not dataset.valid and not _G[dataset.class].attempt_repair(dataset, player) then
+            _G[parent.class].remove(parent, dataset)
         end
     end
 end

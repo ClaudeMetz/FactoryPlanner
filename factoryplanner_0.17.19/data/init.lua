@@ -1,5 +1,7 @@
 require("data.classes.Collection")
 require("data.classes.Item")
+require("data.classes.Recipe")
+require("data.classes.Machine")
 require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
@@ -10,17 +12,22 @@ require("data.loader")
 require("data.calc")
 require("migrations.handler")
 
-margin_of_error = 1e-8  -- Margin of error for floating poing calculations
---devmode = true  -- Enables certain conveniences for development
+margin_of_error = 1e-8  -- Margin of error for floating point calculations
+devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
-
-    -- Run through the loader without need to apply (run) it on any player
+    
+    -- Run through the loader without the need to apply (run) it on any player
     loader.setup()
     loader.finish()
+
+    -- Create player tables for all existing players
+    for index, player in pairs(game.players) do
+        update_player_table(player, global)
+    end
 end
 
 -- Runs through all updates that need to be made after the config changed
@@ -30,17 +37,17 @@ function handle_configuration_change()
 
     -- Runs through all players, even new ones (those with no player_table)
     for index, player in pairs(game.players) do
-        attempt_player_table_migration(player)  -- Migrate player_table data
-        update_player_table(player)  -- Create or update player_table
+        -- Migrate player_table data
+        attempt_player_table_migration(player)
         
-        local player_table = global.players[index]
-        loader.run(player_table)  -- Run the loader on the player
+        -- Create or update player_table
+        local player_table = update_player_table(player, new)
+
+        -- Run the loader on the player
+        loader.run(player_table)
 
         player_gui_reset(player)  -- Destroys all existing GUI's
         player_gui_init(player)  -- Initializes some parts of the GUI
-        
-        -- Update validity of the whole factory (no repair yet)
-        Factory.update_validity(player_table.factory, player)
 
         -- Update calculations in case some recipes changed
         for _, subfactory in ipairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
@@ -58,10 +65,11 @@ end
 
 
 -- Makes sure that the given player has a player_table and a reset gui state
-function update_player_table(player)
+-- The table attribute specified what table the data should be loaded from (either global or new)
+function update_player_table(player, table)
     local function reload_data()
         reload_settings(player)  -- reloads the settings of the player
-        reload_preferences(player) -- reloads and adjusts the player's preferences
+        reload_preferences(player, table) -- reloads and adjusts the player's preferences
         reset_ui_state(player)  -- Resets the player's UI state
     end
 
@@ -80,9 +88,6 @@ function update_player_table(player)
         player_table.ui_state = {}
         reload_data()
 
-        -- Creates recipes if there are none for the force of this player
-        global.all_recipes = generator.all_recipes(false)
-
         queue_message(player, {"label.hint_tutorial"}, "hint")
 
     else  -- existing player, only need to update
@@ -92,6 +97,8 @@ function update_player_table(player)
         local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
         if #subfactories > 0 then data_util.context.set_subfactory(player, subfactories[1]) end
     end
+    
+    return player_table
 end
 
 -- Writes the current user mod settings to their player_table
@@ -110,13 +117,13 @@ function reload_settings(player)
 end
 
 -- Reloads the user preferences, incorporating previous preferences if possible
-function reload_preferences(player)
+function reload_preferences(player, table)
     local preferences = global.players[player.index].preferences
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.enable_recipe_comments = preferences.enable_recipe_comments or false
-    preferences.preferred_belt_id = preferences.preferred_belt_id or data_util.base_data.preferred_belt()
-    preferences.preferred_fuel_id = preferences.preferred_fuel_id or data_util.base_data.preferred_fuel()
-    preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines()
+    preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
+    preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
+    preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines(table)
 end
 
 -- (Re)sets the UI state of the given player

@@ -67,9 +67,9 @@ function Floor.shift(self, dataset, direction)
 end
 
 -- Update validity of this floor and its subfloors
-function Floor.update_validity(self, player)
+function Floor.update_validity(self)
     local classes = {Line = "Line"}
-    self.valid = data_util.run_validation_updates(player, self, classes)
+    self.valid = data_util.run_validation_updates(self, classes)
     return self.valid
 end
 
@@ -78,7 +78,7 @@ function Floor.attempt_repair(self, player)
     self.valid = true
     
     local classes = {Line = "Line"}
-    data_util.run_invalid_dataset_removal(player, self, classes, true)
+    data_util.run_invalid_dataset_repair(player, self, classes)
 
     -- Remove floor if there are no recipes except the top one left
     if self.level > 1 and self.Line.count == 1 then

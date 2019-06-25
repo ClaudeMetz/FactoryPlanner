@@ -69,11 +69,10 @@ function refresh_preferences_dialog(player)
 
     for belt_id, belt in pairs(global.all_belts.belts) do
         local button_belt = table_all_belts.add{type="sprite-button", name="fp_sprite-button_preferences_belt_"
-          .. belt_id, sprite="entity/" .. belt.name, mouse_button_filter={"left"}}
+          .. belt_id, sprite=belt.sprite, mouse_button_filter={"left"}}
           
         local tooltip = belt.localised_name
-        local preferred_belt_id = get_preferences(player).preferred_belt_id
-        if preferred_belt_id == belt_id then
+        if get_preferences(player).preferred_belt == belt then
             button_belt.style = "fp_button_icon_medium_green"
             tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
         else 
@@ -88,11 +87,10 @@ function refresh_preferences_dialog(player)
 
     for fuel_id, fuel in pairs(global.all_fuels.fuels) do
         local button_fuel = table_all_fuels.add{type="sprite-button", name="fp_sprite-button_preferences_fuel_"
-          .. fuel_id, sprite="item/" .. fuel.name, mouse_button_filter={"left"}}
-          
+          .. fuel_id, sprite=fuel.sprite, mouse_button_filter={"left"}}
+    
         local tooltip = fuel.localised_name
-        local preferred_fuel_id = get_preferences(player).preferred_fuel_id
-        if preferred_fuel_id == fuel_id then
+        if get_preferences(player).preferred_fuel == fuel then
             button_fuel.style = "fp_button_icon_medium_green"
             tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
         else 
@@ -114,8 +112,7 @@ function refresh_preferences_dialog(player)
                   .. category_id .. "_" .. machine_id, sprite="entity/" .. machine.name, mouse_button_filter={"left"}}
                   
                 local tooltip = machine.localised_name
-                local default_machine_id = data_util.machines.get_default(player, category_id)
-                if default_machine_id == machine_id then
+                if data_util.machine.get_default(player, category) == machine then
                     button_machine.style = "fp_button_icon_medium_green"
                     tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
                 else 
@@ -130,18 +127,18 @@ end
 
 -- Changes the default machine of the given category
 function handle_preferences_machine_change(player, category_id, id)
-    data_util.machines.set_default(player, category_id, id)
+    data_util.machine.set_default(player, category_id, id)
     refresh_preferences_dialog(player)
 end
 
 -- Changes the preferred belt
 function handle_preferences_belt_change(player, id)
-    get_preferences(player).preferred_belt_id = id
+    get_preferences(player).preferred_belt = global.all_belts.belts[id]
     refresh_preferences_dialog(player)
 end
 
 -- Changes the preferred fuel
 function handle_preferences_fuel_change(player, id)
-    get_preferences(player).preferred_fuel_id = id
+    get_preferences(player).preferred_fuel = global.all_fuels.fuels[id]
     refresh_preferences_dialog(player)
 end

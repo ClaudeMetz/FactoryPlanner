@@ -16,9 +16,10 @@ script.on_configuration_changed(function()
     handle_configuration_change()
 end)
 
--- Creates a lua-global variable containing the item_recipe_map for faster recipe picker searches
+-- Creates some lua-global tables for convenience and performance
 script.on_load(function()
     item_recipe_map = generator.item_recipe_map()
+    item_groups = generator.item_groups()
 end)
 
 -- Fires when a player loads into a game for the first time
@@ -26,7 +27,7 @@ script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
     -- Sets up the player_table for the new player
-    update_player_table(player)
+    update_player_table(player, global)
 
     -- Sets up the GUI for the new player
     player_gui_init(player)
@@ -66,12 +67,13 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 end)
 
 
--- Sets the custom space science recipe to enabled when rockets are researched
+-- Update the recipe prototypes when new technologies are researched
 script.on_event(defines.events.on_research_finished, function(event)
     local force_name = event.research.force.name
 
+    -- Custom handling for the custom space science recipe
     if event.research.name == "space-science-pack" then
-        global.all_recipes[force_name]["fp-space-science-pack"].enabled = true
+        global.all_recipes.recipes[global.all_recipes.map["fp-space-science-pack"]].enabled = true
     end
 end)
 
@@ -278,18 +280,18 @@ script.on_event(defines.events.on_gui_click, function(event)
             local timescale = tonumber(string.match(event.element.name, "%d+"))
             handle_subfactory_timescale_change(player, timescale)
             
-        -- Reacts to any subfactory_pane item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-zA-Z0-9-]+_%d+$") then  --
+        -- Reacts to any subfactory_pane item button being pressed (class name being a string is fine)
+        elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-zA-Z]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, event.alt)
 
         -- Reacts to a item group button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_[a-zA-Z0-9-_]+$") then  --
-            local item_group_name = string.gsub(event.element.name, "fp_sprite%-button_item_group_", "")
-            picker.select_item_group(player, object_type, item_group_name)
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_%d+$") then
+            local item_group_id = tonumber(string.match(event.element.name, "%d+"))
+            picker.select_item_group(player, object_type, item_group_id)
 
-        -- Reacts to a picker object button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[a-zA-Z0-9-]+$") then  --
+        -- Reacts to a picker object button being pressed (the variable can me one or more ids)
+        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[0-9_]+$") then
             _G["handle_picker_" .. object_type .. "_click"](player, event.element)
 
         -- Reacts to a chooser element button being pressed
@@ -333,8 +335,8 @@ script.on_event(defines.events.on_gui_click, function(event)
             local fuel_id = tonumber(string.match(event.element.name, "%d+"))
             handle_preferences_fuel_change(player, fuel_id)
 
-        -- Reacts to any (assembly) line item button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z-]+_%d+$") then  --
+        -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
             handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
         
