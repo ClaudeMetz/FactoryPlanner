@@ -1,6 +1,6 @@
---require("migration_0_17_0")
-require("migration_0_17_13")
-require("migration_0_17_21")
+--require("migrations.migration_0_17_0")
+require("migrations.migration_0_17_13")
+require("migrations.migration_0_17_21")
 
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
