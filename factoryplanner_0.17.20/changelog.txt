@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Changes:
-    - (This is an experimental release. It will probably break some stuff.)
+    - (This is an experimental release. It will probably break some stuff)
     - Made migration when adding/removing/updating mods more solid
   Bugfixes:
     - Fixed a crash when adding Factory Planner to an existing save

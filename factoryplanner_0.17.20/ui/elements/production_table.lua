@@ -422,29 +422,30 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
             -- Set different message depending on whether this fuel is on a line with a subfloor or not
             if line.subfloor == nil then
-                ui_state.modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.localised_name, "':"}
+                ui_state.modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
             else
-                ui_state.modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", line.fuel.localised_name, "':"}
+                ui_state.modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
             end
 
             -- Fill chooser dialog with elements
             local old_fuel_id = global.all_fuels.map[item.proto.name]
+            local machine = line.machine
             for new_fuel_id, fuel in pairs(global.all_fuels.fuels) do
                 local count, tooltip
                 if line.subfloor == nil then
-                    local energy_consumption = line.machine.count * (line.machine.energy * 60)
-                      count = ((energy_consumption / line.machine.burner.effectivity) / line.fuel.fuel_value)
+                    local energy_consumption = machine.count * (machine.proto.energy * 60)
+                      count = ((energy_consumption / machine.proto.burner.effectivity) / fuel.fuel_value)
                       * ui_state.context.subfactory.timescale
-                    tooltip = {"", line.fuel.localised_name, "\n", ui_util.format_number(count, 4)}
+                    tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 4)}
                 else
                     count = nil
-                    tooltip = line.fuel.localised_name
+                    tooltip = fuel.localised_name
                 end
                 
                 table.insert(ui_state.modal_data.choices, {
                     name = old_fuel_id .. "_" .. new_fuel_id,  -- incorporate old fuel id for later use
                     tooltip = tooltip,
-                    sprite = fuel.type .. "/" .. fuel.name,
+                    sprite = fuel.sprite,
                     number = count
                 })
             end

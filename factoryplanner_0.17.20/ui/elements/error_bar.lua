@@ -40,5 +40,5 @@ function handle_subfactory_repair(player)
     local subfactory = get_context(player).subfactory
     Subfactory.attempt_repair(subfactory, player)
     update_calculations(player, subfactory)
-    refresh_subfactory_bar(player, true)
+    refresh_main_dialog(player)
 end

@@ -12,12 +12,21 @@ function Recipe.init(recipe_id)
     }
 end
 
+-- Updates the given recipe with a new proto
+function Recipe.update(self, proto)
+    self.proto = proto
+    self.energy = proto.energy
+    self.sprite = ui_util.generate_recipe_sprite(proto)
+end
+
 
 -- Update the validity of this recipe
 function Recipe.update_validity(self)
-    local new_recipe_id = new.all_recipes.map[self.proto.name]
+    local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
+    local new_recipe_id = new.all_recipes.map[proto_name]
+    
     if new_recipe_id ~= nil then
-        self.proto = new.all_recipes.recipes[new_recipe_id]
+        Recipe.update(self, new.all_recipes.recipes[new_recipe_id])
         self.valid = true
     else
         self.proto = self.proto.name
@@ -32,8 +41,7 @@ end
 function Recipe.attempt_repair(self, player)
     local current_recipe_id = global.all_recipes.map[self.proto]
     if current_recipe_id ~= nil then
-        self.proto = global.all_recipes.recipes[current_recipe_id]
-        self.sprite = ui_util.generate_recipe_sprite(self.proto)
+        Recipe.update(self, global.all_recipes.recipes[current_recipe_id])
         self.valid = true
     end
 

@@ -49,11 +49,6 @@ function handle_configuration_change()
         player_gui_reset(player)  -- Destroys all existing GUI's
         player_gui_init(player)  -- Initializes some parts of the GUI
 
-        -- Update calculations in case some recipes changed
-        for _, subfactory in ipairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
-            if subfactory.valid then update_calculations(player, subfactory) end
-        end
-
         -- Update custom space science recipe state
         local space_tech = player.force.technologies["space-science-pack"].researched
         if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
@@ -61,6 +56,13 @@ function handle_configuration_change()
 
     -- Complete loader process by saving new data to global
     loader.finish()
+
+    -- Update factory calculations in case some numbers changed
+    for index, player in pairs(game.players) do
+        for _, subfactory in ipairs(Factory.get_in_order(global.players[index].factory, "Subfactory")) do
+            if subfactory.valid then update_calculations(player, subfactory) end
+        end
+    end
 end
 
 
