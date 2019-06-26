@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 00
+Version: 0.17.23
+Date: 26. 06. 2019
   Bugfixes:
     - Fixed crash when loading a save
     - Fixed machine changing not working correctly
