@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.22
+Date: 26. 06. 2019
   Bugfixes:
     - Fix crash when loading an existing save (related to view states)
 
