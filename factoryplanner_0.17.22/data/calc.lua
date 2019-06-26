@@ -199,7 +199,12 @@ function calc.update_item_collection(object, class, result)
     for _, result_item in pairs(calc.aggregate.get_in_order(result, class)) do
         if not result_item.touched then
             if not (object.class == "Subfactory" and result_item.amount == 0) then
-                local item = Item.init_by_item(result_item, class, result_item.amount)
+                local item = nil
+                if result_item.proto then
+                    item = Item.init_by_proto(result_item.proto, class, result_item.amount)
+                else
+                    item = Item.init_by_item(result_item, class, result_item.amount)
+                end
                 item.fuel = result_item.fuel
                 _G[object.class].add(object, item)
             end

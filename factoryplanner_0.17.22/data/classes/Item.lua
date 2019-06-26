@@ -15,18 +15,17 @@ function Item.init_by_proto(proto, class, amount)
     }
 end
 
--- Updates the given item with a new proto
-function Item.update(self, proto)
-    self.proto = proto
-    self.sprite = (proto.type .. "/" .. proto.name)
-end
-
-
 -- Initialised by passing a basic item table {name, type, amount}
 function Item.init_by_item(item, class, amount)
     local type = global.all_items.types[global.all_items.map[item.type]]
     local proto = type.items[type.map[item.name]]
     return Item.init_by_proto(proto, class, amount)
+end
+
+-- Updates the given item with a new proto
+function Item.update(self, proto)
+    self.proto = proto
+    self.sprite = (proto.type .. "/" .. proto.name)
 end
 
 
