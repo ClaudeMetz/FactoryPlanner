@@ -175,6 +175,9 @@ function data_util.calculate_item_button_number(player_table, view, amount, type
     local timescale = player_table.ui_state.context.subfactory.timescale
     if view == nil then
         local view_state = player_table.ui_state.view_state
+        -- If the view state hasn't been initialised yet, assume the default
+        -- (This gets re-run when the view state gets initialised)
+        if view_state == nil then return amount end
         view = view_state[view_state.selected_view_id]
     end
 

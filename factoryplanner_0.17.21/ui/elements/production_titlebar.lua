@@ -94,7 +94,10 @@ function refresh_production_pane(player)
         end
         
         -- Update the dynamic parts of the view state buttons
+        local state_existed = (ui_state.view_state ~= nil)
         refresh_view_state(player, subfactory)
+        -- Refresh subfactory pane to update it with the selected state
+        if not state_existed then refresh_subfactory_pane(player) end
 
         for _, view in ipairs(ui_state.view_state) do
             local button = table_view["fp_button_production_titlebar_view_" .. view.name]
