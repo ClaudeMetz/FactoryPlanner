@@ -57,8 +57,11 @@ end
 -- Tries to repair this machine, deletes it otherwise (by returning false)
 -- If this is called, the machine is invalid and has a string saved to proto (and maybe to category)
 function Machine.attempt_repair(self, player)
+    -- If the category is nil, this machine is not repairable
+    if self.category == nil then
+        return false
     -- First, try and repair the category if necessary
-    if type(self.category) == "string" then
+    elseif type(self.category) == "string" then
         local current_category_id = global.all_machines.map[self.category]
         if current_category_id ~= nil then
             self.category = global.all_machines.categories[current_category_id]

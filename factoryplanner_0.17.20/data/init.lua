@@ -13,7 +13,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
-devmode = true  -- Enables certain conveniences for development
+--devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -131,12 +131,12 @@ end
 
 -- (Re)sets the UI state of the given player
 function reset_ui_state(player)
+    local player_table = global.players[player.index]
+
     -- Delete the whole table first in case ui_state parameter got removed
-    global.players[player.index].ui_state = {}
+    player_table.ui_state = {}
     local ui_state_table = global.players[player.index].ui_state
-
-    ui_util.recalculate_main_dialog_dimensions(player)
-
+    
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.selected_object = nil  -- The object relevant for a modal dialog
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
@@ -144,8 +144,12 @@ function reset_ui_state(player)
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.queued_message = nil  -- The next general message to be displayed
     ui_state_table.recipe_filter_preferences = 
-      {disabled = false, hidden = false}  -- The preferred state of both recipe filters
+    {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
+    
+    ui_util.recalculate_main_dialog_dimensions(player)
+    --[[ data_util.context.set_subfactory(player, Factory.get(player_table.factory, "Subfactory", 1))
+    if devmode then refresh_view_state(player, ui_state_table.context.subfactory) end ]]
 end
 
 

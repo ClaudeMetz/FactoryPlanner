@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Changes:
     - (This is an experimental release. It will probably break some stuff)
     - Made migration when adding/removing/updating mods more solid
+    - Top level ingredients/products/byproducts now display their numbers according to the current view
   Bugfixes:
     - Fixed a crash when adding Factory Planner to an existing save
 

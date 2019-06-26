@@ -88,7 +88,7 @@ end)
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
     change_view_state(player, nil)
-    refresh_production_pane(player)
+    refresh_main_dialog(player)
 end)
 
 

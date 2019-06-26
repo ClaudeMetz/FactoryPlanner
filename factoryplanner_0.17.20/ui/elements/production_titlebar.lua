@@ -92,12 +92,10 @@ function refresh_production_pane(player)
         if floor.Line.count > 0 then
             table_titlebar["label_production_titlebar_level"].caption = {"", {"label.level"}, " ", floor.level, "  "}
         end
-
-        -- Configure view buttons
-        table_view.visible = (floor.Line.count > 0)
         
         -- Update the dynamic parts of the view state buttons
         refresh_view_state(player, subfactory)
+
         for _, view in ipairs(ui_state.view_state) do
             local button = table_view["fp_button_production_titlebar_view_" .. view.name]
 
@@ -190,13 +188,12 @@ function change_view_state(player, view_name)
     -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
     local main_dialog = player.gui.center["fp_frame_main_dialog"]
     if not main_dialog or not main_dialog.visible then return end
-    local table_view_selection = main_dialog["flow_production_pane"]["table_production_titlebar"]
-      ["table_production_titlebar_view_selection"]
+    local table_titlebar = main_dialog["flow_production_pane"]["table_production_titlebar"]
     if not (main_dialog["flow_production_pane"] and main_dialog["flow_production_pane"]["table_production_titlebar"]
-     and table_view_selection) then return end
+     and table_titlebar["table_production_titlebar_view_selection"]) then return end
 
     -- Only change the view_state if it exists and is visible
-    if ui_state.view_state ~= nil and table_view_selection.visible then
+    if ui_state.view_state ~= nil and table_titlebar.visible then
         local id_to_select = nil
         for i, view in ipairs(ui_state.view_state) do
             -- Move selection on by one if no view_name is provided

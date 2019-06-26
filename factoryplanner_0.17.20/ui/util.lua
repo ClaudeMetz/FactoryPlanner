@@ -55,6 +55,8 @@ end
 
 -- Formats given number to given number of significant digits
 function ui_util.format_number(number, precision)
+    if number == nil then return nil end
+    
     -- To avoid scientific notation, chop off the decimals points for big numbers
     if (number / (10 ^ precision)) > 1 then
         return ("%d"):format(number)
