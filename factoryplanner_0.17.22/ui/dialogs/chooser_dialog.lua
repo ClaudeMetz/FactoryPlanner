@@ -16,7 +16,11 @@ function open_chooser_dialog(flow_modal_dialog)
           sprite=choice.sprite, tooltip=choice.tooltip, number=choice.number, 
           style="fp_button_icon_large_recipe", mouse_button_filter={"left"}}
 
-        if effects_function ~= nil then effects_function(player, button, choice) end
+        if effects_function ~= nil then
+            choice.sprite_size = 36  -- add sprite size to adjust effect size dynamically
+            effects_function(player, button, choice)
+        
+        end
     end
 end
 

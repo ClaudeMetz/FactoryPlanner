@@ -155,30 +155,35 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
           {"tooltip.machines"}}}
 
         -- Add overlay to indicate if machine the machine count is rounded or not
-        add_rounding_overlay(player, button, {count = count})
+        add_rounding_overlay(player, button, {count = count, sprite_size = 32})
     end
 end
 
 -- Function that adds the rounding indication to the given button
 function add_rounding_overlay(player, button, data)
     -- Add overlay to indicate if machine the machine count is rounded or not
-    local rounding_threshold =  get_settings(player).indicate_rounding
+    local rounding_threshold = get_settings(player).indicate_rounding
     if rounding_threshold > 0 then  -- it being 0 means the setting is disabled
         local sprite = nil
-        if data.count ~= 0 and data.count ~= math.floor(data.count) then
-            if (data.count - math.floor(data.count)) < rounding_threshold then
-                sprite = "fp_sprite_red_arrow_down"
-                button.number = math.floor(data.count)
-            elseif (math.ceil(data.count) - data.count) > rounding_threshold then
+        local count = data.count
+        if count ~= 0 and count ~= math.floor(count) then
+            if (math.ceil(count) - count) > rounding_threshold then
                 sprite = "fp_sprite_green_arrow_up"
+            elseif (count - math.floor(count)) < rounding_threshold then
+                sprite = "fp_sprite_red_arrow_down"
+                button.number = math.floor(count)
             end
         end
 
         if sprite ~= nil then
             local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite}
+            overlay.ignored_by_interaction = true
             overlay.resize_to_sprite = false
-            overlay.style.height = 10
-            overlay.style.width = 10
+
+            -- Set size dynamically according to the button sprite size
+            local size = math.floor(data.sprite_size / 3.2)
+            overlay.style.height = size
+            overlay.style.width = size
         end
     end
 end
@@ -337,6 +342,8 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
             if #line.machine.category.machines > 1 then
                 if #line.machine.category.machines < 5 then  -- if there are more than 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
+                    ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+                    refresh_main_dialog(player)
 
                 else  -- Open a chooser dialog presenting all machine choices
                     ui_state.modal_data = {
@@ -354,15 +361,15 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                                 name = machine_id,
                                 tooltip = {"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4)},
                                 sprite = "entity/" .. machine.proto.name,
-                                number = math.ceil(count)
+                                number = math.ceil(count),
+                                count = count -- actual count to display rounding on the chooser
                             })
                         end
                     end
 
+                    ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                     enter_modal_dialog(player, {type="chooser"})
                 end
-
-                ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
             end
         end
     else
