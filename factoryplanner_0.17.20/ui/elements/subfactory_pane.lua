@@ -72,13 +72,15 @@ function refresh_item_table(player, class)
     local subfactory = get_context(player).subfactory
     if subfactory[class].count > 0 then
         for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
-            local item_specifics = _G["get_" .. ui_name .. "_specifics"](item)
+            local item_specifics = _G["get_" .. ui_name .. "_specifics"](get_table(player), item)
             
-            if item_specifics.number == 0 or item_specifics.number > margin_of_error then
+            if item_specifics.number == nil or item_specifics.number == 0 or item_specifics.number > margin_of_error then
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
                   .. item.id, sprite=item.sprite, mouse_button_filter={"left-and-right"}}
 
-                button.number = item_specifics.number
+                if item_specifics.number == nil then button.number = nil
+                else button.number = ("%.4g"):format(item_specifics.number) end
+                
                 button.tooltip = item_specifics.tooltip
                 button.style = item_specifics.style
             end
@@ -92,12 +94,10 @@ end
 
 -- **** INGREDIENTS ****
 -- Returns necessary details to complete the item button for an ingredient
-function get_ingredient_specifics(ingredient)
-    return {
-        number = ingredient.amount,
-        tooltip = generate_top_level_item_tooltip(ingredient),
-        style = "fp_button_icon_large_blank"
-    }
+function get_ingredient_specifics(player_table, ingredient)
+    local specifics = generate_top_level_item_parameters(player_table, ingredient)
+    specifics.style = "fp_button_icon_large_blank"
+    return specifics
 end
 
 -- Opens clicked element in FNEI or shifts it left or right
@@ -117,7 +117,7 @@ end
 
 -- **** PRODUCTS ****
 -- Returns necessary details to complete the item button for a product
-function get_product_specifics(product)
+function get_product_specifics(player_table, product)
     local style
     if product.amount == 0 then
         style = "fp_button_icon_large_red"
@@ -129,14 +129,21 @@ function get_product_specifics(product)
         style = "fp_button_icon_large_cyan"
     end
 
-    local number = (product.required_amount < margin_of_error) and 0 or product.required_amount
-    local tooltip = {"", generate_top_level_item_tooltip(product), " / ",
-      ui_util.format_number(product.required_amount, 4)}
-    return {
-        number = number,
-        tooltip = tooltip,
-        style = style
-    }
+    -- This is all a bit hacky
+    local specifics = generate_top_level_item_parameters(player_table, product)
+    local number = data_util.calculate_item_button_number(player_table, nil, product.required_amount, product.type.name)
+    local tooltip
+    if number == nil then
+        tooltip = generate_top_level_item_name(product)
+    else
+        number = (number < margin_of_error) and 0 or number
+        tooltip = {"", specifics.tooltip, " / ", ui_util.format_number(number, 4)}
+    end
+    
+    specifics.number = number
+    specifics.tooltip = tooltip
+    specifics.style = style
+    return specifics
 end
 
 -- Adds the button to add a product to the table
@@ -176,12 +183,10 @@ end
 
 -- **** BYPRODUCTS ****
 -- Returns necessary details to complete the item button for a byproduct
-function get_byproduct_specifics(byproduct)
-    return {
-        number = byproduct.amount,
-        tooltip = generate_top_level_item_tooltip(byproduct),
-        style = "fp_button_icon_large_red"
-    }
+function get_byproduct_specifics(player_table, byproduct)
+    local specifics = generate_top_level_item_parameters(player_table, byproduct)
+    specifics.style = "fp_button_icon_large_red"
+    return specifics
 end
 
 
@@ -211,13 +216,23 @@ end
 
 
 -- Generates an appropriate tooltip for the given item
-function generate_top_level_item_tooltip(item)
-    local localised_name = nil
+function generate_top_level_item_parameters(player_table, item)
+    local localised_name = generate_top_level_item_name(item)
+    local number = data_util.calculate_item_button_number(player_table, nil, item.amount, item.type.name)
+    local tooltip = (number == nil) and localised_name or {"", localised_name, "\n", ui_util.format_number(number, 4)}
+
+    return {
+        number = number,
+        tooltip = tooltip
+    }
+end
+
+-- Generates the name to be included in the item tooltip
+function generate_top_level_item_name(item)
     -- Special handling for mining recipes
     if item.proto.type == "entity" then
-        localised_name = {"", {"label.raw"}, " ", item.proto.localised_name}
+        return {"", {"label.raw"}, " ", item.proto.localised_name}
     else
-        localised_name = item.proto.localised_name
+        return item.proto.localised_name
     end
-    return {"", localised_name, "\n", ui_util.format_number(item.amount, 4)}
 end

@@ -112,10 +112,8 @@ function Line.attempt_repair(self, player)
 
     -- Repair Machine
     if self.valid and not self.machine.valid and not Machine.attempt_repair(self.machine) then
-        -- No category means that it could not be repaired
-        if self.machine.category == nil then
-            -- If the line is still valid here, it has a valid recipe
-            if self.valid then
+        if self.machine.category == nil then  -- No category means that it could not be repaired
+            if self.valid then  -- If the line is still valid here, it has a valid recipe
                 -- Replace this line with a new one (with a new category)
                 Floor.replace(self.parent, self, Line.init(player, self.recipe, nil))
             end

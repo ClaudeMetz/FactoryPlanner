@@ -168,6 +168,30 @@ function data_util.determine_product_amount(base_product)
     end
 end
 
+-- Returns the number to put on an item button according to the current view
+function data_util.calculate_item_button_number(player_table, view, amount, type)
+    local number = nil
+
+    local timescale = player_table.ui_state.context.subfactory.timescale
+    if view == nil then
+        local view_state = player_table.ui_state.view_state
+        view = view_state[view_state.selected_view_id]
+    end
+
+    if view.name == "items_per_timescale" then
+        number = amount
+    elseif view.name == "belts_or_lanes" and type ~= "fluid" then
+        local throughput = player_table.preferences.preferred_belt.throughput
+        local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
+        number = amount / divisor / timescale
+    elseif view.name == "items_per_second" then
+        number = amount / timescale
+    end
+
+    return number  -- number might be nil here
+end
+
+
 -- Logs given table shallowly, excluding the parent attribute
 function data_util.log(table)
     local s = "\n{\n"

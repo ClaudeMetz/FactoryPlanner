@@ -201,18 +201,9 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
         end
 
-        local number = nil
-        local timescale = player_table.ui_state.context.subfactory.timescale
-        local view = player_table.ui_state.view_state[player_table.ui_state.view_state.selected_view_id]
-        if view.name == "items_per_timescale" then
-            number = item.amount
-        elseif view.name == "belts_or_lanes" and item.type ~= "fluid" then
-            local throughput = player_table.preferences.preferred_belt.throughput
-            local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
-            number = item.amount / divisor / timescale
-        elseif view.name == "items_per_second" then
-            number = item.amount / timescale
-        end
+        local view_state = player_table.ui_state.view_state
+        local view = view_state[view_state.selected_view_id]
+        local number = data_util.calculate_item_button_number(player_table, view, item.amount, item.type.name)
         
         if number ~= nil then
             button.number = ("%.4g"):format(number)
