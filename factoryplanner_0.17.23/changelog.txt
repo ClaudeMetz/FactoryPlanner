@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Changes:
+    - 'To the top' now only shows when you are one level 3 or deeper
+  Bugfixes:
+    - Fixed a crash when adding Factory Planner to a save that has the rocket tech already researched
+    - Fixed the hint indicating you added an unresearched recipe showing up too often
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.23
 Date: 26. 06. 2019
   Bugfixes:

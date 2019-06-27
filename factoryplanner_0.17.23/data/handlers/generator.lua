@@ -73,7 +73,6 @@ function generator.all_recipes()
                 ingredients = proto.ingredients,
                 products = proto.products,
                 main_product = proto.main_product,
-                enabled = proto.enabled,
                 hidden = proto.hidden,
                 order = proto.order,
                 group = proto.group,
