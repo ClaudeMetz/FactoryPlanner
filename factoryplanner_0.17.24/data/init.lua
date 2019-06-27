@@ -13,7 +13,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
-----------devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -48,10 +48,6 @@ function handle_configuration_change()
 
         player_gui_reset(player)  -- Destroys all existing GUI's
         player_gui_init(player)  -- Initializes some parts of the GUI
-
-        -- Update custom space science recipe state
-        local space_tech = player.force.technologies["space-science-pack"].researched
-        if space_tech then global.all_recipes.recipes[global.all_recipes.map["fp-space-science-pack"]].enabled = true end
     end
 
     -- Complete loader process by saving new data to global
@@ -148,8 +144,6 @@ function reset_ui_state(player)
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
     
     ui_util.recalculate_main_dialog_dimensions(player)
-    --[[ data_util.context.set_subfactory(player, Factory.get(player_table.factory, "Subfactory", 1))
-    if devmode then refresh_view_state(player, ui_state_table.context.subfactory) end ]]
 end
 
 

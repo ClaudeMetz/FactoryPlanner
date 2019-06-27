@@ -52,7 +52,6 @@ function generator.all_recipes()
     
     local function mining_recipe()
         return {
-            enabled = true,
             hidden = false,
             group = {name="intermediate_products", order="c"},
             subgroup = {name="mining", order="z"}
@@ -130,7 +129,6 @@ function generator.all_recipes()
         name = "fp-space-science-pack",
         localised_name = {"item-name.space-science-pack"},  -- official locale
         category = "rocket-building",
-        enabled = false,
         hidden = false,
         energy = 0,
         group = {name="intermediate-products", order="c"},
@@ -181,6 +179,8 @@ function generator.all_items()
             add_item(relevant_items, ingredient)
         end
     end
+    -- Manually add the rocket-part item for the custom space recipe
+    add_item(relevant_items, game["item_prototypes"]["rocket-part"])
     
     -- Adding all standard items minus the undesirable ones
     local undesirables = undesirable_items()
@@ -191,7 +191,7 @@ function generator.all_items()
                 local hidden = false  -- "entity" types are never hidden
                 if type == "item" then hidden = proto.has_flag("hidden")
                 elseif type == "fluid" then hidden = proto.hidden end
-                if not hidden then  -- exclude hidden items
+                if not hidden or item_name == "rocket-part" then  -- exclude hidden items
                     local item = {
                         type = type,
                         name = proto.name,
