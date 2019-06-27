@@ -51,7 +51,7 @@ function handle_configuration_change()
 
         -- Update custom space science recipe state
         local space_tech = player.force.technologies["space-science-pack"].researched
-        if space_tech then global.all_recipes[player.force.name]["fp-space-science-pack"].enabled = true end
+        if space_tech then global.all_recipes.recipes[global.all_recipes.map["fp-space-science-pack"]].enabled = true end
     end
 
     -- Complete loader process by saving new data to global

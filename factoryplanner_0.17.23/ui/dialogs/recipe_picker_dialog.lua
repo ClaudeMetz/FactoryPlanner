@@ -64,17 +64,17 @@ function run_preliminary_checks(player, product)
     local relevant_recipes = {}
     local disabled_recipes_count = 0
     if item_recipe_map[product.proto.type][product.proto.name] ~= nil then  -- this being nil means that the item has no recipes
-        for recipe_id, recipe in pairs(global.all_recipes.recipes) do
+        for _, recipe in pairs(global.all_recipes.recipes) do
             local force_recipe = force_recipes[recipe.name]
             if recipe_produces_product(player, recipe, product.proto.type, product.proto.name) then
                 -- Only add recipes that exist on the current force
                 if force_recipe ~= nil then
-                    table.insert(relevant_recipes, recipe_id)
+                    table.insert(relevant_recipes, recipe)
                     if not force_recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
             
                 -- Add custom recipes by default
                 elseif is_custom_recipe(recipe) then
-                    table.insert(relevant_recipes, recipe_id)
+                    table.insert(relevant_recipes, recipe)
                 end
             end
         end
@@ -91,11 +91,11 @@ function run_preliminary_checks(player, product)
     if #relevant_recipes == 0 then
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
-        local recipe_id = relevant_recipes[1]
-        if not force_recipes.enabled then  -- Show hint if adding unresearched recipe
+        local chosen_recipe = relevant_recipes[1]
+        if not force_recipes[chosen_recipe.name].enabled then  -- Show hint if adding unresearched recipe
             show.message={string={"label.hint_disabled_recipe"}, type="hint"}
         end
-        return recipe_id, nil, show
+        return chosen_recipe.id, nil, show
     else  -- 2+ relevant recipes
         return nil, nil, show
     end

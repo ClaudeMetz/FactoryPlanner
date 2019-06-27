@@ -1,7 +1,7 @@
 {
     "name": "factoryplanner",
     "version": "0.17.23",
-    "title": "Factory Planner",
+    "title": "Factory Planner [BETA]",
     "author": "Therenas",
     "contact": "Therenas.FactoryPlanner@gmail.com",
     "homepage": "https://github.com/ClaudeMetz/FactoryPlanner",
@@ -10,5 +10,5 @@
         "base >= 0.17.46",
         "? FNEI"
     ],
-    "description": "This mod allows you to plan your production in advance, specifying recipes and machines that make up each assembly line. It does the hard work of calculating ratios so you can focus on the factory itself. It's intuitive to use and easily adapted, should your needs change."
+    "description": "This mod allows you to plan your production in advance, specifying the recipes and machines that make up each assembly line.  It provides powerful features that are fast and intuitive to use, so you can focus on actually building your factory."
 }

@@ -88,10 +88,15 @@ function refresh_production_pane(player)
     if subfactory ~= nil and subfactory.valid then        
         local floor = ui_state.context.floor
 
-        table_titlebar["table_production_titlebar_navigation"].visible = (floor.level > 1)
-        if floor.Line.count > 0 then
-            table_titlebar["label_production_titlebar_level"].caption = {"", {"label.level"}, " ", floor.level, "  "}
-        end
+        -- Level indicator
+        local label_level = table_titlebar["label_production_titlebar_level"]
+        label_level.caption = {"", {"label.level"}, " ", floor.level, "  "}
+        label_level.visible = (floor.Line.count > 0)
+
+        -- Navigation
+        local table_navigation = table_titlebar["table_production_titlebar_navigation"]
+        table_navigation["fp_button_floor_up"].visible = (floor.level > 1)
+        table_navigation["fp_button_floor_top"].visible = (floor.level > 2)
         
         -- Update the dynamic parts of the view state buttons
         local state_existed = (ui_state.view_state ~= nil)
