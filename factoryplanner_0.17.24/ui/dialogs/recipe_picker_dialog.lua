@@ -73,7 +73,7 @@ function run_preliminary_checks(player, product)
                     if not force_recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
             
                 -- Add custom recipes by default
-                elseif is_custom_recipe(recipe) then
+                elseif is_custom_recipe(player, recipe, true) then
                     table.insert(relevant_recipes, recipe)
                 end
             end
@@ -92,7 +92,8 @@ function run_preliminary_checks(player, product)
         return nil, {"label.error_no_relevant_recipe"}, show
     elseif #relevant_recipes == 1 then
         local chosen_recipe = relevant_recipes[1]
-        if not force_recipes[chosen_recipe.name].enabled then  -- Show hint if adding unresearched recipe
+        -- Show hint if adding unresearched recipe (no hints on custom recipes)
+        if not is_custom_recipe(player, chosen_recipe, true) and not force_recipes[chosen_recipe.name].enabled then
             show.message={string={"label.hint_disabled_recipe"}, type="hint"}
         end
         return chosen_recipe.id, nil, show
@@ -167,7 +168,18 @@ function recipe_produces_product(player, recipe, product_type, product_name)
     end
 end
 
--- Returns true if this recipe is a custom one
-function is_custom_recipe(recipe)
-    return (string.match(recipe.name, "^fp-.*") or string.match(recipe.name, "^impostor-.*"))
+-- Returns true if this recipe is a custom one, or if the recipe is the custom one for rocket building,
+-- it returns the enabled state of the recipe for a rocket-part
+-- If existence_only is true, it return true for any custom recipe, even if it is not enabled
+function is_custom_recipe(player, recipe, existence_only)
+    if (string.match(recipe.name, "^impostor-.*")) then
+        return true
+    elseif recipe.name == "fp-space-science-pack" then
+        local space_science_recipe = player.force.recipes["rocket-part"]
+        if existence_only or (space_science_recipe ~= nil and space_science_recipe.enabled) then
+            return true
+        else
+            return false
+        end
+    end
 end

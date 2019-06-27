@@ -244,7 +244,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
                         -- recipe ~= nil and not (not disabled and not recipe.enabled) and not (not hidden and object.hidden)
                         if recipe ~= nil and (disabled or recipe.enabled) and (hidden or not object.hidden) then
                             visible = true
-                        elseif is_custom_recipe(object) then
+                        elseif is_custom_recipe(player, object, false) then
                             visible = true
                         end
                     end

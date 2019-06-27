@@ -67,17 +67,6 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 end)
 
 
--- Update the recipe prototypes when new technologies are researched
-script.on_event(defines.events.on_research_finished, function(event)
-    local force_name = event.research.force.name
-
-    -- Custom handling for the custom space science recipe
-    if event.research.name == "space-science-pack" then
-        global.all_recipes.recipes[global.all_recipes.map["fp-space-science-pack"]].enabled = true
-    end
-end)
-
-
 -- Fires on pressing of the 'Open/Close' keyboard shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)
