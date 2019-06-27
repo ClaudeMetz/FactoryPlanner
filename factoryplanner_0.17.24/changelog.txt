@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.24
+Date: 27. 06. 2019
   Changes:
     - 'To the top' now only shows when you are one level 3 or deeper
   Bugfixes:
