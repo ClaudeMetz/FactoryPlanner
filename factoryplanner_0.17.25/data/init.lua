@@ -13,7 +13,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
-devmode = true  -- Enables certain conveniences for development
+--devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
