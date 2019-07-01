@@ -53,6 +53,75 @@ function ui_util.generate_recipe_sprite(recipe)
 end
 
 
+-- Returns the number to put on an item button according to the current view
+function ui_util.calculate_item_button_number(player_table, view, amount, type)
+    local number = nil
+
+    local timescale = player_table.ui_state.context.subfactory.timescale
+    if view == nil then
+        local view_state = player_table.ui_state.view_state
+        -- If the view state hasn't been initialised yet, assume the default
+        -- (This gets re-run when the view state gets initialised)
+        if view_state == nil then return amount end
+        view = view_state[view_state.selected_view_id]
+    end
+
+    if view.name == "items_per_timescale" then
+        number = amount
+    elseif view.name == "belts_or_lanes" and type ~= "fluid" then
+        local throughput = player_table.preferences.preferred_belt.throughput
+        local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
+        number = amount / divisor / timescale
+    elseif view.name == "items_per_second" then
+        number = amount / timescale
+    end
+
+    return number  -- number might be nil here
+end
+
+
+-- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
+function ui_util.generate_module_effects_tooltip_proto(module)
+    -- First, generate the appropriate effects table
+    local effects = {}
+    local raw_effects = (module.proto ~= nil) and module.proto.effects or module.effects
+    for name, effect in pairs(raw_effects) do
+        effects[name] = (module.proto ~= nil) and (effect.bonus * module.amount) or effect.bonus
+    end
+
+    -- Then, let the tooltip function generate the actual tooltip
+    return ui_util.generate_module_effects_tooltip(effects)
+end
+
+-- Generates a tooltip out of the given effects, ignoring those that are 0
+function ui_util.generate_module_effects_tooltip(effects)
+    local localised_names = {
+        consumption = {"tooltip.module_consumption"},
+        speed = {"tooltip.module_speed"},
+        productivity = {"tooltip.module_productivity"},
+        pollution = {"tooltip.module_pollution"}
+    }
+
+    local tooltip = {""}
+    for name, effect in pairs(effects) do
+        if effect ~= 0 then
+            -- Consumption is capped at -80%
+            local effect_bonus, appendage = effect, ""
+            if name == "consumption" and effect_bonus < -0.8 then
+                effect_bonus = -0.8
+                appendage = {"", " (", {"tooltip.capped"}, ")"}
+            end
+
+            -- Force display of either a '+' or '-'
+            local number = ("%+d"):format(math.floor((effect_bonus * 100) + 0.5))
+            tooltip = {"", tooltip, "\n", localised_names[name], ": ", number, "%", appendage}
+        end
+    end
+
+    return tooltip
+end
+
+
 -- Formats given number to given number of significant digits
 function ui_util.format_number(number, precision)
     if number == nil then return nil end

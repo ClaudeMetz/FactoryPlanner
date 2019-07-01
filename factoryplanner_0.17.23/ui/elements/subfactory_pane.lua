@@ -131,7 +131,7 @@ function get_product_specifics(player_table, product)
 
     -- This is all a bit hacky
     local specifics = generate_top_level_item_parameters(player_table, product)
-    local number = data_util.calculate_item_button_number(player_table, nil, product.required_amount, product.type.name)
+    local number = ui_util.calculate_item_button_number(player_table, nil, product.required_amount, product.type.name)
     local tooltip
     if number == nil then
         tooltip = generate_top_level_item_name(product)
@@ -149,9 +149,10 @@ end
 -- Adds the button to add a product to the table
 function append_to_product_table(table)
     local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
-      style="fp_sprite_button", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"}}
+      style="fp_sprite-button_inset", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"}}
     button.style.height = 36
     button.style.width = 36
+    button.style.padding = 3
 end
 
 -- Handles click on a subfactory pane product button
@@ -218,7 +219,7 @@ end
 -- Generates an appropriate tooltip for the given item
 function generate_top_level_item_parameters(player_table, item)
     local localised_name = generate_top_level_item_name(item)
-    local number = data_util.calculate_item_button_number(player_table, nil, item.amount, item.type.name)
+    local number = ui_util.calculate_item_button_number(player_table, nil, item.amount, item.type.name)
     local tooltip = (number == nil) and localised_name or {"", localised_name, "\n", ui_util.format_number(number, 4)}
 
     return {

@@ -47,10 +47,6 @@ function data_util.machine.get_default(player, category)
     return get_preferences(player).default_machines.categories[category.id]
 end
 
--- Returns whether the given machine can produce the given recipe (ingredient limit)
-function data_util.machine.is_applicable(machine, recipe)
-    return (#recipe.proto.ingredients <= machine.proto.ingredient_limit)
-end
 
 -- Changes the machine either to the given machine or moves it in the given direction
 -- If neither machine or direction is given, it applies the default machine for the category
@@ -65,11 +61,13 @@ function data_util.machine.change(player, line, machine, direction)
         local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
         -- Try setting a higher tier machine until it sticks or nothing happens
         -- Crashes if no machine fits at all (unlikely)
-        if not data_util.machine.is_applicable(machine, line.recipe) then
+        if not Machine.is_applicable(machine, line.recipe) then
             data_util.machine.change(player, line, machine, "positive")
 
         else
             line.machine = machine
+
+            -- Adjust parent line
             if line.parent then  -- if no parent exists, nothing is overwritten anyway
                 if line.subfloor then
                     Floor.get(line.subfloor, "Line", 1).machine = machine
@@ -77,6 +75,9 @@ function data_util.machine.change(player, line, machine, direction)
                     line.parent.origin_line.machine = machine
                 end
             end
+
+            -- Adjust modules (ie. trim them if needed)
+            Line.trim_modules(line)
         end
 
     -- Bump machine in the given direction (takes given machine, if available)
@@ -168,32 +169,6 @@ function data_util.determine_product_amount(base_product)
     end
 end
 
--- Returns the number to put on an item button according to the current view
-function data_util.calculate_item_button_number(player_table, view, amount, type)
-    local number = nil
-
-    local timescale = player_table.ui_state.context.subfactory.timescale
-    if view == nil then
-        local view_state = player_table.ui_state.view_state
-        -- If the view state hasn't been initialised yet, assume the default
-        -- (This gets re-run when the view state gets initialised)
-        if view_state == nil then return amount end
-        view = view_state[view_state.selected_view_id]
-    end
-
-    if view.name == "items_per_timescale" then
-        number = amount
-    elseif view.name == "belts_or_lanes" and type ~= "fluid" then
-        local throughput = player_table.preferences.preferred_belt.throughput
-        local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
-        number = amount / divisor / timescale
-    elseif view.name == "items_per_second" then
-        number = amount / timescale
-    end
-
-    return number  -- number might be nil here
-end
-
 
 -- Logs given table shallowly, excluding the parent attribute
 function data_util.log(table)
@@ -225,7 +200,7 @@ end
 local function construct_floor(player, floor, recipes)
     -- Adds a line containing the given recipe to the current floor
     local function add_line(recipe_data)
-        local recipe = Recipe.init(global.all_recipes.map[recipe_data.recipe])
+        local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.recipe])
         local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
         local machine = category.machines[category.map[recipe_data.machine]]
         return Floor.add(floor, Line.init(player, recipe, machine))
@@ -297,7 +272,7 @@ function data_util.run_dev_config(player)
         
         -- Floors
         local recipes = {
-            {recipe="electronic-circuit", machine="assembling-machine-1"}
+            {recipe="electronic-circuit", machine="assembling-machine-2"}
         }
         construct_floor(player, context.floor, recipes)
     end

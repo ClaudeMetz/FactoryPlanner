@@ -46,10 +46,11 @@ function Collection.get(self, object_id)
 end
 
 -- Return format: {[gui_position] = dataset}
-function Collection.get_in_order(self)
+function Collection.get_in_order(self, reverse)
     local ordered_datasets = {}
     for _, dataset in pairs(self.datasets) do
-        ordered_datasets[dataset.gui_position] = dataset
+        local table_position = (reverse) and (self.count - dataset.gui_position + 1) or dataset.gui_position
+        ordered_datasets[table_position] = dataset
     end
     return ordered_datasets
 end
