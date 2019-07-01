@@ -131,10 +131,11 @@ function create_line_table_row(player, line)
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
     if line.machine.proto.module_limit > 0 then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
+            local m = (module.amount == 1) and {"tooltip.module"} or {"", {"tooltip.module"}, "s"}
             local button_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_module_" .. line.id
               .. "_" .. module.id, sprite=module.sprite, style="fp_button_icon_medium_recipe", number=module.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", module.proto.localised_name, "\n", module.amount, " ",
-              {"tooltip.modules"}, ui_util.generate_module_effects_tooltip_proto(module)}}
+              m, ui_util.generate_module_effects_tooltip_proto(module)}}
             button_module.style.padding = 2
         end
 
@@ -170,10 +171,11 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
     local player = game.get_player(gui_table.player_index)
     if Machine.is_applicable(machine, line.recipe) then
         local appendage = (append_machine_id) and ("_" .. machine.proto.id) or ""
+        local m = (count == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
         local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
           sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(count),
           mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4), " ",
-          {"tooltip.machines"}, ui_util.generate_module_effects_tooltip(line.total_effects)}}
+          m, ui_util.generate_module_effects_tooltip(line.total_effects)}}
         button.style.padding = 1
 
         -- Add overlay to indicate if machine the machine count is rounded or not
@@ -216,28 +218,14 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id, direction="horizontal"}
     
     for _, item in ipairs(Line.get_in_order(line, class)) do
-        local s = (item.fuel) and "fp_button_icon_medium_cyan" or style
+        local s = style
+        if item.fuel then s = "fp_button_icon_medium_cyan"
+        elseif item.proto.type == "entity" then s = "fp_button_icon_medium_blank" end
 
         local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-           .. "_" .. item.id, sprite=item.sprite, style=s, mouse_button_filter={"left-and-right"}}
+          .. "_" .. item.id, sprite=item.sprite, style=s, mouse_button_filter={"left-and-right"}}
 
-        -- Special handling for mining recipes
-        local tooltip_name = item.proto.localised_name
-        if item.proto.type == "entity" then 
-            button.style = "fp_button_icon_medium_blank"
-            tooltip_name = {"", {"label.raw"}, " ", tooltip_name}
-        end
-
-        local view_state = player_table.ui_state.view_state
-        local view = view_state[view_state.selected_view_id]
-        local number = ui_util.calculate_item_button_number(player_table, view, item.amount, item.type.name)
-        
-        if number ~= nil then
-            button.number = ("%.4g"):format(number)
-            button.tooltip = {"", tooltip_name, "\n", ui_util.format_number(number, 4), " ", view.caption}
-        else
-            button.tooltip = tooltip_name 
-        end
+        ui_util.setup_item_button(player_table, button, item, false)
     end
 end
 
