@@ -49,12 +49,14 @@ function get_item_picker_condition_instructions()
             [1] = {
                 label = {"label.product_instruction_1"},
                 check = (function(data) return (data.item_sprite == "" or data.required_amount == "") end),
+                refocus = nil,
                 show_on_edit = true
             },
             [2] = {
                 label = {"label.product_instruction_2"},
                 check = (function(data) return (data.required_amount ~= "" and (tonumber(data.required_amount) == nil 
                           or tonumber(data.required_amount) <= 0)) end),
+                refocus = (function(flow) flow["flow_product_bar"]["textfield_product_amount"].focus() end),
                 show_on_edit = true
             }
         }

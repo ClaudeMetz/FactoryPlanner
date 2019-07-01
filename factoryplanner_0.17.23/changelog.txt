@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Added module support!
+    - Added support for modules!
   Changes:
     - Changing the view (items/s, belts, etc) now applies to top-level-items too
     - Improved the tooltips in various places

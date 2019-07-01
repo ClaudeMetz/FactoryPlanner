@@ -82,20 +82,28 @@ function check_modal_dialog_data(flow_modal_dialog, dialog_type)
         end
 
         -- Check all conditions
-        local error_found = false
+        local error_found, first_error_instructions = false, nil
         local table_conditions = flow_modal_dialog.parent["table_modal_dialog_conditions"]
         for _, condition_element in ipairs(table_conditions.children) do
             local n = tonumber(string.match(condition_element.name, "%d+"))
-            if condition_instructions.conditions[n].check(form_data) then
+            local instruction = condition_instructions.conditions[n]
+            if instruction.check(form_data) then
                 ui_util.set_label_color(condition_element, "red")
                 error_found = true
+                if first_error_instructions == nil then first_error_instructions = instruction end
             else
                 ui_util.set_label_color(condition_element, "default_label")
             end
         end
 
-        if error_found then return nil
-        else return form_data end
+        if error_found then
+            -- Re-focus an element, if specified
+            local refocus = first_error_instructions.refocus
+            if refocus then refocus(flow_modal_dialog) end
+            return nil
+        else
+            return form_data
+        end
 
     else return {} end
 end

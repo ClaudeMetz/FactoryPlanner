@@ -53,16 +53,19 @@ function get_subfactory_condition_instructions()
             [1] = {
                 label = {"label.subfactory_instruction_1"},
                 check = (function(data) return (data.name == "" and data.icon == nil) end),
+                refocus = (function(flow) flow["table_subfactory"]["textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             },
             [2] = {
                 label = {"label.subfactory_instruction_2"},
                 check = (function(data) return (data.name:len() > 16) end),
+                refocus = (function(flow) flow["table_subfactory"]["textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             },
             [3] = {
                 label = {"", {"label.subfactory_instruction_3"}, " !#&'()+-./?"},
                 check = (function(data) return (data.name ~= "" and data.name:match("[^%w !#&'%(%)%+%-%./%?]")) end),
+                refocus = (function(flow) flow["table_subfactory"]["textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             }
         }

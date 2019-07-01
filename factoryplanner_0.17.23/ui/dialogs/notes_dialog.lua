@@ -21,6 +21,7 @@ function get_notes_condition_instructions()
             [1] = {
                 label = {"label.notes_instruction_1"},
                 check = (function(data) return (#data.notes > 50000) end),
+                refocus = (function(flow) flow["text-box_notes"].focus() end),
                 show_on_edit = true
             }
         }
