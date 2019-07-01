@@ -56,12 +56,14 @@ function get_modules_condition_instructions(modal_data)
             [1] = {
                 label = {"label.module_instruction_1"},
                 check = (function(data) return (data.item_sprite == "" or data.amount == "") end),
+                refocus = nil,
                 show_on_edit = true
             },
             [2] = {
                 label = instruction_2_label,
                 check = (function(data) return (data.amount ~= "" and (tonumber(data.amount) == nil 
                           or tonumber(data.amount) <= 0 or tonumber(data.amount) > modal_data.empty_slots)) end),
+                refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
                 show_on_edit = true
             }
         }
