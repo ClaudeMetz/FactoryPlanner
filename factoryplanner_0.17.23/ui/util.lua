@@ -28,6 +28,16 @@ function ui_util.set_label_color(ui_element, color)
 end
 
 
+-- Adds the appropriate tutorial tooltip if the preference is enabled
+function ui_util.add_tutorial_tooltip(button, type, line_break)
+    local player = game.get_player(button.player_index)
+    if get_preferences(player).tutorial_mode then
+        local b = line_break and "\n\n" or ""
+        button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}}
+    end
+end
+
+
 -- Returns the sprite string of the given item
 function ui_util.generate_item_sprite(item)
     return (item.type .. "/" .. item.name)

@@ -88,6 +88,7 @@ function create_line_table_row(player, line)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
       sprite=recipe.sprite, tooltip=recipe.proto.localised_name, mouse_button_filter={"left-and-right"}}
     if global.devmode == true then button_recipe.tooltip = {"", recipe.proto.localised_name, "\n", recipe.proto.name} end
+    ui_util.add_tutorial_tooltip(button_recipe, "recipe", true)
 
     if line.subfloor then
         if ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id then
@@ -124,7 +125,8 @@ function create_line_table_row(player, line)
             create_machine_button(table_machines, line, machine, count, true)
         end
     else
-        create_machine_button(table_machines, line, line.machine, line.machine.count, false)
+        local button = create_machine_button(table_machines, line, line.machine, line.machine.count, false)
+        ui_util.add_tutorial_tooltip(button, "machine", true)
     end
 
     -- Modules
@@ -137,6 +139,8 @@ function create_line_table_row(player, line)
               mouse_button_filter={"left-and-right"}, tooltip={"", module.proto.localised_name, "\n", module.amount, " ",
               m, ui_util.generate_module_effects_tooltip_proto(module)}}
             button_module.style.padding = 2
+
+            ui_util.add_tutorial_tooltip(button_module, "module", true)
         end
 
         if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
@@ -180,6 +184,8 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
 
         -- Add overlay to indicate if machine the machine count is rounded or not
         add_rounding_overlay(player, button, {count = count, sprite_size = 32})
+
+        return button
     end
 end
 
@@ -226,6 +232,9 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
           .. "_" .. item.id, sprite=item.sprite, style=s, mouse_button_filter={"left-and-right"}}
 
         ui_util.setup_item_button(player_table, button, item, false)
+        
+        local type = (item.fuel) and "fuel" or string.lower(class)
+        ui_util.add_tutorial_tooltip(button, type, true)
     end
 end
 

@@ -132,6 +132,10 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     elseif event.element.name == "fp_checkbox_preferences_enable_recipe_comments" then
         get_preferences(player).enable_recipe_comments = event.element.state
 
+    -- Changes the tutorial mode-preference
+    elseif event.element.name == "fp_checkbox_tutorial_mode" then
+        get_preferences(player).tutorial_mode = event.element.state
+
     end
 end)
 
