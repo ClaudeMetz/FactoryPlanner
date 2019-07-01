@@ -77,6 +77,7 @@ function refresh_item_table(player, class)
               .. item.id, sprite=item.sprite, style=style, mouse_button_filter={"left-and-right"}}
               
             ui_util.setup_item_button(get_table(player), button, item, true)
+            ui_util.add_tutorial_tooltip(button, "tl_" .. string.lower(class), true)
             if button.number ~= nil and button.number < margin_of_error then button.visible = false end
         end
     end

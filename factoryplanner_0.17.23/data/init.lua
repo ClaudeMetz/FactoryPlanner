@@ -123,6 +123,7 @@ end
 -- Reloads the user preferences, incorporating previous preferences if possible
 function reload_preferences(player, table)
     local preferences = global.players[player.index].preferences
+    preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.enable_recipe_comments = preferences.enable_recipe_comments or false
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
