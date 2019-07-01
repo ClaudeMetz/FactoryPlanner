@@ -55,16 +55,8 @@ end
 
 -- Returns the number to put on an item button according to the current view
 function ui_util.calculate_item_button_number(player_table, view, amount, type)
-    local number = nil
-
     local timescale = player_table.ui_state.context.subfactory.timescale
-    if view == nil then
-        local view_state = player_table.ui_state.view_state
-        -- If the view state hasn't been initialised yet, assume the default
-        -- (This gets re-run when the view state gets initialised)
-        if view_state == nil then return amount end
-        view = view_state[view_state.selected_view_id]
-    end
+    local number = nil
 
     if view.name == "items_per_timescale" then
         number = amount
@@ -77,6 +69,65 @@ function ui_util.calculate_item_button_number(player_table, view, amount, type)
     end
 
     return number  -- number might be nil here
+end
+
+-- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
+-- (Relates to the view_state, doesn't do anything if views are uninitialised)
+function ui_util.setup_item_button(player_table, button, item, top_level)
+    local view_state = player_table.ui_state.view_state
+    -- This gets refreshed after the view state is initialised
+    if view_state == nil then return end
+
+    local view = view_state[view_state.selected_view_id]
+    local amount = (top_level and item.class == "Product") and item.required_amount or item.amount
+    local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type)
+    
+    -- Special handling for mining recipes concerning their localised name
+    local localised_name
+    if item.proto.type == "entity" then localised_name = {"", {"label.raw"}, " ", item.proto.localised_name}
+    else localised_name = item.proto.localised_name end
+    
+    -- Determine caption
+    local caption
+    local function determine_type_text()
+        if item.proto.type == "fluid" then
+            caption = {"tooltip.fluid"}
+        else
+            caption = (number == 1) and {"tooltip.item"} or {"", {"tooltip.item"}, "s"}
+        end
+    end
+    
+    -- Determine caption appendage
+    if view.name == "items_per_timescale" then
+        determine_type_text()
+        local timescale = player_table.ui_state.context.subfactory.timescale
+        caption = {"", caption, "/", ui_util.format_timescale(timescale, true)}
+
+    elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
+        local belts = (player_table.settings.belts_or_lanes == "Belts")
+        caption = belts and {"tooltip.belt"} or {"tooltip.lane"}
+        if number ~= 1 then caption = {"", caption, "s"} end
+
+    elseif view.name == "items_per_second" then
+        determine_type_text()
+        caption = {"", caption, "/s"}
+    end
+
+    -- Compose tooltip, respecting top level products
+    if number ~= nil then
+        local number_string
+        if top_level and item.class == "Product" then
+            local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount, item.proto.type)
+            number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", ui_util.format_number(number, 4)}
+        else
+            number_string = {"", ui_util.format_number(number, 4)}
+        end
+
+        button.number = ("%.4g"):format(number)
+        button.tooltip = {"", localised_name, "\n", number_string, " ", caption}
+    else
+        button.tooltip = localised_name
+    end
 end
 
 
