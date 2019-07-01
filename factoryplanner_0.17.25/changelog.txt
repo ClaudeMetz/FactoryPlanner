@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Bugfixes:
+    - Fixed a crash when loading a save with some missing data
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.25
 Date: 27. 06. 2019
   Bugfixes:
@@ -8,7 +14,7 @@ Date: 27. 06. 2019
 Version: 0.17.24
 Date: 27. 06. 2019
   Changes:
-    - 'To the top' now only shows when you are one level 3 or deeper
+    - 'To the top' now only shows when you are on level 3 or deeper
   Bugfixes:
     - Fixed a crash when adding Factory Planner to a save that has the rocket tech already researched
     - Fixed the hint indicating you added an unresearched recipe showing up too often
