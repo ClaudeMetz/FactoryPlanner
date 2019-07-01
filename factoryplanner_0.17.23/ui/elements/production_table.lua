@@ -12,7 +12,7 @@ function refresh_production_table(player)
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
     
-    local column_count = preferences.enable_recipe_comments and 8 or 7
+    local column_count = preferences.enable_recipe_comments and 9 or 8
     local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
       column_count=column_count}
     table_production.style = "table_with_selection"
@@ -20,7 +20,7 @@ function refresh_production_table(player)
     table_production.style.top_padding = 0
     table_production.style.left_margin = 6
     for i=1, column_count do
-        if i < 5 then table_production.style.column_alignments[i] = "middle-center"
+        if i < 6 then table_production.style.column_alignments[i] = "middle-center"
         else table_production.style.column_alignments[i] = "middle-left" end
     end
 
@@ -37,6 +37,7 @@ function refresh_production_table(player)
                 {name="recipe", label={"label.recipe"}},
                 {name="percent", label="%"}, 
                 {name="machine", label={"label.machine"}},
+                {name="modules", label={"label.modules"}},
                 {name="energy", label={"label.energy"}},
                 {name="products", label={"label.products"}},
                 {name="byproducts", label={"label.byproducts"}},
@@ -117,13 +118,33 @@ function create_line_table_row(player, line)
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
         for _, machine in ipairs(line.machine.category.machines) do
-            local count = (line.production_ratio / (machine.speed / line.recipe.energy) ) / subfactory.timescale
             -- Create temporary machine class for consistency
             local machine = Machine.init_by_proto(machine)
+            local count = Line.calculate_machine_count(line, machine)
             create_machine_button(table_machines, line, machine, count, true)
         end
     else
         create_machine_button(table_machines, line, line.machine, line.machine.count, false)
+    end
+
+    -- Modules
+    local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
+    if line.machine.proto.module_limit > 0 then
+        for _, module in ipairs(Line.get_in_order(line, "Module")) do
+            local button_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_module_" .. line.id
+              .. "_" .. module.id, sprite=module.sprite, style="fp_button_icon_medium_recipe", number=module.amount,
+              mouse_button_filter={"left-and-right"}, tooltip={"", module.proto.localised_name, "\n", module.amount, " ",
+              {"tooltip.modules"}, ui_util.generate_module_effects_tooltip_proto(module)}}
+            button_module.style.padding = 2
+        end
+
+        if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
+            local button_add_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_" .. line.id,
+            sprite="fp_sprite_plus", style="fp_sprite-button_inset", tooltip={"tooltip.add_module"}, mouse_button_filter={"left"}}
+            button_add_module.style.height = 32
+            button_add_module.style.width = 32
+            button_add_module.style.padding = 2
+        end
     end
     
     -- Energy label
@@ -147,12 +168,13 @@ end
 -- Creates and places a single machine button
 function create_machine_button(gui_table, line, machine, count, append_machine_id)
     local player = game.get_player(gui_table.player_index)
-    if data_util.machine.is_applicable(machine, line.recipe) then
+    if Machine.is_applicable(machine, line.recipe) then
         local appendage = (append_machine_id) and ("_" .. machine.proto.id) or ""
         local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
           sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(count),
           mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4), " ",
-          {"tooltip.machines"}}}
+          {"tooltip.machines"}, ui_util.generate_module_effects_tooltip(line.total_effects)}}
+        button.style.padding = 1
 
         -- Add overlay to indicate if machine the machine count is rounded or not
         add_rounding_overlay(player, button, {count = count, sprite_size = 32})
@@ -208,7 +230,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
 
         local view_state = player_table.ui_state.view_state
         local view = view_state[view_state.selected_view_id]
-        local number = data_util.calculate_item_button_number(player_table, view, item.amount, item.type.name)
+        local number = ui_util.calculate_item_button_number(player_table, view, item.amount, item.type.name)
         
         if number ~= nil then
             button.number = ("%.4g"):format(number)
@@ -355,8 +377,8 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                     }
                     for machine_id, machine in ipairs(line.machine.category.machines) do
                         local machine = Machine.init_by_proto(machine)
-                        if data_util.machine.is_applicable(machine, line.recipe) then
-                            local count = (line.production_ratio / (machine.proto.speed / line.recipe.energy)) / subfactory.timescale
+                        if Machine.is_applicable(machine, line.recipe) then
+                            local count = Line.calculate_machine_count(line, machine)
                             table.insert(ui_state.modal_data.choices, {
                                 name = machine_id,
                                 tooltip = {"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4)},
@@ -390,6 +412,72 @@ function apply_chooser_machine_choice(player, element_name)
     data_util.machine.change(player, context.line, machine, nil)
     update_calculations(player, context.subfactory)
 end
+
+-- Handles a click on an existing module or on the add-module-button
+function handle_line_module_click(player, line_id, module_id, click, direction, alt)
+    local ui_state = get_ui_state(player)
+    local floor = ui_state.context.floor
+    local line = Floor.get(floor, "Line", line_id)
+    ui_state.context.line = line
+    local limit = Line.empty_slots(line)
+
+    if module_id == nil then  -- meaning the add-module-button was pressed
+        enter_modal_dialog(player, {type="modules", object=nil, submit=true, modal_data={empty_slots=limit}})
+
+    else  -- meaning an existing module was clicked
+        local module = Line.get(line, "Module", module_id)
+
+        if direction ~= nil then  -- change the module to a higher/lower amount/tier
+            local tier_map = module_tier_map
+
+            -- Changes the current module tier by the given factor (+1 or -1 in this case)
+            local function handle_tier_change(factor)
+                local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                if new_proto ~= nil then
+                    local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
+                    Line.replace(line, module, new_module, true)
+                end
+            end
+
+            -- alt modifies the module amount, no alt modifies the module tier
+            if direction == "positive" then
+                if alt then
+                    module.amount = math.min(module.amount + 1, module.amount + limit)
+                    Line.summarize_modules(line)
+                else
+                    handle_tier_change(1)
+                end
+
+            else  -- direction == "negative"
+                if alt then
+                    module.amount = module.amount - 1
+                    if module.amount == 0 then 
+                        Line.remove(line, module, true)
+                    else
+                        Line.summarize_modules(line)
+                    end
+                else
+                    handle_tier_change(-1)
+                end
+            end
+
+            update_calculations(player, ui_state.context.subfactory)
+
+        else
+            if click == "left" then  -- open the modules modal dialog
+                enter_modal_dialog(player, {type="modules", object=module, submit=true, delete=true,
+                  modal_data={empty_slots=limit+module.amount, selected_module=module.proto}})
+
+            else  -- click == "right"; delete the module
+                Line.remove(line, module, true)
+                update_calculations(player, ui_state.context.subfactory)
+
+            end
+        end
+    end
+end
+
+
 
 -- Handles a click on any of the 3 item buttons of a specific line
 function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)

@@ -23,7 +23,7 @@ data.raw["gui-style"].default["fp_preferences_table"] = {
 
 data.raw["gui-style"].default["fp_button_action"] = {
     type = "button_style",
-    font = "fp-font-16p"
+    font = "fp-font-semibold-16p"
 }
 
 data.raw["gui-style"].default["fp_button_mini"] = {
@@ -94,6 +94,21 @@ data.raw["gui-style"].default["fp_scroll_pane_items"] = {
 data.raw["gui-style"].default["fp_preferences_title_label"] = {
     type = "label_style",
     font = "fp-font-bold-15p"
+}
+
+-- This style is hacked together from rounded-button and textbox
+data.raw["gui-style"].default["fp_sprite-button_inset"] = {
+    type = "button_style",
+    parent = "icon_button",
+    default_graphical_set = {
+        base = {position = {248, 0}, corner_size = 8}
+    },
+    hovered_graphical_set = {
+        base = {position = {219, 200}, corner_size = 8}
+    },
+    clicked_graphical_set = {
+        base = {position = {265, 0}, corner_size = 8}
+    }
 }
 
 

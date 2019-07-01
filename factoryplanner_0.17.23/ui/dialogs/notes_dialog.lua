@@ -35,7 +35,7 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
     local player = game.get_player(flow_modal_dialog.player_index)
     local text_box_notes = flow_modal_dialog.add{type="text-box", name="text-box_notes", 
       text=get_context(player).subfactory.notes}
-    text_box_notes.focus()
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400
+    text_box_notes.focus()
 end

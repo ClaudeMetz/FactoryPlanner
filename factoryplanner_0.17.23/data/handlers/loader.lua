@@ -13,7 +13,7 @@ loader = {
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
 -- (Load order is important here: machines->recipes->items)
-local data_types = {"machines", "recipes", "items", "fuels", "belts"}
+local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules"}
 
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function loader.setup()
@@ -45,6 +45,7 @@ function loader.finish()
     -- Re-runs the table creation that runs on_load to incorporate the reloaded datasets
     item_recipe_map = generator.item_recipe_map()
     item_groups = generator.item_groups()
+    module_tier_map = generator.module_tier_map()
 end
 
 

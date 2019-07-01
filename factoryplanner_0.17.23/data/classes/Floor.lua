@@ -58,8 +58,8 @@ function Floor.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end
 
-function Floor.get_in_order(self, class)
-    return Collection.get_in_order(self[class])
+function Floor.get_in_order(self, class, reverse)
+    return Collection.get_in_order(self[class], reverse)
 end
 
 function Floor.shift(self, dataset, direction)

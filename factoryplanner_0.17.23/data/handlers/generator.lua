@@ -194,8 +194,8 @@ function generator.all_items()
                 elseif type == "fluid" then hidden = proto.hidden end
                 if not hidden then  -- exclude hidden items
                     local item = {
-                        type = type,
                         name = proto.name,
+                        type = type,
                         localised_name = proto.localised_name,
                         order = proto.order,
                         group = proto.group,
@@ -297,6 +297,7 @@ function generator.all_machines()
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local ingredient_limit = proto.ingredient_count or 255
+        local allowed_effects = proto.allowed_effects  -- might be nil
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy = proto.energy_usage or proto.max_energy_usage
         local burner = nil
@@ -313,6 +314,8 @@ function generator.all_machines()
             ingredient_limit = ingredient_limit,
             speed = speed,
             energy = energy,
+            allowed_effects = allowed_effects,
+            module_limit = proto.module_inventory_size,
             burner = burner
         }
         return machine
@@ -415,4 +418,44 @@ function generator.all_fuels()
         end
     end
     return all_fuels
+end
+
+
+-- Generates a table containing all available modules
+function generator.all_modules()
+    local all_modules = {categories = {}, map = {}}
+    for _, proto in pairs(game.item_prototypes) do
+        if proto.type == "module" then
+            -- Convert limitations-table to a [recipe_name] -> true fromat
+            local limitations = {}
+            for _, recipe_name in pairs(proto.limitations) do
+                limitations[recipe_name] = true
+            end
+
+            local module = {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                category = proto.category,
+                tier = proto.tier,
+                effects = proto.module_effects,
+                limitations = limitations
+            }
+            deep_insert_proto(all_modules, "categories", proto.category, "modules", module)
+        end
+    end
+    return all_modules
+end
+
+-- Generates a table containing all module per category, ordered by tier
+function generator.module_tier_map()
+    local map = {}
+
+    for _, category in pairs(global.all_modules.categories) do
+        map[category.id] = {}
+        for _, module in pairs(category.modules) do
+            map[category.id][module.tier] = module
+        end
+    end
+    
+    return map
 end

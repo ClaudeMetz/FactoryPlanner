@@ -6,6 +6,7 @@ require("prototype_picker_dialog")
 require("item_picker_dialog")
 require("recipe_picker_dialog")
 require("chooser_dialog")
+require("modules_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
@@ -14,10 +15,11 @@ function enter_modal_dialog(player, dialog_settings)
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.selected_object = dialog_settings.object
+    ui_state.modal_data = dialog_settings.modal_data or {}
     ui_state.current_activity = nil
     
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
-    local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
+    local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
     
     player.opened = flow_modal_dialog.parent
@@ -68,8 +70,9 @@ end
 -- Checks the entered form data for errors and returns it if it's all correct, else returns nil
 function check_modal_dialog_data(flow_modal_dialog, dialog_type)
     local player = game.get_player(flow_modal_dialog.player_index)
+    local ui_state = get_ui_state(player)
     local conditions_function = _G["get_" .. dialog_type .. "_condition_instructions"]
-    local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
+    local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
 
     if condition_instructions ~= nil then
         -- Get form data
