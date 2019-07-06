@@ -1,5 +1,5 @@
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.27
+Date: 06. 07. 2019
   Features:
     - Added support for modules and beacons! (might cause crashes)
     - Added a tutorial mode, which informs you of all the possible interactions in the
