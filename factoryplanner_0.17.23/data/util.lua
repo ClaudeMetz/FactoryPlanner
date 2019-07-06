@@ -208,14 +208,47 @@ local function add_products(subfactory, products)
 end
 
 -- Adds all given recipes to the floor, recursively calling itself in case of subfloors
--- Needs an appropriately formated recipes table (see definitions above)
+-- Needs an appropriately formated recipes table
 local function construct_floor(player, floor, recipes)
+    -- Tries to find a module with the given name in all module categories
+    local function find_module(name)
+        for _, category in pairs(global.all_modules.categories) do
+            for _, module in pairs(category.modules) do
+                if module.name == name then
+                    return module
+                end
+            end
+        end
+    end
+
     -- Adds a line containing the given recipe to the current floor
     local function add_line(recipe_data)
-        local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.recipe])
+        -- Create recipe line
+        local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.name])
         local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
         local machine = category.machines[category.map[recipe_data.machine]]
-        return Floor.add(floor, Line.init(player, recipe, machine))
+        local line = Floor.add(floor, Line.init(player, recipe, machine))
+
+        -- Optionally, add modules
+        if recipe_data.modules ~= nil then
+            for _, module in pairs(recipe_data.modules) do
+                Line.add(line, Module.init_by_proto(find_module(module.name), module.amount))
+            end
+        end
+
+        -- Optionally, add beacon
+        if recipe_data.beacon ~= nil then
+            local beacon_data = recipe_data.beacon.beacon
+            local beacon_proto = global.all_beacons.beacons[global.all_beacons.map[beacon_data.name]]
+
+            local module_data = recipe_data.beacon.module
+            local module_proto = find_module(module_data.name)
+
+            local beacon = Beacon.init_by_protos(beacon_proto, beacon_data.amount, module_proto, module_data.amount)
+            Line.set_beacon(line, beacon)
+        end
+
+        return line
     end
     
     for _, recipe_data in ipairs(recipes) do
@@ -284,7 +317,10 @@ function data_util.run_dev_config(player)
         
         -- Floors
         local recipes = {
-            {recipe="electronic-circuit", machine="assembling-machine-2"}
+            {
+                name="electronic-circuit",
+                machine="assembling-machine-2"
+            }
         }
         construct_floor(player, context.floor, recipes)
     end
@@ -325,28 +361,49 @@ function data_util.add_example_subfactory(player)
     -- This table describes the desired hierarchical structure of the subfactory
     -- (Order is important; sub-tables represent their own subfloors (recursively))
     local recipes = {
-        {recipe="automation-science-pack", machine_id="assembling-machine-2"},
         {
-            {recipe="logistic-science-pack", machine_id="assembling-machine-2"},
-            {recipe="transport-belt", machine_id="assembling-machine-1"},
-            {recipe="inserter", machine_id="assembling-machine-1"}
+            name="automation-science-pack",
+            machine="assembling-machine-2",
+            modules={{name="speed-module", amount=2}}
         },
         {
-            {recipe="military-science-pack", machine_id="assembling-machine-2"},
-            {recipe="grenade", machine_id="assembling-machine-2"},
-            {recipe="stone-wall", machine_id="assembling-machine-1"},
-            {recipe="piercing-rounds-magazine", machine_id="assembling-machine-1"},
-            {recipe="firearm-magazine", machine_id="assembling-machine-1"}
-        }, 
-        {recipe="iron-gear-wheel", machine_id="assembling-machine-1"},
+            {name="logistic-science-pack", machine="assembling-machine-2"},
+            {name="transport-belt", machine="assembling-machine-1"},
+            {name="inserter", machine="assembling-machine-1"}
+        },
         {
-            {recipe="electronic-circuit", machine_id="assembling-machine-1"},
-            {recipe="copper-cable", machine_id="assembling-machine-1"}
+            {
+                name="military-science-pack",
+                machine="assembling-machine-2",
+                modules={{name="productivity-module-2", amount=2}},
+                beacon={beacon={name="beacon", amount=8}, module={name="speed-module-2", amount=2}}
+            },
+            {
+                name="grenade",
+                machine="assembling-machine-2",
+                modules={{name="speed-module-3", amount=2}}
+            },
+            {name="stone-wall", machine="assembling-machine-1"},
+            {name="piercing-rounds-magazine", machine="assembling-machine-1"},
+            {name="firearm-magazine", machine="assembling-machine-1"}
         }, 
-        {recipe="steel-plate", machine_id="steel-furnace"},
-        {recipe="stone-brick", machine_id="steel-furnace"},
-        {recipe="impostor-stone", machine_id="electric-mining-drill"},
-        {recipe="impostor-coal", machine_id="electric-mining-drill "}
+        {name="iron-gear-wheel", machine="assembling-machine-1"},
+        {
+            {name="electronic-circuit", machine="assembling-machine-1"},
+            {name="copper-cable", machine="assembling-machine-1"}
+        }, 
+        {name="steel-plate", machine="steel-furnace"},
+        {name="stone-brick", machine="steel-furnace"},
+        {
+            name="impostor-stone",
+            machine="electric-mining-drill",
+            modules={{name="speed-module-2", amount=1}, {name="effectivity-module-2", amount=1}}
+        },
+        {
+            name="impostor-coal",
+            machine="electric-mining-drill",
+            beacon={beacon={name="beacon", amount=6}, module={name="speed-module-3", amount=2}}
+        }
     }
     construct_floor(player, context.floor, recipes)
     
