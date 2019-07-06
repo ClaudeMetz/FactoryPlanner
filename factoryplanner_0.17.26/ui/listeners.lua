@@ -20,6 +20,7 @@ end)
 script.on_load(function()
     item_recipe_map = generator.item_recipe_map()
     item_groups = generator.item_groups()
+    module_tier_map = generator.module_tier_map()
 end)
 
 -- Fires when a player loads into a game for the first time
@@ -120,6 +121,10 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     elseif event.element.name == "fp_checkbox_preferences_enable_recipe_comments" then
         get_preferences(player).enable_recipe_comments = event.element.state
 
+    -- Changes the tutorial mode-preference
+    elseif event.element.name == "fp_checkbox_tutorial_mode" then
+        get_preferences(player).tutorial_mode = event.element.state
+
     end
 end)
 
@@ -153,7 +158,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     if event.button == defines.mouse_button_type.left then click = "left"
     elseif event.button == defines.mouse_button_type.right then click = "right" end
 
-    if click == "left" and not event.alt then
+    if click == "left" then
         if not event.control and event.shift then direction = "positive" 
         elseif event.control and not event.shift then direction = "negative" end
     end
@@ -259,6 +264,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_button_error_bar_repair" then
             handle_subfactory_repair(player)
 
+        -- Maxes the amount of modules on a modules-dialog
+        elseif event.element.name == "fp_button_max_modules" then
+            max_module_amount(player)
+            
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
@@ -309,6 +318,30 @@ script.on_event(defines.events.on_gui_click, function(event)
             local split_string = ui_util.split(event.element.name, "_")
             handle_machine_change(player, split_string[5], split_string[6], click, direction)
 
+        -- Handles click on the add-module-button on an (assembly) line
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_add_module_%d+$") then
+            local line_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_line_module_click(player, line_id, nil, click, direction, nil)
+
+        -- Handles click on any module button on an (assembly) line
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_module_%d+_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            handle_line_module_click(player, split_string[5], split_string[6], click, direction, event.alt)
+
+        -- Handles click on the add-beacon-button on an (assembly) line
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_add_beacon_%d+$") then
+            local line_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_line_beacon_click(player, line_id, nil, click, direction, nil)
+        
+        -- Handles click on any beacon (module or beacon) button on an (assembly) line
+        elseif string.find(event.element.name, "^fp_sprite%-button_line_beacon_[a-z]+_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            handle_line_beacon_click(player, split_string[6], split_string[5], click, direction, event.alt)
+
+        -- Handles click on any module/beacon button on a modules/beacons modal dialog
+        elseif string.find(event.element.name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
+            handle_module_beacon_picker_click(player, event.element)
+
         -- Reacts to any preferences machine button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_%d+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
@@ -323,6 +356,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_fuel_%d+$") then
             local fuel_id = tonumber(string.match(event.element.name, "%d+"))
             handle_preferences_fuel_change(player, fuel_id)
+
+        -- Reacts to any preferences beacon button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_beacon_%d+$") then
+            local beacon_id = tonumber(string.match(event.element.name, "%d+"))
+            handle_preferences_beacon_change(player, beacon_id)
 
         -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then

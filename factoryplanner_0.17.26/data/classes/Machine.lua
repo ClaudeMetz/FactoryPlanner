@@ -14,12 +14,6 @@ function Machine.init_by_proto(proto)
     }
 end
 
--- Initialised by passing a machine prototype id
-function Machine.init_by_ids(category_id, id)
-    local proto = global.all_machines.categories[category_id].machines[id]
-    Machine.init_by_proto(proto)
-end
-
 -- Updates the given machine with a new proto
 function Machine.update(self, proto)
     self.proto = proto
@@ -27,8 +21,14 @@ function Machine.update(self, proto)
 end
 
 
+-- Returns whether this machine can produce the given recipe (ingredient limit)
+function Machine.is_applicable(self, recipe)
+    return (#recipe.proto.ingredients <= self.proto.ingredient_limit)
+end
+
+
 -- Update the validity of this machine
-function Machine.update_validity(self)
+function Machine.update_validity(self, recipe)
     local category_name = (type(self.category) == "string") and self.category or self.category.name
     local new_category_id = new.all_machines.map[category_name]
 
@@ -49,6 +49,11 @@ function Machine.update_validity(self)
     else
         self.category = self.category.name
         self.proto = self.proto.name
+        self.valid = false
+    end
+
+    -- If the machine is valid, it might still not be applicable
+    if recipe.valid and not Machine.is_applicable(self, recipe) then
         self.valid = false
     end
     

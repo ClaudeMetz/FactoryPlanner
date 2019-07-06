@@ -22,8 +22,8 @@ function Factory.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end
 
-function Factory.get_in_order(self, class)
-    return Collection.get_in_order(self[class])
+function Factory.get_in_order(self, class, reverse)
+    return Collection.get_in_order(self[class], reverse)
 end
 
 function Factory.get_by_gui_position(self, class, gui_position)

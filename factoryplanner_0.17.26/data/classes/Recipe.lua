@@ -1,11 +1,10 @@
 -- This is essentially just a wrapper-'class' for a recipe prototype to add some data to it
 Recipe = {}
 
-function Recipe.init(recipe_id)
+function Recipe.init_by_id(recipe_id)
     local proto = global.all_recipes.recipes[recipe_id]
     return {
         proto = proto,
-        energy = proto.energy,
         sprite = ui_util.generate_recipe_sprite(proto),
         valid = true,
         class = "Recipe"
@@ -15,7 +14,6 @@ end
 -- Updates the given recipe with a new proto
 function Recipe.update(self, proto)
     self.proto = proto
-    self.energy = proto.energy
     self.sprite = ui_util.generate_recipe_sprite(proto)
 end
 

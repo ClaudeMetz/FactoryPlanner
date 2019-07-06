@@ -28,10 +28,12 @@ function refresh_actionbar(player)
     if ui_state.current_activity == "deleting_subfactory" then
         delete_button.caption = {"button-text.delete_confirm"}
         delete_button.style.font =  "fp-font-bold-16p"
+        delete_button.style.left_padding = 16
         ui_util.set_label_color(delete_button, "dark_red")
     else
         delete_button.caption = {"button-text.delete"}
-        delete_button.style.font =  "fp-font-16p"
+        delete_button.style.font =  "fp-font-semibold-16p"
+        delete_button.style.left_padding = 10
         ui_util.set_label_color(delete_button, "default_button")
     end
 end

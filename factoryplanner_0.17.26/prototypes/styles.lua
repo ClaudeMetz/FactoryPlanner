@@ -3,7 +3,7 @@ data.raw["gui-style"]["default"]["fp_footer_filler"] = {
     height = 32,
     graphical_set = data.raw["gui-style"]["default"]["draggable_space"].graphical_set,
     use_header_filler = false,
-    horizontally_stretchable = "on"
+    horizontally_stretchable = "on",
     --left_margin = data.raw["gui-style"]["default"]["draggable_space"].left_margin,
     --right_margin = data.raw["gui-style"]["default"]["draggable_space"].right_margin,
 }
@@ -23,7 +23,7 @@ data.raw["gui-style"].default["fp_preferences_table"] = {
 
 data.raw["gui-style"].default["fp_button_action"] = {
     type = "button_style",
-    font = "fp-font-16p"
+    font = "fp-font-semibold-16p"
 }
 
 data.raw["gui-style"].default["fp_button_mini"] = {
@@ -96,6 +96,28 @@ data.raw["gui-style"].default["fp_preferences_title_label"] = {
     font = "fp-font-bold-15p"
 }
 
+-- This style is hacked together from rounded-button and textbox
+data.raw["gui-style"].default["fp_sprite-button_inset"] = {
+    type = "button_style",
+    parent = "icon_button",
+    default_graphical_set = {
+        base = {position = {248, 0}, corner_size = 8}
+    },
+    hovered_graphical_set = {
+        base = {position = {219, 200}, corner_size = 8}
+    },
+    clicked_graphical_set = {
+        base = {position = {265, 0}, corner_size = 8}
+    }
+}
+
+data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_inset",
+    height = 32,
+    width = 32,
+    padding = 2
+}
 
 -- Generating prototype styles for the different icon-buttons
 local icon_state_indexes = {recipe = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}

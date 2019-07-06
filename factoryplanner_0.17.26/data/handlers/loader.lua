@@ -1,7 +1,8 @@
 loader = {
     machines = {},
     belts = {},
-    fuels = {}
+    fuels = {},
+    beacons = {}
 }
 
 -- The purpose of a loader is to recreate the global tables containing all relevant data types.
@@ -13,7 +14,7 @@ loader = {
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
 -- (Load order is important here: machines->recipes->items)
-local data_types = {"machines", "recipes", "items", "fuels", "belts"}
+local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons"}
 
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function loader.setup()
@@ -45,6 +46,7 @@ function loader.finish()
     -- Re-runs the table creation that runs on_load to incorporate the reloaded datasets
     item_recipe_map = generator.item_recipe_map()
     item_groups = generator.item_groups()
+    module_tier_map = generator.module_tier_map()
 end
 
 
@@ -68,6 +70,18 @@ function loader.fuels.run(player_table)
         preferences.preferred_fuel = new.all_fuels.fuels[new_fuel_id]
     else
         preferences.preferred_fuel = data_util.base_data.preferred_fuel(new)
+    end
+end
+
+
+-- Update preferred beacon
+function loader.beacons.run(player_table)
+    local preferences = player_table.preferences
+    local new_beacon_id = new.all_beacons.map[preferences.preferred_beacon.name]
+    if new_beacon_id ~= nil then
+        preferences.preferred_beacon = new.all_beacons.beacons[new_beacon_id]
+    else
+        preferences.preferred_beacon = data_util.base_data.preferred_beacon(new)
     end
 end
 

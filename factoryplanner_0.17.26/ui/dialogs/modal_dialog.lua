@@ -6,6 +6,7 @@ require("prototype_picker_dialog")
 require("item_picker_dialog")
 require("recipe_picker_dialog")
 require("chooser_dialog")
+require("modules_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
@@ -14,10 +15,11 @@ function enter_modal_dialog(player, dialog_settings)
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.selected_object = dialog_settings.object
+    ui_state.modal_data = dialog_settings.modal_data or {}
     ui_state.current_activity = nil
     
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
-    local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
+    local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
     
     player.opened = flow_modal_dialog.parent
@@ -68,8 +70,9 @@ end
 -- Checks the entered form data for errors and returns it if it's all correct, else returns nil
 function check_modal_dialog_data(flow_modal_dialog, dialog_type)
     local player = game.get_player(flow_modal_dialog.player_index)
+    local ui_state = get_ui_state(player)
     local conditions_function = _G["get_" .. dialog_type .. "_condition_instructions"]
-    local condition_instructions = (conditions_function ~= nil) and conditions_function(player) or nil
+    local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
 
     if condition_instructions ~= nil then
         -- Get form data
@@ -79,20 +82,28 @@ function check_modal_dialog_data(flow_modal_dialog, dialog_type)
         end
 
         -- Check all conditions
-        local error_found = false
+        local error_found, first_error_instructions = false, nil
         local table_conditions = flow_modal_dialog.parent["table_modal_dialog_conditions"]
         for _, condition_element in ipairs(table_conditions.children) do
             local n = tonumber(string.match(condition_element.name, "%d+"))
-            if condition_instructions.conditions[n].check(form_data) then
+            local instruction = condition_instructions.conditions[n]
+            if instruction.check(form_data) then
                 ui_util.set_label_color(condition_element, "red")
                 error_found = true
+                if first_error_instructions == nil then first_error_instructions = instruction end
             else
                 ui_util.set_label_color(condition_element, "default_label")
             end
         end
 
-        if error_found then return nil
-        else return form_data end
+        if error_found then
+            -- Re-focus an element, if specified
+            local refocus = first_error_instructions.refocus
+            if refocus then refocus(flow_modal_dialog) end
+            return nil
+        else
+            return form_data
+        end
 
     else return {} end
 end
