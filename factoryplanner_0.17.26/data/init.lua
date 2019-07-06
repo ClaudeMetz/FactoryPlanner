@@ -2,6 +2,8 @@ require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Recipe")
 require("data.classes.Machine")
+require("data.classes.Module")
+require("data.classes.Beacon")
 require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
@@ -13,7 +15,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
-----devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -118,10 +120,12 @@ end
 -- Reloads the user preferences, incorporating previous preferences if possible
 function reload_preferences(player, table)
     local preferences = global.players[player.index].preferences
+    preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.enable_recipe_comments = preferences.enable_recipe_comments or false
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
     preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
+    preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
     preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines(table)
 end
 

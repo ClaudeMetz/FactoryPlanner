@@ -19,11 +19,11 @@ function open_preferences_dialog(flow_modal_dialog)
 
     -- Ignore barreling recipes
     table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_ignore_barreling", state=false,
-      caption={"", " ", {"label.preferences_ignore_barreling"}}, tooltip={"tooltip.preferences_ignore_barreling"}}
+      caption={"", " ", {"checkbox.preferences_ignore_barreling"}}, tooltip={"tooltip.preferences_ignore_barreling"}}
 
     -- Show line comments
     table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_enable_recipe_comments", state=false,
-      caption={"", " ", {"label.preferences_enable_recipe_comments"}}, tooltip={"tooltip.preferences_enable_recipe_comments"}}
+      caption={"", " ", {"checkbox.preferences_enable_recipe_comments"}}, tooltip={"tooltip.preferences_enable_recipe_comments"}}
 
 
     -- Belt preferences
@@ -38,6 +38,15 @@ function open_preferences_dialog(flow_modal_dialog)
       style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_fuels"}}
 
     flow_modal_dialog.add{type="table", name="table_all_fuels", column_count=12, style="fp_preferences_table"}
+
+
+    -- Beacon preferences
+    if #global.all_beacons.beacons > 1 then  -- only needed when there are more than one beacon (ie. not vanilla)
+        flow_modal_dialog.add{type="label", name="label_beacons_info", caption={"", {"label.preferences_title_beacons"}, ":"},
+          style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_beacons"}}
+
+        flow_modal_dialog.add{type="table", name="table_all_beacons", column_count=12, style="fp_preferences_table"}
+    end
 
 
     -- Machine preferences
@@ -99,6 +108,26 @@ function refresh_preferences_dialog(player)
         button_fuel.tooltip = tooltip
     end
 
+    -- Beacon preferences
+    if #global.all_beacons.beacons > 1 then
+        local table_all_beacons = flow_modal_dialog["table_all_beacons"]
+        table_all_beacons.clear()
+
+        for beacon_id, beacon in pairs(global.all_beacons.beacons) do
+            local button_beacon = table_all_beacons.add{type="sprite-button", name="fp_sprite-button_preferences_beacon_"
+            .. beacon_id, sprite="entity/" .. beacon.name, mouse_button_filter={"left"}}
+        
+            local tooltip = beacon.localised_name
+            if get_preferences(player).preferred_beacon == beacon then
+                button_beacon.style = "fp_button_icon_medium_green"
+                tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
+            else 
+                button_beacon.style = "fp_button_icon_medium_hidden"
+            end
+            button_beacon.tooltip = tooltip
+        end
+    end
+
     -- Machine preferences
     local table_all_machines = flow_modal_dialog["table_all_machines"]
     table_all_machines.clear()
@@ -140,5 +169,11 @@ end
 -- Changes the preferred fuel
 function handle_preferences_fuel_change(player, id)
     get_preferences(player).preferred_fuel = global.all_fuels.fuels[id]
+    refresh_preferences_dialog(player)
+end
+
+-- Changes the preferred beacon
+function handle_preferences_beacon_change(player, id)
+    get_preferences(player).preferred_beacon = global.all_beacons.beacons[id]
     refresh_preferences_dialog(player)
 end

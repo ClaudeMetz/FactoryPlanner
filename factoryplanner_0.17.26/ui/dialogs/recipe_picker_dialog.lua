@@ -14,7 +14,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
         if recipe_id ~= nil then
-            Floor.add(ui_state.context.floor, Line.init(player, Recipe.init(recipe_id), nil))
+            Floor.add(ui_state.context.floor, Line.init(player, Recipe.init_by_id(recipe_id), nil))
             update_calculations(player, ui_state.context.subfactory)
             if show.message ~= nil then queue_message(player, show.message.string, show.message.type) end
             exit_modal_dialog(player, "cancel", {})
@@ -49,7 +49,7 @@ function handle_picker_recipe_click(player, button)
     local context = get_context(player)
     local recipe_id = tonumber(string.match(button.name, "%d+"))
     
-    Floor.add(context.floor, Line.init(player, Recipe.init(recipe_id)))
+    Floor.add(context.floor, Line.init(player, Recipe.init_by_id(recipe_id)))
     update_calculations(player, context.subfactory)
     exit_modal_dialog(player, "cancel", {})
 end

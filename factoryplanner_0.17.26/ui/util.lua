@@ -28,6 +28,16 @@ function ui_util.set_label_color(ui_element, color)
 end
 
 
+-- Adds the appropriate tutorial tooltip if the preference is enabled
+function ui_util.add_tutorial_tooltip(button, type, line_break)
+    local player = game.get_player(button.player_index)
+    if get_preferences(player).tutorial_mode then
+        local b = line_break and "\n\n" or ""
+        button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}}
+    end
+end
+
+
 -- Returns the sprite string of the given item
 function ui_util.generate_item_sprite(item)
     return (item.type .. "/" .. item.name)
@@ -50,6 +60,133 @@ function ui_util.generate_recipe_sprite(recipe)
     end
 
     return sprite
+end
+
+
+-- Returns the number to put on an item button according to the current view
+function ui_util.calculate_item_button_number(player_table, view, amount, type)
+    local timescale = player_table.ui_state.context.subfactory.timescale
+    local number = nil
+
+    if view.name == "items_per_timescale" then
+        number = amount
+    elseif view.name == "belts_or_lanes" and type ~= "fluid" then
+        local throughput = player_table.preferences.preferred_belt.throughput
+        local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
+        number = amount / divisor / timescale
+    elseif view.name == "items_per_second" then
+        number = amount / timescale
+    end
+
+    return number  -- number might be nil here
+end
+
+
+-- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
+-- (Relates to the view_state, doesn't do anything if views are uninitialised)
+function ui_util.setup_item_button(player_table, button, item, top_level)
+    local view_state = player_table.ui_state.view_state
+    -- This gets refreshed after the view state is initialised
+    if view_state == nil then return end
+
+    local view = view_state[view_state.selected_view_id]
+    local amount = (top_level and item.class == "Product") and item.required_amount or item.amount
+    local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type)
+    
+    -- Special handling for mining recipes concerning their localised name
+    local localised_name
+    if item.proto.type == "entity" then localised_name = {"", {"label.raw"}, " ", item.proto.localised_name}
+    else localised_name = item.proto.localised_name end
+    
+    -- Determine caption
+    local caption
+    local function determine_type_text()
+        if item.proto.type == "fluid" then
+            caption = {"tooltip.fluid"}
+        else
+            caption = (number == 1) and {"tooltip.item"} or {"", {"tooltip.item"}, "s"}
+        end
+    end
+    
+    -- Determine caption appendage
+    if view.name == "items_per_timescale" then
+        determine_type_text()
+        local timescale = player_table.ui_state.context.subfactory.timescale
+        caption = {"", caption, "/", ui_util.format_timescale(timescale, true)}
+
+    elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
+        local belts = (player_table.settings.belts_or_lanes == "Belts")
+        caption = belts and {"tooltip.belt"} or {"tooltip.lane"}
+        if number ~= 1 then caption = {"", caption, "s"} end
+
+    elseif view.name == "items_per_second" then
+        determine_type_text()
+        caption = {"", caption, "/s"}
+    end
+
+    -- Compose tooltip, respecting top level products
+    if number ~= nil then
+        local number_string
+        if top_level and item.class == "Product" then
+            local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount, item.proto.type)
+            number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", ui_util.format_number(number, 4)}
+        else
+            number_string = {"", ui_util.format_number(number, 4)}
+        end
+
+        button.number = ("%.4g"):format(number)
+        button.tooltip = {"", localised_name, "\n", number_string, " ", caption}
+    else
+        button.tooltip = localised_name
+    end
+end
+
+
+-- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
+function ui_util.generate_module_effects_tooltip_proto(module)
+    -- First, generate the appropriate effects table
+    local effects = {}
+    local raw_effects = (module.proto ~= nil) and module.proto.effects or module.effects
+    for name, effect in pairs(raw_effects) do
+        effects[name] = (module.proto ~= nil) and (effect.bonus * module.amount) or effect.bonus
+    end
+
+    -- Then, let the tooltip function generate the actual tooltip
+    return ui_util.generate_module_effects_tooltip(effects)
+end
+
+-- Generates a tooltip out of the given effects, ignoring those that are 0
+function ui_util.generate_module_effects_tooltip(effects)
+    local localised_names = {
+        consumption = {"tooltip.module_consumption"},
+        speed = {"tooltip.module_speed"},
+        productivity = {"tooltip.module_productivity"},
+        pollution = {"tooltip.module_pollution"}
+    }
+
+    local tooltip = {""}
+    for name, effect in pairs(effects) do
+        if effect ~= 0 then
+            -- Consumption is capped at -80%
+            local effect_bonus, appendage = effect, ""
+            if name == "consumption" and effect_bonus < -0.8 then
+                effect_bonus = -0.8
+                appendage = {"", " (", {"tooltip.capped"}, ")"}
+            end
+
+            -- Force display of either a '+' or '-'
+            local number = ("%+d"):format(math.floor((effect_bonus * 100) + 0.5))
+            tooltip = {"", tooltip, "\n", localised_names[name], ": ", number, "%", appendage}
+        end
+    end
+
+    return tooltip
+end
+
+-- Returns a tooltip containing the attributes of the given beacon prototype
+function ui_util.generate_beacon_attributes_tooltip(beacon)
+    return {"", {"tooltip.module_slots"}, ": ", beacon.module_limit, "\n",
+              {"tooltip.effectivity"}, ": ", beacon.effectivity}
 end
 
 
