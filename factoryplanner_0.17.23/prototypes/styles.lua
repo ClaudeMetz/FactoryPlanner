@@ -3,7 +3,7 @@ data.raw["gui-style"]["default"]["fp_footer_filler"] = {
     height = 32,
     graphical_set = data.raw["gui-style"]["default"]["draggable_space"].graphical_set,
     use_header_filler = false,
-    horizontally_stretchable = "on"
+    horizontally_stretchable = "on",
     --left_margin = data.raw["gui-style"]["default"]["draggable_space"].left_margin,
     --right_margin = data.raw["gui-style"]["default"]["draggable_space"].right_margin,
 }
@@ -111,6 +111,13 @@ data.raw["gui-style"].default["fp_sprite-button_inset"] = {
     }
 }
 
+data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_inset",
+    height = 32,
+    width = 32,
+    padding = 2
+}
 
 -- Generating prototype styles for the different icon-buttons
 local icon_state_indexes = {recipe = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}

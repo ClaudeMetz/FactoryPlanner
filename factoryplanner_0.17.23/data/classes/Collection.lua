@@ -68,7 +68,10 @@ end
 -- Returns the dataset with the given name, nil if it doesn't exist
 function Collection.get_by_name(self, name)
     for _, dataset in pairs(self.datasets) do
-        if dataset.name == name then
+        -- Check agains the prototype name, if a prototype exists
+        if dataset.proto ~= nil and dataset.proto.name == name then
+            return dataset
+        elseif dataset.name == name then
             return dataset
         end
     end

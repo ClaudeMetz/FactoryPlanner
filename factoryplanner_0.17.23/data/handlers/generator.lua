@@ -297,7 +297,6 @@ function generator.all_machines()
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local ingredient_limit = proto.ingredient_count or 255
-        local allowed_effects = proto.allowed_effects  -- might be nil
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy = proto.energy_usage or proto.max_energy_usage
         local burner = nil
@@ -314,7 +313,7 @@ function generator.all_machines()
             ingredient_limit = ingredient_limit,
             speed = speed,
             energy = energy,
-            allowed_effects = allowed_effects,
+            allowed_effects = proto.allowed_effects,  -- might be nil
             module_limit = proto.module_inventory_size,
             burner = burner
         }
@@ -435,6 +434,7 @@ function generator.all_modules()
             local module = {
                 name = proto.name,
                 localised_name = proto.localised_name,
+                sprite = "item/" .. proto.name,
                 category = proto.category,
                 tier = proto.tier,
                 effects = proto.module_effects,
@@ -450,6 +450,7 @@ end
 function generator.module_tier_map()
     local map = {}
 
+    if not global.all_modules then return end
     for _, category in pairs(global.all_modules.categories) do
         map[category.id] = {}
         for _, module in pairs(category.modules) do
@@ -458,4 +459,23 @@ function generator.module_tier_map()
     end
     
     return map
+end
+
+
+-- Generates a table containing all available beacons
+function generator.all_beacons()
+    local all_beacons = {beacons = {}, map = {}}
+    for _, proto in pairs(game.entity_prototypes) do
+        if proto.distribution_effectivity ~= nil then
+            insert_proto(all_beacons, "beacons", {
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = "entity/" .. proto.name,
+                allowed_effects = proto.allowed_effects,
+                module_limit = proto.module_inventory_size,
+                effectivity = proto.distribution_effectivity
+            })
+        end
+    end
+    return all_beacons
 end

@@ -71,6 +71,7 @@ function handle_picker_item_click(player, button)
     get_ui_state(player).modal_data.selected_item = item_proto
     
     flow_product_bar["sprite-button_product"].sprite = button.sprite
+    flow_product_bar["sprite-button_product"].tooltip = item_proto.localised_name
     flow_product_bar["textfield_product_amount"].focus()
 end
 
@@ -81,6 +82,7 @@ function refresh_product_bar(flow_modal_dialog, product)
     if product ~= nil then  -- Adjustments if the product is being edited
         sprite = product.sprite
         required_amount = product.required_amount
+        tooltip = product.proto.localised_name
     end
 
     local flow = flow_modal_dialog["flow_product_bar"]
@@ -94,7 +96,8 @@ function refresh_product_bar(flow_modal_dialog, product)
     end
 
     flow.add{type="label", name="label_product", caption={"label.product"}}
-    local button = flow.add{type="sprite-button", name="sprite-button_product", sprite=sprite, style="slot_button"}
+    local button = flow.add{type="sprite-button", name="sprite-button_product", sprite=sprite, tooltip=tooltip,
+      style="slot_button"}
     button.style.width = 28
     button.style.height = 28
     button.style.right_margin = 14

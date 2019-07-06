@@ -12,7 +12,7 @@ function refresh_production_table(player)
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
     
-    local column_count = preferences.enable_recipe_comments and 9 or 8
+    local column_count = preferences.enable_recipe_comments and 10 or 9
     local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
       column_count=column_count}
     table_production.style = "table_with_selection"
@@ -20,7 +20,7 @@ function refresh_production_table(player)
     table_production.style.top_padding = 0
     table_production.style.left_margin = 6
     for i=1, column_count do
-        if i < 6 then table_production.style.column_alignments[i] = "middle-center"
+        if i < 7 then table_production.style.column_alignments[i] = "middle-center"
         else table_production.style.column_alignments[i] = "middle-left" end
     end
 
@@ -38,6 +38,7 @@ function refresh_production_table(player)
                 {name="percent", label="%"}, 
                 {name="machine", label={"label.machine"}},
                 {name="modules", label={"label.modules"}},
+                {name="beacons", label={"label.beacons"}},
                 {name="energy", label={"label.energy"}},
                 {name="products", label={"label.products"}},
                 {name="byproducts", label={"label.byproducts"}},
@@ -133,22 +134,38 @@ function create_line_table_row(player, line)
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
     if line.machine.proto.module_limit > 0 then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
-            local m = (module.amount == 1) and {"tooltip.module"} or {"", {"tooltip.module"}, "s"}
-            local button_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_module_" .. line.id
-              .. "_" .. module.id, sprite=module.sprite, style="fp_button_icon_medium_recipe", number=module.amount,
-              mouse_button_filter={"left-and-right"}, tooltip={"", module.proto.localised_name, "\n", module.amount, " ",
-              m, ui_util.generate_module_effects_tooltip_proto(module)}}
-            button_module.style.padding = 2
-
-            ui_util.add_tutorial_tooltip(button_module, "module", true)
+            create_module_button(flow_modules, line, module, "module", "fp_sprite-button_line_module_" .. line.id 
+            .. "_" .. module.id)
         end
 
         if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
-            local button_add_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_" .. line.id,
-            sprite="fp_sprite_plus", style="fp_sprite-button_inset", tooltip={"tooltip.add_module"}, mouse_button_filter={"left"}}
-            button_add_module.style.height = 32
-            button_add_module.style.width = 32
-            button_add_module.style.padding = 2
+            local button_add_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
+              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_module"},
+              mouse_button_filter={"left"}}
+        end
+    end
+
+    -- Beacons
+    local flow_beacons = table_production.add{type="flow", name="flow_line_beacons_" .. line.id, direction="horizontal"}
+    flow_beacons.style.vertical_align = "center"
+    if line.machine.proto.module_limit > 0 then  -- beacons only work on machines that have module slots themselves
+        if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
+            local button_add_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
+              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_beacon"},
+              mouse_button_filter={"left"}}
+        else
+            local beacon = line.beacon
+            create_module_button(flow_beacons, line, beacon.module, "beacon_module",
+              "fp_sprite-button_line_beacon_module_" .. line.id)
+            flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
+
+            local m = (beacon.amount == 1) and {"tooltip.beacon"} or {"", {"tooltip.beacon"}, "s"}
+            local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
+              sprite=beacon.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
+              mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
+              " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects)}}
+            button_beacon.style.padding = 2
+            ui_util.add_tutorial_tooltip(button_beacon, "beacon_beacon", true)
         end
     end
     
@@ -178,8 +195,8 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
         local m = (count == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
         local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
           sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(count),
-          mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4), " ",
-          m, ui_util.generate_module_effects_tooltip(line.total_effects)}}
+          mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4),
+          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects)}}
         button.style.padding = 1
 
         -- Add overlay to indicate if machine the machine count is rounded or not
@@ -218,6 +235,17 @@ function add_rounding_overlay(player, button, data)
     end
 end
 
+-- Creates and places a single module button
+function create_module_button(flow, line, module, type, button_name)
+    local m = (module.amount == 1) and {"tooltip.module"} or {"", {"tooltip.module"}, "s"}
+    local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.sprite,
+      style="fp_button_icon_medium_recipe", number=module.amount, mouse_button_filter={"left-and-right"},
+      tooltip={"", module.proto.localised_name, "\n", module.amount, " ", m,
+      ui_util.generate_module_effects_tooltip_proto(module)}}
+    button_module.style.padding = 2
+
+    ui_util.add_tutorial_tooltip(button_module, type, true)
+end
 
 -- Creates the flow containing all line items of the given type
 function create_item_button_flow(player_table, gui_table, line, class, style)
@@ -419,7 +447,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
     local limit = Line.empty_slots(line)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
-        enter_modal_dialog(player, {type="modules", object=nil, submit=true, modal_data={empty_slots=limit}})
+        enter_modal_dialog(player, {type="module", object=nil, submit=true, modal_data={empty_slots=limit}})
 
     else  -- meaning an existing module was clicked
         local module = Line.get(line, "Module", module_id)
@@ -439,19 +467,19 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
             -- alt modifies the module amount, no alt modifies the module tier
             if direction == "positive" then
                 if alt then
-                    module.amount = math.min(module.amount + 1, module.amount + limit)
-                    Line.summarize_modules(line)
+                    local new_amount = math.min(module.amount + 1, module.amount + limit)
+                    Line.change_module_amount(line, module, new_amount)
                 else
                     handle_tier_change(1)
                 end
 
             else  -- direction == "negative"
                 if alt then
-                    module.amount = module.amount - 1
-                    if module.amount == 0 then 
+                    local new_amount = module.amount - 1
+                    if new_amount == 0 then 
                         Line.remove(line, module, true)
                     else
-                        Line.summarize_modules(line)
+                        Line.change_module_amount(line, module, new_amount)
                     end
                 else
                     handle_tier_change(-1)
@@ -462,8 +490,8 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
 
         else
             if click == "left" then  -- open the modules modal dialog
-                enter_modal_dialog(player, {type="modules", object=module, submit=true, delete=true,
-                  modal_data={empty_slots=limit+module.amount, selected_module=module.proto}})
+                enter_modal_dialog(player, {type="module", object=module, submit=true, delete=true,
+                  modal_data={empty_slots=(limit + module.amount), selected_module=module.proto}})
 
             else  -- click == "right"; delete the module
                 Line.remove(line, module, true)
@@ -474,6 +502,103 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
     end
 end
 
+
+-- Handles a click on an existing beacon/beacon-module or on the add-beacon-button
+function handle_line_beacon_click(player, line_id, type, click, direction, alt)
+    local ui_state = get_ui_state(player)
+    local floor = ui_state.context.floor
+    local line = Floor.get(floor, "Line", line_id)
+    ui_state.context.line = line
+
+    if type == nil then  -- meaning the add-beacon-button was pressed
+        local limit = get_preferences(player).preferred_beacon.module_limit
+        enter_modal_dialog(player, {type="beacon", object=nil, submit=true, modal_data={empty_slots=limit}})
+
+    elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction
+        if type == "module" then
+            local module = line.beacon.module
+            local tier_map = module_tier_map
+
+            -- Changes the current module tier by the given factor (+1 or -1 in this case)
+            local function handle_tier_change(factor)
+                local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                if new_proto ~= nil then
+                    local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
+                    Beacon.set_module(line.beacon, new_module)
+                end
+            end
+
+            -- alt modifies the module amount, no alt modifies the module tier
+            if direction == "positive" then
+                if alt then
+                    local new_amount = math.min(module.amount + 1, line.beacon.proto.module_limit)
+                    local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
+                    Beacon.set_module(line.beacon, new_module)
+                else
+                    handle_tier_change(1)
+                end
+
+            else  -- direction == "negative"
+                if alt then
+                    local new_amount = module.amount - 1
+                    if new_amount == 0 then 
+                        Line.set_beacon(line, nil)
+                    else
+                        local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
+                        Beacon.set_module(line.beacon, new_module)
+                    end
+                else
+                    handle_tier_change(-1)
+                end
+            end
+
+        else  -- type == "beacon"
+            local beacon = line.beacon
+
+            -- alt modifies the beacon amount, no alt modifies the beacon tier
+            if direction == "positive" then
+                if alt then
+                    local new_beacon = Beacon.init_by_protos(beacon.proto, beacon.amount + 1, beacon.module.proto,
+                      beacon.module.amount)
+                    Line.set_beacon(line, new_beacon)
+                else
+                    local new_proto = global.all_beacons.beacons[beacon.proto.id + 1]
+                    if new_proto ~= nil then
+                        local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
+                          beacon.module.amount)
+                        Line.set_beacon(line, new_beacon)
+                    end
+                end
+
+            else  -- direction == "negative"
+                if alt then
+                    local new_amount = beacon.amount - 1
+                    if new_amount == 0 then 
+                        Line.set_beacon(line, nil)
+                    else
+                        local new_beacon = Beacon.init_by_protos(beacon.proto, new_amount, beacon.module.proto,
+                      beacon.module.amount)
+                    Line.set_beacon(line, new_beacon)
+                    end
+                else
+                    local new_proto = global.all_beacons.beacons[beacon.proto.id - 1]
+                    if new_proto ~= nil then
+                        local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
+                          beacon.module.amount)
+                        Line.set_beacon(line, new_beacon)
+                    end
+                end
+            end
+        end
+
+        update_calculations(player, ui_state.context.subfactory)
+
+    else  -- click is left or right, makes no difference
+        local beacon = line.beacon
+        enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
+          {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+    end
+end
 
 
 -- Handles a click on any of the 3 item buttons of a specific line

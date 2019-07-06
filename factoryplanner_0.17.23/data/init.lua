@@ -3,6 +3,7 @@ require("data.classes.Item")
 require("data.classes.Recipe")
 require("data.classes.Machine")
 require("data.classes.Module")
+require("data.classes.Beacon")
 require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
@@ -128,6 +129,7 @@ function reload_preferences(player, table)
     preferences.enable_recipe_comments = preferences.enable_recipe_comments or false
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
     preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
+    preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
     preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines(table)
 end
 

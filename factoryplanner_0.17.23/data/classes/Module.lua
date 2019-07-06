@@ -55,7 +55,13 @@ function Module.update_validity(self)
 
     -- Check whether the module is still compatible with it's machine 
     if self.valid then  -- only makes sense if the module is still valid at this point
-        local characteristics = Line.get_module_characteristics(self.parent, self.proto)
+        local characteristics
+        -- Different validation strategies depending on the use case of this module
+        if self.parent.class == "Beacon" then
+            characteristics = get_beacon_module_characteristics(self.parent.proto, self.proto)
+        else  -- parent.class == "Line"
+            characteristics = Line.get_module_characteristics(self.parent, self.proto)
+        end
         self.valid = characteristics.compatible
     end
     
@@ -86,7 +92,13 @@ function Module.attempt_repair(self, player)
 
     -- Check whether the module is still compatible with it's machine, else remove it
     if self.valid then  -- only makes sense if the module is still valid at this point
-        local characteristics = Line.get_module_characteristics(self.parent, self.proto)
+        local characteristics
+        -- Different validation strategies depending on the use case of this module
+        if self.parent.class == "Beacon" then
+            characteristics = get_beacon_module_characteristics(self.parent.proto, self.proto)
+        else  -- parent.class == "Line"
+            characteristics = Line.get_module_characteristics(self.parent, self.proto)
+        end
         self.valid = characteristics.compatible
     end
 

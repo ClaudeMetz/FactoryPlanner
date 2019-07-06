@@ -78,6 +78,9 @@ function data_util.machine.change(player, line, machine, direction)
 
             -- Adjust modules (ie. trim them if needed)
             Line.trim_modules(line)
+
+            -- Adjust beacon
+            if line.machine.proto.module_limit == 0 then Line.set_beacon(line, nil) end
         end
 
     -- Bump machine in the given direction (takes given machine, if available)
@@ -137,6 +140,11 @@ function data_util.base_data.preferred_fuel(table)
     end
 end
 
+-- Returns the default preferred beacon
+function data_util.base_data.preferred_beacon(table)
+    return table.all_beacons.beacons[1]
+end
+
 
 -- **** MISC ****
 -- Updates validity of every class specified by the classes parameter
@@ -172,16 +180,20 @@ end
 
 -- Logs given table shallowly, excluding the parent attribute
 function data_util.log(table)
-    local s = "\n{\n"
-    for name, value in pairs(table) do
-        if type(value) == "table" then
-            s = s .. "  " .. name .. " = table\n"
-        else
-            s = s .. "  " .. name .. " = " .. tostring(value) .. "\n"
+    if table == nil then
+        log("nil")
+    else
+        local s = "\n{\n"
+        for name, value in pairs(table) do
+            if type(value) == "table" then
+                s = s .. "  " .. name .. " = table\n"
+            else
+                s = s .. "  " .. name .. " = " .. tostring(value) .. "\n"
+            end
         end
+        s = s .. "}"
+        log(s)
     end
-    s = s .. "}"
-    log(s)
 end
 
 

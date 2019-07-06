@@ -11,7 +11,7 @@ function migration_0_17_22.subfactory(player, subfactory)
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             line.Modules = Collection.init()
             line.recipe.energy = nil
-            Line.summarize_modules(line)
+            Line.summarize_effects(line)
         end
     end
 end
