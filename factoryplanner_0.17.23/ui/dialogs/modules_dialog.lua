@@ -249,7 +249,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
         if object == nil then
             focus = false
             -- Set and lock the textfield and max-button if the module amount has to be 1
-            if Line.empty_slots(line) == 1 then
+            if modal_data.empty_slots == 1 then
                 textfield.text = "1"
                 textfield.enabled = false
                 button_max.enabled = false
