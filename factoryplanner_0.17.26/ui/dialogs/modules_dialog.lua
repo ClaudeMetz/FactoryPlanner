@@ -208,7 +208,8 @@ end
 -- Adds a prototype line to the modal dialog flow to specify either a module or beacon
 function create_prototype_line(flow_modal_dialog, type, line, object)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local modal_data = get_ui_state(player).modal_data
+    local ui_state = get_ui_state(player)
+    local modal_data = ui_state.modal_data
 
     -- Adjustments if the object is being edited
     local sprite, tooltip, amount = nil, nil, ""
@@ -246,15 +247,9 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
         button_max.style.left_margin = 4
         button_max.style.top_margin = 1
 
-        if object == nil then
-            focus = false
-            -- Set and lock the textfield and max-button if the module amount has to be 1
-            if modal_data.empty_slots == 1 then
-                textfield.text = "1"
-                textfield.enabled = false
-                button_max.enabled = false
-            end
-        end
+        -- Update module bar textfield and max-button and focus
+        update_module_bar(flow_modal_dialog, ui_state)
+        if ui_state.selected_object == nil then focus = false end
     end
 
     -- focus textfield on edit
@@ -336,15 +331,18 @@ function handle_module_beacon_picker_click(player, button)
         modal_data.selected_beacon = beacon_proto
         modal_data.empty_slots = beacon_proto.module_limit
 
+        -- Set the module in the interface
+        set_sprite_button(flow_modal_dialog, "beacon", beacon_proto)
+
+        -- The module textfield and max-button might need to be locked (limit=1)
+        update_module_bar(flow_modal_dialog, ui_state)
+
         -- The allowed modules might be different with the newly selected beacon, so refresh them
         refresh_module_selection(flow_modal_dialog, ui_state, "beacon", nil)
 
         -- Update the condition text (a bit hacky)
         local label_instruction_3 = generate_module_condition_text(modal_data)
         flow_modal_dialog.parent["table_modal_dialog_conditions"]["label_subfactory_instruction_3"].caption = label_instruction_3
-
-        -- Set the module in the interface
-        set_sprite_button(flow_modal_dialog, "beacon", beacon_proto)
     end
 end
 
@@ -354,6 +352,16 @@ function set_sprite_button(flow_modal_dialog, type, proto)
     bar["sprite-button_" .. type].sprite = proto.sprite
     bar["sprite-button_" .. type].tooltip = proto.localised_name
     bar["textfield_" .. type .. "_amount"].focus()
+end
+
+-- Updates the module textfield and max-button
+function update_module_bar(flow_modal_dialog, ui_state)
+    -- Set and lock the textfield and max-button if the module amount has to be 1
+    local single_choice = (ui_state.modal_data.empty_slots == 1)
+    local bar = flow_modal_dialog["flow_module_bar"]
+    if single_choice then bar["textfield_module_amount"].text = "1" end
+    bar["textfield_module_amount"].enabled = not single_choice
+    bar["fp_button_max_modules"].enabled = not single_choice
 end
 
 

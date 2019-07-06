@@ -50,19 +50,20 @@ end
 
 -- Changes the machine either to the given machine or moves it in the given direction
 -- If neither machine or direction is given, it applies the default machine for the category
+-- Returns false if no machine is applied because none can be found, true otherwise
 function data_util.machine.change(player, line, machine, direction)
     -- Set the machine to the default one
     if machine == nil and direction == nil then
         local default_machine = data_util.machine.get_default(player, line.machine.category)
-        data_util.machine.change(player, line, default_machine, nil)
+        return data_util.machine.change(player, line, default_machine, nil)
 
     -- Set machine directly
     elseif machine ~= nil and direction == nil then
         local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
         -- Try setting a higher tier machine until it sticks or nothing happens
-        -- Crashes if no machine fits at all (unlikely)
+        -- Returns false if no machine fits at all, so an appropriate error can be displayed
         if not Machine.is_applicable(machine, line.recipe) then
-            data_util.machine.change(player, line, machine, "positive")
+            return data_util.machine.change(player, line, machine, "positive")
 
         else
             line.machine = machine
@@ -79,8 +80,10 @@ function data_util.machine.change(player, line, machine, direction)
             -- Adjust modules (ie. trim them if needed)
             Line.trim_modules(line)
 
-            -- Adjust beacon
+            -- Adjust beacon (ie. remove if machine does not allow beacons)
             if line.machine.proto.module_limit == 0 then Line.set_beacon(line, nil) end
+
+            return true
         end
 
     -- Bump machine in the given direction (takes given machine, if available)
@@ -102,12 +105,16 @@ function data_util.machine.change(player, line, machine, direction)
         if direction == "positive" then
             if proto.id < #category.machines then
                 local new_machine = category.machines[proto.id + 1]
-                data_util.machine.change(player, line, new_machine, nil)
+                return data_util.machine.change(player, line, new_machine, nil)
+            else
+                return false
             end
         else  -- direction == "negative"
             if proto.id > 1 then
                 local new_machine = category.machines[proto.id - 1]
-                data_util.machine.change(player, line, new_machine, nil)
+                return data_util.machine.change(player, line, new_machine, nil)
+            else
+                return false            
             end
         end
     end
