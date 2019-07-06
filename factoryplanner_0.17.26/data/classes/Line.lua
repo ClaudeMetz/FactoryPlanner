@@ -26,7 +26,10 @@ function Line.init(player, recipe, machine)
         -- Hack together a pseudo-category for machine.change to use to find the default
         line.machine = {category = { id = global.all_machines.map[recipe.proto.category] } }
     end
-    data_util.machine.change(player, line, machine, nil)
+    -- Return false if no fitting machine can be found (needs error handling on the other end)
+    if data_util.machine.change(player, line, machine, nil) == false then
+        return false
+    end
 
     for _, product in pairs(recipe.proto.products) do
         Line.add(line, Item.init_by_item(product, "Product", 0))
@@ -229,6 +232,7 @@ function Line.sort_modules(self)
     local next_position = 1
     local new_gui_positions = {}
 
+    if global.all_modules == nil then return end
     for _, category in ipairs(global.all_modules.categories) do
         for _, module_proto in ipairs(category.modules) do
             for _, module in ipairs(Line.get_in_order(self, "Module")) do
@@ -310,7 +314,7 @@ function Line.update_validity(self)
     end
 
     -- Validate beacon
-    if Beacon.update_validity(self.beacon) then
+    if self.beacon ~= nil and Beacon.update_validity(self.beacon) then
         self.valid = false
     end
 
@@ -355,17 +359,24 @@ function Line.attempt_repair(self, player)
     if self.valid and not self.machine.valid and not Machine.attempt_repair(self.machine) then
         if self.machine.category == nil then  -- No category means that it could not be repaired
             if self.valid then  -- If the line is still valid here, it has a valid recipe
-                -- Replace this line with a new one (with a new category)
-                Floor.replace(self.parent, self, Line.init(player, self.recipe, nil))
+                -- Try if a new line with the new category would be valid, remove it otherwise
+                local new_line = Line.init(player, self.recipe, nil)
+                if new_line ~= false then
+                    Floor.replace(self.parent, self, new_line)
+                else
+                    self.valid = false
+                end
             end
         else
-            -- Set the machine to the default one
-            data_util.machine.change(player, self, nil, nil)
+            -- Set the machine to the default one; remove of none is compatible anymore
+            if not data_util.machine.change(player, self, nil, nil) then
+                self.valid = false
+            end
         end
     end
     
     -- Repair Beacon
-    if self.valid and not Beacon.attempt_repair(self.beacon) then
+    if self.valid and self.beacon ~= nil and not Beacon.attempt_repair(self.beacon) then
         self.valid = false
     end
     

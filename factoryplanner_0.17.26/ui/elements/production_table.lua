@@ -393,7 +393,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                     refresh_main_dialog(player)
 
                 else  -- Open a chooser dialog presenting all machine choices
-                    ui_state.modal_data = {
+                    local modal_data = {
                         title = {"label.machine"},
                         text = {"", {"label.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
                         choices = {},
@@ -404,7 +404,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                         local machine = Machine.init_by_proto(machine)
                         if Machine.is_applicable(machine, line.recipe) then
                             local count = Line.calculate_machine_count(line, machine)
-                            table.insert(ui_state.modal_data.choices, {
+                            table.insert(modal_data.choices, {
                                 name = machine_id,
                                 tooltip = {"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4)},
                                 sprite = "entity/" .. machine.proto.name,
@@ -415,7 +415,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                     end
 
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                    enter_modal_dialog(player, {type="chooser"})
+                    enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
                 end
             end
         end
@@ -616,7 +616,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         if click == "right" and item.fuel then
             local ui_state = get_ui_state(player)
             -- Setup chooser dialog
-            ui_state.modal_data = {
+            local modal_data = {
                 title = {"label.fuel"},
                 choices = {},
                 reciever_name = "fuel",
@@ -625,9 +625,9 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
             -- Set different message depending on whether this fuel is on a line with a subfloor or not
             if line.subfloor == nil then
-                ui_state.modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
+                modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
             else
-                ui_state.modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
+                modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
             end
 
             -- Fill chooser dialog with elements
@@ -645,7 +645,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                     tooltip = fuel.localised_name
                 end
                 
-                table.insert(ui_state.modal_data.choices, {
+                table.insert(modal_data.choices, {
                     name = old_fuel_id .. "_" .. new_fuel_id,  -- incorporate old fuel id for later use
                     tooltip = tooltip,
                     sprite = fuel.sprite,
@@ -654,7 +654,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
             end
 
             ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-            enter_modal_dialog(player, {type="chooser"})
+            enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
 
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.proto.type ~= "entity" then

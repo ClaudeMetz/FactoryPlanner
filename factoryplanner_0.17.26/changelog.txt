@@ -1,15 +1,16 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Added support for modules and beacons!
+    - Added support for modules and beacons! (might cause crashes)
     - Added a tutorial mode, which informs you of all the possible interactions in the
       tooltips of various buttons. You can toggle it in the tutorial-window
   Changes:
     - Changing the view (items/s, belts, etc) now applies to top-level-items too
     - Improved the tooltips in various places
   Bugfixes:
-    - 
-    
+    - Fixed a crash when opening the machines or fuel chooser dialog
+    - Fixed a crash that happened when adding a recipe with no compatible machines
+
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.26
 Date: 01. 07. 2019
