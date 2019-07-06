@@ -7,6 +7,7 @@ function Line.init(player, recipe, machine)
         percentage = 100,
         machine = nil,
         Module = Collection.init(),
+        beacon = nil,
         total_effects = nil,
         energy_consumption = 0,
         Product = Collection.init(),
@@ -36,9 +37,42 @@ function Line.init(player, recipe, machine)
     end
 
     -- Initialise the total_effects
-    Line.summarize_modules(line)
+    Line.summarize_effects(line)
 
     return line
+end
+
+
+-- Changes the amount of the given module on this line and optionally it's subfloor / parent line
+function Line.change_module_amount(self, module, new_amount, no_recursion)
+    module.amount = new_amount
+    
+    if self.subfloor ~= nil and not no_recursion then
+        local sub_line = Floor.get(self.subfloor, "Line", 1)
+        local sub_module = Line.get_by_name(sub_line, "Module", module.proto.name)
+        Line.change_module_amount(self, sub_module, new_amount, true)
+    elseif self.id == 1 and self.parent.origin_line and not no_recursion then
+        local parent_module = Line.get_by_name(self.parent.origin_line, "Module", module.proto.name)
+        Line.change_module_amount(self.parent.origin_line, parent_module, new_amount, true)
+    end
+
+    Line.summarize_effects(self)
+end
+
+-- Sets the given beacon on this line and optionally it's subfloor / parent line
+function Line.set_beacon(self, beacon, no_recursion)
+    if beacon ~= nil then beacon.parent = self end
+    self.beacon = beacon
+    
+    if self.subfloor ~= nil and not no_recursion then
+        local sub_line = Floor.get(self.subfloor, "Line", 1)
+        Line.set_beacon(sub_line, util.table.deepcopy(beacon), true)
+    elseif self.id == 1 and self.parent.origin_line and not no_recursion then
+        Line.set_beacon(self.parent.origin_line, util.table.deepcopy(beacon), true)
+    end
+
+    if self.beacon ~= nil then Beacon.trim_modules(self.beacon) end
+    Line.summarize_effects(self)
 end
 
 
@@ -54,7 +88,7 @@ function Line.add(self, object, sort, no_recursion)
             Line.add(self.parent.origin_line, util.table.deepcopy(object), sort, true)
         end
         if sort then Line.sort_modules(self) end
-        Line.summarize_modules(self)
+        Line.summarize_effects(self)
     end
 
     return dataset
@@ -74,7 +108,7 @@ function Line.remove(self, dataset, sort, no_recursion)
     
     if dataset.class == "Module" then
         if sort then Line.sort_modules(self) end
-        Line.summarize_modules(self)
+        Line.summarize_effects(self)
     end
 end
 
@@ -89,7 +123,7 @@ function Line.replace(self, dataset, object, sort, no_recursion)
             Line.replace(self.parent.origin_line, util.table.deepcopy(dataset), object, sort, true)
         end
         if sort then Line.sort_modules(self) end
-        Line.summarize_modules(self)
+        Line.summarize_effects(self)
     end
 
     return dataset
@@ -106,6 +140,10 @@ end
 
 function Line.get_by_gui_position(self, class, gui_position)
     return Collection.get_by_gui_position(self[class], gui_position)
+end
+
+function Line.get_by_name(self, class, name)
+    return Collection.get_by_name(self[class], name)
 end
 
 function Line.shift(self, dataset, direction)
@@ -142,7 +180,7 @@ function Line.get_module_characteristics(self, module_proto)
             compatible = false
         else
             for effect_name, _ in pairs(module_proto.effects) do
-                if allowed_effects[effect_name] == nil then
+                if allowed_effects[effect_name] == false then
                     compatible = false
                 end
             end
@@ -164,14 +202,24 @@ function Line.get_module_characteristics(self, module_proto)
     }
 end
 
--- Updates the line attribute containing the total module effects of this line
-function Line.summarize_modules(self)
+-- Updates the line attribute containing the total module effects of this line (modules+beacons)
+function Line.summarize_effects(self)
     local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+
+    -- Module effects
     for _, module in pairs(Line.get_in_order(self, "Module")) do
         for name, effect in pairs(module.proto.effects) do
             module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
         end
     end
+
+    -- Beacon effects
+    if self.beacon ~= nil then
+        for name, effect in pairs(self.beacon.total_effects) do
+            module_effects[name] = module_effects[name] + effect
+        end
+    end
+
     self.total_effects = module_effects
 end
 
@@ -215,7 +263,8 @@ function Line.trim_modules(self)
 
         -- Otherwise, diminish the amount on the module appropriately and break
         else
-            module.amount = module.amount - (module_count - module_limit)
+            local new_amount = module.amount - (module_count - module_limit)
+            Line.change_module_amount(self, module, new_amount)
             break
         end
     end
@@ -230,7 +279,7 @@ end
 -- Returns the number of machines needed on this Line
 function Line.calculate_machine_count(self, machine)
     local machine_speed = machine.proto.speed + (machine.proto.speed * self.total_effects.speed)
-    local machine_prod_ratio = self.production_ratio - (self.production_ratio * self.total_effects.productivity)
+    local machine_prod_ratio = self.production_ratio / (1 + self.total_effects.productivity)
     return (machine_prod_ratio / (machine_speed / self.recipe.proto.energy)) / self.parent.parent.timescale
 end
 
@@ -258,6 +307,18 @@ function Line.update_validity(self)
     -- Validate module-amount
     if self.machine.valid and Line.count_modules(self) > (self.machine.proto.module_limit or 0) then
         self.valid = false
+    end
+
+    -- Validate beacon
+    if Beacon.update_validity(self.beacon) then
+        self.valid = false
+    end
+
+    -- Update modules to eventual changes in prototypes (only makes sense if valid)
+    if self.valid then
+        Line.sort_modules(self)
+        Line.trim_modules(self)
+        Line.summarize_effects(self)
     end
 
     -- Validate Fuel
@@ -302,13 +363,19 @@ function Line.attempt_repair(self, player)
             data_util.machine.change(player, self, nil, nil)
         end
     end
-
+    
+    -- Repair Beacon
+    if self.valid and not Beacon.attempt_repair(self.beacon) then
+        self.valid = false
+    end
+    
     -- Repair Modules
     if self.valid then
         Line.sort_modules(self)
         Line.trim_modules(self)
+        Line.summarize_effects(self)
     end
-
+    
     -- Repair Fuel
     if self.valid and self.fuel ~= nil and type(self.fuel) == "string" then
         local current_fuel_id = global.all_fuels.map[self.fuel]

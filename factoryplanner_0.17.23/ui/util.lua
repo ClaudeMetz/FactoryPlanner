@@ -81,6 +81,7 @@ function ui_util.calculate_item_button_number(player_table, view, amount, type)
     return number  -- number might be nil here
 end
 
+
 -- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
 -- (Relates to the view_state, doesn't do anything if views are uninitialised)
 function ui_util.setup_item_button(player_table, button, item, top_level)
@@ -180,6 +181,12 @@ function ui_util.generate_module_effects_tooltip(effects)
     end
 
     return tooltip
+end
+
+-- Returns a tooltip containing the attributes of the given beacon prototype
+function ui_util.generate_beacon_attributes_tooltip(beacon)
+    return {"", {"tooltip.module_slots"}, ": ", beacon.module_limit, "\n",
+              {"tooltip.effectivity"}, ": ", beacon.effectivity}
 end
 
 

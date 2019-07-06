@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Added support for modules!
+    - Added support for modules and beacons!
     - Added a tutorial mode, which informs you of all the possible interactions in the
       tooltips of various buttons. You can toggle it in the tutorial-window
   Changes:
