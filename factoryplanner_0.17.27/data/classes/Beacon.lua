@@ -12,6 +12,7 @@ function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module
         valid = true,
         class = "Beacon"
     }
+    beacon.module.parent = beacon
 
     -- Initialise the total_effects
     Beacon.summarize_effects(beacon)
@@ -71,7 +72,7 @@ function Beacon.update_validity(self)
         self.proto = self.proto.name
         self.valid = false
     end
-
+    
     if not Module.update_validity(self.module) then
         self.valid = false
     end
@@ -80,7 +81,7 @@ function Beacon.update_validity(self)
     if self.valid and self.module.amount > self.proto.module_limit then
         self.valid = false
     end
-
+    
     -- Update effects if this beacon is still valid
     if self.valid then
         Beacon.summarize_effects(self)
@@ -99,14 +100,10 @@ function Beacon.attempt_repair(self, player)
     end
 
     -- Trim module amount if necessary
-    if self.valid then
-        Beacon.trim_modules(self)
-    end
+    if self.valid then Beacon.trim_modules(self) end
 
     -- Update effects if this beacon is still valid
-    if self.valid then
-        Beacon.summarize_effects(self)
-    end
+    if self.valid then Beacon.summarize_effects(self) end
 
     return self.valid
 end

@@ -314,10 +314,10 @@ function Line.update_validity(self)
     end
 
     -- Validate beacon
-    if self.beacon ~= nil and Beacon.update_validity(self.beacon) then
+    if self.beacon ~= nil and not Beacon.update_validity(self.beacon) then
         self.valid = false
     end
-
+    
     -- Update modules to eventual changes in prototypes (only makes sense if valid)
     if self.valid then
         Line.sort_modules(self)

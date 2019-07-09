@@ -40,8 +40,6 @@ end
 
 -- Returns all necessary instructions to create and run conditions on the modal dialog
 function get_module_condition_instructions(modal_data)
-    local instruction_2_label = generate_module_condition_text(modal_data)
-
     return {
         data = {
             module_sprite = (function(flow_modal_dialog) return
@@ -57,7 +55,7 @@ function get_module_condition_instructions(modal_data)
                 show_on_edit = true
             },
             [2] = {
-                label = instruction_2_label,
+                label = generate_module_condition_text(modal_data),
                 check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil 
                           or tonumber(data.module_amount) <= 0 or tonumber(data.module_amount) > modal_data.empty_slots)) end),
                 refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
@@ -105,8 +103,6 @@ end
 
 -- Returns all necessary instructions to create and run conditions on the modal dialog
 function get_beacon_condition_instructions(modal_data)
-    local instruction_3_label = generate_module_condition_text(modal_data)
-
     return {
         data = {
             beacon_amount = (function(flow_modal_dialog) return
@@ -132,7 +128,7 @@ function get_beacon_condition_instructions(modal_data)
                 show_on_edit = true
             },
             [3] = {
-                label = instruction_3_label,
+                label = generate_module_condition_text(modal_data),
                 check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil 
                           or tonumber(data.module_amount) <= 0 or tonumber(data.module_amount) > modal_data.empty_slots)) end),
                 refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
