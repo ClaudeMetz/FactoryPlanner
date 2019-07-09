@@ -2,6 +2,7 @@
 require("migrations.migration_0_17_13")
 require("migrations.migration_0_17_21")
 require("migrations.migration_0_17_27")
+require("migrations.migration_0_17_29")
 
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
@@ -13,7 +14,8 @@ function migration_masterlist()
         --[0] = {version="0.17.0"},
         [1] = {version="0.17.13"},
         [2] = {version="0.17.21"},
-        [3] = {version="0.17.27"}
+        [3] = {version="0.17.27"},
+        [4] = {version="0.17.29"}
     }
 end
 
