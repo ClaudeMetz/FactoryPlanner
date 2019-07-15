@@ -298,6 +298,7 @@ function generator.all_machines()
         local ingredient_limit = proto.ingredient_count or 255
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy = proto.energy_usage or proto.max_energy_usage
+        local base_productivity = proto.base_productivity or 0
         local burner = nil
         if proto.burner_prototype then
             burner = {
@@ -312,6 +313,7 @@ function generator.all_machines()
             ingredient_limit = ingredient_limit,
             speed = speed,
             energy = energy,
+            base_productivity = base_productivity,
             allowed_effects = proto.allowed_effects,  -- might be nil
             module_limit = proto.module_inventory_size,
             burner = burner
