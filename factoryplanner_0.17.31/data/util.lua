@@ -79,6 +79,7 @@ function data_util.machine.change(player, line, machine, direction)
 
             -- Adjust modules (ie. trim them if needed)
             Line.trim_modules(line)
+            Line.summarize_effects(line)
 
             -- Adjust beacon (ie. remove if machine does not allow beacons)
             if line.machine.proto.module_limit == 0 then Line.set_beacon(line, nil) end

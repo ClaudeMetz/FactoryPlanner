@@ -193,9 +193,10 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
     if Machine.is_applicable(machine, line.recipe) then
         local appendage = (append_machine_id) and ("_" .. machine.proto.id) or ""
         local m = (count == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
+        local number = ui_util.format_number(count, 4)
         local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
-          sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(count),
-          mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4),
+          sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(number),
+          mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", number,
           " ", m, ui_util.generate_module_effects_tooltip(line.total_effects)}}
         button.style.padding = 1
 
@@ -404,11 +405,12 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                         local machine = Machine.init_by_proto(machine)
                         if Machine.is_applicable(machine, line.recipe) then
                             local count = Line.calculate_machine_count(line, machine)
+                            local number = ui_util.format_number(count, 4)
                             table.insert(modal_data.choices, {
                                 name = machine_id,
-                                tooltip = {"", machine.proto.localised_name, "\n", ui_util.format_number(count, 4)},
+                                tooltip = {"", machine.proto.localised_name, "\n", number},
                                 sprite = "entity/" .. machine.proto.name,
-                                number = math.ceil(count),
+                                number = math.ceil(number),
                                 count = count -- actual count to display rounding on the chooser
                             })
                         end
