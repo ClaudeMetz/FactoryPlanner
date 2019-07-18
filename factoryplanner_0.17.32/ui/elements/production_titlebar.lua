@@ -218,6 +218,8 @@ function change_view_state(player, view_name)
         end
         correct_view_state(ui_state.view_state, id_to_select)
     end
+
+    refresh_main_dialog(player)
 end
 
 -- Moves on the selection until it is on an enabled state (at least 1 view needs to be enabled)

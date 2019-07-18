@@ -78,7 +78,6 @@ end)
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
     change_view_state(player, nil)
-    refresh_main_dialog(player)
 end)
 
 
@@ -301,7 +300,6 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-zA-Z-_]+$") then
             local view_name = string.gsub(event.element.name, "fp_button_production_titlebar_view_", "")
             change_view_state(player, view_name)
-            refresh_production_pane(player)
 
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
