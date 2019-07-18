@@ -295,10 +295,8 @@ function generator.all_machines()
     
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
-        local ingredient_limit = proto.ingredient_count or 255
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy = proto.energy_usage or proto.max_energy_usage
-        local base_productivity = proto.base_productivity or 0
         local burner = nil
         if proto.burner_prototype then
             burner = {
@@ -310,12 +308,12 @@ function generator.all_machines()
             name = proto.name,
             category = category,
             localised_name = proto.localised_name,
-            ingredient_limit = ingredient_limit,
+            ingredient_limit = (proto.ingredient_count or 255),
             speed = speed,
             energy = energy,
-            base_productivity = base_productivity,
+            base_productivity = (proto.base_productivity or 0),
             allowed_effects = proto.allowed_effects,  -- might be nil
-            module_limit = proto.module_inventory_size,
+            module_limit = (proto.module_inventory_size or 0),
             burner = burner
         }
         return machine
