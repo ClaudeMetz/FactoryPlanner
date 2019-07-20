@@ -7,8 +7,7 @@
     "homepage": "https://github.com/ClaudeMetz/FactoryPlanner",
     "factorio_version": "0.17",
     "dependencies": [
-        "base >= 0.17.57",
-        "? FNEI"
+        "base >= 0.17.57"
     ],
     "description": "This mod allows you to plan your production in advance, specifying the recipes and machines that make up each assembly line.  It provides powerful features that are fast and intuitive to use, so you can focus on actually building your factory."
 }
