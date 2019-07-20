@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Changes:
+    - Improved focus selection for the beacon-dialog
+  Bugfixes:
+    - Fixed/improved the beacon-dialog validation process
+    - Fixed a rare crash when another mod changes its mod settings
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.34
 Date: 18. 07. 2019
   Bugfixes:
@@ -21,7 +30,7 @@ Date: 15. 07. 2019
 Version: 0.17.31
 Date: 12. 07. 2019
   Bugfixes:
-    - Fixed a crash on launch when using Py's Raw Ores, but not Py's Petro handling
+    - Fixed a crash on launch when using Py's Raw Ores, but not Py's Petro Handling
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.30

@@ -115,22 +115,24 @@ function get_beacon_condition_instructions(modal_data)
         conditions = {
             [1] = {
                 label = {"label.beacon_instruction_1"},
-                check = (function(data) return
-                          (data.beacon_amount == "" or data.module_sprite == "" or data.amount == "") end),
+                -- Beacon sprite can never be not set, as it is prefilled with the default
+                check = (function(data) return (data.module_sprite == "") end),
                 refocus = nil,
                 show_on_edit = true
             },
             [2] = {
                 label = {"label.beacon_instruction_2"},
-                check = (function(data) return (data.beacon_amount ~= "" and (tonumber(data.beacon_amount) == nil 
+                check = (function(data) return (data.beacon_amount == "" or (tonumber(data.beacon_amount) == nil
                           or tonumber(data.beacon_amount) <= 0)) end),
                 refocus = (function(flow) flow["flow_beacon_bar"]["textfield_beacon_amount"].focus() end),
                 show_on_edit = true
             },
             [3] = {
                 label = generate_module_condition_text(modal_data),
-                check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil 
-                          or tonumber(data.module_amount) <= 0 or tonumber(data.module_amount) > modal_data.empty_slots)) end),
+                -- This condition is messy, but makes total sense, I swear
+                check = (function(data) return (data.module_sprite ~= "" and (data.module_amount == ""
+                          or (tonumber(data.module_amount) == nil or tonumber(data.module_amount) <= 0
+                          or tonumber(data.module_amount) > modal_data.empty_slots))) end),
                 refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
                 show_on_edit = true
             }
@@ -318,7 +320,11 @@ function handle_module_beacon_picker_click(player, button)
             local module_proto = global.all_modules.categories[split_name[5]].modules[split_name[6]]
             modal_data.selected_module = module_proto
             
-            set_sprite_button(flow_modal_dialog, "module", module_proto)
+            -- Don't focus the module textfield if the beacon textfield exists and doesn't have a valid value
+            local beacon_bar = flow_modal_dialog["flow_beacon_bar"]
+            local focus = (beacon_bar ~= nil and tonumber(beacon_bar["textfield_beacon_amount"].text) ~= nil)
+            set_sprite_button(flow_modal_dialog, "module", module_proto, focus)
+
             -- Take focus away from the module amount textfield if it is locked at 1
             if modal_data.empty_slots == 1 then flow_modal_dialog.focus() end
         end
@@ -328,7 +334,7 @@ function handle_module_beacon_picker_click(player, button)
         modal_data.empty_slots = beacon_proto.module_limit
 
         -- Set the module in the interface
-        set_sprite_button(flow_modal_dialog, "beacon", beacon_proto)
+        set_sprite_button(flow_modal_dialog, "beacon", beacon_proto, true)
 
         -- The module textfield and max-button might need to be locked (limit=1)
         update_module_bar(flow_modal_dialog, ui_state)
@@ -343,11 +349,11 @@ function handle_module_beacon_picker_click(player, button)
 end
 
 -- Sets the sprite-button of the given type to the given proto and it's amount
-function set_sprite_button(flow_modal_dialog, type, proto)
+function set_sprite_button(flow_modal_dialog, type, proto, focus)
     local bar = flow_modal_dialog["flow_" .. type .. "_bar"]
     bar["sprite-button_" .. type].sprite = proto.sprite
     bar["sprite-button_" .. type].tooltip = proto.localised_name
-    bar["textfield_" .. type .. "_amount"].focus()
+    if focus then bar["textfield_" .. type .. "_amount"].focus() end
 end
 
 -- Updates the module textfield and max-button
