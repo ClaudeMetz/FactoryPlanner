@@ -322,7 +322,7 @@ function handle_module_beacon_picker_click(player, button)
             
             -- Don't focus the module textfield if the beacon textfield exists and doesn't have a valid value
             local beacon_bar = flow_modal_dialog["flow_beacon_bar"]
-            local focus = (beacon_bar ~= nil and tonumber(beacon_bar["textfield_beacon_amount"].text) ~= nil)
+            local focus = (beacon_bar == nil or tonumber(beacon_bar["textfield_beacon_amount"].text) ~= nil)
             set_sprite_button(flow_modal_dialog, "module", module_proto, focus)
 
             -- Take focus away from the module amount textfield if it is locked at 1

@@ -21,9 +21,14 @@ function Machine.update(self, proto)
 end
 
 
--- Returns whether this machine can produce the given recipe (ingredient limit)
+-- Returns whether this machine can produce the given recipe
 function Machine.is_applicable(self, recipe)
-    return (#recipe.proto.ingredients <= self.proto.ingredient_limit)
+    local item_ingredients_count = 0
+    -- Ingredient count does not include fluid ingredients
+    for _, ingredient in pairs(recipe.proto.ingredients) do
+        if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1 end
+    end
+    return (item_ingredients_count <= self.proto.ingredient_limit)
 end
 
 

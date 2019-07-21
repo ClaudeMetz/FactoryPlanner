@@ -160,14 +160,21 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         if dialog_settings.close then button_cancel.caption = {"button-text.close"}
         else button_cancel.caption = {"button-text.cancel"} end
 
+        -- Add first set of spacers, one of them will always be hidden
         button_bar.add{type="frame", name="frame_modal_dialog_spacer_1", direction="horizontal",
           style="fp_footer_filler"}
+        local flow_spacer_1 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_1", direction="horizontal"}
+        flow_spacer_1.style.horizontally_stretchable = true
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
           caption={"button-text.delete"}, style="red_button", mouse_button_filter={"left"}}
         button_delete.style.font = "default-dialog-button"
         button_delete.style.height = 32
         button_delete.style.maximal_width = 80
+
+        -- Add second spacer, will only be used if the delete button is visible
+        local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
+        flow_spacer_2.style.horizontally_stretchable = true
 
         local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
           caption={"button-text.submit"}, style="confirm_button", mouse_button_filter={"left"}}
@@ -177,9 +184,13 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
     -- Adjust visibility of the submit and delete buttons and the spacer
     local button_bar = center[frame_name]["flow_modal_dialog_button_bar"]
-    button_bar["fp_button_modal_dialog_delete"].visible = dialog_settings.delete or false
-    button_bar["frame_modal_dialog_spacer_1"].visible = not (dialog_settings.delete or false)
     button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false
+
+    local delete = dialog_settings.delete or false
+    button_bar["fp_button_modal_dialog_delete"].visible = delete
+    button_bar["flow_modal_dialog_spacer_1"].visible = delete
+    button_bar["flow_modal_dialog_spacer_2"].visible = delete
+    button_bar["frame_modal_dialog_spacer_1"].visible = not delete
 
     return flow_modal_dialog
 end

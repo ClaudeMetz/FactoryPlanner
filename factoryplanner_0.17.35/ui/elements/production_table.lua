@@ -163,7 +163,7 @@ function create_line_table_row(player, line)
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
               sprite=beacon.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
-              " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects)}}
+              " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, false)}}
             button_beacon.style.padding = 2
             ui_util.add_tutorial_tooltip(button_beacon, "beacon_beacon", true)
         end
@@ -197,7 +197,7 @@ function create_machine_button(gui_table, line, machine, count, append_machine_i
         local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
           sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(number),
           mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", number,
-          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects)}}
+          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, true)}}
         button.style.padding = 1
 
         -- Add overlay to indicate if machine the machine count is rounded or not
