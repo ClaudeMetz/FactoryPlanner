@@ -152,11 +152,11 @@ function ui_util.generate_module_effects_tooltip_proto(module)
     end
 
     -- Then, let the tooltip function generate the actual tooltip
-    return ui_util.generate_module_effects_tooltip(effects)
+    return ui_util.generate_module_effects_tooltip(effects, false)
 end
 
 -- Generates a tooltip out of the given effects, ignoring those that are 0
-function ui_util.generate_module_effects_tooltip(effects)
+function ui_util.generate_module_effects_tooltip(effects, cap_consumption)
     local localised_names = {
         consumption = {"tooltip.module_consumption"},
         speed = {"tooltip.module_speed"},
@@ -169,7 +169,7 @@ function ui_util.generate_module_effects_tooltip(effects)
         if effect ~= 0 then
             -- Consumption is capped at -80%
             local effect_bonus, appendage = effect, ""
-            if name == "consumption" and effect_bonus < -0.8 then
+            if cap_consumption and name == "consumption" and effect_bonus < -0.8 then
                 effect_bonus = -0.8
                 appendage = {"", " (", {"tooltip.capped"}, ")"}
             end
@@ -234,14 +234,20 @@ end
 -- Returns string representing the given power 
 function ui_util.format_energy_consumption(energy_consumption, precision)
     local scale = {"W", "kW", "MW", "GW", "TW", "PW", "EW", "ZW", "YW"}
+    
     local scale_counter = 1
-
-    while scale_counter < #scale and energy_consumption >= 1000 do
-        energy_consumption = energy_consumption / 1000
+    -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
+    while scale_counter < #scale and energy_consumption > (1000 ^ (scale_counter + 1)) do
         scale_counter = scale_counter + 1
     end
 
-    return (ui_util.format_number(energy_consumption, precision) .. " " .. scale[scale_counter])
+    -- Round up if energy consumption is close to the next tier
+    if (energy_consumption / (1000 ^ scale_counter)) > 999 then
+        scale_counter = scale_counter + 1
+    end
+
+    energy_consumption = energy_consumption / (1000 ^ scale_counter)
+    return (ui_util.format_number(energy_consumption, precision) .. " " .. scale[scale_counter + 1])
 end
 
 

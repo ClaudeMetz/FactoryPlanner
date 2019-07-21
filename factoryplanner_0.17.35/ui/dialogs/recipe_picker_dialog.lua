@@ -57,7 +57,7 @@ function handle_picker_recipe_click(player, button)
     
     local line = Line.init(player, Recipe.init_by_id(recipe_id), nil)
     if line == false then
-        queue_message(player, {"label.error_no_compatible_machine"}, "error")
+        queue_message(player, {"label.error_no_compatible_machine"}, "warning")
     else
         Floor.add(context.floor, line)
         update_calculations(player, context.subfactory)
