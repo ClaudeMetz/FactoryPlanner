@@ -419,11 +419,21 @@ function generator.all_fuels()
 end
 
 
+-- Returns the names of the 'modules' that shouldn't be included
+local function undesirable_modules()
+    return {
+        ["seablock-mining-prod-module"] = false
+    }
+end
+
+
 -- Generates a table containing all available modules
 function generator.all_modules()
     local all_modules = {categories = {}, map = {}}
+    local undesirables = undesirable_modules()
+
     for _, proto in pairs(game.item_prototypes) do
-        if proto.type == "module" then
+        if proto.type == "module" and undesirables[proto.name] == nil then
             -- Convert limitations-table to a [recipe_name] -> true fromat
             local limitations = {}
             for _, recipe_name in pairs(proto.limitations) do
@@ -442,6 +452,7 @@ function generator.all_modules()
             deep_insert_proto(all_modules, "categories", proto.category, "modules", module)
         end
     end
+    
     return all_modules
 end
 
@@ -461,11 +472,20 @@ function generator.module_tier_map()
 end
 
 
+-- Returns the names of the 'beacons' that shouldn't be included
+local function undesirable_beacons()
+    return {
+        ["seablock-mining-prod-provider"] = false
+    }
+end
+
 -- Generates a table containing all available beacons
 function generator.all_beacons()
     local all_beacons = {beacons = {}, map = {}}
+    local undesirables = undesirable_beacons()
+
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.distribution_effectivity ~= nil then
+        if proto.distribution_effectivity ~= nil and undesirables[proto.name] == nil then
             insert_proto(all_beacons, "beacons", {
                 name = proto.name,
                 localised_name = proto.localised_name,
@@ -476,5 +496,6 @@ function generator.all_beacons()
             })
         end
     end
+
     return all_beacons
 end

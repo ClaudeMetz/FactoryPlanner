@@ -23,6 +23,7 @@ wind-volume=0.000000
 show-tips-and-tricks=false
 [graphics]
 cache-sprite-atlas=true
+compress-sprite-atlas-cache=true
 graphics-quality=normal
 show-clouds=false"""
 
