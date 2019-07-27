@@ -1,10 +1,10 @@
 # This script will update the version of factorio that is currently installed
-# It will also carry over settings, update the log- and run-files, and re-symlink the mod folder
-# This should be run in the directory that contains the old version of factorio, as well as the new, zipped one
-# You can set a modname, although this only works if the filestructure is the same as my factoryplanner mod
-# Takes the modname from the first command line argument
+# It will also carry over settings, mods and saves, update the log- and run-files, and re-symlink the mod folder
+# This needs to run in the directory that contains the old version of factorio, the new zipped one and the mod project folder
+# Takes the modname from the first command line argument (although project structure needs to be as expected)
 
 import itertools
+import json
 import shutil
 import subprocess
 import sys
@@ -33,8 +33,10 @@ def update_factorio():
     old_factorio_path = list(itertools.islice(cwd.glob("Factorio_*"), 1))[0]
     zip_file_path = list(itertools.islice(cwd.glob("Factorio_*.zip"), 1))[0]
     new_factorio_version = zip_file_path.parts[-1].split("_")[-1][:-4]
-    mod_path = list(itertools.islice((cwd / MODNAME).glob(MODNAME + "_*"), 1))[0]
-    mod_version = mod_path.parts[-1].split("_")[-1]
+    modfiles_path = (cwd / MODNAME / "modfiles")
+    info_json_path = modfiles_path / "info.json"
+    with info_json_path.open("r") as file:
+        mod_version = json.load(file)["version"]
 
     # Extract zip file
     shutil.unpack_archive(zip_file_path, cwd, "zip")
@@ -62,17 +64,17 @@ def update_factorio():
     subprocess.run(["mklink", str(symlink_path), str(factorio_log_path), ">nul"], shell=True)
     print("- current-log link created")
 
-    factorio_mod_path = new_factorio_path / "mods"
-    factorio_mod_path.mkdir()
-    symlink_path = factorio_mod_path / (MODNAME + "_" + mod_version)
-    subprocess.run(["mklink", "/J", str(symlink_path), str(mod_path), ">nul"], shell=True)
+    new_mods_path = new_factorio_path / "mods"
+    new_mods_path.mkdir()
+    symlink_path = new_mods_path / (MODNAME + "_" + mod_version)
+    subprocess.run(["mklink", "/J", str(symlink_path), str(modfiles_path), ">nul"], shell=True)
     print("- mod symlink created")
 
     # Copy over other mods
-    old_mod_path = old_factorio_path / "mods"
-    shutil.copy(str(old_mod_path / "mod-list.json"), str(factorio_mod_path / "mod-list.json"))
-    for mod in old_mod_path.glob("*.zip"):
-        shutil.copy(str(mod), str(factorio_mod_path / mod.parts[-1]))
+    old_mods_path = old_factorio_path / "mods"
+    shutil.copy(str(old_mods_path / "mod-list.json"), str(new_mods_path / "mod-list.json"))
+    for mod in old_mods_path.glob("*.zip"):
+        shutil.copy(str(mod), str(new_mods_path / mod.parts[-1]))
     print("- other mods moved over")
 
     # Copy over saves
@@ -84,7 +86,7 @@ def update_factorio():
     print("- saves moved over")
 
     # Remove old version
-    (old_mod_path / (MODNAME + "_" + mod_version)).rmdir()
+    (old_mods_path / (MODNAME + "_" + mod_version)).rmdir()
     shutil.rmtree(old_factorio_path)
     print("- old version removed")
 
