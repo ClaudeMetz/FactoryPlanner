@@ -84,7 +84,7 @@ function create_label_element(table, width_remaining, subfactory, selected)
         button.style.width = button_width
         button.style.top_padding = 4
         button.style.left_padding = 6
-        ui_util.add_tutorial_tooltip(button, "subfactory", false)
+        ui_util.add_tutorial_tooltip(button, "subfactory", false, false)
         
         label.style.font = "fp-font-mono-15p"
         label.style.font_color = {}  -- black
@@ -154,8 +154,8 @@ function create_sprite_button(table, name, subfactory)
     local button = table.add{type="sprite-button", name=name, sprite=sprite_path, 
       tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
-    if tooltip == "" then ui_util.add_tutorial_tooltip(button, "subfactory", false)
-    else ui_util.add_tutorial_tooltip(button, "subfactory", true) end
+    if tooltip == "" then ui_util.add_tutorial_tooltip(button, "subfactory", false, false)
+    else ui_util.add_tutorial_tooltip(button, "subfactory", true, false) end
 
     return button
 end

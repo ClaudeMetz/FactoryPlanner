@@ -1,6 +1,22 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - Re-added the FNEI interactions now that it has been updated
+  Changes:
+    - Changed some phrasing to improve clarity
+  Bugfixes:
+    - Fixed changelog
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.37
 Date: 27. 07. 2019
+  Bugfixes:
+    - Improved compatibility with the 'More Mining Productivity' mod
+
+---------------------------------------------------------------------------------------------------
+Version: 0.17.36
+Date: 22. 07. 2019
   Changes:
     - Cleaned up the GUI in several places
   Bugfixes:
