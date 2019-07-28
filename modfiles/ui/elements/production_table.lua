@@ -89,7 +89,7 @@ function create_line_table_row(player, line)
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
       sprite=recipe.sprite, tooltip=recipe.proto.localised_name, mouse_button_filter={"left-and-right"}}
     if global.devmode == true then button_recipe.tooltip = {"", recipe.proto.localised_name, "\n", recipe.proto.name} end
-    ui_util.add_tutorial_tooltip(button_recipe, "recipe", true)
+    ui_util.add_tutorial_tooltip(button_recipe, "recipe", true, true)
 
     if line.subfloor then
         if ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id then
@@ -127,7 +127,7 @@ function create_line_table_row(player, line)
         end
     else
         local button = create_machine_button(table_machines, line, line.machine, line.machine.count, false)
-        ui_util.add_tutorial_tooltip(button, "machine", true)
+        ui_util.add_tutorial_tooltip(button, "machine", true, false)
     end
 
     -- Modules
@@ -165,7 +165,7 @@ function create_line_table_row(player, line)
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
               " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, false)}}
             button_beacon.style.padding = 2
-            ui_util.add_tutorial_tooltip(button_beacon, "beacon_beacon", true)
+            ui_util.add_tutorial_tooltip(button_beacon, "beacon_beacon", true, false)
         end
     end
     
@@ -245,7 +245,7 @@ function create_module_button(flow, line, module, type, button_name)
       ui_util.generate_module_effects_tooltip_proto(module)}}
     button_module.style.padding = 2
 
-    ui_util.add_tutorial_tooltip(button_module, type, true)
+    ui_util.add_tutorial_tooltip(button_module, type, true, false)
 end
 
 -- Creates the flow containing all line items of the given type
@@ -263,7 +263,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
         ui_util.setup_item_button(player_table, button, item, false)
         
         local type = (item.fuel) and "fuel" or string.lower(class)
-        ui_util.add_tutorial_tooltip(button, type, true)
+        ui_util.add_tutorial_tooltip(button, type, true, true)
     end
 end
 

@@ -5,9 +5,10 @@
     "author": "Therenas",
     "contact": "Therenas.FactoryPlanner@gmail.com",
     "homepage": "https://github.com/ClaudeMetz/FactoryPlanner",
+    "description": "This mod allows you to plan your production in advance, specifying the recipes and machines that make up each assembly line.  It provides powerful features that are fast and intuitive to use, so you can focus on actually building your factory.",
     "factorio_version": "0.17",
     "dependencies": [
-        "base >= 0.17.57"
-    ],
-    "description": "This mod allows you to plan your production in advance, specifying the recipes and machines that make up each assembly line.  It provides powerful features that are fast and intuitive to use, so you can focus on actually building your factory."
+        "base >= 0.17.59",
+        "? FNEI"
+    ]
 }

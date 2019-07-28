@@ -77,7 +77,7 @@ function refresh_item_table(player, class)
               .. item.id, sprite=item.sprite, style=style, mouse_button_filter={"left-and-right"}}
               
             ui_util.setup_item_button(get_table(player), button, item, true)
-            ui_util.add_tutorial_tooltip(button, "tl_" .. string.lower(class), true)
+            ui_util.add_tutorial_tooltip(button, "tl_" .. string.lower(class), true, true)
             if button.number ~= nil and button.number < margin_of_error then button.visible = false end
         end
     end
@@ -105,6 +105,16 @@ function determine_button_style(item)
     end
 end
 
+-- Adds the button to add a product to the table
+function append_to_product_table(table)
+    local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
+      style="fp_sprite-button_inset", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"}}
+    button.style.height = 36
+    button.style.width = 36
+    button.style.padding = 3
+    button.style.bottom_margin = 2
+end
+
 
 -- Opens clicked element in FNEI or shifts it left or right
 function handle_ingredient_element_click(player, ingredient_id, click, direction, alt)
@@ -118,17 +128,6 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
         Subfactory.shift(subfactory, ingredient, direction)
         refresh_item_table(player, "Ingredient")
     end
-end
-
-
--- Adds the button to add a product to the table
-function append_to_product_table(table)
-    local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
-      style="fp_sprite-button_inset", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"}}
-    button.style.height = 36
-    button.style.width = 36
-    button.style.padding = 3
-    button.style.bottom_margin = 2
 end
 
 -- Handles click on a subfactory pane product button

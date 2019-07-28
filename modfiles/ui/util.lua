@@ -27,13 +27,14 @@ function ui_util.set_label_color(ui_element, color)
     end
 end
 
-
+ 
 -- Adds the appropriate tutorial tooltip if the preference is enabled
-function ui_util.add_tutorial_tooltip(button, type, line_break)
+function ui_util.add_tutorial_tooltip(button, type, line_break, fnei)
     local player = game.get_player(button.player_index)
     if get_preferences(player).tutorial_mode then
         local b = line_break and "\n\n" or ""
-        button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}}
+        local f = (fnei and remote.interfaces["fnei"] ~= nil) and {"tip.tut_fnei"} or ""
+        button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}, f}
     end
 end
 
@@ -278,33 +279,34 @@ function ui_util.split(s, separator)
     return r
 end
 
+
 -- **** FNEI ****
 -- This indicates the version of the FNEI remote interface this is compatible with
-local fnei_version = 1
+local fnei_version = 2
 
 -- Opens FNEI to show the given item
 -- Mirrors FNEI's distinction between left and right clicks
 function ui_util.fnei.show_item(item, click)
     if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
         local action_type = (click == "left") and "craft" or "usage"
-        remote.call("fnei", "show_item", action_type, item.proto.type, item.proto.name)
+        remote.call("fnei", "show_recipe_for_prot", action_type, item.proto.type, item.proto.name)
     end
 end
 
 -- Opens FNEI to show the given recipe
--- Attempts to show an appropriate item context, if possible
 function ui_util.fnei.show_recipe(recipe, line_products)
     if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
+        -- Try to determine the relevant product to use as context for the recipe in FNEI
         if recipe.proto.main_product then
             local product = recipe.proto.main_product
-            remote.call("fnei", "show_recipe", recipe.name, product.type, product.name)
+            remote.call("fnei", "show_recipe", recipe.proto.name, product.name)
         elseif #line_products == 1 then
             local product = line_products[1]
-            remote.call("fnei", "show_recipe", recipe.name, product.type, product.name)
+            remote.call("fnei", "show_recipe", recipe.proto.name, product.proto.name)
+
+        -- If no appropriate context can be determined, FNEI will choose the first ingredient in the list
         else
-            -- The functionality to show a recipe without context does not exist (yet) in FNEI,
-            -- so for now, this case will not show any recipe
-            -- remote.call("fnei", "show_recipe", recipe.name)
+            remote.call("fnei", "show_recipe", recipe.proto.name)
         end
     end
 end
