@@ -12,8 +12,8 @@ function open_tutorial_dialog(flow_modal_dialog)
     table_tutorial.style.bottom_margin = 8
 
     -- Interactive
-    local interactive_title = table_tutorial.add{type="label", name="label_interactive_title", 
-      caption={"", {"label.interactive"}, ":"}}
+    local interactive_title = table_tutorial.add{type="label", name="label_interactive_title",
+      caption={"label.interactive"}}
     interactive_title.style.font = "fp-font-bold-20p"
     interactive_title.style.top_margin = 4
     
@@ -45,15 +45,13 @@ function open_tutorial_dialog(flow_modal_dialog)
     
 
     -- General Tips
-    local interface_title = table_tutorial.add{type="label", name="label_interface_title", 
-      caption={"", {"label.interface"}, ":"}}
+    local interface_title = table_tutorial.add{type="label", name="label_interface_title", caption={"label.interface"}}
     interface_title.style.font = "fp-font-bold-20p"
-    local label_interface = table_tutorial.add{type="label", name="label_tutorial_interface", 
-      caption={"tip.interface"}}
+    local label_interface = table_tutorial.add{type="label", name="label_tutorial_interface", caption={"tip.interface"}}
     label_interface.style.single_line = false
     label_interface.style.bottom_margin = 20
 
-    local usage_title = table_tutorial.add{type="label", name="label_usage_title", caption={"", {"label.usage"}, ":"}}
+    local usage_title = table_tutorial.add{type="label", name="label_usage_title", caption={"label.usage"}}
     usage_title.style.font = "fp-font-bold-20p"
     local label_usage = table_tutorial.add{type="label", name="label_tutorial_usage", caption={"tip.usage"}}
     label_usage.style.single_line = false
@@ -61,8 +59,7 @@ function open_tutorial_dialog(flow_modal_dialog)
 
 
     -- Pro Tips
-    local protips_title = table_tutorial.add{type="label", name="label_protips_title", 
-      caption={"", {"label.protips"}, ":"}}
+    local protips_title = table_tutorial.add{type="label", name="label_protips_title", caption={"label.protips"}}
     protips_title.style.font = "fp-font-bold-20p"
 
     local protip_names = {"hovering", "list_ordering", "machine_changing", "machine_preferences", "interface_width",

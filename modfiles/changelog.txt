@@ -3,6 +3,7 @@ Version: 0.17.00
 Date: 00. 00. 0000
   Features:
     - Re-added the FNEI interactions now that it has been updated
+    - Added offshore pump recipes (Water, Angel's seafloor-pump, etc.)
   Changes:
     - Changed some phrasing to improve clarity
   Bugfixes:

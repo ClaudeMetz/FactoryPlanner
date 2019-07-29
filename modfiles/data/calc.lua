@@ -112,13 +112,12 @@ function calc.update_floor(player, subfactory, floor, aggregate)
 
                 -- Machine count (Same calculation for machines and miners because the machine and line values are adjusted beforehand)
                 local machine_speed = line.machine.proto.speed + (line.machine.proto.speed * line.total_effects.speed)
-                local machine_prod_ratio = production_ratio / (1 + line.total_effects.productivity)
+                local machine_prod_ratio = production_ratio / (1 + math.max(line.total_effects.productivity, 0))
                 line_aggregate.machine_count = (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale
 
                 -- Energy consumption
                 local energy_consumption = line_aggregate.machine_count * (line.machine.proto.energy * 60)
-                local energy_effect = math.max(line.total_effects.consumption, -0.8)
-                energy_consumption = energy_consumption + (energy_consumption * energy_effect)
+                energy_consumption = energy_consumption + (energy_consumption * math.max(line.total_effects.consumption, -0.8))
 
                 local burner = line.machine.proto.burner
                 if burner == nil then

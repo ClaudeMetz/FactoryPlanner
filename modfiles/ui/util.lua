@@ -51,7 +51,7 @@ function ui_util.generate_recipe_sprite(recipe)
     -- Handle custom recipes separately
     if recipe.name == "fp-space-science-pack" then
         sprite = "item/space-science-pack"
-    elseif string.find(recipe.name, "^impostor%-[a-z0-9-_]+$") then
+    elseif (string.match(recipe.name, "^impostor-.*")) then
         -- If the impostor recipe has exactly one product, use it's sprite
         if #recipe.products == 1 then
             sprite = recipe.products[1].type .. "/" .. recipe.products[1].name
@@ -157,7 +157,7 @@ function ui_util.generate_module_effects_tooltip_proto(module)
 end
 
 -- Generates a tooltip out of the given effects, ignoring those that are 0
-function ui_util.generate_module_effects_tooltip(effects, cap_consumption)
+function ui_util.generate_module_effects_tooltip(effects, is_machine)
     local localised_names = {
         consumption = {"tooltip.module_consumption"},
         speed = {"tooltip.module_speed"},
@@ -168,11 +168,18 @@ function ui_util.generate_module_effects_tooltip(effects, cap_consumption)
     local tooltip = {""}
     for name, effect in pairs(effects) do
         if effect ~= 0 then
-            -- Consumption is capped at -80%
             local effect_bonus, appendage = effect, ""
-            if cap_consumption and name == "consumption" and effect_bonus < -0.8 then
-                effect_bonus = -0.8
-                appendage = {"", " (", {"tooltip.capped"}, ")"}
+            if is_machine then  -- Handle effect caps if this is a machine-tooltip
+                -- Consumption is capped at -80%
+                if name == "consumption" and effect_bonus < -0.8 then
+                    effect_bonus = -0.8
+                    appendage = {"", " (", {"tooltip.capped"}, ")"}
+
+                -- Productivity can't go lower than 0
+                elseif name == "productivity" and effect_bonus < 0 then
+                    effect_bonus = 0
+                    appendage = {"", " (", {"tooltip.capped"}, ")"}
+                end
             end
 
             -- Force display of either a '+' or '-'
@@ -236,7 +243,7 @@ end
 function ui_util.format_energy_consumption(energy_consumption, precision)
     local scale = {"W", "kW", "MW", "GW", "TW", "PW", "EW", "ZW", "YW"}
     
-    local scale_counter = 1
+    local scale_counter = 0
     -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
     while scale_counter < #scale and energy_consumption > (1000 ^ (scale_counter + 1)) do
         scale_counter = scale_counter + 1
