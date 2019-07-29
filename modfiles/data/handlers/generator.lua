@@ -54,7 +54,6 @@ function generator.all_recipes()
         return {
             hidden = false,
             group = {name="intermediate_products", order="c"},
-            subgroup = {name="mining", order="z"}
         }
     end
     
@@ -85,29 +84,49 @@ function generator.all_recipes()
     -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
-        if proto.mineable_properties and proto.resource_category and 
-            proto.mineable_properties.products[1].type ~= "fluid" then
-            local recipe = mining_recipe()
-            recipe.name = "impostor-" .. proto.name
-            recipe.localised_name = proto.localised_name
-            recipe.order = proto.order
-            recipe.category = proto.resource_category
-            -- Set energy to mining time so the forumla for the machine_count works out
-            recipe.energy = proto.mineable_properties.mining_time
-            recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
-            recipe.products = proto.mineable_properties.products
-            recipe.main_product = recipe.products[1]
+        if proto.mineable_properties and proto.resource_category then
+            if proto.resource_category == "basic-solid" then
+                local recipe = mining_recipe()
+                recipe.name = "impostor-" .. proto.name
+                recipe.localised_name = proto.localised_name
+                recipe.order = proto.order
+                recipe.subgroup = {name="mining", order="y"}
+                recipe.category = proto.resource_category
+                -- Set energy to mining time so the forumla for the machine_count works out
+                recipe.energy = proto.mineable_properties.mining_time
+                recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
+                recipe.products = proto.mineable_properties.products
+                recipe.main_product = recipe.products[1]
 
-            -- Add mining fluid, if required
-            if proto.mineable_properties.required_fluid then
-                table.insert(recipe.ingredients, {
-                    type = "fluid",
-                    name = proto.mineable_properties.required_fluid,
-                    amount = proto.mineable_properties.fluid_amount
-                })
-                recipe.category = "complex-solid"
+                -- Add mining fluid, if required
+                if proto.mineable_properties.required_fluid then
+                    table.insert(recipe.ingredients, {
+                        type = "fluid",
+                        name = proto.mineable_properties.required_fluid,
+                        amount = proto.mineable_properties.fluid_amount
+                    })
+                    recipe.category = "complex-solid"
+                end
+
+                insert_proto(all_recipes, "recipes", recipe)
+
+            --elseif proto.resource_category == "basic-fluid" then
+                -- crude-oil and angels-natural-gas go here (not interested atm)
             end
 
+        -- Add offshore-pump fluid recipes
+        elseif proto.fluid then
+            local recipe = mining_recipe()
+            recipe.name = "impostor-" .. proto.fluid.name .. "-" .. proto.name
+            recipe.localised_name = proto.fluid.localised_name
+            recipe.order = proto.order
+            recipe.subgroup = {name="fluids", order="z"}
+            recipe.category = proto.name  -- use proto name so every pump has it's own category
+            recipe.energy = 1
+            recipe.ingredients = {}
+            recipe.products = {{type="fluid", name=proto.fluid.name, amount=(proto.pumping_speed * 60)}}
+            recipe.main_product = recipe.products[1]
+            
             insert_proto(all_recipes, "recipes", recipe)
         end
     end
@@ -118,6 +137,7 @@ function generator.all_recipes()
     steam_recipe.localised_name = {"fluid-name.steam"}   -- official locale
     steam_recipe.category = "steam"
     steam_recipe.order = "z"
+    steam_recipe.subgroup = {name="mining", order="y"}
     steam_recipe.energy = 1
     steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
     steam_recipe.products = {{type="fluid", name="steam", amount=60}}
@@ -296,7 +316,7 @@ function generator.all_machines()
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
-        local energy = proto.energy_usage or proto.max_energy_usage
+        local energy = proto.energy_usage or proto.max_energy_usage or 0
         local burner = nil
         if proto.burner_prototype then
             burner = {
@@ -329,7 +349,7 @@ function generator.all_machines()
                 end
             end
 
-        -- Adds mining machines
+        -- Add mining machines
         elseif proto.resource_categories then
             for category, enabled in pairs(proto.resource_categories) do
                 -- Only supports solid mining recipes for now (no oil etc.)
@@ -346,9 +366,15 @@ function generator.all_machines()
                     end
                 end
             end
+        
+        -- Add offshore pumps
+        elseif proto.fluid then
+            local machine = generate_category_entry(proto.name, proto)
+            machine.speed = 1  -- pumping speed included in the recipe product-amount
+            deep_insert_proto(all_machines, "categories", proto.name, "machines", machine)
         end
 
-        -- Adds machines that produce steam
+        -- Add machines that produce steam
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
               and fluidbox.filter.name == "steam" then

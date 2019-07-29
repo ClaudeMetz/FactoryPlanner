@@ -138,8 +138,10 @@ function generate_recipe_tooltip(recipe)
 
     local lists = {"ingredients", "products"}
     for _, item_type in ipairs(lists) do
-        if recipe[item_type] ~= nil then
-            tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
+        tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
+        if #recipe[item_type] == 0 then
+            tooltip = {"", tooltip, "\n    ", {"tooltip.none"}}
+        else
             for _, item in ipairs(recipe[item_type]) do
                 -- Determine the actual amount of items that are consumed/produced
                 -- (This function incidentally handles ingredients as well)
