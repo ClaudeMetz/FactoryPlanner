@@ -141,10 +141,11 @@ function reset_ui_state(player)
     ui_state_table.selected_object = nil  -- The object relevant for a modal dialog
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
+    ui_state_table.floor_total = false  -- Whether the floor or subfactory totals are displayed
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.queued_message = nil  -- The next general message to be displayed
     ui_state_table.recipe_filter_preferences = 
-    {disabled = false, hidden = false}  -- The preferred state of both recipe filters
+      {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
     
     ui_util.recalculate_main_dialog_dimensions(player)

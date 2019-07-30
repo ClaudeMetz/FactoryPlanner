@@ -3,7 +3,7 @@ function add_production_pane_to(main_dialog)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
 
     -- Production titlebar
-    local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=5}
+    local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=6}
     table_titlebar.style.bottom_margin = 8
 
     -- Title
@@ -23,10 +23,17 @@ function add_production_pane_to(main_dialog)
     table_navigation.add{type="button", name="fp_button_floor_top", caption={"label.to_the_top"},
       style="fp_button_mini", mouse_button_filter={"left"}}
 
-    -- View selection
+    -- Spacer
     local spacer = table_titlebar.add{type="flow", name="flow_spacer", direction="horizontal"}
     spacer.style.horizontally_stretchable = true
 
+    -- TopLevelItem-amount toggle
+    local button_toggle = table_titlebar.add{type="button", name="fp_button_item_amount_toggle",
+      caption={"button-text.item_amount_toggle"}, tooltip={"tooltip.item_amount_toggle"},
+      mouse_button_filter={"left"}}
+    button_toggle.style.right_margin = 16
+
+    -- View selection
     local table_view_selection = table_titlebar.add{type="table", name="table_production_titlebar_view_selection",
       column_count=3}
     table_view_selection.style.horizontal_spacing = 0
@@ -97,6 +104,9 @@ function refresh_production_pane(player)
         local table_navigation = table_titlebar["table_production_titlebar_navigation"]
         table_navigation["fp_button_floor_up"].visible = (floor.level > 1)
         table_navigation["fp_button_floor_top"].visible = (floor.level > 2)
+
+        -- TopLevelItem-amount toggle
+        table_titlebar["fp_button_item_amount_toggle"].visible = (floor.level > 1)
         
         -- Update the dynamic parts of the view state buttons
         local state_existed = (ui_state.view_state ~= nil)
@@ -146,6 +156,23 @@ function handle_floor_change_click(player, destination)
 
     ui_state.current_activity = nil
     update_calculations(player, subfactory)
+end
+
+
+-- Toggles the button-style and ui_state of floor_total
+function toggle_floor_total_display(player, button)
+    local ui_state = get_ui_state(player)
+
+    if button.style.name == "button" then
+        ui_state.floor_total = true
+        button.style = "fp_button_selected"
+        button.style.right_margin = 16
+    else
+        ui_state.floor_total = false
+        button.style = "button"
+    end
+
+    refresh_main_dialog(player)
 end
 
 
