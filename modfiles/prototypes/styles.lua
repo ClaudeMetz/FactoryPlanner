@@ -60,6 +60,19 @@ data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
     }
 }
 
+data.raw["gui-style"].default["fp_button_selected"] = {
+    type = "button_style",
+    parent = "button",
+    default_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    },
+    hovered_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    }
+}
+
 data.raw["gui-style"].default["fp_view_selection_button"] = {
     type = "button_style",
     parent = "button",

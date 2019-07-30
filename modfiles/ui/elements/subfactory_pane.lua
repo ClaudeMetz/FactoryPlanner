@@ -64,26 +64,45 @@ end
 
 -- Refreshes the given kind of item table
 function refresh_item_table(player, class)
+    local player_table = get_table(player)
+
     local ui_name = class:gsub("^%u", string.lower)
     local item_table = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_" .. ui_name .. "s"]
       ["scroll-pane"]["item_table"]
     item_table.clear()
 
-    local subfactory = get_context(player).subfactory
-    if subfactory[class].count > 0 then
-        for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
-            local style = determine_button_style(item)
-            local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
-              .. item.id, sprite=item.sprite, style=style, mouse_button_filter={"left-and-right"}}
-              
-            ui_util.setup_item_button(get_table(player), button, item, true)
-            ui_util.add_tutorial_tooltip(button, "tl_" .. string.lower(class), true, true)
-            if button.number ~= nil and button.number < margin_of_error then button.visible = false end
-        end
-    end
+    -- Only show the totals for the current floor, if the toggle is active
+    if get_ui_state(player).floor_total then
+        local parent_line = get_context(player).floor.origin_line
+        if parent_line ~= nil and parent_line[class].count > 0 then
+            for _, item in ipairs(Line.get_in_order(parent_line, class)) do
+                local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
+                  .. item.id, sprite=item.sprite, style="fp_button_icon_large_blank", number=item.amount, 
+                  mouse_button_filter={"middle"}}
 
-    local append_function = _G["append_to_" .. ui_name .. "_table"]
-    if append_function ~= nil then append_function(item_table) end
+                ui_util.setup_item_button(player_table, button, item, false)
+                if button.number ~= nil and button.number < margin_of_error then button.visible = false end
+            end
+        end
+        
+    -- Otherwise, show the subfactory totals
+    else
+        local subfactory = get_context(player).subfactory
+        if subfactory[class].count > 0 then
+            for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
+                local style = determine_button_style(item)
+                local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
+                  .. item.id, sprite=item.sprite, style=style, mouse_button_filter={"left-and-right"}}
+                  
+                ui_util.setup_item_button(player_table, button, item, true)
+                ui_util.add_tutorial_tooltip(button, "tl_" .. string.lower(class), true, true)
+                if button.number ~= nil and button.number < margin_of_error then button.visible = false end
+            end
+        end
+
+        local append_function = _G["append_to_" .. ui_name .. "_table"]
+        if append_function ~= nil then append_function(item_table) end
+    end
 end
 
 -- Determines the button style, depending on the class of the item
@@ -112,7 +131,6 @@ function append_to_product_table(table)
     button.style.height = 36
     button.style.width = 36
     button.style.padding = 3
-    button.style.bottom_margin = 2
 end
 
 

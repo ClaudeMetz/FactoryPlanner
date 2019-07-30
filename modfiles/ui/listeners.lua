@@ -259,6 +259,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_button_floor_top" then
             handle_floor_change_click(player, "top")
 
+        -- Toggles the TopLevelItems-amount display state
+        elseif event.element.name == "fp_button_item_amount_toggle" then
+            toggle_floor_total_display(player, event.element)
+
         -- Clears all the comments on the current floor
         elseif event.element.name == "fp_button_production_clear_comments" then
             clear_recipe_comments(player)

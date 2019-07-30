@@ -2,8 +2,9 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Re-added the FNEI interactions now that it has been updated
+    - Re-enabled the FNEI interactions, now that it has been updated
     - Added offshore pump recipes (Water, Angel's seafloor-pump, etc.)
+    - You can now toggle whether you want the ingredients/products/byproducts up top to show the subfactory or floor totals
   Changes:
     - Changed some phrasing to improve clarity
   Bugfixes:
