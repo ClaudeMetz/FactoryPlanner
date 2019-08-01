@@ -153,11 +153,11 @@ function ui_util.generate_module_effects_tooltip_proto(module)
     end
 
     -- Then, let the tooltip function generate the actual tooltip
-    return ui_util.generate_module_effects_tooltip(effects, false)
+    return ui_util.generate_module_effects_tooltip(effects, nil)
 end
 
 -- Generates a tooltip out of the given effects, ignoring those that are 0
-function ui_util.generate_module_effects_tooltip(effects, is_machine)
+function ui_util.generate_module_effects_tooltip(effects, machine_proto, player, subfactory)
     local localised_names = {
         consumption = {"tooltip.module_consumption"},
         speed = {"tooltip.module_speed"},
@@ -167,23 +167,31 @@ function ui_util.generate_module_effects_tooltip(effects, is_machine)
 
     local tooltip = {""}
     for name, effect in pairs(effects) do
-        if effect ~= 0 then
-            local effect_bonus, appendage = effect, ""
-            if is_machine then  -- Handle effect caps if this is a machine-tooltip
-                -- Consumption is capped at -80%
-                if name == "consumption" and effect_bonus < -0.8 then
-                    effect_bonus = -0.8
-                    appendage = {"", " (", {"tooltip.capped"}, ")"}
+        if name == "productivity" then
+            effect = effect + data_util.determine_mining_productivity(player, subfactory, machine_proto)
+        end
 
-                -- Productivity can't go lower than 0
-                elseif name == "productivity" and effect_bonus < 0 then
-                    effect_bonus = 0
+        if effect ~= 0 then
+            -- Handle effect caps and mining productivity if this is a machine-tooltip
+            if machine_proto ~= nil then
+                local appendage = ""
+                -- Consumption is capped at -80%
+                if name == "consumption" and effect < -0.8 then
+                    effect = -0.8
                     appendage = {"", " (", {"tooltip.capped"}, ")"}
+                    
+                    -- Productivity can't go lower than 0
+                elseif name == "productivity" then
+                    
+                    if effect < 0 then
+                        effect = 0
+                        appendage = {"", " (", {"tooltip.capped"}, ")"}
+                    end
                 end
             end
 
             -- Force display of either a '+' or '-'
-            local number = ("%+d"):format(math.floor((effect_bonus * 100) + 0.5))
+            local number = ("%+d"):format(math.floor((effect * 100) + 0.5))
             tooltip = {"", tooltip, "\n", localised_names[name], ": ", number, "%", appendage}
         end
     end

@@ -133,7 +133,7 @@ function create_line_table_row(player, line)
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=line.machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(machine_count),
           mouse_button_filter={"left"}, tooltip={"", line.machine.proto.localised_name, "\n", machine_count,
-          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, true)}}
+          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, line.machine.proto, player, subfactory)}}
         button.style.padding = 1
 
         ui_util.add_tutorial_tooltip(button, "machine", true, false)
@@ -173,7 +173,7 @@ function create_line_table_row(player, line)
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
               sprite=beacon.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
-              " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, false)}}
+              " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil)}}
             button_beacon.style.padding = 2
             ui_util.add_tutorial_tooltip(button_beacon, "beacon_beacon", true, false)
         end
@@ -204,7 +204,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local line = ui_state.context.line
     local selected = (machine_proto.id == current_machine_proto_id)
 
-    local machine_count = data_util.determine_machine_count(line, machine_proto, line.production_ratio, subfactory.timescale)
+    local machine_count = data_util.determine_machine_count(player, subfactory, line, machine_proto, line.production_ratio)
     machine_count = ui_util.format_number(machine_count, 4)
     button.number = math.ceil(machine_count)
     

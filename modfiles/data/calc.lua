@@ -89,9 +89,10 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 end
                 
                 -- Ingredients
+                local mining_prod = data_util.determine_mining_productivity(player, subfactory, line.machine.proto)
                 for _, ingredient in pairs(calc.aggregate.get_in_order(line_aggregate, "Ingredient")) do
                     ingredient.amount = calculate_produced_amount(ingredient, production_ratio)
-                    ingredient.amount = ingredient.amount / (1 + line.total_effects.productivity)
+                    ingredient.amount = ingredient.amount / (1 + line.total_effects.productivity + mining_prod)
 
                     local line_byproduct = calc.aggregate.get(line_aggregate, "Byproduct", ingredient)
                     if line_byproduct ~= nil then
@@ -111,8 +112,8 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 end
 
                 -- Machine count (Same calculation for machines/miners because values are set appropriately in the prototype)
-                line_aggregate.machine_count = data_util.determine_machine_count(line, line.machine.proto,
-                  production_ratio, subfactory.timescale)
+                line_aggregate.machine_count = data_util.determine_machine_count(player, subfactory, line,
+                  line.machine.proto, production_ratio)
 
                 -- Energy consumption
                 local energy_consumption = data_util.determine_energy_consumption(line.machine,

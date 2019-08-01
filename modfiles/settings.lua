@@ -31,7 +31,7 @@ data:extend({
         name = "fp_subfactory_items_per_row",
         setting_type = "runtime-per-user",
         default_value = 8,
-        allowed_values = {5, 6, 7, 8, 9, 10, 11},
+        allowed_values = {6, 7, 8, 9, 10, 11, 12},
         order = "d",
         localised_name = {"mod-setting-name.fp_subfactory_items_per_row"},
         localised_description = {"mod-setting-description.fp_subfactory_items_per_row"}
@@ -41,7 +41,7 @@ data:extend({
         name = "fp_floor_recipes_at_once",
         setting_type = "runtime-per-user",
         default_value = 14,
-        allowed_values = {8, 10, 12, 14, 16, 18, 20, 22},
+        allowed_values = {8, 10, 12, 14, 16, 18, 20},
         order = "e",
         localised_name = {"mod-setting-name.fp_floor_recipes_at_once"},
         localised_description = {"mod-setting-description.fp_floor_recipes_at_once"}

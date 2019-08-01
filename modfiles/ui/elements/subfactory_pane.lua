@@ -65,6 +65,7 @@ end
 -- Refreshes the given kind of item table
 function refresh_item_table(player, class)
     local player_table = get_table(player)
+    local subfactory = get_context(player).subfactory
 
     local ui_name = class:gsub("^%u", string.lower)
     local item_table = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_" .. ui_name .. "s"]
@@ -72,7 +73,7 @@ function refresh_item_table(player, class)
     item_table.clear()
 
     -- Only show the totals for the current floor, if the toggle is active
-    if get_ui_state(player).floor_total then
+    if get_ui_state(player).floor_total and subfactory.selected_floor.level > 1 then
         local parent_line = get_context(player).floor.origin_line
         if parent_line ~= nil and parent_line[class].count > 0 then
             for _, item in ipairs(Line.get_in_order(parent_line, class)) do
@@ -86,7 +87,6 @@ function refresh_item_table(player, class)
         
     -- Otherwise, show the subfactory totals
     else
-        local subfactory = get_context(player).subfactory
         if subfactory[class].count > 0 then
             for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
                 local style = determine_button_style(item)
