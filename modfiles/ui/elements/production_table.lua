@@ -119,15 +119,25 @@ function create_line_table_row(player, line)
 
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        for _, machine in ipairs(line.machine.category.machines) do
-            -- Create temporary machine class for consistency
-            local machine = Machine.init_by_proto(machine)
-            local count = Line.calculate_machine_count(line, machine)
-            create_machine_button(table_machines, line, machine, count, true)
+        for _, machine_proto in ipairs(line.machine.category.machines) do
+            if data_util.machine.is_applicable(machine_proto, line.recipe) then
+                local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id ..
+                "_" .. machine_proto.id, mouse_button_filter={"left"}}
+                setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
+            end
         end
     else
-        local button = create_machine_button(table_machines, line, line.machine, line.machine.count, false)
+        local machine_count = ui_util.format_number(line.machine.count, 4)
+        local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
+
+        local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
+          sprite=line.machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(machine_count),
+          mouse_button_filter={"left"}, tooltip={"", line.machine.proto.localised_name, "\n", machine_count,
+          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, true)}}
+        button.style.padding = 1
+
         ui_util.add_tutorial_tooltip(button, "machine", true, false)
+        add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
     end
 
     -- Modules
@@ -171,8 +181,8 @@ function create_line_table_row(player, line)
     
     -- Energy label
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
-      caption=ui_util.format_energy_consumption(line.energy_consumption, 3)}
-    label_energy.tooltip = ui_util.format_energy_consumption(line.energy_consumption, 5)
+      caption=ui_util.format_SI_value(line.energy_consumption, "W", 3)}
+    label_energy.tooltip = ui_util.format_SI_value(line.energy_consumption, "W", 5)
 
     -- Item buttons
     create_item_button_flow(player_table, table_production, line, "Product", "fp_button_icon_medium_blank")
@@ -187,24 +197,38 @@ function create_line_table_row(player, line)
     end
 end
 
--- Creates and places a single machine button
-function create_machine_button(gui_table, line, machine, count, append_machine_id)
-    local player = game.get_player(gui_table.player_index)
-    if Machine.is_applicable(machine, line.recipe) then
-        local appendage = (append_machine_id) and ("_" .. machine.proto.id) or ""
-        local m = (count == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
-        local number = ui_util.format_number(count, 4)
-        local button = gui_table.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id .. appendage,
-          sprite=machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(number),
-          mouse_button_filter={"left"}, tooltip={"", machine.proto.localised_name, "\n", number,
-          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, true)}}
-        button.style.padding = 1
+-- Sets up the given button for a machine choice situation
+function setup_machine_choice_button(player, button, machine_proto, current_machine_proto_id, button_size)
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+    local line = ui_state.context.line
+    local selected = (machine_proto.id == current_machine_proto_id)
 
-        -- Add overlay to indicate if machine the machine count is rounded or not
-        add_rounding_overlay(player, button, {count = count, sprite_size = 32})
+    local machine_count = data_util.determine_machine_count(line, machine_proto, line.production_ratio, subfactory.timescale)
+    machine_count = ui_util.format_number(machine_count, 4)
+    button.number = math.ceil(machine_count)
+    
+    -- Table to easily determine the appropriate style dependent on button_size and select-state
+    local styles = {
+        [32] = {
+            [true] = "fp_button_icon_medium_green",
+            [false] = "fp_button_icon_medium_recipe"
+        },
+        [36] = {
+            [true] = "fp_button_icon_large_green",
+            [false] = "fp_button_icon_large_recipe"
+        }
+    }
+    button.style = styles[button_size][selected]
+    button.style.padding = 1
+    button.sprite = ("entity/" .. machine_proto.name)  -- to redo properly
 
-        return button
-    end
+    local s = (selected) and {"", " (", {"tooltip.selected"}, ")"} or ""
+    local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
+    button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
+          " ", m, "\n", ui_util.generate_machine_attributes_tooltip(machine_proto)}
+
+    add_rounding_overlay(player, button, {count=tonumber(machine_count), sprite_size=button_size})
 end
 
 -- Function that adds the rounding indication to the given button
@@ -388,34 +412,19 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         elseif click == "left" then            
             -- Changing machines only makes sense if there are more than one in it's category
             if #line.machine.category.machines > 1 then
-                if #line.machine.category.machines < 5 then  -- if there are more than 4 machines, no picker is needed
+                if #line.machine.category.machines < 5 then  -- up to 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                     refresh_main_dialog(player)
 
                 else  -- Open a chooser dialog presenting all machine choices
                     local modal_data = {
+                        reciever_name = "machine",
                         title = {"label.machine"},
                         text = {"", {"label.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
-                        choices = {},
-                        reciever_name = "machine",
-                        effects_function = add_rounding_overlay
+                        object = line.machine
                     }
-                    for machine_id, machine in ipairs(line.machine.category.machines) do
-                        local machine = Machine.init_by_proto(machine)
-                        if Machine.is_applicable(machine, line.recipe) then
-                            local count = Line.calculate_machine_count(line, machine)
-                            local number = ui_util.format_number(count, 4)
-                            table.insert(modal_data.choices, {
-                                name = machine_id,
-                                tooltip = {"", machine.proto.localised_name, "\n", number},
-                                sprite = "entity/" .. machine.proto.name,
-                                number = math.ceil(number),
-                                count = count -- actual count to display rounding on the chooser
-                            })
-                        end
-                    end
-
+                    
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                     enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
                 end
@@ -428,6 +437,20 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
             data_util.machine.change(player, line, new_machine, nil)
             ui_state.current_activity = nil
             update_calculations(player, subfactory)
+        end
+    end
+end
+
+-- Generates the buttons for the machine chooser dialog
+function generate_chooser_machine_buttons(player)
+    local ui_state = get_ui_state(player)
+    local line = ui_state.context.line
+
+    for machine_id, machine in ipairs(line.machine.category.machines) do
+        if data_util.machine.is_applicable(machine, line.recipe) then
+            local button = generate_blank_chooser_button(player, machine_id)
+            -- The actual button is setup by the method shared by non-chooser machine buttons
+            setup_machine_choice_button(player, button, machine, ui_state.modal_data.object.proto.id, 36)
         end
     end
 end
@@ -617,12 +640,10 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
     else
         if click == "right" and item.fuel then
             local ui_state = get_ui_state(player)
-            -- Setup chooser dialog
             local modal_data = {
-                title = {"label.fuel"},
-                choices = {},
                 reciever_name = "fuel",
-                effects_function = nil
+                title = {"label.fuel"},
+                object = item
             }
 
             -- Set different message depending on whether this fuel is on a line with a subfloor or not
@@ -630,29 +651,6 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                 modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
             else
                 modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
-            end
-
-            -- Fill chooser dialog with elements
-            local old_fuel_id = global.all_fuels.map[item.proto.name]
-            local machine = line.machine
-            for new_fuel_id, fuel in pairs(global.all_fuels.fuels) do
-                local count, tooltip
-                if line.subfloor == nil then
-                    local energy_consumption = machine.count * (machine.proto.energy * 60)
-                      count = ((energy_consumption / machine.proto.burner.effectivity) / fuel.fuel_value)
-                      * ui_state.context.subfactory.timescale
-                    tooltip = {"", fuel.localised_name, "\n", ui_util.format_number(count, 4)}
-                else
-                    count = nil
-                    tooltip = fuel.localised_name
-                end
-                
-                table.insert(modal_data.choices, {
-                    name = old_fuel_id .. "_" .. new_fuel_id,  -- incorporate old fuel id for later use
-                    tooltip = tooltip,
-                    sprite = fuel.sprite,
-                    number = count
-                })
             end
 
             ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
@@ -669,6 +667,43 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
     end
     
     refresh_production_table(player)
+end
+
+
+-- Generates the buttons for the fuel chooser dialog
+function generate_chooser_fuel_buttons(player)
+    local player_table = get_table(player)
+    local ui_state = get_ui_state(player)
+    local view = ui_state.view_state[ui_state.view_state.selected_view_id]
+    local line = ui_state.context.line
+
+    local old_fuel_id = global.all_fuels.map[ui_state.modal_data.object.proto.name]
+    local machine = line.machine
+    for new_fuel_id, fuel_proto in pairs(global.all_fuels.fuels) do
+        local selected = (old_fuel_id == new_fuel_id) and {"", " (", {"tooltip.selected"}, ")"} or ""
+        local tooltip = {"", fuel_proto.localised_name, selected}
+
+        local fuel_amount = nil
+        -- Only add number information if this line has no subfloor (really difficult calculations otherwise)
+        if line.subfloor == nil then
+            local energy_consumption = data_util.determine_energy_consumption(machine, machine.count,
+              line.total_effects)
+            fuel_amount = data_util.determine_fuel_amount(energy_consumption, ui_state.context.subfactory,
+              fuel_proto, machine.proto.burner)
+            fuel_amount = ui_util.calculate_item_button_number(player_table, view, fuel_amount, "item")
+            fuel_amount = ui_util.format_number(fuel_amount, 4)
+
+            local m = (tonumber(fuel_amount) == 1) and {"tooltip.item"} or {"", {"tooltip.item"}, "s"}
+            tooltip = {"", tooltip, "\n", fuel_amount, " ", m}
+        end
+        tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel_proto)}
+
+        local button = generate_blank_chooser_button(player, new_fuel_id)
+        if old_fuel_id == new_fuel_id then button.style = "fp_button_icon_large_green" end
+        button.sprite = fuel_proto.sprite
+        button.number = fuel_amount
+        button.tooltip = tooltip
+    end
 end
 
 -- Recieves the result of a chooser user choice and applies it
@@ -694,11 +729,9 @@ function apply_chooser_fuel_choice(player, fuel_element_name)
         end
     end
 
-    -- Get the old and new fuel_id from the element_name
-    local split = ui_util.split(fuel_element_name, "_")
     local fuels = global.all_fuels.fuels
-    local old_fuel = fuels[tonumber(split[1])]
-    local new_fuel = fuels[tonumber(split[2])]
+    local old_fuel = get_ui_state(player).modal_data.object.proto
+    local new_fuel = fuels[tonumber(fuel_element_name)]
     
     local context = get_context(player)
     if context.line.subfloor == nil then

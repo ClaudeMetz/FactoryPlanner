@@ -135,7 +135,7 @@ function ui_util.setup_item_button(player_table, button, item, top_level)
             number_string = {"", ui_util.format_number(number, 4)}
         end
 
-        button.number = ("%.4g"):format(number)
+        button.number = ui_util.format_number(number, 4)  --("%.4g"):format(number)
         button.tooltip = {"", localised_name, "\n", number_string, " ", caption}
     else
         button.tooltip = localised_name
@@ -194,7 +194,24 @@ end
 -- Returns a tooltip containing the attributes of the given beacon prototype
 function ui_util.generate_beacon_attributes_tooltip(beacon)
     return {"", {"tooltip.module_slots"}, ": ", beacon.module_limit, "\n",
-              {"tooltip.effectivity"}, ": ", beacon.effectivity}
+              {"tooltip.effectivity"}, ": ", beacon.effectivity, "%"}
+end
+
+-- Returns a tooltip containing the attributes of the given fuel prototype
+function ui_util.generate_fuel_attributes_tooltip(fuel)
+    return {"", {"tooltip.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3)}
+end
+
+-- Returns a tooltip containing the attributes of the given belt prototype
+function ui_util.generate_belt_attributes_tooltip(belt)
+    return {"", {"tooltip.throughput"}, ": ", belt.throughput, " ", {"tooltip.item"}, "s/s"}
+end
+
+-- Returns a tooltip containing the attributes of the given machine prototype
+function ui_util.generate_machine_attributes_tooltip(machine)
+    return {"", {"tooltip.crafting_speed"}, ": ", machine.speed, "\n",
+             {"label.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy, "W", 3), "\n",
+             {"tooltip.module_slots"}, ": ", machine.module_limit}
 end
 
 
@@ -240,22 +257,22 @@ function ui_util.format_timescale(timescale, raw)
 end
 
 -- Returns string representing the given power 
-function ui_util.format_energy_consumption(energy_consumption, precision)
-    local scale = {"W", "kW", "MW", "GW", "TW", "PW", "EW", "ZW", "YW"}
+function ui_util.format_SI_value(value, unit, precision)
+    local scale = {"", "k", "M", "G", "T", "P", "E", "Z", "Y"}
     
     local scale_counter = 0
     -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
-    while scale_counter < #scale and energy_consumption > (1000 ^ (scale_counter + 1)) do
+    while scale_counter < #scale and value > (1000 ^ (scale_counter + 1)) do
         scale_counter = scale_counter + 1
     end
 
     -- Round up if energy consumption is close to the next tier
-    if (energy_consumption / (1000 ^ scale_counter)) > 999 then
+    if (value / (1000 ^ scale_counter)) > 999 then
         scale_counter = scale_counter + 1
     end
 
-    energy_consumption = energy_consumption / (1000 ^ scale_counter)
-    return (ui_util.format_number(energy_consumption, precision) .. " " .. scale[scale_counter + 1])
+    value = value / (1000 ^ scale_counter)
+    return (ui_util.format_number(value, precision) .. " " .. scale[scale_counter + 1] .. unit)
 end
 
 

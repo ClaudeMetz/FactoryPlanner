@@ -68,8 +68,8 @@ function handle_picker_item_click(player, button)
     local flow_product_bar = player.gui.center["fp_frame_modal_dialog_item_picker"]["flow_modal_dialog"]["flow_product_bar"]
     local split_name = ui_util.split(button.name, "_")
     local item_proto = global.all_items.types[split_name[5]].items[split_name[6]]
+
     get_ui_state(player).modal_data.selected_item = item_proto
-    
     flow_product_bar["sprite-button_product"].sprite = button.sprite
     flow_product_bar["sprite-button_product"].tooltip = item_proto.localised_name
     flow_product_bar["textfield_product_amount"].focus()

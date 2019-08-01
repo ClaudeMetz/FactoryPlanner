@@ -47,6 +47,16 @@ function data_util.machine.get_default(player, category)
     return get_preferences(player).default_machines.categories[category.id]
 end
 
+-- Returns whether the given machine can produce the given recipe
+function data_util.machine.is_applicable(machine_proto, recipe)
+    local item_ingredients_count = 0
+    -- Ingredient count does not include fluid ingredients
+    for _, ingredient in pairs(recipe.proto.ingredients) do
+        if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1 end
+    end
+    return (item_ingredients_count <= machine_proto.ingredient_limit)
+end
+
 
 -- Changes the machine either to the given machine or moves it in the given direction
 -- If neither machine or direction is given, it applies the default machine for the category
@@ -62,7 +72,7 @@ function data_util.machine.change(player, line, machine, direction)
         local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
         -- Try setting a higher tier machine until it sticks or nothing happens
         -- Returns false if no machine fits at all, so an appropriate error can be displayed
-        if not Machine.is_applicable(machine, line.recipe) then
+        if not data_util.machine.is_applicable(machine.proto, line.recipe) then
             return data_util.machine.change(player, line, machine, "positive")
 
         else
@@ -183,6 +193,24 @@ function data_util.determine_product_amount(base_product)
     else
         return base_product.amount
     end
+end
+
+-- Determines the actual amount of items that a recipe_product produces
+function data_util.determine_machine_count(line, machine_proto, production_ratio, timescale)
+    local machine_speed = machine_proto.speed + (machine_proto.speed * line.total_effects.speed)
+    local machine_prod_ratio = production_ratio / (1 + line.total_effects.productivity)
+    return (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / timescale
+end
+
+-- Determines the amount of energy the given machine will consume
+function data_util.determine_energy_consumption(machine, machine_count, total_effects)
+    local energy_consumption = machine_count * (machine.proto.energy * 60)
+    return energy_consumption + (energy_consumption * math.max(total_effects.consumption, -0.8))
+end
+
+-- Determines the amount of fuel needed in the given context (ec = energy_consumption)
+function data_util.determine_fuel_amount(ec, subfactory, fuel_proto, burner)
+    return ((ec / burner.effectivity) / fuel_proto.fuel_value) * subfactory.timescale
 end
 
 
@@ -328,6 +356,10 @@ function data_util.run_dev_config(player)
             {
                 name="electronic-circuit",
                 machine="assembling-machine-2"
+            },
+            {
+                name="iron-plate",
+                machine="stone-furnace"
             }
         }
         construct_floor(player, context.floor, recipes)
