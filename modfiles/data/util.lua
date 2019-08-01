@@ -196,10 +196,11 @@ function data_util.determine_product_amount(base_product)
 end
 
 -- Determines the actual amount of items that a recipe_product produces
-function data_util.determine_machine_count(line, machine_proto, production_ratio, timescale)
+function data_util.determine_machine_count(player, subfactory, line, machine_proto, production_ratio)
+    local mining_prod = data_util.determine_mining_productivity(player, subfactory, machine_proto)
+    local machine_prod_ratio = production_ratio / (1 + line.total_effects.productivity + mining_prod)
     local machine_speed = machine_proto.speed + (machine_proto.speed * line.total_effects.speed)
-    local machine_prod_ratio = production_ratio / (1 + line.total_effects.productivity)
-    return (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / timescale
+    return (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale
 end
 
 -- Determines the amount of energy the given machine will consume
@@ -211,6 +212,16 @@ end
 -- Determines the amount of fuel needed in the given context (ec = energy_consumption)
 function data_util.determine_fuel_amount(ec, subfactory, fuel_proto, burner)
     return ((ec / burner.effectivity) / fuel_proto.fuel_value) * subfactory.timescale
+end
+
+-- Determines whether mining prod applies, and returns it's value (returns 0 otherwise)
+function data_util.determine_mining_productivity(player, subfactory, machine_proto)
+    if machine_proto.category == "basic-solid" then  -- meaning (solid) mining recipes
+        return ((subfactory.mining_productivity ~= nil) and 
+          subfactory.mining_productivity or player.force.mining_drill_productivity_bonus) / 100
+    else
+        return 0
+    end
 end
 
 

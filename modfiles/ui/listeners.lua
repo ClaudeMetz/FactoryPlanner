@@ -131,7 +131,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     end
 end)
 
--- Fires on any changes to a textbox
+-- Fires on any changes to a textbox/-field
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.get_player(event.player_index)
     
@@ -146,6 +146,10 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     -- Actives the instant filter based on user serachfield text entry
     elseif event.element.name == "fp_textfield_picker_search_bar" then
         picker.search(player)
+
+    -- Persists mining productivity changes
+    elseif event.element.name == "fp_textfield_mining_prod" then
+        handle_mining_prod_change(player, event.element)
 
     end
 end)
@@ -238,6 +242,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Opens notes dialog
         elseif event.element.name == "fp_button_view_notes" then
             enter_modal_dialog(player, {type="notes", submit=true})
+
+        -- Changes into the manual override of the mining prod mode
+        elseif event.element.name == "fp_button_mining_prod_override" then
+            ui_state.current_activity = "overriding_mining_prod"
+            refresh_main_dialog(player)
 
         -- Sets all machines of the current subfactory to the preferred ones
         elseif event.element.name == "fp_button_set_prefmachines_subfactory" then
