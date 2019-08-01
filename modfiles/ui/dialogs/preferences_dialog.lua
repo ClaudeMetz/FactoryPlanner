@@ -19,11 +19,11 @@ function open_preferences_dialog(flow_modal_dialog)
 
     -- Ignore barreling recipes
     table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_ignore_barreling", state=false,
-      caption={"", " ", {"checkbox.preferences_ignore_barreling"}}, tooltip={"tooltip.preferences_ignore_barreling"}}
+      caption={"", " ", {"checkbox.preferences_ignore_barreling"}, " [img=info]"}, tooltip={"tooltip.preferences_ignore_barreling"}}
 
     -- Show line comments
     table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_enable_recipe_comments", state=false,
-      caption={"", " ", {"checkbox.preferences_enable_recipe_comments"}}, tooltip={"tooltip.preferences_enable_recipe_comments"}}
+      caption={"", " ", {"checkbox.preferences_enable_recipe_comments"}, " [img=info]"}, tooltip={"tooltip.preferences_enable_recipe_comments"}}
 
 
     -- Belt preferences
@@ -83,11 +83,11 @@ function refresh_preferences_dialog(player)
         local tooltip = belt.localised_name
         if get_preferences(player).preferred_belt == belt then
             button_belt.style = "fp_button_icon_medium_green"
-            tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
+            tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
         else 
             button_belt.style = "fp_button_icon_medium_hidden"
         end
-        button_belt.tooltip = tooltip
+        button_belt.tooltip = {"", tooltip, "\n", ui_util.generate_belt_attributes_tooltip(belt)}
     end
 
     -- Fuel preferences
@@ -101,11 +101,11 @@ function refresh_preferences_dialog(player)
         local tooltip = fuel.localised_name
         if get_preferences(player).preferred_fuel == fuel then
             button_fuel.style = "fp_button_icon_medium_green"
-            tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
+            tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
         else 
             button_fuel.style = "fp_button_icon_medium_hidden"
         end
-        button_fuel.tooltip = tooltip
+        button_fuel.tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel)}
     end
 
     -- Beacon preferences
@@ -120,11 +120,11 @@ function refresh_preferences_dialog(player)
             local tooltip = beacon.localised_name
             if get_preferences(player).preferred_beacon == beacon then
                 button_beacon.style = "fp_button_icon_medium_green"
-                tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
+                tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
             else 
                 button_beacon.style = "fp_button_icon_medium_hidden"
             end
-            button_beacon.tooltip = tooltip
+            button_beacon.tooltip = {"", tooltip, "\n", ui_util.generate_beacon_attributes_tooltip(beacon)}
         end
     end
 
@@ -143,11 +143,11 @@ function refresh_preferences_dialog(player)
                 local tooltip = machine.localised_name
                 if data_util.machine.get_default(player, category) == machine then
                     button_machine.style = "fp_button_icon_medium_green"
-                    tooltip = {"", tooltip, "\n", {"tooltip.selected"}}
+                    tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
                 else 
                     button_machine.style = "fp_button_icon_medium_hidden"
                 end
-                button_machine.tooltip = tooltip
+                button_machine.tooltip = {"", tooltip, "\n", ui_util.generate_machine_attributes_tooltip(machine)}
             end
         end
     end

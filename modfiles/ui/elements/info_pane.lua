@@ -1,7 +1,7 @@
 -- Constructs the info pane including timescale settings
 function refresh_info_pane(player)
     local ui_state = get_ui_state(player)
-    local subfactory = ui_state.context.subfactory
+    local context = ui_state.context
 
     local flow = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
     flow.style.left_margin = 0
@@ -28,7 +28,7 @@ function refresh_info_pane(player)
           mouse_button_filter={"left"}}
     else            
         -- As unit is limited to presets, timescale will always be displayed as 1
-        local timescale = ui_util.format_timescale(subfactory.timescale, false)
+        local timescale = ui_util.format_timescale(context.subfactory.timescale, false)
         local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
         label_timescale.style.font = "default-bold"
         table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
@@ -42,10 +42,14 @@ function refresh_info_pane(player)
       caption={"", " ",  {"label.energy_consumption"}, ": "}}
     table_energy_consumption["label_energy_consumption_title"].style.font = "fp-font-14p"
 
-    local energy_consumption = ui_util.format_energy_consumption(subfactory.energy_consumption, 3)
+    -- Show either subfactory or floor energy consumption, depending on the floor_total toggle
+    local origin_line = context.floor.origin_line
+    local energy_consumption = (ui_state.floor_total and origin_line ~= nil) and
+      origin_line.energy_consumption or context.subfactory.energy_consumption
+    
     local label_energy = table_energy_consumption.add{type="label", name="label_energy_consumption",
-      caption=energy_consumption}
-    label_energy.tooltip = ui_util.format_energy_consumption(subfactory.energy_consumption, 5)
+      caption=ui_util.format_SI_value(energy_consumption, "W", 3),
+      tooltip=ui_util.format_SI_value(energy_consumption, "W", 5)}
     label_energy.style.font = "default-bold"
 
     -- Notes

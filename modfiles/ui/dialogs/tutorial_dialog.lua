@@ -40,7 +40,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     -- Tutorial Mode
     local tutorial_mode = get_preferences(player).tutorial_mode
     local checkbox_tutorial_mode = interactive_table.add{type="checkbox", name="fp_checkbox_tutorial_mode", 
-      caption={"checkbox.tutorial_mode"}, tooltip={"tooltip.tutorial_mode"}, state=tutorial_mode}
+      caption={"", {"checkbox.tutorial_mode"}, " [img=info]"}, tooltip={"tooltip.tutorial_mode"}, state=tutorial_mode}
     checkbox_tutorial_mode.style.left_margin = 4
     
 

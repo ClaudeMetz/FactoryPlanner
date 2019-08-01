@@ -76,9 +76,8 @@ function refresh_item_table(player, class)
         local parent_line = get_context(player).floor.origin_line
         if parent_line ~= nil and parent_line[class].count > 0 then
             for _, item in ipairs(Line.get_in_order(parent_line, class)) do
-                local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
-                  .. item.id, sprite=item.sprite, style="fp_button_icon_large_blank", number=item.amount, 
-                  mouse_button_filter={"middle"}}
+                local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
+                  .. item.id, sprite=item.sprite, style="fp_button_icon_large_blank", number=item.amount, enabled=false}
 
                 ui_util.setup_item_button(player_table, button, item, false)
                 if button.number ~= nil and button.number < margin_of_error then button.visible = false end

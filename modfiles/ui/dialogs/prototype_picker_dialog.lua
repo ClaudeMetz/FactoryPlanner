@@ -219,8 +219,18 @@ function picker.apply_filter(player, object_type, apply_button_style)
                 if object_type == "item" then
                     -- (Re)apply an appropriate button style if need be
                     if apply_button_style then
-                        if existing_products[object.name] then object_element.style = "fp_button_icon_medium_disabled"
-                        else object_element.style = "fp_button_icon_medium_recipe" end
+                        local existing = ""
+                        if existing_products[object.name] then
+                            object_element.style = "fp_button_existing_product"
+                            object_element.enabled = false
+                            existing = {"", "\n", {"tooltip.existing_product"}}
+                        else
+                            object_element.style = "fp_button_icon_medium_recipe"
+                            object_element.enabled = true
+                        end
+
+                        local dev = (devmode) and {"", "\n", object.name} or ""
+                        object_element.tooltip = {"", _G["generate_" .. object_type .. "_tooltip"](object), existing, dev}
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
@@ -236,6 +246,9 @@ function picker.apply_filter(player, object_type, apply_button_style)
                         if not recipe.enabled then object_element.style = "fp_button_icon_medium_disabled" 
                         elseif object.hidden then object_element.style = "fp_button_icon_medium_hidden"
                         else object_element.style = "fp_button_icon_medium_recipe" end
+
+                        -- Re-doing the tooltip to include disabled/hidden etc is too expensive, it will be done
+                        -- when the tooltip is attached to the prototype
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
@@ -328,11 +341,11 @@ function picker.select_item_group(player, object_type, item_group_id)
         local scroll_pane_items = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_" .. id]
         if id == item_group_id then
             group_button.style = "fp_button_icon_clicked"
-            group_button.mouse_button_filter = {"middle"}  -- Makes the button not click on normal clicks
+            group_button.enabled = false
             scroll_pane_items.visible = true
         else
             group_button.style = "fp_button_icon_medium_recipe"
-            group_button.mouse_button_filter = {"left"}
+            group_button.enabled = true
             scroll_pane_items.visible = false
         end
     end

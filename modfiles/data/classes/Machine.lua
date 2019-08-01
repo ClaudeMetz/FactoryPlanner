@@ -21,17 +21,6 @@ function Machine.update(self, proto)
 end
 
 
--- Returns whether this machine can produce the given recipe
-function Machine.is_applicable(self, recipe)
-    local item_ingredients_count = 0
-    -- Ingredient count does not include fluid ingredients
-    for _, ingredient in pairs(recipe.proto.ingredients) do
-        if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1 end
-    end
-    return (item_ingredients_count <= self.proto.ingredient_limit)
-end
-
-
 -- Update the validity of this machine
 function Machine.update_validity(self, recipe)
     local category_name = (type(self.category) == "string") and self.category or self.category.name
@@ -58,7 +47,7 @@ function Machine.update_validity(self, recipe)
     end
 
     -- If the machine is valid, it might still not be applicable
-    if recipe.valid and not Machine.is_applicable(self, recipe) then
+    if recipe.valid and not data_util.machine.is_applicable(self.proto, recipe) then
         self.valid = false
     end
     

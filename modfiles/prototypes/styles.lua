@@ -132,6 +132,7 @@ data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
     padding = 2
 }
 
+
 -- Generating prototype styles for the different icon-buttons
 local icon_state_indexes = {recipe = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}
 for state, y in pairs(icon_state_indexes) do
@@ -164,6 +165,16 @@ for state, y in pairs(icon_state_indexes) do
             size = 36,
             border = 1,
             scale = 1
+        },
+        -- The disabled set is the same as the default one, by default
+        disabled_graphical_set = 
+        {
+            filename = "__factoryplanner__/graphics/icon_backgrounds.png",
+            priority = "extra-high-no-scale",
+            position = {0, y},
+            size = 36,
+            border = 1,
+            scale = 1
         }
     }
 end
@@ -193,11 +204,12 @@ for _, type in ipairs(icons_medium) do
     }
 end
 
+
 -- Specific style for a clicked item_group sprite button
 data.raw["gui-style"].default["fp_button_icon_clicked"] = {
     type = "button_style",
     parent = "fp_button_icon_medium_recipe",
-    default_graphical_set =
+    disabled_graphical_set =
     {
         filename = "__factoryplanner__/graphics/icon_backgrounds.png",
         priority = "extra-high-no-scale",
@@ -205,23 +217,22 @@ data.raw["gui-style"].default["fp_button_icon_clicked"] = {
         size = 36,
         border = 1,
         scale = 1
-    },
-    hovered_graphical_set =
+    }
+}
+
+-- Specific style for an already existing product button
+data.raw["gui-style"].default["fp_button_existing_product"] = {
+    type = "button_style",
+    parent = "icon_button",
+    size = 32,
+    padding = 0,
+    disabled_graphical_set =
     {
         filename = "__factoryplanner__/graphics/icon_backgrounds.png",
-        priority = "extra-high-no-scale",
-        position = {74, 0},
-        size = 36,
-        border = 1,
-        scale = 1
-    },
-    clicked_graphical_set =
-    {
-        filename = "__factoryplanner__/graphics/icon_backgrounds.png",
-        priority = "extra-high-no-scale",
-        position = {74, 0},
-        size = 36,
-        border = 1,
-        scale = 1
+            priority = "extra-high-no-scale",
+            position = {0, 36},
+            size = 36,
+            border = 1,
+            scale = 1
     }
 }

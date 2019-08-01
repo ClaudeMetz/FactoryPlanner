@@ -283,14 +283,6 @@ function Line.trim_modules(self)
 end
 
 
--- Returns the number of machines needed on this Line
-function Line.calculate_machine_count(self, machine)
-    local machine_speed = machine.proto.speed + (machine.proto.speed * self.total_effects.speed)
-    local machine_prod_ratio = self.production_ratio / (1 + self.total_effects.productivity)
-    return (machine_prod_ratio / (machine_speed / self.recipe.proto.energy)) / self.parent.parent.timescale
-end
-
-
 -- Update the validity of values associated tp this line
 function Line.update_validity(self)
     self.valid = true

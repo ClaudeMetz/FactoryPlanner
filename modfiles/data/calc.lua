@@ -110,14 +110,13 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                     end
                 end
 
-                -- Machine count (Same calculation for machines and miners because the machine and line values are adjusted beforehand)
-                local machine_speed = line.machine.proto.speed + (line.machine.proto.speed * line.total_effects.speed)
-                local machine_prod_ratio = production_ratio / (1 + math.max(line.total_effects.productivity, 0))
-                line_aggregate.machine_count = (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale
+                -- Machine count (Same calculation for machines/miners because values are set appropriately in the prototype)
+                line_aggregate.machine_count = data_util.determine_machine_count(line, line.machine.proto,
+                  production_ratio, subfactory.timescale)
 
                 -- Energy consumption
-                local energy_consumption = line_aggregate.machine_count * (line.machine.proto.energy * 60)
-                energy_consumption = energy_consumption + (energy_consumption * math.max(line.total_effects.consumption, -0.8))
+                local energy_consumption = data_util.determine_energy_consumption(line.machine,
+                  line_aggregate.machine_count, line.total_effects)
 
                 local burner = line.machine.proto.burner
                 if burner == nil then
@@ -126,7 +125,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 elseif burner.categories["chemical"] then
                     -- Only applies to lines without subfloor (lines with subfloor shouldn't have fuel)
                     line.fuel = line.fuel or get_preferences(player).preferred_fuel
-                    local fuel_amount = ((energy_consumption / burner.effectivity) / line.fuel.fuel_value) * subfactory.timescale
+                    local fuel_amount = data_util.determine_fuel_amount(energy_consumption, subfactory, line.fuel, burner)
                     
                     -- How this is added is silly and needs to be fixed with the future proper interface
                     local item = Item.init_by_proto(line.fuel, "Ingredient", fuel_amount)
