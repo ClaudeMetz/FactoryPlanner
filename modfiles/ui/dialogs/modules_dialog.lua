@@ -323,6 +323,7 @@ function handle_module_beacon_picker_click(player, button)
             -- Don't focus the module textfield if the beacon textfield exists and doesn't have a valid value
             local beacon_bar = flow_modal_dialog["flow_beacon_bar"]
             local focus = (beacon_bar == nil or tonumber(beacon_bar["textfield_beacon_amount"].text) ~= nil)
+              and "module" or "beacon"
             set_sprite_button(flow_modal_dialog, "module", module_proto, focus)
 
             -- Take focus away from the module amount textfield if it is locked at 1
@@ -334,7 +335,7 @@ function handle_module_beacon_picker_click(player, button)
         modal_data.empty_slots = beacon_proto.module_limit
 
         -- Set the module in the interface
-        set_sprite_button(flow_modal_dialog, "beacon", beacon_proto, true)
+        set_sprite_button(flow_modal_dialog, "beacon", beacon_proto, "beacon")
 
         -- The module textfield and max-button might need to be locked (limit=1)
         update_module_bar(flow_modal_dialog, ui_state)
@@ -344,7 +345,8 @@ function handle_module_beacon_picker_click(player, button)
 
         -- Update the condition text (a bit hacky)
         local label_instruction_3 = generate_module_condition_text(modal_data)
-        flow_modal_dialog.parent["table_modal_dialog_conditions"]["label_subfactory_instruction_3"].caption = label_instruction_3
+        flow_modal_dialog.parent["table_modal_dialog_conditions"]
+          ["label_subfactory_instruction_3"].caption = label_instruction_3
     end
 end
 
@@ -353,7 +355,8 @@ function set_sprite_button(flow_modal_dialog, type, proto, focus)
     local bar = flow_modal_dialog["flow_" .. type .. "_bar"]
     bar["sprite-button_" .. type].sprite = proto.sprite
     bar["sprite-button_" .. type].tooltip = proto.localised_name
-    if focus then bar["textfield_" .. type .. "_amount"].focus() end
+    -- Focus the specified textfield
+    flow_modal_dialog["flow_" .. focus .. "_bar"]["textfield_" .. focus .. "_amount"].focus()
 end
 
 -- Updates the module textfield and max-button
