@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Added offshore pump recipes (Water, Angel's seafloor-pump, etc.)
     - Mining productivity research is now respected, and can optionally be set to a custom value
   Changes:
+    - Made it easier and prettier to change the subfactory timescale
     - Added some more context to various choices through tooltips
     - Changed phrasing in some places to improve clarity
     - Removed the subfactory/floor machine-changing actions (They will return at a later point)

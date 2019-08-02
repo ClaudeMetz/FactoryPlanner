@@ -15,31 +15,28 @@ function refresh_info_pane(player)
     end
     
     -- Timescale
-    local table_timescale = flow["table_info_elements"].add{type="table", name="table_timescale_buttons", column_count=4}
+    local table_timescale = flow["table_info_elements"].add{type="table", name="table_timescale_buttons", column_count=2}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
-      caption={"", " ", {"label.timescale"}, ": "}}
+      caption={"", " ", {"label.timescale"}, " [img=info]: "}, tooltip={"tooltip.timescales"}}
     label_timescale_title.style.font = "fp-font-14p"
+    table_timescale.style.bottom_margin = 4
 
-    if ui_state.current_activity == "changing_timescale" then
-        table_timescale.add{type="button", name="fp_button_timescale_1", caption="1s", style="fp_button_mini", 
+    local timescales = {["1s"] = 1, ["1m"] = 60, ["1h"] = 3600}
+    local table_timescales = table_timescale.add{type="table", name="table_timescales", column_count=table_size(timescales)}
+    table_timescales.style.horizontal_spacing = 0
+    table_timescales.style.left_margin = 2
+    for caption, scale in pairs(timescales) do  -- Factorio-Lua preserving ordering is important here
+        local button = table_timescales.add{type="button", name=("fp_button_timescale_" .. scale), caption=caption,
           mouse_button_filter={"left"}}
-        table_timescale.add{type="button", name="fp_button_timescale_60", caption="1m", style="fp_button_mini",
-          mouse_button_filter={"left"}}
-        table_timescale.add{type="button", name="fp_button_timescale_3600", caption="1h", style="fp_button_mini", 
-          mouse_button_filter={"left"}}
-    else            
-        -- As unit is limited to presets, timescale will always be displayed as 1
-        local timescale = ui_util.format_timescale(subfactory.timescale, false)
-        local label_timescale = table_timescale.add{type="label", name="label_timescale", caption=timescale .. "   "}
-        label_timescale.style.font = "default-bold"
-        table_timescale.add{type="button", name="fp_button_change_timescale", caption={"button-text.change"},
-          style="fp_button_mini", mouse_button_filter={"left"}}
+        button.enabled = (not (subfactory.timescale == scale))
+        button.style = (subfactory.timescale == scale) and "fp_button_timescale_selected" or "fp_button_timescale"
     end
 
     -- Notes
     local table_notes = flow["table_info_elements"].add{type="table", name="table_notes", column_count=2}
-    table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":  "}}
-    table_notes["label_notes_title"].style.font = "fp-font-14p"
+    local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":  "}}
+    label_notes.style.font = "fp-font-14p"
+    label_notes.style.bottom_padding = 2
     table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
       style="fp_button_mini", mouse_button_filter={"left"}}
 
@@ -86,16 +83,9 @@ end
 
 -- Handles the timescale changing process
 function handle_subfactory_timescale_change(player, timescale)
-    local ui_state = get_ui_state(player)
-    if ui_state.current_activity == "changing_timescale" then
-        local subfactory = ui_state.context.subfactory
-        subfactory.timescale = timescale
-        ui_state.current_activity = nil
-        update_calculations(player, subfactory)
-    else
-        ui_state.current_activity = "changing_timescale"
-        refresh_main_dialog(player)
-    end
+    local subfactory = get_context(player).subfactory
+    subfactory.timescale = timescale
+    update_calculations(player, subfactory)
 end
 
 -- Persists changes to the overriden mining productivity

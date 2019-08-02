@@ -73,6 +73,27 @@ data.raw["gui-style"].default["fp_button_selected"] = {
     }
 }
 
+data.raw["gui-style"].default["fp_button_timescale"] = {
+    type = "button_style",
+    parent = "button",
+    height = 26,
+    width = 40,
+    left_padding = 0,
+    right_padding = 0,
+    top_padding = 1,
+    clicked_vertical_offset = 0
+}
+
+data.raw["gui-style"].default["fp_button_timescale_selected"] = {
+    type = "button_style",
+    parent = "fp_button_timescale",
+    disabled_font_color = {},  -- pure black
+    disabled_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = default_dirt
+    }
+}
+
 data.raw["gui-style"].default["fp_view_selection_button"] = {
     type = "button_style",
     parent = "button",
@@ -83,15 +104,11 @@ data.raw["gui-style"].default["fp_view_selection_button"] = {
 data.raw["gui-style"].default["fp_view_selection_button_selected"] = {
     type = "button_style",
     parent = "fp_view_selection_button",
-    default_graphical_set = {
+    disabled_font_color = {},  -- pure black
+    disabled_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
         shadow = default_dirt
-    },
-    hovered_graphical_set = {
-        base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
-    },
-    left_click_sound = {}
+    }
 }
 
 
@@ -229,10 +246,10 @@ data.raw["gui-style"].default["fp_button_existing_product"] = {
     disabled_graphical_set =
     {
         filename = "__factoryplanner__/graphics/icon_backgrounds.png",
-            priority = "extra-high-no-scale",
-            position = {0, 36},
-            size = 36,
-            border = 1,
-            scale = 1
+        priority = "extra-high-no-scale",
+        position = {0, 36},
+        size = 36,
+        border = 1,
+        scale = 1
     }
 }
