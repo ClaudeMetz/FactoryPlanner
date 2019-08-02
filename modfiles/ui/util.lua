@@ -167,7 +167,7 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
 
     local tooltip = {""}
     for name, effect in pairs(effects) do
-        if name == "productivity" then
+        if machine_proto ~= nil and name == "productivity" then
             effect = effect + data_util.determine_mining_productivity(player, subfactory, machine_proto)
         end
 
