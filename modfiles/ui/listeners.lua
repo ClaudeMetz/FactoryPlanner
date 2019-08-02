@@ -234,11 +234,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to the delete button being pressed
         elseif event.element.name == "fp_button_delete_subfactory" then
             handle_subfactory_deletion(player)
-
-        -- Enters mode to change the timescale of the current subfactory
-        elseif event.element.name == "fp_button_change_timescale" then
-            handle_subfactory_timescale_change(player, nil)
-
+            
         -- Opens notes dialog
         elseif event.element.name == "fp_button_view_notes" then
             enter_modal_dialog(player, {type="notes", submit=true})
@@ -247,14 +243,6 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_button_mining_prod_override" then
             ui_state.current_activity = "overriding_mining_prod"
             refresh_main_dialog(player)
-
-        -- Sets all machines of the current subfactory to the preferred ones
-        elseif event.element.name == "fp_button_set_prefmachines_subfactory" then
-            handle_set_prefmachines_click(player, "subfactory")
-
-        -- Sets all machines of the current floor to the preferred ones
-        elseif event.element.name == "fp_button_set_prefmachines_floor" then
-            handle_set_prefmachines_click(player, "floor")
 
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" then

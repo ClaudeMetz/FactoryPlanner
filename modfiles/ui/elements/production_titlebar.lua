@@ -42,6 +42,7 @@ function add_production_pane_to(main_dialog)
     table_view_selection.add{type="button", name="fp_button_production_titlebar_view_items_per_timescale",
       tooltip={"", {"tooltip.items_per_timescale"}, "\n", {"tooltip.cycle_production_views"}}}
 
+    -- (bl = belt/lane)
     local button_bl = table_view_selection.add{type="button", name="fp_button_production_titlebar_view_belts_or_lanes",
       tooltip={"", {"tooltip.belts_or_lanes"}, "\n", {"tooltip.cycle_production_views"}}}
     local flow_bl = button_bl.add{type="flow", name="flow_belts_or_lanes", direction="horizontal"}
@@ -125,7 +126,8 @@ function refresh_production_pane(player)
             else
                 button.caption = view.caption
             end
-            button.enabled = view.enabled
+            -- It's disabled if it's selected or not enabled by the view
+            button.enabled = (not view.selected and view.enabled)
             button.style = view.selected and "fp_view_selection_button_selected" or "fp_view_selection_button"
         end
     end
