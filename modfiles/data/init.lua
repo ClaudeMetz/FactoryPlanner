@@ -1,5 +1,6 @@
 require("data.classes.Collection")
 require("data.classes.Item")
+require("data.classes.TopLevelItem")
 require("data.classes.Recipe")
 require("data.classes.Machine")
 require("data.classes.Module")

@@ -8,7 +8,6 @@ function Item.init_by_proto(proto, class, amount)
         proto = proto,
         type = type,
         amount = amount or 0,  -- produced amount
-        required_amount = 0,
         sprite = (proto.type .. "/" .. proto.name),
         valid = true,
         class = class

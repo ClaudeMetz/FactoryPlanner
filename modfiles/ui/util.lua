@@ -90,13 +90,13 @@ end
 
 -- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
 -- (Relates to the view_state, doesn't do anything if views are uninitialised)
-function ui_util.setup_item_button(player_table, button, item, top_level)
+function ui_util.setup_item_button(player_table, button, item)
     local view_state = player_table.ui_state.view_state
     -- This gets refreshed after the view state is initialised
     if view_state == nil then return end
 
     local view = view_state[view_state.selected_view_id]
-    local amount = (top_level and item.class == "Product") and item.required_amount or item.amount
+    local amount = (item.top_level and item.class == "Product") and item.required_amount or item.amount
     local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type)
     
     -- Special handling for mining recipes concerning their localised name
@@ -133,7 +133,7 @@ function ui_util.setup_item_button(player_table, button, item, top_level)
     -- Compose tooltip, respecting top level products
     if number ~= nil then
         local number_string
-        if top_level and item.class == "Product" then
+        if item.top_level and item.class == "Product" then
             local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount, item.proto.type)
             number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", ui_util.format_number(number, 4)}
         else
