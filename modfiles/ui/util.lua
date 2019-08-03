@@ -1,4 +1,5 @@
 ui_util = {
+    message = {},
     fnei = {}
 }
 
@@ -14,12 +15,16 @@ end
 
 -- Sets the font color of the given label / button-label
 function ui_util.set_label_color(ui_element, color)
-    if color == "red" then
+    if color == nil then
+        return
+    elseif color == "red" then
         ui_element.style.font_color = {r = 1, g = 0.2, b = 0.2}
     elseif color == "dark_red" then
         ui_element.style.font_color = {r = 0.8, g = 0, b = 0}
     elseif color == "yellow" then
         ui_element.style.font_color = {r = 0.8, g = 0.8, b = 0}
+    elseif color == "green" then
+        ui_element.style.font_color = {r = 0.2, g = 0.8, b = 0.2}
     elseif color == "white" or color == "default_label" then
         ui_element.style.font_color = {r = 1, g = 1, b = 1}
     elseif color == "black" or color == "default_button" then
@@ -309,6 +314,58 @@ function ui_util.split(s, separator)
         table.insert(r, token) 
     end
     return r
+end
+
+
+-- **** Messages ****
+-- Enqueues the given message into the message queue
+-- Possible types are error, warning, hint
+function ui_util.message.enqueue(player, message, type, lifetime)
+    table.insert(get_ui_state(player).message_queue, {text=message, type=type, lifetime=lifetime})
+end
+
+-- Refreshes the current message, taking into account priotities and lifetimes
+-- The messages are displayed in enqueued order, displaying higher priorities first
+-- The lifetime is decreased for every message on every refresh
+-- (The algorithm(s) could be more efficient, but it doesn't matter for the small dataset)
+function ui_util.message.refresh(player)
+    -- The message types are ordered by priority
+    local types = {
+        [1] = {name = "error", color = "red", always_show=true},
+        [2] = {name = "warning", color = "yellow", always_show=false},
+        [3] = {name = "hint", color = "green", always_show=false}
+    }
+    
+    local ui_state = get_ui_state(player)
+    local show_hints = get_settings(player).show_hints
+    
+    -- Go over the all types and messages, trying to find one that should be shown
+    local new_message, new_color = "", nil
+    for _, type in ipairs(types) do
+        if always_show or show_hints then
+            -- All messages will have lifetime > 0 at this point
+            for _, message in ipairs(ui_state.message_queue) do
+                -- Find first message of this type, then break
+                if message.type == type.name then
+                    new_message = message.text
+                    new_color = type.color
+                    break
+                end
+            end
+            -- If a message is found, break because no messages of lower ranked type should be considered
+            if new_message ~= "" then break end
+        end
+    end
+    
+    -- Decrease the lifetime of every queued message
+    for index, message in ipairs(ui_state.message_queue) do
+        message.lifetime = message.lifetime - 1
+        if message.lifetime <= 0 then table.remove(ui_state.message_queue, index) end
+    end
+    
+    local label_hint = player.gui.center["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
+    label_hint.caption = new_message
+    ui_util.set_label_color(label_hint, new_color)
 end
 
 

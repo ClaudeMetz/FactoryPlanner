@@ -136,7 +136,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
 
             else  -- Reset the product counts
                 for _, product in pairs(calc.aggregate.get_in_order(line_aggregate, "Product")) do product.amount = 0 end
-                --queue_message(player, {"label.hint_useless_recipe"}, "hint")
+                --ui_util.message.enqueue(player, {"label.hint_useless_recipe"}, "warning", 1)
             end
             
             calc.update_line(line, line_aggregate)
