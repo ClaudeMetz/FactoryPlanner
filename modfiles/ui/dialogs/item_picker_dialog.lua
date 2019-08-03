@@ -24,10 +24,13 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
     local product = ui_state.selected_object
 
     if action == "submit" then
+        local req_amount = tonumber(data.required_amount)
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
-            product = Subfactory.add(subfactory, Item.init_by_proto(ui_state.modal_data.selected_item, "Product", 0))
+            local top_level_item = TopLevelItem.init_by_proto(ui_state.modal_data.selected_item, "Product", 0, req_amount)
+            product = Subfactory.add(subfactory, top_level_item)
+        else
+              product.required_amount = req_amount
         end
-        product.required_amount = tonumber(data.required_amount)
 
     elseif action == "delete" then  -- delete can only be pressed if product ~= nil
         Subfactory.remove(subfactory, product)

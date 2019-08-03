@@ -248,9 +248,8 @@ end
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
     for _, product in ipairs(products) do
-        local item = Item.init_by_item(product, "Product", product.amount)
-        local dataset = Subfactory.add(subfactory, item)
-        dataset.required_amount = product.required_amount
+        local item = TopLevelItem.init_by_item(product, "Product", product.amount, product.required_amount)
+        Subfactory.add(subfactory, item)
     end
 end
 
