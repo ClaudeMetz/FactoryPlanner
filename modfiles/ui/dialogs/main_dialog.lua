@@ -61,7 +61,7 @@ function toggle_main_dialog(player, keep_paused)
         -- Create and open main dialog, if it doesn't exist yet
         if main_dialog == nil then
             main_dialog = create_main_dialog(player, true)
-            refresh_message(player)
+            ui_util.message.refresh(player)
             open = true
 
         -- Otherwise, toggle it
@@ -123,33 +123,6 @@ function create_main_dialog(player, visible)
 
     return main_dialog
 end
-
-
--- Queues the caption of the general message to be displayed on the next refresh
-function queue_message(player, message, type)
-    get_ui_state(player).queued_message = {string=message, type=type}
-end
-
--- Refreshes the general messge that is displayed next to the main dialog title
-function refresh_message(player)
-    local ui_state = get_ui_state(player)
-    local label_hint = player.gui.center["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
-    
-    if ui_state.queued_message ~= nil then
-        if ui_state.queued_message.type == "warning" then
-            ui_util.set_label_color(label_hint, "red")
-            label_hint.caption = ui_state.queued_message.string
-        elseif ui_state.queued_message.type == "hint" and get_settings(player).show_hints then 
-            ui_util.set_label_color(label_hint, "yellow")
-            label_hint.caption = ui_state.queued_message.string
-        end
-
-        ui_state.queued_message = nil
-    else
-        label_hint.caption = ""
-    end
-end
-
 
 -- Creates the titlebar including name and exit-button
 function add_titlebar_to(main_dialog)

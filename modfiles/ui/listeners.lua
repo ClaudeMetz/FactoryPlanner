@@ -373,6 +373,6 @@ script.on_event(defines.events.on_gui_click, function(event)
         end
 
         -- Only reset hint if one of this mod's actual controls is pressed
-        refresh_message(player)
+        ui_util.message.refresh(player)
     end
 end)

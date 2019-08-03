@@ -88,7 +88,7 @@ function update_player_table(player, table)
         player_table.ui_state = {}
         reload_data()
 
-        queue_message(player, {"label.hint_tutorial"}, "hint")
+        ui_util.message.enqueue(player, {"label.hint_tutorial"}, "hint", 5)
 
     else  -- existing player, only need to update
         reload_data()
@@ -143,7 +143,7 @@ function reset_ui_state(player)
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
     ui_state_table.floor_total = false  -- Whether the floor or subfactory totals are displayed
     ui_state_table.view_state = nil  -- The state of the production views
-    ui_state_table.queued_message = nil  -- The next general message to be displayed
+    ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.recipe_filter_preferences = 
       {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data

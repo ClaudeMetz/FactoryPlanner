@@ -371,7 +371,7 @@ function handle_percentage_change(player, element)
     local new_percentage = tonumber(element.text)  -- returns nil if text is not a number
 
     if new_percentage == nil or new_percentage < 0 then
-        queue_message(player, {"label.error_invalid_percentage"}, "warning")
+        ui_util.message.enqueue(player, {"label.error_invalid_percentage"}, "error", 1)
     -- Two separate patterns are needed here as Lua doesn't allow applying modifiers on patterns (no "(01)?")
     elseif string.find(element.text, "^%d+%.$") or string.find(element.text, "^%d+%.[0-9]*0$") then
         -- Allow people to enter decimal numbers
@@ -390,7 +390,7 @@ function handle_percentage_change(player, element)
         scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
     end
 
-    refresh_message(player)
+    ui_util.message.refresh(player)
 end
 
 

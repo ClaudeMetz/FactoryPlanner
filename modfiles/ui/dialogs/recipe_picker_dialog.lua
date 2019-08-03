@@ -9,7 +9,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
 
     local recipe_id, error, show = run_preliminary_checks(player, product)
     if error ~= nil then
-        queue_message(player, error, "warning")
+        ui_util.message.enqueue(player, error, "error", 1)
         exit_modal_dialog(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
@@ -17,11 +17,11 @@ function open_recipe_picker_dialog(flow_modal_dialog)
             local line = Line.init(player, Recipe.init_by_id(recipe_id), nil)
             -- If line is false, no compatible machine has been found (ingredient limit)
             if line == false then
-                queue_message(player, {"label.error_no_compatible_machine"}, "warning")
+                ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 1)
             else
                 Floor.add(ui_state.context.floor, line)
                 update_calculations(player, ui_state.context.subfactory)
-                if show.message ~= nil then queue_message(player, show.message.string, show.message.type) end
+                if show.message ~= nil then ui_util.message.enqueue(player, show.message.text, show.message.type, 1) end
             end
             exit_modal_dialog(player, "cancel", {})
         
@@ -57,7 +57,7 @@ function handle_picker_recipe_click(player, button)
     
     local line = Line.init(player, Recipe.init_by_id(recipe_id), nil)
     if line == false then
-        queue_message(player, {"label.error_no_compatible_machine"}, "warning")
+        ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 1)
     else
         Floor.add(context.floor, line)
         update_calculations(player, context.subfactory)
@@ -105,7 +105,7 @@ function run_preliminary_checks(player, product)
         local chosen_recipe = relevant_recipes[1]
         -- Show hint if adding unresearched recipe (no hints on custom recipes)
         if not is_custom_recipe(player, chosen_recipe, true) and not force_recipes[chosen_recipe.name].enabled then
-            show.message={string={"label.hint_disabled_recipe"}, type="hint"}
+            show.message={text={"label.hint_disabled_recipe"}, type="warning"}
         end
         return chosen_recipe.id, nil, show
     else  -- 2+ relevant recipes
