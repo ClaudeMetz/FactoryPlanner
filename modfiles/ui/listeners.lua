@@ -6,43 +6,6 @@ require("ui.dialogs.modal_dialog")
 -- (Used in production_pane.handle_percentage_textfield_click())
 local previously_selected_textfield = nil
 
--- Sets up global data structure of the mod
-script.on_init(function()
-    global_init()
-end)
-
--- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
-script.on_configuration_changed(function()
-    handle_configuration_change()
-end)
-
--- Creates some lua-global tables for convenience and performance
-script.on_load(function()
-    item_recipe_map = generator.item_recipe_map()
-    item_groups = generator.item_groups()
-    module_tier_map = generator.module_tier_map()
-end)
-
--- Fires when a player loads into a game for the first time
-script.on_event(defines.events.on_player_created, function(event)
-    local player = game.get_player(event.player_index)
-
-    -- Sets up the player_table for the new player
-    update_player_table(player, global)
-
-    -- Sets up the GUI for the new player
-    player_gui_init(player)
-
-    -- Runs setup if developer mode is active
-    data_util.run_dev_config(player)
-end)
-
--- Fires when a player is irreversibly removed from a game
-script.on_event(defines.events.on_player_removed, function(event)
-    -- Removes the player from the global table
-    global.players[event.player_index] = nil
-end)
-
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
@@ -108,25 +71,19 @@ end)
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
 
-    -- Applies the disabled filter to a picker dialog
-    if event.element.name == "fp_checkbox_picker_filter_condition_disabled" then
-        handle_filter_radiobutton_click(player, "disabled", event.element.state)
-
-    -- Applies the hidden filter to a picker dialog
-    elseif event.element.name == "fp_checkbox_picker_filter_condition_hidden" then
-        handle_filter_radiobutton_click(player, "hidden", event.element.state)
-    
-    -- Changes the preference to ignore barreling
-    elseif event.element.name == "fp_checkbox_preferences_ignore_barreling" then
-        get_preferences(player).ignore_barreling_recipes = event.element.state
-
-    -- Changes the preference to show line comments
-    elseif event.element.name == "fp_checkbox_preferences_enable_recipe_comments" then
-        get_preferences(player).enable_recipe_comments = event.element.state
-
-    -- Changes the tutorial mode-preference
-    elseif event.element.name == "fp_checkbox_tutorial_mode" then
+    -- Changes the tutorial-mode preference
+    if event.element.name == "fp_checkbox_tutorial_mode" then
         get_preferences(player).tutorial_mode = event.element.state
+
+    -- Applies the disabled/hidden filter to a picker dialog
+    elseif string.find(event.element.name, "^fp_checkbox_picker_filter_condition_[a-z]+$") then
+        local filter = string.gsub(event.element.name, "fp_checkbox_preferences_", "")
+        handle_filter_radiobutton_click(player, filter, event.element.state)
+
+    -- Toggles the selected preference
+    elseif string.find(event.element.name, "^fp_checkbox_preferences_[a-z_]+$") then
+        local preference = string.gsub(event.element.name, "fp_checkbox_preferences_", "")
+        get_preferences(player)[preference] = event.element.state
 
     end
 end)
@@ -198,18 +155,6 @@ script.on_event(defines.events.on_gui_click, function(event)
           or event.element.name == "fp_button_titlebar_exit" then
             toggle_main_dialog(player)
 
-        -- Closes the modal dialog straight away
-        elseif event.element.name == "fp_button_modal_dialog_cancel" then
-            exit_modal_dialog(player, "cancel", {})
-
-        -- Closes the modal dialog, calling the appropriate deletion function
-        elseif event.element.name == "fp_button_modal_dialog_delete" then
-            exit_modal_dialog(player, "delete", {})
-
-        -- Submits the modal dialog, forwarding to the appropriate function
-        elseif event.element.name == "fp_button_modal_dialog_submit" then
-            exit_modal_dialog(player, "submit", {})
-
         -- Opens the tutorial dialog
         elseif event.element.name == "fp_button_titlebar_tutorial" then
             enter_modal_dialog(player, {type="tutorial", close=true})
@@ -241,21 +186,12 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Changes into the manual override of the mining prod mode
         elseif event.element.name == "fp_button_mining_prod_override" then
-            ui_state.current_activity = "overriding_mining_prod"
-            refresh_main_dialog(player)
+            mining_prod_override(player)
 
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" then
             enter_modal_dialog(player, {type="item_picker", preserve=true, submit=true})
         
-        -- Sets the selected floor to be the parent of the currently selected one
-        elseif event.element.name == "fp_button_floor_up" then
-            handle_floor_change_click(player, "up")
-
-        -- Sets the selected floor to be the top one
-        elseif event.element.name == "fp_button_floor_top" then
-            handle_floor_change_click(player, "top")
-
         -- Toggles the TopLevelItems-amount display state
         elseif event.element.name == "fp_button_item_amount_toggle" then
             toggle_floor_total_display(player, event.element)
@@ -271,7 +207,12 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Maxes the amount of modules on a modules-dialog
         elseif event.element.name == "fp_button_max_modules" then
             max_module_amount(player)
-            
+
+        -- Reacts to a modal dialog button being pressed
+        elseif string.find(event.element.name, "^fp_button_modal_dialog_[a-z]+$") then
+            local action = string.gsub(event.element.name, "fp_button_modal_dialog_", "")
+            exit_modal_dialog(player, action, {})
+        
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
@@ -300,6 +241,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
             local element_name = string.gsub(event.element.name, "fp_sprite%-button_chooser_element_", "")
             handle_chooser_element_click(player, element_name)
+
+        -- Reacts to a floor-changing button being pressed (up/top)
+        elseif string.find(event.element.name, "^fp_button_floor_[a-z]+$") then
+            local destination = string.gsub(event.element.name, "fp_button_floor_", "")
+            handle_floor_change_click(player, destination)
 
         -- Reacts to a change of the production pane view
         elseif string.find(event.element.name, "^fp_button_production_titlebar_view_[a-zA-Z-_]+$") then
@@ -345,25 +291,15 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
             handle_module_beacon_picker_click(player, event.element)
 
-        -- Reacts to any preferences machine button being pressed
+        -- Reacts to any 1d-prototype preference button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_[a-z]+_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            handle_preferences_change(player, split_string[4], split_string[5])
+
+        -- Reacts to any preferences machine button being pressed (special case of a 2d-prototype preference)
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_%d+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
             handle_preferences_machine_change(player, split_string[5], split_string[6])
-
-        -- Reacts to any preferences belt button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_belt_%d+$") then
-            local belt_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_preferences_belt_change(player, belt_id)
-
-        -- Reacts to any preferences fuel button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_fuel_%d+$") then
-            local fuel_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_preferences_fuel_change(player, fuel_id)
-
-        -- Reacts to any preferences beacon button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_preferences_beacon_%d+$") then
-            local beacon_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_preferences_beacon_change(player, beacon_id)
 
         -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then

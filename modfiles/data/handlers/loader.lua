@@ -1,4 +1,5 @@
 loader = {
+    util = {},
     machines = {},
     belts = {},
     fuels = {},
@@ -43,51 +44,40 @@ function loader.finish()
     end
     new = nil
 
-    -- Re-runs the table creation that runs on_load to incorporate the reloaded datasets
-    item_recipe_map = generator.item_recipe_map()
-    item_groups = generator.item_groups()
-    module_tier_map = generator.module_tier_map()
+    run_on_load()
+end
+
+
+-- Runs the update proceedure for a simple 1-dimensional kind of prototype
+function loader.util.simple_update(player_table, type)
+    local preferences = player_table.preferences
+    local plural_type = type .. "s"
+    local new_id = new["all_" .. plural_type].map[preferences["preferred_" .. type].name]
+    if new_id ~= nil then
+        preferences["preferred_" .. type] = new["all_" .. plural_type][plural_type][new_id]
+    else
+        preferences["preferred_" .. type] = data_util.base_data["preferred_" .. type](new)
+    end  
 end
 
 
 -- Update preferred belt
 function loader.belts.run(player_table)
-    local preferences = player_table.preferences
-    local new_belt_id = new.all_belts.map[preferences.preferred_belt.name]
-    if new_belt_id ~= nil then
-        preferences.preferred_belt = new.all_belts.belts[new_belt_id]
-    else
-        preferences.preferred_belt = data_util.base_data.preferred_belt(new)
-    end   
+    loader.util.simple_update(player_table, "belt") 
 end
-
 
 -- Update preferred fuel
 function loader.fuels.run(player_table)
-    local preferences = player_table.preferences
-    local new_fuel_id = new.all_fuels.map[preferences.preferred_fuel.name]
-    if new_fuel_id ~= nil then
-        preferences.preferred_fuel = new.all_fuels.fuels[new_fuel_id]
-    else
-        preferences.preferred_fuel = data_util.base_data.preferred_fuel(new)
-    end
+    loader.util.simple_update(player_table, "fuel") 
 end
-
 
 -- Update preferred beacon
 function loader.beacons.run(player_table)
-    local preferences = player_table.preferences
-    local new_beacon_id = new.all_beacons.map[preferences.preferred_beacon.name]
-    if new_beacon_id ~= nil then
-        preferences.preferred_beacon = new.all_beacons.beacons[new_beacon_id]
-    else
-        preferences.preferred_beacon = data_util.base_data.preferred_beacon(new)
-    end
+    loader.util.simple_update(player_table, "beacon") 
 end
 
-
+-- Update default machines
 function loader.machines.run(player_table)
-    -- Update default machines
     local preferences = player_table.preferences
     local default_machines = {categories = {}, map = {}}
 

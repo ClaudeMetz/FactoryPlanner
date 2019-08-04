@@ -18,6 +18,43 @@ require("data.calc")
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
 devmode = true  -- Enables certain conveniences for development
 
+
+-- Sets up global data structure of the mod
+script.on_init(function()
+    global_init()
+end)
+
+-- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
+script.on_configuration_changed(function()
+    handle_configuration_change()
+end)
+
+-- Creates some lua-global tables for convenience and performance
+script.on_load(function()
+    run_on_load()
+end)
+
+-- Fires when a player loads into a game for the first time
+script.on_event(defines.events.on_player_created, function(event)
+    local player = game.get_player(event.player_index)
+
+    -- Sets up the player_table for the new player
+    update_player_table(player, global)
+
+    -- Sets up the GUI for the new player
+    player_gui_init(player)
+
+    -- Runs setup if developer mode is active
+    data_util.run_dev_config(player)
+end)
+
+-- Fires when a player is irreversibly removed from a game
+script.on_event(defines.events.on_player_removed, function(event)
+    -- Removes the player from the global table
+    global.players[event.player_index] = nil
+end)
+
+
 -- Initiates all factorio-global variables
 function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
@@ -31,6 +68,13 @@ function global_init()
     for index, player in pairs(game.players) do
         update_player_table(player, global)
     end
+end
+
+-- Central place to consolidate what should run on_load and on_init
+function run_on_load()
+    item_recipe_map = generator.item_recipe_map()
+    item_groups = generator.item_groups()
+    module_tier_map = generator.module_tier_map()
 end
 
 -- Runs through all updates that need to be made after the config changed

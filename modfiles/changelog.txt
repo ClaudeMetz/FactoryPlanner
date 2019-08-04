@@ -11,6 +11,7 @@ Date: 00. 00. 0000
     - Added some more context to various choices through tooltips
     - Changed phrasing in some places to improve clarity
     - Removed the subfactory/floor machine-changing actions (They will return at a later point)
+    - Lots of internal changes to improve performance and stability
   Bugfixes:
     - Fixed certain textfields not being selected properly anymore after Factorio v0.17.59
     - Fixed changelog
