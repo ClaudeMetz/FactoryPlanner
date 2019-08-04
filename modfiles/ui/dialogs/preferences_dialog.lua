@@ -17,39 +17,30 @@ function open_preferences_dialog(flow_modal_dialog)
     table_general_prefs.style.bottom_margin = 8
     table_general_prefs.style.left_margin = 16
 
-    -- Ignore barreling recipes
-    table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_ignore_barreling", state=false,
-      caption={"", " ", {"checkbox.preferences_ignore_barreling"}, " [img=info]"}, tooltip={"tooltip.preferences_ignore_barreling"}}
-
-    -- Show line comments
-    table_general_prefs.add{type="checkbox", name="fp_checkbox_preferences_enable_recipe_comments", state=false,
-      caption={"", " ", {"checkbox.preferences_enable_recipe_comments"}, " [img=info]"}, tooltip={"tooltip.preferences_enable_recipe_comments"}}
-
-
-    -- Belt preferences
-    flow_modal_dialog.add{type="label", name="label_belts_info", caption={"", {"label.preferences_title_belts"}, ":"},
-      style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_belts"}}
-
-    flow_modal_dialog.add{type="table", name="table_all_belts", column_count=12, style="fp_preferences_table"}
-
-
-    -- Fuel preferences
-    flow_modal_dialog.add{type="label", name="label_fuels_info", caption={"", {"label.preferences_title_fuels"}, ":"},
-      style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_fuels"}}
-
-    flow_modal_dialog.add{type="table", name="table_all_fuels", column_count=12, style="fp_preferences_table"}
-
-
-    -- Beacon preferences
-    if #global.all_beacons.beacons > 1 then  -- only needed when there are more than one beacon (ie. not vanilla)
-        flow_modal_dialog.add{type="label", name="label_beacons_info", caption={"", {"label.preferences_title_beacons"}, ":"},
-          style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_beacons"}}
-
-        flow_modal_dialog.add{type="table", name="table_all_beacons", column_count=12, style="fp_preferences_table"}
+    -- Creates the checkbox for a general preference 
+    local function add_general_preference(name)
+        table_general_prefs.add{type="checkbox", name=("fp_checkbox_preferences_" .. name), state=false,
+          caption={"", " ", {"checkbox.preferences_" .. name}, " [img=info]"}, tooltip={"tooltip.preferences_" .. name}}
     end
 
+    local preference_names = {"ignore_barreling_recipes", "enable_recipe_comments"}
+    for _, preference_name in ipairs(preference_names) do add_general_preference(preference_name) end
 
-    -- Machine preferences
+
+    -- Prototype preferences
+    local function add_prototype_preference(name)
+        flow_modal_dialog.add{type="label", name=("label_".. name .. "_info"), caption={"", {"label.preferences_title_" .. name}, ":"},
+          style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_" .. name}}
+
+        flow_modal_dialog.add{type="table", name=("table_all_" .. name), column_count=12, style="fp_preferences_table"}
+    end
+
+    local proto_preference_names = {"belts", "fuels"}
+    -- Beacons are only needed when there is more than one beacon (ie. not vanilla)
+    if #global.all_beacons.beacons > 1 then table.insert(proto_preference_names, "beacons") end
+    for _, preference_name in ipairs(proto_preference_names) do add_prototype_preference(preference_name) end
+
+    -- Machine preferences (needs custom construction as it is a 2d-prototype)
     flow_modal_dialog.add{type="label", name="label_machines_info", caption={"", {"label.preferences_title_machines"}, ":"},
       style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_machines"}}
 
@@ -69,66 +60,38 @@ function refresh_preferences_dialog(player)
 
     -- General preferences
     local table_general_prefs = flow_modal_dialog["table_general_preferences"]
-    table_general_prefs["fp_checkbox_preferences_ignore_barreling"].state = preferences.ignore_barreling_recipes
-    table_general_prefs["fp_checkbox_preferences_enable_recipe_comments"].state = preferences.enable_recipe_comments
-
-    -- Belt preferences
-    local table_all_belts = flow_modal_dialog["table_all_belts"]
-    table_all_belts.clear()
-
-    for belt_id, belt in pairs(global.all_belts.belts) do
-        local button_belt = table_all_belts.add{type="sprite-button", name="fp_sprite-button_preferences_belt_"
-          .. belt_id, sprite=belt.sprite, mouse_button_filter={"left"}}
-          
-        local tooltip = belt.localised_name
-        if get_preferences(player).preferred_belt == belt then
-            button_belt.style = "fp_button_icon_medium_green"
-            tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
-        else 
-            button_belt.style = "fp_button_icon_medium_hidden"
-        end
-        button_belt.tooltip = {"", tooltip, "\n", ui_util.generate_belt_attributes_tooltip(belt)}
+    local preference_names = {"ignore_barreling_recipes", "enable_recipe_comments"}
+    for _, preference_name in ipairs(preference_names) do
+        table_general_prefs["fp_checkbox_preferences_" .. preference_name].state = preferences[preference_name]
     end
 
-    -- Fuel preferences
-    local table_all_fuels = flow_modal_dialog["table_all_fuels"]
-    table_all_fuels.clear()
+    -- Prototype preferences
+    -- Refreshes the given prototype preference GUI, if it exists (for 1d-prototypes)
+    local function refresh_prototype_preference(name)
+        local pname = name .. "s"  -- 'plural_name'
+        local table_all = flow_modal_dialog["table_all_" .. pname]
+        if table_all == nil then return end  -- return if no preference for this prototype exist
+        table_all.clear()
 
-    for fuel_id, fuel in pairs(global.all_fuels.fuels) do
-        local button_fuel = table_all_fuels.add{type="sprite-button", name="fp_sprite-button_preferences_fuel_"
-          .. fuel_id, sprite=fuel.sprite, mouse_button_filter={"left"}}
-    
-        local tooltip = fuel.localised_name
-        if get_preferences(player).preferred_fuel == fuel then
-            button_fuel.style = "fp_button_icon_medium_green"
-            tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
-        else 
-            button_fuel.style = "fp_button_icon_medium_hidden"
-        end
-        button_fuel.tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel)}
-    end
-
-    -- Beacon preferences
-    if #global.all_beacons.beacons > 1 then
-        local table_all_beacons = flow_modal_dialog["table_all_beacons"]
-        table_all_beacons.clear()
-
-        for beacon_id, beacon in pairs(global.all_beacons.beacons) do
-            local button_beacon = table_all_beacons.add{type="sprite-button", name="fp_sprite-button_preferences_beacon_"
-            .. beacon_id, sprite="entity/" .. beacon.name, mouse_button_filter={"left"}}
-        
-            local tooltip = beacon.localised_name
-            if get_preferences(player).preferred_beacon == beacon then
-                button_beacon.style = "fp_button_icon_medium_green"
+        for proto_id, proto in pairs(global["all_" .. pname][pname]) do
+            local button = table_all.add{type="sprite-button", name="fp_sprite-button_preferences_" .. name .. "_"
+              .. proto_id, sprite=proto.sprite, mouse_button_filter={"left"}}
+            
+            local tooltip = proto.localised_name
+            if get_preferences(player)["preferred_" .. name] == proto then
+                button.style = "fp_button_icon_medium_green"
                 tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
             else 
-                button_beacon.style = "fp_button_icon_medium_hidden"
+                button.style = "fp_button_icon_medium_hidden"
             end
-            button_beacon.tooltip = {"", tooltip, "\n", ui_util.generate_beacon_attributes_tooltip(beacon)}
+            button.tooltip = {"", tooltip, "\n", ui_util["generate_" .. name .. "_attributes_tooltip"](proto)}
         end
     end
 
-    -- Machine preferences
+    local proto_preference_names = {"belt", "fuel", "beacon"}
+    for _, preference_name in ipairs(proto_preference_names) do refresh_prototype_preference(preference_name) end
+
+    -- Machine preferences (needs custom construction as it is a 2d-prototype)
     local table_all_machines = flow_modal_dialog["table_all_machines"]
     table_all_machines.clear()
 
@@ -154,26 +117,14 @@ function refresh_preferences_dialog(player)
 end
 
 
+-- Changes the preferred prototype for the given prototype preference type
+function handle_preferences_change(player, type, id)
+    get_preferences(player)["preferred_" .. type] = global["all_" .. type .. "s"][type .. "s"][id]
+    refresh_preferences_dialog(player)
+end
+
 -- Changes the default machine of the given category
 function handle_preferences_machine_change(player, category_id, id)
     data_util.machine.set_default(player, category_id, id)
-    refresh_preferences_dialog(player)
-end
-
--- Changes the preferred belt
-function handle_preferences_belt_change(player, id)
-    get_preferences(player).preferred_belt = global.all_belts.belts[id]
-    refresh_preferences_dialog(player)
-end
-
--- Changes the preferred fuel
-function handle_preferences_fuel_change(player, id)
-    get_preferences(player).preferred_fuel = global.all_fuels.fuels[id]
-    refresh_preferences_dialog(player)
-end
-
--- Changes the preferred beacon
-function handle_preferences_beacon_change(player, id)
-    get_preferences(player).preferred_beacon = global.all_beacons.beacons[id]
     refresh_preferences_dialog(player)
 end

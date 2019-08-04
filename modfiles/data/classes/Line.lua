@@ -24,7 +24,7 @@ function Line.init(player, recipe, machine)
     -- If machine is specified, it gets used, otherwise it'll fall back to the default
     if machine == nil then
         -- Hack together a pseudo-category for machine.change to use to find the default
-        line.machine = {category = { id = global.all_machines.map[recipe.proto.category] } }
+        line.machine = { category = { id = global.all_machines.map[recipe.proto.category] } }
     end
     -- Return false if no fitting machine can be found (needs error handling on the other end)
     if data_util.machine.change(player, line, machine, nil) == false then
@@ -39,7 +39,7 @@ function Line.init(player, recipe, machine)
         Line.add(line, Item.init_by_item(ingredient, "Ingredient", 0))
     end
 
-    -- Initialise the total_effects
+    -- Initialise total_effects
     Line.summarize_effects(line)
 
     return line
@@ -47,14 +47,15 @@ end
 
 
 -- Changes the amount of the given module on this line and optionally it's subfloor / parent line
-function Line.change_module_amount(self, module, new_amount, no_recursion)
+function Line.change_module_amount(self, module, new_amount, secondary)
     module.amount = new_amount
     
-    if self.subfloor ~= nil and not no_recursion then
+    -- (This could theoretically use Line.carry_over_changes, but it's too different to be worth it)
+    if self.subfloor ~= nil and not secondary then
         local sub_line = Floor.get(self.subfloor, "Line", 1)
         local sub_module = Line.get_by_name(sub_line, "Module", module.proto.name)
         Line.change_module_amount(self, sub_module, new_amount, true)
-    elseif self.id == 1 and self.parent.origin_line and not no_recursion then
+    elseif self.id == 1 and self.parent.origin_line and not secondary then
         local parent_module = Line.get_by_name(self.parent.origin_line, "Module", module.proto.name)
         Line.change_module_amount(self.parent.origin_line, parent_module, new_amount, true)
     end
@@ -63,70 +64,44 @@ function Line.change_module_amount(self, module, new_amount, no_recursion)
 end
 
 -- Sets the given beacon on this line and optionally it's subfloor / parent line
-function Line.set_beacon(self, beacon, no_recursion)
+function Line.set_beacon(self, beacon, secondary)
     if beacon ~= nil then beacon.parent = self end
     self.beacon = beacon
     
-    if self.subfloor ~= nil and not no_recursion then
-        local sub_line = Floor.get(self.subfloor, "Line", 1)
-        Line.set_beacon(sub_line, util.table.deepcopy(beacon), true)
-    elseif self.id == 1 and self.parent.origin_line and not no_recursion then
-        Line.set_beacon(self.parent.origin_line, util.table.deepcopy(beacon), true)
-    end
-
+    Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(util.table.deepcopy(beacon)))
     if self.beacon ~= nil then Beacon.trim_modules(self.beacon) end
     Line.summarize_effects(self)
 end
 
 
-function Line.add(self, object, sort, no_recursion)
+function Line.add(self, object, secondary)
     object.parent = self
     local dataset = Collection.add(self[object.class], object)
 
     if dataset.class == "Module" then
-        if self.subfloor ~= nil and not no_recursion then
-            local sub_line = Floor.get(self.subfloor, "Line", 1)
-            Line.add(sub_line, util.table.deepcopy(object), sort, true)
-        elseif self.id == 1 and self.parent.origin_line and not no_recursion then
-            Line.add(self.parent.origin_line, util.table.deepcopy(object), sort, true)
-        end
-        if sort then Line.sort_modules(self) end
-        Line.summarize_effects(self)
+        Line.carry_over_changes(self, Line.add, secondary, table.pack(util.table.deepcopy(object)))
+        Line.normalize_modules(self)
     end
 
     return dataset
 end
 
-function Line.remove(self, dataset, sort, no_recursion)
+function Line.remove(self, dataset, secondary)
     if dataset.class == "Module" then
-        if self.subfloor ~= nil and not no_recursion then
-            local sub_line = Floor.get(self.subfloor, "Line", 1)
-            Line.remove(sub_line, util.table.deepcopy(dataset), sort, true)
-        elseif self.id == 1 and self.parent.origin_line and not no_recursion then
-            Line.remove(self.parent.origin_line, util.table.deepcopy(dataset), sort, true)
-        end
+        Line.carry_over_changes(self, Line.remove, secondary, table.pack(util.table.deepcopy(dataset)))
     end
     
     Collection.remove(self[dataset.class], dataset)
     
-    if dataset.class == "Module" then
-        if sort then Line.sort_modules(self) end
-        Line.summarize_effects(self)
-    end
+    if dataset.class == "Module" then Line.normalize_modules(self) end
 end
 
-function Line.replace(self, dataset, object, sort, no_recursion)
+function Line.replace(self, dataset, object, secondary)
     local dataset = Collection.replace(self[dataset.class], dataset, object)
 
     if dataset.class == "Module" then
-        if self.subfloor ~= nil and not no_recursion then
-            local sub_line = Floor.get(self.subfloor, "Line", 1)
-            Line.replace(sub_line, util.table.deepcopy(dataset), object, sort, true)
-        elseif self.id == 1 and self.parent.origin_line and not no_recursion then
-            Line.replace(self.parent.origin_line, util.table.deepcopy(dataset), object, sort, true)
-        end
-        if sort then Line.sort_modules(self) end
-        Line.summarize_effects(self)
+        Line.carry_over_changes(self, Line.replace, secondary, table.pack(util.table.deepcopy(dataset), object))
+        Line.normalize_modules(self)
     end
 
     return dataset
@@ -153,6 +128,26 @@ function Line.shift(self, dataset, direction)
     Collection.shift(self[dataset.class], dataset, direction)
 end
 
+
+-- Carries the changes to this Line over to it's origin_line and subfloor, whichever applies
+function Line.carry_over_changes(self, f, secondary, arg)
+    if not secondary then
+        table.insert(arg, true)  -- add indication that this is a secondary call
+
+        if self.subfloor ~= nil then
+            local sub_line = Floor.get(self.subfloor, "Line", 1)
+            f(sub_line, unpack(arg))
+        elseif self.id == 1 and self.parent.origin_line then
+            f(self.parent.origin_line, unpack(arg))
+        end
+    end
+end
+
+-- Normalizes the modules of this Line after they've been changed
+function Line.normalize_modules(self)
+    Line.sort_modules(self)
+    Line.summarize_effects(self)
+end
 
 -- Returns the total amount of modules associated with this line
 function Line.count_modules(self)
@@ -278,7 +273,7 @@ function Line.trim_modules(self)
 
     -- Remove superfluous modules (no re-sorting necessary)
     for _, module in pairs(modules_to_remove) do
-        Line.remove(self, module, false)
+        Line.remove(self, module)
     end
 end
 

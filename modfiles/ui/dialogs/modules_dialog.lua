@@ -25,13 +25,13 @@ function close_module_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         local new_module = Module.init_by_proto(ui_state.modal_data.selected_module, tonumber(data.module_amount))
         if module == nil then  -- new module
-            Line.add(line, new_module, true)
+            Line.add(line, new_module)
         else  -- edit existing module (it's easier to replace in the case the selected module changed)
-            Line.replace(line, module, new_module, true)
+            Line.replace(line, module, new_module)
         end
 
     elseif action == "delete" then  -- only possible on edit
-        Line.remove(line, module, true)
+        Line.remove(line, module)
     end
 
     update_calculations(player, ui_state.context.subfactory)
