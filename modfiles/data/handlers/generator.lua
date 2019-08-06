@@ -305,7 +305,9 @@ end
 -- Returns the names of the 'machines' that shouldn't be included
 local function undesirable_machines()
     return {
-        ["escape-pod-assembler"] = false
+        ["escape-pod-assembler"] = false,
+        ["crash-site-assembling-machine-1-repaired"] = false,
+        ["crash-site-assembling-machine-2-repaired"] = false
     }
 end
 

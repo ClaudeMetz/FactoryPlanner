@@ -77,29 +77,21 @@ function handle_percentage_change(player, element)
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
-    local new_percentage = tonumber(element.text)  -- returns nil if text is not a number
 
-    if new_percentage == nil or new_percentage < 0 then
-        ui_util.message.enqueue(player, {"label.error_invalid_percentage"}, "error", 1)
-    -- Two separate patterns are needed here as Lua doesn't allow applying modifiers on patterns (no "(01)?")
-    elseif string.find(element.text, "^%d+%.$") or string.find(element.text, "^%d+%.[0-9]*0$") then
-        -- Allow people to enter decimal numbers
-    else
-        line.percentage = new_percentage
+    local new_percentage = tonumber(element.text) or 0
+    line.percentage = new_percentage
+    
+    -- Update related datasets
+    if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
+    elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
-        -- Update related datasets
-        if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
-        elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
-
-        local scroll_pane = element.parent.parent
-        ui_state.current_activity = nil
-        update_calculations(player, ui_state.context.subfactory)
-        
-        -- Refocus the textfield after the table is reloaded
-        scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus()
-    end
-
-    ui_util.message.refresh(player)
+    -- Please shoot me if I have to touch this ever again --
+    --[[ ui_state.current_activity = nil
+    local scroll_pane = element.parent.parent
+    update_calculations(player, ui_state.context.subfactory)
+    
+    -- Refocus the textfield after the table is reloaded
+    scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus() ]]
 end
 
 
@@ -368,9 +360,9 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.proto.type ~= "entity" then
             if item.class == "Ingredient" then
-                enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
+                enter_modal_dialog(player, {type="recipe_picker", object=item})
             elseif item.class == "Byproduct" then
-                --enter_modal_dialog(player, {type="recipe_picker", object=item, preserve=true})
+                --enter_modal_dialog(player, {type="recipe_picker", object=item})
             end
         end
     end

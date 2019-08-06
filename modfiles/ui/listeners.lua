@@ -2,11 +2,6 @@ require("ui.util")
 require("ui.dialogs.main_dialog")
 require("ui.dialogs.modal_dialog")
 
--- Session variable to deselect previous text as Factorio doesn't do this (yet)
--- (Used in production_pane.handle_percentage_textfield_click())
-local previously_selected_textfield = nil
-
-
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     -- This mod doesn't use runtime-global settings, so that case can be ignored
@@ -23,7 +18,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         -- Changes the width of the main dialog. so it needs to be refreshed
         elseif event.setting == "fp_subfactory_items_per_row" or
-        event.setting == "fp_floor_recipes_at_once" then
+          event.setting == "fp_floor_recipes_at_once" then
             refresh_main_dialog(player, true)
 
         -- Refreshes the view selection or recipe machine buttons appropriately
@@ -35,16 +30,22 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 end)
 
 
--- Fires on pressing of the 'Open/Close' keyboard shortcut
+-- Fires on pressing the 'Open/Close' keyboard shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)
     toggle_main_dialog(player)
 end)
 
--- Fires on pressing of the keyboard shortcut to cycle production views
+-- Fires on pressing the keyboard shortcut to cycle production views
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
     change_view_state(player, nil)
+end)
+
+-- Fires on pressing of the keyboard shortcut to confirm a dialog
+script.on_event("fp_confirm_dialog", function(event)
+    local player = game.get_player(event.player_index)
+    exit_modal_dialog(player, "submit", {})
 end)
 
 
@@ -108,6 +109,31 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     elseif event.element.name == "fp_textfield_mining_prod" then
         handle_mining_prod_change(player, event.element)
 
+    elseif event.element.name == "fp_textfield_subfactory_name" then
+        handle_subfactory_name_change(player, event.element)
+
+    end
+end)
+
+-- Fires on any confirmation of a textfield
+script.on_event(defines.events.on_gui_confirmed, function(event)
+    local player = game.get_player(event.player_index)
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+    
+    -- Re-run calculations when the mining prod changes, or cancel custom mining prod 'mode'
+    if event.element.name == "fp_textfield_mining_prod" then
+        if subfactory.mining_productivity == nil then ui_state.current_activity = nil end
+        update_calculations(player, subfactory)
+
+    -- Re-run calculations when a line percentage changes
+    elseif string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
+        update_calculations(player, subfactory)
+
+    -- Submit any modal dialog, if it is open
+    elseif get_ui_state(player).modal_dialog_type ~= nil then
+        exit_modal_dialog(player, "submit", {})
+
     end
 end)
 
@@ -127,29 +153,8 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.control and not event.shift then direction = "negative" end
     end
 
-    -- Determine object type (not always relevant, but useful in some places)
-    local object_type = (ui_state.modal_dialog_type ~= nil) and 
-      string.gsub(ui_state.modal_dialog_type, "_picker", "") or nil
-
     -- Handle the actual click
     if string.find(event.element.name, "^fp_.+$") then
-        -- Handle clicks on textfields to improve user experience
-        if string.find(event.element.name, "^fp_textfield_[a-z0-9_]+$") then
-            -- Replaces the previously selected textfields text in case it is invalid (for percentage textfields)
-            -- (also unselects it, which the base game does not yet do)
-            if previously_selected_textfield ~= nil and previously_selected_textfield.valid
-              and previously_selected_textfield.index ~= event.element.index then
-                -- A reset is only needed on percentage textfields
-                if string.find(previously_selected_textfield.name, "^fp_textfield_line_percentage_%d+$") then
-                    local line_id = tonumber(string.match(previously_selected_textfield.name, "%d+"))
-                    local line = Floor.get(get_context(player).floor, "Line", line_id)
-                    previously_selected_textfield.text = line.percentage
-                end
-            end
-
-            previously_selected_textfield = event.element
-        end
-
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
         if event.element.name == "fp_button_toggle_interface" 
           or event.element.name == "fp_button_titlebar_exit" then
@@ -190,7 +195,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" then
-            enter_modal_dialog(player, {type="item_picker", preserve=true, submit=true})
+            enter_modal_dialog(player, {type="item_picker", submit=true})
         
         -- Toggles the TopLevelItems-amount display state
         elseif event.element.name == "fp_button_item_amount_toggle" then
@@ -228,14 +233,15 @@ script.on_event(defines.events.on_gui_click, function(event)
             local split_string = ui_util.split(event.element.name, "_")
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, event.alt)
 
-        -- Reacts to a item group button being pressed
-        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_%d+$") then
-            local item_group_id = tonumber(string.match(event.element.name, "%d+"))
-            picker.select_item_group(player, object_type, item_group_id)
+        -- Reacts to a item group button being pressed (item or recipe group)
+        elseif string.find(event.element.name, "^fp_sprite%-button_[a-z]+_group_%d+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            picker.select_item_group(player, split_string[3], split_string[5])
 
         -- Reacts to a picker object button being pressed (the variable can me one or more ids)
-        elseif string.find(event.element.name, "^fp_sprite%-button_picker_object_[0-9_]+$") then
-            _G["handle_picker_" .. object_type .. "_click"](player, event.element)
+        elseif string.find(event.element.name, "^fp_sprite%-button_picker_[a-z]+_object_[0-9_]+$") then
+            local split_string = ui_util.split(event.element.name, "_")
+            _G["handle_picker_" .. split_string[4] .. "_click"](player, event.element)
 
         -- Reacts to a chooser element button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then

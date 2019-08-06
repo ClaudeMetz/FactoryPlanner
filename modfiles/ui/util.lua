@@ -69,6 +69,21 @@ function ui_util.generate_recipe_sprite(recipe)
 end
 
 
+-- Sets basic attributes on the given textfield
+function ui_util.setup_textfield(textfield)
+    textfield.lose_focus_on_confirm = true
+    textfield.clear_and_focus_on_right_click = true
+end
+
+-- Sets up the given textfield as a numeric one, with the specified options
+function ui_util.setup_numeric_textfield(textfield, decimal, negative)
+    ui_util.setup_textfield(textfield)
+    textfield.numeric = true
+    textfield.allow_decimal = (decimal or false)
+    textfield.allow_negative = (negative or false)
+end
+
+
 -- Returns the number to put on an item button according to the current view
 function ui_util.calculate_item_button_number(player_table, view, amount, type)
     local timescale = player_table.ui_state.context.subfactory.timescale
@@ -207,7 +222,7 @@ end
 -- Returns a tooltip containing the attributes of the given beacon prototype
 function ui_util.generate_beacon_attributes_tooltip(beacon)
     return {"", {"tooltip.module_slots"}, ": ", beacon.module_limit, "\n",
-              {"tooltip.effectivity"}, ": ", beacon.effectivity, "%"}
+              {"tooltip.effectivity"}, ": ", (beacon.effectivity * 100), "%"}
 end
 
 -- Returns a tooltip containing the attributes of the given fuel prototype

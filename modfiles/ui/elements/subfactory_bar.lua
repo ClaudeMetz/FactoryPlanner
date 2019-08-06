@@ -182,7 +182,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
             end
             
             ui_state.current_activity = nil
-            refresh_main_dialog(player)
+            update_calculations(player, subfactory)
 
         -- Edit clicked subfactory
         elseif click == "right" then
