@@ -112,6 +112,7 @@ function create_line_table_row(player, line)
       text=line.percentage}
     textfield_percentage.style.width = 55
     textfield_percentage.style.horizontal_align = "center"
+    ui_util.setup_numeric_textfield(textfield_percentage, true, false)
 
     -- Machine button
     local table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
@@ -196,6 +197,7 @@ function create_line_table_row(player, line)
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
           text=(line.comment or "")}
         textfield_comment.style.width = 160
+        ui_util.setup_textfield(textfield_comment)
     end
 end
 

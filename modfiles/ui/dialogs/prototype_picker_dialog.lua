@@ -38,6 +38,7 @@ function picker.refresh_search_bar(flow, search_term, visible)
     table.add{type="label", name="label_search_bar", caption={"label.search"}}
     local textfield = table.add{type="textfield", name="fp_textfield_picker_search_bar", text=search_term}
     textfield.style.width = 140
+    ui_util.setup_textfield(textfield)
     if visible then textfield.focus() end
 end
 
@@ -134,8 +135,9 @@ function picker.refresh_picker_panel(flow, object_type, visible)
             local group_proto = object_groups.groups[object_groups.map[group.name]]
             if group_proto ~= nil then  -- ignore undesirable item groups
                 -- Item groups
-                button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_" .. group_proto.id,
-                sprite=group_proto.sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
+                button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_".. object_type ..
+                  "_group_" .. group_proto.id, sprite=group_proto.sprite, style="fp_button_icon_medium_recipe",
+                  mouse_button_filter={"left"}}
                 button_group.style.width = 70
                 button_group.style.height = 70
                 button_group.tooltip = group_proto.localised_name
@@ -158,9 +160,9 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                         -- Objects
                         local identifier = _G["generate_" .. object_type .. "_identifier"](object)
                         local sprite = ui_util["generate_" .. object_type .. "_sprite"](object)
-                        local button_object = table_subgroup.add{type="sprite-button", name="fp_sprite-button_picker_object_"
-                        .. identifier, sprite=sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}}
-                        button_object.tooltip = _G["generate_" .. object_type .. "_tooltip"](object)
+                        local button_object = table_subgroup.add{type="sprite-button", name=("fp_sprite-button_picker_"
+                          .. object_type .. "_object_" .. identifier), sprite=sprite, style="fp_button_icon_medium_recipe",
+                          tooltip=_G["generate_" .. object_type .. "_tooltip"](object), mouse_button_filter={"left"}}
                         if devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
                     end
                 end
@@ -212,7 +214,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
             local subgroup_visible = false
             local object_count = 0
             for _, object_element in pairs(subgroup_element.children) do
-                local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_object_", "")
+                local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
                 local object = _G["get_" .. object_type](identifier)
                 
                 local visible = false

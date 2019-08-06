@@ -159,12 +159,12 @@ function handle_product_element_click(player, product_id, click, direction, alt)
     else  -- Open modal dialogs
         if click == "left" then
             if context.floor.level == 1 then
-                enter_modal_dialog(player, {type="recipe_picker", object=product, preserve=true})
+                enter_modal_dialog(player, {type="recipe_picker", object=product})
             else
                 ui_util.message.enqueue(player, {"label.error_product_wrong_floor"}, "error", 1)
             end
         elseif click == "right" then
-            enter_modal_dialog(player, {type="item_picker", object=product, preserve=true, submit=true, delete=true})
+            enter_modal_dialog(player, {type="item_picker", object=product, submit=true, delete=true})
         end
     end
     
@@ -187,7 +187,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
     elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, {type="recipe_picker", object=byproduct, preserve=true})
+            --enter_modal_dialog(player, {type="recipe_picker", object=byproduct})
         else
             --ui_util.message.enqueue(player, {"label.error_byproduct_wrong_floor"}, "error", 1)
         end
@@ -268,6 +268,7 @@ function refresh_info_pane(player)
           text=(subfactory.mining_productivity or 0)}
         textfield_prod_bonus.style.width = 60
         textfield_prod_bonus.style.height = 26
+        ui_util.setup_numeric_textfield(textfield_prod_bonus, true, true)
         local label_percentage = table_mining_prod.add{type="label", name="label_percentage", caption="%"}
         label_percentage.style.font = "default-bold"
     else
@@ -285,6 +286,7 @@ end
 function handle_subfactory_timescale_change(player, timescale)
     local subfactory = get_context(player).subfactory
     subfactory.timescale = timescale
+    get_ui_state(player).current_activity = nil
     update_calculations(player, subfactory)
 end
 

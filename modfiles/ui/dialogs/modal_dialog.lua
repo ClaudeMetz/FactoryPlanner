@@ -8,6 +8,9 @@ require("recipe_picker_dialog")
 require("chooser_dialog")
 require("modules_dialog")
 
+-- Global variable to write down the dialogs that should not be deleted when closed
+cached_dialogs = {"fp_frame_modal_dialog_item_picker", "fp_frame_modal_dialog_recipe_picker"}
+
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
     toggle_main_dialog(player, true)
@@ -30,19 +33,27 @@ end
 function exit_modal_dialog(player, button, data)
     local ui_state = get_ui_state(player)
     local dialog_type = ui_state.modal_dialog_type
-    
-    local center = player.gui.center
+    if dialog_type == nil then return end  -- cancel operation if no modal dialog is open
+
     local flow_modal_dialog, preserve = nil, false
-    -- If no normal modal dialog exists, a preserved one has to be open
-    if player.gui.center["fp_frame_modal_dialog"] == nil then
-        flow_modal_dialog = center["fp_frame_modal_dialog_" .. dialog_type]["flow_modal_dialog"]
+    local cached_frame = player.gui.center["fp_frame_modal_dialog_" .. dialog_type]
+    -- First, see if the current dialog_type has a cached frame
+    if cached_frame ~= nil and cached_frame.valid then
+        flow_modal_dialog = cached_frame["flow_modal_dialog"]
         preserve = true
     else
-        flow_modal_dialog = center["fp_frame_modal_dialog"]["flow_modal_dialog"]
+        -- If not, check if a general frame exists
+        local frame = player.gui.center["fp_frame_modal_dialog"]
+        if frame ~= nil and frame.valid then
+            flow_modal_dialog = frame["flow_modal_dialog"]
+        -- If not, no modal dialog is open, so none can be closed
+        else return end
     end
     
     local closing_function = _G["close_" .. dialog_type .. "_dialog"]
-    if button == "submit" then
+    -- If closing_function is nil here, this dialog doesn't have a confirm-button, and if it is closed with
+    -- a submit-action (by a confirmation-action), it should exectue the cancel-action instead
+    if button == "submit" and closing_function ~= nil then
         -- First checks if the entered form data is correct
         local form_data = check_modal_dialog_data(flow_modal_dialog, dialog_type)
         if form_data ~= nil then  -- meaning correct form data has been entered
@@ -99,7 +110,7 @@ function check_modal_dialog_data(flow_modal_dialog, dialog_type)
         if error_found then
             -- Re-focus an element, if specified
             local refocus = first_error_instructions.refocus
-            if refocus then refocus(flow_modal_dialog) end
+            if refocus then refocus(flow_modal_dialog, form_data) end
             return nil
         else
             return form_data
@@ -111,13 +122,21 @@ end
 
 -- Creates barebones modal dialog
 function create_base_modal_dialog(player, condition_instructions, dialog_settings)
-    local center = player.gui.center
-    local flow_modal_dialog
+    local frame_name, flow_modal_dialog, cached = "fp_frame_modal_dialog", nil, false
+    local cached_frame_name = "fp_frame_modal_dialog_" .. dialog_settings.type
 
-    local frame_name = "fp_frame_modal_dialog"
-    if dialog_settings.preserve then frame_name = frame_name .. "_" .. dialog_settings.type end
+    -- See if the dialog to open is a cached one
+    for _, cached_dialog in pairs(cached_dialogs) do
+        if cached_dialog == cached_frame_name then
+            frame_name = cached_frame_name
+            cached = true
+            break
+        end
+    end
     
-    if center[frame_name] ~= nil then  -- Meaning an existing preserved dialog is being opened
+    local center = player.gui.center
+    -- If this dialog should be cached and exists, make it visible
+    if cached and center[frame_name] ~= nil then
         -- Reset condition label colors
         local table_conditions = center[frame_name]["table_modal_dialog_conditions"]
         for _, child in pairs(table_conditions.children) do
@@ -127,6 +146,8 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         -- Show preserved modal dialog
         center[frame_name].visible = true
         flow_modal_dialog = center[frame_name]["flow_modal_dialog"]
+
+    -- Otherwise, create a whole new one with the appropriate name
     else
         frame_modal_dialog = center.add{type="frame", name=frame_name, direction="vertical"}
 
@@ -137,7 +158,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
             for n, condition in ipairs(condition_instructions.conditions) do
                 local currently_editing = (dialog_settings.object ~= nil)
                 if not (currently_editing and (not condition.show_on_edit)) then
-                    table_conditions.add{type="label", name="label_subfactory_instruction_" .. n, caption=condition.label}
+                    table_conditions.add{type="label", name="label_instruction_" .. n, caption=condition.label}
                 end
             end
         end
@@ -157,8 +178,9 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_cancel.style.left_padding = 12
         button_cancel.style.right_margin = 8
 
-        if dialog_settings.close then button_cancel.caption = {"button-text.close"}
-        else button_cancel.caption = {"button-text.cancel"} end
+        local action = dialog_settings.close and "close" or "cancel"
+        button_cancel.caption = {"button-text." .. action}
+        button_cancel.tooltip = {"tooltip." .. action .. "_dialog"}
 
         -- Add first set of spacers, one of them will always be hidden
         button_bar.add{type="frame", name="frame_modal_dialog_spacer_1", direction="horizontal",
@@ -176,8 +198,8 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
         flow_spacer_2.style.horizontally_stretchable = true
 
-        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", 
-          caption={"button-text.submit"}, style="confirm_button", mouse_button_filter={"left"}}
+        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"button-text.submit"},
+          tooltip={"tooltip.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.maximal_width = 90
         button_submit.style.left_margin = 8
     end

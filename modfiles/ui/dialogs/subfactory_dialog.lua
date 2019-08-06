@@ -45,7 +45,7 @@ function get_subfactory_condition_instructions()
         data = {
             -- Trim whitespace at beginning and end of the name
             name = (function(flow_modal_dialog) return
-              flow_modal_dialog["table_subfactory"]["textfield_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1") end),
+              flow_modal_dialog["table_subfactory"]["fp_textfield_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1") end),
             icon = (function(flow_modal_dialog) return 
               flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value end)
         },
@@ -53,19 +53,13 @@ function get_subfactory_condition_instructions()
             [1] = {
                 label = {"label.subfactory_instruction_1"},
                 check = (function(data) return (data.name == "" and data.icon == nil) end),
-                refocus = (function(flow) flow["table_subfactory"]["textfield_subfactory_name"].focus() end),
+                refocus = (function(flow) flow["table_subfactory"]["fp_textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             },
             [2] = {
-                label = {"label.subfactory_instruction_2"},
-                check = (function(data) return (data.name:len() > 16) end),
-                refocus = (function(flow) flow["table_subfactory"]["textfield_subfactory_name"].focus() end),
-                show_on_edit = true
-            },
-            [3] = {
-                label = {"", {"label.subfactory_instruction_3"}, " !#&'()+-./?"},
+                label = {"", {"label.subfactory_instruction_2"}, " !#&'()+-./?"},
                 check = (function(data) return (data.name ~= "" and data.name:match("[^%w !#&'%(%)%+%-%./%?]")) end),
-                refocus = (function(flow) flow["table_subfactory"]["textfield_subfactory_name"].focus() end),
+                refocus = (function(flow) flow["table_subfactory"]["fp_textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             }
         }
@@ -81,11 +75,19 @@ function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon
 
     -- Name
     table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"label.name"}, "    "}}
-    table_subfactory.add{type="textfield", name="textfield_subfactory_name", text=name}
-    table_subfactory["textfield_subfactory_name"].focus()
+    table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
+    table_subfactory["fp_textfield_subfactory_name"].focus()
 
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
     table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="signal",
       signal=icon}
+end
+
+
+-- Handles any change to the subfactory name textfield to limit the character amount
+function handle_subfactory_name_change(player, element)
+    if string.len(element.text) > 16 then
+        element.text = string.sub(element.text, 1, 16)
+    end
 end

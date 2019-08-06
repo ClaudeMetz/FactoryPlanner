@@ -52,14 +52,10 @@ function get_item_picker_condition_instructions()
             [1] = {
                 label = {"label.product_instruction_1"},
                 check = (function(data) return (data.item_sprite == "" or data.required_amount == "") end),
-                refocus = nil,
-                show_on_edit = true
-            },
-            [2] = {
-                label = {"label.product_instruction_2"},
-                check = (function(data) return (data.required_amount ~= "" and (tonumber(data.required_amount) == nil 
-                          or tonumber(data.required_amount) <= 0)) end),
-                refocus = (function(flow) flow["flow_product_bar"]["textfield_product_amount"].focus() end),
+                refocus = (function(flow, data)
+                    if data.item_sprite == "" then flow["table_search_bar"]["fp_textfield_picker_search_bar"].focus()
+                    else flow["flow_product_bar"]["textfield_product_amount"].focus() end
+                end),
                 show_on_edit = true
             }
         }
@@ -70,7 +66,7 @@ end
 function handle_picker_item_click(player, button)
     local flow_product_bar = player.gui.center["fp_frame_modal_dialog_item_picker"]["flow_modal_dialog"]["flow_product_bar"]
     local split_name = ui_util.split(button.name, "_")
-    local item_proto = global.all_items.types[split_name[5]].items[split_name[6]]
+    local item_proto = global.all_items.types[split_name[6]].items[split_name[7]]
 
     get_ui_state(player).modal_data.selected_item = item_proto
     flow_product_bar["sprite-button_product"].sprite = button.sprite
@@ -108,6 +104,7 @@ function refresh_product_bar(flow_modal_dialog, product)
     flow.add{type="label", name="label_product_amount", caption={"label.amount"}}
     local textfield = flow.add{type="textfield", name="textfield_product_amount", text=required_amount}
     textfield.style.width = 80
+    ui_util.setup_numeric_textfield(textfield, true, false)
 
     return flow
 end

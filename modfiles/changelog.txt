@@ -2,16 +2,18 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Re-enabled the FNEI interactions, now that it has been updated
-    - You can now toggle whether you want the ingredients/products/byproducts/energy up top to show the subfactory or floor totals
-    - Added offshore pump recipes (Water, Angel's seafloor-pump, etc.)
+    - You can now use Enter to confirm dialogs and textfields
     - Mining productivity research is now respected, and can optionally be set to a custom value
+    - Re-enabled the FNEI interactions, now that it has been updated
+    - Added offshore pump recipes (Water, Angel's seafloor-pump, etc.)
+    - You can now toggle whether you want the ingredients/products/byproducts/energy up top to show the subfactory or floor totals
   Changes:
+    - Textfields behave more intuitively now
     - Made it easier and prettier to change the subfactory timescale
     - Added some more context to various choices through tooltips
     - Changed phrasing in some places to improve clarity
     - Removed the subfactory/floor machine-changing actions (They will return at a later point)
-    - Lots of internal changes to improve performance and stability
+    - Lots of internal changes to improve performance and stability in the long run
   Bugfixes:
     - Fixed certain textfields not being selected properly anymore after Factorio v0.17.59
     - Fixed changelog
