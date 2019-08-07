@@ -16,6 +16,7 @@ Date: 00. 00. 0000
     - Removed the subfactory/floor machine-changing actions (They will return at a later point)
     - Lots of internal changes to improve performance and stability in the long run
   Bugfixes:
+    - Fixed a problem where certain machines could not be configured to use beacons, even when they should
     - Fixed certain textfields not being selected properly anymore after Factorio v0.17.59
     - Fixed changelog
 

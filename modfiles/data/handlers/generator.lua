@@ -24,6 +24,15 @@ local function deep_insert_proto(t, category_name, category, type_name, proto)
     insert_proto(category_entry, type_name, proto)
 end
 
+-- Returns nil if no effect is true, returns the effects otherwise
+local function format_allowed_effects(allowed_effects)
+    if allowed_effects == nil then return nil end
+    for _, allowed in pairs(allowed_effects) do
+        if allowed == true then return allowed_effects end
+    end
+    return nil  -- all effects are false
+end
+
 
 -- Returns the names of the recipes that shouldn't be included
 local function undesirable_recipes()
@@ -341,7 +350,7 @@ function generator.all_machines()
             speed = speed,
             energy = energy,
             base_productivity = (proto.base_productivity or 0),
-            allowed_effects = proto.allowed_effects,  -- might be nil
+            allowed_effects = format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
             burner = burner
         }
@@ -525,7 +534,7 @@ function generator.all_beacons()
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "entity/" .. proto.name,
-                allowed_effects = proto.allowed_effects,
+                allowed_effects = format_allowed_effects(proto.allowed_effects),
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity
             })

@@ -74,6 +74,10 @@ function Beacon.update_validity(self)
     if self.valid and self.module.amount > self.proto.module_limit then
         self.valid = false
     end
+
+    if self.valid and self.parent.machine.proto.allowed_effects == nil then
+        self.valid = false
+    end
     
     -- Update effects if this beacon is still valid
     if self.valid then

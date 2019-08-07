@@ -268,7 +268,7 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
 
         for _, module in pairs(category.modules) do
             local characteristics = (type == "module") and Line.get_module_characteristics(line, module)
-              or get_beacon_module_characteristics(ui_state.modal_data.selected_beacon, module)
+              or get_beacon_module_characteristics(line.machine.proto, ui_state.modal_data.selected_beacon, module)
 
             if characteristics.compatible then
                 local button_module = flow_category.add{type="sprite-button", name="fp_sprite-button_module_selection_"
@@ -330,7 +330,7 @@ function handle_module_beacon_picker_click(player, button)
         refresh_module_selection(flow_modal_dialog, ui_state, "beacon", nil)
         -- The allowed modules might be different with the newly selected beacon, so refresh and check them
         --[[ if modal_data.selected_module ~= nil and 
-          get_beacon_module_characteristics(beacon_proto, modal_data.selected_module).compatible then
+          get_beacon_module_characteristics(--machine_proto--, beacon_proto, modal_data.selected_module).compatible then
             modal_data.selected_module = nil
             flow_modal_dialog["flow_module_bar"]["sprite-button_module"].sprite = ""
         end ]]
@@ -392,15 +392,14 @@ end
 
 -- Returns a table indicating the compatability of the given module with this beacon
 -- (mimics Line.get_module_characteristics(line, module) functionality)
-function get_beacon_module_characteristics(beacon_proto, module_proto)
+function get_beacon_module_characteristics(machine_proto, beacon_proto, module_proto)
     local compatible = true
 
-    local allowed_effects = beacon_proto.allowed_effects
-    if allowed_effects == nil then
+    if machine_proto.allowed_effects == nil or beacon_proto.allowed_effects == nil then
         compatible = false
     else
         for effect_name, _ in pairs(module_proto.effects) do
-            if allowed_effects[effect_name] == false then
+            if machine_proto.allowed_effects[effect_name] == false or beacon_proto.allowed_effects[effect_name] == false then
                 compatible = false
             end
         end
