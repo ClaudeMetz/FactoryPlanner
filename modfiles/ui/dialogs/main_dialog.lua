@@ -27,14 +27,14 @@ end
 
 -- Destroys all GUI's so they are loaded anew the next time they are shown
 function player_gui_reset(player)
-    local center = player.gui.center
+    local screen = player.gui.screen
     local guis = {
         mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
-        center["fp_frame_main_dialog"],
+        screen["fp_frame_main_dialog"],
         unpack(cached_dialogs)
     }
     for _, gui in pairs(guis) do
-        if type(gui) == "string" then gui = center[gui] end
+        if type(gui) == "string" then gui = screen[gui] end
         if gui ~= nil and gui.valid then log(gui.name);gui.destroy() end
     end
 end
@@ -48,11 +48,11 @@ end
 
 
 -- Toggles the main dialog open and closed
-function toggle_main_dialog(player, keep_paused)
-    local center = player.gui.center
+function toggle_main_dialog(player)
+    local screen = player.gui.screen
     -- Won't toggle if a modal dialog is open
     if get_ui_state(player).modal_dialog_type == nil then
-        local main_dialog = center["fp_frame_main_dialog"]
+        local main_dialog = screen["fp_frame_main_dialog"]
         local open = nil
 
         -- Create and open main dialog, if it doesn't exist yet
@@ -67,49 +67,59 @@ function toggle_main_dialog(player, keep_paused)
                 open = false
             else
                 -- Only refresh it when you make it visible
-                refresh_main_dialog(player, false)
+                refresh_main_dialog(player)
                 open = true
             end
         end
 
         main_dialog.visible = open
         player.opened = open and main_dialog or nil
+
         -- Don't pause in multiplayer or when the setting is disabled
-        if game.is_multiplayer() or not get_settings(player).pause_on_interface then
-            game.tick_paused = false
-        else
-            -- Keep the game paused if a modal dialog is opened
-            game.tick_paused = keep_paused and true or open
-        end
+        if game.is_multiplayer() or not get_settings(player).pause_on_interface then game.tick_paused = false
+        else game.tick_paused = open end  -- only pause when the main dialog is open
     end
 end
 
--- Refreshes all variable GUI-panes (refresh-hierarchy, subfactory_bar refreshes everything below it)
--- Also refreshes the dimensions by reloading the dialog, if the flag is set
-function refresh_main_dialog(player, refresh_dimensions)
-    local main_dialog = player.gui.center["fp_frame_main_dialog"]
-    if refresh_dimensions then
-        ui_util.recalculate_main_dialog_dimensions(player)
-        if main_dialog ~= nil then
-            local visible = main_dialog.visible
-            main_dialog.destroy()
-            create_main_dialog(player, visible)
-        end
+-- Changes the main dialog in reaction to a modal dialog being opened/closed
+function toggle_modal_dialog(player, frame_modal_dialog)
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+
+    -- If the frame parameter is not nil, the given modal dialog has been opened
+    if frame_modal_dialog ~= nil then
+        player.opened = frame_modal_dialog
+        main_dialog.ignored_by_interaction = true
     else
-        if main_dialog ~= nil then
-            refresh_actionbar(player)
-            refresh_subfactory_bar(player, true)
-        end
+        player.opened = main_dialog
+        main_dialog.ignored_by_interaction = false
+        refresh_main_dialog(player)
+    end
+end
+
+
+-- Refreshes the entire main dialog, optionally including it's dimensions
+function refresh_main_dialog(player, refresh_dimensions)
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    if refresh_dimensions and main_dialog ~= nil then
+        -- Recreate the dialog to refresh dimensions
+        local visible = main_dialog.visible
+        main_dialog.destroy()
+        create_main_dialog(player, visible)
+    elseif main_dialog ~= nil then
+        -- Refresh the elements on top of the hierarchy, which refresh everything below them
+        refresh_actionbar(player)
+        refresh_subfactory_bar(player, true)
     end
 end
 
 -- Constructs the main dialog
 function create_main_dialog(player, visible)
-    local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
-    local main_dialog = player.gui.center.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
+    local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
+    local main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
     main_dialog.visible = visible
-    main_dialog.style.minimal_width = main_dialog_dimensions.width
-    main_dialog.style.height = main_dialog_dimensions.height
+    main_dialog.style.minimal_width = dimensions.width
+    main_dialog.style.height = dimensions.height
+    main_dialog.location = {dimensions.x_offset, dimensions.y_offset}
 
     add_titlebar_to(main_dialog)
     add_actionbar_to(main_dialog)
@@ -138,6 +148,13 @@ function add_titlebar_to(main_dialog)
     -- Spacer
     local flow_spacer = titlebar.add{type="flow", name="flow_titlebar_spacer", direction="horizontal"}
     flow_spacer.style.horizontally_stretchable = true
+
+    -- Drag handle
+    local handle = titlebar.add{type="empty-widget", name="empty-widget_titlebar_space", style="draggable_space"}
+    handle.style.height = 34
+    handle.style.width = 180
+    handle.style.top_margin = 4
+    handle.drag_target = main_dialog
 
     -- Buttonbar
     local flow_buttonbar = titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}

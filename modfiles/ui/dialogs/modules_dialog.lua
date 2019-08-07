@@ -308,7 +308,7 @@ end
 function handle_module_beacon_picker_click(player, button)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
-    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog"]["flow_modal_dialog"]
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     
     local split_name = ui_util.split(button.name, "_")
     if split_name[3] == "module" then
@@ -384,7 +384,7 @@ end
 
 -- Sets the amount of modules in the dialog to exactly fill up the machine
 function max_module_amount(player)
-    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog"]["flow_modal_dialog"]
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text = get_ui_state(player).modal_data.empty_slots
     exit_modal_dialog(player, "submit", {})
 end

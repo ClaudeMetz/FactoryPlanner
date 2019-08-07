@@ -18,7 +18,7 @@ end
 -- Refreshes the subfactory bar by reloading the data
 function refresh_subfactory_bar(player, full_refresh)
     local ui_state = get_ui_state(player)
-    local table_subfactories =  player.gui.center["fp_frame_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
+    local table_subfactories =  player.gui.screen["fp_frame_main_dialog"]["scroll-pane_subfactory_bar"]["table_subfactories"]
     table_subfactories.clear()
 
     local max_width = ui_state.main_dialog_dimensions.width * 0.8

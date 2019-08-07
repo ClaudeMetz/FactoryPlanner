@@ -177,7 +177,7 @@ end
 -- Applies filters to the object picker, optionally also (re)applies an appropriate button style
 -- (This function is not object-type-agnostic for performance reasons (minimizing function calls))
 function picker.apply_filter(player, object_type, apply_button_style)
-    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_" .. object_type .. "_picker"]["flow_modal_dialog"]
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog_" .. object_type .. "_picker"]["flow_modal_dialog"]
     local search_term = flow_modal_dialog["table_search_bar"]["fp_textfield_picker_search_bar"].text:gsub("^%s*(.-)%s*$", "%1")
     local warning_label = flow_modal_dialog["label_warning_message"]
 
@@ -321,7 +321,7 @@ end
 
 -- Returns the name of the currently selected item group, else if none is selected
 function picker.get_selected_item_group(player, object_type)
-    local picker_panel = player.gui.center["fp_frame_modal_dialog_" .. object_type .. "_picker"]
+    local picker_panel = player.gui.screen["fp_frame_modal_dialog_" .. object_type .. "_picker"]
       ["flow_modal_dialog"]["flow_picker_panel"]
 
     for _, group_button in pairs(picker_panel["table_item_groups"].children) do
@@ -334,7 +334,7 @@ end
 
 -- Changes the selected item group to be the one specified by the given id
 function picker.select_item_group(player, object_type, item_group_id)
-    local flow_modal_dialog = player.gui.center["fp_frame_modal_dialog_" .. object_type .. "_picker"]
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog_" .. object_type .. "_picker"]
       ["flow_modal_dialog"]
     picker.refresh_warning_label(flow_modal_dialog, "")
 

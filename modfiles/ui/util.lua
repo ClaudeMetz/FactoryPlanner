@@ -9,7 +9,15 @@ function ui_util.recalculate_main_dialog_dimensions(player)
 
     local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
     local height = 395 + (player_table.settings.recipes_at_once * 39)
-    player_table.ui_state.main_dialog_dimensions = {width = width, height = height}
+
+    local resolution = player.display_resolution
+    local scale = player.display_scale
+    local x_offset = ((resolution.width - (width * scale)) / 2) 
+    local y_offset = ((resolution.height - (height * scale)) / 2)
+
+    local dimensions = {width=width, height=height, x_offset=x_offset, y_offset=y_offset}
+    player_table.ui_state.main_dialog_dimensions = dimensions
+    return dimensions
 end
 
 
@@ -378,7 +386,7 @@ function ui_util.message.refresh(player)
         if message.lifetime <= 0 then table.remove(ui_state.message_queue, index) end
     end
     
-    local label_hint = player.gui.center["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
+    local label_hint = player.gui.screen["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
     label_hint.caption = new_message
     ui_util.set_label_color(label_hint, new_color)
 end

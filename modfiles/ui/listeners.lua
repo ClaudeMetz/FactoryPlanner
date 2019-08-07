@@ -29,6 +29,16 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     end
 end)
 
+-- Refreshes the main dialog including it's dimensions
+script.on_event(defines.events.on_player_display_resolution_changed, function(event)
+    refresh_main_dialog(game.get_player(event.player_index), true)
+end)
+
+-- Refreshes the main dialog including it's dimensions
+script.on_event(defines.events.on_player_display_scale_changed, function(event)
+    refresh_main_dialog(game.get_player(event.player_index), true)
+end)
+
 
 -- Fires on pressing the 'Open/Close' keyboard shortcut
 script.on_event("fp_toggle_main_dialog", function(event)

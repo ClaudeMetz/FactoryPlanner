@@ -2,7 +2,8 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - You can now use Enter to confirm dialogs and textfields
+    - You can now use 'Enter' to confirm dialogs and textfields
+    - All windows can be moved, and modal dialogs are 'true' pop-up windows now
     - Mining productivity research is now respected, and can optionally be set to a custom value
     - Re-enabled the FNEI interactions, now that it has been updated
     - Added offshore pump recipes (Water, Angel's seafloor-pump, etc.)

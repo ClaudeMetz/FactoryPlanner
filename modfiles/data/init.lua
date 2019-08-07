@@ -192,8 +192,7 @@ function reset_ui_state(player)
     ui_state_table.recipe_filter_preferences = 
       {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
-    
-    ui_util.recalculate_main_dialog_dimensions(player)
+    ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
 end
 
 

@@ -1,11 +1,10 @@
 data.raw["gui-style"]["default"]["fp_footer_filler"] = {
-    type = "frame_style",
+    type = "empty_widget_style",
+    parent = "draggable_space",
     height = 32,
-    graphical_set = data.raw["gui-style"]["default"]["draggable_space"].graphical_set,
-    use_header_filler = false,
-    horizontally_stretchable = "on",
-    --left_margin = data.raw["gui-style"]["default"]["draggable_space"].left_margin,
-    --right_margin = data.raw["gui-style"]["default"]["draggable_space"].right_margin,
+    left_margin = 0,
+    right_margin = 0,
+    horizontally_stretchable = "on"
 }
 
 data.raw["gui-style"].default["fp_button_titlebar"] = {

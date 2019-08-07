@@ -13,8 +13,6 @@ cached_dialogs = {"fp_frame_modal_dialog_item_picker", "fp_frame_modal_dialog_re
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
-    toggle_main_dialog(player, true)
-
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.selected_object = dialog_settings.object
@@ -25,7 +23,7 @@ function enter_modal_dialog(player, dialog_settings)
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
     
-    player.opened = flow_modal_dialog.parent
+    toggle_modal_dialog(player, flow_modal_dialog.parent)
     _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog)
 end
 
@@ -33,17 +31,18 @@ end
 function exit_modal_dialog(player, button, data)
     local ui_state = get_ui_state(player)
     local dialog_type = ui_state.modal_dialog_type
+    local screen = player.gui.screen
     if dialog_type == nil then return end  -- cancel operation if no modal dialog is open
 
     local flow_modal_dialog, preserve = nil, false
-    local cached_frame = player.gui.center["fp_frame_modal_dialog_" .. dialog_type]
+    local cached_frame = screen["fp_frame_modal_dialog_" .. dialog_type]
     -- First, see if the current dialog_type has a cached frame
     if cached_frame ~= nil and cached_frame.valid then
         flow_modal_dialog = cached_frame["flow_modal_dialog"]
         preserve = true
     else
         -- If not, check if a general frame exists
-        local frame = player.gui.center["fp_frame_modal_dialog"]
+        local frame = screen["fp_frame_modal_dialog"]
         if frame ~= nil and frame.valid then
             flow_modal_dialog = frame["flow_modal_dialog"]
         -- If not, no modal dialog is open, so none can be closed
@@ -74,7 +73,7 @@ function exit_modal_dialog(player, button, data)
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end
 
-    toggle_main_dialog(player, true)
+    toggle_modal_dialog(player, nil)
 end
 
 
@@ -134,22 +133,24 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         end
     end
     
-    local center = player.gui.center
+    local screen = player.gui.screen
     -- If this dialog should be cached and exists, make it visible
-    if cached and center[frame_name] ~= nil then
+    if cached and screen[frame_name] ~= nil then
+        frame_modal_dialog = screen[frame_name]
+
         -- Reset condition label colors
-        local table_conditions = center[frame_name]["table_modal_dialog_conditions"]
+        local table_conditions = frame_modal_dialog["table_modal_dialog_conditions"]
         for _, child in pairs(table_conditions.children) do
             ui_util.set_label_color(child, "default_label")
         end
 
         -- Show preserved modal dialog
-        center[frame_name].visible = true
-        flow_modal_dialog = center[frame_name]["flow_modal_dialog"]
+        frame_modal_dialog.visible = true
+        flow_modal_dialog = frame_modal_dialog["flow_modal_dialog"]
 
     -- Otherwise, create a whole new one with the appropriate name
     else
-        frame_modal_dialog = center.add{type="frame", name=frame_name, direction="vertical"}
+        frame_modal_dialog = screen.add{type="frame", name=frame_name, direction="vertical"}
 
         -- Conditions table
         local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
@@ -183,8 +184,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_cancel.tooltip = {"tooltip." .. action .. "_dialog"}
 
         -- Add first set of spacers, one of them will always be hidden
-        button_bar.add{type="frame", name="frame_modal_dialog_spacer_1", direction="horizontal",
-          style="fp_footer_filler"}
+        button_bar.add{type="empty-widget", name="empty-widget_modal_dialog_spacer_1", style="fp_footer_filler"}
         local flow_spacer_1 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_1", direction="horizontal"}
         flow_spacer_1.style.horizontally_stretchable = true
 
@@ -204,15 +204,16 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_submit.style.left_margin = 8
     end
 
+    frame_modal_dialog.auto_center = true
     -- Adjust visibility of the submit and delete buttons and the spacer
-    local button_bar = center[frame_name]["flow_modal_dialog_button_bar"]
+    local button_bar = frame_modal_dialog["flow_modal_dialog_button_bar"]
     button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false
 
     local delete = dialog_settings.delete or false
     button_bar["fp_button_modal_dialog_delete"].visible = delete
     button_bar["flow_modal_dialog_spacer_1"].visible = delete
     button_bar["flow_modal_dialog_spacer_2"].visible = delete
-    button_bar["frame_modal_dialog_spacer_1"].visible = not delete
+    button_bar["empty-widget_modal_dialog_spacer_1"].visible = not delete
 
     return flow_modal_dialog
 end

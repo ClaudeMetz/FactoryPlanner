@@ -17,7 +17,7 @@ end
 
 -- Generates a blank chooser button for the calling function to adjust to it's needs
 function generate_blank_chooser_button(player, name)
-    local table_chooser = player.gui.center["fp_frame_modal_dialog"]["flow_modal_dialog"]["table_chooser_elements"]
+    local table_chooser = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["table_chooser_elements"]
     return table_chooser.add{type="sprite-button", name="fp_sprite-button_chooser_element_" .. name,
              style="fp_button_icon_large_recipe", mouse_button_filter={"left"}}
 end

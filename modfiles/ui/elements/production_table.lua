@@ -2,7 +2,7 @@ require("production_handler")
 
 -- Refreshes the production table by reloading the data
 function refresh_production_table(player)
-    local flow_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
+    local flow_production = player.gui.screen["fp_frame_main_dialog"]["flow_production_pane"]
     -- Cuts function short if the production pane hasn't been initialized yet
     if not flow_production then return end
 
@@ -77,7 +77,7 @@ end
 
 -- Creates a single row of the table containing all (assembly) lines
 function create_line_table_row(player, line)
-    local table_production = player.gui.center["fp_frame_main_dialog"]["flow_production_pane"]
+    local table_production = player.gui.screen["fp_frame_main_dialog"]["flow_production_pane"]
       ["scroll-pane_production_pane"]["table_production_pane"]
 
     local player_table = get_table(player)
