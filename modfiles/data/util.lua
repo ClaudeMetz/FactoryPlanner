@@ -92,7 +92,7 @@ function data_util.machine.change(player, line, machine, direction)
             Line.summarize_effects(line)
 
             -- Adjust beacon (ie. remove if machine does not allow beacons)
-            if line.machine.proto.module_limit == 0 then Line.set_beacon(line, nil) end
+            if line.machine.proto.allowed_effects == nil then Line.set_beacon(line, nil) end
 
             return true
         end
