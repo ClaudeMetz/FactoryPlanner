@@ -8,7 +8,6 @@ function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module
         amount = beacon_amount,
         module = module,  -- Module-object
         total_effects = nil,
-        sprite = ("entity/" .. beacon_proto.name),
         valid = true,
         class = "Beacon"
     }
@@ -18,12 +17,6 @@ function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module
     Beacon.summarize_effects(beacon)
 
     return beacon
-end
-
--- Updates the given beacon with a new proto
-function Beacon.update(self, proto)
-    self.proto = proto
-    self.sprite = ("entity/" .. proto.name)
 end
 
 
@@ -66,7 +59,7 @@ function Beacon.update_validity(self)
     local new_beacon_id = new.all_beacons.map[proto_name]
     
     if new_beacon_id ~= nil then
-        Beacon.update(self, new.all_beacons.beacons[new_beacon_id])
+        self.proto = new.all_beacons.beacons[new_beacon_id]
         self.valid = true
     else
         self.proto = self.proto.name
@@ -95,7 +88,7 @@ end
 function Beacon.attempt_repair(self, player)
     local current_beacon_id = global.all_beacons.map[self.proto]
     if current_beacon_id ~= nil then
-        Beacon.update(self, global.all_beacons.beacons[current_beacon_id])
+        self.proto = global.all_beacons.beacons[current_beacon_id]
         self.valid = true
     end
 

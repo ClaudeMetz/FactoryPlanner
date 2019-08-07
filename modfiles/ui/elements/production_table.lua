@@ -89,7 +89,7 @@ function create_line_table_row(player, line)
     local recipe = line.recipe
     local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
-      sprite=recipe.sprite, tooltip=recipe.proto.localised_name, mouse_button_filter={"left-and-right"}}
+      sprite=recipe.proto.sprite, tooltip=recipe.proto.localised_name, mouse_button_filter={"left-and-right"}}
     if global.devmode == true then button_recipe.tooltip = {"", recipe.proto.localised_name, "\n", recipe.proto.name} end
     ui_util.add_tutorial_tooltip(button_recipe, "recipe", true, true)
 
@@ -134,7 +134,7 @@ function create_line_table_row(player, line)
         local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
 
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
-          sprite=line.machine.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(machine_count),
+          sprite=line.machine.proto.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(machine_count),
           mouse_button_filter={"left"}, tooltip={"", line.machine.proto.localised_name, "\n", machine_count,
           " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, line.machine.proto, player, subfactory)}}
         button.style.padding = 1
@@ -174,7 +174,7 @@ function create_line_table_row(player, line)
 
             local m = (beacon.amount == 1) and {"tooltip.beacon"} or {"", {"tooltip.beacon"}, "s"}
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
-              sprite=beacon.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
+              sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
               " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil)}}
             button_beacon.style.padding = 2
@@ -225,7 +225,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     }
     button.style = styles[button_size][selected]
     button.style.padding = 1
-    button.sprite = ("entity/" .. machine_proto.name)  -- to redo properly
+    button.sprite = machine_proto.sprite
 
     local s = (selected) and {"", " (", {"tooltip.selected"}, ")"} or ""
     local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
@@ -267,7 +267,7 @@ end
 -- Creates and places a single module button
 function create_module_button(flow, line, module, type, button_name)
     local m = (module.amount == 1) and {"tooltip.module"} or {"", {"tooltip.module"}, "s"}
-    local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.sprite,
+    local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.proto.sprite,
       style="fp_button_icon_medium_recipe", number=module.amount, mouse_button_filter={"left-and-right"},
       tooltip={"", module.proto.localised_name, "\n", module.amount, " ", m,
       ui_util.generate_module_effects_tooltip_proto(module)}}
@@ -286,7 +286,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
         elseif item.proto.type == "entity" then s = "fp_button_icon_medium_blank" end
 
         local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-          .. "_" .. item.id, sprite=item.sprite, style=s, mouse_button_filter={"left-and-right"}}
+          .. "_" .. item.id, sprite=item.proto.sprite, style=s, mouse_button_filter={"left-and-right"}}
 
         ui_util.setup_item_button(player_table, button, item)
         

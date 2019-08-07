@@ -52,7 +52,7 @@ function ui_util.add_tutorial_tooltip(button, type, line_break, fnei)
 end
 
 
--- Returns the sprite string of the given item
+--[[ -- Returns the sprite string of the given item
 function ui_util.generate_item_sprite(item)
     return (item.type .. "/" .. item.name)
 end
@@ -74,7 +74,7 @@ function ui_util.generate_recipe_sprite(recipe)
     end
 
     return sprite
-end
+end ]]
 
 
 -- Sets basic attributes on the given textfield

@@ -35,7 +35,7 @@ function player_gui_reset(player)
     }
     for _, gui in pairs(guis) do
         if type(gui) == "string" then gui = screen[gui] end
-        if gui ~= nil and gui.valid then log(gui.name);gui.destroy() end
+        if gui ~= nil and gui.valid then gui.destroy() end
     end
 end
 

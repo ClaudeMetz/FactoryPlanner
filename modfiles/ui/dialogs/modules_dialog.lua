@@ -174,7 +174,7 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
         local selected_beacon = ui_state.modal_data.selected_beacon
         for _, beacon_proto in pairs(global.all_beacons.beacons) do
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_beacon_selection_"
-              .. beacon_proto.id, sprite="entity/" .. beacon_proto.name, mouse_button_filter={"left"}}
+              .. beacon_proto.id, sprite=beacon_proto.sprite, mouse_button_filter={"left"}}
             local tooltip = beacon_proto.localised_name
             local style = "fp_button_icon_medium_hidden"
 
@@ -206,7 +206,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     -- Adjustments if the object is being edited
     local sprite, tooltip, amount = nil, nil, ""
     if object ~= nil then
-        sprite = object.sprite
+        sprite = object.proto.sprite
         tooltip = object.proto.localised_name
         amount = object.amount
     elseif type == "beacon" then
@@ -272,7 +272,7 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
 
             if characteristics.compatible then
                 local button_module = flow_category.add{type="sprite-button", name="fp_sprite-button_module_selection_"
-                  .. category.id .. "_" .. module.id, sprite="item/" .. module.name, mouse_button_filter={"left"}}
+                  .. category.id .. "_" .. module.id, sprite=module.sprite, mouse_button_filter={"left"}}
                 local tooltip = module.localised_name
                 local style = "fp_button_icon_medium_hidden"
 

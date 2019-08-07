@@ -8,16 +8,9 @@ function Machine.init_by_proto(proto)
         proto = proto,
         category = category,
         count = 0,
-        sprite = ("entity/" .. proto.name),
         valid = true,
         class = "Machine"
     }
-end
-
--- Updates the given machine with a new proto
-function Machine.update(self, proto)
-    self.proto = proto
-    self.sprite = ("entity/" .. proto.name)
 end
 
 
@@ -34,7 +27,7 @@ function Machine.update_validity(self, recipe)
         local new_machine_id = self.category.map[proto_name]
 
         if new_machine_id ~= nil then
-            Machine.update(self, self.category.machines[new_machine_id])
+            self.proto = self.category.machines[new_machine_id]
             self.valid = true
         else
             self.proto = self.proto.name
@@ -74,7 +67,7 @@ function Machine.attempt_repair(self, player)
     -- At this point, category is always valid (and proto is always a string)
     local current_machine_id = self.category.map[self.proto]
     if current_machine_id ~= nil then
-        Machine.update(self, self.category.machines[current_machine_id])
+        self.proto = self.category.machines[current_machine_id]
         self.valid = true
     else
         self.valid = false

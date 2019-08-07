@@ -79,7 +79,7 @@ end
 function refresh_product_bar(flow_modal_dialog, product)
     local sprite, required_amount
     if product ~= nil then  -- Adjustments if the product is being edited
-        sprite = product.sprite
+        sprite = product.proto.sprite
         required_amount = product.required_amount
         tooltip = product.proto.localised_name
     end

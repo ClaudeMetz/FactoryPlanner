@@ -3,6 +3,7 @@ require("migrations.migration_0_17_13")
 require("migrations.migration_0_17_21")
 require("migrations.migration_0_17_27")
 require("migrations.migration_0_17_29")
+require("migrations.migration_0_17_38")
 
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
@@ -15,7 +16,8 @@ function migration_masterlist()
         [1] = {version="0.17.13"},
         [2] = {version="0.17.21"},
         [3] = {version="0.17.27"},
-        [4] = {version="0.17.29"}
+        [4] = {version="0.17.29"},
+        [5] = {version="0.17.38"},
     }
 end
 
@@ -47,7 +49,7 @@ end
 
 -- Applies any appropriate migrations to the given subfactory
 function attempt_subfactory_migration(player, subfactory, migrations)
-    -- if migrations~=nil, it forgoes re-checking itself to avoid repeated checks
+    -- if migrations~=nil, it forgoes re-determining them because the results would be identical
     local migrations = migrations or determine_migrations(subfactory.mod_version)
 
     apply_migrations(migrations, "subfactory", player, subfactory)

@@ -159,9 +159,8 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                     for _, object in ipairs(subgroup.objects) do
                         -- Objects
                         local identifier = _G["generate_" .. object_type .. "_identifier"](object)
-                        local sprite = ui_util["generate_" .. object_type .. "_sprite"](object)
                         local button_object = table_subgroup.add{type="sprite-button", name=("fp_sprite-button_picker_"
-                          .. object_type .. "_object_" .. identifier), sprite=sprite, style="fp_button_icon_medium_recipe",
+                          .. object_type .. "_object_" .. identifier), sprite=object.sprite, style="fp_button_icon_medium_recipe",
                           tooltip=_G["generate_" .. object_type .. "_tooltip"](object), mouse_button_filter={"left"}}
                         if devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
                     end

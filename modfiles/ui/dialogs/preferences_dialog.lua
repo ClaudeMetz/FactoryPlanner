@@ -101,7 +101,7 @@ function refresh_preferences_dialog(player)
             local table_machines = table_all_machines.add{type="table", name="table_machines_" .. category_id, column_count=8}
             for machine_id, machine in ipairs(category.machines) do
                 local button_machine = table_machines.add{type="sprite-button", name="fp_sprite-button_preferences_machine_"
-                  .. category_id .. "_" .. machine_id, sprite="entity/" .. machine.name, mouse_button_filter={"left"}}
+                  .. category_id .. "_" .. machine_id, sprite=machine.sprite, mouse_button_filter={"left"}}
                   
                 local tooltip = machine.localised_name
                 if data_util.machine.get_default(player, category) == machine then
