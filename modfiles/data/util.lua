@@ -226,9 +226,9 @@ end
 
 
 -- Logs given table shallowly, excluding the parent attribute
-function data_util.log(table)
+function data_util.gen_log(table)
     if table == nil then
-        log("nil")
+        return "nil"
     else
         local s = "\n{\n"
         for name, value in pairs(table) do
@@ -239,7 +239,7 @@ function data_util.log(table)
             end
         end
         s = s .. "}"
-        log(s)
+        return s
     end
 end
 

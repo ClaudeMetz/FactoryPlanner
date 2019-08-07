@@ -76,7 +76,7 @@ function refresh_item_table(player, class)
         if parent_line ~= nil and parent_line[class].count > 0 then
             for _, item in ipairs(Line.get_in_order(parent_line, class)) do
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
-                  .. item.id, sprite=item.sprite, style="fp_button_icon_large_blank", number=item.amount, enabled=false}
+                  .. item.id, sprite=item.proto.sprite, style="fp_button_icon_large_blank", number=item.amount, enabled=false}
 
                 ui_util.setup_item_button(player_table, button, item)
                 if button.number ~= nil and button.number < margin_of_error then button.visible = false end
@@ -89,7 +89,7 @@ function refresh_item_table(player, class)
             for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
                 local style = determine_button_style(item)
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" 
-                  .. item.id, sprite=item.sprite, style=style, mouse_button_filter={"left-and-right"}}
+                  .. item.id, sprite=item.proto.sprite, style=style, mouse_button_filter={"left-and-right"}}
                   
                 ui_util.setup_item_button(player_table, button, item)
                 ui_util.add_tutorial_tooltip(button, "tl_" .. string.lower(class), true, true)

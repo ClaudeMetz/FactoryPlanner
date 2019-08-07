@@ -6,6 +6,8 @@ calc = {
 
 -- Updates the whole subfactory calculations from top to bottom
 function calc.update(player, subfactory)
+    if not subfactory.valid then return end
+
     -- Get products that need to be produced
     local required_products = calc.aggregate.init()
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -280,7 +282,7 @@ end
 -- Creates a special item to be put in an aggregate
 function calc.aggregate.item_init(base_item, class, amount)
     local item
-    if base_item.proto then
+    if base_item.class ~= nil then
         item = Item.init_by_proto(base_item.proto, class, amount)
     else
         item = Item.init_by_item(base_item, class, amount)

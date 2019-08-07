@@ -8,7 +8,6 @@ function Module.init_by_proto(proto, amount)
         proto = proto,
         category = category,
         amount = amount,
-        sprite = ("item/" .. proto.name),
         valid = true,
         class = "Module"
     }
@@ -18,13 +17,6 @@ end
 function Module.init_by_ids(category_id, id, amount)
     local proto = global.all_modules.categories[category_id].modules[id]
     Module.init_by_proto(proto, amount)
-end
-
-
--- Updates the given module with a new proto
-function Module.update(self, proto)
-    self.proto = proto
-    self.sprite = ("item/" .. proto.name)
 end
 
 
@@ -41,7 +33,7 @@ function Module.update_validity(self)
         local new_module_id = self.category.map[proto_name]
 
         if new_module_id ~= nil then
-            Module.update(self, self.category.modules[new_module_id])
+            self.proto = self.category.modules[new_module_id]
             self.valid = true
         else
             self.proto = self.proto.name
@@ -84,7 +76,7 @@ function Module.attempt_repair(self, player)
     -- At this point, category is always valid (and proto is always a string)
     local current_module_id = self.category.map[self.proto]
     if current_module_id ~= nil then
-        Module.update(self, self.category.modules[current_module_id])
+        self.proto = self.category.modules[current_module_id]
         self.valid = true
     else
         self.valid = false

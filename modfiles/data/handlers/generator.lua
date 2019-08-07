@@ -66,6 +66,7 @@ function generator.all_recipes()
             local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,
+                sprite = "recipe/" .. proto.name,
                 category = proto.category,
                 energy = proto.energy,
                 ingredients = proto.ingredients,
@@ -86,16 +87,18 @@ function generator.all_recipes()
         -- Adds all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
             if proto.resource_category == "basic-solid" then
+                local products = proto.mineable_properties.products
                 local recipe = mining_recipe()
                 recipe.name = "impostor-" .. proto.name
                 recipe.localised_name = proto.localised_name
+                recipe.sprite = products[1].type .. "/" .. products[1].name
                 recipe.order = proto.order
                 recipe.subgroup = {name="mining", order="y"}
                 recipe.category = proto.resource_category
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
                 recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
-                recipe.products = proto.mineable_properties.products
+                recipe.products = products
                 recipe.main_product = recipe.products[1]
 
                 -- Add mining fluid, if required
@@ -119,6 +122,7 @@ function generator.all_recipes()
             local recipe = mining_recipe()
             recipe.name = "impostor-" .. proto.fluid.name .. "-" .. proto.name
             recipe.localised_name = proto.fluid.localised_name
+            recipe.sprite = "fluid/" .. proto.fluid.name
             recipe.order = proto.order
             recipe.subgroup = {name="fluids", order="z"}
             recipe.category = proto.name  -- use proto name so every pump has it's own category
@@ -126,7 +130,6 @@ function generator.all_recipes()
             recipe.ingredients = {}
             recipe.products = {{type="fluid", name=proto.fluid.name, amount=(proto.pumping_speed * 60)}}
             recipe.main_product = recipe.products[1]
-            
             insert_proto(all_recipes, "recipes", recipe)
         end
     end
@@ -135,6 +138,7 @@ function generator.all_recipes()
     local steam_recipe = mining_recipe()
     steam_recipe.name = "impostor-steam"
     steam_recipe.localised_name = {"fluid-name.steam"}   -- official locale
+    steam_recipe.sprite = "fluid/steam"
     steam_recipe.category = "steam"
     steam_recipe.order = "z"
     steam_recipe.subgroup = {name="mining", order="y"}
@@ -148,6 +152,7 @@ function generator.all_recipes()
     local rocket_recipe = {
         name = "fp-space-science-pack",
         localised_name = {"item-name.space-science-pack"},  -- official locale
+        sprite = "item/space-science-pack",
         category = "rocket-building",
         hidden = false,
         energy = 0,
@@ -215,6 +220,7 @@ function generator.all_items()
                     local item = {
                         name = proto.name,
                         type = type,
+                        sprite = type .. "/" .. proto.name,
                         localised_name = proto.localised_name,
                         order = proto.order,
                         group = proto.group,
@@ -330,6 +336,7 @@ function generator.all_machines()
             name = proto.name,
             category = category,
             localised_name = proto.localised_name,
+            sprite = "entity/" .. proto.name,
             ingredient_limit = (proto.ingredient_count or 255),
             speed = speed,
             energy = energy,

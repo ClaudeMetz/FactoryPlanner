@@ -8,7 +8,6 @@ function Item.init_by_proto(proto, class, amount)
         proto = proto,
         type = type,
         amount = amount or 0,  -- produced amount
-        sprite = (proto.type .. "/" .. proto.name),
         valid = true,
         class = class
     }
@@ -19,12 +18,6 @@ function Item.init_by_item(item, class, amount)
     local type = global.all_items.types[global.all_items.map[item.type]]
     local proto = type.items[type.map[item.name]]
     return Item.init_by_proto(proto, class, amount)
-end
-
--- Updates the given item with a new proto
-function Item.update(self, proto)
-    self.proto = proto
-    self.sprite = (proto.type .. "/" .. proto.name)
 end
 
 
@@ -41,7 +34,7 @@ function Item.update_validity(self)
         local new_item_id = self.type.map[proto_name]
 
         if new_item_id ~= nil then
-            Item.update(self, self.type.items[new_item_id])
+            self.proto = self.type.items[new_item_id]
             self.valid = true
         else
             self.proto = self.proto.name
@@ -72,7 +65,7 @@ function Item.attempt_repair(self, player)
     -- At this point, type is always valid (and proto is always a string)
     local current_item_id = self.type.map[self.proto]
     if current_item_id ~= nil then
-        Item.update(self, self.type.items[current_item_id])
+        self.proto = self.type.items[current_item_id]
         self.valid = true
     else
         self.valid = false
