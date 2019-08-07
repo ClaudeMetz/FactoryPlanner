@@ -79,7 +79,7 @@ end
 
 -- Refreshes the production pane (titlebar + table)
 function refresh_production_pane(player)
-    local main_dialog = player.gui.center["fp_frame_main_dialog"]
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
     -- Cuts function short if the approriate GUI's haven't been initialized yet
     if not (main_dialog and main_dialog["flow_production_pane"]) then return end
 
@@ -223,7 +223,7 @@ function change_view_state(player, view_name)
     local ui_state = get_ui_state(player)
 
     -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
-    local main_dialog = player.gui.center["fp_frame_main_dialog"]
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
     if not main_dialog or not main_dialog.visible then return end
     local table_titlebar = main_dialog["flow_production_pane"]["table_production_titlebar"]
     if not (main_dialog["flow_production_pane"] and main_dialog["flow_production_pane"]["table_production_titlebar"]

@@ -12,7 +12,7 @@ end
 
 -- Refreshes the subfactory pane by reloading the data
 function refresh_subfactory_pane(player)
-    local table_subfactory =  player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]
+    local table_subfactory =  player.gui.screen["fp_frame_main_dialog"]["table_subfactory_pane"]
     -- Cuts function short if the subfactory pane hasn't been initialized yet
     if not table_subfactory then return end
 
@@ -66,7 +66,7 @@ function refresh_item_table(player, class)
     local subfactory = get_context(player).subfactory
 
     local ui_name = class:gsub("^%u", string.lower)
-    local item_table = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_" .. ui_name .. "s"]
+    local item_table = player.gui.screen["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_" .. ui_name .. "s"]
       ["scroll-pane"]["item_table"]
     item_table.clear()
 
@@ -203,7 +203,7 @@ function refresh_info_pane(player)
     local context = ui_state.context
     local subfactory = context.subfactory
 
-    local flow = player.gui.center["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
+    local flow = player.gui.screen["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
     flow.style.left_margin = 0
 
     if flow["table_info_elements"] == nil then

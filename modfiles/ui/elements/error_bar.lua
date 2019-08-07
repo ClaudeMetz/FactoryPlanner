@@ -8,7 +8,7 @@ end
 
 -- Refreshes the error_bar
 function refresh_error_bar(player)
-    local flow_error_bar = player.gui.center["fp_frame_main_dialog"]["flow_error_bar"]
+    local flow_error_bar = player.gui.screen["fp_frame_main_dialog"]["flow_error_bar"]
     -- Cuts function short if the error bar hasn't been initialized yet
     if not flow_error_bar then return end
 

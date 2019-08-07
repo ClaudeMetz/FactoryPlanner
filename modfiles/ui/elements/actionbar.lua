@@ -18,7 +18,7 @@ end
 -- Disables edit and delete buttons if there exist no subfactories
 function refresh_actionbar(player)
     local ui_state = get_ui_state(player)
-    local actionbar = player.gui.center["fp_frame_main_dialog"]["flow_action_bar"]
+    local actionbar = player.gui.screen["fp_frame_main_dialog"]["flow_action_bar"]
     local delete_button = actionbar["fp_button_delete_subfactory"]
 
     local subfactory_exists = (ui_state.context.subfactory ~= nil)
