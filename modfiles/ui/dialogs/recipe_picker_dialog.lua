@@ -71,9 +71,12 @@ end
 -- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
 function run_preliminary_checks(player, product)
     local force_recipes = player.force.recipes
-    -- First determine all relevant recipes and the amount in each category (enabled and hidden)
     local relevant_recipes = {}
-    local disabled_recipes_count = 0
+    local counts = {
+        disabled = 0,
+        hidden = 0,
+        disabled_hidden = 0
+    }
     if item_recipe_map[product.proto.type][product.proto.name] ~= nil then  -- this being nil means that the item has no recipes
         for _, recipe in pairs(global.all_recipes.recipes) do
             local force_recipe = force_recipes[recipe.name]
@@ -81,8 +84,10 @@ function run_preliminary_checks(player, product)
                 -- Only add recipes that exist on the current force
                 if force_recipe ~= nil then
                     table.insert(relevant_recipes, recipe)
-                    if not force_recipe.enabled then disabled_recipes_count = disabled_recipes_count + 1 end
-            
+                    if not force_recipe.enabled and force_recipe.hidden then
+                        counts.disabled_hidden = counts.disabled_hidden + 1
+                    elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
+                    elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
                 -- Add custom recipes by default
                 elseif is_custom_recipe(player, recipe, true) then
                     table.insert(relevant_recipes, recipe)
@@ -92,16 +97,25 @@ function run_preliminary_checks(player, product)
     end
     
     -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
+    -- (This logic is probably inefficient, but it's clear and way faster than the loop above anyways)
     local user_prefs = get_ui_state(player).recipe_filter_preferences
-    local show = {disabled = user_prefs.disabled, hidden = user_prefs.hidden, message = nil}
-    if not user_prefs.disabled and (#relevant_recipes - disabled_recipes_count) == 0 then
-        show.disabled = true  -- avoids showing no recipes if there are some disabled ones
+    local show = {}
+    local relevant_recipes_count = table_size(relevant_recipes)
+    if relevant_recipes_count - counts.disabled - counts.hidden - counts.disabled_hidden > 0 then
+        show.disabled = user_prefs.disabled or false
+        show.hidden = user_prefs.hidden or false
+    elseif relevant_recipes_count - counts.hidden - counts.disabled_hidden > 0 then
+        show.disabled = true
+        show.hidden = user_prefs.hidden or false
+    else
+        show.disabled = true
+        show.hidden = true
     end
     
     -- Return result, format: return recipe, error-message, show
-    if #relevant_recipes == 0 then
+    if relevant_recipes_count == 0 then
         return nil, {"label.error_no_relevant_recipe"}, show
-    elseif #relevant_recipes == 1 then
+    elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
         -- Show hint if adding unresearched recipe (no hints on custom recipes)
         if not is_custom_recipe(player, chosen_recipe, true) and not force_recipes[chosen_recipe.name].enabled then

@@ -333,30 +333,12 @@ function data_util.run_dev_config(player)
                 type = "item",
                 amount = 0,
                 required_amount = 400
-            }--[[ ,
-            {
-                name = "heavy-oil",
-                type = "fluid",
-                amount = 0,
-                required_amount = 100
-            },
+            }--[[,
             {
                 name = "uranium-235",
                 type = "item",
                 amount = 0,
                 required_amount = 10
-            },
-            {
-                name = "grenade",
-                type = "item",
-                amount = 0,
-                required_amount = 100
-            },
-            {
-                name = "iron-plate",
-                type = "item",
-                amount = 0,
-                required_amount = 100
             } ]]
         }
         add_products(subfactory, products)
@@ -366,10 +348,6 @@ function data_util.run_dev_config(player)
             {
                 name="electronic-circuit",
                 machine="assembling-machine-2"
-            },
-            {
-                name="iron-plate",
-                machine="stone-furnace"
             }
         }
         construct_floor(player, context.floor, recipes)
