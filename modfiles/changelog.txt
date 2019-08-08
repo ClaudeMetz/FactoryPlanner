@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.38
+Date: 08. 08. 2019
   Features:
     - You can now use 'Enter' to confirm dialogs and textfields
     - All windows can be moved, and modal dialogs are 'true' pop-up windows now
