@@ -52,31 +52,6 @@ function ui_util.add_tutorial_tooltip(button, type, line_break, fnei)
 end
 
 
---[[ -- Returns the sprite string of the given item
-function ui_util.generate_item_sprite(item)
-    return (item.type .. "/" .. item.name)
-end
-
--- Returns the sprite string of the given recipe
-function ui_util.generate_recipe_sprite(recipe)
-    local sprite = "recipe/" .. recipe.name
-
-    -- Handle custom recipes separately
-    if recipe.name == "fp-space-science-pack" then
-        sprite = "item/space-science-pack"
-    elseif (string.match(recipe.name, "^impostor-.*")) then
-        -- If the impostor recipe has exactly one product, use it's sprite
-        if #recipe.products == 1 then
-            sprite = recipe.products[1].type .. "/" .. recipe.products[1].name
-        else  -- Otherwise (0 or 2+ products), use the first ingredient's sprite
-            sprite = recipe.ingredients[1].type .. "/" .. recipe.ingredients[1].name
-        end
-    end
-
-    return sprite
-end ]]
-
-
 -- Sets basic attributes on the given textfield
 function ui_util.setup_textfield(textfield)
     textfield.lose_focus_on_confirm = true

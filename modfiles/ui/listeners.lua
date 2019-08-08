@@ -88,7 +88,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
 
     -- Applies the disabled/hidden filter to a picker dialog
     elseif string.find(event.element.name, "^fp_checkbox_picker_filter_condition_[a-z]+$") then
-        local filter = string.gsub(event.element.name, "fp_checkbox_preferences_", "")
+        local filter = string.gsub(event.element.name, "fp_checkbox_picker_filter_condition_", "")
         handle_filter_radiobutton_click(player, filter, event.element.state)
 
     -- Toggles the selected preference

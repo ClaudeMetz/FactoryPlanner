@@ -272,8 +272,9 @@ function refresh_info_pane(player)
         local label_percentage = table_mining_prod.add{type="label", name="label_percentage", caption="%"}
         label_percentage.style.font = "default-bold"
     else
+        local prod_bonus = ui_util.format_number(player.force.mining_drill_productivity_bonus, 4)
         local label_prod_bonus = table_mining_prod.add{type="label", name="label_mining_prod_value", 
-          caption={"", player.force.mining_drill_productivity_bonus, "%"}}
+          caption={"", prod_bonus, "%"}}
         label_prod_bonus.style.font = "default-bold"
         local button_override = table_mining_prod.add{type="button", name="fp_button_mining_prod_override", 
           caption={"button-text.override"}, style="fp_button_mini", mouse_button_filter={"left"}}
