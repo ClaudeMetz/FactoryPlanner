@@ -8,6 +8,16 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.style.bottom_margin = 8
 
     local recipe_id, error, show = run_preliminary_checks(player, product)
+
+    local function create_unfiltered_dialog()
+        picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
+        picker.refresh_search_bar(flow_modal_dialog, product.proto.name, false)
+        picker.refresh_warning_label(flow_modal_dialog, "")
+        flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state = show.disabled
+        flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state = show.hidden
+        picker.refresh_picker_panel(flow_modal_dialog, "recipe", true)
+    end
+
     if error ~= nil then
         ui_util.message.enqueue(player, error, "error", 1)
         exit_modal_dialog(player, "cancel", {})
@@ -23,16 +33,12 @@ function open_recipe_picker_dialog(flow_modal_dialog)
                 update_calculations(player, ui_state.context.subfactory)
                 if show.message ~= nil then ui_util.message.enqueue(player, show.message.text, show.message.type, 1) end
             end
+
+            create_unfiltered_dialog() -- already create it here so auto_center works correctly
             exit_modal_dialog(player, "cancel", {})
         
         else  -- Otherwise, show the appropriately filtered dialog
-            picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
-            picker.refresh_search_bar(flow_modal_dialog, product.proto.name, false)
-            picker.refresh_warning_label(flow_modal_dialog, "")
-            flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state = show.disabled
-            flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state = show.hidden
-            picker.refresh_picker_panel(flow_modal_dialog, "recipe", true)
-
+            create_unfiltered_dialog()
             picker.select_item_group(player, "recipe", "logistics")
             picker.apply_filter(player, "recipe", true)
         end

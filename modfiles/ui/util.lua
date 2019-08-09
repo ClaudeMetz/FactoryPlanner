@@ -10,14 +10,18 @@ function ui_util.recalculate_main_dialog_dimensions(player)
     local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
     local height = 395 + (player_table.settings.recipes_at_once * 39)
 
+    local dimensions = {width=width, height=height}
+    player_table.ui_state.main_dialog_dimensions = dimensions
+    return dimensions
+end
+
+-- Properly centers the given frame (need width/height parameters cause no API-read exists)
+function ui_util.properly_center_frame(player, frame, width, height)
     local resolution = player.display_resolution
     local scale = player.display_scale
     local x_offset = ((resolution.width - (width * scale)) / 2) 
     local y_offset = ((resolution.height - (height * scale)) / 2)
-
-    local dimensions = {width=width, height=height, x_offset=x_offset, y_offset=y_offset}
-    player_table.ui_state.main_dialog_dimensions = dimensions
-    return dimensions
+    frame.location = {x_offset, y_offset}
 end
 
 

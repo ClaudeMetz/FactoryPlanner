@@ -68,6 +68,7 @@ function exit_modal_dialog(player, button, data)
     ui_state.modal_dialog_type = nil
     ui_state.selected_object = nil
     ui_state.modal_data = nil
+    ui_state.flow_modal_dialog_height = nil
     ui_state.context.line = nil
     
     if preserve then flow_modal_dialog.parent.visible = false
@@ -151,6 +152,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
     -- Otherwise, create a whole new one with the appropriate name
     else
         frame_modal_dialog = screen.add{type="frame", name=frame_name, direction="vertical"}
+        frame_modal_dialog.auto_center = true
 
         -- Conditions table
         local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
@@ -166,7 +168,6 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
         -- Main flow to be filled by specific modal dialog creator
         flow_modal_dialog = frame_modal_dialog.add{type="scroll-pane", name="flow_modal_dialog", direction="vertical"}
-        flow_modal_dialog.style.maximal_height = 800
 
         -- Button bar
         local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
@@ -204,7 +205,17 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_submit.style.left_margin = 8
     end
 
-    frame_modal_dialog.auto_center = true
+    -- Adjust the dialog size to the main dialog height
+    local ui_state = get_ui_state(player)
+    local main_dialog_dimensions = ui_state.main_dialog_dimensions
+    ui_state.flow_modal_dialog_height = (main_dialog_dimensions.height - 120) * 0.95
+    flow_modal_dialog.style.maximal_height = ui_state.flow_modal_dialog_height
+
+    -- This can't be used until width/height reads are added
+    -- Also, I think cached dialogs should remember their location probably
+    --ui_util.properly_center_frame(player, frame_modal_dialog, width, height)
+    --frame_modal_dialog.auto_center = true
+
     -- Adjust visibility of the submit and delete buttons and the spacer
     local button_bar = frame_modal_dialog["flow_modal_dialog_button_bar"]
     button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false

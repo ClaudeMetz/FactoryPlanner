@@ -16,7 +16,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 
 -- Sets up global data structure of the mod
@@ -193,6 +193,7 @@ function reset_ui_state(player)
       {disabled = false, hidden = false}  -- The preferred state of both recipe filters
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
+    ui_state_table.flow_modal_dialog_height = nil  -- Will be determined when opening modal dialogs
 end
 
 

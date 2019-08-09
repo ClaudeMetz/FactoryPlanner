@@ -1,5 +1,6 @@
 -- Contains the functionality used by all picker dialogs
-picker = {}
+picker = {groups_per_row = 6}
+
 
 -- Adds a bar containing checkboxes to control whether enabled and hidden picks should be shown
 function picker.refresh_filter_conditions(flow, disabled_caption, hidden_caption)
@@ -123,11 +124,12 @@ function picker.refresh_picker_panel(flow, object_type, visible)
         flow_picker_panel = flow.add{type="flow", name="flow_picker_panel", direction="vertical"}
         flow_picker_panel.style.top_margin = 6
 
-        local table_item_groups = flow_picker_panel.add{type="table", name="table_item_groups", column_count=6}
+        local table_item_groups = flow_picker_panel.add{type="table", name="table_item_groups",
+          column_count=picker.groups_per_row}
         table_item_groups.style.bottom_margin = 6
         table_item_groups.style.horizontal_spacing = 3
         table_item_groups.style.vertical_spacing = 3
-        table_item_groups.style.minimal_width = 6 * (64 + 9)
+        table_item_groups.style.minimal_width = picker.groups_per_row * (64 + 9)
 
         local formatted_objects = picker.create_object_tree(_G["get_picker_" .. object_type .. "s"]())
         for _, group in ipairs(formatted_objects) do
@@ -295,7 +297,6 @@ function picker.apply_filter(player, object_type, apply_button_style)
         picker.select_item_group(player, object_type, first_visible_group)
     end
 
-
     -- Show warning message if no corresponding items/recipes are found
     if first_visible_group == nil then 
         picker.refresh_warning_label(flow_modal_dialog, {"label.error_no_" .. object_type .. "_found"})
@@ -304,19 +305,20 @@ function picker.apply_filter(player, object_type, apply_button_style)
     
     -- Set item group height and picker panel heights to always add up to the same so the dialog window size doesn't change
     local flow_picker_panel = flow_modal_dialog["flow_picker_panel"]
-    local group_row_count = math.ceil(visible_group_count / 6)
+    local group_row_count = math.ceil(visible_group_count / picker.groups_per_row)
     flow_picker_panel["table_item_groups"].style.height = group_row_count * 70
     
     -- Set scroll-pane height to be the same for all item groups
-    scroll_pane_height = scroll_pane_height + (math.ceil(total_group_count / 6) * 70)
-    local picker_panel_height = math.min(scroll_pane_height, 700) - (group_row_count) * 70 - warning_label_height
+    local flow_modal_dialog_height = get_ui_state(player).flow_modal_dialog_height
+    scroll_pane_height = scroll_pane_height + (math.ceil(total_group_count / picker.groups_per_row) * 70)
+    local picker_panel_height = math.min(scroll_pane_height, (flow_modal_dialog_height - 100))
+      - (group_row_count * 70) - warning_label_height
     for _, child in ipairs(flow_picker_panel.children_names) do
         if string.find(child, "^scroll%-pane_subgroups_%d+$") then
             flow_picker_panel[child].style.height = picker_panel_height
         end
     end
 end
-
 
 -- Returns the name of the currently selected item group, else if none is selected
 function picker.get_selected_item_group(player, object_type)
