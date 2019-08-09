@@ -327,7 +327,7 @@ function handle_module_beacon_picker_click(player, button)
         modal_data.empty_slots = beacon_proto.module_limit
         set_sprite_button(flow_modal_dialog, "beacon", beacon_proto)
         
-        refresh_module_selection(flow_modal_dialog, ui_state, "beacon", nil)
+        refresh_module_selection(flow_modal_dialog, ui_state, "beacon", ui_state.context.line)
         -- The allowed modules might be different with the newly selected beacon, so refresh and check them
         --[[ if modal_data.selected_module ~= nil and 
           get_beacon_module_characteristics(--machine_proto--, beacon_proto, modal_data.selected_module).compatible then
