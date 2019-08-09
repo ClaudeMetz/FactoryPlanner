@@ -103,7 +103,12 @@ function refresh_main_dialog(player, refresh_dimensions)
     if refresh_dimensions and main_dialog ~= nil then
         -- Recreate the dialog to refresh dimensions
         local visible = main_dialog.visible
-        main_dialog.destroy()
+
+        -- Piece of duct tape to prevent incorrect window layering
+        player_gui_reset(player)
+        player_gui_init(player)
+        
+        --main_dialog.destroy()
         create_main_dialog(player, visible)
     elseif main_dialog ~= nil then
         -- Refresh the elements on top of the hierarchy, which refresh everything below them
