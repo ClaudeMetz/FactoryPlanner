@@ -6,6 +6,7 @@ Date: 00. 00. 0000
     - The recipe- and item-picker dialogs now remember the location you drag them to
   Bugfixes:
     - Fixed a crash when changing the selected beacon for a recipe
+    - Duct-taped over windows not layering correctly in some cases
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.39
