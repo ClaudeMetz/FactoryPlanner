@@ -50,7 +50,7 @@ function Module.update_validity(self)
         local characteristics
         -- Different validation strategies depending on the use case of this module
         if self.parent.class == "Beacon" then
-            characteristics = get_beacon_module_characteristics(self.parent.parent.machine.proto, self.parent.proto, self.proto)
+            characteristics = Line.get_beacon_module_characteristics(self.parent.parent, self.parent.proto, self.proto)
         else  -- parent.class == "Line"
             characteristics = Line.get_module_characteristics(self.parent, self.proto)
         end
@@ -87,7 +87,7 @@ function Module.attempt_repair(self, player)
         local characteristics
         -- Different validation strategies depending on the use case of this module
         if self.parent.class == "Beacon" then
-            characteristics = get_beacon_module_characteristics(self.parent.parent.machine.proto, self.parent.proto, self.proto)
+            characteristics = Line.get_beacon_module_characteristics(self.parent.parent, self.parent.proto, self.proto)
         else  -- parent.class == "Line"
             characteristics = Line.get_module_characteristics(self.parent, self.proto)
         end

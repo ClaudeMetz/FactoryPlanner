@@ -63,6 +63,7 @@ function generator.all_recipes()
         return {
             hidden = false,
             group = {name="intermediate_products", order="c"},
+            use_limitations = false
         }
     end
     
@@ -271,10 +272,12 @@ end
 local function undesirable_item_groups()
     return {
         item = {
-            ["creative-mod_creative-tools"] = false
+            ["creative-mod_creative-tools"] = false,
+            ["im-tools"] = false
         },
         recipe = {
-            ["creative-mod_creative-tools"] = false
+            ["creative-mod_creative-tools"] = false,
+            ["im-tools"] = false
         }
     }
 end

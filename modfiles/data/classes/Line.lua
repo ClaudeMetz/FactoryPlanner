@@ -163,17 +163,21 @@ function Line.empty_slots(self)
     return (self.machine.proto.module_limit - Line.count_modules(self))
 end
 
+
 -- Returns a table containing all relevant data for the given module in relation to this Line
 function Line.get_module_characteristics(self, module_proto)
     local compatible, existing_amount = true, nil
+    local recipe_proto = self.recipe.proto
+    local machine_proto = self.machine.proto
 
-    -- First, check for compatibility
-    if table_size(module_proto.limitations) ~= 0 and not module_proto.limitations[self.recipe.proto.name] then
+    -- First, check for recipe compatibility
+    if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
+      and not module_proto.limitations[recipe_proto.name] then
         compatible = false
     end
 
     if compatible then  -- if it's not compatible anyway, no point in continuing
-        local allowed_effects = self.machine.proto.allowed_effects
+        local allowed_effects = machine_proto.allowed_effects
         if allowed_effects == nil then
             compatible = false
         else
@@ -199,6 +203,35 @@ function Line.get_module_characteristics(self, module_proto)
         existing_amount = existing_amount
     }
 end
+
+-- Returns a table indicating the compatibility of the given module with this line and the given beacon
+function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto)
+    local compatible = true
+    local recipe_proto = self.recipe.proto
+    local machine_proto = self.machine.proto
+
+    -- First, check for recipe compatibility
+    if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
+      and not module_proto.limitations[recipe_proto.name] then
+        compatible = false
+    end
+
+    if compatible then  -- if it's not compatible anyway, no point in continuing
+        if machine_proto.allowed_effects == nil or beacon_proto.allowed_effects == nil then
+            compatible = false
+        else
+            for effect_name, _ in pairs(module_proto.effects) do
+                if machine_proto.allowed_effects[effect_name] == false or
+                  beacon_proto.allowed_effects[effect_name] == false then
+                    compatible = false
+                end
+            end
+        end
+    end
+    
+    return { compatible = compatible }
+end
+
 
 -- Updates the line attribute containing the total module effects of this line (modules+beacons)
 function Line.summarize_effects(self)
