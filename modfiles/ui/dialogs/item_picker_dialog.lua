@@ -29,7 +29,7 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
             local top_level_item = TopLevelItem.init_by_proto(ui_state.modal_data.selected_item, "Product", 0, req_amount)
             product = Subfactory.add(subfactory, top_level_item)
         else
-              product.required_amount = req_amount
+            product.required_amount = req_amount
         end
 
     elseif action == "delete" then  -- delete can only be pressed if product ~= nil
@@ -140,6 +140,6 @@ function get_item(identifier)
 end
 
 -- Generates the tooltip string for the given item
-function generate_item_tooltip(item, already_exists)
+function generate_item_tooltip(item)
     return item.localised_name
 end

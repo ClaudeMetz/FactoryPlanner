@@ -57,7 +57,7 @@ function toggle_main_dialog(player)
 
         -- Create and open main dialog, if it doesn't exist yet
         if main_dialog == nil then
-            main_dialog = create_main_dialog(player, true)
+            main_dialog = refresh_main_dialog(player, true)
             ui_util.message.refresh(player)
             open = true
 
@@ -98,42 +98,38 @@ end
 
 
 -- Refreshes the entire main dialog, optionally including it's dimensions
-function refresh_main_dialog(player, refresh_dimensions)
+function refresh_main_dialog(player, full_refresh)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if refresh_dimensions and main_dialog ~= nil then
-        -- Recreate the dialog to refresh dimensions
-        local visible = main_dialog.visible
+    if full_refresh then
+        if main_dialog == nil then 
+            main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
+        end
+        main_dialog.clear()
 
-        -- Piece of duct tape to prevent incorrect window layering
-        player_gui_reset(player)
-        player_gui_init(player)
-        
-        --main_dialog.destroy()
-        create_main_dialog(player, visible)
+        local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
+        ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
+        main_dialog.style.minimal_width = dimensions.width
+        main_dialog.style.height = dimensions.height
+        main_dialog.visible = visible
+
+        add_titlebar_to(main_dialog)
+        add_actionbar_to(main_dialog)
+        add_subfactory_bar_to(main_dialog)
+        add_error_bar_to(main_dialog)
+        add_subfactory_pane_to(main_dialog)
+        add_production_pane_to(main_dialog)
+
+        return main_dialog
+
     elseif main_dialog ~= nil then
+        -- Re-center the main dialog because it get screwed up sometimes for reasons
+        local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
+        ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
+
         -- Refresh the elements on top of the hierarchy, which refresh everything below them
         refresh_actionbar(player)
         refresh_subfactory_bar(player, true)
     end
-end
-
--- Constructs the main dialog
-function create_main_dialog(player, visible)
-    local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
-    local main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
-    ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
-    main_dialog.style.minimal_width = dimensions.width
-    main_dialog.style.height = dimensions.height
-    main_dialog.visible = visible
-
-    add_titlebar_to(main_dialog)
-    add_actionbar_to(main_dialog)
-    add_subfactory_bar_to(main_dialog)
-    add_error_bar_to(main_dialog)
-    add_subfactory_pane_to(main_dialog)
-    add_production_pane_to(main_dialog)
-
-    return main_dialog
 end
 
 -- Creates the titlebar including name and exit-button
