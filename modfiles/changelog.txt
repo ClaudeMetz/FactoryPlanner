@@ -4,8 +4,9 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
-    - 
+    - Added hint when there are no modules to put into a particular machine/beacon
   Bugfixes:
+    - Fixed detection of which modules are valid for certain machines/beacons
     - Fixed the window layering issue properly
 
 ---------------------------------------------------------------------------------------------------

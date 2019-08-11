@@ -339,6 +339,12 @@ function data_util.run_dev_config(player)
                 type = "item",
                 amount = 0,
                 required_amount = 10
+            },
+            {
+                name = "iron-ore",
+                type = "item",
+                amount = 0,
+                required_amount = 100
             }
         }
         add_products(subfactory, products)

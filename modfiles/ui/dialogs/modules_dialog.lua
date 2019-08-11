@@ -261,6 +261,7 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
         flow_modules.clear()
     end
 
+    local compatible_module_found = false
     for _, category in pairs(global.all_modules.categories) do
         local flow_category = flow_modules.add{type="flow", name="flow_module_category_" .. category.id,
           direction="horizontal"}
@@ -268,9 +269,11 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
 
         for _, module in pairs(category.modules) do
             local characteristics = (type == "module") and Line.get_module_characteristics(line, module)
-              or get_beacon_module_characteristics(line.machine.proto, ui_state.modal_data.selected_beacon, module)
+              or Line.get_beacon_module_characteristics(line, ui_state.modal_data.selected_beacon, module)
 
             if characteristics.compatible then
+                compatible_module_found = true
+
                 local button_module = flow_category.add{type="sprite-button", name="fp_sprite-button_module_selection_"
                   .. category.id .. "_" .. module.id, sprite=module.sprite, mouse_button_filter={"left"}}
                 local tooltip = module.localised_name
@@ -301,6 +304,13 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
         -- Hide this category if it has no compatible modules
         if #flow_category.children_names == 0 then flow_category.visible = false end
     end
+
+    -- Show a hint if no compatible module was found
+    if not compatible_module_found then
+        local label_warning = flow_modules.add{type="label", name="label_no_compatible_modules", caption={"label.no_compatible_module"}}
+        label_warning.style.bottom_margin = 4
+        ui_util.set_label_color(label_warning, "red")
+    end
 end
 
 
@@ -327,14 +337,9 @@ function handle_module_beacon_picker_click(player, button)
         modal_data.empty_slots = beacon_proto.module_limit
         set_sprite_button(flow_modal_dialog, "beacon", beacon_proto)
         
-        refresh_module_selection(flow_modal_dialog, ui_state, "beacon", ui_state.context.line)
         -- The allowed modules might be different with the newly selected beacon, so refresh and check them
-        --[[ if modal_data.selected_module ~= nil and 
-          get_beacon_module_characteristics(--machine_proto--, beacon_proto, modal_data.selected_module).compatible then
-            modal_data.selected_module = nil
-            flow_modal_dialog["flow_module_bar"]["sprite-button_module"].sprite = ""
-        end ]]
-        --> This doesn't work, it won't be an issue probably (TODO)
+        refresh_module_selection(flow_modal_dialog, ui_state, "beacon", ui_state.context.line)
+        --> Removing the selected beacon doesn't work, it won't be an issue probably (TODO)
         
         -- The module textfield and max-button might need to be locked (limit=1)
         update_module_bar(flow_modal_dialog, ui_state)
@@ -387,23 +392,4 @@ function max_module_amount(player)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text = get_ui_state(player).modal_data.empty_slots
     exit_modal_dialog(player, "submit", {})
-end
-
-
--- Returns a table indicating the compatability of the given module with this beacon
--- (mimics Line.get_module_characteristics(line, module) functionality)
-function get_beacon_module_characteristics(machine_proto, beacon_proto, module_proto)
-    local compatible = true
-
-    if machine_proto.allowed_effects == nil or beacon_proto.allowed_effects == nil then
-        compatible = false
-    else
-        for effect_name, _ in pairs(module_proto.effects) do
-            if machine_proto.allowed_effects[effect_name] == false or beacon_proto.allowed_effects[effect_name] == false then
-                compatible = false
-            end
-        end
-    end
-    
-    return { compatible = compatible }
 end
