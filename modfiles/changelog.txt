@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added a preference to ignore recycling recipes (Currently works with Reverse Factory and Deadlock's Industrial Revolution)
   Changes:
     - Added hint when there are no modules to put into a particular machine/beacon
   Bugfixes:
