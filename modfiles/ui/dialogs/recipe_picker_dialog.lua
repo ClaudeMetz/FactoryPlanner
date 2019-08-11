@@ -178,9 +178,12 @@ end
 
 -- Returns true when the given recipe produces the given product
 function recipe_produces_product(player, recipe, product_type, product_name)
-    -- Exclude barreling recipes according to preference
-    if (get_preferences(player).ignore_barreling_recipes and (recipe.subgroup.name == "empty-barrel"
-      or recipe.subgroup.name == "fill-barrel")) then
+    local preferences = get_preferences(player)
+    
+    -- Exclude barreling/recycling recipes according to preference
+    if (preferences.ignore_barreling_recipes and (recipe.subgroup.name == "empty-barrel"
+      or recipe.subgroup.name == "fill-barrel")) or (preferences.ignore_recycling_recipes
+      and recipe.recycling == true) then
         return false
     else
         -- Checks specific type, if it is given

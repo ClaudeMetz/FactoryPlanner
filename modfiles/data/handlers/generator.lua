@@ -33,6 +33,24 @@ local function format_allowed_effects(allowed_effects)
     return nil  -- all effects are false
 end
 
+-- Determines whether this recipe is a recycling one
+-- Compatible with: Reverse Factory, Deadlock's Industrial Revolution
+local active_mods = nil
+local function is_recycling_recipe(proto)
+    active_mods = active_mods or {
+        DIR = game.active_mods["DeadlockIndustry"],
+        RF = game.active_mods["reverse-factory"]
+    }
+
+    if active_mods.DIR and string.match(proto.name, "^disassemble%-.*") then
+        return true
+    elseif active_mods.RF and string.match(proto.name, "^rf%-.*") then
+        return true
+    else
+        return false
+    end
+end
+
 
 -- Returns the names of the recipes that shouldn't be included
 local function undesirable_recipes()
@@ -82,6 +100,7 @@ function generator.all_recipes()
                 ingredients = proto.ingredients,
                 products = proto.products,
                 main_product = proto.main_product,
+                recycling = is_recycling_recipe(proto),
                 hidden = proto.hidden,
                 order = proto.order,
                 group = proto.group,
