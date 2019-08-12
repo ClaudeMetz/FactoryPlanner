@@ -114,9 +114,8 @@ end
 function get_picker_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
-    local types = {"item", "fluid"}
     local all_items = global.all_items
-    for _, type in pairs(types) do
+    for _, type in pairs({"item", "fluid"}) do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             table.insert(items, item)
         end
@@ -137,9 +136,4 @@ end
 function get_item(identifier)
     local split_ident = ui_util.split(identifier, "_")
     return global.all_items.types[split_ident[1]].items[split_ident[2]]
-end
-
--- Generates the tooltip string for the given item
-function generate_item_tooltip(item)
-    return item.localised_name
 end

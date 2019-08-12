@@ -148,6 +148,12 @@ data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
     padding = 2
 }
 
+data.raw["gui-style"].default["fp_table_subgroup"] = {
+    type = "table_style",
+    horizontal_spacing = 2,
+    vertical_spacing = 1
+}
+
 
 -- Generating prototype styles for the different icon-buttons
 local icon_state_indexes = {recipe = 0, disabled = 36, hidden = 72, red = 108, yellow = 144, green = 180, cyan = 216, blank = 252}

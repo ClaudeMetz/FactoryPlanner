@@ -64,58 +64,30 @@ function picker.refresh_warning_label(flow, message)
 end
 
 
--- Extracts, formats and sorts (by their group, subgroup and order) all objects so they can be displayed
+-- Sorts the objects according to their group, subgroup and order
 function picker.create_object_tree(objects)
-    -- First, categrorize the objects according to the order of their group, subgroup and themselves
-    local unsorted_object_tree = {}
-    for _, object in pairs(objects) do
-        if unsorted_object_tree[object.group.order] == nil then
-            unsorted_object_tree[object.group.order] = {}
+    local function sorting_function(a, b)
+        if a.group.order < b.group.order then
+            return true
+        elseif a.group.order > b.group.order then
+            return false
+        elseif a.subgroup.order < b.subgroup.order then
+            return true
+        elseif a.subgroup.order > b.subgroup.order then
+            return false
+        elseif a.order < b.order then
+            return true
+        elseif a.order > b.order then
+            return false
         end
-        local group = unsorted_object_tree[object.group.order]
-
-        if group[object.subgroup.order] == nil then
-            group[object.subgroup.order] = {}
-        end
-        local subgroup = group[object.subgroup.order]
-
-        if subgroup[object.order] == nil then
-            subgroup[object.order] = {}
-        end
-        table.insert(subgroup[object.order], object)
     end
-
-    -- Then, sort them according to the orders into a new array
-    -- Messy tree structure, but avoids modded situations where multiple objects have the same order
-    local sorted_object_tree = {}
-    local group_name, group_localised_name, subgroup_name
-    for _, group in ui_util.pairsByKeys(unsorted_object_tree) do
-        table.insert(sorted_object_tree, {name=nil, localised_name=nil, subgroups={}})
-        local table_group = sorted_object_tree[#sorted_object_tree]
-        for _, subgroup in ui_util.pairsByKeys(group) do
-            table.insert(table_group.subgroups, {name=nil, objects={}})
-            local table_subgroup = table_group.subgroups[#table_group.subgroups]
-            for _, object_order in ui_util.pairsByKeys(subgroup) do
-                for _, object in ipairs(object_order) do
-                    if not group_name then group_name = object.group.name end
-                    if not group_localised_name then group_localised_name = object.group.localised_name end
-                    if not subgroup_name then subgroup_name = object.subgroup.name end
-                    table.insert(table_subgroup.objects, object)
-                end
-            end
-            table_subgroup.name = subgroup_name
-            subgroup_name = nil
-        end
-        table_group.name = group_name
-        group_name = nil
-        table_group.localised_name = group_localised_name
-        group_localised_name = nil
-    end
-
-    return sorted_object_tree
+    
+    table.sort(objects, sorting_function)
+    return objects
 end
 
 -- Refreshes the actual picker panel, for the given object type and with the given visibility
+-- (This function is optimized for performance, so not everything might be done in the obvious way)
 function picker.refresh_picker_panel(flow, object_type, visible)
     local player = game.get_player(flow.player_index)
 
@@ -132,41 +104,55 @@ function picker.refresh_picker_panel(flow, object_type, visible)
         table_item_groups.style.minimal_width = picker.groups_per_row * (64 + 9)
 
         local formatted_objects = picker.create_object_tree(_G["get_picker_" .. object_type .. "s"]())
-        for _, group in ipairs(formatted_objects) do
-            local object_groups = item_groups[object_type]
-            local group_proto = object_groups.groups[object_groups.map[group.name]]
-            if group_proto ~= nil then  -- ignore undesirable item groups
-                -- Item groups
-                button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_".. object_type ..
-                  "_group_" .. group_proto.id, sprite=group_proto.sprite, style="fp_button_icon_medium_recipe",
-                  mouse_button_filter={"left"}}
-                button_group.style.width = 70
-                button_group.style.height = 70
-                button_group.tooltip = group_proto.localised_name
-                if devmode then button_group.tooltip = {"", button_group.tooltip, "\n", group_proto.name} end
+        local identifier_function = _G["generate_" .. object_type .. "_identifier"]
+        local undesirables = generator.undesirable_item_groups()[object_type]
+        local group_id_cache, group_button_cache, subgroup_flow_cache, subgroup_table_cache = {}, {}, {}, {}
 
-                local scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", name="scroll-pane_subgroups_"
-                .. group_proto.id}
-                scroll_pane_subgroups.style.bottom_margin = 4
-                scroll_pane_subgroups.style.horizontally_stretchable = true
+        for _, object in ipairs(formatted_objects) do
+            local group_name = object.group.name
+            local group_id = group_id_cache[group_name]
+            if group_id == nil then
+                group_id_cache[group_name] = (table_size(group_id_cache) + 1)
+                group_id = table_size(group_id_cache)
+            end
 
-                local table_subgroup = scroll_pane_subgroups.add{type="table", name="table_subgroup", column_count=1}
-                table_subgroup.style.vertical_spacing = 3
-                for _, subgroup in ipairs(group.subgroups) do
-                    -- Item subgroups
-                    local table_subgroup = table_subgroup.add{type="table", name="table_subgroup_" .. subgroup.name,
-                    column_count = 12}
-                    table_subgroup.style.horizontal_spacing = 2
-                    table_subgroup.style.vertical_spacing = 1
-                    for _, object in ipairs(subgroup.objects) do
-                        -- Objects
-                        local identifier = _G["generate_" .. object_type .. "_identifier"](object)
-                        local button_object = table_subgroup.add{type="sprite-button", name=("fp_sprite-button_picker_"
-                          .. object_type .. "_object_" .. identifier), sprite=object.sprite, style="fp_button_icon_medium_recipe",
-                          tooltip=_G["generate_" .. object_type .. "_tooltip"](object), mouse_button_filter={"left"}}
-                        if devmode then button_object.tooltip = {"", button_object.tooltip, "\n", object.name} end
-                    end
+            if undesirables[group_name] == nil then  -- ignore undesirable item groups
+                local button_group = group_button_cache[group_id]
+                local scroll_pane_subgroups, table_subgroups = nil, nil
+                if button_group == nil then
+                    button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_".. object_type ..
+                      "_group_" .. group_id, sprite=("item-group/" .. group_name), style="fp_button_icon_medium_recipe",
+                      tooltip=object.group.localised_name, mouse_button_filter={"left"}}
+                    button_group.style.width = 70
+                    button_group.style.height = 70
+                    if devmode then button_group.tooltip = {"", button_group.tooltip, ("\n" .. group_name)} end
+                    group_button_cache[group_id] = button_group
+
+                    -- This only exists when button_group also exists
+                    scroll_pane_subgroups = flow_picker_panel.add{type="scroll-pane", 
+                      name="scroll-pane_subgroups_" .. group_id}
+                    scroll_pane_subgroups.style.bottom_margin = 4
+                    scroll_pane_subgroups.style.horizontally_stretchable = true
+                    subgroup_flow_cache[group_id] = scroll_pane_subgroups
+
+                    table_subgroups = scroll_pane_subgroups.add{type="table", name="table_subgroups", column_count=1}
+                    table_subgroups.style.vertical_spacing = 3
+                else
+                    scroll_pane_subgroups = subgroup_flow_cache[group_id]
+                    table_subgroups = scroll_pane_subgroups["table_subgroups"]
                 end
+
+                local subgroup_name = object.subgroup.name
+                local table_subgroup = subgroup_table_cache[subgroup_name]
+                if table_subgroup == nil then
+                    table_subgroup = table_subgroups.add{type="table", name="table_subgroup_" .. subgroup_name,
+                      column_count=12, style="fp_table_subgroup"}
+                    subgroup_table_cache[subgroup_name] = table_subgroup
+                end
+
+                local button_object = table_subgroup.add{type="sprite-button", name=("fp_sprite-button_picker_"
+                  .. object_type .. "_object_" .. identifier_function(object)), sprite=object.sprite,
+                  style="fp_button_icon_medium_recipe", tooltip=object.tooltip, mouse_button_filter={"left"}}
             end
         end
     end
@@ -210,7 +196,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
         local specific_scroll_pane_height = 0
         local subgroup_count = 0
         local subgroup_elements = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_".. group_id]
-          ["table_subgroup"].children
+          ["table_subgroups"].children
         for _, subgroup_element in pairs(subgroup_elements) do
             local subgroup_visible = false
             local object_count = 0
@@ -233,7 +219,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
                         end
 
                         local dev = (devmode) and {"", "\n", object.name} or ""
-                        object_element.tooltip = {"", _G["generate_" .. object_type .. "_tooltip"](object), existing, dev}
+                        object_element.tooltip = {"", object.tooltip, existing, dev}
                     end
 
                     -- Set visibility of objects (and item-groups) appropriately
