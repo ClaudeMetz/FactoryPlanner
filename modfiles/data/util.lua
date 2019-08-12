@@ -216,7 +216,7 @@ end
 
 -- Determines whether mining prod applies, and returns it's value (returns 0 otherwise)
 function data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    if machine_proto.category == "basic-solid" then  -- meaning (solid) mining recipes
+    if string.match(machine_proto.category, "^[a-z]+%-solid$") then  -- all mining recipes
         return ((subfactory.mining_productivity ~= nil) and 
           subfactory.mining_productivity or player.force.mining_drill_productivity_bonus) / 100
     else
