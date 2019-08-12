@@ -168,20 +168,20 @@ function picker.apply_filter(player, object_type, apply_button_style)
     local search_term = flow_modal_dialog["table_search_bar"]["fp_textfield_picker_search_bar"].text:gsub("^%s*(.-)%s*$", "%1")
     local warning_label = flow_modal_dialog["label_warning_message"]
 
-    local disabled, hidden
-    local existing_products = {}
+    local disabled, hidden = nil, nil
+    local existing_products, relevant_recipes, force_recipes = {}, {}, nil
     if object_type == "recipe" then
         disabled = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state
         hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state
+
+        for _, recipe in pairs(get_ui_state(player).modal_data) do relevant_recipes[recipe.id] = recipe end 
+        force_recipes = player.force.recipes
     else
         for _, product in pairs(Subfactory.get_in_order(get_context(player).subfactory, "Product")) do
             existing_products[product.proto.name] = true
         end
     end
 
-    local preferences = get_preferences(player)
-    local force_recipes = player.force.recipes
-    
     local first_visible_group = nil
     local visible_group_count = 0
     local total_group_count = 0
@@ -191,90 +191,82 @@ function picker.apply_filter(player, object_type, apply_button_style)
         group_element.style.width = 70
         group_element.style.height = 70
 
-        local group_id = tonumber(string.match(group_element.name, "%d+"))
         local group_visible = false
         local specific_scroll_pane_height = 0
         local subgroup_count = 0
+
+        local group_id = tonumber(string.match(group_element.name, "%d+"))
         local subgroup_elements = flow_modal_dialog["flow_picker_panel"]["scroll-pane_subgroups_".. group_id]
           ["table_subgroups"].children
+
         for _, subgroup_element in pairs(subgroup_elements) do
             local subgroup_visible = false
             local object_count = 0
-            for _, object_element in pairs(subgroup_element.children) do
-                local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
-                local object = _G["get_" .. object_type](identifier)
                 
+            for _, object_element in pairs(subgroup_element.children) do
                 local visible = false
+                
                 if object_type == "item" then
-                    -- (Re)apply an appropriate button style if need be
+                    local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
+                    local split_ident = ui_util.split(identifier, "_")
+                    local item = global.all_items.types[split_ident[1]].items[split_ident[2]]
+
+                    -- Set visibility of items (and item-groups) appropriately
+                    if string.find(string.lower(item.name), string.lower(search_term), 1, true) then
+                        visible = true
+
+                        -- Only need to refresh button style if will actually be shown
                     if apply_button_style then
-                        local existing = ""
-                        if existing_products[object.name] then
+                            if existing_products[item.name] then
                             object_element.style = "fp_button_existing_product"
                             object_element.enabled = false
-                            existing = {"", "\n", {"tooltip.existing_product"}}
                         else
                             object_element.style = "fp_button_icon_medium_recipe"
                             object_element.enabled = true
                         end
-
-                        local dev = (devmode) and {"", "\n", object.name} or ""
-                        object_element.tooltip = {"", object.tooltip, existing, dev}
                     end
-
-                    -- Set visibility of objects (and item-groups) appropriately
-                    if string.find(string.lower(object.name), string.lower(search_term), 1, true) and not object.hidden then
-                        visible = true
                     end
+                else  -- object_type == "recipe"
+                    local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
+                    local recipe = relevant_recipes[tonumber(identifier)]
 
-                elseif object_type == "recipe" then
-                    -- (Re)apply an appropriate button style if need be
-                    local recipe = force_recipes[object.name]
-                    -- If recipe is nil, the button will be hidden anyways
-                    if apply_button_style and recipe ~= nil then
-                        if not recipe.enabled then object_element.style = "fp_button_icon_medium_disabled" 
-                        elseif object.hidden then object_element.style = "fp_button_icon_medium_hidden"
-                        else object_element.style = "fp_button_icon_medium_recipe" end
+                    if recipe ~= nil then
+                        local force_recipe = force_recipes[recipe.name]
 
-                        -- Re-doing the tooltip to include disabled/hidden etc is too expensive, it will be done
-                        -- when the tooltip is attached to the prototype
-                    end
-
-                    -- Set visibility of objects (and item-groups) appropriately
-                    if recipe_produces_product(player, object, nil, search_term) then
                         -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
-                        -- recipe ~= nil and not (not disabled and not recipe.enabled) and not (not hidden and object.hidden)
-                        if recipe ~= nil and (disabled or recipe.enabled) and (hidden or not object.hidden) then
-                            visible = true
-                        elseif is_custom_recipe(player, object, false) then
+                        -- recipe.custom or (not (not disabled and not recipe.enabled) and not (not hidden and object.hidden))
+                        if recipe.custom or ((disabled or force_recipe.enabled) and (hidden or not recipe.hidden)) then
                             visible = true
                         end
+
+                         -- Only need to refresh button style if will actually be shown
+                        if visible and apply_button_style then
+                            if not recipe.custom and not force_recipe.enabled then object_element.style = "fp_button_icon_medium_disabled" 
+                            elseif recipe.hidden then object_element.style = "fp_button_icon_medium_hidden"
+                            else object_element.style = "fp_button_icon_medium_recipe" end
                     end
                 end
-
-                if visible then
-                    object_element.visible = true
-                    subgroup_visible = true
-                    group_visible = true
-                else
-                    object_element.visible = false
                 end
                 
+                object_element.visible = visible
+                if visible then subgroup_visible = true; group_visible = true end
                 object_count = object_count + 1
             end
+            
             subgroup_element.visible = subgroup_visible
             specific_scroll_pane_height = specific_scroll_pane_height +  math.ceil(object_count / 12) * 33
             subgroup_count = subgroup_count + 1
+            
         end
         group_element.visible = group_visible
         specific_scroll_pane_height = specific_scroll_pane_height + subgroup_count * 3
         scroll_pane_height = math.max(scroll_pane_height, specific_scroll_pane_height)
+        total_group_count = total_group_count + 1     
         
         if group_visible then
             visible_group_count = visible_group_count + 1
             if first_visible_group == nil then first_visible_group = group_id end
         end
-        total_group_count = total_group_count + 1
     end
 
     -- Set selection to the first item group that is visible, respecting a previous selection

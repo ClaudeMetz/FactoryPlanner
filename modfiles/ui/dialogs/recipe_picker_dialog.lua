@@ -7,9 +7,10 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"label.add_recipe"}
     flow_modal_dialog.style.bottom_margin = 8
 
-    local recipe_id, error, show = run_preliminary_checks(player, product)
+    -- Result is either the single possible recipe_id, or a table of relevant recipes
+    local result, error, show = run_preliminary_checks(player, product)
     
-    local function create_unfiltered_dialog()
+    local function refresh_unfiltered_dialog()
         picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
         picker.refresh_search_bar(flow_modal_dialog, product.proto.name, false)
         picker.refresh_warning_label(flow_modal_dialog, "")
@@ -23,8 +24,8 @@ function open_recipe_picker_dialog(flow_modal_dialog)
         exit_modal_dialog(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
-        if recipe_id ~= nil then
-            local line = Line.init(player, Recipe.init_by_id(recipe_id), nil)
+        if type(result) == "number" then
+            local line = Line.init(player, Recipe.init_by_id(result), nil)
             -- If line is false, no compatible machine has been found (ingredient limit)
             if line == false then
                 ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 1)
@@ -34,11 +35,12 @@ function open_recipe_picker_dialog(flow_modal_dialog)
                 if show.message ~= nil then ui_util.message.enqueue(player, show.message.text, show.message.type, 1) end
             end
 
-            create_unfiltered_dialog() -- already create it here so auto_center works correctly
+            --create_unfiltered_dialog() -- already create it here so auto_center works correctly
             exit_modal_dialog(player, "cancel", {})
         
         else  -- Otherwise, show the appropriately filtered dialog
-            create_unfiltered_dialog()
+            ui_state.modal_data = result
+            refresh_unfiltered_dialog()
             picker.select_item_group(player, "recipe", "logistics")
             picker.apply_filter(player, "recipe", true)
         end
@@ -49,10 +51,8 @@ end
 -- Reacts to either the disabled or hidden radiobutton being pressed
 function handle_filter_radiobutton_click(player, type, state)
     local ui_state = get_ui_state(player)
-
     -- Remember the user selection for this type of filter
     ui_state.recipe_filter_preferences[type] = state
-
     picker.apply_filter(player, "recipe", false)
 end
 
@@ -72,9 +72,8 @@ function handle_picker_recipe_click(player, button)
 end
 
 
--- Serves the dual-purpose of setting the filter to include disabled recipes if no enabled ones are found
--- and, if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
--- (This is more efficient than the big filter-loop, which would have to run twice otherwise)
+-- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and,
+-- if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
 function run_preliminary_checks(player, product)
     local force_recipes = player.force.recipes
     local relevant_recipes = {}
@@ -83,29 +82,35 @@ function run_preliminary_checks(player, product)
         hidden = 0,
         disabled_hidden = 0
     }
-    if item_recipe_map[product.proto.type][product.proto.name] ~= nil then  -- this being nil means that the item has no recipes
-        for _, recipe in pairs(global.all_recipes.recipes) do
+    
+    local map = item_recipe_map[product.proto.type][product.proto.name]
+    if map ~= nil then  -- this being nil means that the item has no recipes
+        local preferences = get_preferences(player)
+        for recipe_id, _ in pairs(map) do
+            local recipe = global.all_recipes.recipes[recipe_id]
             local force_recipe = force_recipes[recipe.name]
-            if recipe_produces_product(player, recipe, product.proto.type, product.proto.name) then
-                -- Only add recipes that exist on the current force
-                if force_recipe ~= nil then
-                    table.insert(relevant_recipes, recipe)
-                    if not force_recipe.enabled and force_recipe.hidden then
-                        counts.disabled_hidden = counts.disabled_hidden + 1
-                    elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
-                    elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
-                -- Add custom recipes by default
-                elseif is_custom_recipe(player, recipe, true) then
-                    table.insert(relevant_recipes, recipe)
-                end
+
+            -- Add custom recipes by default
+            if recipe.custom then
+                table.insert(relevant_recipes, recipe)
+
+            -- Only add recipes that exist on the current force (and aren't preferenced-out)
+            elseif force_recipe ~= nil and not ((preferences.ignore_barreling_recipes and recipe.barreling)
+              or (preferences.ignore_recycling_recipes and recipe.recycling)) then
+                table.insert(relevant_recipes, recipe)
+
+                if not force_recipe.enabled and force_recipe.hidden then
+                    counts.disabled_hidden = counts.disabled_hidden + 1
+                elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
+                elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
             end
         end
     end
-    
+
     -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
     -- (This logic is probably inefficient, but it's clear and way faster than the loop above anyways)
-    local user_prefs = get_ui_state(player).recipe_filter_preferences
     local show = {}
+    local user_prefs = get_ui_state(player).recipe_filter_preferences
     local relevant_recipes_count = table_size(relevant_recipes)
     if relevant_recipes_count - counts.disabled - counts.hidden - counts.disabled_hidden > 0 then
         show.disabled = user_prefs.disabled or false
@@ -124,12 +129,12 @@ function run_preliminary_checks(player, product)
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
         -- Show hint if adding unresearched recipe (no hints on custom recipes)
-        if not is_custom_recipe(player, chosen_recipe, true) and not force_recipes[chosen_recipe.name].enabled then
+        if not chosen_recipe.custom and not force_recipes[chosen_recipe.name].enabled then
             show.message={text={"label.hint_disabled_recipe"}, type="warning"}
         end
         return chosen_recipe.id, nil, show
     else  -- 2+ relevant recipes
-        return nil, nil, show
+        return relevant_recipes, nil, show
     end
 end
 
@@ -146,53 +151,4 @@ end
 -- Returns the string identifier for the given recipe
 function generate_recipe_identifier(recipe)
     return recipe.id
-end
-
--- Returns the recipe described by the identifier
-function get_recipe(identifier)
-    return global.all_recipes.recipes[tonumber(identifier)]
-end
-
--- Returns true when the given recipe produces the given product
-function recipe_produces_product(player, recipe, product_type, product_name)
-    local preferences = get_preferences(player)
-    
-    -- Exclude barreling/recycling recipes according to preference
-    if (preferences.ignore_barreling_recipes and (recipe.subgroup.name == "empty-barrel"
-      or recipe.subgroup.name == "fill-barrel")) or (preferences.ignore_recycling_recipes
-      and recipe.recycling == true) then
-        return false
-    else
-        -- Checks specific type, if it is given
-        if product_type ~= nil then
-            return (item_recipe_map[product_type][product_name][recipe.name] ~= nil)
-            
-        -- Otherwise, looks through all types
-        else
-            local product_types = {"item", "fluid"}
-            for _, type in ipairs(product_types) do
-                if item_recipe_map[type][product_name] ~= nil 
-                  and item_recipe_map[type][product_name][recipe.name] ~= nil then
-                    return true
-                end
-            end
-            return false  -- return false if no product is found
-        end
-    end
-end
-
--- Returns true if this recipe is a custom one, or if the recipe is the custom one for rocket building,
--- it returns the enabled state of the recipe for a rocket-part
--- If existence_only is true, it return true for any custom recipe, even if it is not enabled
-function is_custom_recipe(player, recipe, existence_only)
-    if (string.match(recipe.name, "^impostor-.*")) then
-        return true
-    elseif recipe.name == "fp-space-science-pack" then
-        local space_science_recipe = player.force.recipes["rocket-part"]
-        if existence_only or (space_science_recipe ~= nil and space_science_recipe.enabled) then
-            return true
-        else
-            return false
-        end
-    end
 end
