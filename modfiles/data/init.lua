@@ -16,7 +16,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Sets up global data structure of the mod
 script.on_init(function()
@@ -72,7 +72,6 @@ end
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
     item_recipe_map = generator.item_recipe_map()
-    item_groups = generator.item_groups()
     module_tier_map = generator.module_tier_map()
 end
 

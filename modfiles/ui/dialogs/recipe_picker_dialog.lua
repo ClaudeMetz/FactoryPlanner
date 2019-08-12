@@ -8,7 +8,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.style.bottom_margin = 8
 
     local recipe_id, error, show = run_preliminary_checks(player, product)
-
+    
     local function create_unfiltered_dialog()
         picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
         picker.refresh_search_bar(flow_modal_dialog, product.proto.name, false)
@@ -136,7 +136,11 @@ end
 
 -- Returns all recipes
 function get_picker_recipes()
-    return global.all_recipes.recipes
+    local recipes = {}
+    for _, recipe in ipairs(global.all_recipes.recipes) do
+        table.insert(recipes, recipe)
+    end
+    return recipes
 end
 
 -- Returns the string identifier for the given recipe
@@ -147,33 +151,6 @@ end
 -- Returns the recipe described by the identifier
 function get_recipe(identifier)
     return global.all_recipes.recipes[tonumber(identifier)]
-end
-
--- Generates the tooltip string for the given recipe
-function generate_recipe_tooltip(recipe)
-    local tooltip = recipe.localised_name
-    if recipe.energy ~= nil then 
-        tooltip = {"", tooltip, "\n  ", {"tooltip.crafting_time"}, ":  ", recipe.energy}
-    end
-
-    local lists = {"ingredients", "products"}
-    for _, item_type in ipairs(lists) do
-        tooltip = {"", tooltip, "\n  ", {"tooltip." .. item_type}, ":"}
-        if #recipe[item_type] == 0 then
-            tooltip = {"", tooltip, "\n    ", {"tooltip.none"}}
-        else
-            for _, item in ipairs(recipe[item_type]) do
-                -- Determine the actual amount of items that are consumed/produced
-                -- (This function incidentally handles ingredients as well)
-                produced_amount = data_util.determine_product_amount(item)
-            
-                tooltip = {"", tooltip, "\n    ", "[", item.type, "=", item.name, "] ", produced_amount, "x ",
-                  game[item.type .. "_prototypes"][item.name].localised_name}
-            end
-        end
-    end
-
-    return tooltip
 end
 
 -- Returns true when the given recipe produces the given product
