@@ -56,6 +56,11 @@ local function is_recycling_recipe(proto)
     end
 end
 
+-- Determines whether the given recipe is a barreling one
+local function is_barreling_recipe(proto)
+    return (proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel")
+end
+
 -- Adds the tooltip for the given recipe
 function add_recipe_tooltip(recipe)
     local tooltip = {}
@@ -127,7 +132,8 @@ function generator.all_recipes()
         return {
             hidden = false,
             group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"}, order="c"},
-            use_limitations = false
+            use_limitations = false,
+            custom = true
         }
     end
     
@@ -147,6 +153,8 @@ function generator.all_recipes()
                 products = proto.products,
                 main_product = proto.main_product,
                 recycling = is_recycling_recipe(proto),
+                barreling = is_barreling_recipe(proto),
+                custom = false,
                 hidden = proto.hidden,
                 order = proto.order,
                 group = generate_group_table(proto.group),
@@ -244,7 +252,8 @@ function generator.all_recipes()
             {type="item", name="rocket-part", amount=100},
             {type="item", name="satellite", amount=1}
         },
-        products = {{type="item", name="space-science-pack", amount=1000}}
+        products = {{type="item", name="space-science-pack", amount=1000}},
+        custom = true
     }
 
     add_recipe_tooltip(rocket_recipe)
@@ -320,7 +329,7 @@ function generator.all_items()
 end
 
 
--- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_name] = true})
+-- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_id] = true})
 -- This optimizes the recipe filtering process for the recipe picker
 function generator.item_recipe_map()
     local map = {}
@@ -334,7 +343,7 @@ function generator.item_recipe_map()
             if map[product.type][product.name] == nil then
                 map[product.type][product.name] = {}
             end
-            map[product.type][product.name][recipe.name] = true
+            map[product.type][product.name][recipe.id] = true
         end
     end
     

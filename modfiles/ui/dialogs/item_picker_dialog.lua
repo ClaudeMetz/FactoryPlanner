@@ -3,7 +3,7 @@ function open_item_picker_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
     local product = get_ui_state(player).selected_object
 
-    flow_modal_dialog.parent.caption = product == nil and {"label.add_product"} or {"label.edit_product"}
+    flow_modal_dialog.parent.caption = (product == nil) and {"label.add_product"} or {"label.edit_product"}
     flow_modal_dialog.style.bottom_margin = 8
     
     local product_bar = refresh_product_bar(flow_modal_dialog, product)
@@ -130,10 +130,4 @@ function generate_item_identifier(item)
     local type_id = all_items.map[item.type]
     local item_id = all_items.types[type_id].map[item.name]
     return (type_id .. "_" .. item_id)
-end
-
--- Returns the item described by the identifier
-function get_item(identifier)
-    local split_ident = ui_util.split(identifier, "_")
-    return global.all_items.types[split_ident[1]].items[split_ident[2]]
 end

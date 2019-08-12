@@ -4,9 +4,7 @@
 -- (doesn't refresh the production table so calling functions can refresh at the appropriate point for themselves)
 function update_calculations(player, subfactory)
     calc.update(player, subfactory)
-    if player.gui.screen["fp_frame_main_dialog"] ~= nil then
-        refresh_main_dialog(player)
-    end
+    refresh_main_dialog(player)
 end
 
 
