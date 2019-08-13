@@ -1,10 +1,8 @@
--- This files contains the handlers for production_table.lua, so that file isn't as long
-
 -- Updates the whole subfactory calculations from top to bottom
 -- (doesn't refresh the production table so calling functions can refresh at the appropriate point for themselves)
 function update_calculations(player, subfactory)
-    calc.update(player, subfactory)
-    if player.gui.screen["fp_frame_main_dialog"] ~= nil then
+    if get_ui_state(player).modal_dialog_type == nil and player.gui.screen["fp_frame_main_dialog"].visible then
+        calc.update(player, subfactory)
         refresh_main_dialog(player)
     end
 end
@@ -85,7 +83,8 @@ function handle_percentage_change(player, element)
     if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
     elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
-    -- Please shoot me if I have to touch this ever again --
+    -- Please shoot me if I have to touch this ever again -- 
+    -- The time has come 🔫, like a fucking week later
     --[[ ui_state.current_activity = nil
     local scroll_pane = element.parent.parent
     update_calculations(player, ui_state.context.subfactory)

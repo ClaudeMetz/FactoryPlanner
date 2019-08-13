@@ -50,9 +50,9 @@ function get_module_condition_instructions(modal_data)
         conditions = {
             [1] = {
                 label = {"label.module_instruction_1"},
-                check = (function(data) return (data.module_sprite == "" or data.module_amount == "") end),
+                check = (function(data) return (data.module_sprite == "fp_sprite_empty" or data.module_amount == "") end),
                 refocus = (function(flow, data)
-                    if data.module_sprite ~= "" then flow["flow_module_bar"]["textfield_module_amount"].focus() end
+                    if data.module_sprite ~= "fp_sprite_empty" then flow["flow_module_bar"]["textfield_module_amount"].focus() end
                 end),
                 show_on_edit = true
             },
@@ -118,7 +118,7 @@ function get_beacon_condition_instructions(modal_data)
             [1] = {
                 label = {"label.beacon_instruction_1"},
                 -- Beacon sprite can never be not set, as it is prefilled with the default
-                check = (function(data) return (data.beacon_amount  == "" or data.module_sprite == ""
+                check = (function(data) return (data.beacon_amount  == "" or data.module_sprite == "fp_sprite_empty"
                           or data.module_amount == "") end),
                 refocus = (function(flow) set_appropriate_focus(flow, nil) end),
                 show_on_edit = true
@@ -204,7 +204,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     local modal_data = ui_state.modal_data
 
     -- Adjustments if the object is being edited
-    local sprite, tooltip, amount = nil, nil, ""
+    local sprite, tooltip, amount = "fp_sprite_empty", nil, ""
     if object ~= nil then
         sprite = object.proto.sprite
         tooltip = object.proto.localised_name
@@ -339,7 +339,6 @@ function handle_module_beacon_picker_click(player, button)
         
         -- The allowed modules might be different with the newly selected beacon, so refresh and check them
         refresh_module_selection(flow_modal_dialog, ui_state, "beacon", ui_state.context.line)
-        --> Removing the selected beacon doesn't work, it won't be an issue probably (TODO)
         
         -- The module textfield and max-button might need to be locked (limit=1)
         update_module_bar(flow_modal_dialog, ui_state)
@@ -369,8 +368,8 @@ function set_appropriate_focus(flow_modal_dialog, type)
         local textfield_beacon = beacon_bar["textfield_beacon_amount"]
         local textfield_module = module_bar["textfield_module_amount"]
         if textfield_beacon.text == "" then textfield_beacon.focus()
-        elseif textfield_module.text == "" then
-            if module_bar["sprite-button_module"].sprite ~= "" then textfield_module.focus() end
+        elseif textfield_module.text == "" or type == nil then
+            if module_bar["sprite-button_module"].sprite ~= "fp_sprite_empty" then textfield_module.focus() end
         else flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"].focus() end
     else module_bar["textfield_module_amount"].focus() end
 end
@@ -378,12 +377,24 @@ end
 
 -- Updates the module textfield and max-button
 function update_module_bar(flow_modal_dialog, ui_state)
+    local modal_data = ui_state.modal_data
     -- Set and lock the textfield and max-button if the module amount has to be 1
-    local single_choice = (ui_state.modal_data.empty_slots == 1)
+    local single_choice = (modal_data.empty_slots == 1)
     local bar = flow_modal_dialog["flow_module_bar"]
     if single_choice then bar["textfield_module_amount"].text = "1" end
     bar["textfield_module_amount"].enabled = not single_choice
     bar["fp_button_max_modules"].enabled = not single_choice
+
+    -- Make sure there is no module is selected that is incompatible with the selected beacon
+    if ui_state.modal_dialog_type == "beacon" and modal_data.selected_module ~= nil then
+        local characteristics = Line.get_beacon_module_characteristics(ui_state.context.line, 
+          modal_data.selected_beacon, modal_data.selected_module)
+        if not characteristics.compatible then
+            bar["sprite-button_module"].sprite = "fp_sprite_empty"
+            bar["sprite-button_module"].tooltip = ""
+            modal_data.selected_module = nil
+        end
+    end
 end
 
 

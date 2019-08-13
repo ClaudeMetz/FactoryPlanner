@@ -15,10 +15,17 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "fp_refresh_production",
+        key_sequence = "R",
+        consuming = "none",
+        order = "c"
+    },
+    {
+        type = "custom-input",
         name = "fp_confirm_dialog",
         key_sequence = "ENTER",
         alternative_key_sequence = "KP_ENTER",
         consuming = "none",
-        order = "c"
+        order = "d"
     }
 })

@@ -6,11 +6,19 @@ function add_production_pane_to(main_dialog)
     local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=6}
     table_titlebar.style.bottom_margin = 8
 
+    -- Refresh button
+    local button_refresh = table_titlebar.add{type="sprite-button", name="fp_sprite-button_refresh_production",
+      sprite="utility/refresh", style="fp_sprite_button", tooltip={"tooltip.refresh_production"}}
+    button_refresh.style.width = 22
+    button_refresh.style.height = 22
+    button_refresh.style.left_margin = 8
+
     -- Title
     local title = table_titlebar.add{type="label", name="label_production_pane_title", 
       caption={"", "  ", {"label.production"}, " "}}
     title.style.font = "fp-font-20p"
     title.style.top_padding = 2
+    title.style.left_margin = -4
 
     -- Navigation
     local label_level = table_titlebar.add{type="label", name="label_production_titlebar_level", caption=""}
