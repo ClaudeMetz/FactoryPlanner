@@ -1,10 +1,10 @@
--- This files contains the handlers for production_table.lua, so that file isn't as long
-
 -- Updates the whole subfactory calculations from top to bottom
 -- (doesn't refresh the production table so calling functions can refresh at the appropriate point for themselves)
 function update_calculations(player, subfactory)
-    calc.update(player, subfactory)
-    refresh_main_dialog(player)
+    if get_ui_state(player).modal_dialog_type == nil and player.gui.screen["fp_frame_main_dialog"].visible then
+        calc.update(player, subfactory)
+        refresh_main_dialog(player)
+    end
 end
 
 

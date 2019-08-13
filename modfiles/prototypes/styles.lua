@@ -37,6 +37,7 @@ data.raw["gui-style"].default["fp_button_mini"] = {
 data.raw["gui-style"].default["fp_sprite_button"] = {
     type = "button_style",
     parent = "button",
+    minimal_width = 0,
     padding = 0
 }
 
