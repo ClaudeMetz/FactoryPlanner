@@ -159,7 +159,8 @@ function generator.all_recipes()
     local function mining_recipe()
         return {
             hidden = false,
-            group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"}, order="c"},
+            group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
+              order="c", valid=true},
             use_limitations = false,
             custom = true
         }
@@ -205,7 +206,7 @@ function generator.all_recipes()
                 recipe.localised_name = proto.localised_name
                 recipe.sprite = products[1].type .. "/" .. products[1].name
                 recipe.order = proto.order
-                recipe.subgroup = {name="mining", order="y"}
+                recipe.subgroup = {name="mining", order="y", valid=true}
                 recipe.category = proto.resource_category
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
@@ -237,7 +238,7 @@ function generator.all_recipes()
             recipe.localised_name = proto.fluid.localised_name
             recipe.sprite = "fluid/" .. proto.fluid.name
             recipe.order = proto.order
-            recipe.subgroup = {name="fluids", order="z"}
+            recipe.subgroup = {name="fluids", order="z", valid=true}
             recipe.category = proto.name  -- use proto name so every pump has it's own category
             recipe.energy = 1
             recipe.ingredients = {}
@@ -256,7 +257,7 @@ function generator.all_recipes()
     steam_recipe.sprite = "fluid/steam"
     steam_recipe.category = "steam"
     steam_recipe.order = "z"
-    steam_recipe.subgroup = {name="mining", order="y"}
+    steam_recipe.subgroup = {name="fluids", order="z", valid=true}
     steam_recipe.energy = 1
     steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
     steam_recipe.products = {{type="fluid", name="steam", amount=60}}
@@ -273,8 +274,9 @@ function generator.all_recipes()
         category = "rocket-building",
         hidden = false,
         energy = 0,
-        group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"}, order="c"},
-        subgroup = {name="science-pack", order="g"},
+        group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
+          order="c", valid=true},
+        subgroup = {name="science-pack", order="g", valid=true},
         order = "x[fp-space-science-pack]",
         ingredients = {
             {type="item", name="rocket-part", amount=100},

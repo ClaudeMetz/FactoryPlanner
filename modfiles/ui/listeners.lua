@@ -165,6 +165,15 @@ script.on_event(defines.events.on_gui_click, function(event)
 
     -- Handle the actual click
     if string.find(event.element.name, "^fp_.+$") then
+        -- Redo the calculations if selecting a percentage textfield so at least something makes some fucking sense
+        -- I can't even do this, this is terrible
+        --[[ if event.element.type == "textfield" and string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
+            local line_id = string.gsub(event.element.name, "fp_textfield_line_percentage_", "")
+            local scroll_pane = event.element.parent.parent
+            update_calculations(player, ui_state.context.subfactory)
+            scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus() ]]
+
+
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
         if event.element.name == "fp_button_toggle_interface" 
           or event.element.name == "fp_button_titlebar_exit" then

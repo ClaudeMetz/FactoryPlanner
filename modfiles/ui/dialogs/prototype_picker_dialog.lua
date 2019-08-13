@@ -192,37 +192,35 @@ function picker.apply_filter(player, object_type, apply_button_style)
                     if string.find(string.lower(item.name), string.lower(search_term), 1, true) then
                         visible = true
 
-                        -- Only need to refresh button style if will actually be shown
-                    if apply_button_style then
+                        -- Only need to refresh button style if needed
+                        if apply_button_style then
                             if existing_products[item.name] then
-                            object_element.style = "fp_button_existing_product"
-                            object_element.enabled = false
-                        else
-                            object_element.style = "fp_button_icon_medium_recipe"
-                            object_element.enabled = true
+                                object_element.style = "fp_button_existing_product"
+                                object_element.enabled = false
+                            else
+                                object_element.style = "fp_button_icon_medium_recipe"
+                                object_element.enabled = true
+                            end
                         end
-                    end
                     end
                 else  -- object_type == "recipe"
                     local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
                     local recipe = relevant_recipes[tonumber(identifier)]
-
+                    
                     if recipe ~= nil then
-                        local force_recipe = force_recipes[recipe.name]
-
+                        local enabled = (recipe.custom) and true or force_recipes[recipe.name].enabled
+                        
                         -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
-                        -- recipe.custom or (not (not disabled and not recipe.enabled) and not (not hidden and object.hidden))
-                        if recipe.custom or ((disabled or force_recipe.enabled) and (hidden or not recipe.hidden)) then
+                        -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and object.hidden))
+                        if recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)) then
                             visible = true
-                        end
 
-                         -- Only need to refresh button style if will actually be shown
-                        if visible and apply_button_style then
-                            if not recipe.custom and not force_recipe.enabled then object_element.style = "fp_button_icon_medium_disabled" 
+                            -- Only need to refresh button style if will actually be shown
+                            if not enabled then object_element.style = "fp_button_icon_medium_disabled" 
                             elseif recipe.hidden then object_element.style = "fp_button_icon_medium_hidden"
                             else object_element.style = "fp_button_icon_medium_recipe" end
+                        end
                     end
-                end
                 end
                 
                 object_element.visible = visible

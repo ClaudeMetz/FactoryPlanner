@@ -35,14 +35,14 @@ function open_recipe_picker_dialog(flow_modal_dialog)
                 if show.message ~= nil then ui_util.message.enqueue(player, show.message.text, show.message.type, 1) end
             end
 
-            --create_unfiltered_dialog() -- already create it here so auto_center works correctly
+            refresh_unfiltered_dialog() -- already create it here so auto_center works correctly
             exit_modal_dialog(player, "cancel", {})
         
         else  -- Otherwise, show the appropriately filtered dialog
-            ui_state.modal_data = result
             refresh_unfiltered_dialog()
             picker.select_item_group(player, "recipe", "logistics")
-            picker.apply_filter(player, "recipe", true)
+            ui_state.modal_data = result
+            picker.apply_filter(player, "recipe", nil)
         end
     end
 end
@@ -53,7 +53,7 @@ function handle_filter_radiobutton_click(player, type, state)
     local ui_state = get_ui_state(player)
     -- Remember the user selection for this type of filter
     ui_state.recipe_filter_preferences[type] = state
-    picker.apply_filter(player, "recipe", false)
+    picker.apply_filter(player, "recipe", nil)
 end
 
 -- Reacts to a picker recipe button being pressed
