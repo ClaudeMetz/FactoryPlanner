@@ -64,28 +64,6 @@ function picker.refresh_warning_label(flow, message)
 end
 
 
--- Sorts the objects according to their group, subgroup and order
-function picker.create_object_tree(objects)
-    local function sorting_function(a, b)
-        if a.group.order < b.group.order then
-            return true
-        elseif a.group.order > b.group.order then
-            return false
-        elseif a.subgroup.order < b.subgroup.order then
-            return true
-        elseif a.subgroup.order > b.subgroup.order then
-            return false
-        elseif a.order < b.order then
-            return true
-        elseif a.order > b.order then
-            return false
-        end
-    end
-    
-    table.sort(objects, sorting_function)
-    return objects
-end
-
 -- Refreshes the actual picker panel, for the given object type and with the given visibility
 -- (This function is optimized for performance, so not everything might be done in the obvious way)
 function picker.refresh_picker_panel(flow, object_type, visible)
@@ -103,8 +81,7 @@ function picker.refresh_picker_panel(flow, object_type, visible)
         table_item_groups.style.vertical_spacing = 3
         table_item_groups.style.minimal_width = picker.groups_per_row * (64 + 9)
 
-        local formatted_objects = picker.create_object_tree(_G["get_picker_" .. object_type .. "s"]())
-        local identifier_function = _G["generate_" .. object_type .. "_identifier"]
+        local formatted_objects = sorted_objects[object_type .. "s"]
         local undesirables = generator.undesirable_item_groups()[object_type]
         local group_id_cache, group_button_cache, subgroup_flow_cache, subgroup_table_cache = {}, {}, {}, {}
 
@@ -151,7 +128,7 @@ function picker.refresh_picker_panel(flow, object_type, visible)
                 end
 
                 local button_object = table_subgroup.add{type="sprite-button", name=("fp_sprite-button_picker_"
-                  .. object_type .. "_object_" .. identifier_function(object)), sprite=object.sprite,
+                  .. object_type .. "_object_" .. object.identifier), sprite=object.sprite,
                   style="fp_button_icon_medium_recipe", tooltip=object.tooltip, mouse_button_filter={"left"}}
             end
         end

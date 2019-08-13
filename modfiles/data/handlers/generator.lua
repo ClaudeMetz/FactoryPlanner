@@ -2,17 +2,18 @@ generator = {}
 
 -- Inserts given prototype into given table t and adds it to t's map
 -- Example: type = "recipes"
-local function insert_proto(t, type_name, proto)
+local function insert_proto(t, type_name, proto, add_identifier)
     table.insert(t[type_name], proto)
     local id = #t[type_name]
-    t[type_name][id].id = id
+    proto.id = id
     t.map[proto.name] = id
+    if add_identifier then proto.identifier = id end
 end
 
 -- Inserts given proto into a two layers deep table t
 -- (category and type are generic terms here, describing the first and second level of t)
 -- Example: category_name = "categories", category = "steam", type_name = "machines"
-local function deep_insert_proto(t, category_name, category, type_name, proto)
+local function deep_insert_proto(t, category_name, category, type_name, proto, add_identifier)
     if t.map[category] == nil then
         table.insert(t[category_name], {[type_name] = {}, map = {}, name = category})
         local id = #t[category_name]
@@ -22,11 +23,13 @@ local function deep_insert_proto(t, category_name, category, type_name, proto)
 
     local category_entry = t[category_name][t.map[category]]
     insert_proto(category_entry, type_name, proto)
+    if add_identifier then proto.identifier = t.map[category] .. "_" .. proto.id end
 end
+
 
 -- Generates a table imitating the a LuaGroup to avoid lua-cpp bridging
 local function generate_group_table(group)
-    return {name=group.name, localised_name=group.localised_name, order=group.order}
+    return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
 
 -- Returns nil if no effect is true, returns the effects otherwise
@@ -37,6 +40,7 @@ local function format_allowed_effects(allowed_effects)
     end
     return nil  -- all effects are false
 end
+
 
 -- Determines whether this recipe is a recycling one
 -- Compatible with: Reverse Factory, Deadlock's Industrial Revolution
@@ -60,6 +64,7 @@ end
 local function is_barreling_recipe(proto)
     return (proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel")
 end
+
 
 -- Adds the tooltip for the given recipe
 function add_recipe_tooltip(recipe)
@@ -100,6 +105,29 @@ local function add_item_tooltip(item)
     local tooltip = item.localised_name
     if devmode then tooltip = {"", tooltip, ("\n" .. item.name)} end
     item.tooltip = tooltip
+end
+
+
+-- Sorts the objects according to their group, subgroup and order
+local function create_object_tree(objects)
+    local function sorting_function(a, b)
+        if a.group.order < b.group.order then
+            return true
+        elseif a.group.order > b.group.order then
+            return false
+        elseif a.subgroup.order < b.subgroup.order then
+            return true
+        elseif a.subgroup.order > b.subgroup.order then
+            return false
+        elseif a.order < b.order then
+            return true
+        elseif a.order > b.order then
+            return false
+        end
+    end
+    
+    table.sort(objects, sorting_function)
+    return objects
 end
 
 
@@ -145,9 +173,9 @@ function generator.all_recipes()
         if undesirables[recipe_name] == nil and category_id ~= nil then
             local recipe = {
                 name = proto.name,
+                category = proto.category,
                 localised_name = proto.localised_name,
                 sprite = "recipe/" .. proto.name,
-                category = proto.category,
                 energy = proto.energy,
                 ingredients = proto.ingredients,
                 products = proto.products,
@@ -161,7 +189,7 @@ function generator.all_recipes()
                 subgroup = generate_group_table(proto.subgroup)
             }
             add_recipe_tooltip(recipe)
-            insert_proto(all_recipes, "recipes", recipe)
+            insert_proto(all_recipes, "recipes", recipe, true)
         end
     end
 
@@ -196,7 +224,7 @@ function generator.all_recipes()
                 end
 
                 add_recipe_tooltip(recipe)
-                insert_proto(all_recipes, "recipes", recipe)
+                insert_proto(all_recipes, "recipes", recipe, true)
 
             --elseif proto.resource_category == "basic-fluid" then
                 -- crude-oil and angels-natural-gas go here (not interested atm)
@@ -217,7 +245,7 @@ function generator.all_recipes()
             recipe.main_product = recipe.products[1]
 
             add_recipe_tooltip(recipe)
-            insert_proto(all_recipes, "recipes", recipe)
+            insert_proto(all_recipes, "recipes", recipe, true)
         end
     end
     
@@ -235,7 +263,7 @@ function generator.all_recipes()
     steam_recipe.main_product = steam_recipe.products[1]
 
     add_recipe_tooltip(steam_recipe)
-    insert_proto(all_recipes, "recipes", steam_recipe)
+    insert_proto(all_recipes, "recipes", steam_recipe, true)
     
     -- Adds a convenient space science recipe
     local rocket_recipe = {
@@ -257,9 +285,19 @@ function generator.all_recipes()
     }
 
     add_recipe_tooltip(rocket_recipe)
-    insert_proto(all_recipes, "recipes", rocket_recipe)
+    insert_proto(all_recipes, "recipes", rocket_recipe, true)
     
     return all_recipes
+end
+
+-- Generates a list of all recipes, sorted for display in the picker
+function generator.sorted_recipes()
+    local recipes = {}
+    for _, recipe in ipairs(global.all_recipes.recipes) do
+        -- Silly checks needed here for migration purposes
+        if recipe.group.valid and recipe.subgroup.valid then table.insert(recipes, recipe) end
+    end
+    return create_object_tree(recipes)
 end
 
 
@@ -319,13 +357,27 @@ function generator.all_items()
                         subgroup = generate_group_table(proto.subgroup)
                     }
                     add_item_tooltip(item)
-                    deep_insert_proto(all_items, "types", type, "items", item)
+                    deep_insert_proto(all_items, "types", type, "items", item, true)
                 end
             end
         end
     end
     
     return all_items
+end
+
+-- Generates a list of all items, sorted for display in the picker
+function generator.sorted_items()
+    -- Combines item and fluid prototypes into an unsorted number-indexed array
+    local items = {}
+    local all_items = global.all_items
+    for _, type in pairs({"item", "fluid"}) do
+        for _, item in pairs(all_items.types[all_items.map[type]].items) do
+            -- Silly checks needed here for migration purposes
+            if item.group.valid and item.subgroup.valid then table.insert(items, item) end
+        end
+    end
+    return create_object_tree(items)
 end
 
 

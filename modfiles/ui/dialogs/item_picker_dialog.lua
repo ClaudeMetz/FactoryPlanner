@@ -108,26 +108,3 @@ function refresh_product_bar(flow_modal_dialog, product)
 
     return flow
 end
-
-
--- Returns all items in a format fit for the picker
-function get_picker_items()
-    -- Combines item and fluid prototypes into an unsorted number-indexed array
-    local items = {}
-    local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
-        for _, item in pairs(all_items.types[all_items.map[type]].items) do
-            table.insert(items, item)
-        end
-    end
-    return items
-end
-
-
--- Returns the string identifier for the given item
-function generate_item_identifier(item)
-    local all_items = global.all_items
-    local type_id = all_items.map[item.type]
-    local item_id = all_items.types[type_id].map[item.name]
-    return (type_id .. "_" .. item_id)
-end
