@@ -16,7 +16,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Sets up global data structure of the mod
 script.on_init(function()
@@ -72,8 +72,11 @@ end
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
     item_recipe_map = generator.item_recipe_map()
-    item_groups = generator.item_groups()
     module_tier_map = generator.module_tier_map()
+    sorted_objects = {
+        items = generator.sorted_items(),
+        recipes = generator.sorted_recipes()
+    }
 end
 
 -- Runs through all updates that need to be made after the config changed
@@ -194,6 +197,7 @@ function reset_ui_state(player)
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.flow_modal_dialog_height = nil  -- Will be determined when opening modal dialogs
+    ui_state_table.item_picker_location = nil  -- Used to remember the item picker location
 end
 
 

@@ -58,7 +58,6 @@ function toggle_main_dialog(player)
         -- Create and open main dialog, if it doesn't exist yet
         if main_dialog == nil then
             main_dialog = refresh_main_dialog(player, true)
-            ui_util.message.refresh(player)
             open = true
 
         -- Otherwise, toggle it
@@ -130,6 +129,8 @@ function refresh_main_dialog(player, full_refresh)
         refresh_actionbar(player)
         refresh_subfactory_bar(player, true)
     end
+    
+    ui_util.message.refresh(player)
 end
 
 -- Creates the titlebar including name and exit-button

@@ -37,6 +37,7 @@ data.raw["gui-style"].default["fp_button_mini"] = {
 data.raw["gui-style"].default["fp_sprite_button"] = {
     type = "button_style",
     parent = "button",
+    minimal_width = 0,
     padding = 0
 }
 
@@ -146,6 +147,12 @@ data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
     height = 32,
     width = 32,
     padding = 2
+}
+
+data.raw["gui-style"].default["fp_table_subgroup"] = {
+    type = "table_style",
+    horizontal_spacing = 2,
+    vertical_spacing = 1
 }
 
 

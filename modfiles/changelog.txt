@@ -2,11 +2,14 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added a button to manually refresh the production table
   Changes:
-    - 
+    - Vastly improved the performance of the item and recipe picker-dialogs (mostly relevant for heavily modded games)
+      Initial opening sped up fivefold, subsequent openings sped up twelvefold
   Bugfixes:
-    - Fix mining productivity not applying to mining with fluids
+    - Fixed bug where item/recipe categories overlapped sometimes
+    - Fixed mining productivity not applying to mining with fluids
+    - Fixed a crash on the beacons dialog in a particular situation
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.41
