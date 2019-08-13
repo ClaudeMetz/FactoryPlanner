@@ -105,7 +105,7 @@ function handle_configuration_change()
     -- Update factory calculations in case some numbers changed
     for index, player in pairs(game.players) do
         for _, subfactory in ipairs(Factory.get_in_order(global.players[index].factory, "Subfactory")) do
-            if subfactory.valid then update_calculations(player, subfactory) end
+            update_calculations(player, subfactory)
         end
     end
 end

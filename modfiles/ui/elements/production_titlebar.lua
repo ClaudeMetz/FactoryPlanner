@@ -104,6 +104,10 @@ function refresh_production_pane(player)
     if subfactory ~= nil and subfactory.valid then        
         local floor = ui_state.context.floor
 
+        -- Refresh button
+        local button_refresh = table_titlebar["fp_sprite-button_refresh_production"]
+        button_refresh.visible = (floor.Line.count > 0)
+
         -- Level indicator
         local label_level = table_titlebar["label_production_titlebar_level"]
         label_level.caption = {"", {"label.level"}, " ", floor.level, "  "}
