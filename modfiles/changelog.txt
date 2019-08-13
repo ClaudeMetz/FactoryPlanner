@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
+  Features:
+    - Added a button to manually refresh the production table
   Changes:
     - Vastly improved the performance of the item and recipe picker-dialogs (mostly relevant for heavily modded games)
       Initial opening sped up fivefold, subsequent openings sped up twelvefold
