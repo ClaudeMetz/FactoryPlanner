@@ -1,7 +1,7 @@
 -- Updates the whole subfactory calculations from top to bottom
--- (doesn't refresh the production table so calling functions can refresh at the appropriate point for themselves)
 function update_calculations(player, subfactory)
-    if get_ui_state(player).modal_dialog_type == nil and player.gui.screen["fp_frame_main_dialog"].visible then
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    if main_dialog ~= nil and main_dialog.visible and subfactory ~= nil and subfactory.valid then
         calc.update(player, subfactory)
         refresh_main_dialog(player)
     end
@@ -36,7 +36,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
             Floor.shift(floor, line, direction)
             update_calculations(player, subfactory)
         end
-        
+
     else
         -- Attaches a subfloor to this line
         if click == "left" then
