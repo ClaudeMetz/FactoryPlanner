@@ -83,7 +83,8 @@ function handle_percentage_change(player, element)
     if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
     elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
 
-    -- Please shoot me if I have to touch this ever again --
+    -- Please shoot me if I have to touch this ever again -- 
+    -- The time has come 🔫, like a fucking week later
     --[[ ui_state.current_activity = nil
     local scroll_pane = element.parent.parent
     update_calculations(player, ui_state.context.subfactory)
