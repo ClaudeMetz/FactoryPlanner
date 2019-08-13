@@ -1,10 +1,15 @@
 -- Handles populating the item picker dialog
 function open_item_picker_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local product = get_ui_state(player).selected_object
+    local ui_state = get_ui_state(player)
+    local product = ui_state.selected_object
 
-    flow_modal_dialog.parent.caption = (product == nil) and {"label.add_product"} or {"label.edit_product"}
+    local frame = flow_modal_dialog.parent
+    frame.caption = (product == nil) and {"label.add_product"} or {"label.edit_product"}
     flow_modal_dialog.style.bottom_margin = 8
+
+    if product == nil then frame.location = ui_state.item_picker_location
+    else frame.force_auto_center() end
     
     local product_bar = refresh_product_bar(flow_modal_dialog, product)
     picker.refresh_search_bar(flow_modal_dialog, "", (product == nil))
@@ -27,7 +32,7 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
         local req_amount = tonumber(data.required_amount)
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
             local top_level_item = TopLevelItem.init_by_proto(ui_state.modal_data.selected_item, "Product", 0, req_amount)
-            product = Subfactory.add(subfactory, top_level_item)
+            Subfactory.add(subfactory, top_level_item)
         else
             product.required_amount = req_amount
         end
@@ -36,6 +41,8 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
         Subfactory.remove(subfactory, product)
     end
 
+    -- Remeber the location of the non-edit item picker dialog
+    if product == nil then ui_state.item_picker_location = flow_modal_dialog.parent.location end
     update_calculations(player, subfactory)
 end
 
