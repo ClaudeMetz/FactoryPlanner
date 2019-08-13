@@ -73,6 +73,10 @@ end
 function run_on_load()
     item_recipe_map = generator.item_recipe_map()
     module_tier_map = generator.module_tier_map()
+    sorted_objects = {
+        items = generator.sorted_items(),
+        recipes = generator.sorted_recipes()
+    }
 end
 
 -- Runs through all updates that need to be made after the config changed

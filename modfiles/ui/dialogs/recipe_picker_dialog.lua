@@ -137,18 +137,3 @@ function run_preliminary_checks(player, product)
         return relevant_recipes, nil, show
     end
 end
-
-
--- Returns all recipes
-function get_picker_recipes()
-    local recipes = {}
-    for _, recipe in ipairs(global.all_recipes.recipes) do
-        table.insert(recipes, recipe)
-    end
-    return recipes
-end
-
--- Returns the string identifier for the given recipe
-function generate_recipe_identifier(recipe)
-    return recipe.id
-end
