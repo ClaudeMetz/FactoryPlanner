@@ -50,9 +50,9 @@ function get_module_condition_instructions(modal_data)
         conditions = {
             [1] = {
                 label = {"label.module_instruction_1"},
-                check = (function(data) return (data.module_sprite == "fp_sprite_empty" or data.module_amount == "") end),
+                check = (function(data) return (data.module_sprite == "" or data.module_amount == "") end),
                 refocus = (function(flow, data)
-                    if data.module_sprite ~= "fp_sprite_empty" then flow["flow_module_bar"]["textfield_module_amount"].focus() end
+                    if data.module_sprite ~= "" then flow["flow_module_bar"]["textfield_module_amount"].focus() end
                 end),
                 show_on_edit = true
             },
@@ -118,7 +118,7 @@ function get_beacon_condition_instructions(modal_data)
             [1] = {
                 label = {"label.beacon_instruction_1"},
                 -- Beacon sprite can never be not set, as it is prefilled with the default
-                check = (function(data) return (data.beacon_amount  == "" or data.module_sprite == "fp_sprite_empty"
+                check = (function(data) return (data.beacon_amount  == "" or data.module_sprite == ""
                           or data.module_amount == "") end),
                 refocus = (function(flow) set_appropriate_focus(flow, nil) end),
                 show_on_edit = true
@@ -204,7 +204,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     local modal_data = ui_state.modal_data
 
     -- Adjustments if the object is being edited
-    local sprite, tooltip, amount, decimal = "fp_sprite_empty", nil, "", false
+    local sprite, tooltip, amount, decimal = "", nil, "", false
     if object ~= nil then
         sprite = object.proto.sprite
         tooltip = object.proto.localised_name
@@ -370,7 +370,7 @@ function set_appropriate_focus(flow_modal_dialog, type)
         local textfield_module = module_bar["textfield_module_amount"]
         if textfield_beacon.text == "" then textfield_beacon.focus()
         elseif textfield_module.text == "" or type == nil then
-            if module_bar["sprite-button_module"].sprite ~= "fp_sprite_empty" then textfield_module.focus() end
+            if module_bar["sprite-button_module"].sprite ~= "" then textfield_module.focus() end
         else flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"].focus() end
     else module_bar["textfield_module_amount"].focus() end
 end
@@ -391,7 +391,7 @@ function update_module_bar(flow_modal_dialog, ui_state)
         local characteristics = Line.get_beacon_module_characteristics(ui_state.context.line, 
           modal_data.selected_beacon, modal_data.selected_module)
         if not characteristics.compatible then
-            bar["sprite-button_module"].sprite = "fp_sprite_empty"
+            bar["sprite-button_module"].sprite = ""
             bar["sprite-button_module"].tooltip = ""
             modal_data.selected_module = nil
         end
