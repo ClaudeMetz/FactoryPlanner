@@ -3,7 +3,7 @@ function add_production_pane_to(main_dialog)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
 
     -- Production titlebar
-    local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=6}
+    local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=7}
     table_titlebar.style.bottom_margin = 8
 
     -- Refresh button
