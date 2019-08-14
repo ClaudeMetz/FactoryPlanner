@@ -204,7 +204,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     local modal_data = ui_state.modal_data
 
     -- Adjustments if the object is being edited
-    local sprite, tooltip, amount = "fp_sprite_empty", nil, ""
+    local sprite, tooltip, amount, decimal = "fp_sprite_empty", nil, "", false
     if object ~= nil then
         sprite = object.proto.sprite
         tooltip = object.proto.localised_name
@@ -214,6 +214,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
         modal_data.selected_beacon = preferred_beacon
         sprite = preferred_beacon.sprite
         tooltip = preferred_beacon.localised_name
+        decimal = true
     end
 
     flow = flow_modal_dialog.add{type="flow", name="flow_" .. type .. "_bar", direction="horizontal"}
@@ -231,7 +232,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     flow.add{type="label", name="label_" .. type .. "_amount", caption={"label.amount"}}
     local textfield = flow.add{type="textfield", name="textfield_" .. type .. "_amount", text=amount}
     textfield.style.width = 40
-    ui_util.setup_numeric_textfield(textfield, false, false)
+    ui_util.setup_numeric_textfield(textfield, decimal, false)
     
     local focus = true
     if type == "module" then  -- only add max button if this is a module
