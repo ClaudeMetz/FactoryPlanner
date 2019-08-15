@@ -189,7 +189,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
                     local item = global.all_items.types[split_ident[1]].items[split_ident[2]]
 
                     -- Set visibility of items (and item-groups) appropriately
-                    if string.find(string.lower(item.name), string.lower(search_term), 1, true) then
+                    if not item.ingredient_only and string.find(string.lower(item.name), string.lower(search_term), 1, true) then
                         visible = true
 
                         -- Only need to refresh button style if needed

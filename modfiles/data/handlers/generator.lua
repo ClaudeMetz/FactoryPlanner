@@ -189,6 +189,7 @@ function generator.all_recipes()
                 group = generate_group_table(proto.group),
                 subgroup = generate_group_table(proto.subgroup)
             }
+            
             add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
         end
@@ -319,45 +320,50 @@ end
 function generator.all_items()
     local all_items = {types = {}, map = {}}
 
-    local function add_item(table, item)
-        if table[item.type] == nil then
-            table[item.type] = {}
-        end
-        table[item.type][item.name] = true
+    local function add_item(table, item)        
+        local type = item.proto.type
+        local name = item.proto.name
+        if table[type] == nil then table[type] = {} end
+        -- Determine whether this item is used as a product at least once
+        table[type][name] = table[type][name] or item.is_product
     end
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
     local relevant_items = {}
     for _, recipe in pairs(new.all_recipes.recipes) do
         for _, product in pairs(recipe.products) do
-            add_item(relevant_items, product)
+            add_item(relevant_items, {proto=product, is_product=true})
         end
         for _, ingredient in pairs(recipe.ingredients) do
-            add_item(relevant_items, ingredient)
+            add_item(relevant_items, {proto=ingredient, is_product=false})
         end
     end
     -- Manually add the rocket-part item for the custom space recipe
-    add_item(relevant_items, game["item_prototypes"]["rocket-part"])
+    add_item(relevant_items, {proto=game["item_prototypes"]["rocket-part"], is_product=true})
     
     -- Adding all standard items minus the undesirable ones
     local undesirables = undesirable_items()
     for type, item_table in pairs(relevant_items) do
-        for item_name, _ in pairs(item_table) do
+        for item_name, is_product in pairs(item_table) do
             if not undesirables[type][item_name] then
                 local proto = game[type .. "_prototypes"][item_name]
+
                 local hidden = false  -- "entity" types are never hidden
                 if type == "item" then hidden = proto.has_flag("hidden")
                 elseif type == "fluid" then hidden = proto.hidden end
+                
                 if not hidden or item_name == "rocket-part" then  -- exclude hidden items
                     local item = {
                         name = proto.name,
                         type = type,
                         sprite = type .. "/" .. proto.name,
                         localised_name = proto.localised_name,
+                        ingredient_only = not is_product,
                         order = proto.order,
                         group = generate_group_table(proto.group),
                         subgroup = generate_group_table(proto.subgroup)
                     }
+
                     add_item_tooltip(item)
                     deep_insert_proto(all_items, "types", type, "items", item, true)
                 end
@@ -394,9 +400,11 @@ function generator.item_recipe_map()
             if map[product.type] == nil then
                 map[product.type] = {}
             end
+
             if map[product.type][product.name] == nil then
                 map[product.type][product.name] = {}
             end
+
             map[product.type][product.name][recipe.id] = true
         end
     end
@@ -445,6 +453,7 @@ function generator.all_machines()
                 effectivity = proto.burner_prototype.effectivity
             }
         end
+
         local machine = {
             name = proto.name,
             category = category,
@@ -458,6 +467,7 @@ function generator.all_machines()
             module_limit = (proto.module_inventory_size or 0),
             burner = burner
         }
+
         return machine
     end
 

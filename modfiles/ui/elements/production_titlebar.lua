@@ -77,6 +77,7 @@ function add_production_pane_to(main_dialog)
     -- Main production pane
     local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane_production_pane", direction="vertical"}
     scroll_pane.style.left_margin = 4
+    scroll_pane.style.right_margin = -4
     scroll_pane.style.extra_left_margin_when_activated = -4
     scroll_pane.style.extra_top_margin_when_activated = -4
     scroll_pane.style.horizontally_stretchable = true
