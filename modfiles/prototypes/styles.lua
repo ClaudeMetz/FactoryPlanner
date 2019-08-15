@@ -259,3 +259,6 @@ data.raw["gui-style"].default["fp_button_existing_product"] = {
         scale = 1
     }
 }
+
+--data.raw["gui-style"].default["crafting_queue_slot"].size = 24
+--data.raw["gui-style"].default["slot_button"].size = 24
