@@ -118,8 +118,8 @@ function get_beacon_condition_instructions(modal_data)
             [1] = {
                 label = {"label.beacon_instruction_1"},
                 -- Beacon sprite can never be not set, as it is prefilled with the default
-                check = (function(data) return (data.beacon_amount  == "" or data.module_sprite == ""
-                          or data.module_amount == "") end),
+                check = (function(data) return (data.beacon_amount  == "" or tonumber(data.beacon_amount) == 0
+                    or data.module_sprite == "" or data.module_amount == "") end),
                 refocus = (function(flow) set_appropriate_focus(flow, nil) end),
                 show_on_edit = true
             },
@@ -368,7 +368,8 @@ function set_appropriate_focus(flow_modal_dialog, type)
     if beacon_bar ~= nil then
         local textfield_beacon = beacon_bar["textfield_beacon_amount"]
         local textfield_module = module_bar["textfield_module_amount"]
-        if textfield_beacon.text == "" then textfield_beacon.focus()
+        if textfield_beacon.text == "" or tonumber(textfield_beacon.text) == 0 then
+            textfield_beacon.focus()
         elseif textfield_module.text == "" or type == nil then
             if module_bar["sprite-button_module"].sprite ~= "" then textfield_module.focus() end
         else flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"].focus() end
