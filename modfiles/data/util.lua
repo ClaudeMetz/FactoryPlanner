@@ -50,8 +50,8 @@ end
 -- Returns whether the given machine can produce the given recipe
 function data_util.machine.is_applicable(machine_proto, recipe)
     local item_ingredients_count = 0
-    -- Ingredient count does not include fluid ingredients
     for _, ingredient in pairs(recipe.proto.ingredients) do
+        -- Ingredient count does not include fluid ingredients
         if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1 end
     end
     return (item_ingredients_count <= machine_proto.ingredient_limit)
