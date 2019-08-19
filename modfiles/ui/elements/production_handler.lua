@@ -1,8 +1,8 @@
 -- Updates the whole subfactory calculations from top to bottom
 function update_calculations(player, subfactory)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if main_dialog ~= nil and main_dialog.visible and subfactory ~= nil and subfactory.valid then
-        calc.update(player, subfactory)
+    if main_dialog ~= nil and main_dialog.visible then
+        if subfactory ~= nil and subfactory.valid then calc.update(player, subfactory) end
         refresh_main_dialog(player)
     end
 end
@@ -267,7 +267,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
                 if alt then
                     local new_amount = module.amount - 1
                     if new_amount == 0 then 
-                        Line.set_beacon(line, nil)
+                        Line.remove_beacon(line)
                     else
                         local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
                         Beacon.set_module(line.beacon, new_module)
@@ -299,7 +299,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
                 if alt then
                     local new_amount = beacon.amount - 1
                     if new_amount == 0 then 
-                        Line.set_beacon(line, nil)
+                        Line.remove_beacon(line)
                     else
                         local new_beacon = Beacon.init_by_protos(beacon.proto, new_amount, beacon.module.proto,
                       beacon.module.amount)

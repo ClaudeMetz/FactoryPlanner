@@ -33,7 +33,7 @@ function loader.run(player_table)
         if f ~= nil then f.run(player_table) end
     end
 
-    -- First, update the validity of all elements of the factory
+    -- Update the validity of all elements of the factory
     Factory.update_validity(player_table.factory)
 end
 

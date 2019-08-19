@@ -8,7 +8,8 @@ function open_item_picker_dialog(flow_modal_dialog)
     frame.caption = (product == nil) and {"label.add_product"} or {"label.edit_product"}
     flow_modal_dialog.style.bottom_margin = 8
 
-    if product == nil then frame.location = ui_state.item_picker_location
+    -- Remember item picker location, if available, center the dialog otherwise
+    if ui_state.item_picker_location ~= nil and product == nil then frame.location = ui_state.item_picker_location
     else frame.force_auto_center() end
     
     local product_bar = refresh_product_bar(flow_modal_dialog, product)

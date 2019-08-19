@@ -1,12 +1,12 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
-  Features:
-    - 
-  Changes:
-    - 
   Bugfixes:
     - Fixed that you could add a product (or beacon) with an amount of 0
+    - Fixed a crash when removing beacons under certain conditions
+    - Fixed that you couldn't select an subfactory that's become invalid
+    - Fixed product picker not always centering correctly
+    - Fixed a couple of migration crashes
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.44
