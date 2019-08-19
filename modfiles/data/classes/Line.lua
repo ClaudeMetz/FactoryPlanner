@@ -63,13 +63,20 @@ function Line.change_module_amount(self, module, new_amount, secondary)
     Line.summarize_effects(self)
 end
 
--- Sets the given beacon on this line and optionally it's subfloor / parent line
+-- Sets the given beacon on this line and optionally it's subfloor / parent line (Beacon can't be nil)
 function Line.set_beacon(self, beacon, secondary)
-    if beacon ~= nil then beacon.parent = self end
+    beacon.parent = self
     self.beacon = beacon
     
     Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(util.table.deepcopy(beacon)))
-    if self.beacon ~= nil then Beacon.trim_modules(self.beacon) end
+    Beacon.trim_modules(self.beacon)
+    Line.summarize_effects(self)
+end
+
+-- Use this if you want to remove the beacon from this line
+function Line.remove_beacon(self, secondary)
+    self.beacon = nil
+    Line.carry_over_changes(self, Line.remove_beacon, secondary, {})
     Line.summarize_effects(self)
 end
 
@@ -133,7 +140,7 @@ end
 function Line.carry_over_changes(self, f, secondary, arg)
     if not secondary then
         table.insert(arg, true)  -- add indication that this is a secondary call
-
+        
         if self.subfloor ~= nil then
             local sub_line = Floor.get(self.subfloor, "Line", 1)
             f(sub_line, unpack(arg))
@@ -386,6 +393,12 @@ function Line.attempt_repair(self, player)
                 local new_line = Line.init(player, self.recipe, nil)
                 if new_line ~= false then
                     Floor.replace(self.parent, self, new_line)
+
+                    -- Try to repair the machine again with the new category
+                    self.machine.category = self.recipe.proto.category
+                    if not Machine.attempt_repair(self.machine) then
+                        self.valid = false
+                    end
                 else
                     self.valid = false
                 end
