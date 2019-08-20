@@ -25,7 +25,6 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
     
-    
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_recipe(line.recipe, Line.get_in_order(line, "Product"))
 
