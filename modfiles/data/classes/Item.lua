@@ -29,6 +29,7 @@ function Item.update_validity(self)
     if new_type_id ~= nil then
         self.type = new.all_items.types[new_type_id]
 
+        if self.proto == nil then self.valid = false; return self.valid end
         local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
         local new_item_id = self.type.map[proto_name]
 
