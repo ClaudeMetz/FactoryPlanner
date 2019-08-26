@@ -200,8 +200,8 @@ end
 -- Determines the actual amount of items that a recipe_product produces
 function data_util.determine_machine_count(player, subfactory, line, machine_proto, production_ratio)
     local mining_prod = data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    local machine_prod_ratio = production_ratio / (1 + line.total_effects.productivity + mining_prod)
-    local machine_speed = machine_proto.speed + (machine_proto.speed * line.total_effects.speed)
+    local machine_prod_ratio = production_ratio / (1 + math.max(line.total_effects.productivity + mining_prod, -0.8))
+    local machine_speed = machine_proto.speed * (1 + math.max(line.total_effects.speed, -0.8))
     return (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale
 end
 
@@ -211,16 +211,16 @@ function data_util.determine_energy_consumption(machine, machine_count, total_ef
     return energy_consumption + (energy_consumption * math.max(total_effects.consumption, -0.8))
 end
 
--- Determines the amount of fuel needed in the given context (ec = energy_consumption)
-function data_util.determine_fuel_amount(ec, subfactory, fuel_proto, burner)
-    return ((ec / burner.effectivity) / fuel_proto.fuel_value) * subfactory.timescale
+-- Determines the amount of fuel needed in the given context
+function data_util.determine_fuel_amount(energy_consumption, subfactory, fuel_proto, burner)
+    return ((energy_consumption / burner.effectivity) / fuel_proto.fuel_value) * subfactory.timescale
 end
 
 -- Determines whether mining prod applies, and returns it's value (returns 0 otherwise)
 function data_util.determine_mining_productivity(player, subfactory, machine_proto)
     if string.match(machine_proto.category, "^[a-z]+%-solid$") then  -- all mining recipes
-        return ((subfactory.mining_productivity ~= nil) and 
-          subfactory.mining_productivity or player.force.mining_drill_productivity_bonus) / 100
+        return (subfactory.mining_productivity ~= nil) and 
+          (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
     else
         return 0
     end

@@ -14,7 +14,7 @@ loader = {
 -- removed when the user tells the subfactory to repair itself, giving him a chance to re-add the
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
--- (Load order is important here: machines->recipes->items)
+-- (Load order is important here: machines->recipes->items->fuels)
 local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons"}
 
 -- Generates the new data and mapping_tables and saves them to lua-globals

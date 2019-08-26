@@ -561,8 +561,10 @@ end
 -- (only supports chemical fuels for now)
 function generator.all_fuels()
     local all_fuels = {fuels = {}, map = {}}
+    local items = new.all_items.types[new.all_items.map["item"]]
     for _, proto in pairs(game.item_prototypes) do
-        if proto.fuel_value and proto.fuel_category == "chemical" then
+        -- Only use fuels that were actually detected/accepted to be items
+        if proto.fuel_value and proto.fuel_category == "chemical" and items.map[proto.name] then
             insert_proto(all_fuels, "fuels", {
                 name = proto.name,
                 type = proto.type,
