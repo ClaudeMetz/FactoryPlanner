@@ -391,7 +391,7 @@ function generate_chooser_fuel_buttons(player)
             fuel_amount = ui_util.calculate_item_button_number(player_table, view, fuel_amount, "item")
             fuel_amount = ui_util.format_number(fuel_amount, 4)
 
-            local m = (tonumber(fuel_amount) == 1) and {"tooltip.item"} or {"", {"tooltip.item"}, "s"}
+            local m = (tonumber(fuel_amount) == 1) and {"tooltip.item"} or {"tooltip.items"}
             tooltip = {"", tooltip, "\n", fuel_amount, " ", m}
         end
         tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel_proto)}

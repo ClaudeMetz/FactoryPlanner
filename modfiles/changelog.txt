@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Changes:
-    - 
+    - Made several strings easier to localize by splitting up singular and plural words
   Bugfixes:
     - Fixed mining productivity being handled incorrectly
     - Fixed certain items being detected as fuel when they shouldn't be
