@@ -44,9 +44,8 @@ end
 
 -- Determines whether this recipe is a recycling one
 -- Compatible with: Reverse Factory, Deadlock's Industrial Revolution
-local active_mods = nil
 local function is_recycling_recipe(proto)
-    active_mods = active_mods or {
+    local active_mods = {
         DIR = game.active_mods["DeadlockIndustry"],
         RF = game.active_mods["reverse-factory"]
     }
@@ -60,9 +59,19 @@ local function is_recycling_recipe(proto)
     end
 end
 
--- Determines whether the given recipe is a barreling one
+-- Determines whether the given recipe is a barreling or stacking one
 local function is_barreling_recipe(proto)
-    return (proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel")
+    local active_mods = {
+        DBL = game.active_mods["deadlock-beltboxes-loaders"]
+    }
+
+    if proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel" then
+        return true
+    elseif active_mods.DBL and string.match(proto.name, "^deadlock%-stacks%-.*") then
+        return true
+    else
+        return false
+    end
 end
 
 
