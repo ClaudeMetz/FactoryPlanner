@@ -131,7 +131,7 @@ function create_line_table_row(player, line)
         end
     else
         local machine_count = ui_util.format_number(line.machine.count, 4)
-        local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
+        local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
 
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=line.machine.proto.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(machine_count),
@@ -173,7 +173,7 @@ function create_line_table_row(player, line)
               "fp_sprite-button_line_beacon_module_" .. line.id)
             flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
 
-            local m = (beacon.amount == 1) and {"tooltip.beacon"} or {"", {"tooltip.beacon"}, "s"}
+            local m = (beacon.amount == 1) and {"tooltip.beacon"} or {"tooltip.beacons"}
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
               sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
@@ -229,7 +229,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     button.sprite = machine_proto.sprite
 
     local s = (selected) and {"", " (", {"tooltip.selected"}, ")"} or ""
-    local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"", {"tooltip.machine"}, "s"}
+    local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
     button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
           " ", m, "\n", ui_util.generate_machine_attributes_tooltip(machine_proto)}
 
@@ -267,7 +267,7 @@ end
 
 -- Creates and places a single module button
 function create_module_button(flow, line, module, type, button_name)
-    local m = (module.amount == 1) and {"tooltip.module"} or {"", {"tooltip.module"}, "s"}
+    local m = (module.amount == 1) and {"tooltip.module"} or {"tooltip.modules"}
     local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.proto.sprite,
       style="fp_button_icon_medium_recipe", number=module.amount, mouse_button_filter={"left-and-right"},
       tooltip={"", module.proto.localised_name, "\n", module.amount, " ", m,

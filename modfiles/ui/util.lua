@@ -112,7 +112,7 @@ function ui_util.setup_item_button(player_table, button, item)
         if item.proto.type == "fluid" then
             caption = {"tooltip.fluid"}
         else
-            caption = (number == 1) and {"tooltip.item"} or {"", {"tooltip.item"}, "s"}
+            caption = (number == 1) and {"tooltip.item"} or {"tooltip.items"}
         end
     end
     
@@ -124,8 +124,11 @@ function ui_util.setup_item_button(player_table, button, item)
 
     elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
         local belts = (player_table.settings.belts_or_lanes == "Belts")
-        caption = belts and {"tooltip.belt"} or {"tooltip.lane"}
-        if number ~= 1 then caption = {"", caption, "s"} end
+        if belts then
+            caption = (number == 1) and {"tooltip.belt"} or {"tooltip.belts"}
+        else
+            caption = (number == 1) and {"tooltip.lane"} or {"tooltip.lanes"}
+        end
 
     elseif view.name == "items_per_second" then
         determine_type_text()
