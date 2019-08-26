@@ -263,7 +263,7 @@ function refresh_info_pane(player)
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
 
     if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then
-        subfactory.mining_productivity = subfactory.mining_productivity or 0
+        subfactory.mining_productivity = subfactory.mining_productivity or 0  -- switch from no mining prod to a custom one
         local textfield_prod_bonus = table_mining_prod.add{type="textfield", name="fp_textfield_mining_prod",
           text=(subfactory.mining_productivity or 0)}
         textfield_prod_bonus.style.width = 60
@@ -272,7 +272,7 @@ function refresh_info_pane(player)
         local label_percentage = table_mining_prod.add{type="label", name="label_percentage", caption="%"}
         label_percentage.style.font = "default-bold"
     else
-        local prod_bonus = ui_util.format_number(player.force.mining_drill_productivity_bonus, 4)
+        local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
         local label_prod_bonus = table_mining_prod.add{type="label", name="label_mining_prod_value", 
           caption={"", prod_bonus, "%"}}
         label_prod_bonus.style.font = "default-bold"

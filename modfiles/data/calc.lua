@@ -94,7 +94,7 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 local mining_prod = data_util.determine_mining_productivity(player, subfactory, line.machine.proto)
                 for _, ingredient in pairs(calc.aggregate.get_in_order(line_aggregate, "Ingredient")) do
                     ingredient.amount = calculate_produced_amount(ingredient, production_ratio)
-                    ingredient.amount = ingredient.amount / (1 + line.total_effects.productivity + mining_prod)
+                    ingredient.amount = ingredient.amount / (1 + math.max(line.total_effects.productivity + mining_prod, -0.8))
 
                     local line_byproduct = calc.aggregate.get(line_aggregate, "Byproduct", ingredient)
                     if line_byproduct ~= nil then

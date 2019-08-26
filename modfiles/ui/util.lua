@@ -142,7 +142,7 @@ function ui_util.setup_item_button(player_table, button, item)
             number_string = {"", ui_util.format_number(number, 4)}
         end
 
-        button.number = ui_util.format_number(number, 4)  --("%.4g"):format(number)
+        button.number = ui_util.format_number(number, 4)
         button.tooltip = {"", localised_name, "\n", number_string, " ", caption}
     else
         button.tooltip = localised_name
@@ -179,17 +179,17 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
         end
 
         if effect ~= 0 then
+            local appendage = ""
+            
             -- Handle effect caps and mining productivity if this is a machine-tooltip
             if machine_proto ~= nil then
-                local appendage = ""
-                -- Consumption is capped at -80%
-                if name == "consumption" and effect < -0.8 then
+                -- Consumption, speed and pollution are capped at -80%
+                if (name == "consumption" or name == "speed" or name == "pollution") and effect < -0.8 then
                     effect = -0.8
                     appendage = {"", " (", {"tooltip.capped"}, ")"}
                     
-                    -- Productivity can't go lower than 0
+                -- Productivity can't go lower than 0
                 elseif name == "productivity" then
-                    
                     if effect < 0 then
                         effect = 0
                         appendage = {"", " (", {"tooltip.capped"}, ")"}
