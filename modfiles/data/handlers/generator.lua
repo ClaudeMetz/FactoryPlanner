@@ -192,6 +192,7 @@ function generator.all_recipes()
                 main_product = proto.main_product,
                 recycling = is_recycling_recipe(proto),
                 barreling = is_barreling_recipe(proto),
+                use_limitations = true,
                 custom = false,
                 hidden = proto.hidden,
                 order = proto.order,
