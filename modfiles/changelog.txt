@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Made all mod settings localizable
   Bugfixes:
     - Fixed that you couldn't enter a decimal amount of beacons in some cases
+    - Fixed that module limitations (related to productivity modules) didn't apply to many recipes
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.48
