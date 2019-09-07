@@ -556,8 +556,9 @@ function generator.all_belts()
         if proto.type == "transport-belt" then
             insert_proto(all_belts, "belts", {
                 name = proto.name,
-                sprite = "entity/" .. proto.name,
                 localised_name = proto.localised_name,
+                sprite = "entity/" .. proto.name,
+                rich_text = "[entity=" .. proto.name .. "]",
                 throughput = proto.belt_speed * 480
             })
         end

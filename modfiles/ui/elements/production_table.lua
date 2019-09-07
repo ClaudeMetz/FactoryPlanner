@@ -289,7 +289,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
         local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
           .. "_" .. item.id, sprite=item.proto.sprite, style=s, mouse_button_filter={"left-and-right"}}
 
-        ui_util.setup_item_button(player_table, button, item)
+        ui_util.setup_item_button(player_table, button, item, line)
         
         local type = (item.fuel) and "fuel" or string.lower(class)
         ui_util.add_tutorial_tooltip(button, type, true, true)

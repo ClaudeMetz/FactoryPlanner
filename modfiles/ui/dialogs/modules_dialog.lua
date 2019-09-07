@@ -203,13 +203,16 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
 
-    -- Adjustments if the object is being edited
     local sprite, tooltip, amount, decimal = "", nil, "", false
+    -- Adjustments if the object is being edited
     if object ~= nil then
         sprite = object.proto.sprite
         tooltip = object.proto.localised_name
         amount = object.amount
-    elseif type == "beacon" then
+    end
+
+    -- Adjustments for a beacon prototype line
+    if type == "beacon" then
         local preferred_beacon = get_preferences(player).preferred_beacon
         modal_data.selected_beacon = preferred_beacon
         sprite = preferred_beacon.sprite

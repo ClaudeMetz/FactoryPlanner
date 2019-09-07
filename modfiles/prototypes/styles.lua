@@ -97,7 +97,7 @@ data.raw["gui-style"].default["fp_button_timescale_selected"] = {
 data.raw["gui-style"].default["fp_view_selection_button"] = {
     type = "button_style",
     parent = "button",
-    width = 90,
+    width = 100,
     clicked_vertical_offset = 0
 }
 

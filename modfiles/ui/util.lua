@@ -72,18 +72,20 @@ end
 
 
 -- Returns the number to put on an item button according to the current view
-function ui_util.calculate_item_button_number(player_table, view, amount, type)
+function ui_util.calculate_item_button_number(player_table, view, amount, type, machine_count)
     local timescale = player_table.ui_state.context.subfactory.timescale
+    
     local number = nil
-
     if view.name == "items_per_timescale" then
         number = amount
     elseif view.name == "belts_or_lanes" and type ~= "fluid" then
         local throughput = player_table.preferences.preferred_belt.throughput
         local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
         number = amount / divisor / timescale
-    elseif view.name == "items_per_second" then
-        number = amount / timescale
+    elseif view.name == "items_per_second_per_machine" and type ~= "fluid" then
+        -- Show items/s/1 (machine) if it's a top level item, or machine_count is at 0
+        machine_count = (machine_count ~= nil and machine_count ~= 0) and machine_count or 1
+        number = amount / timescale / machine_count
     end
 
     return number  -- number might be nil here
@@ -92,35 +94,34 @@ end
 
 -- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
 -- (Relates to the view_state, doesn't do anything if views are uninitialised)
-function ui_util.setup_item_button(player_table, button, item)
+function ui_util.setup_item_button(player_table, button, item, line)
     local view_state = player_table.ui_state.view_state
     -- This gets refreshed after the view state is initialised
     if view_state == nil then return end
 
     local view = view_state[view_state.selected_view_id]
     local amount = (item.top_level and item.class == "Product") and item.required_amount or item.amount
-    local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type)
+    local machine_count = (line ~= nil) and line.machine.count or nil
+    local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type, machine_count)
     
     -- Special handling for mining recipes concerning their localised name
-    local localised_name
-    if item.proto.type == "entity" then localised_name = {"", {"label.raw"}, " ", item.proto.localised_name}
-    else localised_name = item.proto.localised_name end
+    local localised_name = (item.proto.type == "entity") and {"", {"label.raw"}, " ", item.proto.localised_name}
+      or item.proto.localised_name
     
     -- Determine caption
-    local caption
     local function determine_type_text()
         if item.proto.type == "fluid" then
-            caption = {"tooltip.fluid"}
+            return {"tooltip.fluid"}
         else
-            caption = (number == 1) and {"tooltip.item"} or {"tooltip.items"}
+            return ((number == 1) and {"tooltip.item"} or {"tooltip.items"})
         end
     end
     
+    local caption = nil
     -- Determine caption appendage
     if view.name == "items_per_timescale" then
-        determine_type_text()
         local timescale = player_table.ui_state.context.subfactory.timescale
-        caption = {"", caption, "/", ui_util.format_timescale(timescale, true)}
+        caption = {"", determine_type_text(), "/", ui_util.format_timescale(timescale, true, false)}
 
     elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
         local belts = (player_table.settings.belts_or_lanes == "Belts")
@@ -130,16 +131,19 @@ function ui_util.setup_item_button(player_table, button, item)
             caption = (number == 1) and {"tooltip.lane"} or {"tooltip.lanes"}
         end
 
-    elseif view.name == "items_per_second" then
-        determine_type_text()
-        caption = {"", caption, "/s"}
+    elseif view.name == "items_per_second_per_machine" and item.proto.type ~= "fluid" then
+        -- Only show "/machine" if it's not a top level item, where it'll just show items/s
+        local s_machine = (machine_count ~= nil) and {"", "/", {"tooltip.machine"}} or ""
+        caption = {"", determine_type_text(), "/s", s_machine}
+
     end
 
     -- Compose tooltip, respecting top level products
     if number ~= nil then
         local number_string
         if item.top_level and item.class == "Product" then
-            local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount, item.proto.type)
+            local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount,
+              item.proto.type, nil)
             number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", ui_util.format_number(number, 4)}
         else
             number_string = {"", ui_util.format_number(number, 4)}
@@ -150,6 +154,23 @@ function ui_util.setup_item_button(player_table, button, item)
     else
         button.tooltip = localised_name
     end
+end
+
+-- Determines a suitable crafting machine sprite path, according to what is available
+function ui_util.find_crafting_machine_sprite()
+    -- Try these categories first, one of them should exist
+    local categories = {"crafting", "advanced-crafting", "basic-crafting"}
+    for _, category_name in ipairs(categories) do
+        local category_id = global.all_machines.map[category_name]
+        if category_id ~= nil then
+            local machines = global.all_machines.categories[category_id].machines
+            return machines[table_size(machines)].sprite
+        end
+    end
+
+    -- If none of the specified categories exist, just pick the top tier machine of the first one
+    local machines = global.all_machines.categories[1].machines
+    return machines[table_size(machines)].sprite
 end
 
 
@@ -261,14 +282,14 @@ function ui_util.format_number(number, precision)
 end
 
 -- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
-function ui_util.format_timescale(timescale, raw)
+function ui_util.format_timescale(timescale, raw, whole_word)
     local ts = nil
     if timescale == 1 then
-        ts = "s"
+        ts = whole_word and {"label.second"} or "s"
     elseif timescale == 60 then
-        ts = "m"
+        ts = whole_word and {"label.minute"} or "m"
     elseif timescale == 3600 then
-        ts = "h"
+        ts = whole_word and {"label.hour"} or "h"
     end
     if raw then return ts
     else return ("1" .. ts) end
