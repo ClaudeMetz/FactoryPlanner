@@ -29,7 +29,8 @@ function close_subfactory_dialog(flow_modal_dialog, action, data)
             subfactory.name = data.name
             Subfactory.set_icon(subfactory, data.icon)  -- Exceptional setter for edge case handling
         else
-            local subfactory = Factory.add(ui_state.context.factory, Subfactory.init(data.name, data.icon))
+            local subfactory = Factory.add(ui_state.context.factory, Subfactory.init(data.name, data.icon,
+              get_settings(player).default_timescale))
             data_util.context.set_subfactory(player, subfactory)
         end
     elseif action == "delete" then

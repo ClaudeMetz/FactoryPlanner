@@ -227,6 +227,18 @@ function data_util.determine_mining_productivity(player, subfactory, machine_pro
 end
 
 
+-- Converts the given timescale setting string to the appropriate number
+function data_util.timescale_setting_to_number(setting)
+    if setting == "one_second" then
+        return 1
+    elseif setting == "one_minute" then
+        return 60
+    elseif setting == "one_hour" then
+        return 3600
+    end
+end
+
+
 -- Logs given table shallowly, excluding the parent attribute
 function data_util.gen_log(table)
     if table == nil then
@@ -323,10 +335,10 @@ function data_util.run_dev_config(player)
         local factory = context.factory
 
         -- Subfactories
-        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}))
+        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}, "one_minute"))
         data_util.context.set_subfactory(player, subfactory)
-        Factory.add(factory, Subfactory.init("Beta", nil))
-        Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}))
+        Factory.add(factory, Subfactory.init("Beta", nil, "one_minute"))
+        Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}, "one_minute"))
 
         -- Products
         local products = {
@@ -373,7 +385,8 @@ function data_util.add_example_subfactory(player)
     local context = get_context(player)
     local factory = context.factory
     
-    local subfactory = Factory.add(factory, Subfactory.init("Example", {type="item", name="automation-science-pack"}))
+    local subfactory = Factory.add(factory, Subfactory.init("Example", 
+      {type="item", name="automation-science-pack"}, "one_minute"))
     data_util.context.set_subfactory(player, subfactory)
     
     -- Products

@@ -2,9 +2,10 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added a mod setting to specify the default timescale for your subfactories
   Changes:
     - Changed the view that helps estimate how many inserters you'll need from items/s to items/s/machine, which just makes way more sense
+    - Made all mod settings localizable
   Bugfixes:
     - Fixed that you couldn't enter a decimal amount of beacons in some cases
 

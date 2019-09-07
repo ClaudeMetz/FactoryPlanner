@@ -50,11 +50,21 @@ data:extend({
         type = "string-setting",
         name = "fp_view_belts_or_lanes",
         setting_type = "runtime-per-user",
-        default_value = "Belts",
-        allowed_values = {"Belts", "Lanes"},
+        default_value = "belts",
+        allowed_values = {"belts", "lanes"},
         order = "f",
         localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
         localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
+    },
+    {
+        type = "string-setting",
+        name = "fp_default_timescale",
+        setting_type = "runtime-per-user",
+        default_value = "one_minute",
+        allowed_values = {"one_second", "one_minute", "one_hour"},
+        order = "g",
+        localised_name = {"mod-setting-name.fp_default_timescale"},
+        localised_description = {"mod-setting-description.fp_default_timescale"}
     },
     {
         type = "double-setting",
@@ -63,7 +73,7 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "g",
+        order = "h",
         localised_name = {"mod-setting-name.fp_indicate_rounding"},
         localised_description = {"mod-setting-description.fp_indicate_rounding"}
     }

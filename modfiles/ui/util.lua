@@ -80,7 +80,7 @@ function ui_util.calculate_item_button_number(player_table, view, amount, type, 
         number = amount
     elseif view.name == "belts_or_lanes" and type ~= "fluid" then
         local throughput = player_table.preferences.preferred_belt.throughput
-        local divisor = (player_table.settings.belts_or_lanes == "Belts") and throughput or (throughput / 2)
+        local divisor = (player_table.settings.belts_or_lanes == "belts") and throughput or (throughput / 2)
         number = amount / divisor / timescale
     elseif view.name == "items_per_second_per_machine" and type ~= "fluid" then
         -- Show items/s/1 (machine) if it's a top level item, or machine_count is at 0
@@ -124,7 +124,7 @@ function ui_util.setup_item_button(player_table, button, item, line)
         caption = {"", determine_type_text(), "/", ui_util.format_timescale(timescale, true, false)}
 
     elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
-        local belts = (player_table.settings.belts_or_lanes == "Belts")
+        local belts = (player_table.settings.belts_or_lanes == "belts")
         if belts then
             caption = (number == 1) and {"tooltip.belt"} or {"tooltip.belts"}
         else
