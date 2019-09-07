@@ -150,23 +150,25 @@ end
 
 -- Writes the current user mod settings to their player_table
 function reload_settings(player)
+    local settings = settings.get_player_settings(player)
     -- Delete the whole table first in case a setting got removed
     global.players[player.index].settings = {}
     local settings_table = global.players[player.index].settings
     
-    local settings = settings.get_player_settings(player)
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.show_hints = settings["fp_show_hints"].value
     settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
 end
 
 -- Reloads the user preferences, incorporating previous preferences if possible
 function reload_preferences(player, table)
     local preferences = global.players[player.index].preferences
+
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
@@ -179,10 +181,8 @@ end
 
 -- (Re)sets the UI state of the given player
 function reset_ui_state(player)
-    local player_table = global.players[player.index]
-
     -- Delete the whole table first in case ui_state parameter got removed
-    player_table.ui_state = {}
+    global.players[player.index].ui_state = {}
     local ui_state_table = global.players[player.index].ui_state
     
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type

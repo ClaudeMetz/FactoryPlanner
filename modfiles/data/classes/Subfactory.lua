@@ -1,11 +1,11 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon)
+function Subfactory.init(name, icon, timescale)
     local subfactory = {
         name = name,
         icon = nil,
-        timescale = 60,
+        timescale = nil,
         energy_consumption = 0,
         notes = "",
         mining_productivity = nil,
@@ -20,6 +20,7 @@ function Subfactory.init(name, icon)
     }
 
     Subfactory.set_icon(subfactory, icon)
+    subfactory.timescale = data_util.timescale_setting_to_number(timescale)
 
     -- Add first floor to the subfactory
     subfactory.selected_floor = Floor.init(nil)

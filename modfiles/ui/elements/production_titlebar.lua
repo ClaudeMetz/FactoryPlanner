@@ -128,7 +128,7 @@ function refresh_production_pane(player)
                 button.tooltip = {"", {"tooltip.items_per_timescale"}, " ", timescale, ".",
                   "\n", {"tooltip.cycle_production_views"}}
             elseif view.name == "belts_or_lanes" then
-                local belts_lanes_label = (player_table.settings.belts_or_lanes == "Belts") 
+                local belts_lanes_label = (player_table.settings.belts_or_lanes == "belts") 
                   and {"tooltip.belts"} or {"tooltip.lanes"}
                 button.tooltip = {"", {"tooltip.belts_or_lanes_a"}, " ", belts_lanes_label, " ",
                   {"tooltip.belts_or_lanes_b"}, "\n", {"tooltip.cycle_production_views"}}
@@ -190,7 +190,7 @@ end
 function refresh_view_state(player, subfactory)
     local player_table = get_table(player)
     local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
-    local bl_caption = (player_table.settings.belts_or_lanes == "Belts") and {"button-text.belts"} or {"button-text.lanes"}
+    local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"button-text.belts"} or {"button-text.lanes"}
     local bl_sprite = player_table.preferences.preferred_belt.rich_text
     local crafting_machine_sprite_path = ui_util.find_crafting_machine_sprite()
     local view_state = {
