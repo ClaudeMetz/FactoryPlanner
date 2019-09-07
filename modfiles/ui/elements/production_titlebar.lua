@@ -47,26 +47,14 @@ function add_production_pane_to(main_dialog)
     table_view_selection.style.horizontal_spacing = 0
 
     -- Captions will be set appropriately at runtime
-    table_view_selection.add{type="button", name="fp_button_production_titlebar_view_items_per_timescale",
-      tooltip={"", {"tooltip.items_per_timescale"}, "\n", {"tooltip.cycle_production_views"}}}
+    table_view_selection.add{type="button", name="fp_button_production_titlebar_view_items_per_timescale"}
+    -- (The tooltip for this is set dynamically)
 
-    -- (bl = belt/lane)
-    local button_bl = table_view_selection.add{type="button", name="fp_button_production_titlebar_view_belts_or_lanes",
-      tooltip={"", {"tooltip.belts_or_lanes"}, "\n", {"tooltip.cycle_production_views"}}}
-    local flow_bl = button_bl.add{type="flow", name="flow_belts_or_lanes", direction="horizontal"}
-    flow_bl.ignored_by_interaction = true
-    flow_bl.style.height = 20
-    flow_bl.style.vertical_align = "center"
-    local sprite_bl = flow_bl.add{type="sprite", name="sprite_belts_or_lanes"}
-    sprite_bl.style.height = 20
-    sprite_bl.style.width = 20
-    sprite_bl.resize_to_sprite = false
-    local label_bl = flow_bl.add{type="label", name="label_belts_or_lanes"}
-    ui_util.set_label_color(label_bl, "black")
-    label_bl.style.font = "default-semibold"
+    table_view_selection.add{type="button", name="fp_button_production_titlebar_view_belts_or_lanes"}
+    -- (The tooltip for this is set dynamically)
 
-    table_view_selection.add{type="button", name="fp_button_production_titlebar_view_items_per_second",
-      tooltip={"", {"tooltip.items_per_second"}, "\n", {"tooltip.cycle_production_views"}}}
+    table_view_selection.add{type="button", name="fp_button_production_titlebar_view_items_per_second_per_machine",
+      tooltip={"", {"tooltip.items_per_second_per_machine"}, "\n", {"tooltip.cycle_production_views"}}}
 
 
     -- Info label
@@ -125,20 +113,27 @@ function refresh_production_pane(player)
         -- Update the dynamic parts of the view state buttons
         local state_existed = (ui_state.view_state ~= nil)
         refresh_view_state(player, subfactory)
+
         -- Refresh subfactory pane to update it with the selected state
         if not state_existed then refresh_subfactory_pane(player) end
 
         for _, view in ipairs(ui_state.view_state) do
             local button = table_view["fp_button_production_titlebar_view_" .. view.name]
+            button.caption = view.caption
 
-            if view.name == "belts_or_lanes" then
-                local flow = button["flow_belts_or_lanes"]
-                flow["label_belts_or_lanes"].caption = view.caption
-                flow["sprite_belts_or_lanes"].sprite = player_table.preferences.preferred_belt.sprite
-                flow.style.left_padding = (player_table.settings.belts_or_lanes == "Belts") and 6 or 4
-            else
-                button.caption = view.caption
+            -- Update the tooltip based on current settings
+            -- The "items_per_second_per_machine"-tooltip doesn't need to be updated according to any settings
+            if view.name == "items_per_timescale" then
+                local timescale = ui_util.format_timescale(subfactory.timescale, true, true)
+                button.tooltip = {"", {"tooltip.items_per_timescale"}, " ", timescale, ".",
+                  "\n", {"tooltip.cycle_production_views"}}
+            elseif view.name == "belts_or_lanes" then
+                local belts_lanes_label = (player_table.settings.belts_or_lanes == "Belts") 
+                  and {"tooltip.belts"} or {"tooltip.lanes"}
+                button.tooltip = {"", {"tooltip.belts_or_lanes_a"}, " ", belts_lanes_label, " ",
+                  {"tooltip.belts_or_lanes_b"}, "\n", {"tooltip.cycle_production_views"}}
             end
+
             -- It's disabled if it's selected or not enabled by the view
             button.enabled = (not view.selected and view.enabled)
             button.style = view.selected and "fp_view_selection_button_selected" or "fp_view_selection_button"
@@ -194,7 +189,10 @@ end
 -- Refreshes the current view state
 function refresh_view_state(player, subfactory)
     local player_table = get_table(player)
-    local timescale = ui_util.format_timescale(subfactory.timescale, true)
+    local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
+    local bl_caption = (player_table.settings.belts_or_lanes == "Belts") and {"button-text.belts"} or {"button-text.lanes"}
+    local bl_sprite = player_table.preferences.preferred_belt.rich_text
+    local crafting_machine_sprite_path = ui_util.find_crafting_machine_sprite()
     local view_state = {
         [1] = {
             name = "items_per_timescale",
@@ -204,15 +202,14 @@ function refresh_view_state(player, subfactory)
         },
         [2] = {
             name = "belts_or_lanes",
-            caption = (player_table.settings.belts_or_lanes == "Belts") 
-                and {"button-text.belts"} or {"button-text.lanes"},
+            caption = {"", bl_sprite, " ", bl_caption},
             enabled = true,
             selected = false
         },
         [3] = {
-            name = "items_per_second",
-            caption = {"", {"button-text.items"}, "/s"},
-            enabled = (timescale ~= "s"),
+            name = "items_per_second_per_machine",
+            caption = {"", {"button-text.items"}, "/s/[img=" .. crafting_machine_sprite_path .. "]"},
+            enabled = true,
             selected = false
         },
         selected_view_id = 1
@@ -265,6 +262,7 @@ function change_view_state(player, view_name)
 end
 
 -- Moves on the selection until it is on an enabled state (at least 1 view needs to be enabled)
+-- (Not useful currently as all views are enabled, but it was in the past)
 function correct_view_state(view_state, id_to_select)
     while true do
         view = view_state[id_to_select]

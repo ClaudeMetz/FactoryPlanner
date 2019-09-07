@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - Changed the view that helps estimate how many inserters you'll need from items/s to items/s/machine, which just makes way more sense
+  Bugfixes:
+    - Fixed that you couldn't enter a decimal amount of beacons in some cases
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.48
 Date: 26. 08. 2019
   Changes:

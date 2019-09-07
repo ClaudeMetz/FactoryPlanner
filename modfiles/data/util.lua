@@ -347,6 +347,12 @@ function data_util.run_dev_config(player)
                 type = "item",
                 amount = 0,
                 required_amount = 100
+            },
+            {
+                name = "light-oil",
+                type = "fluid",
+                amount = 0,
+                required_amount = 250
             }
         }
         add_products(subfactory, products)

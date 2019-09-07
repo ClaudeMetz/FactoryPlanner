@@ -388,7 +388,8 @@ function generate_chooser_fuel_buttons(player)
               line.total_effects)
             fuel_amount = data_util.determine_fuel_amount(energy_consumption, ui_state.context.subfactory,
               fuel_proto, machine.proto.burner)
-            fuel_amount = ui_util.calculate_item_button_number(player_table, view, fuel_amount, "item")
+            fuel_amount = ui_util.calculate_item_button_number(player_table, view, fuel_amount,
+              fuel_proto.type, line.machine.count)
             fuel_amount = ui_util.format_number(fuel_amount, 4)
 
             local m = (tonumber(fuel_amount) == 1) and {"tooltip.item"} or {"tooltip.items"}
