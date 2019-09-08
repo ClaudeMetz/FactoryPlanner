@@ -205,13 +205,18 @@ function generator.all_recipes()
         end
     end
 
-    -- Adding all (solid) mining recipes
+    -- Adding mining recipes
     -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
-            if proto.resource_category == "basic-solid" then
-                local products = proto.mineable_properties.products
+            local produces_solid = false
+            local products = proto.mineable_properties.products
+            for _, product in pairs(products) do  -- detects all solid mining recipes
+                if product.type == "item" then produces_solid = true end
+            end
+
+            if produces_solid then
                 local recipe = mining_recipe()
                 recipe.name = "impostor-" .. proto.name
                 recipe.localised_name = proto.localised_name
@@ -232,13 +237,13 @@ function generator.all_recipes()
                         name = proto.mineable_properties.required_fluid,
                         amount = proto.mineable_properties.fluid_amount
                     })
-                    recipe.category = "complex-solid"
+                    if recipe.category == "basic-solid" then recipe.category = "complex-solid" end
                 end
 
                 add_recipe_tooltip(recipe)
                 insert_proto(all_recipes, "recipes", recipe, true)
 
-            --elseif proto.resource_category == "basic-fluid" then
+            --else
                 -- crude-oil and angels-natural-gas go here (not interested atm)
             end
 
