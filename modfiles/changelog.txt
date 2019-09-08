@@ -7,8 +7,9 @@ Date: 00. 00. 0000
     - Changed the view that helps estimate how many inserters you'll need from items/s to items/s/machine, which just makes way more sense
     - Made all mod settings localizable
   Bugfixes:
-    - Fixed that you couldn't enter a decimal amount of beacons in some cases
     - Fixed that module limitations (related to productivity modules) didn't apply to many recipes
+    - Fixed mining recipes not being detected correctly for some mods
+    - Fixed that you couldn't enter a decimal amount of beacons in some cases
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.48
