@@ -488,7 +488,8 @@ function generator.all_machines()
 
     local undesirables = undesirable_machines()
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.crafting_categories and proto.energy_usage ~= nil and undesirables[proto.name] == nil then
+        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil and 
+          undesirables[proto.name] == nil then
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then 
                     local machine = generate_category_entry(category, proto)
@@ -502,12 +503,14 @@ function generator.all_machines()
                 -- Only supports solid mining recipes for now (no oil etc.)
                 if enabled and category ~= "basic-fluid" then
                     local machine = generate_category_entry(category, proto)
+                    machine.mining = true
                     deep_insert_proto(all_machines, "categories", category, "machines", machine)
 
                     -- Add separate category for mining with fluids that avoids the burner-miner
                     if category == "basic-solid" then
                         if not proto.burner_prototype then
                             local machine = generate_category_entry("complex-solid", proto)
+                            machine.mining = true
                             deep_insert_proto(all_machines, "categories", "complex-solid", "machines", machine)
                         end
                     end
