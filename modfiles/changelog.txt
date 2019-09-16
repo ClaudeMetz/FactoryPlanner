@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - Fixed that the launch sequence time wasn't considered for rocket production calculations
+    - Fixed productivity not applying correctly to mining recipes in certain modded situations
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.49
 Date: 08. 09. 2019
   Features:

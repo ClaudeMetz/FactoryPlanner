@@ -200,9 +200,18 @@ end
 -- Determines the actual amount of items that a recipe_product produces
 function data_util.determine_machine_count(player, subfactory, line, machine_proto, production_ratio)
     local mining_prod = data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    local machine_prod_ratio = production_ratio / (1 + math.max(line.total_effects.productivity + mining_prod, -0.8))
+    local machine_prod_ratio = production_ratio / (1 + math.max(line.total_effects.productivity + mining_prod, 0))
     local machine_speed = machine_proto.speed * (1 + math.max(line.total_effects.speed, -0.8))
-    return (machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale
+
+    local launch_delay = 0
+    if line.recipe.proto.name == "rocket-part" then
+        local rockets_produced = production_ratio / 100
+        local launch_sequence_time = 41.25 / subfactory.timescale  -- in seconds
+        -- Not sure why this forumla works, but it seemingly does
+        launch_delay = launch_sequence_time * rockets_produced
+end
+
+    return ((machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale) + launch_delay
 end
 
 -- Determines the amount of energy the given machine will consume
@@ -218,7 +227,7 @@ end
 
 -- Determines whether mining prod applies, and returns it's value (returns 0 otherwise)
 function data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    if string.match(machine_proto.category, "^[a-z]+%-solid$") then  -- all mining recipes
+    if machine_proto.mining then  -- all mining recipes
         return (subfactory.mining_productivity ~= nil) and 
           (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
     else
