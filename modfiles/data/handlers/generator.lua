@@ -224,6 +224,7 @@ function generator.all_recipes()
                 recipe.order = proto.order
                 recipe.subgroup = {name="mining", order="y", valid=true}
                 recipe.category = proto.resource_category
+                recipe.mining = true
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
                 recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
@@ -404,23 +405,26 @@ function generator.sorted_items()
 end
 
 
--- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_id] = true})
--- This optimizes the recipe filtering process for the recipe picker
+-- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_id] = true}
+-- This optimizes the recipe filtering process for the recipe picker.
 function generator.item_recipe_map()
     local map = {}
 
     if not global.all_recipes.recipes then return end
     for _, recipe in pairs(global.all_recipes.recipes) do
         for _, product in ipairs(recipe.products) do
-            if map[product.type] == nil then
-                map[product.type] = {}
-            end
+            local net_product = data_util.determine_net_product(recipe, product.name)
+            if net_product > 0 then  -- Ignores recipes that produce a net item/fluid amount <= 0
+                if map[product.type] == nil then
+                    map[product.type] = {}
+                end
 
-            if map[product.type][product.name] == nil then
-                map[product.type][product.name] = {}
-            end
+                if map[product.type][product.name] == nil then
+                    map[product.type][product.name] = {}
+                end
 
-            map[product.type][product.name][recipe.id] = true
+                map[product.type][product.name][recipe.id] = true
+            end
         end
     end
     

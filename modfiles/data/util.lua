@@ -197,6 +197,30 @@ function data_util.determine_product_amount(base_product)
     end
 end
 
+-- Determines the net amount that the given recipe produces of the given item (might be negative)
+function data_util.determine_net_product(recipe_proto, item_name)
+    local net_amount = 0
+    for _, product in pairs(recipe_proto.products) do
+        if recipe_proto.mining and product.name == recipe_proto.main_product.name then
+            return product.amount
+        end
+
+        if product.name == item_name then
+            net_amount = data_util.determine_product_amount(product)
+            break
+        end
+    end
+
+    for _, ingredient in pairs(recipe_proto.ingredients) do
+        if ingredient.name == item_name then
+            net_amount = net_amount - ingredient.amount
+            break
+        end
+    end
+    
+    return net_amount
+end
+
 -- Determines the actual amount of items that a recipe_product produces
 function data_util.determine_machine_count(player, subfactory, line, machine_proto, production_ratio)
     local mining_prod = data_util.determine_mining_productivity(player, subfactory, machine_proto)
@@ -209,7 +233,7 @@ function data_util.determine_machine_count(player, subfactory, line, machine_pro
         local launch_sequence_time = 41.25 / subfactory.timescale  -- in seconds
         -- Not sure why this forumla works, but it seemingly does
         launch_delay = launch_sequence_time * rockets_produced
-end
+    end
 
     return ((machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale) + launch_delay
 end
@@ -227,9 +251,12 @@ end
 
 -- Determines whether mining prod applies, and returns it's value (returns 0 otherwise)
 function data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    if machine_proto.mining then  -- all mining recipes
-        return (subfactory.mining_productivity ~= nil) and 
-          (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+    if machine_proto.mining then  -- all mining machines
+        if subfactory.mining_productivity ~= nil then
+            return (subfactory.mining_productivity / 100)
+        else
+            return player.force.mining_drill_productivity_bonus
+        end
     else
         return 0
     end
@@ -374,6 +401,12 @@ function data_util.run_dev_config(player)
                 type = "fluid",
                 amount = 0,
                 required_amount = 250
+            },
+            {
+                name = "rocket-part",
+                type = "item",
+                amount = 0,
+                required_amount = 540
             }
         }
         add_products(subfactory, products)
@@ -383,7 +416,17 @@ function data_util.run_dev_config(player)
             {
                 name="electronic-circuit",
                 machine="assembling-machine-2"
-            }
+            },
+            --[[ {
+                name="rocket-part",
+                machine="rocket-silo",
+                modules={{name="productivity-module-3", amount=4}},
+                beacon={beacon={name="beacon", amount=20}, module={name="speed-module-3", amount=2}}
+            }, ]]
+            --[[ {
+                name="kovarex-enrichment-process",
+                machine="centrifuge"
+            }, ]]
         }
         construct_floor(player, context.floor, recipes)
     end

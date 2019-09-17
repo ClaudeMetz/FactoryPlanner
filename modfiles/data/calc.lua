@@ -38,14 +38,31 @@ function calc.update_floor(player, subfactory, floor, aggregate)
         -- Otherwise, calculate the line by itself and adjust it accordingly
         else
             -- Some local functions to avoid too many parameters needing to be passed
+            -- Determines to how many of the ingredients productivity bonuses apply
+            local function proddable_ingredient_amount(item, production_ratio)
+                if line.recipe.proto.custom then  -- custom recipes won't have catalyst ingredients
+                    return item.amount
+                else
+                    local live_recipe = player.force.recipes[line.recipe.proto.name]
+                    local live_item = nil
+                    for _, live_product in pairs(live_recipe.ingredients) do
+                        if live_product.name == item.name then
+                            live_item = live_product
+                            break
+                        end
+                    end
+                    
+                    if live_item.catalyst_amount then
+                        live_item.amount = live_item.amount - live_item.catalyst_amount
+                    end
+                    return live_item.amount * production_ratio
+                end
+            end
+
             local function calculate_production_ratio(item)
                 local product = calc.aggregate.get(aggregate, "Product", item)
-                if item.net then
-                    if item.net > 0 then return (math.abs(product.amount) * (line.percentage / 100)) / item.net
-                    else return 0 end
-                else
-                    return (math.abs(product.amount) * (line.percentage / 100)) / item.ratio
-                end
+                local net = data_util.determine_net_product(line.recipe.proto, item.name)
+                return ((math.abs(product.amount) * (line.percentage / 100)) / net)
             end
 
             local function calculate_produced_amount(item, production_ratio)
@@ -91,10 +108,8 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                 end
                 
                 -- Ingredients
-                local mining_prod = data_util.determine_mining_productivity(player, subfactory, line.machine.proto)
                 for _, ingredient in pairs(calc.aggregate.get_in_order(line_aggregate, "Ingredient")) do
                     ingredient.amount = calculate_produced_amount(ingredient, production_ratio)
-                    ingredient.amount = ingredient.amount / (1 + math.max(line.total_effects.productivity + mining_prod, -0.8))
 
                     local line_byproduct = calc.aggregate.get(line_aggregate, "Byproduct", ingredient)
                     if line_byproduct ~= nil then
@@ -111,8 +126,16 @@ function calc.update_floor(player, subfactory, floor, aggregate)
                             calc.aggregate.remove(line_aggregate, ingredient)
                         end
                     end
+                    
+                    -- Temporary and bad solution to productivity on recipes with catalysts
+                    local mining_prod = data_util.determine_mining_productivity(player, subfactory, line.machine.proto)
+                    local proddable_amount = proddable_ingredient_amount(ingredient,  production_ratio)
+                    if proddable_amount > 0 then
+                        ingredient.amount = ingredient.amount - proddable_amount + 
+                          (proddable_amount / (1 + math.max(line.total_effects.productivity + mining_prod, 0)))
+                    end
                 end
-
+                
                 -- Machine count (Same calculation for machines/miners because values are set appropriately in the prototype)
                 line_aggregate.machine_count = data_util.determine_machine_count(player, subfactory, line,
                   line.machine.proto, production_ratio)
@@ -270,7 +293,7 @@ function calc.aggregate.init_with_recipe(main_aggregate, recipe, products_only, 
         for _, ingredient in pairs(recipe.proto.ingredients) do
             -- Check for recipes with the same items as both ingredients and products
             local product = calc.aggregate.get(aggregate, "Product", ingredient)
-            if product and ingredient.type ~= "entity" then product.net = product.ratio - ingredient.amount end
+            --if product and ingredient.type ~= "entity" then product.net = product.ratio - ingredient.amount end
             --item_count = item_count + 1
             calc.aggregate.add(aggregate, calc.aggregate.item_init(ingredient, "Ingredient", 0))
         end
