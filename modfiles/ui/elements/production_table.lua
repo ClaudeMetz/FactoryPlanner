@@ -290,6 +290,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
           .. "_" .. item.id, sprite=item.proto.sprite, style=s, mouse_button_filter={"left-and-right"}}
 
         ui_util.setup_item_button(player_table, button, item, line)
+        if button.number ~= nil and button.number < margin_of_error then button.visible = false end
         
         local type = (item.fuel) and "fuel" or string.lower(class)
         ui_util.add_tutorial_tooltip(button, type, true, true)

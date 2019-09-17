@@ -4,10 +4,11 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
-    - 
+    - The recipe picker now only shows recipes that actually produce a net positive amount of the desired item or fluid
   Bugfixes:
     - Fixed that the launch sequence time wasn't considered for rocket production calculations
     - Fixed productivity not applying correctly to mining recipes in certain modded situations
+    - Fixed an issue where productivity bonuses were applied incorrectly on catalyst recipes
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.49
