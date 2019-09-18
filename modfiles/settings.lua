@@ -10,19 +10,10 @@ data:extend({
     },
     {
         type = "bool-setting",
-        name = "fp_show_hints",
-        setting_type = "runtime-per-user",
-        default_value = true,
-        order = "b",
-        localised_name = {"mod-setting-name.fp_show_hints"},
-        localised_description = {"mod-setting-description.fp_show_hints"}
-    },
-    {
-        type = "bool-setting",
         name = "fp_pause_on_interface",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "c",
+        order = "b",
         localised_name = {"mod-setting-name.fp_pause_on_interface"},
         localised_description = {"mod-setting-description.fp_pause_on_interface"}
     },
@@ -32,7 +23,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 8,
         allowed_values = {6, 7, 8, 9, 10, 11, 12},
-        order = "d",
+        order = "c",
         localised_name = {"mod-setting-name.fp_subfactory_items_per_row"},
         localised_description = {"mod-setting-description.fp_subfactory_items_per_row"}
     },
@@ -42,7 +33,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 14,
         allowed_values = {8, 10, 12, 14, 16, 18, 20},
-        order = "e",
+        order = "d",
         localised_name = {"mod-setting-name.fp_floor_recipes_at_once"},
         localised_description = {"mod-setting-description.fp_floor_recipes_at_once"}
     },
@@ -52,7 +43,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
-        order = "f",
+        order = "e",
         localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
         localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
     },
@@ -62,7 +53,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "g",
+        order = "f",
         localised_name = {"mod-setting-name.fp_default_timescale"},
         localised_description = {"mod-setting-description.fp_default_timescale"}
     },
@@ -73,7 +64,7 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "h",
+        order = "g",
         localised_name = {"mod-setting-name.fp_indicate_rounding"},
         localised_description = {"mod-setting-description.fp_indicate_rounding"}
     }

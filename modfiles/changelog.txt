@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Recipes that don't produce anything are now removed after a product has been deleted
   Changes:
     - The recipe picker now only shows recipes that actually produce a net positive amount of the desired item or fluid
+    - Removed the 'Show hints' setting, as I don't think it's really necessary
   Bugfixes:
     - Fixed that the launch sequence time wasn't considered for rocket production calculations
     - Fixed productivity not applying correctly to mining recipes in certain modded situations
