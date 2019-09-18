@@ -3,6 +3,7 @@ Version: 0.17.00
 Date: 00. 00. 0000
   Features:
     - Recipes that don't produce anything are now removed after a product has been deleted
+    - Added a setting to specify whether machine and belt numbers should be rounded up or not
   Changes:
     - The recipe picker now only shows recipes that actually produce a net positive amount of the desired item or fluid
     - Removed the 'Show hints' setting, as I don't think it's really necessary
