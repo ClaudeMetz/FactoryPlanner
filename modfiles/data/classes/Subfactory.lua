@@ -65,6 +65,24 @@ function Subfactory.shift(self, dataset, direction)
     Collection.shift(self[dataset.class], dataset, direction)
 end
 
+
+-- Removes all lines that are useless (ie have production_ratio of 0)
+-- This gets away with only checking the top floor, as no subfloor-lines can become useless if the
+-- parent line is still useful, and vice versa (It's still set up to be recursively useable)
+function Subfactory.remove_useless_lines(self)
+    local function clear_floor(floor)
+        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            if line.production_ratio == 0 then
+                Floor.remove(floor, line)
+            end
+        end
+    end
+
+    local top_floor = Subfactory.get(self, "Floor", 1)
+    clear_floor(top_floor)
+end
+
+
 -- Updates the validity of the whole subfactory
 -- Floors can be checked in any order and separately without problem
 function Subfactory.update_validity(self)
@@ -80,11 +98,13 @@ function Subfactory.attempt_repair(self, player)
     data_util.run_invalid_dataset_repair(player, self, classes)
 
     -- Set selected floor to the top one in case the selected one gets deleted
-    data_util.context.set_floor(player, Subfactory.get(self, "Floor", 1))
+    local top_floor = Subfactory.get(self, "Floor", 1)
+    self.selected_floor = top_floor
+    data_util.context.set_floor(player, top_floor)
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     -- (Return value is not caught here because the top level floor won't be removed)
-    Floor.attempt_repair(Subfactory.get(self, "Floor", 1), player)
+    Floor.attempt_repair(top_floor, player)
 
     self.valid = true
 end
