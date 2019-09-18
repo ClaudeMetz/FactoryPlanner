@@ -58,13 +58,22 @@ data:extend({
         localised_description = {"mod-setting-description.fp_default_timescale"}
     },
     {
+        type = "bool-setting",
+        name = "fp_round_button_numbers",
+        setting_type = "runtime-per-user",
+        default_value = true,
+        order = "g",
+        localised_name = {"mod-setting-name.fp_round_button_numbers"},
+        localised_description = {"mod-setting-description.fp_round_button_numbers"}
+    },
+    {
         type = "double-setting",
         name = "fp_indicate_rounding",
         setting_type = "runtime-per-user",
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "g",
+        order = "h",
         localised_name = {"mod-setting-name.fp_indicate_rounding"},
         localised_description = {"mod-setting-description.fp_indicate_rounding"}
     }

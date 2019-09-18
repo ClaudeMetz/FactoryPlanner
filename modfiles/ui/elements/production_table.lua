@@ -125,18 +125,19 @@ function create_line_table_row(player, line)
         for _, machine_proto in ipairs(line.machine.category.machines) do
             if data_util.machine.is_applicable(machine_proto, line.recipe) then
                 local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id ..
-                "_" .. machine_proto.id, mouse_button_filter={"left"}}
+                  "_" .. machine_proto.id, mouse_button_filter={"left"}}
                 setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
             end
         end
     else
         local machine_count = ui_util.format_number(line.machine.count, 4)
-        local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
+        local machine_text = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
 
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
-          sprite=line.machine.proto.sprite, style="fp_button_icon_medium_recipe", number=math.ceil(machine_count),
-          mouse_button_filter={"left"}, tooltip={"", line.machine.proto.localised_name, "\n", machine_count,
-          " ", m, ui_util.generate_module_effects_tooltip(line.total_effects, line.machine.proto, player, subfactory)}}
+          sprite=line.machine.proto.sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}, 
+          tooltip={"", line.machine.proto.localised_name, "\n", machine_count, " ", machine_text, 
+          ui_util.generate_module_effects_tooltip(line.total_effects, line.machine.proto, player, subfactory)}}
+        button.number = (player_table.settings.round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
         ui_util.add_tutorial_tooltip(button, "machine", true, false)
@@ -211,7 +212,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
 
     local machine_count = data_util.determine_machine_count(player, subfactory, line, machine_proto, line.production_ratio)
     machine_count = ui_util.format_number(machine_count, 4)
-    button.number = math.ceil(machine_count)
+    button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
     
     -- Table to easily determine the appropriate style dependent on button_size and select-state
     local styles = {
@@ -231,7 +232,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local s = (selected) and {"", " (", {"tooltip.selected"}, ")"} or ""
     local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
     button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
-          " ", m, "\n", ui_util.generate_machine_attributes_tooltip(machine_proto)}
+      " ", m, "\n", ui_util.generate_machine_attributes_tooltip(machine_proto)}
 
     add_rounding_overlay(player, button, {count=tonumber(machine_count), sprite_size=button_size})
 end
@@ -246,6 +247,7 @@ function add_rounding_overlay(player, button, data)
         if count ~= 0 and count ~= math.floor(count) then
             if (math.ceil(count) - count) > rounding_threshold then
                 sprite = "fp_sprite_green_arrow_up"
+                button.number = math.ceil(count)
             elseif (count - math.floor(count)) < rounding_threshold then
                 sprite = "fp_sprite_red_arrow_down"
                 button.number = math.floor(count)
