@@ -40,6 +40,10 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
 
     elseif action == "delete" then  -- delete can only be pressed if product ~= nil
         Subfactory.remove(subfactory, product)
+
+        -- Remove useless recipes after a product has been deleted
+        update_calculations(player, subfactory)
+        Subfactory.remove_useless_lines(subfactory)
     end
 
     -- Remeber the location of the non-edit item picker dialog

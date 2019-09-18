@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Recipes that don't produce anything are now removed after a product has been deleted
   Changes:
     - The recipe picker now only shows recipes that actually produce a net positive amount of the desired item or fluid
   Bugfixes:

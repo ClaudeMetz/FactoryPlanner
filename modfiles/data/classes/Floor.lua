@@ -66,6 +66,7 @@ function Floor.shift(self, dataset, direction)
     Collection.shift(self[dataset.class], dataset, direction)
 end
 
+
 -- Update validity of this floor and its subfloors
 function Floor.update_validity(self)
     local classes = {Line = "Line"}
