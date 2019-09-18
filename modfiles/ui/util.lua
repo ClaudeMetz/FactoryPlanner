@@ -342,30 +342,27 @@ end
 function ui_util.message.refresh(player)
     -- The message types are ordered by priority
     local types = {
-        [1] = {name = "error", color = "red", always_show=true},
-        [2] = {name = "warning", color = "yellow", always_show=false},
-        [3] = {name = "hint", color = "green", always_show=false}
+        [1] = {name = "error", color = "red"},
+        [2] = {name = "warning", color = "yellow"},
+        [3] = {name = "hint", color = "green"}
     }
     
     local ui_state = get_ui_state(player)
-    local show_hints = get_settings(player).show_hints
     
     -- Go over the all types and messages, trying to find one that should be shown
     local new_message, new_color = "", nil
     for _, type in ipairs(types) do
-        if always_show or show_hints then
-            -- All messages will have lifetime > 0 at this point
-            for _, message in ipairs(ui_state.message_queue) do
-                -- Find first message of this type, then break
-                if message.type == type.name then
-                    new_message = message.text
-                    new_color = type.color
-                    break
-                end
+        -- All messages will have lifetime > 0 at this point
+        for _, message in ipairs(ui_state.message_queue) do
+            -- Find first message of this type, then break
+            if message.type == type.name then
+                new_message = message.text
+                new_color = type.color
+                break
             end
-            -- If a message is found, break because no messages of lower ranked type should be considered
-            if new_message ~= "" then break end
         end
+        -- If a message is found, break because no messages of lower ranked type should be considered
+        if new_message ~= "" then break end
     end
     
     -- Decrease the lifetime of every queued message

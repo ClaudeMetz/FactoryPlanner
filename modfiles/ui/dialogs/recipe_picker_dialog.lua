@@ -20,7 +20,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     end
 
     if error ~= nil then
-        ui_util.message.enqueue(player, error, "error", 1)
+        ui_util.message.enqueue(player, error, "error", 2)  -- lifetime of 2 so it survives the first refresh
         exit_modal_dialog(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
@@ -28,7 +28,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
             local line = Line.init(player, Recipe.init_by_id(result), nil)
             -- If line is false, no compatible machine has been found (ingredient limit)
             if line == false then
-                ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 1)
+                ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
             else
                 Floor.add(ui_state.context.floor, line)
                 update_calculations(player, ui_state.context.subfactory)
@@ -63,7 +63,7 @@ function handle_picker_recipe_click(player, button)
     
     local line = Line.init(player, Recipe.init_by_id(recipe_id), nil)
     if line == false then
-        ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 1)
+        ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
     else
         Floor.add(context.floor, line)
         update_calculations(player, context.subfactory)
