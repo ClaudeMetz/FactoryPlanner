@@ -9,7 +9,6 @@
     "factorio_version": "0.17",
     "dependencies": [
         "base >= 0.17.65",
-        "? FNEI",
-        "! ZRecycling"
+        "? FNEI"
     ]
 }
