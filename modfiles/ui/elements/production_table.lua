@@ -82,6 +82,7 @@ function create_line_table_row(player, line)
 
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
+    local archive_open = ui_state.archive_open
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
 
@@ -109,7 +110,7 @@ function create_line_table_row(player, line)
 
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
-      text=line.percentage}
+      text=line.percentage, enabled=(not archive_open)}
     textfield_percentage.style.width = 55
     textfield_percentage.style.horizontal_align = "center"
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
@@ -155,7 +156,7 @@ function create_line_table_row(player, line)
         if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
             local button_add_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_module"},
-              mouse_button_filter={"left"}}
+              mouse_button_filter={"left"}, enabled=(not archive_open)}
         end
     end
 
@@ -167,7 +168,7 @@ function create_line_table_row(player, line)
         if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
             local button_add_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_beacon"},
-              mouse_button_filter={"left"}}
+              mouse_button_filter={"left"}, enabled=(not archive_open)}
         else
             local beacon = line.beacon
             create_module_button(flow_beacons, line, beacon.module, "beacon_module",

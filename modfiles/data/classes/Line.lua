@@ -98,9 +98,10 @@ function Line.remove(self, dataset, secondary)
         Line.carry_over_changes(self, Line.remove, secondary, table.pack(util.table.deepcopy(dataset)))
     end
     
-    Collection.remove(self[dataset.class], dataset)
-    
+    local removed_gui_position = Collection.remove(self[dataset.class], dataset)
     if dataset.class == "Module" then Line.normalize_modules(self) end
+
+    return removed_gui_position
 end
 
 function Line.replace(self, dataset, object, secondary)

@@ -4,6 +4,7 @@ Factory = {}
 function Factory.init()
     return {
         Subfactory = Collection.init(),
+        selected_subfactory = nil,
         valid = true,
         class = "Factory"
     }
@@ -15,7 +16,7 @@ function Factory.add(self, object)
 end
 
 function Factory.remove(self, dataset)
-    Collection.remove(self[dataset.class], dataset)
+    return Collection.remove(self[dataset.class], dataset)
 end
 
 function Factory.get(self, class, dataset_id)

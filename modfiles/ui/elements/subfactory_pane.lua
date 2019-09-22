@@ -98,7 +98,7 @@ function refresh_item_table(player, class)
         end
 
         local append_function = _G["append_to_" .. ui_name .. "_table"]
-        if append_function ~= nil then append_function(item_table) end
+        if append_function ~= nil then append_function(player, item_table) end
     end
 end
 
@@ -122,9 +122,10 @@ function determine_button_style(item)
 end
 
 -- Adds the button to add a product to the table
-function append_to_product_table(table)
+function append_to_product_table(player, table)
     local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
-      style="fp_sprite-button_inset", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"}}
+      style="fp_sprite-button_inset", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"},
+      enabled=(not ui_util.check_archive_status(player, true))}
     button.style.height = 36
     button.style.width = 36
     button.style.padding = 3
@@ -139,6 +140,9 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(ingredient, click)
         
+    elseif ui_util.check_archive_status(player) then 
+        return
+        
     elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(subfactory, ingredient, direction)
         refresh_item_table(player, "Ingredient")
@@ -152,6 +156,9 @@ function handle_product_element_click(player, product_id, click, direction, alt)
 
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(product, click)
+        
+    elseif ui_util.check_archive_status(player) then
+        return
 
     elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(context.subfactory, product, direction)
@@ -179,6 +186,9 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
     
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(byproduct, click)
+
+    elseif ui_util.check_archive_status(player) then 
+        return
 
     elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(context.subfactory, byproduct, direction)
@@ -285,6 +295,8 @@ end
 
 -- Handles the timescale changing process
 function handle_subfactory_timescale_change(player, timescale)
+    if ui_util.check_archive_status(player) then return end
+
     local subfactory = get_context(player).subfactory
     subfactory.timescale = timescale
     get_ui_state(player).current_activity = nil
@@ -293,12 +305,16 @@ end
 
 -- Activates the mining prod override mode for the current subfactory
 function mining_prod_override(player)
+    if ui_util.check_archive_status(player) then return end
+
     get_ui_state(player).current_activity = "overriding_mining_prod"
     refresh_main_dialog(player)
 end
 
 -- Persists changes to the overriden mining productivity
 function handle_mining_prod_change(player, element)
+    if ui_util.check_archive_status(player) then return end
+
     local subfactory = get_context(player).subfactory
     subfactory.mining_productivity = tonumber(element.text)
 end

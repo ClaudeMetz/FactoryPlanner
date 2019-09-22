@@ -25,6 +25,19 @@ function ui_util.properly_center_frame(player, frame, width, height)
 end
 
 
+-- Checks whether the archive is open; posts an error and returns true if it is
+function ui_util.check_archive_status(player, mute)
+    if get_ui_state(player).archive_open then
+        if not mute then 
+            ui_util.message.enqueue(player, {"label.error_editing_archived_subfactory"}, "error", 1)
+        end
+        return true
+    else
+        return false
+    end
+end
+
+
 -- Sets the font color of the given label / button-label
 function ui_util.set_label_color(ui_element, color)
     if color == nil then

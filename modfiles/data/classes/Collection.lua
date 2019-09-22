@@ -30,6 +30,9 @@ function Collection.remove(self, dataset)
 
     self.count = self.count - 1
     self.datasets[dataset.id] = nil
+
+    -- Returning the deleted position here to allow for GUI adjustments
+    return dataset.gui_position
 end
 
 -- Replaces the dataset with the new object in-place

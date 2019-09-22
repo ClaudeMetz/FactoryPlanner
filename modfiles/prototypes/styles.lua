@@ -25,6 +25,12 @@ data.raw["gui-style"].default["fp_button_action"] = {
     font = "fp-font-semibold-16p"
 }
 
+data.raw["gui-style"].default["fp_button_action_selected"] = {
+    type = "button_style",
+    parent = "fp_button_selected",
+    font = "fp-font-semibold-16p"
+}
+
 data.raw["gui-style"].default["fp_button_mini"] = {
     type = "button_style",
     parent = "rounded_button",
@@ -138,6 +144,9 @@ data.raw["gui-style"].default["fp_sprite-button_inset"] = {
     },
     clicked_graphical_set = {
         base = {position = {265, 0}, corner_size = 8}
+    },
+    disabled_graphical_set = {
+        base = {position = {185, 200}, corner_size = 8}
     }
 }
 
