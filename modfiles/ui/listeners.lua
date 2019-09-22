@@ -206,9 +206,17 @@ script.on_event(defines.events.on_gui_click, function(event)
             local subfactory = ui_state.context.subfactory
             enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
 
+        -- Reacts to the archive button being pressed
+        elseif event.element.name == "fp_button_archive_subfactory" then
+            handle_subfactory_archivation(player)
+
         -- Reacts to the delete button being pressed
         elseif event.element.name == "fp_button_delete_subfactory" then
             handle_subfactory_deletion(player)
+
+        -- Toggles the archive-view-mode
+        elseif event.element.name == "fp_button_toggle_archive" then
+            toggle_archive_view(player)
             
         -- Opens notes dialog
         elseif event.element.name == "fp_button_view_notes" then

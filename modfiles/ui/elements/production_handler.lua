@@ -24,11 +24,15 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
+
+    local archive_status = ui_util.check_archive_status(player)
     
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_recipe(line.recipe, Line.get_in_order(line, "Product"))
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
+        if archive_status then return end
+
         -- Can't shift second line into the first position on subfloors
         -- (Top line ignores interaction, so no special handling there)
         if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) then
@@ -40,6 +44,8 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
         -- Attaches a subfloor to this line
         if click == "left" then
             if line.subfloor == nil then  -- create new subfloor
+                if archive_status then return end
+
                 local subfloor = Floor.init(line)
                 line.subfloor = Subfactory.add(subfactory, subfloor)
                 update_calculations(player, subfactory)
@@ -48,8 +54,10 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
             data_util.context.set_floor(player, line.subfloor)
             refresh_main_dialog(player)
             
-            -- Handle removal of clicked (assembly) line
+        -- Handle removal of clicked (assembly) line
         elseif click == "right" then
+            if archive_status then return end
+
             if line.subfloor == nil then
                 Floor.remove(floor, line)
                 update_calculations(player, subfactory)
@@ -95,6 +103,8 @@ end
 
 -- Handles the machine changing process
 function handle_machine_change(player, line_id, machine_id, click, direction)
+    if ui_util.check_archive_status(player) then return end
+
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
@@ -165,6 +175,8 @@ end
 
 -- Handles a click on an existing module or on the add-module-button
 function handle_line_module_click(player, line_id, module_id, click, direction, alt)
+    if ui_util.check_archive_status(player) then return end
+
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
@@ -229,6 +241,8 @@ end
 
 -- Handles a click on an existing beacon/beacon-module or on the add-beacon-button
 function handle_line_beacon_click(player, line_id, type, click, direction, alt)
+    if ui_util.check_archive_status(player) then return end
+
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
@@ -327,6 +341,8 @@ end
 
 -- Handles a click on any of the 3 item buttons of a specific line
 function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
+    if ui_util.check_archive_status(player) then return end
+
     local line = Floor.get(get_context(player).floor, "Line", line_id)
     local item = Line.get(line, class, item_id)
 

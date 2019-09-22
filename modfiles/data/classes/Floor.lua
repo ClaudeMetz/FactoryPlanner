@@ -38,7 +38,7 @@ function Floor.remove(self, dataset)
         Subfactory.remove(self.parent, dataset.subfloor)
     end
 
-    Collection.remove(self[dataset.class], dataset)
+    return Collection.remove(self[dataset.class], dataset)
 end
 
 -- This leaves the object in disrepair, but it will be deleted anyway

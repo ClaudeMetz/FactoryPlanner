@@ -1,15 +1,24 @@
 -- Creates the actionbar including the new-, edit- and delete-buttons
 function add_actionbar_to(main_dialog)
     local actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
+    actionbar.style.bottom_margin = 4
     actionbar.style.left_margin = 6
 
     actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, 
       style="fp_button_action", mouse_button_filter={"left"}}
     actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, 
       style="fp_button_action", mouse_button_filter={"left"}}
+    actionbar.add{type="button", name="fp_button_archive_subfactory", caption={"button-text.archive"}, 
+      style="fp_button_action", mouse_button_filter={"left"}}
     actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, 
       style="fp_button_action", mouse_button_filter={"left"}}
-    actionbar.style.bottom_margin = 4
+
+    local actionbar_spacer = actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
+    actionbar_spacer.style.horizontally_stretchable = true
+
+    local button_toggle_archive = actionbar.add{type="button", name="fp_button_toggle_archive",
+      caption={"button-text.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}
+    button_toggle_archive.style.width = 160    
 
     refresh_actionbar(game.get_player(main_dialog.player_index))
 end
@@ -19,10 +28,14 @@ end
 function refresh_actionbar(player)
     local ui_state = get_ui_state(player)
     local actionbar = player.gui.screen["fp_frame_main_dialog"]["flow_action_bar"]
+    local new_button = actionbar["fp_button_new_subfactory"]
     local delete_button = actionbar["fp_button_delete_subfactory"]
+    local archive_button = actionbar["fp_button_archive_subfactory"]
+    local toggle_archive_button = actionbar["fp_button_toggle_archive"]
 
     local subfactory_exists = (ui_state.context.subfactory ~= nil)
     actionbar["fp_button_edit_subfactory"].enabled = subfactory_exists
+    archive_button.enabled = subfactory_exists
     delete_button.enabled = subfactory_exists
 
     if ui_state.current_activity == "deleting_subfactory" then
@@ -36,6 +49,26 @@ function refresh_actionbar(player)
         delete_button.style.left_padding = 10
         ui_util.set_label_color(delete_button, "default_button")
     end
+
+    if ui_state.archive_open then
+        new_button.enabled = false
+        archive_button.caption = {"button-text.unarchive"}
+        toggle_archive_button.caption = {"button-text.close_archive"}
+        toggle_archive_button.style = "fp_button_action_selected"
+    else
+        new_button.enabled = true
+        archive_button.caption = {"button-text.archive"}
+        toggle_archive_button.caption = {"button-text.open_archive"}
+        toggle_archive_button.style = "fp_button_action"
+    end
+end
+
+
+-- Resets the selected subfactory to a valid position after one has been removed
+local function reset_subfactory_selection(player, factory, removed_gui_position)
+    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
+    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
+    data_util.context.set_subfactory(player, subfactory)
 end
 
 
@@ -45,17 +78,45 @@ function handle_subfactory_deletion(player)
 
     if ui_state.current_activity == "deleting_subfactory" then
         local factory = ui_state.context.factory
-        local removed_gui_position = ui_state.context.subfactory.gui_position
-        Factory.remove(factory, ui_state.context.subfactory)
-
-        if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
-        local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
-        data_util.context.set_subfactory(player, subfactory)
+        local removed_gui_position = Factory.remove(factory, ui_state.context.subfactory)
+        reset_subfactory_selection(player, factory, removed_gui_position)
 
         ui_state.current_activity = nil
     else
         ui_state.current_activity = "deleting_subfactory"
     end
 
+    refresh_main_dialog(player)
+end
+
+-- Handles (un)archiving the current subfactory
+function handle_subfactory_archivation(player)
+    local player_table = get_table(player)
+    local ui_state = player_table.ui_state
+    local subfactory = ui_state.context.subfactory
+    local archive_open = ui_state.archive_open
+
+    local origin = archive_open and player_table.archive or player_table.factory
+    local destination = archive_open and player_table.factory or player_table.archive
+
+    local removed_gui_position = Factory.remove(origin, subfactory)
+    reset_subfactory_selection(player, origin, removed_gui_position)
+    Factory.add(destination, subfactory)
+
+    ui_state.current_activity = nil
+    refresh_main_dialog(player)
+end
+
+-- Enters or leaves the archive-viewing mode
+function toggle_archive_view(player)
+    local player_table = get_table(player)
+    local ui_state = player_table.ui_state
+    local archive_open = not ui_state.archive_open  -- already negated right here
+    ui_state.archive_open = archive_open
+
+    local factory = archive_open and player_table.archive or player_table.factory
+    data_util.context.set_factory(player, factory)
+
+    ui_state.current_activity = nil
     refresh_main_dialog(player)
 end

@@ -46,7 +46,7 @@ function Subfactory.remove(self, dataset)
         Floor.remove_subfloors(dataset)
     end
 
-    Collection.remove(self[dataset.class], dataset)
+    return Collection.remove(self[dataset.class], dataset)
 end
 
 function Subfactory.get(self, class, dataset_id)

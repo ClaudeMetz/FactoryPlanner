@@ -16,9 +16,19 @@ function data_util.context.create(player)
     }
 end
 
+-- Updates the context to match the newly selected factory
+function data_util.context.set_factory(player, factory)
+    local context = get_context(player)
+    context.factory = factory
+    local subfactory = factory.selected_subfactory or
+      Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
+    data_util.context.set_subfactory(player, subfactory)
+end
+
 -- Updates the context to match the newly selected subfactory
 function data_util.context.set_subfactory(player, subfactory)
     local context = get_context(player)
+    context.factory.selected_subfactory = subfactory
     context.subfactory = subfactory
     context.floor = (subfactory ~= nil) and subfactory.selected_floor or nil
     context.line = nil
@@ -434,12 +444,16 @@ end
 
 -- Adds an example subfactory for new users to explore (returns that subfactory)
 function data_util.add_example_subfactory(player)
-    local context = get_context(player)
-    local factory = context.factory
+    local player_table = get_table(player)
+    local ui_state = player_table.ui_state
+    local factory = player_table.factory
     
+    -- Always add the example subfactory as a non-archived one
     local subfactory = Factory.add(factory, Subfactory.init("Example", 
       {type="item", name="automation-science-pack"}, "one_minute"))
-    data_util.context.set_subfactory(player, subfactory)
+    factory.selected_subfactory = subfactory
+    data_util.context.set_factory(player, factory)
+    ui_state.archive_open = false
     
     -- Products
     local products = {
@@ -512,7 +526,7 @@ function data_util.add_example_subfactory(player)
             beacon={beacon={name="beacon", amount=6}, module={name="speed-module-3", amount=2}}
         }
     }
-    construct_floor(player, context.floor, recipes)
+    construct_floor(player, ui_state.context.floor, recipes)
     
     return subfactory
 end

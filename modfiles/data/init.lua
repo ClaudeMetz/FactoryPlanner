@@ -16,7 +16,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Sets up global data structure of the mod
 script.on_init(function()
@@ -129,6 +129,7 @@ function update_player_table(player, table)
         player_table.index = player.index
 
         player_table.factory = Factory.init()
+        player_table.archive = Factory.init()
 
         player_table.settings = {}
         player_table.preferences = {}
@@ -190,6 +191,7 @@ function reset_ui_state(player)
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
     ui_state_table.floor_total = false  -- Whether the floor or subfactory totals are displayed
+    ui_state_table.archive_open = false  -- Wether the players subfactory archive is currently open
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.recipe_filter_preferences = 
