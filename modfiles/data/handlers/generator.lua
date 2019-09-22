@@ -42,17 +42,20 @@ local function format_allowed_effects(allowed_effects)
 end
 
 
--- Determines whether this recipe is a recycling one
--- Compatible with: Reverse Factory, Deadlock's Industrial Revolution
+-- Determines whether this recipe is a recycling one or not
+-- Compatible with: Reverse Factory, Industrial Revolution, Recycling Machines
 local function is_recycling_recipe(proto)
     local active_mods = {
-        DIR = game.active_mods["DeadlockIndustry"],
-        RF = game.active_mods["reverse-factory"]
+        DIR = game.active_mods["IndustrialRevolution"],
+        RF = game.active_mods["reverse-factory"],
+        ZR = game.active_mods["ZRecycling"]
     }
 
-    if active_mods.DIR and string.match(proto.name, "^disassemble%-.*") then
+    if active_mods.DIR and string.match(proto.name, "^scrap%-.*") then
         return true
     elseif active_mods.RF and string.match(proto.name, "^rf%-.*") then
+        return true
+    elseif active_mods.ZR and string.match(proto.name, "^dry411srev%-.*") then
         return true
     else
         return false
@@ -60,14 +63,12 @@ local function is_recycling_recipe(proto)
 end
 
 -- Determines whether the given recipe is a barreling or stacking one
+-- Compatible with: Deadlock's Stacking Beltboxes & Compact Loaders and extensions of it
 local function is_barreling_recipe(proto)
-    local active_mods = {
-        DBL = game.active_mods["deadlock-beltboxes-loaders"]
-    }
-
     if proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel" then
         return true
-    elseif active_mods.DBL and string.match(proto.name, "^deadlock%-stacks%-.*") then
+    elseif string.match(proto.name, "^deadlock%-stacks%-.*") or string.match(proto.name, "^deadlock%-packrecipe%-.*")
+      or string.match(proto.name, "^deadlock%-unpackrecipe%-.*") then
         return true
     else
         return false
@@ -144,19 +145,12 @@ end
 local function undesirable_recipes()
     local undesirables = 
     {
-        ["small-plane"] = false,
+        --[[ ["small-plane"] = false,
         ["electric-energy-interface"] = false,
         ["railgun"] = false,
         ["railgun-dart"] = false,
-        ["player-port"] = false
+        ["player-port"] = false ]]
     }
-
-    -- Leaves loaders in if LoaderRedux is loaded
-    if game.active_mods["LoaderRedux"] == nil then
-        undesirables["loader"] = false
-        undesirables["fast-loader"] = false
-        undesirables["express-loader"] = false
-    end
     
     return undesirables
 end
@@ -451,9 +445,9 @@ end
 -- Returns the names of the 'machines' that shouldn't be included
 local function undesirable_machines()
     return {
-        ["escape-pod-assembler"] = false,
+        --[[ ["escape-pod-assembler"] = false,
         ["crash-site-assembling-machine-1-repaired"] = false,
-        ["crash-site-assembling-machine-2-repaired"] = false
+        ["crash-site-assembling-machine-2-repaired"] = false ]]
     }
 end
 
