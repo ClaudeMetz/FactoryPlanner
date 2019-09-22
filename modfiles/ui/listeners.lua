@@ -65,6 +65,16 @@ script.on_event("fp_confirm_dialog", function(event)
 end)
 
 
+-- Fires on the activation of any quickbar lua shortcut
+script.on_event(defines.events.on_lua_shortcut, function(event)
+    local player = game.players[event.player_index]
+
+    if event.prototype_name == "fp_open_interface" then
+        toggle_main_dialog(player)
+    end
+end)
+
+
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.get_player(event.player_index)

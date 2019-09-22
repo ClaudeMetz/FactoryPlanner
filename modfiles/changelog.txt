@@ -3,6 +3,7 @@ Version: 0.17.00
 Date: 00. 00. 0000
   Features:
     - Added a subfactory archive. You can use it to keep around old plans that you might want to refer back to at a later point. They can't be edited once they are archived, although you can un-archive them again, should you need to.
+    - Added a quickbar shortcut to open the main interface
   Changes:
     - 
   Bugfixes:
