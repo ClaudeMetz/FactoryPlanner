@@ -43,7 +43,7 @@ end
 
 
 -- Determines whether this recipe is a recycling one or not
--- Compatible with: Reverse Factory, Industrial Revolution, Recycling Machines
+-- Compatible with: 'Industrial Revolution', 'Reverse Factory', 'Recycling Machines'
 local function is_recycling_recipe(proto)
     local active_mods = {
         DIR = game.active_mods["IndustrialRevolution"],
@@ -63,7 +63,7 @@ local function is_recycling_recipe(proto)
 end
 
 -- Determines whether the given recipe is a barreling or stacking one
--- Compatible with: Deadlock's Stacking Beltboxes & Compact Loaders and extensions of it
+-- Compatible with: 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions of it
 local function is_barreling_recipe(proto)
     if proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel" then
         return true
@@ -78,14 +78,21 @@ end
 
 -- Adds the tooltip for the given recipe
 function add_recipe_tooltip(recipe)
-    local tooltip = {}
+    local tooltip = {"", recipe.localised_name}
     local current_table = tooltip
-    -- Inserts strings in a way to minimize amount and depth of the localised string
+    local current_depth = 1
+
+    -- Inserts strings in a way to minimize depth ('nestedness') of the localised string
     local function multi_insert(t)
         for _, e in pairs(t) do
-            if table_size(current_table) == 18 then
+            -- Nest localised string deeper if the limit of 20 elements per 'level' is reached
+            if table_size(current_table) == 20 then
+                -- Stop adding to the tooltip if the maximum depth has been reached (should rarely happen)
+                if current_depth == 20 then return tooltip end
+
                 table.insert(current_table, {""})
                 current_table = current_table[table_size(current_table)]
+                current_depth = current_depth + 1
             end
             table.insert(current_table, e)
         end
@@ -107,7 +114,7 @@ function add_recipe_tooltip(recipe)
     end
     if devmode then multi_insert{("\n" .. recipe.name)} end
 
-    recipe.tooltip = {"", recipe.localised_name, unpack(tooltip)}
+    recipe.tooltip = tooltip
 end
 
 -- Adds the tooltip for the given item
