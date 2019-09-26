@@ -250,7 +250,7 @@ end
 
 -- Determines the amount of energy the given machine will consume
 function data_util.determine_energy_consumption(machine, machine_count, total_effects)
-    local energy_consumption = machine_count * (machine.proto.energy * 60)
+    local energy_consumption = machine_count * (machine.proto.energy_usage * 60)
     return energy_consumption + (energy_consumption * math.max(total_effects.consumption, -0.8))
 end
 
