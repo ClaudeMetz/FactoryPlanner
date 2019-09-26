@@ -465,7 +465,7 @@ function generator.all_machines()
     local function generate_category_entry(category, proto)        
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
-        local energy = proto.energy_usage or proto.max_energy_usage or 0
+        local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
         local burner = nil
         if proto.burner_prototype then
             burner = {
@@ -481,7 +481,7 @@ function generator.all_machines()
             sprite = "entity/" .. proto.name,
             ingredient_limit = (proto.ingredient_count or 255),
             speed = speed,
-            energy = energy,
+            energy_usage = energy_usage,
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
@@ -550,7 +550,7 @@ function generator.all_machines()
                         
                         temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
                         energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
-                        machine.speed = machine.energy / energy_per_unit
+                        machine.speed = machine.energy_usage / energy_per_unit
 
                         deep_insert_proto(all_machines, "categories", "steam", "machines", machine)
                     end
@@ -676,7 +676,8 @@ function generator.all_beacons()
                 sprite = "entity/" .. proto.name,
                 allowed_effects = format_allowed_effects(proto.allowed_effects),
                 module_limit = proto.module_inventory_size,
-                effectivity = proto.distribution_effectivity
+                effectivity = proto.distribution_effectivity,
+                energy_usage = proto.energy_usage or proto.max_energy_usage or 0
             })
         end
     end

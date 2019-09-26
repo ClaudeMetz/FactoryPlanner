@@ -5,13 +5,13 @@ function add_actionbar_to(main_dialog)
     actionbar.style.left_margin = 6
 
     actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, 
-      style="fp_button_action", mouse_button_filter={"left"}}
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"tooltip.new_subfactory"}}
     actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, 
-      style="fp_button_action", mouse_button_filter={"left"}}
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"tooltip.edit_subfactory"}}
     actionbar.add{type="button", name="fp_button_archive_subfactory", caption={"button-text.archive"}, 
       style="fp_button_action", mouse_button_filter={"left"}}
     actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, 
-      style="fp_button_action", mouse_button_filter={"left"}}
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"tooltip.delete_subfactory"}}
 
     local actionbar_spacer = actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
     actionbar_spacer.style.horizontally_stretchable = true
@@ -35,8 +35,22 @@ function refresh_actionbar(player)
 
     local subfactory_exists = (ui_state.context.subfactory ~= nil)
     actionbar["fp_button_edit_subfactory"].enabled = subfactory_exists
-    archive_button.enabled = subfactory_exists
     delete_button.enabled = subfactory_exists
+
+    archive_button.enabled = subfactory_exists
+    archive_button.tooltip = (ui_state.archive_open) and {"tooltip.unarchive_subfactory"} or {"tooltip.archive_subfactory"}
+
+    local archived_subfactories_count = get_table(player).archive.Subfactory.count
+    toggle_archive_button.enabled = (ui_state.archive_open or archived_subfactories_count > 0)
+    local archive_tooltip = {"tooltip.toggle_archive"}
+    if not toggle_archive_button.enabled then 
+        archive_tooltip = {"", archive_tooltip, "\n", {"tooltip.archive_empty"}}
+    else 
+        local subs = (archived_subfactories_count == 1) and {"tooltip.subfactory"} or {"tooltip.subfactories"}
+        archive_tooltip = {"", archive_tooltip, "\n- ", {"tooltip.archive_filled_1"},
+          " " .. archived_subfactories_count .. " ", subs, " -"}
+    end
+    toggle_archive_button.tooltip = archive_tooltip
 
     if ui_state.current_activity == "deleting_subfactory" then
         delete_button.caption = {"button-text.delete_confirm"}

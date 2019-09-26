@@ -4,9 +4,9 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
-    - 
+    - Improved the tooltips in several places
   Bugfixes:
-    - Fixed the tooltip too long-crash for real this time
+    - Fixed the 'tooltip too long'-crash for real this time
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.52

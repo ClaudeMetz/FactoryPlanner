@@ -249,7 +249,8 @@ end
 -- Returns a tooltip containing the attributes of the given beacon prototype
 function ui_util.generate_beacon_attributes_tooltip(beacon)
     return {"", {"tooltip.module_slots"}, ": ", beacon.module_limit, "\n",
-              {"tooltip.effectivity"}, ": ", (beacon.effectivity * 100), "%"}
+              {"tooltip.effectivity"}, ": ", (beacon.effectivity * 100), "%", "\n",
+              {"label.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
 end
 
 -- Returns a tooltip containing the attributes of the given fuel prototype
@@ -265,7 +266,7 @@ end
 -- Returns a tooltip containing the attributes of the given machine prototype
 function ui_util.generate_machine_attributes_tooltip(machine)
     return {"", {"tooltip.crafting_speed"}, ": ", machine.speed, "\n",
-             {"label.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy, "W", 3), "\n",
+             {"label.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
              {"tooltip.module_slots"}, ": ", machine.module_limit}
 end
 
