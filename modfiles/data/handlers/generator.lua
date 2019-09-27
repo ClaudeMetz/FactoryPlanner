@@ -432,6 +432,18 @@ function generator.item_recipe_map()
     return map
 end
 
+-- Generates a table mapping item identifier to their prototypes
+function generator.idenfifier_item_map()
+    local map = {}
+    local all_items = global.all_items
+    for _, type in pairs({"item", "fluid"}) do
+        for _, item in pairs(all_items.types[all_items.map[type]].items) do
+            map[item.identifier] = item
+        end
+    end
+    return map
+end
+
 
 -- Returns the names of the item groups that shouldn't be included
 function generator.undesirable_item_groups()

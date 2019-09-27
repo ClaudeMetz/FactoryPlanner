@@ -142,8 +142,9 @@ end
 -- (This function is not object-type-agnostic for performance reasons (minimizing function calls))
 function picker.apply_filter(player, object_type, apply_button_style)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog_" .. object_type .. "_picker"]["flow_modal_dialog"]
-    local search_term = flow_modal_dialog["table_search_bar"]["fp_textfield_picker_search_bar"].text:gsub("^%s*(.-)%s*$", "%1")
     local warning_label = flow_modal_dialog["label_warning_message"]
+    local search_term = flow_modal_dialog["table_search_bar"]["fp_textfield_picker_search_bar"].text:gsub("^%s*(.-)%s*$", "%1")
+    search_term = string.lower(search_term)
 
     local disabled, hidden = nil, nil
     local existing_products, relevant_recipes, force_recipes = {}, {}, nil
@@ -151,9 +152,9 @@ function picker.apply_filter(player, object_type, apply_button_style)
         disabled = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state
         hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state
 
-        for _, recipe in pairs(get_ui_state(player).modal_data) do relevant_recipes[recipe.id] = recipe end 
+        for _, recipe in pairs(get_ui_state(player).modal_data) do relevant_recipes[tostring(recipe.id)] = recipe end 
         force_recipes = player.force.recipes
-    else
+    elseif apply_button_style then  -- object_type == "item"
         for _, product in pairs(Subfactory.get_in_order(get_context(player).subfactory, "Product")) do
             existing_products[product.proto.name] = true
         end
@@ -178,18 +179,15 @@ function picker.apply_filter(player, object_type, apply_button_style)
 
         for _, subgroup_element in pairs(subgroup_elements) do
             local subgroup_visible = false
-            local object_count = 0
                 
             for _, object_element in pairs(subgroup_element.children) do
                 local visible = false
                 
                 if object_type == "item" then
-                    local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
-                    local split_ident = ui_util.split(identifier, "_")
-                    local item = global.all_items.types[split_ident[1]].items[split_ident[2]]
+                    local item = identifier_item_map[string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")]
 
                     -- Set visibility of items (and item-groups) appropriately
-                    if not item.ingredient_only and string.find(string.lower(item.name), string.lower(search_term), 1, true) then
+                    if (not item.ingredient_only) and string.find(item.name, search_term, 1, true) then
                         visible = true
 
                         -- Only need to refresh button style if needed
@@ -203,15 +201,15 @@ function picker.apply_filter(player, object_type, apply_button_style)
                             end
                         end
                     end
+
                 else  -- object_type == "recipe"
-                    local identifier = string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")
-                    local recipe = relevant_recipes[tonumber(identifier)]
+                    local recipe = relevant_recipes[string.gsub(object_element.name, "fp_sprite%-button_picker_[a-z]+_object_", "")]
                     
                     if recipe ~= nil then
                         local enabled = (recipe.custom) and true or force_recipes[recipe.name].enabled
                         
                         -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
-                        -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and object.hidden))
+                        -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and recipe.hidden))
                         if recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)) then
                             visible = true
 
@@ -225,10 +223,10 @@ function picker.apply_filter(player, object_type, apply_button_style)
                 
                 object_element.visible = visible
                 if visible then subgroup_visible = true; group_visible = true end
-                object_count = object_count + 1
             end
             
             subgroup_element.visible = subgroup_visible
+            local object_count = table_size(subgroup_element.children)
             specific_scroll_pane_height = specific_scroll_pane_height +  math.ceil(object_count / 12) * 33
             subgroup_count = subgroup_count + 1
             

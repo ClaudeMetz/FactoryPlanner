@@ -1,9 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
-  Features:
-    - 
   Changes:
+    - Improved item picker search performance significantly
     - Improved the tooltips in several places
   Bugfixes:
     - Fixed the 'tooltip too long'-crash for real this time
