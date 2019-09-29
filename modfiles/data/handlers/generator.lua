@@ -87,8 +87,9 @@ function add_recipe_tooltip(recipe)
         for _, e in pairs(t) do
             -- Nest localised string deeper if the limit of 20 elements per 'level' is reached
             if table_size(current_table) == 20 then
-                -- Stop adding to the tooltip if the maximum depth has been reached (should rarely happen)
-                if current_depth == 19 then return tooltip end
+                -- If the depth is more than 8, the serpent deserializer will crash when loading the save
+                -- because the resulting global table will be 'too complex'
+                if current_depth == 8 then return tooltip end
 
                 table.insert(current_table, {""})
                 current_table = current_table[table_size(current_table)]
