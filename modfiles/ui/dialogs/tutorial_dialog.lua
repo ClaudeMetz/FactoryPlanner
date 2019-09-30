@@ -38,11 +38,8 @@ function open_tutorial_dialog(flow_modal_dialog)
     label_example_subfactory.visible = other_mods_active
 
     -- Tutorial Mode
-    local tutorial_mode = get_preferences(player).tutorial_mode
-    local checkbox_tutorial_mode = interactive_table.add{type="checkbox", name="fp_checkbox_tutorial_mode", 
-      caption={"", {"checkbox.tutorial_mode"}, " [img=info]"}, tooltip={"tooltip.tutorial_mode"}, state=tutorial_mode}
-    checkbox_tutorial_mode.style.left_margin = 4
-    
+    local switch = ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode, 
+      {"label.tutorial_mode"}, {"tooltip.tutorial_mode"})
 
     -- General Tips
     local interface_title = table_tutorial.add{type="label", name="label_interface_title", caption={"label.interface"}}

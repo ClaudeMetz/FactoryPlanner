@@ -1,4 +1,5 @@
 ui_util = {
+    switch = {},
     message = {},
     fnei = {}
 }
@@ -342,6 +343,48 @@ function ui_util.split(s, separator)
         table.insert(r, token) 
     end
     return r
+end
+
+
+-- **** Switch utility ****
+-- Adds an on/off-switch including a label with tooltip to the given flow
+-- Automatically converts boolean state to the appropriate switch_state
+function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip)
+    if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
+
+    local flow = parent_flow.add{type="flow", name="flow_" .. name, direction="horizontal"}
+    flow.style.vertical_align = "center"
+    
+    local switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
+      left_label_caption={"label.on"}, right_label_caption={"label.off"}}
+
+    local caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
+    local label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
+    label.style.font = "fp-font-15p"
+    label.style.left_margin = 8
+
+    return switch
+end
+
+-- Returns the switch_state of the switch by the given name in the given flow (optionally as a boolean)
+function ui_util.switch.get_state(flow, name, boolean)
+    local state = flow["flow_" .. name]["fp_switch_" .. name].switch_state
+    if boolean then return ui_util.switch.convert_to_boolean(state)
+    else return state end
+end
+
+-- Sets the switch_state of the switch by the given name in the given flow (state given as switch_state or boolean)
+function ui_util.switch.set_state(flow, name, state)
+    if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
+    flow["flow_" .. name]["fp_switch_" .. name].switch_state = state
+end
+
+function ui_util.switch.convert_to_boolean(state)
+    return (state == "left") and true or false
+end
+
+function ui_util.switch.convert_to_state(boolean)
+    return boolean and "left" or "right"
 end
 
 

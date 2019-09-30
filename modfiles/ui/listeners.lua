@@ -98,19 +98,27 @@ end)
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
 
-    -- Changes the tutorial-mode preference
-    if event.element.name == "fp_checkbox_tutorial_mode" then
-        get_preferences(player).tutorial_mode = event.element.state
-
-    -- Applies the disabled/hidden filter to a picker dialog
-    elseif string.find(event.element.name, "^fp_checkbox_picker_filter_condition_[a-z]+$") then
-        local filter = string.gsub(event.element.name, "fp_checkbox_picker_filter_condition_", "")
-        handle_filter_radiobutton_click(player, filter, event.element.state)
-
     -- Toggles the selected preference
-    elseif string.find(event.element.name, "^fp_checkbox_preferences_[a-z_]+$") then
+    if string.find(event.element.name, "^fp_checkbox_preferences_[a-z_]+$") then
         local preference = string.gsub(event.element.name, "fp_checkbox_preferences_", "")
         get_preferences(player)[preference] = event.element.state
+
+    end
+end)
+
+-- Fires on any radiobutton change
+script.on_event(defines.events.on_gui_switch_state_changed, function(event)
+    local player = game.get_player(event.player_index)
+
+    -- Changes the tutorial-mode preference
+    if event.element.name == "fp_switch_tutorial_mode" then
+        local state = ui_util.switch.convert_to_boolean(event.element.switch_state)
+        get_preferences(player).tutorial_mode = state
+
+    -- Applies the disabled/hidden filter to a picker dialog
+    elseif string.find(event.element.name, "^fp_switch_picker_filter_condition_[a-z]+$") then
+        local filter_name = string.gsub(event.element.name, "fp_switch_picker_filter_condition_", "")
+        handle_filter_switch_flick(player, filter_name, event.element.switch_state)
 
     end
 end)
