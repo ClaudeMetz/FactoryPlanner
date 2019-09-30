@@ -33,8 +33,9 @@ function loader.run(player_table)
         if f ~= nil then f.run(player_table) end
     end
 
-    -- Update the validity of all elements of the factory
+    -- Update the validity of all elements of the factory and archive
     Factory.update_validity(player_table.factory)
+    Factory.update_validity(player_table.archive)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global

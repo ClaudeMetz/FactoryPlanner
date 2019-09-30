@@ -40,9 +40,12 @@ function attempt_player_table_migration(player)
         -- General migrations
         apply_migrations(migrations, "player_table", player, player_table)
 
-        -- Factory migrations
-        for _, subfactory in pairs(Factory.get_in_order(player_table.factory, "Subfactory")) do
-            attempt_subfactory_migration(player, subfactory, migrations)
+        -- Subfactory migrations
+        local factories = {"factory", "archive"}
+        for _, factory_name in pairs(factories) do
+            for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
+                attempt_subfactory_migration(player, subfactory, migrations)
+            end
         end
 
         player_table.mod_version = global.mod_version

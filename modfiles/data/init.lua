@@ -103,10 +103,14 @@ function handle_configuration_change()
     -- Complete loader process by saving new data to global
     loader.finish()
 
-    -- Update factory calculations in case some numbers changed
+    -- Update factory and archive calculations in case some numbers changed
+    local factories = {"factory", "archive"}
     for index, player in pairs(game.players) do
-        for _, subfactory in ipairs(Factory.get_in_order(global.players[index].factory, "Subfactory")) do
-            update_calculations(player, subfactory)
+        local player_table = global.players[index]
+        for _, factory_name in pairs(factories) do
+            for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
+                update_calculations(player, subfactory)
+            end
         end
     end
 end
