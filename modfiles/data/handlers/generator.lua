@@ -439,7 +439,8 @@ function generator.idenfifier_item_map()
     local all_items = global.all_items
     for _, type in pairs({"item", "fluid"}) do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
-            map[item.identifier] = item
+            -- Identifier existance-check for migration reasons
+            if item.identifier ~= nil then map[item.identifier] = item end
         end
     end
     return map
