@@ -11,11 +11,9 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     local result, error, show = run_preliminary_checks(player, product)
     
     local function refresh_unfiltered_dialog()
-        picker.refresh_filter_conditions(flow_modal_dialog, {"checkbox.unresearched_recipes"}, {"checkbox.hidden_recipes"})
+        picker.refresh_filter_conditions(flow_modal_dialog, show.disabled, show.hidden)
         picker.refresh_search_bar(flow_modal_dialog, product.proto.name, false)
         picker.refresh_warning_label(flow_modal_dialog, "")
-        flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state = show.disabled
-        flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state = show.hidden
         picker.refresh_picker_panel(flow_modal_dialog, "recipe", true)
     end
 
@@ -48,11 +46,11 @@ function open_recipe_picker_dialog(flow_modal_dialog)
 end
 
 
--- Reacts to either the disabled or hidden radiobutton being pressed
-function handle_filter_radiobutton_click(player, type, state)
+-- Reacts to either the disabled or hidden switches being flicked
+function handle_filter_switch_flick(player, type, state)
     local ui_state = get_ui_state(player)
     -- Remember the user selection for this type of filter
-    ui_state.recipe_filter_preferences[type] = state
+    ui_state.recipe_filter_preferences[type] = ui_util.switch.convert_to_boolean(state)
     picker.apply_filter(player, "recipe", nil)
 end
 

@@ -3,22 +3,28 @@ picker = {groups_per_row = 6}
 
 
 -- Adds a bar containing checkboxes to control whether enabled and hidden picks should be shown
-function picker.refresh_filter_conditions(flow, disabled_caption, hidden_caption)
-    if enabled_caption ~= nil or hidden_caption ~= nil then
-        if flow["table_filter_conditions"] == nil then
-            local table = flow.add{type="table", name="table_filter_conditions", column_count=3}
-            table.style.horizontal_spacing = 16
+function picker.refresh_filter_conditions(flow, disabled_state, hidden_state)
+    -- Create filter conditions from scratch if they don't exist
+    if flow["table_filter_conditions"] == nil then
+        local table = flow.add{type="table", name="table_filter_conditions", column_count=2}
+        table.vertical_centering = false
+        table.style.horizontal_spacing = 16
 
-            table.add{type="label", name="label_filter_conditions", caption={"label.show"}}
-            if disabled_caption ~= nil then
-                table.add{type="checkbox", name="fp_checkbox_picker_filter_condition_disabled", 
-                  caption=disabled_caption, state=false}
-            end
-            if hidden_caption ~= nil then
-                table.add{type="checkbox", name="fp_checkbox_picker_filter_condition_hidden", 
-                  caption=hidden_caption, state=false}
-            end
-        end
+        local label = table.add{type="label", name="label_filter_conditions", caption={"label.show"}}
+        label.style.top_margin = 2
+        label.style.left_margin = 4
+
+        local flow_switches = table.add{type="flow", name="flow_switches", direction="vertical"}
+        ui_util.switch.add_on_off(flow_switches, "picker_filter_condition_disabled", disabled_state, 
+          {"label.unresearched_recipes"}, nil)
+        ui_util.switch.add_on_off(flow_switches, "picker_filter_condition_hidden", hidden_state,
+          {"label.hidden_recipes"}, nil)
+
+    -- Refresh the switch_states if the elements already exist
+    else
+        local flow_switches = flow["table_filter_conditions"]["flow_switches"]
+        ui_util.switch.set_state(flow_switches, "picker_filter_condition_disabled", disabled_state)
+        ui_util.switch.set_state(flow_switches, "picker_filter_condition_hidden", hidden_state)
     end
 end
 
@@ -149,8 +155,9 @@ function picker.apply_filter(player, object_type, apply_button_style)
     local disabled, hidden = nil, nil
     local existing_products, relevant_recipes, force_recipes = {}, {}, nil
     if object_type == "recipe" then
-        disabled = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_disabled"].state
-        hidden = flow_modal_dialog["table_filter_conditions"]["fp_checkbox_picker_filter_condition_hidden"].state
+        local flow_switches = flow_modal_dialog["table_filter_conditions"]["flow_switches"]
+        disabled = ui_util.switch.get_state(flow_switches, "picker_filter_condition_disabled", true)
+        hidden = ui_util.switch.get_state(flow_switches, "picker_filter_condition_hidden", true)
 
         for _, recipe in pairs(get_ui_state(player).modal_data) do relevant_recipes[tostring(recipe.id)] = recipe end 
         force_recipes = player.force.recipes
