@@ -318,3 +318,12 @@ function handle_mining_prod_change(player, element)
     local subfactory = get_context(player).subfactory
     subfactory.mining_productivity = tonumber(element.text)
 end
+
+-- Handles confirmation of the mining prod textfield, possibly disabling the custom override
+function handle_mining_prod_confirmation(player)
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+
+    if subfactory.mining_productivity == nil then ui_state.current_activity = nil end
+    update_calculations(player, subfactory)
+end

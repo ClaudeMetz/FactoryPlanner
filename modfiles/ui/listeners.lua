@@ -143,6 +143,7 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     elseif event.element.name == "fp_textfield_mining_prod" then
         handle_mining_prod_change(player, event.element)
 
+    -- Limits the subfactory name length to 16 characters
     elseif event.element.name == "fp_textfield_subfactory_name" then
         handle_subfactory_name_change(player, event.element)
 
@@ -152,17 +153,14 @@ end)
 -- Fires on any confirmation of a textfield
 script.on_event(defines.events.on_gui_confirmed, function(event)
     local player = game.get_player(event.player_index)
-    local ui_state = get_ui_state(player)
-    local subfactory = ui_state.context.subfactory
     
     -- Re-run calculations when the mining prod changes, or cancel custom mining prod 'mode'
     if event.element.name == "fp_textfield_mining_prod" then
-        if subfactory.mining_productivity == nil then ui_state.current_activity = nil end
-        update_calculations(player, subfactory)
+        handle_mining_prod_confirmation(player)
 
-    -- Re-run calculations when a line percentage changes
+    -- Re-run calculations when a line percentage change is confirmed
     elseif string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
-        update_calculations(player, subfactory)
+        handle_percentage_confirmation(player, event.element)
 
     -- Submit any modal dialog, if it is open
     elseif get_ui_state(player).modal_dialog_type ~= nil then

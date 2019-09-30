@@ -77,7 +77,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
 end
 
 
--- Handles the changing of the percentage textfield
+-- Handles the changing of the percentage textfield (doesn't refresh the production table yet)
 function handle_percentage_change(player, element)
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
@@ -89,15 +89,17 @@ function handle_percentage_change(player, element)
     -- Update related datasets
     if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
     elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
+end
 
-    -- Please shoot me if I have to touch this ever again -- 
-    -- The time has come 🔫, like a fucking week later
-    --[[ ui_state.current_activity = nil
+-- Handles the player confirming the given percentage textfield by reloading and refocusing
+function handle_percentage_confirmation(player, element)
+    local line_id = tonumber(string.match(element.name, "%d+"))
+    local ui_state = get_ui_state(player)
+    ui_state.current_activity = nil
+
     local scroll_pane = element.parent.parent
     update_calculations(player, ui_state.context.subfactory)
-    
-    -- Refocus the textfield after the table is reloaded
-    scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line.id].focus() ]]
+    scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus()
 end
 
 
