@@ -74,9 +74,10 @@ function toggle_main_dialog(player)
         main_dialog.visible = open
         player.opened = open and main_dialog or nil
 
-        -- Don't pause in multiplayer or when the setting is disabled
-        if game.is_multiplayer() or not get_settings(player).pause_on_interface then game.tick_paused = false
-        else game.tick_paused = open end  -- only pause when the main dialog is open
+        if get_settings(player).pause_on_interface and not game.is_multiplayer() and 
+          player.controller_type ~= defines.controllers.editor then
+            game.tick_paused = open  -- only pause when the main dialog is open
+        end
     end
 end
 
