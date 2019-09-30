@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - 
   Changes:
     - Converted several checkboxes to switches, because that's prettier
+    - Percentage textfields are now re-focused after confirmation
   Bugfixes:
     - Fixed crash when loading a save with tooltips that are too long
 
