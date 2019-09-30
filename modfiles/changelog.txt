@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.54
+Date: 30. 09. 2019
   Changes:
     - Converted several checkboxes to switches, because that's prettier
     - Percentage textfields are now re-focused after confirmation
