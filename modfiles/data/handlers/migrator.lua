@@ -1,11 +1,11 @@
---require("migrations.migration_0_17_0")
-require("migrations.migration_0_17_13")
-require("migrations.migration_0_17_21")
-require("migrations.migration_0_17_27")
-require("migrations.migration_0_17_29")
-require("migrations.migration_0_17_38")
-require("migrations.migration_0_17_51")
-require("migrations.migration_0_17_55")
+--require("data.migrations.migration_0_17_0")
+require("data.migrations.migration_0_17_13")
+require("data.migrations.migration_0_17_21")
+require("data.migrations.migration_0_17_27")
+require("data.migrations.migration_0_17_29")
+require("data.migrations.migration_0_17_38")
+require("data.migrations.migration_0_17_51")
+require("data.migrations.migration_0_17_55")
 
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
