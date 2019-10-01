@@ -14,7 +14,6 @@ require("data.handlers.migrator")
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.util")
-require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
 devmode = true  -- Enables certain conveniences for development
