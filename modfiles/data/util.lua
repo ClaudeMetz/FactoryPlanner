@@ -160,7 +160,7 @@ function data_util.base_data.preferred_belt(table)
     return table.all_belts.belts[1]
 end
 
--- Returns the default preferred belt (tries to choose coal)
+-- Returns the default preferred fuel (tries to choose coal)
 function data_util.base_data.preferred_fuel(table)
     local fuels = table.all_fuels
     if fuels.map["coal"] then

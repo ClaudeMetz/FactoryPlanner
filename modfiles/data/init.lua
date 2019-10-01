@@ -1,6 +1,7 @@
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.TopLevelItem")
+require("data.classes.Fuel")
 require("data.classes.Recipe")
 require("data.classes.Machine")
 require("data.classes.Module")
@@ -16,7 +17,7 @@ require("data.util")
 require("data.calc")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Sets up global data structure of the mod
 script.on_init(function()

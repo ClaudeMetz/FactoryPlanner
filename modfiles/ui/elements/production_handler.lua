@@ -355,7 +355,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         Line.shift(line, item, direction)
         
     else
-        if click == "right" and item.fuel then
+        if click == "right" and item.class == "Fuel" then
             local ui_state = get_ui_state(player)
             local modal_data = {
                 reciever_name = "fuel",
@@ -425,7 +425,7 @@ end
 
 -- Recieves the result of a chooser user choice and applies it
 function apply_chooser_fuel_choice(player, fuel_element_name)
-    -- Sets the given fuel_id on the given line
+    --[[ -- Sets the given fuel_id on the given line
     local function apply_fuel_to_line(line, fuel)
         line.fuel = fuel
         if line.id == 1 and line.parent and line.parent.level > 1 then
@@ -444,17 +444,22 @@ function apply_chooser_fuel_choice(player, fuel_element_name)
                 apply_fuel_to_floor(line.subfloor, old_fuel, new_fuel)
             end
         end
-    end
+    end ]]
 
     local fuels = global.all_fuels.fuels
     local old_fuel = get_ui_state(player).modal_data.object.proto
     local new_fuel = fuels[tonumber(fuel_element_name)]
     
     local context = get_context(player)
-    if context.line.subfloor == nil then
-        apply_fuel_to_line(context.line, new_fuel)
+    local line = context.line
+    if line.subfloor == nil then
+        Line.get(line, "Fuel", 1).proto = new_fuel
+        if line.id == 1 and line.parent and line.parent.level > 1 then
+            Line.get(line.parent.origin_line, "Fuel", 1).proto = new_fuel
+        end
     else
-        apply_fuel_to_floor(context.line.subfloor, old_fuel, new_fuel)
+        
+        --apply_fuel_to_floor(context.line.subfloor, old_fuel, new_fuel)
     end
 
     update_calculations(player, context.subfactory)

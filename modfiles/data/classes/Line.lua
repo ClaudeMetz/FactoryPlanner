@@ -13,7 +13,7 @@ function Line.init(player, recipe, machine)
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
-        fuel = nil,  -- gets set on first use, then stays set
+        Fuel = Collection.init(),
         comment = nil,
         production_ratio = 0,
         subfloor = nil,
@@ -328,8 +328,8 @@ function Line.update_validity(self)
         self.valid = false
     end
 
-    -- Validate Items + Modules
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module"}
+    -- Validate Items + Modules + Fuel
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module", Fuel = "Fuel"}
     if not data_util.run_validation_updates(self, classes) then
         self.valid = false
     end
@@ -356,19 +356,6 @@ function Line.update_validity(self)
         Line.summarize_effects(self)
     end
 
-    -- Validate Fuel
-    if self.fuel ~= nil then
-        local fuel_name = (type(self.fuel) == "string") and self.fuel or self.fuel.name
-        local new_fuel_id = new.all_fuels.map[fuel_name]
-
-        if new_fuel_id ~= nil then
-            self.fuel = new.all_fuels.fuels[new_fuel_id]
-        else
-            self.fuel = self.fuel.name
-            self.valid = false
-        end
-    end
-
     return self.valid
 end
 
@@ -382,8 +369,8 @@ function Line.attempt_repair(self, player)
         self.valid = false
     end
 
-    -- Repair Items + Modules
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module"}
+    -- Repair Items + Modules + Fuel
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module", Fuel = "Fuel"}
     data_util.run_invalid_dataset_repair(player, self, classes)
 
     -- Repair Machine
@@ -422,17 +409,6 @@ function Line.attempt_repair(self, player)
         Line.sort_modules(self)
         Line.trim_modules(self)
         Line.summarize_effects(self)
-    end
-    
-    -- Repair Fuel
-    if self.valid and self.fuel ~= nil and type(self.fuel) == "string" then
-        local current_fuel_id = global.all_fuels.map[self.fuel]
-        if current_fuel_id ~= nil then
-            self.fuel = global.all_fuels.fuels[current_fuel_id]
-        else
-            -- If it is not found, set it to the default
-            self.fuel = data_util.base_data.preferred_fuel(global)
-        end
     end
 
     -- Repair subfloor (continues through recursively)

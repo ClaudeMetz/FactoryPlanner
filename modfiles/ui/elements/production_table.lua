@@ -191,9 +191,9 @@ function create_line_table_row(player, line)
     label_energy.tooltip = ui_util.format_SI_value(line.energy_consumption, "W", 5)
 
     -- Item buttons
-    create_item_button_flow(player_table, table_production, line, "Product", "fp_button_icon_medium_blank")
-    create_item_button_flow(player_table, table_production, line, "Byproduct", "fp_button_icon_medium_red")
-    create_item_button_flow(player_table, table_production, line, "Ingredient", "fp_button_icon_medium_green")
+    create_item_button_flow(player_table, table_production, line, "products", {"Product"}, {"blank"})
+    create_item_button_flow(player_table, table_production, line, "byproducts", {"Byproduct"}, {"red"})
+    create_item_button_flow(player_table, table_production, line, "ingredients", {"Ingredient", "Fuel"}, {"green", "cyan"})
 
     -- Comment textfield
     if get_preferences(player).enable_recipe_comments then
@@ -281,21 +281,22 @@ function create_module_button(flow, line, module, type, button_name)
 end
 
 -- Creates the flow containing all line items of the given type
-function create_item_button_flow(player_table, gui_table, line, class, style)
-    local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id, direction="horizontal"}
-    
-    for _, item in ipairs(Line.get_in_order(line, class)) do
-        local s = style
-        if item.fuel then s = "fp_button_icon_medium_cyan"
-        elseif item.proto.type == "entity" then s = "fp_button_icon_medium_blank" end
+function create_item_button_flow(player_table, gui_table, line, group, classes, styles)
+    local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
 
-        local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-          .. "_" .. item.id, sprite=item.proto.sprite, style=s, mouse_button_filter={"left-and-right"}}
-
-        ui_util.setup_item_button(player_table, button, item, line)
-        if button.number ~= nil and button.number < margin_of_error then button.visible = false end
+    for index, class in ipairs(classes) do
+        local style = "fp_button_icon_medium_" .. styles[index]
         
-        local type = (item.fuel) and "fuel" or string.lower(class)
-        ui_util.add_tutorial_tooltip(button, type, true, true)
+        for _, item in ipairs(Line.get_in_order(line, class)) do
+            if item.proto.type == "entity" then style = "fp_button_icon_medium_blank" end
+
+            local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
+              .. "_" .. item.id, sprite=item.proto.sprite, style=style, mouse_button_filter={"left-and-right"}}
+
+            ui_util.setup_item_button(player_table, button, item, line)
+            if button.number ~= nil and button.number < margin_of_error then button.visible = false end
+            
+            ui_util.add_tutorial_tooltip(button, string.lower(class), true, true)
+        end
     end
 end
