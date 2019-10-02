@@ -165,7 +165,7 @@ function handle_floor_change_click(player, destination)
     end
 
     ui_state.current_activity = nil
-    update_calculations(player, subfactory)
+    calculation.update(player, subfactory)
 end
 
 

@@ -42,13 +42,13 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
         Subfactory.remove(subfactory, product)
 
         -- Remove useless recipes after a product has been deleted
-        update_calculations(player, subfactory)
+        calculation.update(player, subfactory)
         Subfactory.remove_useless_lines(subfactory)
     end
 
     -- Remeber the location of the non-edit item picker dialog
     if product == nil then ui_state.item_picker_location = flow_modal_dialog.parent.location end
-    update_calculations(player, subfactory)
+    calculation.update(player, subfactory)
 end
 
 -- Returns all necessary instructions to create and run conditions on the modal dialog

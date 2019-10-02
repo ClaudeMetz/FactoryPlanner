@@ -1,23 +1,3 @@
--- Updates the whole subfactory calculations from top to bottom
-function update_calculations(player, subfactory)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if main_dialog ~= nil and main_dialog.visible then
-        if subfactory ~= nil and subfactory.valid then calc.update(player, subfactory) end
-        refresh_main_dialog(player)
-    end
-end
-
-
--- Clears all comments on the current floor
-function clear_recipe_comments(player)
-    local floor = get_context(player).floor
-    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-        line.comment = nil
-    end
-    refresh_production_pane(player)
-end
-
-
 -- Handles any clicks on the recipe icon of an (assembly) line
 function handle_line_recipe_click(player, line_id, click, direction, alt)
     local ui_state = get_ui_state(player)
@@ -37,7 +17,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
         -- (Top line ignores interaction, so no special handling there)
         if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) then
             Floor.shift(floor, line, direction)
-            update_calculations(player, subfactory)
+            calculation.update(player, subfactory)
         end
 
     else
@@ -48,7 +28,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
 
                 local subfloor = Floor.init(line)
                 line.subfloor = Subfactory.add(subfactory, subfloor)
-                update_calculations(player, subfactory)
+                calculation.update(player, subfactory)
             end
             ui_state.current_activity = nil
             data_util.context.set_floor(player, line.subfloor)
@@ -60,12 +40,12 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
 
             if line.subfloor == nil then
                 Floor.remove(floor, line)
-                update_calculations(player, subfactory)
+                calculation.update(player, subfactory)
             else
                 if ui_state.current_activity == "deleting_line" then
                     Floor.remove(floor, line)
                     ui_state.current_activity = nil
-                    update_calculations(player, subfactory)
+                    calculation.update(player, subfactory)
                 else
                     ui_state.current_activity = "deleting_line"
                     ui_state.context.line = line
@@ -98,7 +78,7 @@ function handle_percentage_confirmation(player, element)
     ui_state.current_activity = nil
 
     local scroll_pane = element.parent.parent
-    update_calculations(player, ui_state.context.subfactory)
+    calculation.update(player, ui_state.context.subfactory)
     scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus()
 end
 
@@ -117,7 +97,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         -- Change the machine to be one tier lower/higher if possible
         if direction ~= nil then
             data_util.machine.change(player, line, nil, direction)
-            update_calculations(player, subfactory)
+            calculation.update(player, subfactory)
 
         -- Display all the options for this machine category
         elseif click == "left" then            
@@ -147,7 +127,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
             local new_machine = global.all_machines.categories[line.machine.category.id].machines[machine_id]
             data_util.machine.change(player, line, new_machine, nil)
             ui_state.current_activity = nil
-            update_calculations(player, subfactory)
+            calculation.update(player, subfactory)
         end
     end
 end
@@ -171,7 +151,7 @@ function apply_chooser_machine_choice(player, element_name)
     local context = get_context(player)
     local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(element_name)]
     data_util.machine.change(player, context.line, machine, nil)
-    update_calculations(player, context.subfactory)
+    calculation.update(player, context.subfactory)
 end
 
 
@@ -225,7 +205,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
                 end
             end
 
-            update_calculations(player, ui_state.context.subfactory)
+            calculation.update(player, ui_state.context.subfactory)
 
         else
             if click == "left" then  -- open the modules modal dialog
@@ -234,7 +214,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
 
             else  -- click == "right"; delete the module
                 Line.remove(line, module)
-                update_calculations(player, ui_state.context.subfactory)
+                calculation.update(player, ui_state.context.subfactory)
 
             end
         end
@@ -331,7 +311,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
             end
         end
 
-        update_calculations(player, ui_state.context.subfactory)
+        calculation.update(player, ui_state.context.subfactory)
 
     else  -- click is left or right, makes no difference
         local beacon = line.beacon
@@ -462,7 +442,7 @@ function apply_chooser_fuel_choice(player, fuel_element_name)
         --apply_fuel_to_floor(context.line.subfloor, old_fuel, new_fuel)
     end
 
-    update_calculations(player, context.subfactory)
+    calculation.update(player, context.subfactory)
 end
 
 
@@ -470,4 +450,13 @@ end
 function handle_comment_change(player, element)
     local line = Floor.get(get_context(player).floor, "Line", tonumber(string.match(element.name, "%d+")))
     line.comment = element.text
+end
+
+-- Clears all comments on the current floor
+function clear_recipe_comments(player)
+    local floor = get_context(player).floor
+    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+        line.comment = nil
+    end
+    refresh_production_pane(player)
 end
