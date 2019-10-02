@@ -300,7 +300,7 @@ function handle_subfactory_timescale_change(player, timescale)
     local subfactory = get_context(player).subfactory
     subfactory.timescale = timescale
     get_ui_state(player).current_activity = nil
-    update_calculations(player, subfactory)
+    calculation.update(player, subfactory)
 end
 
 -- Activates the mining prod override mode for the current subfactory
@@ -325,5 +325,5 @@ function handle_mining_prod_confirmation(player)
     local subfactory = ui_state.context.subfactory
 
     if subfactory.mining_productivity == nil then ui_state.current_activity = nil end
-    update_calculations(player, subfactory)
+    calculation.update(player, subfactory)
 end

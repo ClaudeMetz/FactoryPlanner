@@ -73,6 +73,6 @@ end
 -- Creates the example subfactory and shows it to the user
 function handle_add_example_subfactory_click(player)
     local subfactory = data_util.add_example_subfactory(player)
-    update_calculations(player, subfactory)
+    calculation.update(player, subfactory)
     exit_modal_dialog(player, "cancel", {})
 end
