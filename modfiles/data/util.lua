@@ -285,22 +285,56 @@ function data_util.timescale_setting_to_number(setting)
 end
 
 
--- Logs given table shallowly, excluding the parent attribute
-function data_util.gen_log(table)
-    if table == nil then
-        return "nil"
-    else
-        local s = "\n{\n"
-        for name, value in pairs(table) do
-            if type(value) == "table" then
-                s = s .. "  " .. name .. " = table\n"
-            else
-                s = s .. "  " .. name .. " = " .. tostring(value) .. "\n"
+-- Logs given table, excluding certain attributes (Kinda super-jank and inconsistent)
+function data_util.log(table)
+    local excluded_attributes = {proto=true, recipe_proto=true, machine_proto=true}
+
+    local first = next(table)
+    -- local function to allow for recursive use
+    local function create_table_log(table, depth)
+        if table == nil then
+            return "nil"
+        elseif table_size(table) == 0 then
+            return "{}"
+        else
+            local spacer = ""
+            for i=0, depth-1, 1 do spacer = spacer .. " " end
+            local super_spacer = spacer .. "  "
+
+            local s = "\n" .. spacer .. "{"
+            local first_element = true
+            for name, value in pairs(table) do
+                local line_end = (first_element) and ((type(value) == "table") and "" or "\n") or ",\n"
+                local name_string = (type(name) == "string") and name .. " = " or ""
+                local line = line_end .. super_spacer .. name_string
+                first_element = false
+
+                if type(value) == "table" then
+                    if excluded_attributes[name] then
+                        -- Try and show the excluded values name, if it's present
+                        value = (value.name) and value.name or "table"
+                        line = "\n" .. super_spacer .. name_string .. value
+                    else 
+                        line = line .. create_table_log(value, depth+2)
+                    end
+
+                elseif type(value) == "string" then
+                    value = value:gsub("\n", '\\n') 
+                    line = line .. "\"" .. value .. "\""
+
+                else
+                    line = line .. tostring(value)
+                end
+
+                s = s .. line
             end
+            s = s .. "\n" .. spacer .. "}"
+            
+            return s
         end
-        s = s .. "}"
-        return s
     end
+
+    log(create_table_log(table, 0))
 end
 
 
