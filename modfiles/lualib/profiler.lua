@@ -1,4 +1,3 @@
--- Work of the elusive Boodals, taken straight from https://github.com/Boodals/Factorio-Profiler
 
 local table_sort = table.sort
 local string_rep = string.rep
@@ -23,13 +22,29 @@ local Profiler =
 	IsRunning = false,
 }
 
+local ignoredFunctions =
+{
+	[debug.sethook] = true
+}
 
-commands.add_command("startProfiler", "Starts profiling", function(command)
+local namedSources =
+{
+	["[string \"local n, v = \"serpent\", \"0.30\" -- (C) 2012-17...\"]"] = "serpent",
+}
+
+
+local function startCommand(command)
 	Profiler.Start(command.parameter ~= nil)
-end)
-commands.add_command("stopProfiler", "Stops profiling", function(command)
+end
+local function stopCommand(command)
 	Profiler.Stop(command.parameter ~= nil, nil)
-end)
+end
+ignoredFunctions[startCommand] = true
+ignoredFunctions[stopCommand] = true
+
+
+commands.add_command("startProfiler", "Starts profiling", startCommand)
+commands.add_command("stopProfiler", "Stops profiling", stopCommand)
 
 
 local assert_raw = assert
@@ -66,24 +81,33 @@ function Profiler.Start(excludeCalledMs)
 	local stack = { [0] = Profiler.CallTree  }
 	local stack_count = 0
 
-	debug.sethook(function(type)
-		local info = debug_getinfo(2)
+	debug.sethook(function(event)
+		local info = debug_getinfo(2, "nSf")
 
-		if type == "call" then
+		if ignoredFunctions[info.func] then
+			return
+		end
+
+		if event == "call" or event == "tail call" then
 			local prevCall = stack[stack_count]
 			if excludeCalledMs then
 				prevCall.profiler.stop()
 			end
 
-			if info.name == "error" then
-				Profiler.Stop(false, "Error raised")
-				return
+			local what = info.what
+			local name
+			if what == "C" then
+				name = string_format("C function %q", info.name or "anonymous")
+			else
+				local source = info.short_src
+				local namedSource = namedSources[source]
+				if namedSource ~= nil then
+					source = namedSource
+				elseif string.sub(source, 1, 1) == "@" then
+					source = string.sub(source, 1)
+				end
+				name = string_format("%q in %q, line %d", info.name or "anonymous", source, info.linedefined)
 			end
-			local source = string_gsub(info.source, "[\n\t]", "")
-			if string_len(source) > 75 then --for some reason serpent's "source" is the entire source code..
-				source = string_sub(source, 1, 75) .. "..."
-			end
-			local name = string_format("%q at %q, line %d", info.name or "anonymous", source, info.linedefined)
 
 			local prevCall_next = prevCall.next
 			if prevCall_next == nil then
@@ -94,14 +118,15 @@ function Profiler.Start(excludeCalledMs)
 			local currCall = prevCall_next[name]
 			local profilerStartFunc
 			if currCall == nil then
+				local prof = create_profiler()
 				currCall =
 				{
 					name = name,
 					calls = 1,
-					profiler = create_profiler(),
+					profiler = prof,
 				}
 				prevCall_next[name] = currCall
-				profilerStartFunc = currCall.profiler.reset
+				profilerStartFunc = prof.reset
 			else
 				currCall.calls = currCall.calls + 1
 				profilerStartFunc = currCall.profiler.restart
@@ -111,8 +136,9 @@ function Profiler.Start(excludeCalledMs)
 			stack[stack_count] = currCall
 
 			profilerStartFunc()
+		end
 
-		elseif type == "return" then
+		if event == "return" or event == "tail call" then
 			if stack_count > 0 then
 				stack[stack_count].profiler.stop()
 				stack[stack_count] = nil
@@ -125,6 +151,7 @@ function Profiler.Start(excludeCalledMs)
 		end
 	end, "cr")
 end
+ignoredFunctions[Profiler.Start] = true
 
 local function DumpTree(averageMs)
 	local function sort_Call(a, b)
@@ -184,11 +211,12 @@ function Profiler.Stop(averageMs, message)
 
 	local text = { "", "\n\n----------PROFILER DUMP----------\n", DumpTree(averageMs), "\n\n----------PROFILER STOPPED----------\n" }
 	if message ~= nil then
-		text = { "", "Reason: " .. message .. "\n" }
+		text[#text + 1] = string.format("Reason: %s\n", message)
 	end
 	log(text)
 	Profiler.CallTree = nil
 	Profiler.IsRunning = false
 end
+ignoredFunctions[Profiler.Stop] = true
 
 return Profiler
