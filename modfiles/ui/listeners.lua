@@ -4,25 +4,26 @@ require("ui.dialogs.modal_dialog")
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
-    -- This mod doesn't use runtime-global settings, so that case can be ignored
-    -- (runtime-global changes don't have a player attached, so this would crash otherwise)
-    if event.setting_type ~= "runtime-global" then
+    -- This mod currently only uses runtime-per-user settings
+    if event.setting_type == "runtime-per-user" then
         local player = game.get_player(event.player_index)
 
         -- Reload all user mod settings
         reload_settings(player)
 
-        -- Toggles the visibility of the toggle-main-dialog-button
+        -- Toggles the visibility of the toggle-main_dialog-button
         if event.setting == "fp_display_gui_button" then 
             toggle_button_interface(player)
 
-        -- Changes the width of the main dialog. so it needs to be refreshed
+        -- Changes the width of the main dialog
         elseif event.setting == "fp_subfactory_items_per_row" or
           event.setting == "fp_floor_recipes_at_once" then
             refresh_main_dialog(player, true)
 
         -- Refreshes the view selection or recipe machine buttons appropriately
-        elseif event.setting == "fp_view_belts_or_lanes" or event.setting == "fp_indicate_rounding" then
+        elseif event.setting == "fp_view_belts_or_lanes" or 
+          event.setting == "fp_round_button_numbers" or
+          event.setting == "fp_indicate_rounding" then
             refresh_production_pane(player)
 
         end
