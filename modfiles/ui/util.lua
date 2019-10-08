@@ -316,6 +316,7 @@ end
 -- Returns string representing the given power 
 function ui_util.format_SI_value(value, unit, precision)
     local scale = {"", "k", "M", "G", "T", "P", "E", "Z", "Y"}
+    value = value or 0
     
     local scale_counter = 0
     -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
