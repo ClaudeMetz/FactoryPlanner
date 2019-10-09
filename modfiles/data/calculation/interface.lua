@@ -91,10 +91,10 @@ function calculation.interface.set_subfactory_result(result)
 
     -- For ingredients and byproducts, the procedure is more complicated, because
     -- it has to retain the users ordering of those items
-    local function update_top_level_items(class)
-        local items = result[class]
+    local function update_top_level_items(class_name)
+        local items = result[class_name]
         
-        for _, item in pairs(Subfactory.get_in_order(subfactory, class)) do
+        for _, item in pairs(Subfactory.get_in_order(subfactory, class_name)) do
             local item_result_amount = items[item.proto.type][item.proto.name]
             
             if item_result_amount == nil then
@@ -106,8 +106,8 @@ function calculation.interface.set_subfactory_result(result)
             end
         end
 
-        for _, item_result in pairs(calculation.util.items_to_array(items)) do
-            local top_level_item = TopLevelItem.init_by_item(item_result, class, item_result.amount)
+        for _, item_result in pairs(structures.class.to_array(items)) do
+            local top_level_item = TopLevelItem.init_by_item(item_result, class_name, item_result.amount)
             Subfactory.add(subfactory, top_level_item)
         end
     end
@@ -126,10 +126,10 @@ function calculation.interface.set_line_result(result)
     line.production_ratio = result.production_ratio
 
     -- This procedure is a bit more complicated to to retain the users ordering of items
-    local function update_items(class)
-        local items = result[class]
+    local function update_items(class_name)
+        local items = result[class_name]
 
-        for _, item in pairs(Line.get_in_order(line, class)) do
+        for _, item in pairs(Line.get_in_order(line, class_name)) do
             local item_result_amount = items[item.proto.type][item.proto.name]
             
             if item_result_amount == nil then
@@ -141,8 +141,8 @@ function calculation.interface.set_line_result(result)
             end
         end
 
-        for _, item_result in pairs(calculation.util.items_to_array(items)) do
-            local item = Item.init_by_item(item_result, class, item_result.amount)
+        for _, item_result in pairs(structures.class.to_array(items)) do
+            local item = Item.init_by_item(item_result, class_name, item_result.amount)
             Line.add(line, item)
         end
     end
@@ -151,21 +151,4 @@ function calculation.interface.set_line_result(result)
     update_items("Byproduct")
     update_items("Ingredient")
     update_items("Fuel")
-end
-
-
--- Returns an array that contains every item in the given data structure
-function calculation.util.items_to_array(items)
-    local array = {}
-    for type, items_of_type in pairs(items) do
-        for name, amount in pairs(items_of_type) do
-            local item = {
-                name = name,
-                type = type,
-                amount = amount
-            }
-            table.insert(array, item)
-        end
-    end
-    return array
 end

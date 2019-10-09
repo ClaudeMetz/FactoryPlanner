@@ -10,6 +10,7 @@ function model.update_subfactory(subfactory_data)
 
     model.update_floor(subfactory_data.top_floor, aggregate)  -- updates aggregate
 
+    -- Fuels are combined with Ingredients for top-level purposes
     structures.aggregate.combine_classes(aggregate, "Ingredient", "Fuel")
     calculation.interface.set_subfactory_result {
         player_index = subfactory_data.player_index,
@@ -30,8 +31,9 @@ function model.update_floor(floor_data, aggregate)
                 subfloor_aggregate.Product[product.type][product.name] = aggregate.Product[product.type][product.name]
             end
             
-            model.update_floor(subfloor, subfloor_aggregate)
+            model.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
+            -- Update the parent line of the subfloor with the results from the subfloor aggregate
             calculation.interface.set_line_result {
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
@@ -44,14 +46,16 @@ function model.update_floor(floor_data, aggregate)
                 Fuel = subfloor_aggregate.Fuel
             }
         else
-            -- Update aggregate according to the current line, which also adjusts the respective real line object
-            model.update_line(line_data, aggregate)
+            -- Update aggregate according to the current line, which also adjusts the respective line object
+            model.update_line(line_data, aggregate)  -- updates aggregate
         end
     end
 end
 
 function model.update_line(line_data, aggregate)
-    -- TODO all
+    -- Determine production ratio
+    
+
 
     -- aggregate.production_ratio = aggregate.production_ratio or production_ratio
 
