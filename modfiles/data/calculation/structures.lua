@@ -18,8 +18,13 @@ function structures.aggregate.init(player_index, floor_id)
 end
 
 -- Item might be an Item-object or a simple item {type, name, amount}
-function structures.aggregate.add(aggregate, class_name, item)
-    structures.class.add(aggregate[class_name], item)
+function structures.aggregate.add(aggregate, class_name, item, amount)
+    structures.class.add(aggregate[class_name], item, amount)
+end
+
+function structures.aggregate.subtract(aggregate, class_name, item, amount)
+    local negative_amount = (amount ~= nil) and -amount or -item.amount
+    structures.class.add(aggregate[class_name], item, negative_amount)
 end
 
 -- Adds all the elements of the secondary class to the main one (modifies the aggregate!)
@@ -43,10 +48,10 @@ function structures.class.init()
 end
 
 -- Item might be an Item-object or a simple item {type, name, amount}
-function structures.class.add(class, item)
+function structures.class.add(class, item, amount)
     local type = (item.proto ~= nil) and item.proto.type or item.type
     local name = (item.proto ~= nil) and item.proto.name or item.name
-    local amount = item.required_amount or item.amount
+    local amount = amount or (item.required_amount or item.amount)
     
     local type_table = class[type]
     if type_table[name] == nil then
@@ -56,6 +61,11 @@ function structures.class.add(class, item)
     end
     
     if type_table[name] == 0 then type_table[name] = nil end
+end
+
+function structures.class.subtract(class, item, amount)
+    local negative_amount = (amount ~= nil) and -amount or -item.amount
+    structures.class.add(class, item, negative_amount)
 end
 
 -- Returns an array that contains every item in the given data structure

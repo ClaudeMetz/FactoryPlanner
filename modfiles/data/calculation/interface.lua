@@ -13,17 +13,13 @@ function calculation.update(player, subfactory)
         if subfactory ~= nil and subfactory.valid then
             local player_table = get_table(player)
 
-            -- Save the some data in global so the model doesn't have to pass it around
-            player_table.calc = {
-                active_subfactory = subfactory,
-                timescale = subfactory.timescale,
-                mining_productivity = subfactory.mining_productivity or 0,
-            }
+            -- Save the active subfactory in global so the model doesn't have to pass it around
+            player_table.active_subfactory = subfactory
             
             local subfactory_data = calculation.interface.get_data(player, subfactory)
             model.update_subfactory(subfactory_data)
 
-            player_table.calc = nil
+            player_table.active_subfactory = nil
         end
         refresh_main_dialog(player)
     end
@@ -57,12 +53,17 @@ function calculation.interface.get_data(player, subfactory)
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
             local line_data = {
                 id = line.id,
+                timescale = subfactory.timescale,
                 percentage = line.percentage,
                 total_effects = util.table.deepcopy(line.total_effects),
                 recipe_proto = line.recipe.proto,  -- reference
                 machine_proto = line.machine.proto,  -- reference
                 subfloor = generate_floor_data(line.subfloor)
             }
+
+            -- Include mining prod right here, if applicable
+            local mining_prod = data_util.determine_mining_productivity(player, subfactory, line.machine.proto)
+            line_data.total_effects.productivity = math.max(line_data.total_effects.productivity + mining_prod, 0)
 
             table.insert(floor_data.lines, line_data)
         end
@@ -78,7 +79,7 @@ end
 
 -- Updates the active subfactories top-level data with the given result
 function calculation.interface.set_subfactory_result(result)
-    local subfactory = global.players[result.player_index].calc.active_subfactory
+    local subfactory = global.players[result.player_index].active_subfactory
 
     subfactory.energy_consumption = result.energy_consumption
 
@@ -118,10 +119,11 @@ end
 
 -- Updates the given line of the given floor of the active subfactory
 function calculation.interface.set_line_result(result)
-    local subfactory = global.players[result.player_index].calc.active_subfactory
+    local subfactory = global.players[result.player_index].active_subfactory
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
 
+    line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
     line.production_ratio = result.production_ratio
 
