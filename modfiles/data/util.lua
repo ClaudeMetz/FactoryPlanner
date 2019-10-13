@@ -196,8 +196,8 @@ function data_util.run_invalid_dataset_repair(player, parent, classes)
 end
 
 
--- Determines the actual amount of items that a recipe_product produces
-function data_util.determine_product_amount(base_product)
+-- Determines the actual amount of items that a recipe product or ingredient equates to
+function data_util.determine_item_amount(base_product)
     if base_product.amount_max ~= nil and base_product.amount_min ~= nil then
         return ((base_product.amount_max + base_product.amount_min) / 2) * base_product.probability
     elseif base_product.probability ~= nil then
@@ -216,7 +216,7 @@ function data_util.determine_net_product(recipe_proto, item_name)
         end
 
         if product.name == item_name then
-            net_amount = data_util.determine_product_amount(product)
+            net_amount = data_util.determine_item_amount(product)
             break
         end
     end
@@ -230,6 +230,26 @@ function data_util.determine_net_product(recipe_proto, item_name)
     
     return net_amount
 end
+
+-- Returns the catalyst amount of the given item in the given recipe (temporary)
+function data_util.determine_catalyst_amount(player, recipe_proto, type, item_name)
+    if recipe_proto.custom then  -- custom recipes won't have catalyst ingredients
+        return 0
+    else
+        local live_recipe = player.force.recipes[recipe_proto.name]
+        local live_item = nil
+        for _, live_product in pairs(live_recipe[type]) do
+            if live_product.name == item_name then
+                live_item = live_product
+                break
+            end
+        end
+        
+        if live_item.catalyst_amount then return live_item.catalyst_amount
+        else return 0 end
+    end
+end
+
 
 -- Determines the actual amount of items that a recipe_product produces
 function data_util.determine_machine_count(player, subfactory, line, machine_proto, production_ratio)
@@ -259,9 +279,10 @@ function data_util.determine_fuel_amount(energy_consumption, subfactory, fuel_pr
     return ((energy_consumption / burner.effectivity) / fuel_proto.fuel_value) * subfactory.timescale
 end
 
--- Determines whether mining prod applies, and returns it's value (returns 0 otherwise)
+-- Either returns the mining prod applying to the given machine (ie. it being a mining machine), 
+-- or the mining prod in general, if no machine prototype is given
 function data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    if machine_proto.mining then  -- all mining machines
+    if (machine_proto == nil) or machine_proto.mining then
         if subfactory.mining_productivity ~= nil then
             return (subfactory.mining_productivity / 100)
         else

@@ -109,13 +109,13 @@ function determine_button_style(item)
     elseif item.class == "Byproduct" then
         return "fp_button_icon_large_red"
     else  -- item.class == "Product"
-        if item.amount == 0 then
+        if item.amount <= 0 then
             return "fp_button_icon_large_red"
         elseif item.amount < item.required_amount then
             return "fp_button_icon_large_yellow"
         elseif item.amount == item.required_amount then
             return "fp_button_icon_large_green"
-        else
+        else  -- overproduction, should not happen normally
             return "fp_button_icon_large_cyan"
         end
     end

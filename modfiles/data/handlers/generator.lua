@@ -106,7 +106,7 @@ function add_recipe_tooltip(recipe)
             multi_insert{"\n    ", {"tooltip.none"}}
         else
             for _, item in ipairs(recipe[item_type]) do
-                produced_amount = data_util.determine_product_amount(item)
+                produced_amount = data_util.determine_item_amount(item)
             
                 multi_insert{("\n    " .. "[" .. item.type .. "=" .. item.name .. "] " .. produced_amount .. "x "),
                   game[item.type .. "_prototypes"][item.name].localised_name}

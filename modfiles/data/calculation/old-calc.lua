@@ -329,7 +329,7 @@ function calc.aggregate.item_init(base_item, class, amount)
         item.ratio = base_item.ratio
     else
         -- (This function incidentally handles ingredients as well)
-        item.ratio = data_util.determine_product_amount(base_item)
+        item.ratio = data_util.determine_item_amount(base_item)
     end
     return item
 end
