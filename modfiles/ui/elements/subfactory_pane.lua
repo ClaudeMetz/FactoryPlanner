@@ -74,7 +74,10 @@ function refresh_item_table(player, class)
     if get_ui_state(player).floor_total and subfactory.selected_floor.level > 1 then
         local parent_line = get_context(player).floor.origin_line
         if parent_line ~= nil and parent_line[class].count > 0 then
-            for _, item in ipairs(Line.get_in_order(parent_line, class)) do
+            local items = (class ~= "Ingredient") and Line.get_in_order(parent_line, class)
+              or data_util.combine_item_collections(parent_line.Ingredient, parent_line.Fuel).datasets
+
+            for _, item in ipairs(items) do
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
                   .. item.id, sprite=item.proto.sprite, style="fp_button_icon_large_blank", enabled=false}
 
@@ -300,7 +303,7 @@ function handle_subfactory_timescale_change(player, timescale)
     local subfactory = get_context(player).subfactory
     subfactory.timescale = timescale
     get_ui_state(player).current_activity = nil
-    calculation.update(player, subfactory)
+    calculation.update(player, subfactory, true)
 end
 
 -- Activates the mining prod override mode for the current subfactory
@@ -325,5 +328,5 @@ function handle_mining_prod_confirmation(player)
     local subfactory = ui_state.context.subfactory
 
     if subfactory.mining_productivity == nil then ui_state.current_activity = nil end
-    calculation.update(player, subfactory)
+    calculation.update(player, subfactory, true)
 end

@@ -7,7 +7,7 @@ calculation = {
 }
 
 -- Updates the whole subfactory calculations from top to bottom
-function calculation.update(player, subfactory)
+function calculation.update(player, subfactory, refresh)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
     if main_dialog ~= nil and main_dialog.visible then
         if subfactory ~= nil and subfactory.valid then
@@ -21,7 +21,7 @@ function calculation.update(player, subfactory)
 
             player_table.active_subfactory = nil
         end
-        refresh_main_dialog(player)
+        if refresh then refresh_main_dialog(player) end
     end
 end
 
@@ -55,15 +55,21 @@ function calculation.interface.get_data(player, subfactory)
                 id = line.id,
                 timescale = subfactory.timescale,
                 percentage = line.percentage,
-                total_effects = util.table.deepcopy(line.total_effects),
+                total_effects = Line.get_total_effects(line, player),  -- copy
                 recipe_proto = line.recipe.proto,  -- reference
                 machine_proto = line.machine.proto,  -- reference
+                fuel_proto = nil,  -- will be a reference
                 subfloor = generate_floor_data(line.subfloor)
             }
 
-            -- Include mining prod right here, if applicable
-            local mining_prod = data_util.determine_mining_productivity(player, subfactory, line.machine.proto)
-            line_data.total_effects.productivity = math.max(line_data.total_effects.productivity + mining_prod, 0)
+            if line_data.subfloor == nil then  -- the fuel_proto is only needed when there's no subfloor
+                local fuels = Line.get_in_order(line, "Fuel")
+                if table_size(fuels) == 1 then  -- use the already configured Fuel, if available
+                    line_data.fuel_proto = fuels[1].proto
+                else  -- otherwise, use the preferred fuel
+                    line_data.fuel_proto = get_preferences(player).preferred_fuel
+                end
+            end
 
             table.insert(floor_data.lines, line_data)
         end
@@ -144,7 +150,8 @@ function calculation.interface.set_line_result(result)
         end
 
         for _, item_result in pairs(structures.class.to_array(items)) do
-            local item = Item.init_by_item(item_result, class_name, item_result.amount)
+            local item = (class_name == "Fuel") and Fuel.init_by_item(item_result, item_result.amount)
+              or Item.init_by_item(item_result, class_name, item_result.amount)
             Line.add(line, item)
         end
     end
@@ -153,4 +160,32 @@ function calculation.interface.set_line_result(result)
     update_items("Byproduct")
     update_items("Ingredient")
     update_items("Fuel")
+end
+
+
+-- Determine the amount of machines needed to produce the given recipe in the given context
+function calculation.util.determine_machine_count(machine_proto, recipe_proto, total_effects, production_ratio, timescale)
+    local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
+    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
+
+    local launch_delay = 0
+    if recipe_proto.name == "rocket-part" then
+        local rockets_produced = production_ratio / 100
+        local launch_sequence_time = 41.25 / timescale  -- in seconds
+        -- Not sure why this forumla works, but it seemingly does
+        launch_delay = launch_sequence_time * rockets_produced
+    end
+
+    return ((machine_prod_ratio / (machine_speed / recipe_proto.energy)) / timescale) + launch_delay
+end
+
+-- Determines the amount of energy needed to satisfy the given recipe in the given context
+function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
+    local energy_consumption = machine_count * (machine_proto.energy_usage * 60)
+    return energy_consumption + (energy_consumption * math.max(total_effects.consumption, -0.8))
+end
+
+-- Determines the amount of fuel needed in the given context
+function calculation.util.determine_fuel_amount(energy_consumption, burner, fuel_value, timescale)
+    return ((energy_consumption / burner.effectivity) / fuel_value) * timescale
 end

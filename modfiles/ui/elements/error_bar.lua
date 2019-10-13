@@ -39,5 +39,5 @@ end
 function handle_subfactory_repair(player)
     local subfactory = get_context(player).subfactory
     Subfactory.attempt_repair(subfactory, player)
-    calculation.update(player, subfactory)
+    calculation.update(player, subfactory, true)
 end

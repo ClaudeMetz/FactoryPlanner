@@ -56,7 +56,7 @@ end)
 -- Fires on pressing of the keyboard shortcut to refresh the production table
 script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
-    calculation.update(player, get_context(player).subfactory)
+    calculation.update(player, get_context(player).subfactory, true)
 end)
 
 -- Fires on pressing of the keyboard shortcut to confirm a dialog
@@ -193,7 +193,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         --[[ if event.element.type == "textfield" and string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
             local line_id = string.gsub(event.element.name, "fp_textfield_line_percentage_", "")
             local scroll_pane = event.element.parent.parent
-            calculation.update(player, ui_state.context.subfactory)
+            calculation.update(player, ui_state.context.subfactory, true)
             scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus() ]]
 
 
@@ -253,7 +253,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Refreshes the production table
         elseif event.element.name == "fp_sprite-button_refresh_production" then
-            calculation.update(player, ui_state.context.subfactory)
+            calculation.update(player, ui_state.context.subfactory, true)
 
         -- Clears all the comments on the current floor
         elseif event.element.name == "fp_button_production_clear_comments" then
@@ -299,8 +299,8 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Reacts to a chooser element button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
-            local element_name = string.gsub(event.element.name, "fp_sprite%-button_chooser_element_", "")
-            handle_chooser_element_click(player, element_name)
+            local element_id = string.gsub(event.element.name, "fp_sprite%-button_chooser_element_", "")
+            handle_chooser_element_click(player, element_id)
 
         -- Reacts to a floor-changing button being pressed (up/top)
         elseif string.find(event.element.name, "^fp_button_floor_[a-z]+$") then

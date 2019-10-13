@@ -22,7 +22,7 @@ function model.update_subfactory(subfactory_data)
 end
 
 function model.update_floor(floor_data, aggregate)
-    local desired_products = util.table.deepcopy(aggregate.Product)
+    local desired_products = data_util.deepcopy(aggregate.Product)
 
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
@@ -33,13 +33,37 @@ function model.update_floor(floor_data, aggregate)
                 subfloor_aggregate.Product[product.type][product.name] = aggregate.Product[product.type][product.name]
             end
             
+            local floor_products = data_util.deepcopy(subfloor_aggregate.Product)
             model.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
+
+            -- Convert the internal product-format into actual products for display
+            for _, product in pairs(structures.class.to_array(floor_products)) do
+                local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
+                subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
+            end
+            
+
+            -- Update the main aggregate with the results
+            aggregate.energy_consumption = subfloor_aggregate.energy_consumption
+
+            local function update_main_aggregate(class_name, destination_class_name)
+                for _, item in ipairs(structures.class.to_array(subfloor_aggregate[class_name])) do
+                    local amount = (class_name == "Product") and -item.amount or item.amount
+                    structures.aggregate.add(aggregate, destination_class_name, item, amount)
+                end
+            end
+            
+            update_main_aggregate("Byproduct", "Byproduct")
+            update_main_aggregate("Product", "Product")
+            update_main_aggregate("Ingredient", "Product")
+            update_main_aggregate("Fuel", "Product")
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             calculation.interface.set_line_result {
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
+                machine_count = subfloor_aggregate.machine_count,
                 energy_consumption = subfloor_aggregate.energy_consumption,
                 production_ratio = subfloor_aggregate.production_ratio,
                 Product = subfloor_aggregate.Product,
@@ -114,7 +138,6 @@ function model.update_line(line_data, aggregate)
         structures.class.add(Byproduct, byproduct)
         structures.aggregate.add(aggregate, "Byproduct", byproduct)
     end
-    
 
     -- Determine products
     local Product = structures.class.init()
@@ -133,11 +156,10 @@ function model.update_line(line_data, aggregate)
         structures.aggregate.subtract(aggregate, "Product", product)
     end
 
-
     -- Determine ingredients
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(line_data.recipe_proto.ingredients) do
-        local ingredient = util.table.deepcopy(ingredient)
+        local ingredient = data_util.deepcopy(ingredient)
         ingredient.amount = data_util.determine_item_amount(ingredient)
         
         -- Incorporate productivity
@@ -182,16 +204,33 @@ function model.update_line(line_data, aggregate)
 
 
     -- Determine machine count
-    local machine_count = 0
+    local machine_count = calculation.util.determine_machine_count(line_data.machine_proto, line_data.recipe_proto,
+      line_data.total_effects, production_ratio, line_data.timescale)
+    -- Set the machine count of the current aggregate to the one of the first line (relevant for subfloors)
+    aggregate.machine_count = aggregate.machine_count or machine_count
 
-    -- Determine energy consumption
-    local energy_consumption = 0
-    aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
 
-
-    -- Determine fuel needs
+    -- Determine energy consumption, including potential fuel needs
+    local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
+      machine_count, line_data.total_effects)
+    
     local Fuel = structures.class.init()
+    local burner = line_data.machine_proto.burner
 
+    if burner ~= nil and burner.categories["chemical"] then  -- only handles chemical fuels for now
+        local fuel_proto = line_data.fuel_proto  -- Lines without subfloors will always have a fuel_proto attached
+        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, burner, 
+          fuel_proto.fuel_value, line_data.timescale)
+        
+        local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
+        structures.class.add(Fuel, fuel)
+        structures.aggregate.add(aggregate, "Product", fuel)  -- add it as a product so it can be produced
+
+        energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+    end
+
+    aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
+    
 
     -- Update the actual line with the calculated results
     calculation.interface.set_line_result {

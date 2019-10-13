@@ -29,7 +29,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
                 ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
             else
                 Floor.add(ui_state.context.floor, line)
-                calculation.update(player, ui_state.context.subfactory)
+                calculation.update(player, ui_state.context.subfactory, false)
                 if show.message ~= nil then ui_util.message.enqueue(player, show.message.text, show.message.type, 1) end
             end
 
@@ -64,7 +64,7 @@ function handle_picker_recipe_click(player, button)
         ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
     else
         Floor.add(context.floor, line)
-        calculation.update(player, context.subfactory)
+        calculation.update(player, context.subfactory, false)
     end
     exit_modal_dialog(player, "cancel", {})
 end

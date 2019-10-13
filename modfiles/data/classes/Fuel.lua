@@ -1,9 +1,20 @@
 -- This is essentially just a wrapper-'class' for a fuel prototype to add some data to it
--- It's based on the Item class, with some added/modified attributes and methods
 Fuel = {}
 
+-- Initialised by passing a prototype from the all_fuels global table
 function Fuel.init_by_proto(proto, amount)
-    return Item.init_by_proto(proto, "Fuel", amount)
+    return {
+        proto = proto,
+        amount = amount or 0,  -- produced amount
+        valid = true,
+        class = "Fuel"
+    }
+end
+
+-- Initialised by passing a basic item table {name, type, amount}
+function Fuel.init_by_item(item, amount)
+    local proto = global.all_fuels.fuels[global.all_fuels.map[item.name]]
+    return Fuel.init_by_proto(proto, amount)
 end
 
 

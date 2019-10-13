@@ -1,3 +1,4 @@
+require("data.util")
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.TopLevelItem")
@@ -14,7 +15,6 @@ require("data.handlers.migrator")
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.calculation.interface")
-require("data.util")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
 devmode = true  -- Enables certain conveniences for development
@@ -110,7 +110,7 @@ function handle_configuration_change()
         local player_table = global.players[index]
         for _, factory_name in pairs(factories) do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                calculation.update(player, subfactory)
+                calculation.update(player, subfactory, false)
             end
         end
     end
