@@ -215,10 +215,6 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
 
     local tooltip = {""}
     for name, effect in pairs(effects) do
-        if machine_proto ~= nil and name == "productivity" then
-            effect = effect + data_util.determine_mining_productivity(player, subfactory, machine_proto)
-        end
-
         if effect ~= 0 then
             local appendage = ""
             
@@ -243,7 +239,7 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
             tooltip = {"", tooltip, "\n", localised_names[name], ": ", number, "%", appendage}
         end
     end
-
+    
     return tooltip
 end
 

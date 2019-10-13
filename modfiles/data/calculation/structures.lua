@@ -8,6 +8,7 @@ function structures.aggregate.init(player_index, floor_id)
     return {
         player_index = player_index,
         floor_id = floor_id,
+        machine_count = nil,
         energy_consumption = 0,
         production_ratio = nil,
         Product = structures.class.init(),

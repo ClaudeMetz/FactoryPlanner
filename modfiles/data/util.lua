@@ -251,68 +251,56 @@ function data_util.determine_catalyst_amount(player, recipe_proto, type, item_na
 end
 
 
--- Determines the actual amount of items that a recipe_product produces
-function data_util.determine_machine_count(player, subfactory, line, machine_proto, production_ratio)
-    local mining_prod = data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    local machine_prod_ratio = production_ratio / (1 + math.max(line.total_effects.productivity + mining_prod, 0))
-    local machine_speed = machine_proto.speed * (1 + math.max(line.total_effects.speed, -0.8))
 
-    local launch_delay = 0
-    if line.recipe.proto.name == "rocket-part" then
-        local rockets_produced = production_ratio / 100
-        local launch_sequence_time = 41.25 / subfactory.timescale  -- in seconds
-        -- Not sure why this forumla works, but it seemingly does
-        launch_delay = launch_sequence_time * rockets_produced
-    end
+-- Returns the combination of both item collections in GUI order, as a deepcopy
+function data_util.combine_item_collections(primary_items, secondary_items)
+    local combination = Collection.init()
+    local touched_datasets = {}
 
-    return ((machine_prod_ratio / (machine_speed / line.recipe.proto.energy)) / subfactory.timescale) + launch_delay
-end
-
--- Determines the amount of energy the given machine will consume
-function data_util.determine_energy_consumption(machine, machine_count, total_effects)
-    local energy_consumption = machine_count * (machine.proto.energy_usage * 60)
-    return energy_consumption + (energy_consumption * math.max(total_effects.consumption, -0.8))
-end
-
--- Determines the amount of fuel needed in the given context
-function data_util.determine_fuel_amount(energy_consumption, subfactory, fuel_proto, burner)
-    return ((energy_consumption / burner.effectivity) / fuel_proto.fuel_value) * subfactory.timescale
-end
-
--- Either returns the mining prod applying to the given machine (ie. it being a mining machine), 
--- or the mining prod in general, if no machine prototype is given
-function data_util.determine_mining_productivity(player, subfactory, machine_proto)
-    if (machine_proto == nil) or machine_proto.mining then
-        if subfactory.mining_productivity ~= nil then
-            return (subfactory.mining_productivity / 100)
-        else
-            return player.force.mining_drill_productivity_bonus
+    -- First, go through all primary items and combine them with any identical secondary ones
+    for _, dataset in ipairs(Collection.get_in_order(primary_items)) do
+        local primary_item = Collection.add(combination, data_util.deepcopy(dataset))
+        local secondary_item = Collection.get_by_name(secondary_items, dataset.proto.name)
+        if secondary_item ~= nil then
+            primary_item.amount = primary_item.amount + secondary_item.amount
+            touched_datasets[secondary_item.proto.name] = true
         end
-    else
-        return 0
     end
+    
+    -- Then, add all remaining secondary items on their own
+    for _, dataset in ipairs(Collection.get_in_order(secondary_items)) do
+        if touched_datasets[dataset.proto.name] == nil then
+            Collection.add(combination, data_util.deepcopy(dataset))
+        end
+    end
+
+    return combination
 end
 
 
 -- Converts the given timescale setting string to the appropriate number
 function data_util.timescale_setting_to_number(setting)
-    if setting == "one_second" then
-        return 1
-    elseif setting == "one_minute" then
-        return 60
-    elseif setting == "one_hour" then
-        return 3600
-    end
+    if setting == "one_second" then return 1
+    elseif setting == "one_minute" then return 60
+    elseif setting == "one_hour" then return 3600 end
 end
 
 
 -- Logs given table, excluding certain attributes (Kinda super-jank and inconsistent)
 function data_util.log(table)
-    local excluded_attributes = {proto=true, recipe_proto=true, machine_proto=true}
+    local excluded_attributes = {proto=true, recipe_proto=true, machine_proto=true, parent=true,
+      type=true, category=true, subfloor=true}
 
+    if type(table) ~= "table" then log(table); return end
     local first = next(table)
+    local lookup_table = {}
+    
     -- local function to allow for recursive use
     local function create_table_log(table, depth)
+        if lookup_table[table] ~= nil then
+            return lookup_table[table]
+        end
+        
         if table == nil then
             return "nil"
         elseif table_size(table) == 0 then
@@ -350,12 +338,39 @@ function data_util.log(table)
                 s = s .. line
             end
             s = s .. "\n" .. spacer .. "}"
-            
+            lookup_table[table] = s
             return s
         end
     end
 
     log(create_table_log(table, 0))
+end
+
+-- Deepcopies given table, excluding certain attributes (cribbed from core.lualib)
+function data_util.deepcopy(object)
+    local excluded_attributes = {proto=true}
+
+    local lookup_table = {}
+    local function _copy(name, object)
+        if type(object) ~= "table" then
+            return object
+        -- don't copy the excluded attributes
+        elseif excluded_attributes[name] then
+            return object
+        -- don't copy factorio rich objects
+        elseif object.__self then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local new_table = {}
+        lookup_table[object] = new_table
+        for index, value in pairs(object) do
+            new_table[_copy("", index)] = _copy(index, value)
+        end
+        return setmetatable(new_table, getmetatable(object))
+    end
+    return _copy("", object)
 end
 
 

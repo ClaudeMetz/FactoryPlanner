@@ -137,7 +137,7 @@ function create_line_table_row(player, line)
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=line.machine.proto.sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}, 
           tooltip={"", line.machine.proto.localised_name, "\n", machine_count, " ", machine_text, 
-          ui_util.generate_module_effects_tooltip(line.total_effects, line.machine.proto, player, subfactory)}}
+          ui_util.generate_module_effects_tooltip(Line.get_total_effects(line, player), line.machine.proto, player, subfactory)}}
         button.number = (player_table.settings.round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
@@ -150,7 +150,7 @@ function create_line_table_row(player, line)
     if line.machine.proto.module_limit > 0 and recipe.proto.name ~= "fp-space-science-pack" then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
             create_module_button(flow_modules, line, module, "module", "fp_sprite-button_line_module_" .. line.id 
-            .. "_" .. module.id)
+              .. "_" .. module.id)
         end
 
         if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
@@ -211,7 +211,8 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local line = ui_state.context.line
     local selected = (machine_proto.id == current_machine_proto_id)
 
-    local machine_count = data_util.determine_machine_count(player, subfactory, line, machine_proto, line.production_ratio)
+    local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto, 
+      Line.get_total_effects(line, player), line.production_ratio, subfactory.timescale)
     machine_count = ui_util.format_number(machine_count, 4)
     button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
     

@@ -31,14 +31,6 @@ function Line.init(player, recipe, machine)
         return false
     end
 
-    for _, product in pairs(recipe.proto.products) do
-        Line.add(line, Item.init_by_item(product, "Product", 0))
-    end
-
-    for _, ingredient in pairs(recipe.proto.ingredients) do
-        Line.add(line, Item.init_by_item(ingredient, "Ingredient", 0))
-    end
-
     -- Initialise total_effects
     Line.summarize_effects(line)
 
@@ -68,7 +60,7 @@ function Line.set_beacon(self, beacon, secondary)
     beacon.parent = self
     self.beacon = beacon
     
-    Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(util.table.deepcopy(beacon)))
+    Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(data_util.deepcopy(beacon)))
     Beacon.trim_modules(self.beacon)
     Line.summarize_effects(self)
 end
@@ -86,7 +78,7 @@ function Line.add(self, object, secondary)
     local dataset = Collection.add(self[object.class], object)
 
     if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.add, secondary, table.pack(util.table.deepcopy(object)))
+        Line.carry_over_changes(self, Line.add, secondary, table.pack(data_util.deepcopy(object)))
         Line.normalize_modules(self)
     end
 
@@ -95,7 +87,7 @@ end
 
 function Line.remove(self, dataset, secondary)
     if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.remove, secondary, table.pack(util.table.deepcopy(dataset)))
+        Line.carry_over_changes(self, Line.remove, secondary, table.pack(data_util.deepcopy(dataset)))
     end
     
     local removed_gui_position = Collection.remove(self[dataset.class], dataset)
@@ -108,7 +100,7 @@ function Line.replace(self, dataset, object, secondary)
     local dataset = Collection.replace(self[dataset.class], dataset, object)
 
     if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.replace, secondary, table.pack(util.table.deepcopy(dataset), object))
+        Line.carry_over_changes(self, Line.replace, secondary, table.pack(data_util.deepcopy(dataset), object))
         Line.normalize_modules(self)
     end
 
@@ -238,6 +230,26 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
     end
     
     return { compatible = compatible }
+end
+
+
+-- Returns the total effects influencing this line, including mining productivity
+function Line.get_total_effects(self, player)
+    local effects = data_util.deepcopy(self.total_effects)
+
+    -- Add mining productivity, if applicable
+    local mining_productivity = 0
+    if self.machine.proto.mining then
+        local subfactory = self.parent.parent
+        if subfactory.mining_productivity ~= nil then
+            mining_productivity = (subfactory.mining_productivity / 100)
+        else
+            mining_productivity = player.force.mining_drill_productivity_bonus
+        end
+    end
+    effects.productivity = effects.productivity + mining_productivity
+
+    return effects
 end
 
 

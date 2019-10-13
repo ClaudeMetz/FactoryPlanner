@@ -17,7 +17,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
         -- (Top line ignores interaction, so no special handling there)
         if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) then
             Floor.shift(floor, line, direction)
-            calculation.update(player, subfactory)
+            calculation.update(player, subfactory, true)
         end
 
     else
@@ -28,7 +28,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
 
                 local subfloor = Floor.init(line)
                 line.subfloor = Subfactory.add(subfactory, subfloor)
-                calculation.update(player, subfactory)
+                calculation.update(player, subfactory, false)
             end
             ui_state.current_activity = nil
             data_util.context.set_floor(player, line.subfloor)
@@ -40,12 +40,12 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
 
             if line.subfloor == nil then
                 Floor.remove(floor, line)
-                calculation.update(player, subfactory)
+                calculation.update(player, subfactory, true)
             else
                 if ui_state.current_activity == "deleting_line" then
                     Floor.remove(floor, line)
                     ui_state.current_activity = nil
-                    calculation.update(player, subfactory)
+                    calculation.update(player, subfactory, true)
                 else
                     ui_state.current_activity = "deleting_line"
                     ui_state.context.line = line
@@ -78,7 +78,7 @@ function handle_percentage_confirmation(player, element)
     ui_state.current_activity = nil
 
     local scroll_pane = element.parent.parent
-    calculation.update(player, ui_state.context.subfactory)
+    calculation.update(player, ui_state.context.subfactory, true)
     scroll_pane["table_production_pane"]["fp_textfield_line_percentage_" .. line_id].focus()
 end
 
@@ -97,7 +97,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         -- Change the machine to be one tier lower/higher if possible
         if direction ~= nil then
             data_util.machine.change(player, line, nil, direction)
-            calculation.update(player, subfactory)
+            calculation.update(player, subfactory, true)
 
         -- Display all the options for this machine category
         elseif click == "left" then            
@@ -127,7 +127,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
             local new_machine = global.all_machines.categories[line.machine.category.id].machines[machine_id]
             data_util.machine.change(player, line, new_machine, nil)
             ui_state.current_activity = nil
-            calculation.update(player, subfactory)
+            calculation.update(player, subfactory, true)
         end
     end
 end
@@ -147,11 +147,11 @@ function generate_chooser_machine_buttons(player)
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_chooser_machine_choice(player, element_name)
+function apply_chooser_machine_choice(player, machine_id)
     local context = get_context(player)
-    local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(element_name)]
+    local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(machine_id)]
     data_util.machine.change(player, context.line, machine, nil)
-    calculation.update(player, context.subfactory)
+    calculation.update(player, context.subfactory, false)
 end
 
 
@@ -205,7 +205,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
                 end
             end
 
-            calculation.update(player, ui_state.context.subfactory)
+            calculation.update(player, ui_state.context.subfactory, true)
 
         else
             if click == "left" then  -- open the modules modal dialog
@@ -214,7 +214,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
 
             else  -- click == "right"; delete the module
                 Line.remove(line, module)
-                calculation.update(player, ui_state.context.subfactory)
+                calculation.update(player, ui_state.context.subfactory, true)
 
             end
         end
@@ -311,7 +311,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
             end
         end
 
-        calculation.update(player, ui_state.context.subfactory)
+        calculation.update(player, ui_state.context.subfactory, true)
 
     else  -- click is left or right, makes no difference
         local beacon = line.beacon
@@ -355,7 +355,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.proto.type ~= "entity" then
-            if item.class == "Ingredient" then
+            if item.class == "Ingredient" or item.class == "Fuel" then
                 enter_modal_dialog(player, {type="recipe_picker", object=item})
             elseif item.class == "Byproduct" then
                 --enter_modal_dialog(player, {type="recipe_picker", object=item})
@@ -382,10 +382,11 @@ function generate_chooser_fuel_buttons(player)
         local fuel_amount = nil
         -- Only add number information if this line has no subfloor (really difficult calculations otherwise)
         if line.subfloor == nil then
-            local energy_consumption = data_util.determine_energy_consumption(machine, machine.count,
-              line.total_effects)
-            fuel_amount = data_util.determine_fuel_amount(energy_consumption, ui_state.context.subfactory,
-              fuel_proto, machine.proto.burner)
+            local energy_consumption = calculation.util.determine_energy_consumption(machine.proto, machine.count,
+              line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
+            fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine.proto.burner,
+              fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
+
             fuel_amount = ui_util.calculate_item_button_number(player_table, view, fuel_amount,
               fuel_proto.type, line.machine.count)
             fuel_amount = ui_util.format_number(fuel_amount, 4)
@@ -404,45 +405,35 @@ function generate_chooser_fuel_buttons(player)
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_chooser_fuel_choice(player, fuel_element_name)
-    --[[ -- Sets the given fuel_id on the given line
-    local function apply_fuel_to_line(line, fuel)
-        line.fuel = fuel
-        if line.id == 1 and line.parent and line.parent.level > 1 then
-            line.parent.origin_line.fuel = fuel
-        end
-    end
-    
-    -- Sets the given fuel_id to all relevant lines on the given floor and all it's subfloors
-    local function apply_fuel_to_floor(floor, old_fuel, new_fuel)
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            if line.subfloor == nil then
-                if line.fuel == old_fuel then
-                    apply_fuel_to_line(line, new_fuel)
-                end
-            else
-                apply_fuel_to_floor(line.subfloor, old_fuel, new_fuel)
-            end
-        end
-    end ]]
-
-    local fuels = global.all_fuels.fuels
-    local old_fuel = get_ui_state(player).modal_data.object.proto
-    local new_fuel = fuels[tonumber(fuel_element_name)]
-    
+function apply_chooser_fuel_choice(player, new_fuel_id)
     local context = get_context(player)
     local line = context.line
-    if line.subfloor == nil then
-        Line.get(line, "Fuel", 1).proto = new_fuel
+
+    local old_fuel = get_ui_state(player).modal_data.object.proto
+    local new_fuel = global.all_fuels.fuels[tonumber(new_fuel_id)]
+    
+    -- Sets the new fuel to all relevant lines on the given floor and all it's subfloors
+    local function apply_fuel_to_floor(floor)
+        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            if line.subfloor == nil then
+                local current_fuel = Line.get_by_name(line, "Fuel", old_fuel.name)
+                if current_fuel ~= nil then current_fuel.proto = new_fuel end
+            else
+                apply_fuel_to_floor(line.subfloor)
+            end
+        end
+    end
+    
+    if line.subfloor == nil then  -- subfloor-less lines are always limited to 1 fuel type
+        Line.get_by_gui_position(line, "Fuel", 1).proto = new_fuel
         if line.id == 1 and line.parent and line.parent.level > 1 then
-            Line.get(line.parent.origin_line, "Fuel", 1).proto = new_fuel
+            Line.get_by_gui_position(line.parent.origin_line, "Fuel", 1).proto = new_fuel
         end
     else
-        
-        --apply_fuel_to_floor(context.line.subfloor, old_fuel, new_fuel)
+        apply_fuel_to_floor(line.subfloor)
     end
 
-    calculation.update(player, context.subfactory)
+    calculation.update(player, context.subfactory, false)
 end
 
 
