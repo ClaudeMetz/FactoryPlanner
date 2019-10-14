@@ -87,11 +87,11 @@ function create_line_table_row(player, line)
     local floor = ui_state.context.floor
 
     -- Recipe button
-    local recipe = line.recipe
     local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
+    local tooltip = {"", line.recipe.proto.localised_name}
+    if line.subfloor ~= nil then tooltip = {"", tooltip, "\n", "- Subfloor attached -"} end
     local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
-      sprite=recipe.proto.sprite, tooltip=recipe.proto.localised_name, mouse_button_filter={"left-and-right"}}
-    if global.devmode == true then button_recipe.tooltip = {"", recipe.proto.localised_name, "\n", recipe.proto.name} end
+      sprite=line.recipe.proto.sprite, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
     ui_util.add_tutorial_tooltip(button_recipe, "recipe", true, true)
 
     if line.subfloor then
@@ -147,7 +147,7 @@ function create_line_table_row(player, line)
 
     -- Modules
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
-    if line.machine.proto.module_limit > 0 and recipe.proto.name ~= "fp-space-science-pack" then
+    if line.machine.proto.module_limit > 0 and line.recipe.proto.name ~= "fp-space-science-pack" then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
             create_module_button(flow_modules, line, module, "module", "fp_sprite-button_line_module_" .. line.id 
               .. "_" .. module.id)
@@ -164,7 +164,7 @@ function create_line_table_row(player, line)
     local flow_beacons = table_production.add{type="flow", name="flow_line_beacons_" .. line.id, direction="horizontal"}
     flow_beacons.style.vertical_align = "center"
     -- Beacons only work on machines that have some allowed_effects
-    if line.machine.proto.allowed_effects ~= nil and recipe.proto.name ~= "fp-space-science-pack" then
+    if line.machine.proto.allowed_effects ~= nil and line.recipe.proto.name ~= "fp-space-science-pack" then
         if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
             local button_add_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_beacon"},
