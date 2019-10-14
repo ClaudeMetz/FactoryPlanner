@@ -73,7 +73,7 @@ end
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
     item_recipe_map = generator.item_recipe_map()
-    identifier_item_map = generator.idenfifier_item_map()
+    identifier_item_map = generator.identifier_item_map()
     module_tier_map = generator.module_tier_map()
     sorted_objects = {
         items = generator.sorted_items(),

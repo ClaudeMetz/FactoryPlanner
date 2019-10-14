@@ -36,7 +36,7 @@ function model.update_floor(floor_data, aggregate)
             local floor_products = data_util.deepcopy(subfloor_aggregate.Product)
             model.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
-            -- Convert the internal product-format into actual products for display
+            -- Convert the internal product-format into positive products for the line and main aggregate
             for _, product in pairs(structures.class.to_array(floor_products)) do
                 local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
                 subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
@@ -57,6 +57,7 @@ function model.update_floor(floor_data, aggregate)
             update_main_aggregate("Product", "Product")
             update_main_aggregate("Ingredient", "Product")
             update_main_aggregate("Fuel", "Product")
+
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
             calculation.interface.set_line_result {
@@ -119,10 +120,21 @@ function model.update_line(line_data, aggregate)
         local relevant_product = relevant_products[1]
         production_ratio = determine_production_ratio(relevant_product)
     elseif relevant_product_count >= 2 then
-        -- Determine the highest production ratio needed to fulfill every demand
+        local priority_proto = line_data.priority_product_proto
+        
         for _, relevant_product in pairs(relevant_products) do
-            local ratio = determine_production_ratio(relevant_product)
-            production_ratio = math.max(production_ratio, ratio)
+            -- Use the priority product to determine the production ratio, if it's set
+            if priority_proto ~= nil then
+                if relevant_product.type == priority_proto.type and relevant_product.name == priority_proto.name then
+                    production_ratio = determine_production_ratio(relevant_product)
+                    break
+                end
+
+            -- Otherwise, determine the highest production ratio needed to fulfill every demand
+            else
+                local ratio = determine_production_ratio(relevant_product)
+                production_ratio = math.max(production_ratio, ratio)
+            end
         end
     end
 
@@ -224,7 +236,7 @@ function model.update_line(line_data, aggregate)
         
         local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
         structures.class.add(Fuel, fuel)
-        structures.aggregate.add(aggregate, "Product", fuel)  -- add it as a product so it can be produced
+        structures.aggregate.add(aggregate, "Fuel", fuel)  -- add it as a product so it can be produced
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
     end

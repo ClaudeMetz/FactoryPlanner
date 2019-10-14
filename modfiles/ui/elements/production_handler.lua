@@ -325,7 +325,8 @@ end
 function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
-    local line = Floor.get(get_context(player).floor, "Line", line_id)
+    local ui_state = get_ui_state(player)
+    local line = Floor.get(ui_state.context.floor, "Line", line_id)
     local item = Line.get(line, class, item_id)
 
     if alt then  -- Open item in FNEI
@@ -333,10 +334,10 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
     elseif direction ~= nil then  -- Shift item in the given direction
         Line.shift(line, item, direction)
+        refresh_production_table(player)
         
     else
         if click == "right" and item.class == "Fuel" then
-            local ui_state = get_ui_state(player)
             local modal_data = {
                 reciever_name = "fuel",
                 title = {"label.fuel"},
@@ -357,13 +358,21 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         elseif click == "left" and item.proto.type ~= "entity" then
             if item.class == "Ingredient" or item.class == "Fuel" then
                 enter_modal_dialog(player, {type="recipe_picker", object=item})
+
+            elseif item.class == "Product" then
+                if line.Product.count < 2 then
+                    ui_util.message.enqueue(player, {"label.error_no_prioritizing_single_product"}, "error", 1)
+                else
+                    local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+                    Line.set_priority_product(line, priority_product_proto)
+                    calculation.update(player, ui_state.context.subfactory, true)
+                end
+
             elseif item.class == "Byproduct" then
                 --enter_modal_dialog(player, {type="recipe_picker", object=item})
             end
         end
     end
-    
-    refresh_production_table(player)
 end
 
 -- Generates the buttons for the fuel chooser dialog

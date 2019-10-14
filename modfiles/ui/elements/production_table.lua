@@ -289,10 +289,17 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
         local style = "fp_button_icon_medium_" .. styles[index]
         
         for _, item in ipairs(Line.get_in_order(line, class)) do
-            if item.proto.type == "entity" then style = "fp_button_icon_medium_blank" end
+            local actual_style = style
+            if item.proto.type == "entity" then
+                actual_style = "fp_button_icon_medium_blank" 
+            elseif class == "Product" and line.priority_product_proto ~= nil and 
+              line.priority_product_proto.type == item.proto.type and 
+              line.priority_product_proto.name == item.proto.name then
+                actual_style = "fp_button_icon_medium_green"
+            end
 
             local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-              .. "_" .. item.id, sprite=item.proto.sprite, style=style, mouse_button_filter={"left-and-right"}}
+              .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, mouse_button_filter={"left-and-right"}}
 
             ui_util.setup_item_button(player_table, button, item, line)
             if button.number ~= nil and button.number < margin_of_error then button.visible = false end
