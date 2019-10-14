@@ -121,7 +121,7 @@ function model.update_line(line_data, aggregate)
         production_ratio = determine_production_ratio(relevant_product)
     elseif relevant_product_count >= 2 then
         local priority_proto = line_data.priority_product_proto
-        
+
         for _, relevant_product in pairs(relevant_products) do
             -- Use the priority product to determine the production ratio, if it's set
             if priority_proto ~= nil then
@@ -236,7 +236,11 @@ function model.update_line(line_data, aggregate)
         
         local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
         structures.class.add(Fuel, fuel)
-        structures.aggregate.add(aggregate, "Fuel", fuel)  -- add it as a product so it can be produced
+        structures.aggregate.add(aggregate, "Fuel", fuel)
+
+        -- This is to work around the fuel not being detected as a possible product
+        structures.aggregate.add(aggregate, "Product", fuel)
+        structures.aggregate.subtract(aggregate, "Ingredient", fuel)
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
     end
