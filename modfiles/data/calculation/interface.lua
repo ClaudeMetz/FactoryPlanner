@@ -56,6 +56,7 @@ function calculation.interface.get_data(player, subfactory)
                 timescale = subfactory.timescale,
                 percentage = line.percentage,
                 total_effects = Line.get_total_effects(line, player),  -- copy
+                priority_product_proto = line.priority_product_proto,  -- reference
                 recipe_proto = line.recipe.proto,  -- reference
                 machine_proto = line.machine.proto,  -- reference
                 fuel_proto = nil,  -- will be a reference
@@ -132,6 +133,11 @@ function calculation.interface.set_line_result(result)
     line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
     line.production_ratio = result.production_ratio
+
+    -- Reset the priority_product if there aren't more than one product
+    if table_size(structures.class.to_array(result.Product)) < 2 then
+        Line.set_priority_product(line, nil)
+    end
 
     -- This procedure is a bit more complicated to to retain the users ordering of items
     local function update_items(class_name)

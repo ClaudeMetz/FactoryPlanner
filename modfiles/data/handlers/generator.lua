@@ -434,7 +434,7 @@ function generator.item_recipe_map()
 end
 
 -- Generates a table mapping item identifier to their prototypes
-function generator.idenfifier_item_map()
+function generator.identifier_item_map()
     local map = {}
     local all_items = global.all_items
     for _, type in pairs({"item", "fluid"}) do

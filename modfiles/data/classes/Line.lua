@@ -14,6 +14,7 @@ function Line.init(player, recipe, machine)
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
         Fuel = Collection.init(),
+        priority_product_proto = nil,  -- will be set by the user
         comment = nil,
         production_ratio = 0,
         subfloor = nil,
@@ -35,6 +36,19 @@ function Line.init(player, recipe, machine)
     Line.summarize_effects(line)
 
     return line
+end
+
+
+-- Sets the priority_product_proto on this line and optionally it's subfloor / parent line
+function Line.set_priority_product(self, proto)
+    self.priority_product_proto = proto
+    -- Can't use pack/unpack method as it doesn't work for proto being nil
+    if self.subfloor ~= nil then
+        local sub_line = Floor.get(self.subfloor, "Line", 1)
+        sub_line.priority_product_proto = proto
+    elseif self.id == 1 and self.parent.origin_line then
+        self.parent.origin_line.priority_product_proto = proto
+    end
 end
 
 
