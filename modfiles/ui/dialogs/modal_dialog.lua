@@ -1,3 +1,4 @@
+require("generic_dialogs")
 require("tutorial_dialog")
 require("preferences_dialog")
 require("subfactory_dialog")
@@ -5,7 +6,6 @@ require("notes_dialog")
 require("prototype_picker_dialog")
 require("item_picker_dialog")
 require("recipe_picker_dialog")
-require("chooser_dialog")
 require("modules_dialog")
 
 -- Global variable to write down the dialogs that should not be deleted when closed

@@ -75,7 +75,7 @@ function refresh_item_table(player, class)
         local parent_line = get_context(player).floor.origin_line
         if parent_line ~= nil and parent_line[class].count > 0 then
             local items = (class ~= "Ingredient") and Line.get_in_order(parent_line, class)
-              or data_util.combine_item_collections(parent_line.Ingredient, parent_line.Fuel).datasets
+              or Collection.get_in_order(data_util.combine_item_collections(parent_line.Ingredient, parent_line.Fuel))
 
             for _, item in ipairs(items) do
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
