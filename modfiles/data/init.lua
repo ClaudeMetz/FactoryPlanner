@@ -168,6 +168,7 @@ function reload_settings(player)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
+    settings_table.ingredient_satisfaction = settings["fp_ingredient_satisfaction"].value
     settings_table.round_button_numbers = settings["fp_round_button_numbers"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
 end

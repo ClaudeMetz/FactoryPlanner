@@ -8,6 +8,7 @@ function Item.init_by_proto(proto, class, amount)
         proto = proto,
         type = type,
         amount = amount or 0,  -- produced amount
+        satisfied_amount = 0,
         valid = true,
         class = class
     }

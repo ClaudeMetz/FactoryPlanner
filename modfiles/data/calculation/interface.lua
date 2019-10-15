@@ -16,9 +16,13 @@ function calculation.update(player, subfactory, refresh)
             -- Save the active subfactory in global so the model doesn't have to pass it around
             player_table.active_subfactory = subfactory
             
-            local subfactory_data = calculation.interface.get_data(player, subfactory)
+            local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+            --Profiler.Start()
+            --local p = game.create_profiler()
             model.update_subfactory(subfactory_data)
-
+            --p.stop()
+            --log(p)
+            --Profiler.Stop()
             player_table.active_subfactory = nil
         end
         if refresh then refresh_main_dialog(player) end
@@ -27,7 +31,7 @@ end
 
 
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.get_data(player, subfactory)
+function calculation.interface.get_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
@@ -123,6 +127,59 @@ function calculation.interface.set_subfactory_result(result)
 
     update_top_level_items("Ingredient")
     update_top_level_items("Byproduct")
+
+
+    local function determine_net_ingredients(floor, aggregate)
+        -- First, determine the net ingredients of this floor
+        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            if line.subfloor ~= nil then 
+                determine_net_ingredients(line.subfloor, aggregate)
+            else
+                for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+                    local simple_ingredient = {type=ingredient.proto.type, name=ingredient.proto.name, amount=ingredient.amount}
+                    structures.aggregate.add(aggregate, "Ingredient", simple_ingredient)
+                end
+
+                for _, product in ipairs(Line.get_in_order(line, "Product")) do
+                    local simple_product = {type=product.proto.type, name=product.proto.name, amount=product.amount}
+                    local ingredient_amount = aggregate.Ingredient[simple_product.type][simple_product.name] or 0
+                    local used_ingredient_amount = math.min(ingredient_amount, simple_product.amount)
+                    structures.aggregate.subtract(aggregate, "Ingredient", simple_product, used_ingredient_amount)
+                end
+            end
+        end
+    end
+
+    local function update_ingredient_satisfaction(floor, aggregate)
+        -- Then, go through all ingredients again, determining their satisfied_amounts
+        for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
+            if line.subfloor ~= nil then 
+                local aggregate_copy = data_util.deepcopy(aggregate)
+                update_ingredient_satisfaction(line.subfloor, aggregate)
+
+                for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+                    local type, name = ingredient.proto.type, ingredient.proto.name
+                    local removed_amount = (aggregate_copy.Ingredient[type][name] or 0) - (aggregate.Ingredient[type][name] or 0)
+                    ingredient.satisfied_amount = ingredient.amount - removed_amount
+                end
+
+            else
+                for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+                    local aggregate_ingredient_amount = aggregate.Ingredient[ingredient.proto.type][ingredient.proto.name] or 0
+                    local removed_amount = math.min(ingredient.amount, aggregate_ingredient_amount)
+
+                    ingredient.satisfied_amount = ingredient.amount - removed_amount
+                    structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type, name=ingredient.proto.name}, removed_amount)
+                end
+            end
+        end
+    end
+
+    -- Determine satisfaction-amounts for all line ingredients
+    local top_floor = Subfactory.get(subfactory, "Floor", 1)
+    local aggregate = structures.aggregate.init()  -- get modified by the two functions
+    determine_net_ingredients(top_floor, aggregate)
+    update_ingredient_satisfaction(top_floor, aggregate)
 end
 
 -- Updates the given line of the given floor of the active subfactory
