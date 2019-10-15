@@ -498,17 +498,7 @@ function data_util.run_dev_config(player)
             {
                 name="electronic-circuit",
                 machine="assembling-machine-2"
-            },
-            --[[ {
-                name="rocket-part",
-                machine="rocket-silo",
-                modules={{name="productivity-module-3", amount=4}},
-                beacon={beacon={name="beacon", amount=20}, module={name="speed-module-3", amount=2}}
-            }, ]]
-            --[[ {
-                name="kovarex-enrichment-process",
-                machine="centrifuge"
-            }, ]]
+            }
         }
         construct_floor(player, context.floor, recipes)
     end

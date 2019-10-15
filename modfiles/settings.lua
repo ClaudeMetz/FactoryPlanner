@@ -59,10 +59,19 @@ data:extend({
     },
     {
         type = "bool-setting",
+        name = "fp_ingredient_satisfaction",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "g",
+        localised_name = {"mod-setting-name.fp_ingredient_satisfaction"},
+        localised_description = {"mod-setting-description.fp_ingredient_satisfaction"}
+    },
+    {
+        type = "bool-setting",
         name = "fp_round_button_numbers",
         setting_type = "runtime-per-user",
         default_value = true,
-        order = "g",
+        order = "h",
         localised_name = {"mod-setting-name.fp_round_button_numbers"},
         localised_description = {"mod-setting-description.fp_round_button_numbers"}
     },
@@ -73,7 +82,7 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "h",
+        order = "i",
         localised_name = {"mod-setting-name.fp_indicate_rounding"},
         localised_description = {"mod-setting-description.fp_indicate_rounding"}
     }

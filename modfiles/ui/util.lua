@@ -156,7 +156,7 @@ function ui_util.setup_item_button(player_table, button, item, line)
     if number ~= nil then
         number = ui_util.format_number(number, 4)
         
-        local number_string, indication = nil, ""
+        local number_string, indication, satisfaction = nil, "", ""
         if item.class == "Product" then
             if line ~= nil and line.priority_product_proto == item.proto then 
                 indication = {"", " (", {"label.priority"}, ")"}
@@ -168,6 +168,10 @@ function ui_util.setup_item_button(player_table, button, item, line)
                 number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", number}
             end
 
+        elseif item.class == "Ingredient" and player_table.settings.ingredient_satisfaction then
+            local satisfaction_percentage = (item.satisfied_amount / item.amount) * 100
+            satisfaction = {"", "\n", ui_util.format_number(satisfaction_percentage, 4), "% ", {"tooltip.satisfied"}}
+
         elseif item.class == "Fuel" then
             indication = {"", " (", {"label.fuel"}, ")"}
         end
@@ -175,7 +179,7 @@ function ui_util.setup_item_button(player_table, button, item, line)
 
         button.number = (view.name == "belts_or_lanes" and player_table.settings.round_button_numbers)
           and math.ceil(number) or number
-        button.tooltip = {"", localised_name, indication, "\n", number_string, " ", caption}
+        button.tooltip = {"", localised_name, indication, "\n", number_string, " ", caption, satisfaction}
 
     else
         button.tooltip = localised_name
