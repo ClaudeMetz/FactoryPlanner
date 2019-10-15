@@ -8,6 +8,7 @@ function Machine.init_by_proto(proto)
         proto = proto,
         category = category,
         count = 0,
+        count_cap = nil,  -- will be set by the user
         valid = true,
         class = "Machine"
     }

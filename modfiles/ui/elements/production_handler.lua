@@ -120,6 +120,21 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                     enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
                 end
             end
+        
+        -- Open the dialog to set a machine count cap
+        elseif click == "right" then
+            local modal_data = {
+                reciever_name = "machine",
+                title = {"", {"tooltip.machine"}, " ", {"label.cap"}},
+                text = {"", {"label.setter_machine_cap"}, " '", line.recipe.proto.localised_name, "':"},
+                type = "numeric",
+                caption = {"label.count"},
+                value = line.machine.count_cap or "",
+                object = line.machine
+            }
+
+            ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+            enter_modal_dialog(player, {type="setter", submit=true, modal_data=modal_data})
         end
     else
         -- Accept the user selection of new machine for this (assembly) line
@@ -146,11 +161,19 @@ function generate_chooser_machine_buttons(player)
     end
 end
 
--- Recieves the result of a chooser user choice and applies it
+-- Recieves the result of the machine choice and applies it
 function apply_chooser_machine_choice(player, machine_id)
     local context = get_context(player)
     local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(machine_id)]
     data_util.machine.change(player, context.line, machine, nil)
+    calculation.update(player, context.subfactory, false)
+end
+
+-- Recieves the result of the machine cap choice and applies it
+function apply_setter_machine_choice(player, machine, count_cap)
+    local context = get_context(player)
+    -- tonumber() has already converted an empty string to nil
+    Line.set_machine_count_cap(context.line, count_cap)
     calculation.update(player, context.subfactory, false)
 end
 

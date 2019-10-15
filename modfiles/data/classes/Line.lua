@@ -17,6 +17,7 @@ function Line.init(player, recipe, machine)
         priority_product_proto = nil,  -- will be set by the user
         comment = nil,
         production_ratio = 0,
+        uncapped_production_ratio = 0, -- used to calculate machine choice numbers
         subfloor = nil,
         valid = true,
         class = "Line"
@@ -48,6 +49,18 @@ function Line.set_priority_product(self, proto)
         sub_line.priority_product_proto = proto
     elseif self.id == 1 and self.parent.origin_line then
         self.parent.origin_line.priority_product_proto = proto
+    end
+end
+
+-- Sets the machine's count_cap on this line and optionally it's subfloor / parent line
+function Line.set_machine_count_cap(self, count_cap)
+    self.machine.count_cap = count_cap
+    -- Can't use pack/unpack method as it doesn't work for proto being nil
+    if self.subfloor ~= nil then
+        local sub_line = Floor.get(self.subfloor, "Line", 1)
+        sub_line.machine.count_cap = count_cap
+    elseif self.id == 1 and self.parent.origin_line then
+        self.parent.origin_line.machine.count_cap = count_cap
     end
 end
 

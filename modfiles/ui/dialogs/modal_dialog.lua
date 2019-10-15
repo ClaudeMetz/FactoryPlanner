@@ -158,7 +158,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
         -- Conditions table
         local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
-        if condition_instructions ~= nil then
+        if condition_instructions ~= nil and condition_instructions.conditions ~= nil then
             table_conditions.style.bottom_margin = 6
             for n, condition in ipairs(condition_instructions.conditions) do
                 local currently_editing = (dialog_settings.object ~= nil)
