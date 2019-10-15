@@ -67,6 +67,7 @@ function model.update_floor(floor_data, aggregate)
                 machine_count = subfloor_aggregate.machine_count,
                 energy_consumption = subfloor_aggregate.energy_consumption,
                 production_ratio = subfloor_aggregate.production_ratio,
+                uncapped_production_ratio = subfloor_aggregate.uncapped_production_ratio,
                 Product = subfloor_aggregate.Product,
                 Byproduct = subfloor_aggregate.Byproduct,
                 Ingredient = subfloor_aggregate.Ingredient,
@@ -107,7 +108,7 @@ function model.update_line(line_data, aggregate)
     
 
     -- Determine production ratio
-    local production_ratio = 0
+    local production_ratio, uncapped_production_ratio = 0, 0
 
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
@@ -137,9 +138,18 @@ function model.update_line(line_data, aggregate)
             end
         end
     end
+    uncapped_production_ratio = production_ratio  -- retain the uncapped ratio for line_data
+
+    -- Cap the machine_count by reducing the production_ratio, if necessary
+    if line_data.machine_cap ~= nil then
+        local capped_production_ratio = calculation.util.determine_production_ratio(line_data.machine_proto, 
+          line_data.recipe_proto, line_data.total_effects, line_data.machine_cap, line_data.timescale)
+        production_ratio = math.min(production_ratio, capped_production_ratio)
+    end
 
     -- Set the production ratio of the current aggregate to the one of the first line (relevant for subfloors)
     aggregate.production_ratio = aggregate.production_ratio or production_ratio
+    aggregate.uncapped_production_ratio = aggregate.uncapped_production_ratio or uncapped_production_ratio
 
 
     -- Determine byproducts
@@ -256,6 +266,7 @@ function model.update_line(line_data, aggregate)
         machine_count = machine_count,
         energy_consumption = energy_consumption,
         production_ratio = production_ratio,
+        uncapped_production_ratio = uncapped_production_ratio,
         Product = Product,
         Byproduct = Byproduct,
         Ingredient = Ingredient,

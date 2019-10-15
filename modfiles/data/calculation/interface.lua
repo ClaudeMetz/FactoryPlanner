@@ -55,6 +55,7 @@ function calculation.interface.get_data(player, subfactory)
                 id = line.id,
                 timescale = subfactory.timescale,
                 percentage = line.percentage,
+                machine_cap = line.machine.count_cap,
                 total_effects = Line.get_total_effects(line, player),  -- copy
                 priority_product_proto = line.priority_product_proto,  -- reference
                 recipe_proto = line.recipe.proto,  -- reference
@@ -133,6 +134,7 @@ function calculation.interface.set_line_result(result)
     line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
     line.production_ratio = result.production_ratio
+    line.uncapped_production_ratio = result.uncapped_production_ratio
 
     -- Reset the priority_product if there aren't more than one product
     if table_size(structures.class.to_array(result.Product)) < 2 then
@@ -183,6 +185,13 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
     end
 
     return ((machine_prod_ratio / (machine_speed / recipe_proto.energy)) / timescale) + launch_delay
+end
+
+-- Calculates the production ratio from a given machine cap
+-- (Conversion of the machine_count formula, not sure how to work in the launch_delay correctly)
+function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_cap, timescale)
+    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
+    return ((machine_cap --[[ - launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * (1 + math.max(total_effects.productivity, 0)))
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context

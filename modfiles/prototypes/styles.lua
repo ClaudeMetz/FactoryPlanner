@@ -227,7 +227,7 @@ for _, type in ipairs(icons_large) do
 end
 
 -- Generates all medium-sized sprite-button styles
-local icons_medium = {"default", "recipe", "disabled", "hidden", "cyan", "red", "green", "blank"}
+local icons_medium = {"default", "recipe", "disabled", "hidden", "cyan", "red", "yellow", "green", "blank"}
 for _, type in ipairs(icons_medium) do
     data.raw["gui-style"].default["fp_button_icon_medium_" .. type] = {
         type = "button_style",

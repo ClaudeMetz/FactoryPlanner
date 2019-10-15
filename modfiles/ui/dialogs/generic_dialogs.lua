@@ -70,7 +70,6 @@ function get_setter_condition_instructions()
             number = (function(flow_modal_dialog)
                 return tonumber(flow_modal_dialog["table_setter"]["fp_textfield_setter_numeric"].text) end)
         },
-        conditions = {
-        }
+        conditions = nil
     }
 end

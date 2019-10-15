@@ -131,13 +131,27 @@ function create_line_table_row(player, line)
             end
         end
     else
+        local machine_proto = line.machine.proto
+        local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
         local machine_text = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
 
+        local style, cap_set, capped = "fp_button_icon_medium_recipe", "", ""
+        if line.machine.count_cap ~= nil then
+            cap_set = {"", " (", {"tooltip.cap_set"}, ")"}
+            style = "fp_button_icon_medium_green"
+
+            -- Check if the machine cap is 'in action'
+            if line.production_ratio < line.uncapped_production_ratio then
+                capped = {"", " (", {"tooltip.capped"}, ")"}
+                style = "fp_button_icon_medium_yellow"
+            end
+        end
+
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
-          sprite=line.machine.proto.sprite, style="fp_button_icon_medium_recipe", mouse_button_filter={"left"}, 
-          tooltip={"", line.machine.proto.localised_name, "\n", machine_count, " ", machine_text, 
-          ui_util.generate_module_effects_tooltip(Line.get_total_effects(line, player), line.machine.proto, player, subfactory)}}
+          sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
+          tooltip={"", machine_proto.localised_name, cap_set, "\n", machine_count, " ", machine_text, capped,
+          ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory)}}
         button.number = (player_table.settings.round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
@@ -212,7 +226,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local selected = (machine_proto.id == current_machine_proto_id)
 
     local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto, 
-      Line.get_total_effects(line, player), line.production_ratio, subfactory.timescale)
+      Line.get_total_effects(line, player), line.uncapped_production_ratio, subfactory.timescale)
     machine_count = ui_util.format_number(machine_count, 4)
     button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
     
