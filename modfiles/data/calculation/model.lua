@@ -164,16 +164,23 @@ function model.update_line(line_data, aggregate)
         local product = data_util.deepcopy(product)
         product.amount = data_util.determine_item_amount(product) * production_ratio
 
-        local product_demand = aggregate.Product[product.type][product.name]
-        if product.amount > product_demand then
-            local overflow_amount = product.amount - product_demand
-            structures.class.add(Byproduct, product, overflow_amount)
-            structures.aggregate.add(aggregate, "Byproduct", product, overflow_amount)
-            product.amount = product_demand  -- desired amount
-        end
+        -- Don't include net negative relevant products as products
+        if data_util.determine_net_product(line_data.recipe_proto, product.name) <= 0 then
+            structures.class.add(Byproduct, product)
+            structures.aggregate.add(aggregate, "Byproduct", product)
 
-        structures.class.add(Product, product)
-        structures.aggregate.subtract(aggregate, "Product", product)
+        else
+            local product_demand = aggregate.Product[product.type][product.name]
+            if product.amount > product_demand then
+                local overflow_amount = product.amount - product_demand
+                structures.class.add(Byproduct, product, overflow_amount)
+                structures.aggregate.add(aggregate, "Byproduct", product, overflow_amount)
+                product.amount = product_demand  -- desired amount
+            end
+            
+            structures.class.add(Product, product)
+            structures.aggregate.subtract(aggregate, "Product", product)
+        end
     end
 
     -- Determine ingredients
