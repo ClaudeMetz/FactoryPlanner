@@ -76,6 +76,81 @@ local function is_barreling_recipe(proto)
 end
 
 
+-- Determines the actual amount of items that a recipe product or ingredient equates to
+local function generate_formatted_item(base_item)
+    local actual_amount = 0
+    if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
+        actual_amount = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
+    elseif base_item.probability ~= nil then
+        actual_amount = base_item.amount * base_item.probability
+    else
+        actual_amount = base_item.amount
+    end
+
+    return {
+        name = base_item.name,
+        type = base_item.type,
+        amount = actual_amount
+    }
+end
+
+-- Determines the net amount that the given recipe produces of the given item (might be negative)
+local function determine_net_product_amount(recipe_proto, item)
+    local net_amount = 0
+    for _, product in pairs(recipe_proto.products) do
+        -- Mining recipes' net amounts always equal their main_product's amount
+        if recipe_proto.mining and product.name == recipe_proto.main_product.name then
+            return product.amount
+        end
+
+        -- Find the given item in the ingredient list
+        if product.type == item.type and product.name == item.name then
+            net_amount = product.amount  -- actual amount
+            break
+        end
+    end
+
+    for _, ingredient in pairs(recipe_proto.ingredients) do
+        -- Find the given item in the product list
+        if ingredient.type == item.type and ingredient.name == item.name then
+            net_amount = net_amount - ingredient.amount
+            break
+        end
+    end
+    
+    return net_amount
+end
+
+-- Formats the products/ingredients of a recipe for more convenient use
+local function format_recipe_products_and_ingredients(recipe_proto)
+    local ingredients = {}
+    for _, base_ingredient in ipairs(recipe_proto.ingredients) do
+        local formatted_ingredient = generate_formatted_item(base_ingredient)
+        table.insert(ingredients, formatted_ingredient)
+    end
+    recipe_proto.ingredients = ingredients
+
+    local products = {}
+    for _, base_product in ipairs(recipe_proto.products) do
+        local formatted_product = generate_formatted_item(base_product)
+        table.insert(products, formatted_product)
+
+        -- Update the main product as well, if present
+        if recipe_proto.main_product ~= nil and
+          formatted_product.type == recipe_proto.main_product.type and
+          formatted_product.name == recipe_proto.main_product.name then
+            recipe_proto.main_product = formatted_product
+        end
+    end
+    recipe_proto.products = products
+
+    -- Determine the net amount after the actual amounts have been calculated
+    for _, formatted_product in ipairs(recipe_proto.products) do
+        formatted_product.net_amount = determine_net_product_amount(recipe_proto, formatted_product)
+    end
+end
+
+
 -- Adds the tooltip for the given recipe
 function add_recipe_tooltip(recipe)
     local tooltip = {"", recipe.localised_name}
@@ -106,9 +181,7 @@ function add_recipe_tooltip(recipe)
             multi_insert{"\n    ", {"tooltip.none"}}
         else
             for _, item in ipairs(recipe[item_type]) do
-                produced_amount = data_util.determine_item_amount(item)
-            
-                multi_insert{("\n    " .. "[" .. item.type .. "=" .. item.name .. "] " .. produced_amount .. "x "),
+                multi_insert{("\n    " .. "[" .. item.type .. "=" .. item.name .. "] " .. item.amount .. "x "),
                   game[item.type .. "_prototypes"][item.name].localised_name}
             end
         end
@@ -202,6 +275,7 @@ function generator.all_recipes()
                 subgroup = generate_group_table(proto.subgroup)
             }
             
+            format_recipe_products_and_ingredients(recipe)
             add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
         end
@@ -243,6 +317,7 @@ function generator.all_recipes()
                     if recipe.category == "basic-solid" then recipe.category = "complex-solid" end
                 end
 
+                format_recipe_products_and_ingredients(recipe)
                 add_recipe_tooltip(recipe)
                 insert_proto(all_recipes, "recipes", recipe, true)
 
@@ -264,6 +339,7 @@ function generator.all_recipes()
             recipe.products = {{type="fluid", name=proto.fluid.name, amount=(proto.pumping_speed * 60)}}
             recipe.main_product = recipe.products[1]
 
+            format_recipe_products_and_ingredients(recipe)
             add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
         end
@@ -282,6 +358,7 @@ function generator.all_recipes()
     steam_recipe.products = {{type="fluid", name="steam", amount=60}}
     steam_recipe.main_product = steam_recipe.products[1]
 
+    format_recipe_products_and_ingredients(steam_recipe)
     add_recipe_tooltip(steam_recipe)
     insert_proto(all_recipes, "recipes", steam_recipe, true)
     
@@ -305,6 +382,7 @@ function generator.all_recipes()
         custom = true
     }
 
+    format_recipe_products_and_ingredients(rocket_recipe)
     add_recipe_tooltip(rocket_recipe)
     insert_proto(all_recipes, "recipes", rocket_recipe, true)
     
@@ -415,8 +493,7 @@ function generator.item_recipe_map()
     if not global.all_recipes.recipes then return end
     for _, recipe in pairs(global.all_recipes.recipes) do
         for _, product in ipairs(recipe.products) do
-            local net_product = data_util.determine_net_product(recipe, product.name)
-            if net_product > 0 then  -- Ignores recipes that produce a net item/fluid amount <= 0
+            if product.net_amount > 0 then  -- Ignores recipes that produce a net item/fluid amount <= 0
                 if map[product.type] == nil then
                     map[product.type] = {}
                 end
