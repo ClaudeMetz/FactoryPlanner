@@ -1,7 +1,7 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon, timescale)
+function Subfactory.init(name, icon, timescale_setting)
     local subfactory = {
         name = name,
         icon = nil,
@@ -20,7 +20,14 @@ function Subfactory.init(name, icon, timescale)
     }
 
     Subfactory.set_icon(subfactory, icon)
-    subfactory.timescale = data_util.timescale_setting_to_number(timescale)
+
+    -- Converts the given timescale setting string to the appropriate number
+    local function timescale_setting_to_number(setting)
+        if setting == "one_second" then return 1
+        elseif setting == "one_minute" then return 60
+        elseif setting == "one_hour" then return 3600 end
+    end
+    subfactory.timescale = timescale_setting_to_number(timescale_setting)
 
     -- Add first floor to the subfactory
     subfactory.selected_floor = Floor.init(nil)
@@ -80,6 +87,33 @@ function Subfactory.remove_useless_lines(self)
 
     local top_floor = Subfactory.get(self, "Floor", 1)
     clear_floor(top_floor)
+end
+
+
+-- Returns the combination of both item collections in GUI order, as a deepcopy
+-- (More of a util function, 'self' isn't really needed here)
+function Subfactory.combine_item_collections(self, primary_items, secondary_items)
+    local combination = Collection.init()
+    local touched_datasets = {}
+
+    -- First, go through all primary items and combine them with any identical secondary ones
+    for _, dataset in ipairs(Collection.get_in_order(primary_items)) do
+        local primary_item = Collection.add(combination, data_util.deepcopy(dataset))
+        local secondary_item = Collection.get_by_name(secondary_items, dataset.proto.name)
+        if secondary_item ~= nil then
+            primary_item.amount = primary_item.amount + secondary_item.amount
+            touched_datasets[secondary_item.proto.name] = true
+        end
+    end
+    
+    -- Then, add all remaining secondary items on their own
+    for _, dataset in ipairs(Collection.get_in_order(secondary_items)) do
+        if touched_datasets[dataset.proto.name] == nil then
+            Collection.add(combination, data_util.deepcopy(dataset))
+        end
+    end
+
+    return combination
 end
 
 
