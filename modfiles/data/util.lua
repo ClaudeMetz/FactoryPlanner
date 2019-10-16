@@ -253,41 +253,6 @@ function data_util.determine_catalyst_amount(player, recipe_proto, type, item_na
 end
 
 
-
--- Returns the combination of both item collections in GUI order, as a deepcopy
-function data_util.combine_item_collections(primary_items, secondary_items)
-    local combination = Collection.init()
-    local touched_datasets = {}
-
-    -- First, go through all primary items and combine them with any identical secondary ones
-    for _, dataset in ipairs(Collection.get_in_order(primary_items)) do
-        local primary_item = Collection.add(combination, data_util.deepcopy(dataset))
-        local secondary_item = Collection.get_by_name(secondary_items, dataset.proto.name)
-        if secondary_item ~= nil then
-            primary_item.amount = primary_item.amount + secondary_item.amount
-            touched_datasets[secondary_item.proto.name] = true
-        end
-    end
-    
-    -- Then, add all remaining secondary items on their own
-    for _, dataset in ipairs(Collection.get_in_order(secondary_items)) do
-        if touched_datasets[dataset.proto.name] == nil then
-            Collection.add(combination, data_util.deepcopy(dataset))
-        end
-    end
-
-    return combination
-end
-
-
--- Converts the given timescale setting string to the appropriate number
-function data_util.timescale_setting_to_number(setting)
-    if setting == "one_second" then return 1
-    elseif setting == "one_minute" then return 60
-    elseif setting == "one_hour" then return 3600 end
-end
-
-
 -- Logs given table, excluding certain attributes (Kinda super-jank and inconsistent)
 function data_util.log(table)
     local excluded_attributes = {proto=true, recipe_proto=true, machine_proto=true, parent=true,
