@@ -91,20 +91,14 @@ end
 
 function model.update_line(line_data, aggregate)    
     -- Determine relevant products
-    local relevant_products, byproducts = structures.class.init(), structures.class.init()
-    local relevant_product_count = 0
-
+    local relevant_products, byproducts = {}, {}
     for _, product in pairs(line_data.recipe_proto.products) do
         if aggregate.Product[product.type][product.name] ~= nil then
-            structures.class.add(relevant_products, product)
-            relevant_product_count = relevant_product_count + 1
+            table.insert(relevant_products, product)
         else
-            structures.class.add(byproducts, product)
+            table.insert(byproducts, product)
         end
     end
-
-    relevant_products = structures.class.to_array(relevant_products)
-    byproducts = structures.class.to_array(byproducts)
     
 
     -- Determine production ratio
@@ -117,9 +111,11 @@ function model.update_line(line_data, aggregate)
         return ((demand * (line_data.percentage / 100)) / net_amount)
     end
 
+    local relevant_product_count = table_size(relevant_products)
     if relevant_product_count == 1 then
         local relevant_product = relevant_products[1]
         production_ratio = determine_production_ratio(relevant_product)
+
     elseif relevant_product_count >= 2 then
         local priority_proto = line_data.priority_product_proto
 
@@ -155,8 +151,9 @@ function model.update_line(line_data, aggregate)
     -- Determine byproducts
     local Byproduct = structures.class.init()
     for _, byproduct in pairs(byproducts) do
+        local byproduct = data_util.deepcopy(byproduct)
         byproduct.amount = data_util.determine_item_amount(byproduct) * production_ratio
-
+        
         structures.class.add(Byproduct, byproduct)
         structures.aggregate.add(aggregate, "Byproduct", byproduct)
     end
@@ -164,6 +161,7 @@ function model.update_line(line_data, aggregate)
     -- Determine products
     local Product = structures.class.init()
     for _, product in pairs(relevant_products) do
+        local product = data_util.deepcopy(product)
         product.amount = data_util.determine_item_amount(product) * production_ratio
 
         local product_demand = aggregate.Product[product.type][product.name]
