@@ -107,8 +107,7 @@ function model.update_line(line_data, aggregate)
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Product[relevant_product.type][relevant_product.name]
-        local net_amount = data_util.determine_net_product(line_data.recipe_proto, relevant_product.name)
-        return ((demand * (line_data.percentage / 100)) / net_amount)
+        return ((demand * (line_data.percentage / 100)) / relevant_product.net_amount)
     end
 
     local relevant_product_count = table_size(relevant_products)
@@ -152,7 +151,7 @@ function model.update_line(line_data, aggregate)
     local Byproduct = structures.class.init()
     for _, byproduct in pairs(byproducts) do
         local byproduct = data_util.deepcopy(byproduct)
-        byproduct.amount = data_util.determine_item_amount(byproduct) * production_ratio
+        byproduct.amount = byproduct.amount * production_ratio
         
         structures.class.add(Byproduct, byproduct)
         structures.aggregate.add(aggregate, "Byproduct", byproduct)
@@ -162,10 +161,10 @@ function model.update_line(line_data, aggregate)
     local Product = structures.class.init()
     for _, product in pairs(relevant_products) do
         local product = data_util.deepcopy(product)
-        product.amount = data_util.determine_item_amount(product) * production_ratio
+        product.amount = product.amount * production_ratio
 
         -- Don't include net negative relevant products as products
-        if data_util.determine_net_product(line_data.recipe_proto, product.name) <= 0 then
+        if product.net_amount <= 0 then
             structures.class.add(Byproduct, product)
             structures.aggregate.add(aggregate, "Byproduct", product)
 
@@ -187,7 +186,6 @@ function model.update_line(line_data, aggregate)
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(line_data.recipe_proto.ingredients) do
         local ingredient = data_util.deepcopy(ingredient)
-        ingredient.amount = data_util.determine_item_amount(ingredient)
         
         -- Incorporate productivity
         -- Temporary solution for this until catalyst_amount is part of the prototype
@@ -195,7 +193,7 @@ function model.update_line(line_data, aggregate)
           game.get_player(aggregate.player_index), line_data.recipe_proto, "ingredients", ingredient.name)
 
         local prodded_amount = ingredient.amount
-        if proddable_amount > 0 then
+        if proddable_amount > 0 then  -- only do the calculation if productivity ~= 0
             -- Only apply the productivity bonus to the proddable part of the ingredient amount
             prodded_amount = ingredient.amount - proddable_amount + 
               (proddable_amount / (1 + line_data.total_effects.productivity))

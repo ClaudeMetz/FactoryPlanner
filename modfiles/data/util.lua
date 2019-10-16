@@ -198,41 +198,6 @@ function data_util.run_invalid_dataset_repair(player, parent, classes)
 end
 
 
--- Determines the actual amount of items that a recipe product or ingredient equates to
-function data_util.determine_item_amount(base_product)
-    if base_product.amount_max ~= nil and base_product.amount_min ~= nil then
-        return ((base_product.amount_max + base_product.amount_min) / 2) * base_product.probability
-    elseif base_product.probability ~= nil then
-        return base_product.amount * base_product.probability
-    else
-        return base_product.amount
-    end
-end
-
--- Determines the net amount that the given recipe produces of the given item (might be negative)
-function data_util.determine_net_product(recipe_proto, item_name)
-    local net_amount = 0
-    for _, product in pairs(recipe_proto.products) do
-        if recipe_proto.mining and product.name == recipe_proto.main_product.name then
-            return product.amount
-        end
-
-        if product.name == item_name then
-            net_amount = data_util.determine_item_amount(product)
-            break
-        end
-    end
-
-    for _, ingredient in pairs(recipe_proto.ingredients) do
-        if ingredient.name == item_name then
-            net_amount = net_amount - ingredient.amount
-            break
-        end
-    end
-    
-    return net_amount
-end
-
 -- Returns the catalyst amount of the given item in the given recipe (temporary)
 function data_util.determine_catalyst_amount(player, recipe_proto, type, item_name)
     if recipe_proto.custom then  -- custom recipes won't have catalyst ingredients
