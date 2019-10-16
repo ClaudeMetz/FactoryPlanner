@@ -8,7 +8,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     flow_modal_dialog.style.bottom_margin = 8
 
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, product)
+    local result, error, show = run_preliminary_checks(player, product, ui_state.modal_data.production_type)
     
     local function refresh_unfiltered_dialog()
         picker.refresh_filter_conditions(flow_modal_dialog, show.disabled, show.hidden)
@@ -23,7 +23,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
         if type(result) == "number" then
-            local line = Line.init(player, Recipe.init_by_id(result), nil)
+            local line = Line.init(player, Recipe.init_by_id(result, ui_state.modal_data.production_type), nil)
             -- If line is false, no compatible machine has been found (ingredient limit)
             if line == false then
                 ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
@@ -38,8 +38,8 @@ function open_recipe_picker_dialog(flow_modal_dialog)
         
         else  -- Otherwise, show the appropriately filtered dialog
             refresh_unfiltered_dialog()
-            picker.select_item_group(player, "recipe", "logistics")
-            ui_state.modal_data = result
+
+            ui_state.modal_data.recipes = result
             picker.apply_filter(player, "recipe", nil)
         end
     end
@@ -56,15 +56,15 @@ end
 
 -- Reacts to a picker recipe button being pressed
 function handle_picker_recipe_click(player, button)
-    local context = get_context(player)
+    local ui_state = get_ui_state(player)
     local recipe_id = tonumber(string.match(button.name, "%d+"))
     
-    local line = Line.init(player, Recipe.init_by_id(recipe_id), nil)
+    local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type), nil)
     if line == false then
         ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
     else
-        Floor.add(context.floor, line)
-        calculation.update(player, context.subfactory, false)
+        Floor.add(ui_state.context.floor, line)
+        calculation.update(player, ui_state.context.subfactory, false)
     end
     exit_modal_dialog(player, "cancel", {})
 end
@@ -72,7 +72,7 @@ end
 
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and,
 -- if there is only one that matches, to return a recipe name that can be added directly without the modal dialog
-function run_preliminary_checks(player, product)
+function run_preliminary_checks(player, product, production_type)
     local force_recipes = player.force.recipes
     local relevant_recipes = {}
     local counts = {
@@ -81,7 +81,7 @@ function run_preliminary_checks(player, product)
         disabled_hidden = 0
     }
     
-    local map = item_recipe_map[product.proto.type][product.proto.name]
+    local map = recipe_maps[production_type][product.proto.type][product.proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         local preferences = get_preferences(player)
         for recipe_id, _ in pairs(map) do

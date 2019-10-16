@@ -94,6 +94,28 @@ local function generate_formatted_item(base_item)
     }
 end
 
+-- Determines the net amount that the given recipe consumes of the given item (might be negative)
+local function determine_net_ingredient_amount(recipe_proto, item)
+    local net_amount = 0
+    for _, ingredient in pairs(recipe_proto.ingredients) do
+        -- Find the given item in the ingredient list
+        if ingredient.type == item.type and ingredient.name == item.name then
+            net_amount = ingredient.amount  -- actual amount
+            break
+        end
+    end
+
+    for _, product in pairs(recipe_proto.products) do
+        -- Find the given item in the product list
+        if product.type == item.type and product.name == item.name then
+            net_amount = net_amount - product.amount
+            break
+        end
+    end
+    
+    return net_amount
+end
+
 -- Determines the net amount that the given recipe produces of the given item (might be negative)
 local function determine_net_product_amount(recipe_proto, item)
     local net_amount = 0
@@ -103,7 +125,7 @@ local function determine_net_product_amount(recipe_proto, item)
             return product.amount
         end
 
-        -- Find the given item in the ingredient list
+        -- Find the given item in the product list
         if product.type == item.type and product.name == item.name then
             net_amount = product.amount  -- actual amount
             break
@@ -111,7 +133,7 @@ local function determine_net_product_amount(recipe_proto, item)
     end
 
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        -- Find the given item in the product list
+        -- Find the given item in the ingredient list
         if ingredient.type == item.type and ingredient.name == item.name then
             net_amount = net_amount - ingredient.amount
             break
@@ -129,6 +151,11 @@ local function format_recipe_products_and_ingredients(recipe_proto)
         table.insert(ingredients, formatted_ingredient)
     end
     recipe_proto.ingredients = ingredients
+
+    -- Determine the net amount after the actual amounts have been calculated
+    for _, formatted_ingredient in ipairs(recipe_proto.ingredients) do
+        formatted_ingredient.net_amount = determine_net_ingredient_amount(recipe_proto, formatted_ingredient)
+    end
 
     local products = {}
     for _, base_product in ipairs(recipe_proto.products) do
@@ -486,27 +513,40 @@ end
 
 
 -- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_id] = true}
--- This optimizes the recipe filtering process for the recipe picker.
-function generator.item_recipe_map()
+function generator.product_recipe_map()
     local map = {}
 
     if not global.all_recipes.recipes then return end
     for _, recipe in pairs(global.all_recipes.recipes) do
         for _, product in ipairs(recipe.products) do
-            if product.net_amount > 0 then  -- Ignores recipes that produce a net item/fluid amount <= 0
-                if map[product.type] == nil then
-                    map[product.type] = {}
-                end
-
-                if map[product.type][product.name] == nil then
-                    map[product.type][product.name] = {}
-                end
-
+            -- Ignores recipes that produce a net item/fluid amount <= 0
+            if product.net_amount and product.net_amount > 0 then
+                map[product.type] = map[product.type] or {}
+                map[product.type][product.name] = map[product.type][product.name] or {}
                 map[product.type][product.name][recipe.id] = true
             end
         end
     end
     
+    return map
+end
+
+-- Maps all items to the recipes that consume them ([item_type][item_name] = {[recipe_id] = true}
+function generator.ingredient_recipe_map()
+    local map = {}
+
+    if not global.all_recipes.recipes then return end
+    for _, recipe in pairs(global.all_recipes.recipes) do
+        for _, ingredient in ipairs(recipe.ingredients) do
+            -- Ignores recipes that consume a net item/fluid amount <= 0
+            if ingredient.net_amount and ingredient.net_amount > 0 then
+                map[ingredient.type] = map[ingredient.type] or {}
+                map[ingredient.type][ingredient.name] = map[ingredient.type][ingredient.name] or {}
+                map[ingredient.type][ingredient.name][recipe.id] = true
+            end
+        end
+    end
+
     return map
 end
 

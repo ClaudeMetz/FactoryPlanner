@@ -89,7 +89,7 @@ function model.update_floor(floor_data, aggregate)
     end
 end
 
-function model.update_line(line_data, aggregate)    
+function model.update_line(line_data, aggregate)
     -- Determine relevant products
     local relevant_products, byproducts = {}, {}
     for _, product in pairs(line_data.recipe_proto.products) do
@@ -99,7 +99,6 @@ function model.update_line(line_data, aggregate)
             table.insert(byproducts, product)
         end
     end
-    
 
     -- Determine production ratio
     local production_ratio, uncapped_production_ratio = 0, 0
