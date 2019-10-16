@@ -141,12 +141,17 @@ function calculation.interface.set_subfactory_result(result)
                     structures.aggregate.add(aggregate, "Ingredient", simple_ingredient)
                 end
 
-                for _, product in ipairs(Line.get_in_order(line, "Product")) do
-                    local simple_product = {type=product.proto.type, name=product.proto.name, amount=product.amount}
-                    local ingredient_amount = aggregate.Ingredient[simple_product.type][simple_product.name] or 0
-                    local used_ingredient_amount = math.min(ingredient_amount, simple_product.amount)
-                    structures.aggregate.subtract(aggregate, "Ingredient", simple_product, used_ingredient_amount)
+                local function subtract_product(product_type, limiter)
+                    for _, product in ipairs(Line.get_in_order(line, product_type)) do
+                        local simple_product = {type=product.proto.type, name=product.proto.name, amount=product.amount}
+                        local ingredient_amount = aggregate.Ingredient[simple_product.type][simple_product.name] or 0
+                        local used_ingredient_amount = limiter(ingredient_amount, simple_product.amount)
+                        structures.aggregate.subtract(aggregate, "Ingredient", simple_product, used_ingredient_amount)
+                    end
                 end
+
+                subtract_product("Product", math.min)
+                subtract_product("Byproduct", math.max)
             end
         end
     end
