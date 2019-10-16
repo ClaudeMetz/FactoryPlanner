@@ -159,7 +159,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
         disabled = ui_util.switch.get_state(flow_switches, "picker_filter_condition_disabled", true)
         hidden = ui_util.switch.get_state(flow_switches, "picker_filter_condition_hidden", true)
 
-        for _, recipe in pairs(get_ui_state(player).modal_data) do relevant_recipes[tostring(recipe.id)] = recipe end 
+        for _, recipe in pairs(get_ui_state(player).modal_data.recipes) do relevant_recipes[tostring(recipe.id)] = recipe end 
         force_recipes = player.force.recipes
     elseif apply_button_style then  -- object_type == "item"
         for _, product in pairs(Subfactory.get_in_order(get_context(player).subfactory, "Product")) do

@@ -72,13 +72,16 @@ end
 
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
-    item_recipe_map = generator.item_recipe_map()
-    identifier_item_map = generator.identifier_item_map()
-    module_tier_map = generator.module_tier_map()
+    recipe_maps = {
+        produce = generator.product_recipe_map(),
+        consume = generator.ingredient_recipe_map()
+    }
     sorted_objects = {
         items = generator.sorted_items(),
         recipes = generator.sorted_recipes()
     }
+    identifier_item_map = generator.identifier_item_map()
+    module_tier_map = generator.module_tier_map()
 end
 
 -- Runs through all updates that need to be made after the config changed

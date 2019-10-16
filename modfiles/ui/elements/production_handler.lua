@@ -380,7 +380,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.proto.type ~= "entity" then
             if item.class == "Ingredient" or item.class == "Fuel" then
-                enter_modal_dialog(player, {type="recipe_picker", object=item})
+                enter_modal_dialog(player, {type="recipe_picker", object=item, modal_data={production_type="produce"}})
 
             elseif item.class == "Product" then
                 if line.Product.count < 2 then
@@ -392,7 +392,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                 end
 
             elseif item.class == "Byproduct" then
-                --enter_modal_dialog(player, {type="recipe_picker", object=item})
+                --enter_modal_dialog(player, {type="recipe_picker", object=item, modal_data={production_type="consume"}})
             end
         end
     end

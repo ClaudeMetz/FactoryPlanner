@@ -310,7 +310,7 @@ end
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
     for _, product in ipairs(products) do
-        local item = TopLevelItem.init_by_item(product, "Product", product.amount, product.required_amount)
+        local item = TopLevelItem.init_by_item(product, "Product", 0, product.required_amount)
         Subfactory.add(subfactory, item)
     end
 end
@@ -332,7 +332,8 @@ local function construct_floor(player, floor, recipes)
     -- Adds a line containing the given recipe to the current floor
     local function add_line(recipe_data)
         -- Create recipe line
-        local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.name])
+        local production_type = recipe_data.production_type or "produce"
+        local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.name], production_type)
         local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
         local machine = category.machines[category.map[recipe_data.machine]]
         local line = Floor.add(floor, Line.init(player, recipe, machine))
@@ -393,31 +394,26 @@ function data_util.run_dev_config(player)
             {
                 name = "electronic-circuit",
                 type = "item",
-                amount = 0,
                 required_amount = 400
             },
             {
                 name = "uranium-235",
                 type = "item",
-                amount = 0,
                 required_amount = 10
             },
             {
                 name = "iron-ore",
                 type = "item",
-                amount = 0,
                 required_amount = 100
             },
             {
                 name = "light-oil",
                 type = "fluid",
-                amount = 0,
                 required_amount = 250
             },
             {
                 name = "rocket-part",
                 type = "item",
-                amount = 0,
                 required_amount = 540
             }
         }
@@ -452,19 +448,16 @@ function data_util.add_example_subfactory(player)
         {
             name = "automation-science-pack",
             type = "item",
-            amount = 0,
             required_amount = 60
         },
         {
             name = "logistic-science-pack",
             type = "item",
-            amount = 0,
             required_amount = 60
         },
         {
             name = "military-science-pack",
             type = "item",
-            amount = 0,
             required_amount = 60
         }
     }

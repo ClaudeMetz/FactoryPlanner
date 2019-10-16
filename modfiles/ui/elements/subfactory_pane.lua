@@ -165,11 +165,12 @@ function handle_product_element_click(player, product_id, click, direction, alt)
 
     elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(context.subfactory, product, direction)
+        refresh_item_table(player, "Product")
 
     else  -- Open modal dialogs
         if click == "left" then
             if context.floor.level == 1 then
-                enter_modal_dialog(player, {type="recipe_picker", object=product})
+                enter_modal_dialog(player, {type="recipe_picker", object=product, modal_data={production_type="produce"}})
             else
                 ui_util.message.enqueue(player, {"label.error_product_wrong_floor"}, "error", 1)
             end
@@ -177,8 +178,6 @@ function handle_product_element_click(player, product_id, click, direction, alt)
             enter_modal_dialog(player, {type="item_picker", object=product, submit=true, delete=true})
         end
     end
-    
-    refresh_item_table(player, "Product")
 end
 
 
@@ -195,18 +194,16 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
 
     elseif direction ~= nil then  -- Shift product in the given direction
         Subfactory.shift(context.subfactory, byproduct, direction)
+        refresh_item_table(player, "Byproduct")
 
-    -- Open recipe dialog? Dealing with byproducts will come at a later stage
     elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, {type="recipe_picker", object=byproduct})
+            --enter_modal_dialog(player, {type="recipe_picker", object=byproduct, modal_data={production_type="consume"}})
         else
             --ui_util.message.enqueue(player, {"label.error_byproduct_wrong_floor"}, "error", 1)
         end
     end
-
-    refresh_item_table(player, "Byproduct")
 end
 
 

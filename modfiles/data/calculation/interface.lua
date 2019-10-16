@@ -62,6 +62,7 @@ function calculation.interface.get_subfactory_data(player, subfactory)
                 machine_cap = line.machine.count_cap,
                 total_effects = Line.get_total_effects(line, player),  -- copy
                 priority_product_proto = line.priority_product_proto,  -- reference
+                production_type = line.recipe.production_type,
                 recipe_proto = line.recipe.proto,  -- reference
                 machine_proto = line.machine.proto,  -- reference
                 fuel_proto = nil,  -- will be a reference
@@ -177,7 +178,7 @@ function calculation.interface.set_subfactory_result(result)
 
     -- Determine satisfaction-amounts for all line ingredients
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    local aggregate = structures.aggregate.init()  -- get modified by the two functions
+    local aggregate = structures.aggregate.init()  -- gets modified by the two functions
     determine_net_ingredients(top_floor, aggregate)
     update_ingredient_satisfaction(top_floor, aggregate)
 end

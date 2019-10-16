@@ -100,7 +100,9 @@ function create_line_table_row(player, line)
         else
             button_recipe.style = "fp_button_icon_medium_green"
         end
-    else button_recipe.style = "fp_button_icon_medium_blank" end
+    else
+        button_recipe.style = "fp_button_icon_medium_blank"
+    end
     
     -- Make the first line of every subfloor uninteractable, it stays constant
     if floor.level > 1 and line.gui_position == 1 then

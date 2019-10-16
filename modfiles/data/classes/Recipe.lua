@@ -1,10 +1,11 @@
 -- This is essentially just a wrapper-'class' for a recipe prototype to add some data to it
 Recipe = {}
 
-function Recipe.init_by_id(recipe_id)
+function Recipe.init_by_id(recipe_id, production_type)
     local proto = global.all_recipes.recipes[recipe_id]
     return {
         proto = proto,
+        production_type = production_type,
         valid = true,
         class = "Recipe"
     }
