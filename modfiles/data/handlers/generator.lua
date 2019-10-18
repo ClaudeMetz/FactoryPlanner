@@ -790,7 +790,9 @@ end
 -- Returns the names of the 'beacons' that shouldn't be included
 local function undesirable_beacons()
     return {
-        ["seablock-mining-prod-provider"] = false
+        ["seablock-mining-prod-provider"] = false,
+        ["pyveganism-beacon-cultivation-expertise"] = false,
+        ["pyveganism-beacon-plant-breeding"] = false
     }
 end
 

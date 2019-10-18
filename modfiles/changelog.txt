@@ -10,6 +10,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that fuels that originate on subfloors weren't always shown correctly on their parent floors
     - Fixed that fuels didn't always show up as the last ingredients in a recipe line, and that changing them in bulk didn't behave correctly
+    - Fixed crash with PyVeganism
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.54
