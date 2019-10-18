@@ -198,8 +198,8 @@ function Line.get_module_characteristics(self, module_proto)
     local machine_proto = self.machine.proto
 
     -- First, check for recipe compatibility
-    if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
-      and not module_proto.limitations[recipe_proto.name] then
+    if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
+      recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
         compatible = false
     end
 
@@ -238,8 +238,8 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
     local machine_proto = self.machine.proto
 
     -- First, check for recipe compatibility
-    if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
-      and not module_proto.limitations[recipe_proto.name] then
+    if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
+    recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
         compatible = false
     end
 
