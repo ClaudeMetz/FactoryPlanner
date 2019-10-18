@@ -313,12 +313,12 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
               line.priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
             elseif class == "Ingredient" and player_table.settings.ingredient_satisfaction then
-                local satisfied_amount = tonumber(string.format("%.4f", item.satisfied_amount))
-                if satisfied_amount == 0 then
+                local satisfaction_percentage = tonumber(string.format("%.3f", (item.satisfied_amount / item.amount) * 100))
+                if satisfaction_percentage == 0 then
                     actual_style = "fp_button_icon_medium_red"
-                elseif satisfied_amount < item.amount then
+                elseif satisfaction_percentage < 100 then
                     actual_style = "fp_button_icon_medium_yellow"
-                elseif satisfied_amount >= item.amount then
+                elseif satisfaction_percentage >= 100 then
                     actual_style = "fp_button_icon_medium_green"
                 end
             end

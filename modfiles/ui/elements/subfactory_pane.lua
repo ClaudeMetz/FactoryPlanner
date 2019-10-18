@@ -81,7 +81,7 @@ function refresh_item_table(player, class)
                 local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
                   .. item.id, sprite=item.proto.sprite, style="fp_button_icon_large_blank", enabled=false}
 
-                ui_util.setup_item_button(player_table, button, item, nil)
+                ui_util.setup_item_button(player_table, button, item, nil, true)
                 if button.number ~= nil and button.number < margin_of_error then button.visible = false end
             end
         end
