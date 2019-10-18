@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.55
+Date: 18. 10. 2019
   Features:
     - [Warning: Experimental!] This version is a complete rewrite of the calculation backbone of the mod, so it's likely to contain some crashes and bugs. I'd love it if you reported them to me on the mod portal.
     - This rewrite was done to allow me to implement some much requested features and to fix some bugs that wouldn't be fixable otherwise. The ability to add recipes that consume byproducts didn't make it for this version, but will get done at some point, hopefully soon!
