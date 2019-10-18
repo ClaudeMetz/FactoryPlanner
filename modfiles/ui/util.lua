@@ -108,7 +108,7 @@ end
 
 -- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
 -- (Relates to the view_state, doesn't do anything if views are uninitialised)
-function ui_util.setup_item_button(player_table, button, item, line)
+function ui_util.setup_item_button(player_table, button, item, line, imitate_top_level)
     local view_state = player_table.ui_state.view_state
     -- This gets refreshed after the view state is initialised
     if view_state == nil then return end
@@ -124,11 +124,8 @@ function ui_util.setup_item_button(player_table, button, item, line)
     
     -- Determine caption
     local function determine_type_text()
-        if item.proto.type == "fluid" then
-            return {"tooltip.fluid"}
-        else
-            return ((number == 1) and {"tooltip.item"} or {"tooltip.items"})
-        end
+        if item.proto.type == "fluid" then return {"tooltip.fluid"}
+        else return ((number == 1) and {"tooltip.item"} or {"tooltip.items"}) end
     end
     
     local caption = nil
@@ -168,11 +165,12 @@ function ui_util.setup_item_button(player_table, button, item, line)
                 number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", number}
             end
 
-        elseif item.class == "Ingredient" and player_table.settings.ingredient_satisfaction then
+        elseif item.class == "Ingredient" and (not item.top_level and not imitate_top_level)
+          and player_table.settings.ingredient_satisfaction then
             local satisfaction_percentage = (item.satisfied_amount / item.amount) * 100
             satisfaction = {"", "\n", ui_util.format_number(satisfaction_percentage, 4), "% ", {"tooltip.satisfied"}}
 
-        elseif item.class == "Fuel" then
+        elseif item.class == "Fuel" then  -- is never a top level item
             indication = {"", " (", {"label.fuel"}, ")"}
         end
         if number_string == nil then number_string = {"", number} end
