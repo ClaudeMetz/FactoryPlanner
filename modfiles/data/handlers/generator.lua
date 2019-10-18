@@ -152,11 +152,6 @@ local function format_recipe_products_and_ingredients(recipe_proto)
     end
     recipe_proto.ingredients = ingredients
 
-    -- Determine the net amount after the actual amounts have been calculated
-    for _, formatted_ingredient in ipairs(recipe_proto.ingredients) do
-        formatted_ingredient.net_amount = determine_net_ingredient_amount(recipe_proto, formatted_ingredient)
-    end
-
     local products = {}
     for _, base_product in ipairs(recipe_proto.products) do
         local formatted_product = generate_formatted_item(base_product)
@@ -170,6 +165,11 @@ local function format_recipe_products_and_ingredients(recipe_proto)
         end
     end
     recipe_proto.products = products
+    
+    -- Determine the net amount after the actual amounts have been calculated
+    for _, formatted_ingredient in ipairs(recipe_proto.ingredients) do
+        formatted_ingredient.net_amount = determine_net_ingredient_amount(recipe_proto, formatted_ingredient)
+    end
 
     -- Determine the net amount after the actual amounts have been calculated
     for _, formatted_product in ipairs(recipe_proto.products) do
