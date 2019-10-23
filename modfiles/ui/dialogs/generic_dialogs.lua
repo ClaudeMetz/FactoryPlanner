@@ -30,6 +30,7 @@ function handle_chooser_element_click(player, element_id)
     exit_modal_dialog(player, "cancel", {})
 end
 
+
 -- Handles populating the setter dialog
 function open_setter_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)

@@ -168,7 +168,8 @@ function model.update_line(line_data, aggregate)
             structures.aggregate.add(aggregate, "Byproduct", product)
 
         else
-            local product_demand = aggregate.Product[product.type][product.name]
+            -- TODO: product_demand shouldn't be able to be nil, but apparently is sometimes
+            local product_demand = aggregate.Product[product.type][product.name] or 0
             if product.amount > product_demand then
                 local overflow_amount = product.amount - product_demand
                 structures.class.add(Byproduct, product, overflow_amount)
