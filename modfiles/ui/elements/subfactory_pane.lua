@@ -246,8 +246,10 @@ function refresh_info_pane(player)
     local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":  "}}
     label_notes.style.font = "fp-font-14p"
     label_notes.style.bottom_padding = 2
-    table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
+    local button_notes = table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
       style="fp_button_mini", mouse_button_filter={"left"}}
+    button_notes.tooltip = (string.len(subfactory.notes) < 750) and
+      subfactory.notes or string.sub(subfactory.notes, 1, 750) .. "\n[...]"
 
     -- Power Usage
     local table_energy_consumption = flow["table_info_elements"].add{type="table", name="table_energy_consumption",

@@ -2,7 +2,7 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - A preview of your notes is now displayed in the tooltip of the 'View notes'-button
   Changes:
     - The 'round button numbers' mod setting now defaults to false so it's less confusing to new users
   Bugfixes:
