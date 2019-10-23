@@ -60,12 +60,15 @@ end
 
  
 -- Adds the appropriate tutorial tooltip if the preference is enabled
-function ui_util.add_tutorial_tooltip(button, type, line_break, fnei)
-    local player = game.get_player(button.player_index)
+function ui_util.add_tutorial_tooltip(player, button, tooltip, type, line_break, fnei)
     if get_preferences(player).tutorial_mode then
         local b = line_break and "\n\n" or ""
         local f = (fnei and remote.interfaces["fnei"] ~= nil) and {"tip.tut_fnei"} or ""
-        button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}, f}
+        if button ~= nil then
+            button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}, f}
+        elseif tooltip ~= nil then
+            return {"", tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}, f}
+        end
     end
 end
 

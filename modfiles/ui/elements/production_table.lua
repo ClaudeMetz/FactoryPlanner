@@ -86,36 +86,37 @@ function create_line_table_row(player, line)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
 
-    -- Recipe button
-    local style = line.subfloor and "fp_button_icon_medium_green" or "fp_button_icon_medium_blank"
-    local tooltip = {"", line.recipe.proto.localised_name}
-    if line.subfloor ~= nil then tooltip = {"", tooltip, "\n", "- Subfloor attached -"} end
-    local button_recipe = table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id,
-      sprite=line.recipe.proto.sprite, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
-    ui_util.add_tutorial_tooltip(button_recipe, "recipe", true, true)
 
-    if line.subfloor then
-        if ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id then
-            button_recipe.style = "fp_button_icon_medium_red"
-        else
-            button_recipe.style = "fp_button_icon_medium_green"
-        end
-    else
-        button_recipe.style = "fp_button_icon_medium_blank"
-    end
-    
+    -- Recipe button
+    local tooltip, style, enabled = {"", line.recipe.proto.localised_name}, "fp_button_icon_medium_blank", true
+
     -- Make the first line of every subfloor uninteractable, it stays constant
     if floor.level > 1 and line.gui_position == 1 then
-        button_recipe.style = "fp_button_icon_medium_hidden"
-        button_recipe.ignored_by_interaction = true
+        style = "fp_button_icon_medium_hidden"
+        enabled = false
+    else
+        if line.subfloor then
+            tooltip = {"", tooltip, "\n", "- Subfloor attached -"}
+
+            style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
+              "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
+        end
+
+        -- Tutorial tooltip only needed for interactable buttons
+        tooltip = ui_util.add_tutorial_tooltip(player, nil, tooltip, "recipe", true, true)
     end
 
+    table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id, style=style,
+      sprite=line.recipe.proto.sprite, tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
+
+    
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
       text=line.percentage, enabled=(not archive_open)}
     textfield_percentage.style.width = 55
     textfield_percentage.style.horizontal_align = "center"
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
+
 
     -- Machine button
     local table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
@@ -157,9 +158,10 @@ function create_line_table_row(player, line)
         button.number = (player_table.settings.round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
-        ui_util.add_tutorial_tooltip(button, "machine", true, false)
+        ui_util.add_tutorial_tooltip(player, button, nil, "machine", true, false)
         add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
     end
+
 
     -- Modules
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
@@ -175,6 +177,7 @@ function create_line_table_row(player, line)
               mouse_button_filter={"left"}, enabled=(not archive_open)}
         end
     end
+
 
     -- Beacons
     local flow_beacons = table_production.add{type="flow", name="flow_line_beacons_" .. line.id, direction="horizontal"}
@@ -197,20 +200,23 @@ function create_line_table_row(player, line)
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
               " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil)}}
             button_beacon.style.padding = 2
-            ui_util.add_tutorial_tooltip(button_beacon, "beacon_beacon", true, false)
+            ui_util.add_tutorial_tooltip(player, button_beacon, nil, "beacon_beacon", true, false)
         end
     end
     
+
     -- Energy label
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3)}
     label_energy.tooltip = ui_util.format_SI_value(line.energy_consumption, "W", 5)
+
 
     -- Item buttons
     create_item_button_flow(player_table, table_production, line, "products", {"Product"}, {"blank"})
     create_item_button_flow(player_table, table_production, line, "byproducts", {"Byproduct"}, {"red"})
     create_item_button_flow(player_table, table_production, line, "ingredients", {"Ingredient", "Fuel"}, {"green", "cyan"})
 
+    
     -- Comment textfield
     if get_preferences(player).enable_recipe_comments then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
@@ -294,7 +300,7 @@ function create_module_button(flow, line, module, type, button_name)
       ui_util.generate_module_effects_tooltip_proto(module)}}
     button_module.style.padding = 2
 
-    ui_util.add_tutorial_tooltip(button_module, type, true, false)
+    ui_util.add_tutorial_tooltip(game.get_player(flow.player_index), button_module, nil, type, true, false)
 end
 
 -- Creates the flow containing all line items of the given type
@@ -306,12 +312,15 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
         
         for _, item in ipairs(Line.get_in_order(line, class)) do
             local actual_style = style
+
             if item.proto.type == "entity" then
                 actual_style = "fp_button_icon_medium_blank" 
+
             elseif class == "Product" and line.priority_product_proto ~= nil and 
               line.priority_product_proto.type == item.proto.type and 
               line.priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
+
             elseif class == "Ingredient" and player_table.settings.ingredient_satisfaction then
                 local satisfaction_percentage = tonumber(string.format("%.3f", (item.satisfied_amount / item.amount) * 100))
                 if satisfaction_percentage == 0 then
@@ -329,7 +338,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
             ui_util.setup_item_button(player_table, button, item, line)
             if button.number ~= nil and button.number < margin_of_error then button.visible = false end
             
-            ui_util.add_tutorial_tooltip(button, string.lower(class), true, true)
+            ui_util.add_tutorial_tooltip(game.get_player(flow.player_index), button, nil, string.lower(class), true, true)
         end
     end
 end

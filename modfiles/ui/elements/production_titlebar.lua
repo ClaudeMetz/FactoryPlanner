@@ -18,12 +18,13 @@ function add_production_pane_to(main_dialog)
       caption={"", "  ", {"label.production"}, " "}}
     title.style.font = "fp-font-20p"
     title.style.top_padding = 2
-    title.style.left_margin = -4
+    title.style.left_margin = 0
 
     -- Navigation
     local label_level = table_titlebar.add{type="label", name="label_production_titlebar_level", caption=""}
     label_level.style.font = "fp-font-bold-15p"
     label_level.style.top_padding = 4
+    label_level.style.left_padding = 10
 
     local table_navigation = table_titlebar.add{type="table", name="table_production_titlebar_navigation", column_count=2}
     table_navigation.add{type="button", name="fp_button_floor_up", caption={"label.go_up"},
