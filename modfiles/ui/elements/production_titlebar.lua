@@ -159,10 +159,7 @@ function handle_floor_change_click(player, destination)
     data_util.context.set_floor(player, selected_floor)
 
     -- Remove floor if no recipes have been added to it
-    if floor.level > 1 and floor.Line.count == 1 then
-        floor.origin_line.subfloor = nil
-        Subfactory.remove(subfactory, floor)
-    end
+    Floor.delete_empty(floor)
 
     ui_state.current_activity = nil
     calculation.update(player, subfactory, true)

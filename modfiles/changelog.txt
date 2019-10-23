@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - Fixed multiple subfactory-repair crashes
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.58
 Date: 23. 10. 2019
   Bugfixes:
@@ -22,8 +32,8 @@ Version: 0.17.55
 Date: 18. 10. 2019
   Features:
     - [Warning: Experimental!] This version is a complete rewrite of the calculation backbone of the mod, so it's likely to contain some crashes and bugs. I'd love it if you reported them to me on the mod portal.
-    - This rewrite was done to allow me to implement some much requested features and to fix some bugs that wouldn't be fixable otherwise. The ability to add recipes that consume byproducts didn't make it for this version, but will get done at some point, hopefully soon!
-    - Added the ability to select which product is the main product of a recipe, which allows you to have more control over how many times this recipe is run. Left-click any product of a recipe line with multiple products to active this feature.
+    - This rewrite was done to allow me to implement some much requested features and to fix some bugs that wouldn't be fixable otherwise. The ability to add recipes that consume byproducts didn't make it for this version, but will get done at some point, hopefully soon-ish!
+    - Added the ability to select which product is the main product of a recipe, which allows you to have more control over how many times this recipe is run. Left-click any product of a recipe line with multiple products to activate this feature.
     - Added the ability to set a cap/limit to how many machines a recipe line uses. Right-click the machine button to set it.
     - Added a mod setting ('Line satisfaction') that, when enabled, shows whether the ingredients of a recipe line are produced by the recipes below them or not. This allows you to more easily discern which recipes you might still need to add.
   Bugfixes:

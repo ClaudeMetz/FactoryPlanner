@@ -177,12 +177,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
         -- Change selected subfactory
         if click == "left" then
             -- Reset Floor when clicking on selected subfactory
-            if old_subfactory == subfactory then
-                subfactory.selected_floor = Subfactory.get(subfactory, "Floor", 1)
-            end
-            
-            ui_state.current_activity = nil
-            calculation.update(player, subfactory, true)
+            handle_floor_change_click(player, "top")
 
         -- Edit clicked subfactory
         elseif click == "right" then

@@ -48,6 +48,14 @@ function Floor.remove_subfloors(self)
     end
 end
 
+-- Floor deletes itself if it only has it's mandatory first line
+function Floor.delete_empty(self)
+    if self.level > 1 and self.Line.count == 1 then
+        self.origin_line.subfloor = nil
+        Subfactory.remove(self.parent, self)
+    end
+end
+
 function Floor.replace(self, dataset, object)
     return Collection.replace(self[dataset.class], dataset, object)
 end
@@ -69,6 +77,7 @@ end
 function Floor.update_validity(self)
     local classes = {Line = "Line"}
     self.valid = data_util.run_validation_updates(self, classes)
+    if self.origin_line ~= nil then self.origin_line.valid = self.valid end
     return self.valid
 end
 

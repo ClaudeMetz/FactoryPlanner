@@ -130,8 +130,9 @@ end
 function Subfactory.attempt_repair(self, player)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
     data_util.run_invalid_dataset_repair(player, self, classes)
-
+    
     -- Set selected floor to the top one in case the selected one gets deleted
+    Floor.delete_empty(self.selected_floor)
     local top_floor = Subfactory.get(self, "Floor", 1)
     self.selected_floor = top_floor
     data_util.context.set_floor(player, top_floor)
@@ -139,6 +140,6 @@ function Subfactory.attempt_repair(self, player)
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     -- (Return value is not caught here because the top level floor won't be removed)
     Floor.attempt_repair(top_floor, player)
-
+    
     self.valid = true
 end
