@@ -70,7 +70,7 @@ data:extend({
         type = "bool-setting",
         name = "fp_round_button_numbers",
         setting_type = "runtime-per-user",
-        default_value = true,
+        default_value = false,
         order = "h",
         localised_name = {"mod-setting-name.fp_round_button_numbers"},
         localised_description = {"mod-setting-description.fp_round_button_numbers"}
