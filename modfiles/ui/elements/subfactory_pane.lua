@@ -96,7 +96,7 @@ function refresh_item_table(player, class)
                   
                 ui_util.setup_item_button(player_table, button, item, nil)
                 ui_util.add_tutorial_tooltip(player, button, nil, "tl_" .. string.lower(class), true, true)
-                if button.number ~= nil and button.number < margin_of_error then button.visible = false end
+                if button.number ~= nil and class ~= "Product" and button.number < margin_of_error then button.visible = false end
             end
         end
 

@@ -137,6 +137,7 @@ function create_line_table_row(player, line)
         local machine_proto = line.machine.proto
         local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
+        if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
         local machine_text = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
 
         local style, cap_set, capped = "fp_button_icon_medium_recipe", "", ""
