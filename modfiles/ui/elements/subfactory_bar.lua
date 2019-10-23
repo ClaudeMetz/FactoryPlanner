@@ -1,14 +1,15 @@
 -- Creates the subfactory bar that includes all current subfactory buttons
 function add_subfactory_bar_to(main_dialog)
     local subfactory_bar = main_dialog.add{type="scroll-pane", name="scroll-pane_subfactory_bar", direction="vertical"}
-    subfactory_bar.style.maximal_height = 82
+    subfactory_bar.style.maximal_height = 88
     subfactory_bar.style.bottom_margin = 8
     subfactory_bar.style.left_margin = 6
+    subfactory_bar.style.right_margin = 2
     subfactory_bar.style.horizontally_stretchable = true
     subfactory_bar.style.vertically_squashable = false
     subfactory_bar.horizontal_scroll_policy = "never"
 
-    local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count = 1}
+    local table_subfactories = subfactory_bar.add{type="table", name="table_subfactories", column_count=1}
     table_subfactories.style.vertical_spacing = 4
 
     refresh_subfactory_bar(game.get_player(main_dialog.player_index), true)
@@ -35,7 +36,7 @@ function refresh_subfactory_bar(player, full_refresh)
 
             if width_used == 0 then
                 current_table = table_subfactories.add{type="table", name="table_subfactories_" .. current_table_index, 
-                  column_count = 30}
+                  column_count=100}
                 current_table.style.horizontal_spacing = 6
                 current_table_index = current_table_index + 1
                 width_remaining = max_width
