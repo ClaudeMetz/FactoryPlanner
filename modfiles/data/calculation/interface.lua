@@ -8,25 +8,22 @@ calculation = {
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if main_dialog ~= nil and main_dialog.visible then
-        if subfactory ~= nil and subfactory.valid then
-            local player_table = get_table(player)
-
-            -- Save the active subfactory in global so the model doesn't have to pass it around
-            player_table.active_subfactory = subfactory
-            
-            local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-            --Profiler.Start()
-            --local p = game.create_profiler()
-            model.update_subfactory(subfactory_data)
-            --p.stop()
-            --log(p)
-            --Profiler.Stop()
-            player_table.active_subfactory = nil
-        end
-        if refresh then refresh_main_dialog(player) end
+    if subfactory ~= nil and subfactory.valid then
+        local player_table = get_table(player)
+        -- Save the active subfactory in global so the model doesn't have to pass it around
+        player_table.active_subfactory = subfactory
+        
+        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+        --Profiler.Start()
+        --local p = game.create_profiler()
+        model.update_subfactory(subfactory_data)
+        --p.stop()
+        --log(p)
+        --Profiler.Stop()
+        player_table.active_subfactory = nil
     end
+
+    if refresh then refresh_main_dialog(player) end
 end
 
 

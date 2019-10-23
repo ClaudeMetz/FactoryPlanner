@@ -62,13 +62,8 @@ function toggle_main_dialog(player)
 
         -- Otherwise, toggle it
         else
-            if main_dialog.visible then
-                open = false
-            else
-                -- Only refresh it when you make it visible
-                refresh_main_dialog(player)
-                open = true
-            end
+            open = not main_dialog.visible
+            refresh_main_dialog(player)
         end
 
         main_dialog.visible = open
@@ -121,7 +116,7 @@ function refresh_main_dialog(player, full_refresh)
 
         return main_dialog
 
-    elseif main_dialog ~= nil then
+    elseif main_dialog ~= nil and main_dialog.visible then
         -- Re-center the main dialog because it get screwed up sometimes for reasons
         local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
