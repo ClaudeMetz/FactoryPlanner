@@ -125,7 +125,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         elseif click == "right" then
             local modal_data = {
                 reciever_name = "machine",
-                title = {"", {"tooltip.machine"}, " ", {"label.cap"}},
+                title = {"label.machine_cap"},
                 text = {"", {"label.setter_machine_cap"}, " '", line.recipe.proto.localised_name, "':"},
                 type = "numeric",
                 caption = {"label.count"},
