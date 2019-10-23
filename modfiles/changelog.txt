@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed multiple subfactory-repair crashes
     - Fixed the calculations not updating properly after migration
+    - Fixed the subfactory bar not linebreaking correctly when it contains many small elements
     - Fixed several small graphical inconsistencies
 
 ---------------------------------------------------------------------------------------------------
