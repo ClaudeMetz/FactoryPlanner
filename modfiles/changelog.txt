@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed multiple subfactory-repair crashes
     - Fixed the calculations not updating properly after migration
+    - Fixed several small graphical inconsistencies
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.58

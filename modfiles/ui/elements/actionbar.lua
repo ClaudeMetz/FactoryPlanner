@@ -17,8 +17,7 @@ function add_actionbar_to(main_dialog)
     actionbar_spacer.style.horizontally_stretchable = true
 
     local button_toggle_archive = actionbar.add{type="button", name="fp_button_toggle_archive",
-      caption={"button-text.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}
-    button_toggle_archive.style.width = 160    
+      caption={"button-text.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}  
 
     refresh_actionbar(game.get_player(main_dialog.player_index))
 end
@@ -32,6 +31,7 @@ function refresh_actionbar(player)
     local delete_button = actionbar["fp_button_delete_subfactory"]
     local archive_button = actionbar["fp_button_archive_subfactory"]
     local toggle_archive_button = actionbar["fp_button_toggle_archive"]
+    toggle_archive_button.style.width = 148  -- set here so it doesn't get lost somehow
 
     local subfactory_exists = (ui_state.context.subfactory ~= nil)
     actionbar["fp_button_edit_subfactory"].enabled = subfactory_exists
