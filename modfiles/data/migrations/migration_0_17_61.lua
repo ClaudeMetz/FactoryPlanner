@@ -4,6 +4,7 @@ function migration_0_17_61.global()
 end
 
 function migration_0_17_61.player_table(player, player_table)
+    player_table.preferences.enable_recipe_comments = nil
 end
 
 function migration_0_17_61.subfactory(player, subfactory)

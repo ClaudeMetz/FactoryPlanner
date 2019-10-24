@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added pollution calculation (Shown in the tooltip of the energy consumption of every recipe line)
   Changes:
-    - 
+    - Changed around the preferences and mod-settings a bit
   Bugfixes:
     - Fixed changelog
 

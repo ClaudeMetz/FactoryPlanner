@@ -169,8 +169,9 @@ function reload_settings(player)
     settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
-    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
+    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.line_comments = settings["fp_line_comments"].value
     settings_table.ingredient_satisfaction = settings["fp_ingredient_satisfaction"].value
     settings_table.round_button_numbers = settings["fp_round_button_numbers"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
@@ -183,7 +184,6 @@ function reload_preferences(player, table)
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
-    preferences.enable_recipe_comments = preferences.enable_recipe_comments or false
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
     preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
     preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
