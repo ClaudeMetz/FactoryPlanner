@@ -81,14 +81,6 @@ function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon
 
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
-    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon", elem_type="signal",
-      signal=icon}
-end
-
-
--- Handles any change to the subfactory name textfield to limit the character amount
-function handle_subfactory_name_change(player, element)
-    if string.len(element.text) > 16 then
-        element.text = string.sub(element.text, 1, 16)
-    end
+    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon",
+      elem_type="signal", signal=icon}
 end
