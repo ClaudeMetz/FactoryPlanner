@@ -216,17 +216,20 @@ function refresh_info_pane(player)
     local flow = player.gui.screen["fp_frame_main_dialog"]["table_subfactory_pane"]["flow_info"]["scroll-pane"]
     flow.style.left_margin = 0
 
-    if flow["table_info_elements"] == nil then
-        flow.add{type="table", name="table_info_elements", column_count=1}
-        flow["table_info_elements"].style.vertical_spacing = 6
+    local table_info_elements = flow["table_info_elements"]
+    if table_info_elements == nil then
+        table_info_elements = flow.add{type="table", name="table_info_elements", column_count=1}
+        table_info_elements.style.vertical_spacing = 6
+        table_info_elements.style.left_margin = 6
     else
-        flow["table_info_elements"].clear()
+        table_info_elements.clear()
     end
     
+
     -- Timescale
-    local table_timescale = flow["table_info_elements"].add{type="table", name="table_timescale_buttons", column_count=2}
+    local table_timescale = table_info_elements.add{type="table", name="table_timescale_buttons", column_count=2}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
-      caption={"", " ", {"label.timescale"}, " [img=info]: "}, tooltip={"tooltip.timescales"}}
+      caption={"", {"label.timescale"}, " [img=info]: "}, tooltip={"tooltip.timescales"}}
     label_timescale_title.style.font = "fp-font-14p"
     table_timescale.style.bottom_margin = 4
 
@@ -241,9 +244,10 @@ function refresh_info_pane(player)
         button.style = (subfactory.timescale == scale) and "fp_button_timescale_selected" or "fp_button_timescale"
     end
 
+
     -- Notes
-    local table_notes = flow["table_info_elements"].add{type="table", name="table_notes", column_count=2}
-    local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", " ",  {"label.notes"}, ":  "}}
+    local table_notes = table_info_elements.add{type="table", name="table_notes", column_count=2}
+    local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", {"label.notes"}, ":  "}}
     label_notes.style.font = "fp-font-14p"
     label_notes.style.bottom_padding = 2
     local button_notes = table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
@@ -251,27 +255,48 @@ function refresh_info_pane(player)
     button_notes.tooltip = (string.len(subfactory.notes) < 750) and
       subfactory.notes or string.sub(subfactory.notes, 1, 750) .. "\n[...]"
 
-    -- Power Usage
-    local table_energy_consumption = flow["table_info_elements"].add{type="table", name="table_energy_consumption",
-      column_count=2}
-    table_energy_consumption.add{type="label", name="label_energy_consumption_title", 
-      caption={"", " ",  {"label.energy_consumption"}, ": "}}
-    table_energy_consumption["label_energy_consumption_title"].style.font = "fp-font-14p"
 
-    -- Show either subfactory or floor energy consumption, depending on the floor_total toggle
+    -- Power Usage + Pollution
+    local table_energy_pollution = table_info_elements.add{type="table", name="table_energy_pollution", column_count=2}
+    table_energy_pollution.draw_vertical_lines = true
+    table_energy_pollution.style.horizontal_spacing = 20
+
+    -- Show either subfactory or floor energy/pollution, depending on the floor_total toggle
     local origin_line = context.floor.origin_line
-    local energy_consumption = (ui_state.floor_total and origin_line ~= nil) and
-      origin_line.energy_consumption or subfactory.energy_consumption
-    
-    local label_energy = table_energy_consumption.add{type="label", name="label_energy_consumption",
+    local energy_consumption, pollution
+    if ui_state.floor_total and origin_line ~= nil then
+        energy_consumption = origin_line.energy_consumption
+        pollution = origin_line.pollution
+    else
+        energy_consumption = subfactory.energy_consumption
+        pollution = subfactory.pollution
+    end
+
+    -- Energy consumption
+    local table_energy = table_energy_pollution.add{type="table", name="table_energy", column_count=2}
+    local label_energy_title = table_energy.add{type="label", name="label_energy_title", 
+      caption={"", {"label.energy"}, ":"}}
+    label_energy_title.style.font = "fp-font-14p"
+    local label_energy_value = table_energy.add{type="label", name="label_energy_value", 
       caption=ui_util.format_SI_value(energy_consumption, "W", 3),
       tooltip=ui_util.format_SI_value(energy_consumption, "W", 5)}
-    label_energy.style.font = "default-bold"
+    label_energy_value.style.font = "default-bold"
+
+    -- Pollution
+    local table_pollution = table_energy_pollution.add{type="table", name="table_pollution", column_count=2}
+    local label_pollution_title = table_pollution.add{type="label", name="label_pollution_title",
+      caption={"", {"label.pollution"}, ":"}}
+    label_pollution_title.style.font = "fp-font-14p"
+    local label_pollution_value = table_pollution.add{type="label", name="label_pollution_value", 
+      caption={"", ui_util.format_SI_value(pollution, {"tooltip.pollution_unit"}, 3), "/s"},
+      tooltip={"", ui_util.format_SI_value(pollution,{"tooltip.pollution_unit"},  5), "/s"}}
+    label_pollution_value.style.font = "default-bold"
+
 
     -- Mining Productivity
-    local table_mining_prod = flow["table_info_elements"].add{type="table", name="table_mining_prod", column_count=3}
+    local table_mining_prod = table_info_elements.add{type="table", name="table_mining_prod", column_count=3}
     table_mining_prod.add{type="label", name="label_mining_prod_title",
-      caption={"", " ",  {"label.mining_prod"}, " [img=info]: "}, tooltip={"tooltip.mining_prod"}}
+      caption={"", {"label.mining_prod"}, " [img=info]: "}, tooltip={"tooltip.mining_prod"}}
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
 
     if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then

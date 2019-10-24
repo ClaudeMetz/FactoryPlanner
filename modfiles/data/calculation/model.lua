@@ -15,6 +15,7 @@ function model.update_subfactory(subfactory_data)
     calculation.interface.set_subfactory_result {
         player_index = subfactory_data.player_index,
         energy_consumption = aggregate.energy_consumption,
+        pollution = aggregate.pollution,
         Product = aggregate.Product,
         Byproduct = aggregate.Byproduct,
         Ingredient = aggregate.Ingredient
@@ -45,6 +46,7 @@ function model.update_floor(floor_data, aggregate)
 
             -- Update the main aggregate with the results
             aggregate.energy_consumption = subfloor_aggregate.energy_consumption
+            aggregate.pollution = subfloor_aggregate.pollution
 
             local function update_main_aggregate(class_name, destination_class_name)
                 for _, item in ipairs(structures.class.to_array(subfloor_aggregate[class_name])) do
@@ -66,6 +68,7 @@ function model.update_floor(floor_data, aggregate)
                 line_id = line_data.id,
                 machine_count = subfloor_aggregate.machine_count,
                 energy_consumption = subfloor_aggregate.energy_consumption,
+                pollution = subfloor_aggregate.pollution,
                 production_ratio = subfloor_aggregate.production_ratio,
                 uncapped_production_ratio = subfloor_aggregate.uncapped_production_ratio,
                 Product = subfloor_aggregate.Product,
@@ -235,9 +238,11 @@ function model.update_line(line_data, aggregate)
     aggregate.machine_count = aggregate.machine_count or machine_count
 
 
-    -- Determine energy consumption, including potential fuel needs
+    -- Determine energy consumption (including potential fuel needs) and pollution
     local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
       machine_count, line_data.total_effects)
+    local pollution = calculation.util.determine_pollution(line_data.machine_proto, line_data.recipe_proto,
+      line_data.fuel_proto, line_data.total_effects, energy_consumption)
     
     local Fuel = structures.class.init()
     local burner = line_data.machine_proto.burner
@@ -259,7 +264,7 @@ function model.update_line(line_data, aggregate)
     end
 
     aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
-    
+    aggregate.pollution = aggregate.pollution + pollution
 
     -- Update the actual line with the calculated results
     calculation.interface.set_line_result {
@@ -268,6 +273,7 @@ function model.update_line(line_data, aggregate)
         line_id = line_data.id,
         machine_count = machine_count,
         energy_consumption = energy_consumption,
+        pollution = pollution,
         production_ratio = production_ratio,
         uncapped_production_ratio = uncapped_production_ratio,
         Product = Product,
