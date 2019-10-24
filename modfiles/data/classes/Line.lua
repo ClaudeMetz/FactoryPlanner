@@ -10,6 +10,7 @@ function Line.init(player, recipe, machine)
         beacon = nil,
         total_effects = nil,
         energy_consumption = 0,
+        pollution = 0,
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),

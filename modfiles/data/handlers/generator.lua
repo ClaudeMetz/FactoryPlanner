@@ -289,6 +289,7 @@ function generator.all_recipes()
                 localised_name = proto.localised_name,
                 sprite = "recipe/" .. proto.name,
                 energy = proto.energy,
+                emissions_multiplier = proto.emissions_multiplier,
                 ingredients = proto.ingredients,
                 products = proto.products,
                 main_product = proto.main_product,
@@ -330,6 +331,7 @@ function generator.all_recipes()
                 recipe.mining = true
                 -- Set energy to mining time so the forumla for the machine_count works out
                 recipe.energy = proto.mineable_properties.mining_time
+                recipe.emissions_multiplier = 1
                 recipe.ingredients = {{type="entity", name=proto.name, amount=1}}
                 recipe.products = products
                 recipe.main_product = recipe.products[1]
@@ -362,6 +364,7 @@ function generator.all_recipes()
             recipe.subgroup = {name="fluids", order="z", valid=true}
             recipe.category = proto.name  -- use proto name so every pump has it's own category
             recipe.energy = 1
+            recipe.emissions_multiplier = 1
             recipe.ingredients = {}
             recipe.products = {{type="fluid", name=proto.fluid.name, amount=(proto.pumping_speed * 60)}}
             recipe.main_product = recipe.products[1]
@@ -381,6 +384,7 @@ function generator.all_recipes()
     steam_recipe.order = "z"
     steam_recipe.subgroup = {name="fluids", order="z", valid=true}
     steam_recipe.energy = 1
+    steam_recipe.emissions_multiplier = 1
     steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
     steam_recipe.products = {{type="fluid", name="steam", amount=60}}
     steam_recipe.main_product = steam_recipe.products[1]
@@ -397,6 +401,7 @@ function generator.all_recipes()
         category = "rocket-building",
         hidden = false,
         energy = 0,
+        emissions_multiplier = 1,
         group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
           order="c", valid=true},
         subgroup = {name="science-pack", order="g", valid=true},
@@ -597,12 +602,16 @@ function generator.all_machines()
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
-        local burner = nil
+
+        local burner, emissions = nil, 0  -- emissions remain at 0 if no energy source is present
         if proto.burner_prototype then
             burner = {
                 categories = proto.burner_prototype.fuel_categories,
                 effectivity = proto.burner_prototype.effectivity
             }
+            emissions = proto.burner_prototype.emissions
+        elseif proto.electric_energy_source_prototype then
+            emissions = proto.electric_energy_source_prototype.emissions
         end
 
         local machine = {
@@ -613,6 +622,7 @@ function generator.all_machines()
             ingredient_limit = (proto.ingredient_count or 255),
             speed = speed,
             energy_usage = energy_usage,
+            emissions = emissions,
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
@@ -726,7 +736,8 @@ function generator.all_fuels()
                 sprite = proto.type .. "/" .. proto.name,
                 localised_name = proto.localised_name,
                 fuel_category = proto.fuel_category,
-                fuel_value = proto.fuel_value
+                fuel_value = proto.fuel_value,
+                emissions_multiplier = proto.fuel_emissions_multiplier
             })
         end
     end

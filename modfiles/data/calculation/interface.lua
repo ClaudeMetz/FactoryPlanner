@@ -92,6 +92,7 @@ function calculation.interface.set_subfactory_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
 
     subfactory.energy_consumption = result.energy_consumption
+    subfactory.pollution = result.pollution
 
     -- For products, the existing top-level items just get updated individually
     -- When the products are not present in the result, it means they have been produced
@@ -193,6 +194,7 @@ function calculation.interface.set_line_result(result)
 
     line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
+    line.pollution = result.pollution
     line.production_ratio = result.production_ratio
     line.uncapped_production_ratio = result.uncapped_production_ratio
 
@@ -233,9 +235,6 @@ end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
 function calculation.util.determine_machine_count(machine_proto, recipe_proto, total_effects, production_ratio, timescale)
-    local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
-    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-
     local launch_delay = 0
     if recipe_proto.name == "rocket-part" then
         local rockets_produced = production_ratio / 100
@@ -243,7 +242,9 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
         -- Not sure why this forumla works, but it seemingly does
         launch_delay = launch_sequence_time * rockets_produced
     end
-
+    
+    local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
+    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
     return ((machine_prod_ratio / (machine_speed / recipe_proto.energy)) / timescale) + launch_delay
 end
 
@@ -251,13 +252,20 @@ end
 -- (Conversion of the machine_count formula, not sure how to work in the launch_delay correctly)
 function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_cap, timescale)
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-    return ((machine_cap --[[ - launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * (1 + math.max(total_effects.productivity, 0)))
+    local productivity_multiplier = (1 + math.max(total_effects.productivity, 0))
+    return ((machine_cap --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier)
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
 function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
-    local energy_consumption = machine_count * (machine_proto.energy_usage * 60)
-    return energy_consumption + (energy_consumption * math.max(total_effects.consumption, -0.8))
+    return machine_count * (machine_proto.energy_usage * 60) * (1 + math.max(total_effects.consumption, -0.8))
+end
+
+-- Determines the amount of pollution this recipe produces
+function calculation.util.determine_pollution(machine_proto, recipe_proto, fuel_proto, total_effects, energy_consumption)
+    local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
+    local pollution_multiplier = 1 + math.max(total_effects.pollution, -0.8)
+    return energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier * fuel_multiplier * recipe_proto.emissions_multiplier
 end
 
 -- Determines the amount of fuel needed in the given context

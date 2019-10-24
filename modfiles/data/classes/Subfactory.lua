@@ -7,6 +7,7 @@ function Subfactory.init(name, icon, timescale_setting)
         icon = nil,
         timescale = nil,
         energy_consumption = 0,
+        pollution = 0,
         notes = "",
         mining_productivity = nil,
         Product = Collection.init(),
