@@ -411,6 +411,9 @@ end
 -- The lifetime is decreased for every message on every refresh
 -- (The algorithm(s) could be more efficient, but it doesn't matter for the small dataset)
 function ui_util.message.refresh(player)
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    if main_dialog == nil then return end
+
     -- The message types are ordered by priority
     local types = {
         [1] = {name = "error", color = "red"},
@@ -442,7 +445,7 @@ function ui_util.message.refresh(player)
         if message.lifetime <= 0 then table.remove(ui_state.message_queue, index) end
     end
     
-    local label_hint = player.gui.screen["fp_frame_main_dialog"]["flow_titlebar"]["label_titlebar_hint"]
+    local label_hint = main_dialog["flow_titlebar"]["label_titlebar_hint"]
     label_hint.caption = new_message
     ui_util.set_label_color(label_hint, new_color)
 end
