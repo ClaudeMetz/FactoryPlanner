@@ -8,13 +8,13 @@ function refresh_production_table(player)
 
     flow_production["label_production_info"].visible = false
     local scroll_pane_production = flow_production["scroll-pane_production_pane"]
-    local preferences = get_preferences(player)
+    local line_comments = get_settings(player).line_comments
 
     -- Production table needs to be destroyed to change it's column count
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
     
-    local column_count = preferences.enable_recipe_comments and 10 or 9
+    local column_count = line_comments and 10 or 9
     local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
       column_count=column_count}
     table_production.style = "table_with_selection"
@@ -52,11 +52,11 @@ function refresh_production_table(player)
                 title.style.font = "fp-font-16p"
             end
 
-            -- If enabled, add the comment column and it's clear button
-            if preferences.enable_recipe_comments then
+            -- If enabled, add the comment column and its clear button
+            if line_comments then
                 local flow = table_production.add{type="flow", name="flow_comment_clear", direction="horizontal"}
                 flow.style.vertical_align = "center"
-                local title = flow.add{type="label", name="label_title_comment", caption={"", {"label.comment"}, " "}}
+                local title = flow.add{type="label", name="label_title_comment", caption={"", {"label.comments"}, " "}}
                 title.style.font = "fp-font-16p"
                 local button = flow.add{type="button", name="fp_button_production_clear_comments",
                   caption={"button-text.clear"},  tooltip={"tooltip.clear_recipe_comments"}, style="fp_button_mini",
@@ -219,7 +219,7 @@ function create_line_table_row(player, line)
 
     
     -- Comment textfield
-    if get_preferences(player).enable_recipe_comments then
+    if get_settings(player).line_comments then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
           text=(line.comment or "")}
         textfield_comment.style.width = 160

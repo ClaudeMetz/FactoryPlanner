@@ -21,7 +21,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             refresh_main_dialog(player, true)
 
         -- Refreshes the view selection or recipe machine buttons appropriately
-        elseif event.setting == "fp_view_belts_or_lanes" or 
+        elseif event.setting == "fp_view_belts_or_lanes" or
+          event.setting == "fp_line_comments" or
           event.setting == "fp_ingredient_satisfaction" or
           event.setting == "fp_round_button_numbers" or
           event.setting == "fp_indicate_rounding" then

@@ -39,30 +39,39 @@ data:extend({
     },
     {
         type = "string-setting",
-        name = "fp_view_belts_or_lanes",
-        setting_type = "runtime-per-user",
-        default_value = "belts",
-        allowed_values = {"belts", "lanes"},
-        order = "e",
-        localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
-        localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
-    },
-    {
-        type = "string-setting",
         name = "fp_default_timescale",
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "f",
+        order = "e",
         localised_name = {"mod-setting-name.fp_default_timescale"},
         localised_description = {"mod-setting-description.fp_default_timescale"}
+    },
+    {
+        type = "string-setting",
+        name = "fp_view_belts_or_lanes",
+        setting_type = "runtime-per-user",
+        default_value = "belts",
+        allowed_values = {"belts", "lanes"},
+        order = "f",
+        localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
+        localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
+    },
+    {
+        type = "bool-setting",
+        name = "fp_line_comments",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "g",
+        localised_name = {"mod-setting-name.fp_line_comments"},
+        localised_description = {"mod-setting-description.fp_line_comments"}
     },
     {
         type = "bool-setting",
         name = "fp_ingredient_satisfaction",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "g",
+        order = "h",
         localised_name = {"mod-setting-name.fp_ingredient_satisfaction"},
         localised_description = {"mod-setting-description.fp_ingredient_satisfaction"}
     },
@@ -71,7 +80,7 @@ data:extend({
         name = "fp_round_button_numbers",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "h",
+        order = "i",
         localised_name = {"mod-setting-name.fp_round_button_numbers"},
         localised_description = {"mod-setting-description.fp_round_button_numbers"}
     },
@@ -82,7 +91,7 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "i",
+        order = "j",
         localised_name = {"mod-setting-name.fp_indicate_rounding"},
         localised_description = {"mod-setting-description.fp_indicate_rounding"}
     }

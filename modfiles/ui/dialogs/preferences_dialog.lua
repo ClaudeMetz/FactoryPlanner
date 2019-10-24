@@ -23,7 +23,7 @@ function open_preferences_dialog(flow_modal_dialog)
           caption={"", " ", {"checkbox.preferences_" .. name}, " [img=info]"}, tooltip={"tooltip.preferences_" .. name}}
     end
 
-    local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "enable_recipe_comments"}
+    local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes"}
     for _, preference_name in ipairs(preference_names) do add_general_preference(preference_name) end
 
 
@@ -60,7 +60,7 @@ function refresh_preferences_dialog(player)
 
     -- General preferences
     local table_general_prefs = flow_modal_dialog["table_general_preferences"]
-    local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "enable_recipe_comments"}
+    local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes"}
     for _, preference_name in ipairs(preference_names) do
         table_general_prefs["fp_checkbox_preferences_" .. preference_name].state = preferences[preference_name]
     end
