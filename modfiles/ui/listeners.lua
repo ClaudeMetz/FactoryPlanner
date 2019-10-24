@@ -146,9 +146,9 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     elseif event.element.name == "fp_textfield_mining_prod" then
         handle_mining_prod_change(player, event.element)
 
-    -- Limits the subfactory name length to 16 characters
+    -- Limits the subfactory name length (implemented here for better responsiveness)
     elseif event.element.name == "fp_textfield_subfactory_name" then
-        handle_subfactory_name_change(player, event.element)
+        event.element.text = string.sub(event.element.text, 1, 24)
 
     end
 end)
