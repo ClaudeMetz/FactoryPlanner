@@ -32,7 +32,7 @@ function close_item_picker_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         local req_amount = tonumber(data.required_amount)
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
-            local top_level_item = TopLevelItem.init_by_proto(ui_state.modal_data.selected_item, "Product", 0, req_amount)
+            local top_level_item = Item.init_by_proto(ui_state.modal_data.selected_item, "Product", 0, req_amount)
             Subfactory.add(subfactory, top_level_item)
         else
             product.required_amount = req_amount

@@ -1,7 +1,6 @@
 require("data.util")
 require("data.classes.Collection")
 require("data.classes.Item")
-require("data.classes.TopLevelItem")
 require("data.classes.Fuel")
 require("data.classes.Recipe")
 require("data.classes.Machine")
