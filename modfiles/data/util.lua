@@ -310,7 +310,7 @@ end
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
     for _, product in ipairs(products) do
-        local item = TopLevelItem.init_by_item(product, "Product", 0, product.required_amount)
+        local item = Item.init_by_item(product, "Product", 0, (product.required_amount or 0))
         Subfactory.add(subfactory, item)
     end
 end

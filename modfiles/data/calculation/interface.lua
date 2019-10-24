@@ -119,7 +119,7 @@ function calculation.interface.set_subfactory_result(result)
         end
 
         for _, item_result in pairs(structures.class.to_array(items)) do
-            local top_level_item = TopLevelItem.init_by_item(item_result, class_name, item_result.amount)
+            local top_level_item = Item.init_by_item(item_result, class_name, item_result.amount, 0)
             Subfactory.add(subfactory, top_level_item)
         end
     end
