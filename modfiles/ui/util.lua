@@ -326,8 +326,13 @@ end
 -- Returns string representing the given power 
 function ui_util.format_SI_value(value, unit, precision)
     local scale = {"", "k", "M", "G", "T", "P", "E", "Z", "Y"}
+    local units = {
+        W = {"label.unit_watt"},
+        J = {"label.unit_joule"},
+        P = {"label.unit_pollution"}
+    }
+
     value = value or 0
-    
     local scale_counter = 0
     -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
     while scale_counter < #scale and value > (1000 ^ (scale_counter + 1)) do
