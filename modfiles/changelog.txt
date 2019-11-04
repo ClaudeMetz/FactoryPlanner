@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.62
+Date: 04. 11. 2019
   Changes:
     - Made the 'Tutorial Mode'-tooltips a bit more consistent
     - Made units like Watt or Joule localisable
