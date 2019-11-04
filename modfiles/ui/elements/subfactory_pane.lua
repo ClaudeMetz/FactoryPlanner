@@ -288,8 +288,8 @@ function refresh_info_pane(player)
       caption={"", {"label.pollution"}, ":"}}
     label_pollution_title.style.font = "fp-font-14p"
     local label_pollution_value = table_pollution.add{type="label", name="label_pollution_value", 
-      caption={"", ui_util.format_SI_value(pollution, {"tooltip.pollution_unit"}, 3), "/s"},
-      tooltip={"", ui_util.format_SI_value(pollution,{"tooltip.pollution_unit"},  5), "/s"}}
+      caption={"", ui_util.format_SI_value(pollution, "P", 3), "/s"},
+      tooltip={"", ui_util.format_SI_value(pollution, "P", 5), "/s"}}
     label_pollution_value.style.font = "default-bold"
 
 
