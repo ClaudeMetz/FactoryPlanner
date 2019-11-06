@@ -87,10 +87,13 @@ local function generate_formatted_item(base_item)
         actual_amount = base_item.amount
     end
 
+    local proddable_amount = actual_amount - (base_item.catalyst_amount or 0)
+
     return {
         name = base_item.name,
         type = base_item.type,
-        amount = actual_amount
+        amount = actual_amount,
+        proddable_amount = proddable_amount
     }
 end
 

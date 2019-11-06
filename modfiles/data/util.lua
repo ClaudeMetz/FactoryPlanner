@@ -198,26 +198,6 @@ function data_util.run_invalid_dataset_repair(player, parent, classes)
 end
 
 
--- Returns the catalyst amount of the given item in the given recipe (temporary)
-function data_util.determine_catalyst_amount(player, recipe_proto, type, item_name)
-    if recipe_proto.custom then  -- custom recipes won't have catalyst ingredients
-        return 0
-    else
-        local live_recipe = player.force.recipes[recipe_proto.name]
-        local live_item = nil
-        for _, live_product in pairs(live_recipe[type]) do
-            if live_product.name == item_name then
-                live_item = live_product
-                break
-            end
-        end
-        
-        if live_item.catalyst_amount then return live_item.catalyst_amount
-        else return 0 end
-    end
-end
-
-
 -- Logs given table, excluding certain attributes (Kinda super-jank and inconsistent)
 function data_util.log(table)
     local excluded_attributes = {proto=true, recipe_proto=true, machine_proto=true, parent=true,

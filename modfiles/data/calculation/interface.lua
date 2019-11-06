@@ -249,11 +249,18 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
 end
 
 -- Calculates the production ratio from a given machine cap
--- (Conversion of the machine_count formula, not sure how to work in the launch_delay correctly)
+-- (Forumla derived from determine_machine_count, not sure how to work in the launch_delay correctly)
 function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_cap, timescale)
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
     local productivity_multiplier = (1 + math.max(total_effects.productivity, 0))
-    return ((machine_cap --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier)
+    return (machine_cap --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier
+end
+
+-- Calculates the ingredient amount after applying productivity bonuses
+-- [Formula dervied from: amount - proddable_amount + (proddable_amount / productivity)]
+function calculation.util.determine_prodded_amount(ingredient, total_effects)
+    local productivity = (1 + math.max(total_effects.productivity, 0))
+    return ingredient.amount + ingredient.proddable_amount * ((1 / productivity) - 1)
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
