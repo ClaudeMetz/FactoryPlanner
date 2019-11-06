@@ -190,19 +190,12 @@ function model.update_line(line_data, aggregate)
     for _, ingredient in pairs(line_data.recipe_proto.ingredients) do
         local ingredient = data_util.deepcopy(ingredient)
         
-        -- Incorporate productivity
-        -- Temporary solution for this until catalyst_amount is part of the prototype
-        local proddable_amount = ingredient.amount - data_util.determine_catalyst_amount(
-          game.get_player(aggregate.player_index), line_data.recipe_proto, "ingredients", ingredient.name)
-
-        local prodded_amount = ingredient.amount
-        if proddable_amount > 0 then  -- only do the calculation if productivity ~= 0
-            -- Only apply the productivity bonus to the proddable part of the ingredient amount
-            prodded_amount = ingredient.amount - proddable_amount + 
-              (proddable_amount / (1 + line_data.total_effects.productivity))
+        -- Incorporate productiviy where applicable, else the ingredient_amount stays the same
+        if (ingredient.proddable_amount > 0) and (line_data.total_effects.productivity > 0) then
+            ingredient.amount = calculation.util.determine_prodded_amount(ingredient, line_data.total_effects)
         end
-        
-        ingredient.amount = prodded_amount * production_ratio
+
+        ingredient.amount = ingredient.amount * production_ratio
         structures.class.add(Ingredient, ingredient)
 
         -- Reduce the line-byproducts and -ingredients so only the net amounts remain
