@@ -126,15 +126,28 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
             local modal_data = {
                 reciever_name = "machine",
                 title = {"label.machine_cap"},
-                text = {"", {"label.setter_machine_cap"}, " '", line.recipe.proto.localised_name, "':"},
-                type = "numeric",
-                caption = {"label.count"},
-                value = line.machine.count_cap or "",
-                object = line.machine
+                text = {"", {"label.options_machine_cap"}, " '", line.recipe.proto.localised_name, "':"},
+                object = line.machine,
+                fields = {
+                    {
+                        type = "numeric",
+                        name = "machine_limit",
+                        caption = "Limit",
+                        value = line.machine.count_cap or "",
+                        focus = true
+                    }--[[ ,
+                    {
+                        type = "on_off_switch",
+                        name = "force_limit",
+                        caption = "Enforce limit",
+                        tooltip = "forces stuff",
+                        value = false
+                    } ]]
+                }
             }
 
             ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-            enter_modal_dialog(player, {type="setter", submit=true, modal_data=modal_data})
+            enter_modal_dialog(player, {type="options", submit=true, modal_data=modal_data})
         end
     else
         -- Accept the user selection of new machine for this (assembly) line
@@ -170,10 +183,10 @@ function apply_chooser_machine_choice(player, machine_id)
 end
 
 -- Recieves the result of the machine cap choice and applies it
-function apply_setter_machine_choice(player, machine, count_cap)
+function apply_options_machine_choice(player, machine, options)
     local context = get_context(player)
     -- tonumber() has already converted an empty string to nil
-    Line.set_machine_count_cap(context.line, count_cap)
+    Line.set_machine_count_cap(context.line, options.machine_limit)
     calculation.update(player, context.subfactory, false)
 end
 
