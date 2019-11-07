@@ -1,5 +1,7 @@
 -- This file contains general-purpose dialogs that are generic and used in several places
 
+
+-- **** CHOOSER ****
 -- Handles populating the chooser dialog
 function open_chooser_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
@@ -8,9 +10,7 @@ function open_chooser_dialog(flow_modal_dialog)
     flow_modal_dialog.add{type="label", name="label_chooser_text", caption=modal_data.text}
 
     local table_chooser = flow_modal_dialog.add{type="table", name="table_chooser_elements", column_count=8}
-    table_chooser.style.top_padding = 6
-    table_chooser.style.bottom_padding = 10
-    table_chooser.style.left_padding = 6
+    table_chooser.style.padding = {6, 4, 10, 6}
 
     -- This is the function that will populate the chooser dialog, requesting as many blank chooser buttons as needed
     -- using the 'generate_blank_chooser_button'-function below
@@ -31,46 +31,72 @@ function handle_chooser_element_click(player, element_id)
 end
 
 
--- Handles populating the setter dialog
-function open_setter_dialog(flow_modal_dialog)
+
+-- **** OPTIONS ****
+-- Handles populating the options dialog
+function open_options_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
     local modal_data = get_ui_state(player).modal_data
+
     flow_modal_dialog.parent.caption = {"", {"label.set"}, " ", modal_data.title}
-    flow_modal_dialog.add{type="label", name="label_setter_text", caption=modal_data.text}
+    flow_modal_dialog.add{type="label", name="label_options_text", caption=modal_data.text}
+    
+    local flow_options = flow_modal_dialog.add{type="flow", name="flow_options", direction="vertical"}
+    flow_options.style.padding = {6, 4, 10, 10}
+    flow_options.style.vertical_spacing = 10
 
-    if modal_data.type == "numeric" then
-        local table_setter = flow_modal_dialog.add{type="table", name="table_setter", column_count=2}
-        table_setter.style.top_padding = 6
-        table_setter.style.bottom_padding = 10
-        table_setter.style.left_padding = 10
-        table_setter.style.horizontal_spacing = 16
+    for _, field in ipairs(modal_data.fields) do
+        local table_option = flow_options.add{type="table", name="table_option_" .. field.name, column_count=2}
+        table_option.style.horizontal_spacing = 12
 
-        table_setter.add{type="label", name="label_setter_caption", caption=modal_data.caption}
-
-        local textfield_setter = table_setter.add{type="textfield", name="fp_textfield_setter_numeric",
-          text=modal_data.value}
-        ui_util.setup_numeric_textfield(textfield_setter, true, false)
-        textfield_setter.style.width = 60
-        textfield_setter.focus()
+        _G["add_" .. field.type .. "_option"](table_option, field)
     end
 end
 
--- Handles closing of the setter dialog
-function close_setter_dialog(flow_modal_dialog, action, data)
+-- Handles closing of the options dialog
+function close_options_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         local player = game.get_player(flow_modal_dialog.player_index)
         local object = get_ui_state(player).modal_data.object
-        _G["apply_setter_" .. get_ui_state(player).modal_data.reciever_name .. "_choice"](player, object, data.number)
+        _G["apply_options_" .. get_ui_state(player).modal_data.reciever_name .. "_choice"](player, object, data)
     end
 end
 
 -- Returns all necessary instructions to create and run conditions on the modal dialog
-function get_setter_condition_instructions()
-    return {
-        data = {
-            number = (function(flow_modal_dialog)
-                return tonumber(flow_modal_dialog["table_setter"]["fp_textfield_setter_numeric"].text) end)
-        },
+function get_options_condition_instructions(modal_data)
+    local instructions = {
+        data = {},
         conditions = nil
     }
+
+    for _, field in ipairs(modal_data.fields) do
+        if field.type == "numeric" then
+            instructions.data[field.name] = (function(flow_modal_dialog) return tonumber(flow_modal_dialog["flow_options"]
+              ["table_option_" .. field.name]["textfield_option_numeric"].text) end)
+
+        elseif field.type == "on_off_switch" then
+            instructions.data[field.name] = (function(flow_modal_dialog) return ui_util.switch.get_state(flow_modal_dialog
+              ["flow_options"]["table_option_" .. field.name], field.name, true) end)
+        end
+    end
+
+    return instructions
+end
+
+
+function add_numeric_option(table, field)
+    local textfield = table.add{type="textfield", name="textfield_option_numeric", text=field.value, tooltip=field.tooltip}
+    textfield.style.left_margin = 1
+    textfield.style.width = 75
+    ui_util.setup_numeric_textfield(textfield, true, false)
+    if field.focus then textfield.focus() end
+    
+    local caption = (field.tooltip ~= nil) and {"", field.caption, " [img=info]"} or field.caption
+    local label = table.add{type="label", name="label_option_caption", caption=caption}
+    label.style.font = "fp-font-15p"
+    label.style.left_padding = 2
+end
+
+function add_on_off_switch_option(table, field)
+    ui_util.switch.add_on_off(table, field.name, field.value, field.caption, field.tooltip)
 end
