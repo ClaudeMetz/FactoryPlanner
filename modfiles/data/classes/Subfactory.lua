@@ -97,9 +97,18 @@ function Subfactory.combine_item_collections(self, primary_items, secondary_item
     local combination = Collection.init()
     local touched_datasets = {}
 
+    local function create_item_copy(dataset)
+        return {
+            id = dataset.id,
+            proto = dataset.proto,  -- reference
+            amount = dataset.amount
+        }
+    end
+    
     -- First, go through all primary items and combine them with any identical secondary ones
     for _, dataset in ipairs(Collection.get_in_order(primary_items)) do
-        local primary_item = Collection.add(combination, data_util.deepcopy(dataset))
+        --log(serpent.block(dataset))
+        local primary_item = Collection.add(combination, create_item_copy(dataset))
         local secondary_item = Collection.get_by_name(secondary_items, dataset.proto.name)
         if secondary_item ~= nil then
             primary_item.amount = primary_item.amount + secondary_item.amount
@@ -110,7 +119,7 @@ function Subfactory.combine_item_collections(self, primary_items, secondary_item
     -- Then, add all remaining secondary items on their own
     for _, dataset in ipairs(Collection.get_in_order(secondary_items)) do
         if touched_datasets[dataset.proto.name] == nil then
-            Collection.add(combination, data_util.deepcopy(dataset))
+            Collection.add(combination, create_item_copy(dataset))
         end
     end
 
