@@ -257,7 +257,7 @@ function calculation.util.determine_production_ratio(machine_proto, recipe_proto
 end
 
 -- Calculates the ingredient amount after applying productivity bonuses
--- [Formula dervied from: amount - proddable_amount + (proddable_amount / productivity)]
+-- [Formula derived from: amount - proddable_amount + (proddable_amount / productivity)]
 function calculation.util.determine_prodded_amount(ingredient, total_effects)
     local productivity = (1 + math.max(total_effects.productivity, 0))
     return ingredient.amount + ingredient.proddable_amount * ((1 / productivity) - 1)

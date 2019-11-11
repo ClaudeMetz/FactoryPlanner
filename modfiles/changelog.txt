@@ -1,12 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
-  Features:
-    - 
   Changes:
-    - 
+    - Slightly improved calculation performance by using new API capabilities
   Bugfixes:
-    - 
+    - Improved compatibility with PyVeganism
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.62
@@ -113,7 +111,7 @@ Date: 22. 09. 2019
     - Added a subfactory archive. You can use it to keep around old plans that you might want to refer back to at a later point. They can't be edited once they are archived, although you can un-archive them again, should you need to.
     - Added a quickbar shortcut to open the main interface
   Changes:
-    - Improved compatability/detection of mods that add loaders, recyclers or stackers
+    - Improved compatibility/detection of mods that add loaders, recyclers or stackers
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.50
@@ -533,8 +531,8 @@ Version: 0.17.2
 Date: 30. 05. 2019
   Bugfixes:
     - Fixed an issue where products could have negative amounts
-    - Improved compatability with Angel's mods
-    - Improved compatability with Creative Mod
+    - Improved compatibility with Angel's mods
+    - Improved compatibility with Creative Mod
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.1
