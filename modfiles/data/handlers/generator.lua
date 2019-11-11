@@ -762,20 +762,21 @@ function generator.all_modules()
     local undesirables = undesirable_modules()
 
     for _, proto in pairs(game.item_prototypes) do
-        if proto.type == "module" and undesirables[proto.name] == nil then
-            -- Convert limitations-table to a [recipe_name] -> true fromat
+        if proto.type == "module" and not proto.has_flag("hidden")
+          and undesirables[proto.name] == nil then
+            -- Convert limitations-table to a [recipe_name] -> true format
             local limitations = {}
             for _, recipe_name in pairs(proto.limitations) do
                 limitations[recipe_name] = true
             end
-
+            
             local module = {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "item/" .. proto.name,
                 category = proto.category,
                 tier = proto.tier,
-                effects = proto.module_effects,
+                effects = proto.module_effects or {},
                 limitations = limitations
             }
             deep_insert_proto(all_modules, "categories", proto.category, "modules", module)
@@ -804,9 +805,7 @@ end
 -- Returns the names of the 'beacons' that shouldn't be included
 local function undesirable_beacons()
     return {
-        ["seablock-mining-prod-provider"] = false,
-        ["pyveganism-beacon-cultivation-expertise"] = false,
-        ["pyveganism-beacon-plant-breeding"] = false
+        ["seablock-mining-prod-provider"] = false
     }
 end
 
@@ -816,7 +815,8 @@ function generator.all_beacons()
     local undesirables = undesirable_beacons()
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.distribution_effectivity ~= nil and undesirables[proto.name] == nil then
+        if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden")
+          and undesirables[proto.name] == nil then
             insert_proto(all_beacons, "beacons", {
                 name = proto.name,
                 localised_name = proto.localised_name,
