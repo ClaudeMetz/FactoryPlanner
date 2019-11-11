@@ -49,29 +49,17 @@ end
 
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
-    local screen = player.gui.screen
     -- Won't toggle if a modal dialog is open
     if get_ui_state(player).modal_dialog_type == nil then
-        local main_dialog = screen["fp_frame_main_dialog"]
-        local open = nil
+        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        if main_dialog ~= nil then main_dialog.visible = not main_dialog.visible end
+        refresh_main_dialog(player)
+        player.opened = main_dialog.visible and main_dialog or nil
 
-        -- Create and open main dialog, if it doesn't exist yet
-        if main_dialog == nil then
-            main_dialog = refresh_main_dialog(player, true)
-            open = true
-
-        -- Otherwise, toggle it
-        else
-            open = not main_dialog.visible
-            refresh_main_dialog(player)
-        end
-
-        main_dialog.visible = open
-        player.opened = open and main_dialog or nil
-
+        -- Handle the pause_on_open_interface option
         if get_settings(player).pause_on_interface and not game.is_multiplayer() and 
           player.controller_type ~= defines.controllers.editor then
-            game.tick_paused = open  -- only pause when the main dialog is open
+            game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
         end
     end
 end
@@ -93,19 +81,18 @@ end
 
 
 -- Refreshes the entire main dialog, optionally including it's dimensions
+-- Creates the dialog if it doesn't exist; Recreates it if needs to
 function refresh_main_dialog(player, full_refresh)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if full_refresh then
-        if main_dialog == nil then 
-            main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
-        end
-        main_dialog.clear()
-
+    if main_dialog == nil or full_refresh then
+        if main_dialog ~= nil then main_dialog.clear()
+        else main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"} end
+        
         local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
         main_dialog.style.minimal_width = dimensions.width
         main_dialog.style.height = dimensions.height
-        main_dialog.visible = visible
+        main_dialog.visible = not full_refresh  -- hide dialog on a full refresh
 
         add_titlebar_to(main_dialog)
         add_actionbar_to(main_dialog)
@@ -114,9 +101,7 @@ function refresh_main_dialog(player, full_refresh)
         add_subfactory_pane_to(main_dialog)
         add_production_pane_to(main_dialog)
 
-        return main_dialog
-
-    elseif main_dialog ~= nil and main_dialog.visible then
+    elseif main_dialog.visible then
         -- Re-center the main dialog because it get screwed up sometimes for reasons
         local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
