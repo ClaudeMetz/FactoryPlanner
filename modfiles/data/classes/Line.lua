@@ -53,15 +53,16 @@ function Line.set_priority_product(self, proto)
     end
 end
 
--- Sets the machine's count_cap on this line and optionally it's subfloor / parent line
-function Line.set_machine_count_cap(self, count_cap)
-    self.machine.count_cap = count_cap
+-- Sets the machine's limit on this line and optionally it's subfloor / parent line
+function Line.set_machine_limit(self, limit, hard_limit)
+    self.machine.limit, self.machine.hard_limit = limit, hard_limit
     -- Can't use pack/unpack method as it doesn't work for proto being nil
     if self.subfloor ~= nil then
-        local sub_line = Floor.get(self.subfloor, "Line", 1)
-        sub_line.machine.count_cap = count_cap
+        local machine = Floor.get(self.subfloor, "Line", 1).machine
+        machine.limit, machine.hard_limit = limit, hard_limit
     elseif self.id == 1 and self.parent.origin_line then
-        self.parent.origin_line.machine.count_cap = count_cap
+        local machine = self.parent.origin_line.machine
+        machine.limit, machine.hard_limit = limit, hard_limit
     end
 end
 

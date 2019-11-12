@@ -140,21 +140,23 @@ function create_line_table_row(player, line)
         if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
         local machine_text = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
 
-        local style, cap_set, capped = "fp_button_icon_medium_recipe", "", ""
-        if line.machine.count_cap ~= nil then
-            cap_set = {"", " (", {"tooltip.cap_set"}, ")"}
-            style = "fp_button_icon_medium_green"
-
-            -- Check if the machine cap is 'in action'
-            if line.production_ratio < line.uncapped_production_ratio then
-                capped = {"", " (", {"tooltip.capped"}, ")"}
+        local style, limit_notice = "fp_button_icon_medium_recipe", ""
+        if line.machine.limit ~= nil then
+            if line.machine.hard_limit then
+                style = "fp_button_icon_medium_cyan"
+                limit_notice = {"", "\n- ", {"tooltip.machine_limit_hard"}, " -"}
+            elseif line.production_ratio < line.uncapped_production_ratio then
                 style = "fp_button_icon_medium_yellow"
+                limit_notice = {"", "\n- ", {"tooltip.machine_limit_enforced"}, " -"}
+            else
+                style = "fp_button_icon_medium_green"
+                limit_notice = {"", "\n- ", {"tooltip.machine_limit_set"}, " -"}
             end
         end
 
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
-          tooltip={"", machine_proto.localised_name, cap_set, "\n", machine_count, " ", machine_text, capped,
+          tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
           ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory)}}
         button.number = (player_table.settings.round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1

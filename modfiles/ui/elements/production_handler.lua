@@ -121,28 +121,29 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                 end
             end
         
-        -- Open the dialog to set a machine count cap
+        -- Open the dialog to set a machine count limit
         elseif click == "right" then
             local modal_data = {
                 reciever_name = "machine",
-                title = {"label.machine_cap"},
-                text = {"", {"label.options_machine_cap"}, " '", line.recipe.proto.localised_name, "':"},
+                title = {"label.machine_limit_title"},
+                text = {"", {"label.machine_limit_text"}, " '", line.recipe.proto.localised_name, "':"},
                 object = line.machine,
                 fields = {
                     {
                         type = "numeric",
                         name = "machine_limit",
-                        caption = "Limit",
-                        value = line.machine.count_cap or "",
+                        caption = {"label.machine_limit_option"},
+                        tooltip = {"tooltip.machine_limit_option"},
+                        value = line.machine.limit or "",
                         focus = true
-                    }--[[ ,
+                    },
                     {
                         type = "on_off_switch",
-                        name = "force_limit",
-                        caption = "Enforce limit",
-                        tooltip = "forces stuff",
-                        value = false
-                    } ]]
+                        name = "hard_limit",
+                        caption = {"label.machine_hard_limit_option"},
+                        tooltip = {"tooltip.machine_hard_limit_option"},
+                        value = line.machine.hard_limit or false
+                    }
                 }
             }
 
@@ -182,11 +183,12 @@ function apply_chooser_machine_choice(player, machine_id)
     calculation.update(player, context.subfactory, false)
 end
 
--- Recieves the result of the machine cap choice and applies it
+-- Recieves the result of the machine limit choice and applies it
 function apply_options_machine_choice(player, machine, options)
     local context = get_context(player)
     -- tonumber() has already converted an empty string to nil
-    Line.set_machine_count_cap(context.line, options.machine_limit)
+    if options.machine_limit == nil then options.hard_limit = false end
+    Line.set_machine_limit(context.line, options.machine_limit, options.hard_limit)
     calculation.update(player, context.subfactory, false)
 end
 

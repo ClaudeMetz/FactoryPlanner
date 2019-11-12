@@ -86,8 +86,11 @@ function data_util.machine.change(player, line, machine, direction)
             return data_util.machine.change(player, line, machine, "positive")
 
         else
-            -- Carry over the machine cap
-            if machine and line.machine then machine.count_cap = line.machine.count_cap end
+            -- Carry over the machine limit
+            if machine and line.machine then
+                machine.limit = line.machine.limit
+                machine.hard_limit = line.machine.hard_limit
+            end
             line.machine = machine
 
             -- Adjust parent line

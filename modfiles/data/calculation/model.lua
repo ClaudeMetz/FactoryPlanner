@@ -137,11 +137,12 @@ function model.update_line(line_data, aggregate)
     end
     uncapped_production_ratio = production_ratio  -- retain the uncapped ratio for line_data
 
-    -- Cap the machine_count by reducing the production_ratio, if necessary
-    if line_data.machine_cap ~= nil then
+    -- Limit the machine_count by reducing the production_ratio, if necessary
+    if line_data.machine_limit.limit ~= nil then
         local capped_production_ratio = calculation.util.determine_production_ratio(line_data.machine_proto, 
-          line_data.recipe_proto, line_data.total_effects, line_data.machine_cap, line_data.timescale)
-        production_ratio = math.min(production_ratio, capped_production_ratio)
+          line_data.recipe_proto, line_data.total_effects, line_data.machine_limit.limit, line_data.timescale)
+        production_ratio = line_data.machine_limit.hard_limit and 
+          capped_production_ratio or math.min(production_ratio, capped_production_ratio)
     end
 
     -- Set the production ratio of the current aggregate to the one of the first line (relevant for subfloors)

@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - You can now set a hard limit on the machine amount of a recipe line
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.64
 Date: 12. 11. 2019
   Bugfixes:
@@ -11,7 +21,7 @@ Date: 12. 11. 2019
     - Slightly improved calculation performance by using new API capabilities
   Bugfixes:
     - Improved compatibility with PyVeganism
-    - Fixed the main interface unnecessarily refreshing sometimes
+    - Fixed the main interface refreshing unnecessarily sometimes
     - Fixed the horrible performance of the 'Floor Total'-mode
 
 ---------------------------------------------------------------------------------------------------

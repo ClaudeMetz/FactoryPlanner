@@ -85,14 +85,14 @@ end
 
 
 function add_numeric_option(table, field)
-    local textfield = table.add{type="textfield", name="textfield_option_numeric", text=field.value, tooltip=field.tooltip}
+    local textfield = table.add{type="textfield", name="textfield_option_numeric", text=field.value}
     textfield.style.left_margin = 1
     textfield.style.width = 75
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then textfield.focus() end
     
     local caption = (field.tooltip ~= nil) and {"", field.caption, " [img=info]"} or field.caption
-    local label = table.add{type="label", name="label_option_caption", caption=caption}
+    local label = table.add{type="label", name="label_option_caption", caption=caption, tooltip=field.tooltip}
     label.style.font = "fp-font-15p"
     label.style.left_padding = 2
 end
