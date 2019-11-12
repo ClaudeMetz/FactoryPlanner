@@ -56,7 +56,7 @@ function calculation.interface.get_subfactory_data(player, subfactory)
                 id = line.id,
                 timescale = subfactory.timescale,
                 percentage = line.percentage,
-                machine_cap = line.machine.count_cap,
+                machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit},
                 total_effects = Line.get_total_effects(line, player),  -- copy
                 priority_product_proto = line.priority_product_proto,  -- reference
                 production_type = line.recipe.production_type,
@@ -248,12 +248,12 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
     return ((machine_prod_ratio / (machine_speed / recipe_proto.energy)) / timescale) + launch_delay
 end
 
--- Calculates the production ratio from a given machine cap
+-- Calculates the production ratio from a given machine limit
 -- (Forumla derived from determine_machine_count, not sure how to work in the launch_delay correctly)
-function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_cap, timescale)
+function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_limit, timescale)
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
     local productivity_multiplier = (1 + math.max(total_effects.productivity, 0))
-    return (machine_cap --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier
+    return (machine_limit --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier
 end
 
 -- Calculates the ingredient amount after applying productivity bonuses
