@@ -53,7 +53,7 @@ function toggle_main_dialog(player)
     if get_ui_state(player).modal_dialog_type == nil then
         local main_dialog = player.gui.screen["fp_frame_main_dialog"]
         if main_dialog ~= nil then main_dialog.visible = not main_dialog.visible end
-        refresh_main_dialog(player)
+        main_dialog = refresh_main_dialog(player)
         player.opened = main_dialog.visible and main_dialog or nil
 
         -- Handle the pause_on_open_interface option
@@ -112,6 +112,7 @@ function refresh_main_dialog(player, full_refresh)
     end
     
     ui_util.message.refresh(player)
+    return main_dialog
 end
 
 -- Creates the titlebar including name and exit-button
