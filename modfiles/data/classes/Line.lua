@@ -264,7 +264,7 @@ end
 
 -- Returns the total effects influencing this line, including mining productivity
 function Line.get_total_effects(self, player)
-    local effects = data_util.deepcopy(self.total_effects)
+    local effects = data_util.shallowcopy(self.total_effects)
 
     -- Add mining productivity, if applicable
     local mining_productivity = 0
