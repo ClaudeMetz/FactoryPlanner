@@ -14,12 +14,7 @@ function calculation.update(player, subfactory, refresh)
         player_table.active_subfactory = subfactory
         
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        --Profiler.Start()
-        --local p = game.create_profiler()
         model.update_subfactory(subfactory_data)
-        --p.stop()
-        --log(p)
-        --Profiler.Stop()
         player_table.active_subfactory = nil
     end
 
@@ -43,46 +38,8 @@ function calculation.interface.get_subfactory_data(player, subfactory)
         table.insert(subfactory_data.top_level_products, product_data)
     end
 
-    local function generate_floor_data(floor)
-        if floor == nil then return nil end
-
-        local floor_data = {
-            id = floor.id,
-            lines = {}
-        }
-
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            local line_data = {
-                id = line.id,
-                timescale = subfactory.timescale,
-                percentage = line.percentage,
-                machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit},
-                total_effects = Line.get_total_effects(line, player),  -- copy
-                priority_product_proto = line.priority_product_proto,  -- reference
-                production_type = line.recipe.production_type,
-                recipe_proto = line.recipe.proto,  -- reference
-                machine_proto = line.machine.proto,  -- reference
-                fuel_proto = nil,  -- will be a reference
-                subfloor = generate_floor_data(line.subfloor)
-            }
-
-            if line_data.subfloor == nil then  -- the fuel_proto is only needed when there's no subfloor
-                local fuels = Line.get_in_order(line, "Fuel")
-                if table_size(fuels) == 1 then  -- use the already configured Fuel, if available
-                    line_data.fuel_proto = fuels[1].proto
-                else  -- otherwise, use the preferred fuel
-                    line_data.fuel_proto = get_preferences(player).preferred_fuel
-                end
-            end
-
-            table.insert(floor_data.lines, line_data)
-        end
-
-        return floor_data
-    end
-
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    subfactory_data.top_floor = generate_floor_data(top_floor)
+    subfactory_data.top_floor = calculation.util.generate_floor_data(player, subfactory, top_floor)
 
     return subfactory_data
 end
@@ -100,90 +57,15 @@ function calculation.interface.set_subfactory_result(result)
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
         product.amount = product.required_amount - product_result_amount
     end
-
-    -- For ingredients and byproducts, the procedure is more complicated, because
-    -- it has to retain the users ordering of those items
-    local function update_top_level_items(class_name)
-        local items = result[class_name]
-        
-        for _, item in pairs(Subfactory.get_in_order(subfactory, class_name)) do
-            local item_result_amount = items[item.proto.type][item.proto.name]
-            
-            if item_result_amount == nil then
-                Subfactory.remove(subfactory, item)
-            else
-                item.amount = item_result_amount
-                -- This item_result_amount has been incorporated, so it can be removed
-                items[item.proto.type][item.proto.name] = nil
-            end
-        end
-
-        for _, item_result in pairs(structures.class.to_array(items)) do
-            local top_level_item = Item.init_by_item(item_result, class_name, item_result.amount, 0)
-            Subfactory.add(subfactory, top_level_item)
-        end
-    end
-
-    update_top_level_items("Ingredient")
-    update_top_level_items("Byproduct")
-
-
-    local function determine_net_ingredients(floor, aggregate)
-        -- First, determine the net ingredients of this floor
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            if line.subfloor ~= nil then 
-                determine_net_ingredients(line.subfloor, aggregate)
-            else
-                for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                    local simple_ingredient = {type=ingredient.proto.type, name=ingredient.proto.name, amount=ingredient.amount}
-                    structures.aggregate.add(aggregate, "Ingredient", simple_ingredient)
-                end
-
-                local function subtract_product(product_type, limiter)
-                    for _, product in ipairs(Line.get_in_order(line, product_type)) do
-                        local simple_product = {type=product.proto.type, name=product.proto.name, amount=product.amount}
-                        local ingredient_amount = aggregate.Ingredient[simple_product.type][simple_product.name] or 0
-                        local used_ingredient_amount = limiter(ingredient_amount, simple_product.amount)
-                        structures.aggregate.subtract(aggregate, "Ingredient", simple_product, used_ingredient_amount)
-                    end
-                end
-
-                subtract_product("Product", math.min)
-                subtract_product("Byproduct", math.max)
-            end
-        end
-    end
-
-    local function update_ingredient_satisfaction(floor, aggregate)
-        -- Then, go through all ingredients again, determining their satisfied_amounts
-        for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
-            if line.subfloor ~= nil then 
-                local aggregate_copy = data_util.deepcopy(aggregate)
-                update_ingredient_satisfaction(line.subfloor, aggregate)
-
-                for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                    local type, name = ingredient.proto.type, ingredient.proto.name
-                    local removed_amount = (aggregate_copy.Ingredient[type][name] or 0) - (aggregate.Ingredient[type][name] or 0)
-                    ingredient.satisfied_amount = ingredient.amount - removed_amount
-                end
-
-            else
-                for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                    local aggregate_ingredient_amount = aggregate.Ingredient[ingredient.proto.type][ingredient.proto.name] or 0
-                    local removed_amount = math.min(ingredient.amount, aggregate_ingredient_amount)
-
-                    ingredient.satisfied_amount = ingredient.amount - removed_amount
-                    structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type, name=ingredient.proto.name}, removed_amount)
-                end
-            end
-        end
-    end
+    
+    calculation.util.update_items(subfactory, result, "Byproduct")
+    calculation.util.update_items(subfactory, result, "Ingredient")
 
     -- Determine satisfaction-amounts for all line ingredients
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
     local aggregate = structures.aggregate.init()  -- gets modified by the two functions
-    determine_net_ingredients(top_floor, aggregate)
-    update_ingredient_satisfaction(top_floor, aggregate)
+    calculation.util.determine_net_ingredients(top_floor, aggregate)
+    calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
 end
 
 -- Updates the given line of the given floor of the active subfactory
@@ -198,41 +80,141 @@ function calculation.interface.set_line_result(result)
     line.production_ratio = result.production_ratio
     line.uncapped_production_ratio = result.uncapped_production_ratio
 
-    -- Reset the priority_product if there aren't more than one product
+    -- Reset the priority_product if there's <2 products
     if table_size(structures.class.to_array(result.Product)) < 2 then
         Line.set_priority_product(line, nil)
     end
 
-    -- This procedure is a bit more complicated to to retain the users ordering of items
-    local function update_items(class_name)
-        local items = result[class_name]
-
-        for _, item in pairs(Line.get_in_order(line, class_name)) do
-            local item_result_amount = items[item.proto.type][item.proto.name]
-            
-            if item_result_amount == nil then
-                Line.remove(line, item)
-            else
-                item.amount = item_result_amount
-                -- This item_result_amount has been incorporated, so it can be removed
-                items[item.proto.type][item.proto.name] = nil
-            end
-        end
-
-        for _, item_result in pairs(structures.class.to_array(items)) do
-            local item = (class_name == "Fuel") and Fuel.init_by_item(item_result, item_result.amount)
-              or Item.init_by_item(item_result, class_name, item_result.amount)
-            Line.add(line, item)
-        end
-    end
-
-    update_items("Product")
-    update_items("Byproduct")
-    update_items("Ingredient")
-    update_items("Fuel")
+    calculation.util.update_items(line, result, "Product")
+    calculation.util.update_items(line, result, "Byproduct")
+    calculation.util.update_items(line, result, "Ingredient")
+    calculation.util.update_items(line, result, "Fuel")
 end
 
 
+-- **** LOCAL UTIL ****
+-- Generates structured data of the given floor for calculation
+function calculation.util.generate_floor_data(player, subfactory, floor)
+    if floor == nil then return nil end
+
+    local floor_data = {
+        id = floor.id,
+        lines = {}
+    }
+
+    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+        local line_data = {
+            id = line.id,
+            timescale = subfactory.timescale,
+            percentage = line.percentage,
+            machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit},
+            total_effects = Line.get_total_effects(line, player),  -- copy
+            priority_product_proto = line.priority_product_proto,  -- reference
+            production_type = line.recipe.production_type,
+            recipe_proto = line.recipe.proto,  -- reference
+            machine_proto = line.machine.proto,  -- reference
+            fuel_proto = nil,  -- will be a reference
+            subfloor = calculation.util.generate_floor_data(player, subfactory, line.subfloor)
+        }
+
+        if line_data.subfloor == nil then  -- the fuel_proto is only needed when there's no subfloor
+            local fuels = Line.get_in_order(line, "Fuel")
+            if table_size(fuels) == 1 then  -- use the already configured Fuel, if available
+                line_data.fuel_proto = fuels[1].proto
+            else  -- otherwise, use the preferred fuel
+                line_data.fuel_proto = get_preferences(player).preferred_fuel
+            end
+        end
+
+        table.insert(floor_data.lines, line_data)
+    end
+
+    return floor_data
+end
+
+-- Updates the items of the given object (of given class) using the given result
+-- This procedure is a bit more complicated to to retain the users ordering of items
+function calculation.util.update_items(object, result, class_name)
+    local items = result[class_name]
+
+    for _, item in pairs(_G[object.class].get_in_order(object, class_name)) do
+        local item_result_amount = items[item.proto.type][item.proto.name]
+        
+        if item_result_amount == nil then
+            _G[object.class].remove(object, item)
+        else
+            item.amount = item_result_amount
+            -- This item_result_amount has been incorporated, so it can be removed
+            items[item.proto.type][item.proto.name] = nil
+        end
+    end
+
+    for _, item_result in pairs(structures.class.to_array(items)) do
+        if object.class == "Subfactory" then
+            top_level_item = Item.init_by_item(item_result, class_name, item_result.amount, 0)
+            _G[object.class].add(object, top_level_item)
+
+        elseif object.class == "Line" then
+            item = (class_name == "Fuel") and Fuel.init_by_item(item_result, item_result.amount)
+              or Item.init_by_item(item_result, class_name, item_result.amount)
+            _G[object.class].add(object, item)
+        end
+    end
+end
+
+-- Determines the net ingredients of this floor
+function calculation.util.determine_net_ingredients(floor, aggregate)
+    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+        if line.subfloor ~= nil then 
+            calculation.util.determine_net_ingredients(line.subfloor, aggregate)
+        else
+            for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+                local simple_ingredient = {type=ingredient.proto.type, name=ingredient.proto.name, amount=ingredient.amount}
+                structures.aggregate.add(aggregate, "Ingredient", simple_ingredient)
+            end
+
+            local function subtract_product(product_type, limiter)
+                for _, product in ipairs(Line.get_in_order(line, product_type)) do
+                    local simple_product = {type=product.proto.type, name=product.proto.name, amount=product.amount}
+                    local ingredient_amount = aggregate.Ingredient[simple_product.type][simple_product.name] or 0
+                    local used_ingredient_amount = limiter(ingredient_amount, simple_product.amount)
+                    structures.aggregate.subtract(aggregate, "Ingredient", simple_product, used_ingredient_amount)
+                end
+            end
+
+            subtract_product("Product", math.min)
+            subtract_product("Byproduct", math.max)
+        end
+    end
+end
+
+-- Goes through all ingredients (again), determining their satisfied_amounts
+function calculation.util.update_ingredient_satisfaction(floor, aggregate)
+    for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
+        if line.subfloor ~= nil then 
+            local aggregate_copy = data_util.deepcopy(aggregate)
+            calculation.util.update_ingredient_satisfaction(line.subfloor, aggregate)
+
+            for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+                local type, name = ingredient.proto.type, ingredient.proto.name
+                local removed_amount = (aggregate_copy.Ingredient[type][name] or 0) - (aggregate.Ingredient[type][name] or 0)
+                ingredient.satisfied_amount = ingredient.amount - removed_amount
+            end
+
+        else
+            for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+                local aggregate_ingredient_amount = aggregate.Ingredient[ingredient.proto.type][ingredient.proto.name] or 0
+                local removed_amount = math.min(ingredient.amount, aggregate_ingredient_amount)
+
+                ingredient.satisfied_amount = ingredient.amount - removed_amount
+                structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type, name=ingredient.proto.name}, removed_amount)
+            end
+        end
+    end
+end
+
+
+-- **** FORMULAE ****
 -- Determine the amount of machines needed to produce the given recipe in the given context
 function calculation.util.determine_machine_count(machine_proto, recipe_proto, total_effects, production_ratio, timescale)
     local launch_delay = 0
