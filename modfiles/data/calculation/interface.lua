@@ -81,7 +81,7 @@ function calculation.interface.set_line_result(result)
     line.uncapped_production_ratio = result.uncapped_production_ratio
 
     -- Reset the priority_product if there's <2 products
-    if table_size(structures.class.to_array(result.Product)) < 2 then
+    if structures.class.count(result.Product) < 2 then
         Line.set_priority_product(line, nil)
     end
 
@@ -95,12 +95,14 @@ end
 -- **** LOCAL UTIL ****
 -- Generates structured data of the given floor for calculation
 function calculation.util.generate_floor_data(player, subfactory, floor)
-    if floor == nil then return nil end
-
     local floor_data = {
         id = floor.id,
         lines = {}
     }
+
+    local preferred_fuel = get_preferences(player).preferred_fuel
+    local mining_productivity = (subfactory.mining_productivity ~= nil) and
+      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = {
@@ -108,23 +110,38 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
             timescale = subfactory.timescale,
             percentage = line.percentage,
             machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit},
-            total_effects = Line.get_total_effects(line, player),  -- copy
+            total_effects = nil,  -- reference or copy, depending on case
             priority_product_proto = line.priority_product_proto,  -- reference
             production_type = line.recipe.production_type,
             recipe_proto = line.recipe.proto,  -- reference
             machine_proto = line.machine.proto,  -- reference
             fuel_proto = nil,  -- will be a reference
-            subfloor = calculation.util.generate_floor_data(player, subfactory, line.subfloor)
+            subfloor = nil  -- will be a floor_data object
         }
 
+        -- total_effects
+        if line.machine.proto.mining then
+            -- If there is mining prod, a copy of the table is required
+            local effects = data_util.shallowcopy(line.total_effects)
+            effects.productivity = effects.productivity + mining_productivity
+            line_data.total_effects = effects
+        else
+            -- If there's no mining prod, a reference will suffice
+            line_data.total_effects = line.total_effects
+        end
+
+        -- Fuel proto
         if line_data.subfloor == nil then  -- the fuel_proto is only needed when there's no subfloor
-            local fuels = Line.get_in_order(line, "Fuel")
-            if table_size(fuels) == 1 then  -- use the already configured Fuel, if available
-                line_data.fuel_proto = fuels[1].proto
+            if line.Fuel.count == 1 then  -- use the already configured Fuel, if available
+                line_data.fuel_proto = Line.get_by_gui_position(line, "Fuel", 1).proto
             else  -- otherwise, use the preferred fuel
-                line_data.fuel_proto = get_preferences(player).preferred_fuel
+                line_data.fuel_proto = preferred_fuel
             end
         end
+
+        -- Subfloor
+        if line.subfloor ~= nil then line_data.subfloor = 
+          calculation.util.generate_floor_data(player, subfactory, line.subfloor) end
 
         table.insert(floor_data.lines, line_data)
     end
@@ -154,7 +171,7 @@ function calculation.util.update_items(object, result, class_name)
             top_level_item = Item.init_by_item(item_result, class_name, item_result.amount, 0)
             _G[object.class].add(object, top_level_item)
 
-        elseif object.class == "Line" then
+        else  -- object.class == "Line"
             item = (class_name == "Fuel") and Fuel.init_by_item(item_result, item_result.amount)
               or Item.init_by_item(item_result, class_name, item_result.amount)
             _G[object.class].add(object, item)
@@ -192,12 +209,12 @@ end
 function calculation.util.update_ingredient_satisfaction(floor, aggregate)
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
         if line.subfloor ~= nil then 
-            local aggregate_copy = data_util.deepcopy(aggregate)
+            local aggregate_ingredient_copy = util.table.deepcopy(aggregate.Ingredient)
             calculation.util.update_ingredient_satisfaction(line.subfloor, aggregate)
 
             for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
                 local type, name = ingredient.proto.type, ingredient.proto.name
-                local removed_amount = (aggregate_copy.Ingredient[type][name] or 0) - (aggregate.Ingredient[type][name] or 0)
+                local removed_amount = (aggregate_ingredient_copy[type][name] or 0) - (aggregate.Ingredient[type][name] or 0)
                 ingredient.satisfied_amount = ingredient.amount - removed_amount
             end
 

@@ -23,7 +23,7 @@ function model.update_subfactory(subfactory_data)
 end
 
 function model.update_floor(floor_data, aggregate)
-    local desired_products = data_util.deepcopy(aggregate.Product)
+    local desired_products = util.table.deepcopy(aggregate.Product)
 
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
@@ -34,11 +34,11 @@ function model.update_floor(floor_data, aggregate)
                 subfloor_aggregate.Product[product.type][product.name] = aggregate.Product[product.type][product.name]
             end
             
-            local floor_products = data_util.deepcopy(subfloor_aggregate.Product)
+            local floor_products = structures.class.to_array(subfloor_aggregate.Product)
             model.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
             -- Convert the internal product-format into positive products for the line and main aggregate
-            for _, product in pairs(structures.class.to_array(floor_products)) do
+            for _, product in pairs(floor_products) do
                 local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
                 subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
             end
@@ -84,8 +84,7 @@ function model.update_floor(floor_data, aggregate)
 
     -- Convert all outstanding non-desired products to ingredients
     for _, product in pairs(structures.class.to_array(aggregate.Product)) do
-        local desired_product = desired_products[product.type][product.name]
-        if desired_product == nil then
+        if desired_products[product.type][product.name] == nil then
             structures.aggregate.add(aggregate, "Ingredient", product)
             structures.aggregate.subtract(aggregate, "Product", product)
         end
@@ -153,74 +152,71 @@ function model.update_line(line_data, aggregate)
     -- Determine byproducts
     local Byproduct = structures.class.init()
     for _, byproduct in pairs(byproducts) do
-        local byproduct = data_util.deepcopy(byproduct)
-        byproduct.amount = byproduct.amount * production_ratio
+        local byproduct_amount = byproduct.amount * production_ratio
         
-        structures.class.add(Byproduct, byproduct)
-        structures.aggregate.add(aggregate, "Byproduct", byproduct)
+        structures.class.add(Byproduct, byproduct, byproduct_amount)
+        structures.aggregate.add(aggregate, "Byproduct", byproduct, byproduct_amount)
     end
 
     -- Determine products
     local Product = structures.class.init()
     for _, product in pairs(relevant_products) do
-        local product = data_util.deepcopy(product)
-        product.amount = product.amount * production_ratio
+        local product_amount = product.amount * production_ratio
 
         -- Don't include net negative relevant products as products
         if product.net_amount <= 0 then
-            structures.class.add(Byproduct, product)
-            structures.aggregate.add(aggregate, "Byproduct", product)
+            structures.class.add(Byproduct, product, product_amount)
+            structures.aggregate.add(aggregate, "Byproduct", product, product_amount)
 
         else
-            -- TODO: product_demand shouldn't be able to be nil, but apparently is sometimes
             local product_demand = aggregate.Product[product.type][product.name] or 0
-            if product.amount > product_demand then
-                local overflow_amount = product.amount - product_demand
+            if product_amount > product_demand then
+                local overflow_amount = product_amount - product_demand
                 structures.class.add(Byproduct, product, overflow_amount)
                 structures.aggregate.add(aggregate, "Byproduct", product, overflow_amount)
-                product.amount = product_demand  -- desired amount
+                product_amount = product_demand  -- desired amount
             end
             
-            structures.class.add(Product, product)
-            structures.aggregate.subtract(aggregate, "Product", product)
+            structures.class.add(Product, product, product_amount)
+            structures.aggregate.subtract(aggregate, "Product", product, product_amount)
         end
     end
 
     -- Determine ingredients
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(line_data.recipe_proto.ingredients) do
-        local ingredient = data_util.deepcopy(ingredient)
+        local ingredient_amount = ingredient.amount
         
         -- Incorporate productiviy where applicable, else the ingredient_amount stays the same
         if (ingredient.proddable_amount > 0) and (line_data.total_effects.productivity > 0) then
-            ingredient.amount = calculation.util.determine_prodded_amount(ingredient, line_data.total_effects)
+            ingredient_amount = calculation.util.determine_prodded_amount(ingredient, line_data.total_effects)
         end
 
-        ingredient.amount = ingredient.amount * production_ratio
-        structures.class.add(Ingredient, ingredient)
+        ingredient_amount = ingredient_amount * production_ratio
+        structures.class.add(Ingredient, ingredient, ingredient_amount)
 
         -- Reduce the line-byproducts and -ingredients so only the net amounts remain
         local byproduct_amount = Byproduct[ingredient.type][ingredient.name]
         if byproduct_amount ~= nil then
-            structures.class.subtract(Byproduct, ingredient, ingredient.amount)
+            structures.class.subtract(Byproduct, ingredient, ingredient_amount)
             structures.class.subtract(Ingredient, ingredient, byproduct_amount)
         end
 
         -- Ingredients should be taken out of byproducts as much as possible for the aggregate
         local available_byproduct = aggregate.Byproduct[ingredient.type][ingredient.name]
         if available_byproduct ~= nil then
-            if available_byproduct == ingredient.amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient)
+            if available_byproduct == ingredient_amount then
+                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
 
-            elseif available_byproduct < ingredient.amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient)
-                structures.aggregate.add(aggregate, "Product", ingredient, (ingredient.amount - available_byproduct))
+            elseif available_byproduct < ingredient_amount then
+                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
+                structures.aggregate.add(aggregate, "Product", ingredient, (ingredient_amount - available_byproduct))
 
-            elseif available_byproduct > ingredient.amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient)
+            elseif available_byproduct > ingredient_amount then
+                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
             end
         else
-            structures.aggregate.add(aggregate, "Product", ingredient)
+            structures.aggregate.add(aggregate, "Product", ingredient, ingredient_amount)
         end
     end
 

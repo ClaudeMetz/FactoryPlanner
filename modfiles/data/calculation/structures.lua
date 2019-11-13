@@ -26,8 +26,7 @@ function structures.aggregate.add(aggregate, class_name, item, amount)
 end
 
 function structures.aggregate.subtract(aggregate, class_name, item, amount)
-    local negative_amount = (amount ~= nil) and -amount or -item.amount
-    structures.class.add(aggregate[class_name], item, negative_amount)
+    structures.class.add(aggregate[class_name], item, -(amount or item.amount))
 end
 
 -- Adds all the elements of the secondary class to the main one (modifies the aggregate!)
@@ -57,18 +56,12 @@ function structures.class.add(class, item, amount)
     local amount = amount or (item.required_amount or item.amount)
     
     local type_table = class[type]
-    if type_table[name] == nil then
-        type_table[name] = amount
-    else
-        type_table[name] = type_table[name] + amount
-    end
-    
+    type_table[name] = (type_table[name] or 0) + amount
     if type_table[name] == 0 then type_table[name] = nil end
 end
 
 function structures.class.subtract(class, item, amount)
-    local negative_amount = (amount ~= nil) and -amount or -item.amount
-    structures.class.add(class, item, negative_amount)
+    structures.class.add(class, item, -(amount or item.amount))
 end
 
 -- Returns an array that contains every item in the given data structure
@@ -76,13 +69,21 @@ function structures.class.to_array(class)
     local array = {}
     for type, items_of_type in pairs(class) do
         for name, amount in pairs(items_of_type) do
-            local item = {
+            table.insert(array, {
                 name = name,
                 type = type,
                 amount = amount
-            }
-            table.insert(array, item)
+            })
         end
     end
     return array
+end
+
+-- Counts the elements contained in the given class
+function structures.class.count(class)
+    local n = 0
+    for _, items_of_type in pairs(class) do
+        n = n + table_size(items_of_type)
+    end
+    return n
 end

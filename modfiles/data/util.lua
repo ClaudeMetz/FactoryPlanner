@@ -261,6 +261,15 @@ function data_util.log(table)
     log(create_table_log(table, 0))
 end
 
+-- Shallowly and naively copys the base level of the given table
+function data_util.shallowcopy(table)
+    local copy = {}
+    for key, value in pairs(table) do
+        copy[key] = value
+    end
+    return copy
+end
+
 -- Deepcopies given table, excluding certain attributes (cribbed from core.lualib)
 function data_util.deepcopy(object)
     local excluded_attributes = {proto=true}
