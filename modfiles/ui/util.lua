@@ -345,7 +345,7 @@ function ui_util.format_SI_value(value, unit, precision)
     end
 
     value = value / (1000 ^ scale_counter)
-    return {"", ui_util.format_number(value, precision) .. " " .. scale[scale_counter + 1], unit}
+    return {"", ui_util.format_number(value, precision) .. " " .. scale[scale_counter + 1], units[unit]}
 end
 
 
