@@ -166,6 +166,7 @@ function reload_settings(player)
     
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
+    settings_table.performance_mode = settings["fp_performance_mode"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.default_timescale = settings["fp_default_timescale"].value

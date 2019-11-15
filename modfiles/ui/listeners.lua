@@ -15,6 +15,10 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         if event.setting == "fp_display_gui_button" then 
             toggle_button_interface(player)
 
+        -- Redoes the calculations for ingredient satisfaction
+        elseif event.setting == "fp_performance_mode" then
+            calculation.update(player, get_context(player).subfactory)
+
         -- Changes the width of the main dialog
         elseif event.setting == "fp_subfactory_items_per_row" or
           event.setting == "fp_floor_recipes_at_once" then
@@ -139,7 +143,8 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         handle_comment_change(player, event.element)
         
     -- Actives the instant filter based on user serachfield text entry
-    elseif event.element.name == "fp_textfield_picker_search_bar" then
+    elseif event.element.name == "fp_textfield_picker_search_bar" and
+      not get_settings(player).performance_mode then
         picker.search(player)
 
     -- Persists mining productivity changes
@@ -164,6 +169,11 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
     -- Re-run calculations when a line percentage change is confirmed
     elseif string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
         handle_percentage_confirmation(player, event.element)
+
+    -- Runs the picker search
+    elseif event.element.name == "fp_textfield_picker_search_bar" then
+        picker.search(player)
+        event.element.focus()
 
     -- Submit any modal dialog, if it is open
     elseif get_ui_state(player).modal_dialog_type ~= nil then
