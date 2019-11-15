@@ -18,12 +18,21 @@ data:extend({
         localised_description = {"mod-setting-description.fp_pause_on_interface"}
     },
     {
+        type = "bool-setting",
+        name = "fp_performance_mode",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "c",
+        localised_name = {"mod-setting-name.fp_performance_mode"},
+        localised_description = {"mod-setting-description.fp_performance_mode"}
+    },
+    {
         type = "int-setting",
         name = "fp_subfactory_items_per_row",
         setting_type = "runtime-per-user",
         default_value = 8,
         allowed_values = {6, 7, 8, 9, 10, 11, 12},
-        order = "c",
+        order = "d",
         localised_name = {"mod-setting-name.fp_subfactory_items_per_row"},
         localised_description = {"mod-setting-description.fp_subfactory_items_per_row"}
     },
@@ -33,7 +42,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 14,
         allowed_values = {8, 10, 12, 14, 16, 18, 20},
-        order = "d",
+        order = "e",
         localised_name = {"mod-setting-name.fp_floor_recipes_at_once"},
         localised_description = {"mod-setting-description.fp_floor_recipes_at_once"}
     },
@@ -43,7 +52,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "e",
+        order = "f",
         localised_name = {"mod-setting-name.fp_default_timescale"},
         localised_description = {"mod-setting-description.fp_default_timescale"}
     },
@@ -53,7 +62,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
-        order = "f",
+        order = "g",
         localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
         localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
     },
@@ -62,7 +71,7 @@ data:extend({
         name = "fp_line_comments",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "g",
+        order = "h",
         localised_name = {"mod-setting-name.fp_line_comments"},
         localised_description = {"mod-setting-description.fp_line_comments"}
     },
@@ -71,7 +80,7 @@ data:extend({
         name = "fp_ingredient_satisfaction",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "h",
+        order = "i",
         localised_name = {"mod-setting-name.fp_ingredient_satisfaction"},
         localised_description = {"mod-setting-description.fp_ingredient_satisfaction"}
     },
@@ -80,7 +89,7 @@ data:extend({
         name = "fp_round_button_numbers",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "i",
+        order = "j",
         localised_name = {"mod-setting-name.fp_round_button_numbers"},
         localised_description = {"mod-setting-description.fp_round_button_numbers"}
     },
@@ -91,7 +100,7 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "j",
+        order = "k",
         localised_name = {"mod-setting-name.fp_indicate_rounding"},
         localised_description = {"mod-setting-description.fp_indicate_rounding"}
     }

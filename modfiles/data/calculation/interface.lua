@@ -46,7 +46,8 @@ end
 
 -- Updates the active subfactories top-level data with the given result
 function calculation.interface.set_subfactory_result(result)
-    local subfactory = global.players[result.player_index].active_subfactory
+    local player_table = global.players[result.player_index]
+    local subfactory = player_table.active_subfactory
 
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
@@ -62,10 +63,12 @@ function calculation.interface.set_subfactory_result(result)
     calculation.util.update_items(subfactory, result, "Ingredient")
 
     -- Determine satisfaction-amounts for all line ingredients
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    local aggregate = structures.aggregate.init()  -- gets modified by the two functions
-    calculation.util.determine_net_ingredients(top_floor, aggregate)
-    calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
+    if not player_table.settings.performance_mode then
+        local top_floor = Subfactory.get(subfactory, "Floor", 1)
+        local aggregate = structures.aggregate.init()  -- gets modified by the two functions
+        calculation.util.determine_net_ingredients(top_floor, aggregate)
+        calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
+    end
 end
 
 -- Updates the given line of the given floor of the active subfactory

@@ -308,6 +308,7 @@ end
 
 -- Creates the flow containing all line items of the given type
 function create_item_button_flow(player_table, gui_table, line, group, classes, styles)
+    local settings = player_table.settings
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
 
     for index, class in ipairs(classes) do
@@ -324,7 +325,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
               line.priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
 
-            elseif class == "Ingredient" and player_table.settings.ingredient_satisfaction then
+            elseif class == "Ingredient" and not settings.performance_mode and settings.ingredient_satisfaction then
                 local satisfaction_percentage = tonumber(string.format("%.3f", (item.satisfied_amount / item.amount) * 100))
                 if satisfaction_percentage == 0 then
                     actual_style = "fp_button_icon_medium_red"

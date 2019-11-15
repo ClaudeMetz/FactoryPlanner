@@ -38,5 +38,6 @@ function create_notes_dialog_structure(flow_modal_dialog, title)
       text=get_context(player).subfactory.notes}
     text_box_notes.style.width = 600
     text_box_notes.style.height = 400
+    text_box_notes.word_wrap = true
     text_box_notes.focus()
 end
