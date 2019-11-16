@@ -206,7 +206,7 @@ function refresh_view_state(player, subfactory)
         },
         [3] = {
             name = "items_per_second_per_machine",
-            caption = {"", {"button-text.items"}, "/s/[img=" .. crafting_machine_sprite_path .. "]"},
+            caption = {"", {"button-text.items"}, "/", {"label.unit_second"}, "/[img=" .. crafting_machine_sprite_path .. "]"},
             enabled = true,
             selected = false
         },

@@ -233,13 +233,13 @@ function refresh_info_pane(player)
     label_timescale_title.style.font = "fp-font-14p"
     table_timescale.style.bottom_margin = 4
 
-    local timescales = {["1s"] = 1, ["1m"] = 60, ["1h"] = 3600}
+    local timescales = {1, 60, 3600}
     local table_timescales = table_timescale.add{type="table", name="table_timescales", column_count=table_size(timescales)}
     table_timescales.style.horizontal_spacing = 0
     table_timescales.style.left_margin = 2
-    for caption, scale in pairs(timescales) do  -- Factorio-Lua preserving ordering is important here
-        local button = table_timescales.add{type="button", name=("fp_button_timescale_" .. scale), caption=caption,
-          mouse_button_filter={"left"}}
+    for _, scale in pairs(timescales) do
+        local button = table_timescales.add{type="button", name=("fp_button_timescale_" .. scale),
+          caption=ui_util.format_timescale(scale), mouse_button_filter={"left"}}
         button.enabled = (not (subfactory.timescale == scale))
         button.style = (subfactory.timescale == scale) and "fp_button_timescale_selected" or "fp_button_timescale"
     end
@@ -288,8 +288,8 @@ function refresh_info_pane(player)
       caption={"", {"label.pollution"}, ":"}}
     label_pollution_title.style.font = "fp-font-14p"
     local label_pollution_value = table_pollution.add{type="label", name="label_pollution_value", 
-      caption={"", ui_util.format_SI_value(pollution, "P", 3), "/s"},
-      tooltip={"", ui_util.format_SI_value(pollution, "P", 5), "/s"}}
+      caption={"", ui_util.format_SI_value(pollution, "P/s", 3)},
+      tooltip={"", ui_util.format_SI_value(pollution, "P/s", 5)}}
     label_pollution_value.style.font = "default-bold"
 
 

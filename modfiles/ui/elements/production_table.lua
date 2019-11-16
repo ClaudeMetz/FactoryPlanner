@@ -212,7 +212,7 @@ function create_line_table_row(player, line)
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
       ui_util.format_SI_value(line.energy_consumption, "W", 5), "\n", {"label.pollution"}, ": ",
-      ui_util.format_SI_value(line.pollution, "P", 3), "/s"}}
+      ui_util.format_SI_value(line.pollution, "P/s", 3)}}
 
     -- Item buttons
     create_item_button_flow(player_table, table_production, line, "products", {"Product"}, {"blank"})
