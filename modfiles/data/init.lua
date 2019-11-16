@@ -144,7 +144,7 @@ function update_player_table(player, table)
         player_table.ui_state = {}
         reload_data()
 
-        ui_util.message.enqueue(player, {"label.hint_tutorial"}, "hint", 5)
+        ui_util.message.enqueue(player, {"fp.hint_tutorial"}, "hint", 5)
 
     else  -- existing player, only need to update
         reload_data()

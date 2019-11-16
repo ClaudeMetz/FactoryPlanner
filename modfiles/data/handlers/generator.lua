@@ -204,11 +204,11 @@ function add_recipe_tooltip(recipe)
         end
     end
 
-    if recipe.energy ~= nil then multi_insert{"\n  ", {"tooltip.crafting_time"}, (":  " .. recipe.energy)} end
+    if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.crafting_time"}, (":  " .. recipe.energy)} end
     for _, item_type in ipairs({"ingredients", "products"}) do
-        multi_insert{"\n  ", {"tooltip." .. item_type}, ":"}
+        multi_insert{"\n  ", {"fp." .. item_type}, ":"}
         if #recipe[item_type] == 0 then
-            multi_insert{"\n    ", {"tooltip.none"}}
+            multi_insert{"\n    ", {"fp.none"}}
         else
             for _, item in ipairs(recipe[item_type]) do
                 multi_insert{("\n    " .. "[" .. item.type .. "=" .. item.name .. "] " .. item.amount .. "x "),

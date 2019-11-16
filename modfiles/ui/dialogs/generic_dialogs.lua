@@ -6,7 +6,7 @@
 function open_chooser_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
     local modal_data = get_ui_state(player).modal_data
-    flow_modal_dialog.parent.caption = {"", {"label.choose"}, " ", modal_data.title}
+    flow_modal_dialog.parent.caption = {"", {"fp.choose"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_chooser_text", caption=modal_data.text}
 
     local table_chooser = flow_modal_dialog.add{type="table", name="table_chooser_elements", column_count=8}
@@ -38,7 +38,7 @@ function open_options_dialog(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
     local modal_data = get_ui_state(player).modal_data
 
-    flow_modal_dialog.parent.caption = {"", {"label.set"}, " ", modal_data.title}
+    flow_modal_dialog.parent.caption = {"", {"fp.set"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_options_text", caption=modal_data.text}
     
     local flow_options = flow_modal_dialog.add{type="flow", name="flow_options", direction="vertical"}

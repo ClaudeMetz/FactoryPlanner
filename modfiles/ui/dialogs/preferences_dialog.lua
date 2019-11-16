@@ -1,17 +1,17 @@
 -- Handles populating the preferences dialog
 function open_preferences_dialog(flow_modal_dialog)
-    flow_modal_dialog.parent.caption = {"label.preferences"}
+    flow_modal_dialog.parent.caption = {"fp.preferences"}
     flow_modal_dialog.style.padding = 6
 
     -- Info
     local label_preferences_info = flow_modal_dialog.add{type="label", name="label_preferences_info", 
-      caption={"label.preferences_info"}}
+      caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
     label_preferences_info.style.bottom_margin = 4
 
     -- General preferences
-    flow_modal_dialog.add{type="label", name="label_general_info", caption={"", {"label.preferences_title_general"}, ":"},
-      style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_general"}}
+    flow_modal_dialog.add{type="label", name="label_general_info", caption={"", {"fp.preferences_title_general"}, ":"},
+      style="fp_preferences_title_label", tooltip={"fp.preferences_title_general"}}
     local table_general_prefs = flow_modal_dialog.add{type="table", name="table_general_preferences", column_count=1}
     table_general_prefs.style.top_margin = 2
     table_general_prefs.style.bottom_margin = 8
@@ -20,7 +20,7 @@ function open_preferences_dialog(flow_modal_dialog)
     -- Creates the checkbox for a general preference 
     local function add_general_preference(name)
         table_general_prefs.add{type="checkbox", name=("fp_checkbox_preferences_" .. name), state=false,
-          caption={"", " ", {"checkbox.preferences_" .. name}, " [img=info]"}, tooltip={"tooltip.preferences_" .. name}}
+          caption={"", " ", {"fp.preferences_" .. name}, " [img=info]"}, tooltip={"fp.preferences_" .. name .. "_tt"}}
     end
 
     local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes"}
@@ -29,8 +29,8 @@ function open_preferences_dialog(flow_modal_dialog)
 
     -- Prototype preferences
     local function add_prototype_preference(name)
-        flow_modal_dialog.add{type="label", name=("label_".. name .. "_info"), caption={"", {"label.preferences_title_" .. name}, ":"},
-          style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_" .. name}}
+        flow_modal_dialog.add{type="label", name=("label_".. name .. "_info"), caption={"", {"fp.preferences_title_" .. name}, ":"},
+          style="fp_preferences_title_label", tooltip={"fp.preferences_title_" .. name .. "_tt"}}
 
         flow_modal_dialog.add{type="table", name=("table_all_" .. name), column_count=12, style="fp_preferences_table"}
     end
@@ -41,8 +41,8 @@ function open_preferences_dialog(flow_modal_dialog)
     for _, preference_name in ipairs(proto_preference_names) do add_prototype_preference(preference_name) end
 
     -- Machine preferences (needs custom construction as it is a 2d-prototype)
-    flow_modal_dialog.add{type="label", name="label_machines_info", caption={"", {"label.preferences_title_machines"}, ":"},
-      style="fp_preferences_title_label", tooltip={"tooltip.preferences_title_machines"}}
+    flow_modal_dialog.add{type="label", name="label_machines_info", caption={"", {"fp.preferences_title_machines"}, ":"},
+      style="fp_preferences_title_label", tooltip={"fp.preferences_title_machines_tt"}}
 
     local table_all_machines = flow_modal_dialog.add{type="table", name="table_all_machines", column_count=2}
     table_all_machines.style.top_margin = 4
@@ -80,7 +80,7 @@ function refresh_preferences_dialog(player)
             local tooltip = proto.localised_name
             if get_preferences(player)["preferred_" .. name] == proto then
                 button.style = "fp_button_icon_medium_green"
-                tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
+                tooltip = {"", tooltip, " (", {"fp.selected"}, ")"}
             else 
                 button.style = "fp_button_icon_medium_hidden"
             end
@@ -106,7 +106,7 @@ function refresh_preferences_dialog(player)
                 local tooltip = machine.localised_name
                 if data_util.machine.get_default(player, category) == machine then
                     button_machine.style = "fp_button_icon_medium_green"
-                    tooltip = {"", tooltip, " (", {"tooltip.selected"}, ")"}
+                    tooltip = {"", tooltip, " (", {"fp.selected"}, ")"}
                 else 
                     button_machine.style = "fp_button_icon_medium_hidden"
                 end

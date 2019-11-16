@@ -12,9 +12,9 @@ function open_subfactory_dialog(flow_modal_dialog)
             elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
         end
         
-        create_subfactory_dialog_structure(flow_modal_dialog, {"label.edit_subfactory"}, subfactory.name, icon)
+        create_subfactory_dialog_structure(flow_modal_dialog, {"fp.edit_subfactory"}, subfactory.name, icon)
     else
-        create_subfactory_dialog_structure(flow_modal_dialog, {"label.new_subfactory"}, nil, nil)
+        create_subfactory_dialog_structure(flow_modal_dialog, {"fp.new_subfactory"}, nil, nil)
     end
 end
 
@@ -52,13 +52,13 @@ function get_subfactory_condition_instructions()
         },
         conditions = {
             [1] = {
-                label = {"label.subfactory_instruction_1"},
+                label = {"fp.subfactory_instruction_1"},
                 check = (function(data) return (data.name == "" and data.icon == nil) end),
                 refocus = (function(flow) flow["table_subfactory"]["fp_textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             },
             [2] = {
-                label = {"", {"label.subfactory_instruction_2"}, " !#&'()+-./?"},
+                label = {"", {"fp.subfactory_instruction_2"}, " !#&'()+-./?"},
                 check = (function(data) return (data.name ~= "" and data.name:match("[^%w !#&'%(%)%+%-%./%?]")) end),
                 refocus = (function(flow) flow["table_subfactory"]["fp_textfield_subfactory_name"].focus() end),
                 show_on_edit = true
@@ -75,12 +75,12 @@ function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon
     table_subfactory.style.bottom_padding = 8
 
     -- Name
-    table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"label.name"}, "    "}}
+    table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"fp.name"}, "    "}}
     table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
     table_subfactory["fp_textfield_subfactory_name"].focus()
 
     -- Icon
-    table_subfactory.add{type="label", name="label_subfactory_icon", caption={"label.icon"}}
+    table_subfactory.add{type="label", name="label_subfactory_icon", caption={"fp.icon"}}
     table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon",
       elem_type="signal", signal=icon}
 end

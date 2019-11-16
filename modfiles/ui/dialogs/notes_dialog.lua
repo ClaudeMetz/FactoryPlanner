@@ -1,6 +1,6 @@
 -- Handles populating the modal dialog to view or edit notes
 function open_notes_dialog(flow_modal_dialog)
-    create_notes_dialog_structure(flow_modal_dialog, {"label.notes"})
+    create_notes_dialog_structure(flow_modal_dialog, {"fp.notes"})
 end
 
 -- Handles closing of the notes dialog
@@ -19,7 +19,7 @@ function get_notes_condition_instructions()
         },
         conditions = {
             [1] = {
-                label = {"label.notes_instruction_1"},
+                label = {"fp.notes_instruction_1"},
                 check = (function(data) return (#data.notes > 50000) end),
                 refocus = (function(flow) flow["text-box_notes"].focus() end),
                 show_on_edit = true

@@ -5,7 +5,7 @@ function open_item_picker_dialog(flow_modal_dialog)
     local product = ui_state.selected_object
 
     local frame = flow_modal_dialog.parent
-    frame.caption = (product == nil) and {"label.add_product"} or {"label.edit_product"}
+    frame.caption = (product == nil) and {"fp.add_product"} or {"fp.edit_product"}
     flow_modal_dialog.style.bottom_margin = 8
 
     -- Remember item picker location, if available, center the dialog otherwise
@@ -62,7 +62,7 @@ function get_item_picker_condition_instructions()
         },
         conditions = {
             [1] = {
-                label = {"label.product_instruction_1"},
+                label = {"fp.product_instruction_1"},
                 check = (function(data) return (data.item_sprite == "" or data.required_amount == ""
                     or tonumber(data.required_amount) == 0) end),
                 refocus = (function(flow, data)
@@ -107,14 +107,14 @@ function refresh_product_bar(flow_modal_dialog, product)
         flow.clear()
     end
 
-    flow.add{type="label", name="label_product", caption={"label.product"}}
+    flow.add{type="label", name="label_product", caption={"fp.product"}}
     local button = flow.add{type="sprite-button", name="sprite-button_product", sprite=sprite, tooltip=tooltip,
       style="slot_button"}
     button.style.width = 28
     button.style.height = 28
     button.style.right_margin = 14
 
-    flow.add{type="label", name="label_product_amount", caption={"label.amount"}}
+    flow.add{type="label", name="label_product_amount", caption={"fp.amount"}}
     local textfield = flow.add{type="textfield", name="textfield_product_amount", text=required_amount}
     textfield.style.width = 80
     ui_util.setup_numeric_textfield(textfield, true, false)

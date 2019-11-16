@@ -25,13 +25,13 @@ end
 
 -- Constructs the error bar
 function create_error_bar(flow, subfactory_id)
-    local label_1 = flow.add{type="label", name="label_error_bar_1", caption={"", "   ", {"label.error_bar_1"}}}
+    local label_1 = flow.add{type="label", name="label_error_bar_1", caption={"", "   ", {"fp.error_bar_1"}}}
     label_1.style.font = "fp-font-16p"
     local table = flow.add{type="table", name="table_error_bar", column_count=2}
-    local label_2 = table.add{type="label", name="label_error_bar_2", caption={"", "   ", {"label.error_bar_2"}, " "}}
+    local label_2 = table.add{type="label", name="label_error_bar_2", caption={"", "   ", {"fp.error_bar_2"}, " "}}
     label_2.style.font = "fp-font-16p"
     local button = table.add{type="button", name="fp_button_error_bar_repair",
-      caption={"button-text.error_bar_delete"}, mouse_button_filter={"left"}}
+      caption={"fp.error_bar_delete"}, mouse_button_filter={"left"}}
     button.style.font = "fp-font-16p"    
 end
 
