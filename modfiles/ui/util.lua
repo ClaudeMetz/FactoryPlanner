@@ -148,7 +148,7 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
     elseif view.name == "items_per_second_per_machine" and item.proto.type ~= "fluid" then
         -- Only show "/machine" if it's not a top level item, where it'll just show items/s
         local s_machine = (machine_count ~= nil) and {"", "/", {"tooltip.machine"}} or ""
-        caption = {"", determine_type_text(), "/s", s_machine}
+        caption = {"", determine_type_text(), "/", {"label.unit_second"}, s_machine}
 
     end
 
@@ -271,7 +271,7 @@ end
 
 -- Returns a tooltip containing the attributes of the given belt prototype
 function ui_util.generate_belt_attributes_tooltip(belt)
-    return {"", {"tooltip.throughput"}, ": ", belt.throughput, " ", {"tooltip.item"}, "s/s"}
+    return {"", {"tooltip.throughput"}, ": ", belt.throughput, " ", {"tooltip.items"}, "/", {"label.unit_second"}}
 end
 
 -- Returns a tooltip containing the attributes of the given machine prototype
@@ -313,23 +313,23 @@ end
 function ui_util.format_timescale(timescale, raw, whole_word)
     local ts = nil
     if timescale == 1 then
-        ts = whole_word and {"label.second"} or "s"
+        ts = whole_word and {"label.second"} or {"label.unit_second"}
     elseif timescale == 60 then
-        ts = whole_word and {"label.minute"} or "m"
+        ts = whole_word and {"label.minute"} or {"label.unit_minute"}
     elseif timescale == 3600 then
-        ts = whole_word and {"label.hour"} or "h"
+        ts = whole_word and {"label.hour"} or {"label.unit_hour"}
     end
     if raw then return ts
-    else return ("1" .. ts) end
+    else return {"", "1", ts} end
 end
 
 -- Returns string representing the given power 
 function ui_util.format_SI_value(value, unit, precision)
     local scale = {"", "k", "M", "G", "T", "P", "E", "Z", "Y"}
     local units = {
-        W = {"label.unit_watt"},
-        J = {"label.unit_joule"},
-        P = {"label.unit_pollution"}
+        ["W"] = {"label.unit_watt"},
+        ["J"] = {"label.unit_joule"},
+        ["P/s"] = {"", {"label.unit_pollution"}, "/", {"label.unit_second"}}
     }
 
     value = value or 0

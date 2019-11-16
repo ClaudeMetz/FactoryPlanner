@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Improved performance of the calculation model
   Bugfixes:
     - Fixed SI-unit localisations not actually being shown
+    - Made time-shorthands (s, m, h) properly localisable
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.64
