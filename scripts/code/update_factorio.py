@@ -2,6 +2,7 @@
 # It will also carry over settings, mods and saves, update the log- and run-files, and re-symlink the mod folder
 # This needs to run in the directory that contains the old version of factorio, the new zipped one and the mod project folder
 # Takes the modname from the first command line argument (although project structure needs to be as expected)
+# Not compatible with macOS, as it's not needed there
 
 import itertools
 import json
