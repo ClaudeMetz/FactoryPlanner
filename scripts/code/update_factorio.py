@@ -22,6 +22,8 @@ music-volume=0.000000
 wind-volume=0.000000
 [interface]
 show-tips-and-tricks=false
+show-tutorial-notifications=false
+show-mod-owners-in-tooltips=false
 [graphics]
 cache-sprite-atlas=true
 compress-sprite-atlas-cache=true
