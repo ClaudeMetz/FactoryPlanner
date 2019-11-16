@@ -5,9 +5,9 @@
 import re
 from pathlib import Path
 
-def update_changelog():
-    cwd = Path.cwd()
+cwd = Path.cwd()
 
+def update_changelog():
     # Update changelog file for further development
     changelog_path = cwd / "changelog.txt"
     new_changelog_entry = ("-----------------------------------------------------------------------------------------------"
