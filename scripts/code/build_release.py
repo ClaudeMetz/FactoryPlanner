@@ -25,7 +25,7 @@ def build_release():
     os = platform.system()
     cwd = Path.cwd()
     repo = git.Repo(cwd / MODNAME)
-    modfiles_path = (cwd / MODNAME / "modfiles")
+    modfiles_path = cwd / MODNAME / "modfiles"
     
     info_json_path = modfiles_path / "info.json"
     with info_json_path.open("r") as file:
@@ -42,7 +42,7 @@ def build_release():
 
     # Update factorio folder mod symlink
     if os == "Darwin":
-        mods_path = (cwd / "userdata" / "mods")
+        mods_path = cwd / "userdata" / "mods"
         old_mod_symlink = list(itertools.islice(mods_path.glob(MODNAME + "_*"), 1))[0]
         old_mod_symlink.unlink()
         new_mod_symlink = Path(mods_path, MODNAME + "_" + new_mod_version)
@@ -60,7 +60,7 @@ def build_release():
     init_file_path = modfiles_path / "data" / "init.lua"
     with tmp_path.open("w") as new_file, init_file_path.open("r") as old_file:
         for line in old_file:
-            line = re.sub(r"devmode = true", "--devmode = true", line)
+            line = re.sub(r"^devmode = true", "--devmode = true", line)
             new_file.write(line)
     init_file_path.unlink()
     tmp_path.rename(init_file_path)
