@@ -9,9 +9,9 @@ function open_module_dialog(flow_modal_dialog)
     local module = ui_state.selected_object
     
     if module == nil then  -- Meaning this is adding a module
-        create_module_beacon_dialog_structure(flow_modal_dialog, {"label.add_module"}, "module", line, nil, nil)
+        create_module_beacon_dialog_structure(flow_modal_dialog, {"fp.add_module"}, "module", line, nil, nil)
     else  -- meaning this is an edit
-        create_module_beacon_dialog_structure(flow_modal_dialog, {"label.edit_module"}, "module", line, module, nil)
+        create_module_beacon_dialog_structure(flow_modal_dialog, {"fp.edit_module"}, "module", line, module, nil)
     end
 end
 
@@ -49,7 +49,7 @@ function get_module_condition_instructions(modal_data)
         },
         conditions = {
             [1] = {
-                label = {"label.module_instruction_1"},
+                label = {"fp.module_instruction_1"},
                 check = (function(data) return (data.module_sprite == "" or data.module_amount == "") end),
                 refocus = (function(flow, data)
                     if data.module_sprite ~= "" then flow["flow_module_bar"]["textfield_module_amount"].focus() end
@@ -77,9 +77,9 @@ function open_beacon_dialog(flow_modal_dialog)
     local beacon = ui_state.selected_object
     
     if beacon == nil then  -- Meaning this is adding a beacon
-        create_module_beacon_dialog_structure(flow_modal_dialog, {"label.add_beacon"}, "beacon", line, nil, nil)
+        create_module_beacon_dialog_structure(flow_modal_dialog, {"fp.add_beacon"}, "beacon", line, nil, nil)
     else  -- meaning this is an edit
-        create_module_beacon_dialog_structure(flow_modal_dialog, {"label.edit_beacon"}, "beacon", line, nil, beacon)
+        create_module_beacon_dialog_structure(flow_modal_dialog, {"fp.edit_beacon"}, "beacon", line, nil, beacon)
     end
 end
 
@@ -116,7 +116,7 @@ function get_beacon_condition_instructions(modal_data)
         },
         conditions = {
             [1] = {
-                label = {"label.beacon_instruction_1"},
+                label = {"fp.beacon_instruction_1"},
                 -- Beacon sprite can never be not set, as it is prefilled with the default
                 check = (function(data) return (data.beacon_amount  == "" or tonumber(data.beacon_amount) == 0
                     or data.module_sprite == "" or data.module_amount == "") end),
@@ -139,9 +139,9 @@ end
 -- Generates the module condition text for beacons, so it can be updated when the selected beacon changes
 function generate_module_condition_text(modal_data)
     if (modal_data.empty_slots == 1) then
-        return {"", {"label.module_instruction_2_1"}, "1"}
+        return {"", {"fp.module_instruction_2_1"}, "1"}
     else
-        return {"", {"label.module_instruction_2_1"}, {"label.module_instruction_2_2"},
+        return {"", {"fp.module_instruction_2_1"}, {"fp.module_instruction_2_2"},
           modal_data.empty_slots}
     end
 end
@@ -164,7 +164,7 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
     -- Beacon selection
     if type == "beacon" and #global.all_beacons.beacons > 1 then
         flow_modal_dialog.add{type="label", name="label_beacon_selection",
-          caption={"", {"label.select_beacon"}, ":"}, style="fp_preferences_title_label"}
+          caption={"", {"fp.select_beacon"}, ":"}, style="fp_preferences_title_label"}
 
         local flow_beacons = flow_modal_dialog.add{type="flow", name="flow_beacon_selection", direction="horizontal"}
         flow_beacons.style.top_margin = 4
@@ -180,7 +180,7 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
 
             if beacon ~= nil and selected_beacon ~= nil and selected_beacon.name == beacon_proto.name then
                 style = "fp_button_icon_medium_green"
-                tooltip = {"", tooltip, "\n", {"tooltip.current_beacon"}}
+                tooltip = {"", tooltip, "\n", {"fp.current_beacon"}}
             end
             tooltip = {"", tooltip, "\n", ui_util.generate_beacon_attributes_tooltip(beacon_proto)}
 
@@ -192,7 +192,7 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
     
     -- Module selection
     flow_modal_dialog.add{type="label", name="label_module_selection",
-    caption={"", {"label.select_module"}, ":"}, style="fp_preferences_title_label"}
+      caption={"", {"fp.select_module"}, ":"}, style="fp_preferences_title_label"}
     refresh_module_selection(flow_modal_dialog, ui_state, type, line)
 end
 
@@ -225,22 +225,22 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     flow.style.horizontal_spacing = 8
     flow.style.vertical_align = "center"
 
-    flow.add{type="label", name="label_" .. type, caption={"label." .. type}}
+    flow.add{type="label", name="label_" .. type, caption={"fp." .. type}}
     local button = flow.add{type="sprite-button", name="sprite-button_" .. type, sprite=sprite, tooltip=tooltip,
       style="slot_button"}
     button.style.width = 28
     button.style.height = 28
     button.style.right_margin = 12
 
-    flow.add{type="label", name="label_" .. type .. "_amount", caption={"label.amount"}}
+    flow.add{type="label", name="label_" .. type .. "_amount", caption={"fp.amount"}}
     local textfield = flow.add{type="textfield", name="textfield_" .. type .. "_amount", text=amount}
     textfield.style.width = 40
     ui_util.setup_numeric_textfield(textfield, decimal, false)
     
     local focus = true
     if type == "module" then  -- only add max button if this is a module
-        local button_max = flow.add{type="button", name="fp_button_max_modules", caption={"button-text.max"},
-          style="fp_button_mini", tooltip={"tooltip.max_modules"}, mouse_button_filter={"left"}}
+        local button_max = flow.add{type="button", name="fp_button_max_modules", caption={"fp.max"},
+          style="fp_button_mini", tooltip={"fp.max_modules"}, mouse_button_filter={"left"}}
         button_max.style.left_margin = 4
         button_max.style.top_margin = 1
 
@@ -289,13 +289,13 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
                       or selected_object.module.proto.name
                     if current_name == module.name then
                         style = "fp_button_icon_medium_green"
-                        tooltip = {"", tooltip, "\n", {"tooltip.current_module"}}
+                        tooltip = {"", tooltip, "\n", {"fp.current_module"}}
                     end
                 elseif characteristics.existing_amount ~= nil then
                     button_module.number = characteristics.existing_amount
                     style = "fp_button_icon_medium_cyan"
-                    tooltip = {"", tooltip, "\n", {"tooltip.existing_module_a"}, " ", characteristics.existing_amount,
-                      " ", {"tooltip.existing_module_b"}}
+                    tooltip = {"", tooltip, "\n", {"fp.existing_module_a"}, " ", characteristics.existing_amount,
+                      " ", {"fp.existing_module_b"}}
                 end
                 tooltip = {"", tooltip, ui_util.generate_module_effects_tooltip_proto(module)}
 
@@ -311,7 +311,7 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
 
     -- Show a hint if no compatible module was found
     if not compatible_module_found then
-        local label_warning = flow_modules.add{type="label", name="label_no_compatible_modules", caption={"label.no_compatible_module"}}
+        local label_warning = flow_modules.add{type="label", name="label_no_compatible_modules", caption={"fp.no_compatible_module"}}
         label_warning.style.bottom_margin = 4
         ui_util.set_label_color(label_warning, "red")
     end

@@ -4,27 +4,21 @@ data:extend({
         name = "fp_display_gui_button",
         setting_type = "runtime-per-user",
         default_value = true,
-        order = "a",
-        localised_name = {"mod-setting-name.fp_display_gui_button"},
-        localised_description = {"mod-setting-description.fp_display_gui_button"}
+        order = "a"
     },
     {
         type = "bool-setting",
         name = "fp_pause_on_interface",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "b",
-        localised_name = {"mod-setting-name.fp_pause_on_interface"},
-        localised_description = {"mod-setting-description.fp_pause_on_interface"}
+        order = "b"
     },
     {
         type = "bool-setting",
         name = "fp_performance_mode",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "c",
-        localised_name = {"mod-setting-name.fp_performance_mode"},
-        localised_description = {"mod-setting-description.fp_performance_mode"}
+        order = "c"
     },
     {
         type = "int-setting",
@@ -32,9 +26,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 8,
         allowed_values = {6, 7, 8, 9, 10, 11, 12},
-        order = "d",
-        localised_name = {"mod-setting-name.fp_subfactory_items_per_row"},
-        localised_description = {"mod-setting-description.fp_subfactory_items_per_row"}
+        order = "d"
     },
     {
         type = "int-setting",
@@ -42,9 +34,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 14,
         allowed_values = {8, 10, 12, 14, 16, 18, 20},
-        order = "e",
-        localised_name = {"mod-setting-name.fp_floor_recipes_at_once"},
-        localised_description = {"mod-setting-description.fp_floor_recipes_at_once"}
+        order = "e"
     },
     {
         type = "string-setting",
@@ -52,9 +42,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "f",
-        localised_name = {"mod-setting-name.fp_default_timescale"},
-        localised_description = {"mod-setting-description.fp_default_timescale"}
+        order = "f"
     },
     {
         type = "string-setting",
@@ -62,36 +50,28 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
-        order = "g",
-        localised_name = {"mod-setting-name.fp_view_belts_or_lanes"},
-        localised_description = {"mod-setting-description.fp_view_belts_or_lanes"}
+        order = "g"
     },
     {
         type = "bool-setting",
         name = "fp_line_comments",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "h",
-        localised_name = {"mod-setting-name.fp_line_comments"},
-        localised_description = {"mod-setting-description.fp_line_comments"}
+        order = "h"
     },
     {
         type = "bool-setting",
         name = "fp_ingredient_satisfaction",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "i",
-        localised_name = {"mod-setting-name.fp_ingredient_satisfaction"},
-        localised_description = {"mod-setting-description.fp_ingredient_satisfaction"}
+        order = "i"
     },
     {
         type = "bool-setting",
         name = "fp_round_button_numbers",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "j",
-        localised_name = {"mod-setting-name.fp_round_button_numbers"},
-        localised_description = {"mod-setting-description.fp_round_button_numbers"}
+        order = "j"
     },
     {
         type = "double-setting",
@@ -100,8 +80,6 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "k",
-        localised_name = {"mod-setting-name.fp_indicate_rounding"},
-        localised_description = {"mod-setting-description.fp_indicate_rounding"}
+        order = "k"
     }
 })

@@ -44,7 +44,7 @@ function add_subfactory_pane_cell_to(player, table, ui_name)
     flow.style.width = width
     flow.style.vertically_stretchable = true
     local label_title = flow.add{type="label", name="label_" .. ui_name .. "_title", 
-     caption={"", "  ", {"label." .. ui_name}}}
+     caption={"", "  ", {"fp." .. ui_name}}}
     label_title.style.font = "fp-font-16p"
     local scroll_pane = flow.add{type="scroll-pane", name="scroll-pane", direction="vertical",
       style="fp_scroll_pane_items"}
@@ -127,7 +127,7 @@ end
 -- Adds the button to add a product to the table
 function append_to_product_table(player, table)
     local button = table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
-      style="fp_sprite-button_inset", tooltip={"tooltip.add_product"}, mouse_button_filter={"left"},
+      style="fp_sprite-button_inset", tooltip={"fp.add_a_product"}, mouse_button_filter={"left"},
       enabled=(not ui_util.check_archive_status(player, true))}
     button.style.height = 36
     button.style.width = 36
@@ -172,7 +172,7 @@ function handle_product_element_click(player, product_id, click, direction, alt)
             if context.floor.level == 1 then
                 enter_modal_dialog(player, {type="recipe_picker", object=product, modal_data={production_type="produce"}})
             else
-                ui_util.message.enqueue(player, {"label.error_product_wrong_floor"}, "error", 1)
+                ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1)
             end
         elseif click == "right" then
             enter_modal_dialog(player, {type="item_picker", object=product, submit=true, delete=true})
@@ -201,7 +201,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
         if floor.level == 1 then
             --enter_modal_dialog(player, {type="recipe_picker", object=byproduct, modal_data={production_type="consume"}})
         else
-            --ui_util.message.enqueue(player, {"label.error_byproduct_wrong_floor"}, "error", 1)
+            --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1)
         end
     end
 end
@@ -229,7 +229,7 @@ function refresh_info_pane(player)
     -- Timescale
     local table_timescale = table_info_elements.add{type="table", name="table_timescale_buttons", column_count=2}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
-      caption={"", {"label.timescale"}, " [img=info]: "}, tooltip={"tooltip.timescales"}}
+      caption={"", {"fp.timescale"}, " [img=info]: "}, tooltip={"fp.timescales"}}
     label_timescale_title.style.font = "fp-font-14p"
     table_timescale.style.bottom_margin = 4
 
@@ -247,10 +247,10 @@ function refresh_info_pane(player)
 
     -- Notes
     local table_notes = table_info_elements.add{type="table", name="table_notes", column_count=2}
-    local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", {"label.notes"}, ":  "}}
+    local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", {"fp.notes"}, ":  "}}
     label_notes.style.font = "fp-font-14p"
     label_notes.style.bottom_padding = 2
-    local button_notes = table_notes.add{type="button", name="fp_button_view_notes", caption={"button-text.view_notes"},
+    local button_notes = table_notes.add{type="button", name="fp_button_view_notes", caption={"fp.view_notes"},
       style="fp_button_mini", mouse_button_filter={"left"}}
     button_notes.tooltip = (string.len(subfactory.notes) < 750) and
       subfactory.notes or string.sub(subfactory.notes, 1, 750) .. "\n[...]"
@@ -275,7 +275,7 @@ function refresh_info_pane(player)
     -- Energy consumption
     local table_energy = table_energy_pollution.add{type="table", name="table_energy", column_count=2}
     local label_energy_title = table_energy.add{type="label", name="label_energy_title", 
-      caption={"", {"label.energy"}, ":"}}
+      caption={"", {"fp.energy"}, ":"}}
     label_energy_title.style.font = "fp-font-14p"
     local label_energy_value = table_energy.add{type="label", name="label_energy_value", 
       caption=ui_util.format_SI_value(energy_consumption, "W", 3),
@@ -285,7 +285,7 @@ function refresh_info_pane(player)
     -- Pollution
     local table_pollution = table_energy_pollution.add{type="table", name="table_pollution", column_count=2}
     local label_pollution_title = table_pollution.add{type="label", name="label_pollution_title",
-      caption={"", {"label.pollution"}, ":"}}
+      caption={"", {"fp.cpollution"}, ":"}}
     label_pollution_title.style.font = "fp-font-14p"
     local label_pollution_value = table_pollution.add{type="label", name="label_pollution_value", 
       caption={"", ui_util.format_SI_value(pollution, "P/s", 3)},
@@ -296,7 +296,7 @@ function refresh_info_pane(player)
     -- Mining Productivity
     local table_mining_prod = table_info_elements.add{type="table", name="table_mining_prod", column_count=3}
     table_mining_prod.add{type="label", name="label_mining_prod_title",
-      caption={"", {"label.mining_prod"}, " [img=info]: "}, tooltip={"tooltip.mining_prod"}}
+      caption={"", {"fp.mining_prod"}, " [img=info]: "}, tooltip={"fp.mining_prod_tt"}}
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
 
     if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then
@@ -314,7 +314,7 @@ function refresh_info_pane(player)
           caption={"", prod_bonus, "%"}}
         label_prod_bonus.style.font = "default-bold"
         local button_override = table_mining_prod.add{type="button", name="fp_button_mining_prod_override", 
-          caption={"button-text.override"}, style="fp_button_mini", mouse_button_filter={"left"}}
+          caption={"fp.override"}, style="fp_button_mini", mouse_button_filter={"left"}}
         button_override.style.left_margin = 8
     end
 end

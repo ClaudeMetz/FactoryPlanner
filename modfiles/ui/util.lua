@@ -30,7 +30,7 @@ end
 function ui_util.check_archive_status(player, mute)
     if get_ui_state(player).archive_open then
         if not mute then 
-            ui_util.message.enqueue(player, {"label.error_editing_archived_subfactory"}, "error", 1)
+            ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1)
         end
         return true
     else
@@ -63,11 +63,11 @@ end
 function ui_util.add_tutorial_tooltip(player, button, tooltip, type, line_break, fnei)
     if get_preferences(player).tutorial_mode then
         local b = line_break and "\n\n" or ""
-        local f = (fnei and remote.interfaces["fnei"] ~= nil) and {"tip.tut_fnei"} or ""
+        local f = (fnei and remote.interfaces["fnei"] ~= nil) and {"fp.tut_fnei"} or ""
         if button ~= nil then
-            button.tooltip = {"", button.tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}, f}
+            button.tooltip = {"", button.tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. type}, f}
         elseif tooltip ~= nil then
-            return {"", tooltip, b, {"tooltip.tut_mode"}, "\n", {"tip.tut_" .. type}, f}
+            return {"", tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. type}, f}
         end
     end
 end
@@ -122,13 +122,13 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
     local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type, machine_count)
     
     -- Special handling for mining recipes concerning their localised name
-    local localised_name = (item.proto.type == "entity") and {"", {"label.raw"}, " ", item.proto.localised_name}
+    local localised_name = (item.proto.type == "entity") and {"", {"fp.raw"}, " ", item.proto.localised_name}
       or item.proto.localised_name
     
     -- Determine caption
     local function determine_type_text()
-        if item.proto.type == "fluid" then return {"tooltip.fluid"}
-        else return ((number == 1) and {"tooltip.item"} or {"tooltip.items"}) end
+        if item.proto.type == "fluid" then return {"fp.fluid"}
+        else return ((number == 1) and {"fp.item"} or {"fp.items"}) end
     end
     
     local caption = nil
@@ -140,15 +140,15 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
     elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
         local belts = (player_table.settings.belts_or_lanes == "belts")
         if belts then
-            caption = (number == 1) and {"tooltip.belt"} or {"tooltip.belts"}
+            caption = (number == 1) and {"fp.belt"} or {"fp.belts"}
         else
-            caption = (number == 1) and {"tooltip.lane"} or {"tooltip.lanes"}
+            caption = (number == 1) and {"fp.lane"} or {"fp.lanes"}
         end
 
     elseif view.name == "items_per_second_per_machine" and item.proto.type ~= "fluid" then
         -- Only show "/machine" if it's not a top level item, where it'll just show items/s
-        local s_machine = (machine_count ~= nil) and {"", "/", {"tooltip.machine"}} or ""
-        caption = {"", determine_type_text(), "/", {"label.unit_second"}, s_machine}
+        local s_machine = (machine_count ~= nil) and {"", "/", {"fp.machine"}} or ""
+        caption = {"", determine_type_text(), "/", {"fp.unit_second"}, s_machine}
 
     end
 
@@ -159,7 +159,7 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
         local number_string, indication, satisfaction = nil, "", ""
         if item.class == "Product" then
             if line ~= nil and line.priority_product_proto == item.proto then 
-                indication = {"", " (", {"label.priority"}, ")"}
+                indication = {"", " (", {"fp.priority"}, ")"}
             end
 
             if item.top_level then
@@ -171,10 +171,10 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
         elseif item.class == "Ingredient" and (not item.top_level and not imitate_top_level)
           and player_table.settings.ingredient_satisfaction then
             local satisfaction_percentage = (item.satisfied_amount / item.amount) * 100
-            satisfaction = {"", "\n", ui_util.format_number(satisfaction_percentage, 4), "% ", {"tooltip.satisfied"}}
+            satisfaction = {"", "\n", ui_util.format_number(satisfaction_percentage, 4), "% ", {"fp.satisfied"}}
 
         elseif item.class == "Fuel" then  -- is never a top level item
-            indication = {"", " (", {"label.fuel"}, ")"}
+            indication = {"", " (", {"fp.fuel"}, ")"}
         end
         if number_string == nil then number_string = {"", number} end
 
@@ -234,10 +234,10 @@ end
 -- Generates a tooltip out of the given effects, ignoring those that are 0
 function ui_util.generate_module_effects_tooltip(effects, machine_proto, player, subfactory)
     local localised_names = {
-        consumption = {"tooltip.module_consumption"},
-        speed = {"tooltip.module_speed"},
-        productivity = {"tooltip.module_productivity"},
-        pollution = {"tooltip.module_pollution"}
+        consumption = {"fp.module_consumption"},
+        speed = {"fp.module_speed"},
+        productivity = {"fp.module_productivity"},
+        pollution = {"fp.module_pollution"}
     }
 
     local tooltip = {""}
@@ -250,13 +250,13 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
                 -- Consumption, speed and pollution are capped at -80%
                 if (name == "consumption" or name == "speed" or name == "pollution") and effect < -0.8 then
                     effect = -0.8
-                    appendage = {"", " (", {"tooltip.capped"}, ")"}
+                    appendage = {"", " (", {"fp.capped"}, ")"}
                     
                 -- Productivity can't go lower than 0
                 elseif name == "productivity" then
                     if effect < 0 then
                         effect = 0
-                        appendage = {"", " (", {"tooltip.capped"}, ")"}
+                        appendage = {"", " (", {"fp.capped"}, ")"}
                     end
                 end
             end
@@ -272,26 +272,26 @@ end
 
 -- Returns a tooltip containing the attributes of the given beacon prototype
 function ui_util.generate_beacon_attributes_tooltip(beacon)
-    return {"", {"tooltip.module_slots"}, ": ", beacon.module_limit, "\n",
-              {"tooltip.effectivity"}, ": ", (beacon.effectivity * 100), "%", "\n",
-              {"label.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+    return {"", {"fp.module_slots"}, ": ", beacon.module_limit, "\n",
+              {"fp.effectivity"}, ": ", (beacon.effectivity * 100), "%", "\n",
+              {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
 end
 
 -- Returns a tooltip containing the attributes of the given fuel prototype
 function ui_util.generate_fuel_attributes_tooltip(fuel)
-    return {"", {"tooltip.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3)}
+    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3)}
 end
 
 -- Returns a tooltip containing the attributes of the given belt prototype
 function ui_util.generate_belt_attributes_tooltip(belt)
-    return {"", {"tooltip.throughput"}, ": ", belt.throughput, " ", {"tooltip.items"}, "/", {"label.unit_second"}}
+    return {"", {"fp.throughput"}, ": ", belt.throughput, " ", {"fp.items"}, "/", {"fp.unit_second"}}
 end
 
 -- Returns a tooltip containing the attributes of the given machine prototype
 function ui_util.generate_machine_attributes_tooltip(machine)
-    return {"", {"tooltip.crafting_speed"}, ": ", machine.speed, "\n",
-             {"label.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
-             {"tooltip.module_slots"}, ": ", machine.module_limit}
+    return {"", {"fp.crafting_speed"}, ": ", machine.speed, "\n",
+             {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
+             {"fp.module_slots"}, ": ", machine.module_limit}
 end
 
 
@@ -326,11 +326,11 @@ end
 function ui_util.format_timescale(timescale, raw, whole_word)
     local ts = nil
     if timescale == 1 then
-        ts = whole_word and {"label.second"} or {"label.unit_second"}
+        ts = whole_word and {"fp.second"} or {"fp.unit_second"}
     elseif timescale == 60 then
-        ts = whole_word and {"label.minute"} or {"label.unit_minute"}
+        ts = whole_word and {"fp.minute"} or {"fp.unit_minute"}
     elseif timescale == 3600 then
-        ts = whole_word and {"label.hour"} or {"label.unit_hour"}
+        ts = whole_word and {"fp.hour"} or {"fp.unit_hour"}
     end
     if raw then return ts
     else return {"", "1", ts} end
@@ -340,9 +340,9 @@ end
 function ui_util.format_SI_value(value, unit, precision)
     local scale = {"", "k", "M", "G", "T", "P", "E", "Z", "Y"}
     local units = {
-        ["W"] = {"label.unit_watt"},
-        ["J"] = {"label.unit_joule"},
-        ["P/s"] = {"", {"label.unit_pollution"}, "/", {"label.unit_second"}}
+        ["W"] = {"fp.unit_watt"},
+        ["J"] = {"fp.unit_joule"},
+        ["P/s"] = {"", {"fp.unit_pollution"}, "/", {"fp.unit_second"}}
     }
 
     value = value or 0
@@ -385,7 +385,7 @@ function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip)
     flow.style.vertical_align = "center"
     
     local switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
-      left_label_caption={"label.on"}, right_label_caption={"label.off"}}
+      left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
 
     local caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
     local label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}

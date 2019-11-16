@@ -36,15 +36,15 @@ function refresh_production_table(player)
             
             -- Table titles
             local title_strings = {
-                {name="recipe", label={"label.recipe"}},
+                {name="recipe", label={"fp.recipe"}},
                 {name="percent", label="%"}, 
-                {name="machine", label={"label.machine"}},
-                {name="modules", label={"label.modules"}},
-                {name="beacons", label={"label.beacons"}},
-                {name="energy", label={"label.energy"}},
-                {name="products", label={"label.products"}},
-                {name="byproducts", label={"label.byproducts"}},
-                {name="ingredients", label={"label.ingredients"}}
+                {name="machine", label={"fp.cmachine"}},
+                {name="modules", label={"fp.cmodules"}},
+                {name="beacons", label={"fp.cbeacons"}},
+                {name="energy", label={"fp.energy"}},
+                {name="products", label={"fp.products"}},
+                {name="byproducts", label={"fp.byproducts"}},
+                {name="ingredients", label={"fp.ingredients"}}
             }
 
             for _, title in ipairs(title_strings) do
@@ -56,10 +56,10 @@ function refresh_production_table(player)
             if line_comments then
                 local flow = table_production.add{type="flow", name="flow_comment_clear", direction="horizontal"}
                 flow.style.vertical_align = "center"
-                local title = flow.add{type="label", name="label_title_comment", caption={"", {"label.comments"}, " "}}
+                local title = flow.add{type="label", name="label_title_comment", caption={"", {"fp.comments"}, " "}}
                 title.style.font = "fp-font-16p"
                 local button = flow.add{type="button", name="fp_button_production_clear_comments",
-                  caption={"button-text.clear"},  tooltip={"tooltip.clear_recipe_comments"}, style="fp_button_mini",
+                  caption={"fp.clear"},  tooltip={"fp.clear_recipe_comments"}, style="fp_button_mini",
                   mouse_button_filter={"left"}}
                 button.style.font = "fp-font-14p-semi"
                 button.style.height = 20
@@ -138,19 +138,19 @@ function create_line_table_row(player, line)
         local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
         if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
-        local machine_text = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
+        local machine_text = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
 
         local style, limit_notice = "fp_button_icon_medium_recipe", ""
         if line.machine.limit ~= nil then
             if line.machine.hard_limit then
                 style = "fp_button_icon_medium_cyan"
-                limit_notice = {"", "\n- ", {"tooltip.machine_limit_hard"}, " -"}
+                limit_notice = {"", "\n- ", {"fp.machine_limit_hard"}, " -"}
             elseif line.production_ratio < line.uncapped_production_ratio then
                 style = "fp_button_icon_medium_yellow"
-                limit_notice = {"", "\n- ", {"tooltip.machine_limit_enforced"}, " -"}
+                limit_notice = {"", "\n- ", {"fp.machine_limit_enforced"}, " -"}
             else
                 style = "fp_button_icon_medium_green"
-                limit_notice = {"", "\n- ", {"tooltip.machine_limit_set"}, " -"}
+                limit_notice = {"", "\n- ", {"fp.machine_limit_set"}, " -"}
             end
         end
 
@@ -176,7 +176,7 @@ function create_line_table_row(player, line)
 
         if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
             local button_add_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
-              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_module"},
+              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_a_module"},
               mouse_button_filter={"left"}, enabled=(not archive_open)}
         end
     end
@@ -189,7 +189,7 @@ function create_line_table_row(player, line)
     if line.machine.proto.allowed_effects ~= nil and line.recipe.proto.name ~= "fp-space-science-pack" then
         if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
             local button_add_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
-              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"tooltip.add_beacon"},
+              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_beacons"},
               mouse_button_filter={"left"}, enabled=(not archive_open)}
         else
             local beacon = line.beacon
@@ -197,7 +197,7 @@ function create_line_table_row(player, line)
               "fp_sprite-button_line_beacon_module_" .. line.id)
             flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
 
-            local m = (beacon.amount == 1) and {"tooltip.beacon"} or {"tooltip.beacons"}
+            local m = (beacon.amount == 1) and {"fp.beacon"} or {"fp.beacons"}
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
               sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
@@ -211,7 +211,7 @@ function create_line_table_row(player, line)
     -- Energy label
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
-      ui_util.format_SI_value(line.energy_consumption, "W", 5), "\n", {"label.pollution"}, ": ",
+      ui_util.format_SI_value(line.energy_consumption, "W", 5), "\n", {"fp.cpollution"}, ": ",
       ui_util.format_SI_value(line.pollution, "P/s", 3)}}
 
 
@@ -257,8 +257,8 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     button.style.padding = 1
     button.sprite = machine_proto.sprite
 
-    local s = (selected) and {"", " (", {"tooltip.selected"}, ")"} or ""
-    local m = (tonumber(machine_count) == 1) and {"tooltip.machine"} or {"tooltip.machines"}
+    local s = (selected) and {"", " (", {"fp.selected"}, ")"} or ""
+    local m = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
     button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
       " ", m, "\n", ui_util.generate_machine_attributes_tooltip(machine_proto)}
 
@@ -289,7 +289,7 @@ end
 
 -- Creates and places a single module button
 function create_module_button(flow, line, module, type, button_name)
-    local m = (module.amount == 1) and {"tooltip.module"} or {"tooltip.modules"}
+    local m = (module.amount == 1) and {"fp.module"} or {"fp.modules"}
     local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.proto.sprite,
       style="fp_button_icon_medium_recipe", number=module.amount, mouse_button_filter={"left-and-right"},
       tooltip={"", module.proto.localised_name, "\n", module.amount, " ", m,

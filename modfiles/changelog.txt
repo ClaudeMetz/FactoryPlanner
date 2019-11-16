@@ -6,6 +6,7 @@ Date: 00. 00. 0000
     - Added a performance mode setting that disables certain performance-intensive features
   Changes:
     - Improved performance of the calculation model
+    - Made the localisation more compatible with other mods. Everything had to be moved around, so translation mods will have to do a bit of work to be compatible again. Sorry about that.
   Bugfixes:
     - Fixed the 'Machine rounding precision' setting not working correctly
     - Fixed SI-unit localisations not actually being shown

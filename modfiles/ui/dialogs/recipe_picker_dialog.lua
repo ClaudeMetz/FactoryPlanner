@@ -4,7 +4,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
     local ui_state = get_ui_state(player)
     local product = ui_state.selected_object
 
-    flow_modal_dialog.parent.caption = {"label.add_recipe"}
+    flow_modal_dialog.parent.caption = {"fp.add_recipe"}
     flow_modal_dialog.style.bottom_margin = 8
 
     -- Result is either the single possible recipe_id, or a table of relevant recipes
@@ -26,7 +26,7 @@ function open_recipe_picker_dialog(flow_modal_dialog)
             local line = Line.init(player, Recipe.init_by_id(result, ui_state.modal_data.production_type), nil)
             -- If line is false, no compatible machine has been found (ingredient limit)
             if line == false then
-                ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
+                ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 2)
             else
                 Floor.add(ui_state.context.floor, line)
                 calculation.update(player, ui_state.context.subfactory, false)
@@ -61,7 +61,7 @@ function handle_picker_recipe_click(player, button)
     
     local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type), nil)
     if line == false then
-        ui_util.message.enqueue(player, {"label.error_no_compatible_machine"}, "error", 2)
+        ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 2)
     else
         Floor.add(ui_state.context.floor, line)
         calculation.update(player, ui_state.context.subfactory, false)
@@ -123,12 +123,12 @@ function run_preliminary_checks(player, product, production_type)
     
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
-        return nil, {"label.error_no_relevant_recipe"}, show
+        return nil, {"fp.error_no_relevant_recipe"}, show
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
         -- Show hint if adding unresearched recipe (no hints on custom recipes)
         if not chosen_recipe.custom and not force_recipes[chosen_recipe.name].enabled then
-            show.message={text={"label.hint_disabled_recipe"}, type="warning"}
+            show.message={text={"fp.hint_disabled_recipe"}, type="warning"}
         end
         return chosen_recipe.id, nil, show
     else  -- 2+ relevant recipes

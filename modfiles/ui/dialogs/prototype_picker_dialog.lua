@@ -10,15 +10,15 @@ function picker.refresh_filter_conditions(flow, disabled_state, hidden_state)
         table.vertical_centering = false
         table.style.horizontal_spacing = 16
 
-        local label = table.add{type="label", name="label_filter_conditions", caption={"label.show"}}
+        local label = table.add{type="label", name="label_filter_conditions", caption={"fp.show"}}
         label.style.top_margin = 2
         label.style.left_margin = 4
 
         local flow_switches = table.add{type="flow", name="flow_switches", direction="vertical"}
         ui_util.switch.add_on_off(flow_switches, "picker_filter_condition_disabled", disabled_state, 
-          {"label.unresearched_recipes"}, nil)
+          {"fp.unresearched_recipes"}, nil)
         ui_util.switch.add_on_off(flow_switches, "picker_filter_condition_hidden", hidden_state,
-          {"label.hidden_recipes"}, nil)
+          {"fp.hidden_recipes"}, nil)
 
     -- Refresh the switch_states if the elements already exist
     else
@@ -42,7 +42,7 @@ function picker.refresh_search_bar(flow, search_term, visible)
     end
     table.visible = visible
 
-    table.add{type="label", name="label_search_bar", caption={"label.search"}}
+    table.add{type="label", name="label_search_bar", caption={"fp.search"}}
     local textfield = table.add{type="textfield", name="fp_textfield_picker_search_bar", text=search_term}
     textfield.style.width = 140
     ui_util.setup_textfield(textfield)
@@ -257,7 +257,7 @@ function picker.apply_filter(player, object_type, apply_button_style)
 
     -- Show warning message if no corresponding items/recipes are found
     if first_visible_group == nil then 
-        picker.refresh_warning_label(flow_modal_dialog, {"label.error_no_" .. object_type .. "_found"})
+        picker.refresh_warning_label(flow_modal_dialog, {"fp.error_no_" .. object_type .. "_found"})
     else picker.refresh_warning_label(flow_modal_dialog, "") end
     local warning_label_height = (warning_label.caption == "") and 0 or 38
     

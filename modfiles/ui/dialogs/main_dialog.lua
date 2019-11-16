@@ -15,7 +15,7 @@ function player_gui_init(player)
             type = "button",
             name = "fp_button_toggle_interface",
             caption = "FP",
-            tooltip = {"tooltip.open_main_dialog"},
+            tooltip = {"fp.open_main_dialog"},
             style = mod_gui.button_style,
             mouse_button_filter = {"left"}
         }
@@ -144,9 +144,9 @@ function add_titlebar_to(main_dialog)
     local flow_buttonbar = titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}
     flow_buttonbar.style.top_margin = 4
 
-    flow_buttonbar.add{type="button", name="fp_button_titlebar_tutorial", caption={"label.tutorial"},
+    flow_buttonbar.add{type="button", name="fp_button_titlebar_tutorial", caption={"fp.tutorial"},
       style="fp_button_titlebar", mouse_button_filter={"left"}}
-    flow_buttonbar.add{type="button", name="fp_button_titlebar_preferences", caption={"label.preferences"},
+    flow_buttonbar.add{type="button", name="fp_button_titlebar_preferences", caption={"fp.preferences"},
       style="fp_button_titlebar", mouse_button_filter={"left"}}
 
     local button_exit = flow_buttonbar.add{type="button", name="fp_button_titlebar_exit", caption="X",

@@ -150,7 +150,7 @@ function create_sprite_button(table, name, subfactory)
     local tooltip = ""
     if not table.gui.is_valid_sprite_path(sprite_path) then
         sprite_path = "utility/danger_icon"
-        tooltip = {"tooltip.sprite_missing"}
+        tooltip = {"fp.sprite_missing"}
     end
     local button = table.add{type="sprite-button", name=name, sprite=sprite_path, 
       tooltip=tooltip, mouse_button_filter={"left-and-right"}}

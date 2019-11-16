@@ -4,20 +4,20 @@ function add_actionbar_to(main_dialog)
     actionbar.style.bottom_margin = 4
     actionbar.style.left_margin = 6
 
-    actionbar.add{type="button", name="fp_button_new_subfactory", caption={"button-text.new_subfactory"}, 
-      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"tooltip.new_subfactory"}}
-    actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"button-text.edit"}, 
-      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"tooltip.edit_subfactory"}}
-    actionbar.add{type="button", name="fp_button_archive_subfactory", caption={"button-text.archive"}, 
+    actionbar.add{type="button", name="fp_button_new_subfactory", caption={"fp.new_subfactory"}, 
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_new_subfactory"}}
+    actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"fp.edit"}, 
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_edit_subfactory"}}
+    actionbar.add{type="button", name="fp_button_archive_subfactory", caption={"fp.archive"}, 
       style="fp_button_action", mouse_button_filter={"left"}}
-    actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"button-text.delete"}, 
-      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"tooltip.delete_subfactory"}}
+    actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"fp.delete"}, 
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_delete_subfactory"}}
 
     local actionbar_spacer = actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
     actionbar_spacer.style.horizontally_stretchable = true
 
     local button_toggle_archive = actionbar.add{type="button", name="fp_button_toggle_archive",
-      caption={"button-text.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}  
+      caption={"fp.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}  
 
     refresh_actionbar(game.get_player(main_dialog.player_index))
 end
@@ -38,27 +38,28 @@ function refresh_actionbar(player)
     delete_button.enabled = subfactory_exists
 
     archive_button.enabled = subfactory_exists
-    archive_button.tooltip = (ui_state.archive_open) and {"tooltip.unarchive_subfactory"} or {"tooltip.archive_subfactory"}
+    archive_button.tooltip = (ui_state.archive_open) and 
+      {"fp.action_unarchive_subfactory"} or {"fp.action_archive_subfactory"}
 
     local archived_subfactories_count = get_table(player).archive.Subfactory.count
     toggle_archive_button.enabled = (ui_state.archive_open or archived_subfactories_count > 0)
-    local archive_tooltip = {"tooltip.toggle_archive"}
+    local archive_tooltip = {"fp.toggle_archive"}
     if not toggle_archive_button.enabled then 
-        archive_tooltip = {"", archive_tooltip, "\n", {"tooltip.archive_empty"}}
+        archive_tooltip = {"", archive_tooltip, "\n", {"fp.archive_empty"}}
     else 
-        local subs = (archived_subfactories_count == 1) and {"tooltip.subfactory"} or {"tooltip.subfactories"}
-        archive_tooltip = {"", archive_tooltip, "\n- ", {"tooltip.archive_filled_1"},
+        local subs = (archived_subfactories_count == 1) and {"fp.subfactory"} or {"fp.subfactories"}
+        archive_tooltip = {"", archive_tooltip, "\n- ", {"fp.archive_filled_1"},
           " " .. archived_subfactories_count .. " ", subs, " -"}
     end
     toggle_archive_button.tooltip = archive_tooltip
 
     if ui_state.current_activity == "deleting_subfactory" then
-        delete_button.caption = {"button-text.delete_confirm"}
+        delete_button.caption = {"fp.delete_confirm"}
         delete_button.style.font =  "fp-font-bold-16p"
         delete_button.style.left_padding = 16
         ui_util.set_label_color(delete_button, "dark_red")
     else
-        delete_button.caption = {"button-text.delete"}
+        delete_button.caption = {"fp.delete"}
         delete_button.style.font =  "fp-font-semibold-16p"
         delete_button.style.left_padding = 10
         ui_util.set_label_color(delete_button, "default_button")
@@ -66,13 +67,13 @@ function refresh_actionbar(player)
 
     if ui_state.archive_open then
         new_button.enabled = false
-        archive_button.caption = {"button-text.unarchive"}
-        toggle_archive_button.caption = {"button-text.close_archive"}
+        archive_button.caption = {"fp.unarchive"}
+        toggle_archive_button.caption = {"fp.close_archive"}
         toggle_archive_button.style = "fp_button_action_selected"
     else
         new_button.enabled = true
-        archive_button.caption = {"button-text.archive"}
-        toggle_archive_button.caption = {"button-text.open_archive"}
+        archive_button.caption = {"fp.archive"}
+        toggle_archive_button.caption = {"fp.open_archive"}
         toggle_archive_button.style = "fp_button_action"
     end
 end

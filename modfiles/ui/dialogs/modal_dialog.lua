@@ -183,8 +183,8 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         button_cancel.style.right_margin = 8
 
         local action = dialog_settings.close and "close" or "cancel"
-        button_cancel.caption = {"button-text." .. action}
-        button_cancel.tooltip = {"tooltip." .. action .. "_dialog"}
+        button_cancel.caption = {"fp." .. action}
+        button_cancel.tooltip = {"fp." .. action .. "_dialog"}
 
         -- Add first set of spacers, one of them will always be hidden
         button_bar.add{type="empty-widget", name="empty-widget_modal_dialog_spacer_1", style="fp_footer_filler"}
@@ -192,7 +192,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         flow_spacer_1.style.horizontally_stretchable = true
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
-          caption={"button-text.delete"}, style="red_button", mouse_button_filter={"left"}}
+          caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
         button_delete.style.font = "default-dialog-button"
         button_delete.style.height = 32
         button_delete.style.maximal_width = 80
@@ -201,8 +201,8 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
         flow_spacer_2.style.horizontally_stretchable = true
 
-        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"button-text.submit"},
-          tooltip={"tooltip.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
+        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"fp.submit"},
+          tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.maximal_width = 90
         button_submit.style.left_margin = 8
     end

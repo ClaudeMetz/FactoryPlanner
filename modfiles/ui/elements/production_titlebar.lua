@@ -8,14 +8,14 @@ function add_production_pane_to(main_dialog)
 
     -- Refresh button
     local button_refresh = table_titlebar.add{type="sprite-button", name="fp_sprite-button_refresh_production",
-      sprite="utility/refresh", style="fp_sprite_button", tooltip={"tooltip.refresh_production"}}
+      sprite="utility/refresh", style="fp_sprite_button", tooltip={"fp.refresh_production"}}
     button_refresh.style.width = 22
     button_refresh.style.height = 22
     button_refresh.style.left_margin = 8
 
     -- Title
     local title = table_titlebar.add{type="label", name="label_production_pane_title", 
-      caption={"", "  ", {"label.production"}, " "}}
+      caption={"", "  ", {"fp.production"}, " "}}
     title.style.font = "fp-font-20p"
     title.style.top_padding = 2
     title.style.left_margin = 0
@@ -27,9 +27,9 @@ function add_production_pane_to(main_dialog)
     label_level.style.left_padding = 10
 
     local table_navigation = table_titlebar.add{type="table", name="table_production_titlebar_navigation", column_count=2}
-    table_navigation.add{type="button", name="fp_button_floor_up", caption={"label.go_up"},
+    table_navigation.add{type="button", name="fp_button_floor_up", caption={"fp.go_up"},
       style="fp_button_mini", mouse_button_filter={"left"}}
-    table_navigation.add{type="button", name="fp_button_floor_top", caption={"label.to_the_top"},
+    table_navigation.add{type="button", name="fp_button_floor_top", caption={"fp.to_the_top"},
       style="fp_button_mini", mouse_button_filter={"left"}}
 
     -- Spacer
@@ -38,7 +38,7 @@ function add_production_pane_to(main_dialog)
 
     -- TopLevelItem-amount toggle
     local button_toggle = table_titlebar.add{type="button", name="fp_button_item_amount_toggle",
-      caption={"button-text.item_amount_toggle"}, tooltip={"tooltip.item_amount_toggle"},
+      caption={"fp.item_amount_toggle"}, tooltip={"fp.item_amount_toggle_tt"},
       mouse_button_filter={"left"}}
     button_toggle.style.right_margin = 16
 
@@ -55,12 +55,12 @@ function add_production_pane_to(main_dialog)
     -- (The tooltip for this is set dynamically)
 
     table_view_selection.add{type="button", name="fp_button_production_titlebar_view_items_per_second_per_machine",
-      tooltip={"", {"tooltip.items_per_second_per_machine"}, "\n", {"tooltip.cycle_production_views"}}}
+      tooltip={"", {"fp.items_per_second_per_machine"}, "\n", {"fp.cycle_production_views"}}}
 
 
     -- Info label
     local info = flow.add{type="label", name="label_production_info", 
-      caption={"", "   (",  {"label.production_info"}, ")"}}
+      caption={"", "   (",  {"fp.production_info"}, ")"}}
     info.visible = false
 
     -- Main production pane
@@ -100,7 +100,7 @@ function refresh_production_pane(player)
 
         -- Level indicator
         local label_level = table_titlebar["label_production_titlebar_level"]
-        label_level.caption = {"", {"label.level"}, " ", floor.level, "  "}
+        label_level.caption = {"", {"fp.level"}, " ", floor.level, "  "}
         label_level.visible = (floor.Line.count > 0)
 
         -- Navigation
@@ -126,13 +126,13 @@ function refresh_production_pane(player)
             -- The "items_per_second_per_machine"-tooltip doesn't need to be updated according to any settings
             if view.name == "items_per_timescale" then
                 local timescale = ui_util.format_timescale(subfactory.timescale, true, true)
-                button.tooltip = {"", {"tooltip.items_per_timescale"}, " ", timescale, ".",
-                  "\n", {"tooltip.cycle_production_views"}}
+                button.tooltip = {"", {"fp.items_per_timescale"}, " ", timescale, ".",
+                  "\n", {"fp.cycle_production_views"}}
             elseif view.name == "belts_or_lanes" then
                 local belts_lanes_label = (player_table.settings.belts_or_lanes == "belts") 
-                  and {"tooltip.belts"} or {"tooltip.lanes"}
-                button.tooltip = {"", {"tooltip.belts_or_lanes_a"}, " ", belts_lanes_label, " ",
-                  {"tooltip.belts_or_lanes_b"}, "\n", {"tooltip.cycle_production_views"}}
+                  and {"fp.cbelts"} or {"fp.clanes"}
+                button.tooltip = {"", {"fp.belts_or_lanes_a"}, " ", belts_lanes_label, " ",
+                  {"fp.belts_or_lanes_b"}, "\n", {"fp.cycle_production_views"}}
             end
 
             -- It's disabled if it's selected or not enabled by the view
@@ -188,13 +188,13 @@ end
 function refresh_view_state(player, subfactory)
     local player_table = get_table(player)
     local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
-    local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"button-text.belts"} or {"button-text.lanes"}
+    local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"fp.cbelts"} or {"fp.clanes"}
     local bl_sprite = player_table.preferences.preferred_belt.rich_text
     local crafting_machine_sprite_path = ui_util.find_crafting_machine_sprite()
     local view_state = {
         [1] = {
             name = "items_per_timescale",
-            caption = {"", {"button-text.items"}, "/", timescale},
+            caption = {"", {"fp.citems"}, "/", timescale},
             enabled = true,
             selected = true
         },
@@ -206,7 +206,7 @@ function refresh_view_state(player, subfactory)
         },
         [3] = {
             name = "items_per_second_per_machine",
-            caption = {"", {"button-text.items"}, "/", {"label.unit_second"}, "/[img=" .. crafting_machine_sprite_path .. "]"},
+            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. crafting_machine_sprite_path .. "]"},
             enabled = true,
             selected = false
         },

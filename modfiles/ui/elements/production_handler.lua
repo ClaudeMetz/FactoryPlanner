@@ -111,8 +111,8 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                 else  -- Open a chooser dialog presenting all machine choices
                     local modal_data = {
                         reciever_name = "machine",
-                        title = {"label.machine"},
-                        text = {"", {"label.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
+                        title = {"fp.machine"},
+                        text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
                         object = line.machine
                     }
                     
@@ -125,23 +125,23 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         elseif click == "right" then
             local modal_data = {
                 reciever_name = "machine",
-                title = {"label.machine_limit_title"},
-                text = {"", {"label.machine_limit_text"}, " '", line.recipe.proto.localised_name, "':"},
+                title = {"fp.machine_limit_title"},
+                text = {"", {"fp.machine_limit_text"}, " '", line.recipe.proto.localised_name, "':"},
                 object = line.machine,
                 fields = {
                     {
                         type = "numeric",
                         name = "machine_limit",
-                        caption = {"label.machine_limit_option"},
-                        tooltip = {"tooltip.machine_limit_option"},
+                        caption = {"fp.machine_limit_option"},
+                        tooltip = {"fp.machine_limit_option_tt"},
                         value = line.machine.limit or "",
                         focus = true
                     },
                     {
                         type = "on_off_switch",
                         name = "hard_limit",
-                        caption = {"label.machine_hard_limit_option"},
-                        tooltip = {"tooltip.machine_hard_limit_option"},
+                        caption = {"fp.machine_hard_limit_option"},
+                        tooltip = {"fp.machine_hard_limit_option_tt"},
                         value = line.machine.hard_limit or false
                     }
                 }
@@ -378,15 +378,15 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         if click == "right" and item.class == "Fuel" then
             local modal_data = {
                 reciever_name = "fuel",
-                title = {"label.fuel"},
+                title = {"fp.fuel"},
                 object = item
             }
 
             -- Set different message depending on whether this fuel is on a line with a subfloor or not
             if line.subfloor == nil then
-                modal_data.text = {"", {"label.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
+                modal_data.text = {"", {"fp.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
             else
-                modal_data.text = {"", {"label.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
+                modal_data.text = {"", {"fp.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
             end
 
             ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
@@ -399,7 +399,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
             elseif item.class == "Product" then
                 if line.Product.count < 2 then
-                    ui_util.message.enqueue(player, {"label.error_no_prioritizing_single_product"}, "error", 1)
+                    ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1)
                 else
                     local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
                     Line.set_priority_product(line, priority_product_proto)
@@ -423,7 +423,7 @@ function generate_chooser_fuel_buttons(player)
     local old_fuel_id = global.all_fuels.map[ui_state.modal_data.object.proto.name]
     local machine = line.machine
     for new_fuel_id, fuel_proto in pairs(global.all_fuels.fuels) do
-        local selected = (old_fuel_id == new_fuel_id) and {"", " (", {"tooltip.selected"}, ")"} or ""
+        local selected = (old_fuel_id == new_fuel_id) and {"", " (", {"fp.selected"}, ")"} or ""
         local tooltip = {"", fuel_proto.localised_name, selected}
 
         local fuel_amount = nil
@@ -438,7 +438,7 @@ function generate_chooser_fuel_buttons(player)
               fuel_proto.type, line.machine.count)
             fuel_amount = ui_util.format_number(fuel_amount, 4)
 
-            local m = (tonumber(fuel_amount) == 1) and {"tooltip.item"} or {"tooltip.items"}
+            local m = (tonumber(fuel_amount) == 1) and {"fp.item"} or {"fp.items"}
             tooltip = {"", tooltip, "\n", fuel_amount, " ", m}
         end
         tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel_proto)}
