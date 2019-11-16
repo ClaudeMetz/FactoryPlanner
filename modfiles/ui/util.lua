@@ -187,6 +187,19 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
     end
 end
 
+-- Adds the given sprite to the top left corner of the given button
+function ui_util.add_overlay_sprite(button, sprite, button_size)
+    local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite}
+    overlay.ignored_by_interaction = true
+    overlay.resize_to_sprite = false
+
+    -- Set size dynamically according to the button sprite size
+    local adjusted_size = math.floor(button_size / 3.2)
+    overlay.style.height = adjusted_size
+    overlay.style.width = adjusted_size
+end
+
+
 -- Determines a suitable crafting machine sprite path, according to what is available
 function ui_util.find_crafting_machine_sprite()
     -- Try these categories first, one of them should exist

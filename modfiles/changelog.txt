@@ -7,6 +7,7 @@ Date: 00. 00. 0000
   Changes:
     - Improved performance of the calculation model
   Bugfixes:
+    - Fixed the 'Machine rounding precision' setting not working correctly
     - Fixed SI-unit localisations not actually being shown
     - Made time-shorthands (s, m, h) properly localisable
 
@@ -37,7 +38,7 @@ Date: 04. 11. 2019
 Version: 0.17.61
 Date: 24. 10. 2019
   Features:
-    - Added pollution calculation (Shown in the tooltip of the energy consumption of every recipe line)
+    - Added pollution calculation (shown in the tooltip of the energy consumption of every recipe line)
   Changes:
     - Changed around the preferences and mod-settings a bit
     - Reworded several of the mod-setting descriptions
@@ -49,7 +50,7 @@ Date: 24. 10. 2019
 Version: 0.17.60
 Date: 24. 10. 2019
   Bugfixes:
-    - Fixed a crash when rotating an machine
+    - Fixed a crash when rotating a machine
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.59

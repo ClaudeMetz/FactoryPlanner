@@ -214,6 +214,7 @@ function create_line_table_row(player, line)
       ui_util.format_SI_value(line.energy_consumption, "W", 5), "\n", {"label.pollution"}, ": ",
       ui_util.format_SI_value(line.pollution, "P/s", 3)}}
 
+
     -- Item buttons
     create_item_button_flow(player_table, table_production, line, "products", {"Product"}, {"blank"})
     create_item_button_flow(player_table, table_production, line, "byproducts", {"Byproduct"}, {"red"})
@@ -266,31 +267,23 @@ end
 
 -- Function that adds the rounding indication to the given button
 function add_rounding_overlay(player, button, data)
-    -- Add overlay to indicate if machine the machine count is rounded or not
     local rounding_threshold = get_settings(player).indicate_rounding
-    if rounding_threshold > 0 then  -- it being 0 means the setting is disabled
+    local count, floor, ceil = data.count, math.floor(data.count), math.ceil(data.count)
+    -- A treshold of 0 indicates the setting being disabled
+    if (rounding_threshold > 0) and (count ~= floor) then
         local sprite = nil
-        local count = data.count
-        if count ~= 0 and count ~= math.floor(count) then
-            if (math.ceil(count) - count) > rounding_threshold then
+
+        if count - floor < rounding_threshold then
+            button.number = floor
+            sprite = "fp_sprite_red_arrow_down"
+        else
+            button.number = ceil
+            if ceil - count > rounding_threshold then
                 sprite = "fp_sprite_green_arrow_up"
-                button.number = math.ceil(count)
-            elseif (count - math.floor(count)) < rounding_threshold then
-                sprite = "fp_sprite_red_arrow_down"
-                button.number = math.floor(count)
             end
         end
 
-        if sprite ~= nil then
-            local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite}
-            overlay.ignored_by_interaction = true
-            overlay.resize_to_sprite = false
-
-            -- Set size dynamically according to the button sprite size
-            local size = math.floor(data.sprite_size / 3.2)
-            overlay.style.height = size
-            overlay.style.width = size
-        end
+        if sprite ~= nil then ui_util.add_overlay_sprite(button, sprite, data.sprite_size) end
     end
 end
 
