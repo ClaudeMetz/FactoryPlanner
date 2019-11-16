@@ -30,9 +30,10 @@ compress-sprite-atlas-cache=true
 graphics-quality=normal
 show-clouds=false"""
 
+cwd = Path.cwd()
+
 def update_factorio():
     # Determine paths and versions
-    cwd = Path.cwd()
     old_factorio_path = list(itertools.islice(cwd.glob("Factorio_*"), 1))[0]
     zip_file_path = list(itertools.islice(cwd.glob("Factorio_*.zip"), 1))[0]
     new_factorio_version = zip_file_path.parts[-1].split("_")[-1][:-4]

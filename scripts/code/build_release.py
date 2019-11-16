@@ -20,13 +20,12 @@ import git  # gitpython module
 # Script config
 MODNAME = sys.argv[1]
 
+os = platform.system()
+cwd = Path.cwd()
+repo = git.Repo(cwd / MODNAME)
+
 def build_release():
-    # Determine paths and versions, initialize git
-    os = platform.system()
-    cwd = Path.cwd()
-    repo = git.Repo(cwd / MODNAME)
     modfiles_path = cwd / MODNAME / "modfiles"
-    
     info_json_path = modfiles_path / "info.json"
     with info_json_path.open("r") as file:
         data = json.load(file)
@@ -44,9 +43,8 @@ def build_release():
     if os == "Darwin":
         mods_path = cwd / "userdata" / "mods"
         old_mod_symlink = list(itertools.islice(mods_path.glob(MODNAME + "_*"), 1))[0]
-        old_mod_symlink.unlink()
         new_mod_symlink = Path(mods_path, MODNAME + "_" + new_mod_version)
-        new_mod_symlink.symlink_to(modfiles_path)
+        old_mod_symlink.rename(new_mod_symlink)
     else:  # os == "Windows"
         mods_path = list(itertools.islice(cwd.glob("Factorio_*"), 1))[0] / "mods"
         old_mod_symlink = list(itertools.islice(mods_path.glob(MODNAME + "_*"), 1))[0]
