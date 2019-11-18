@@ -8,9 +8,9 @@ data:extend({
     },
     {
         type = "custom-input",
-        name = "fp_cycle_production_views",
-        key_sequence = "TAB",
-        consuming = "none",
+        name = "fp_floor_up",
+        key_sequence = "SHIFT + R",
+        consuming = "script-only",
         order = "b"
     },
     {
@@ -22,10 +22,17 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "fp_cycle_production_views",
+        key_sequence = "TAB",
+        consuming = "none",
+        order = "d"
+    },
+    {
+        type = "custom-input",
         name = "fp_confirm_dialog",
         key_sequence = "ENTER",
         alternative_key_sequence = "KP_ENTER",
         consuming = "none",
-        order = "d"
+        order = "e"
     }
 })
