@@ -77,17 +77,34 @@ end
 
 
 -- Determines the actual amount of items that a recipe product or ingredient equates to
-local function generate_formatted_item(base_item)
-    local actual_amount = 0
+local function generate_formatted_item(base_item, type)
+    local actual_amount, proddable_amount = 0, 0
     if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
         actual_amount = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
+        
+        -- I'm unsure whether this calculation is correct for this type of recipe spec
+        -- A definition with max/min and catalysts might not even be possible/in use
+        if type == "ingredient" then
+            proddable_amount = actual_amount - (base_item.catalyst_amount or 0)
+        else  -- type == "product"
+            proddable_amount = (base_item.catalyst_amount or 0)
+        end
+
     elseif base_item.probability ~= nil then
         actual_amount = base_item.amount * base_item.probability
+        if type == "ingredient" then
+            proddable_amount = (base_item.amount - (base_item.catalyst_amount or 0)) * base_item.probability
+        else  -- type == "product"
+            proddable_amount = (base_item.catalyst_amount or 0) * base_item.probability
+        end
     else
         actual_amount = base_item.amount
+        if type == "ingredient" then
+            proddable_amount = base_item.amount - (base_item.catalyst_amount or 0)
+        else  -- type == "product"
+            proddable_amount = (base_item.catalyst_amount or 0)
+        end
     end
-
-    local proddable_amount = actual_amount - (base_item.catalyst_amount or 0)
 
     return {
         name = base_item.name,
@@ -150,14 +167,14 @@ end
 local function format_recipe_products_and_ingredients(recipe_proto)
     local ingredients = {}
     for _, base_ingredient in ipairs(recipe_proto.ingredients) do
-        local formatted_ingredient = generate_formatted_item(base_ingredient)
+        local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
         table.insert(ingredients, formatted_ingredient)
     end
     recipe_proto.ingredients = ingredients
 
     local products = {}
     for _, base_product in ipairs(recipe_proto.products) do
-        local formatted_product = generate_formatted_item(base_product)
+        local formatted_product = generate_formatted_item(base_product, "product")
         table.insert(products, formatted_product)
 
         -- Update the main product as well, if present

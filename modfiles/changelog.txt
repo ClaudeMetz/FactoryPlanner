@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Made the localisation more compatible with other mods. Everything had to be moved around, so translation mods will have to do a bit of work to be compatible again. Sorry about that.
   Bugfixes:
     - Fixed the 'Machine rounding precision' setting not working correctly
+    - Fixed a calculation error regarding productivity on certain types of recipes
     - Fixed SI-unit localisations not actually being shown
     - Made time-shorthands (s, m, h) properly localisable
 

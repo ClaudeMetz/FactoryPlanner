@@ -149,11 +149,20 @@ function model.update_line(line_data, aggregate)
     aggregate.uncapped_production_ratio = aggregate.uncapped_production_ratio or uncapped_production_ratio
 
 
+    -- Determines the amount of the given item, considering productivity
+    local function determine_amount_with_productivity(item)
+        if (item.proddable_amount > 0) and (line_data.total_effects.productivity > 0) then
+            return (calculation.util.determine_prodded_amount(item, line_data.total_effects) * production_ratio)
+        else
+            return (item.amount * production_ratio)
+        end
+    end
+    
     -- Determine byproducts
     local Byproduct = structures.class.init()
     for _, byproduct in pairs(byproducts) do
-        local byproduct_amount = byproduct.amount * production_ratio
-        
+        local byproduct_amount = determine_amount_with_productivity(byproduct)
+
         structures.class.add(Byproduct, byproduct, byproduct_amount)
         structures.aggregate.add(aggregate, "Byproduct", byproduct, byproduct_amount)
     end
@@ -161,7 +170,7 @@ function model.update_line(line_data, aggregate)
     -- Determine products
     local Product = structures.class.init()
     for _, product in pairs(relevant_products) do
-        local product_amount = product.amount * production_ratio
+        local product_amount = determine_amount_with_productivity(product)
 
         -- Don't include net negative relevant products as products
         if product.net_amount <= 0 then
@@ -185,14 +194,8 @@ function model.update_line(line_data, aggregate)
     -- Determine ingredients
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(line_data.recipe_proto.ingredients) do
-        local ingredient_amount = ingredient.amount
+        local ingredient_amount = determine_amount_with_productivity(ingredient)
         
-        -- Incorporate productiviy where applicable, else the ingredient_amount stays the same
-        if (ingredient.proddable_amount > 0) and (line_data.total_effects.productivity > 0) then
-            ingredient_amount = calculation.util.determine_prodded_amount(ingredient, line_data.total_effects)
-        end
-
-        ingredient_amount = ingredient_amount * production_ratio
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
         -- Reduce the line-byproducts and -ingredients so only the net amounts remain
