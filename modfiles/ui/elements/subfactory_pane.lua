@@ -229,7 +229,7 @@ function refresh_info_pane(player)
     -- Timescale
     local table_timescale = table_info_elements.add{type="table", name="table_timescale_buttons", column_count=2}
     local label_timescale_title = table_timescale.add{type="label", name="label_timescale_title",
-      caption={"", {"fp.timescale"}, " [img=info]: "}, tooltip={"fp.timescales"}}
+      caption={"", {"fp.timescale"}, " [img=info]: "}, tooltip={"fp.timescales_tt"}}
     label_timescale_title.style.font = "fp-font-14p"
     table_timescale.style.bottom_margin = 4
 
