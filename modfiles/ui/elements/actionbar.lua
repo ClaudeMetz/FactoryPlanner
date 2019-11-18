@@ -48,7 +48,7 @@ function refresh_actionbar(player)
         archive_tooltip = {"", archive_tooltip, "\n", {"fp.archive_empty"}}
     else 
         local subs = (archived_subfactories_count == 1) and {"fp.subfactory"} or {"fp.subfactories"}
-        archive_tooltip = {"", archive_tooltip, "\n- ", {"fp.archive_filled_1"},
+        archive_tooltip = {"", archive_tooltip, "\n- ", {"fp.archive_filled"},
           " " .. archived_subfactories_count .. " ", subs, " -"}
     end
     toggle_archive_button.tooltip = archive_tooltip
