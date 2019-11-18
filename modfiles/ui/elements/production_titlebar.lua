@@ -151,19 +151,25 @@ function handle_floor_change_click(player, destination)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
 
+    if subfactory == nil or floor == nil then return end
+
     local selected_floor = nil
-    if destination == "up" then
+    if destination == "up" and floor.level > 1 then
         selected_floor = floor.origin_line.parent
     elseif destination == "top" then
         selected_floor = Subfactory.get(subfactory, "Floor", 1)
     end
-    data_util.context.set_floor(player, selected_floor)
 
-    -- Remove floor if no recipes have been added to it
-    Floor.delete_empty(floor)
+    -- Only need to refresh if the floor was indeed changed
+    if selected_floor ~= nil then
+        data_util.context.set_floor(player, selected_floor)
 
-    ui_state.current_activity = nil
-    calculation.update(player, subfactory, true)
+        -- Remove floor if no recipes have been added to it
+        Floor.delete_empty(floor)
+
+        ui_state.current_activity = nil
+        calculation.update(player, subfactory, true)
+    end
 end
 
 

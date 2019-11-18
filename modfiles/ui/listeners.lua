@@ -53,16 +53,22 @@ script.on_event("fp_toggle_main_dialog", function(event)
     toggle_main_dialog(player)
 end)
 
--- Fires on pressing the keyboard shortcut to cycle production views
-script.on_event("fp_cycle_production_views", function(event)
+-- Fires on pressing of the keyboard shortcut to go up a floor
+script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
-    change_view_state(player, nil)
+    handle_floor_change_click(player, "up")
 end)
 
 -- Fires on pressing of the keyboard shortcut to refresh the production table
 script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
     calculation.update(player, get_context(player).subfactory, true)
+end)
+
+-- Fires on pressing the keyboard shortcut to cycle production views
+script.on_event("fp_cycle_production_views", function(event)
+    local player = game.get_player(event.player_index)
+    change_view_state(player, nil)
 end)
 
 -- Fires on pressing of the keyboard shortcut to confirm a dialog
@@ -142,7 +148,7 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     elseif string.find(event.element.name, "^fp_textfield_line_comment_%d+$") then
         handle_comment_change(player, event.element)
         
-    -- Actives the instant filter based on user serachfield text entry
+    -- Activates the instant filter based on user search-string entry
     elseif event.element.name == "fp_textfield_picker_search_bar" and
       not get_settings(player).performance_mode then
         picker.search(player)
