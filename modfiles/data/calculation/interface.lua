@@ -258,11 +258,11 @@ function calculation.util.determine_production_ratio(machine_proto, recipe_proto
     return (machine_limit --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier
 end
 
--- Calculates the ingredient amount after applying productivity bonuses
+-- Calculates the ingredient/product amount after applying productivity bonuses
 -- [Formula derived from: amount - proddable_amount + (proddable_amount / productivity)]
-function calculation.util.determine_prodded_amount(ingredient, total_effects)
+function calculation.util.determine_prodded_amount(item, total_effects)
     local productivity = (1 + math.max(total_effects.productivity, 0))
-    return ingredient.amount + ingredient.proddable_amount * ((1 / productivity) - 1)
+    return item.amount + item.proddable_amount * ((1 / productivity) - 1)
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
