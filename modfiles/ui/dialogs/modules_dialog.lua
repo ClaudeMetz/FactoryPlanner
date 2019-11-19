@@ -195,14 +195,14 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
         flow_beacons.style.left_margin = 6
         flow_beacons.style.bottom_margin = 6
 
-        local selected_beacon = ui_state.modal_data.selected_beacon
+        local selected_object = ui_state.selected_object
         for _, beacon_proto in pairs(global.all_beacons.beacons) do
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_beacon_selection_"
               .. beacon_proto.id, sprite=beacon_proto.sprite, mouse_button_filter={"left"}}
             local tooltip = beacon_proto.localised_name
             local style = "fp_button_icon_medium_hidden"
 
-            if beacon ~= nil and selected_beacon ~= nil and selected_beacon.name == beacon_proto.name then
+            if selected_object ~= nil and selected_object.proto.name == beacon_proto.name then
                 style = "fp_button_icon_medium_green"
                 tooltip = {"", tooltip, "\n", {"fp.current_beacon"}}
             end
@@ -237,11 +237,14 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
 
     -- Adjustments for a beacon prototype line
     if type == "beacon" then
-        local preferred_beacon = get_preferences(player).preferred_beacon
-        modal_data.selected_beacon = preferred_beacon
-        sprite = preferred_beacon.sprite
-        tooltip = preferred_beacon.localised_name
         decimal = true
+        
+        if object == nil then
+            local preferred_beacon = get_preferences(player).preferred_beacon
+            modal_data.selected_beacon = preferred_beacon
+            sprite = preferred_beacon.sprite
+            tooltip = preferred_beacon.localised_name
+        end
     end
 
     flow = flow_modal_dialog.add{type="flow", name="flow_" .. type .. "_bar", direction="horizontal"}
