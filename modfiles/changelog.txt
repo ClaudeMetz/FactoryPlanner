@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Added a hotkey to go up a floor in a subfactory (SHIFT+R by default)
   Changes:
     - Improved performance of the calculation model
+    - Right-clicking on beacons now removes them, which is in line with the rest of the UI
     - Made the localisation more compatible with other mods. Everything had to be moved around, so translation mods will have to do a bit of work to be compatible again. If you're having trouble, join the Discord and I'll try to help.
   Bugfixes:
     - Fixed a calculation error regarding productivity on certain types of recipes
