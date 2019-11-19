@@ -351,10 +351,16 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
 
         calculation.update(player, ui_state.context.subfactory, true)
 
-    else  -- click is left or right, makes no difference
-        local beacon = line.beacon
-        enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
-          {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+    else
+        if click == "left" then
+            local beacon = line.beacon
+            enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
+              {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+
+        else  -- click == "right"
+            Line.remove_beacon(line)
+            calculation.update(player, ui_state.context.subfactory, true)
+        end
     end
 end
 
