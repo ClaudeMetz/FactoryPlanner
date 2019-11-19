@@ -69,7 +69,8 @@ function ui_util.add_tutorial_tooltip(player, button, tooltip, type, line_break,
         elseif tooltip ~= nil then
             return {"", tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. type}, f}
         end
-    end
+    -- Return the tooltip as-is if Tutorial Mode is inactive
+    elseif tooltip then return tooltip end
 end
 
 

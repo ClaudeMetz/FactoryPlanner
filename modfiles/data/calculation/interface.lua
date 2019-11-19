@@ -112,17 +112,18 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
             id = line.id,
             timescale = subfactory.timescale,
             percentage = line.percentage,
+            production_type = line.recipe.production_type,
             machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit},
             total_effects = nil,  -- reference or copy, depending on case
+            beacon_consumption = 0,
             priority_product_proto = line.priority_product_proto,  -- reference
-            production_type = line.recipe.production_type,
             recipe_proto = line.recipe.proto,  -- reference
             machine_proto = line.machine.proto,  -- reference
             fuel_proto = nil,  -- will be a reference
             subfloor = nil  -- will be a floor_data object
         }
 
-        -- total_effects
+        -- Total effects
         if line.machine.proto.mining then
             -- If there is mining prod, a copy of the table is required
             local effects = data_util.shallowcopy(line.total_effects)
@@ -131,6 +132,11 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
         else
             -- If there's no mining prod, a reference will suffice
             line_data.total_effects = line.total_effects
+        end
+
+        -- Beacon total (can be calculated here, which is faster and simpler)
+        if line.beacon ~= nil and line.beacon.total_amount ~= nil then
+            line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
         end
 
         -- Fuel proto

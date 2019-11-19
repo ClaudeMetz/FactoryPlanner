@@ -198,11 +198,14 @@ function create_line_table_row(player, line)
             flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
 
             local m = (beacon.amount == 1) and {"fp.beacon"} or {"fp.beacons"}
-            local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_" .. line.id,
-              sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
+            local b = (beacon.total_amount ~= nil) and {"", " (", {"fp.total"}, ": ", beacon.total_amount, ")"} or "" 
+            local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_"
+              .. line.id, sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
-              " ", m, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil)}}
+              " ", m, b, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil)}}
             button_beacon.style.padding = 2
+
+            if beacon.total_amount ~= nil then ui_util.add_overlay_sprite(button_beacon, "fp_sprite_purple_circle", 32) end
             ui_util.add_tutorial_tooltip(player, button_beacon, nil, "beacon_beacon", true, false)
         end
     end

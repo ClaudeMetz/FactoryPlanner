@@ -92,7 +92,7 @@ function close_beacon_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         -- It makes no difference if this is an edit or not, the beacon gets replaced anyway
         local new_beacon = Beacon.init_by_protos(ui_state.modal_data.selected_beacon, tonumber(data.beacon_amount),
-          ui_state.modal_data.selected_module, tonumber(data.module_amount))
+          ui_state.modal_data.selected_module, tonumber(data.module_amount), tonumber(data.beacon_total))
         Line.set_beacon(line, new_beacon)   
 
     elseif action == "delete" then  -- only possible on edit
@@ -112,7 +112,9 @@ function get_beacon_condition_instructions(modal_data)
             module_sprite = (function(flow_modal_dialog) return
               flow_modal_dialog["flow_module_bar"]["sprite-button_module"].sprite end),
             module_amount = (function(flow_modal_dialog) return
-               flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text end)
+               flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text end),
+            beacon_total = (function(flow_modal_dialog) return
+                flow_modal_dialog["flow_beacon_total"]["textfield_beacon_total"].text end)
         },
         conditions = {
             [1] = {
@@ -159,7 +161,29 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
     
     -- Module bar
     module = (type == "beacon" and beacon ~= nil) and beacon.module or module
-    create_prototype_line(flow_modal_dialog, "module", line, module)
+    create_prototype_line(flow_modal_dialog, "module", line, module)    
+
+
+    -- Beacon Total
+    if type == "beacon" then
+        local flow_beacon_total = flow_modal_dialog.add{type="flow", name="flow_beacon_total", direction="horizontal"}
+        flow_beacon_total.style.margin = {4, 4, 10, 0}
+        flow_beacon_total.style.vertical_align = "center"
+
+        flow_beacon_total.add{type="label", name="label_beacon_total", caption={"", {"fp.beacon_total"}, " [img=info]"},
+          tooltip={"fp.beacon_total_tt"}}
+
+        local textfield_beacon_total = flow_beacon_total.add{type="textfield", name="textfield_beacon_total"}
+          ui_util.setup_numeric_textfield(textfield_beacon_total, true, false)
+        if line.beacon ~= nil then textfield_beacon_total.text = (line.beacon.total_amount or "") end
+        textfield_beacon_total.style.width = 70
+        textfield_beacon_total.style.margin = {0, 6}
+
+        local button_beacon_selector = flow_beacon_total.add{type="button", name="fp_button_beacon_selector",
+          caption={"fp.select"}, style="fp_button_mini", tooltip={"fp.beacon_select"}, mouse_button_filter={"left"}}
+        button_beacon_selector.style.top_margin = 1
+    end
+
 
     -- Beacon selection
     if type == "beacon" and #global.all_beacons.beacons > 1 then
@@ -225,7 +249,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     flow.style.horizontal_spacing = 8
     flow.style.vertical_align = "center"
 
-    flow.add{type="label", name="label_" .. type, caption={"fp." .. type}}
+    flow.add{type="label", name="label_" .. type, caption={"fp.c" .. type}}
     local button = flow.add{type="sprite-button", name="sprite-button_" .. type, sprite=sprite, tooltip=tooltip,
       style="slot_button"}
     button.style.width = 28
@@ -408,4 +432,21 @@ function max_module_amount(player)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text = get_ui_state(player).modal_data.empty_slots
     exit_modal_dialog(player, "submit", {})
+end
+
+-- Handles entering the beacon-selection mode
+function enter_beacon_selection(player)
+    player.cursor_stack.set_stack("fp_beacon_selector")
+    set_selection_mode(player, true)
+end
+
+-- Leaves the beacon-selection mode, applying the results if available
+function leave_beacon_selection(player, beacon_amount)
+    local textfield_beacon_total = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
+      ["flow_beacon_total"]["textfield_beacon_total"]
+    textfield_beacon_total.text = beacon_amount or textfield_beacon_total.text
+    if beacon_amount then textfield_beacon_total.focus() end
+
+    player.cursor_stack.set_stack(nil)
+    set_selection_mode(player, false)
 end

@@ -20,5 +20,12 @@ data:extend({
         filename = "__factoryplanner__/graphics/red_arrow_down.png",
         priority = "extra-high-no-scale",
         size = 40
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_purple_circle",
+        filename = "__factoryplanner__/graphics/purple_circle.png",
+        priority = "extra-high-no-scale",
+        size = 40
     }
 })
