@@ -256,9 +256,13 @@ function model.update_line(line_data, aggregate)
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
     end
 
+    -- Include beacon energy consumption
+    energy_consumption = energy_consumption + line_data.beacon_consumption
+
     aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
     aggregate.pollution = aggregate.pollution + pollution
 
+    
     -- Update the actual line with the calculated results
     calculation.interface.set_line_result {
         player_index = aggregate.player_index,

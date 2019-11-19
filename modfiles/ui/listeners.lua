@@ -87,20 +87,40 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
     end
 end)
 
+-- Fires when the user makes a selection using a selection-tool
+script.on_event(defines.events.on_player_selected_area, function(event)
+    local player = game.get_player(event.player_index)
+
+    if event.item == "fp_beacon_selector" then
+        leave_beacon_selection(player, table_size(event.entities))
+    end
+end)
+
+-- Fires when the item that the player is holding changes
+script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
+    local player = game.get_player(event.player_index)
+    -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
+    if get_ui_state(player).selection_mode and not player.cursor_stack.valid_for_read then
+        leave_beacon_selection(player, nil)
+    end
+end)
+
 
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.get_player(event.player_index)
+    local ui_state = get_ui_state(player)
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
       and string.find(event.element.name, "^fp_.+$") then
 
-        -- Close or hide any modal dialog
-		if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
-			exit_modal_dialog(player, "cancel", {})
+        -- Close or hide any modal dialog or leave selection mode
+        if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
+            if ui_state.selection_mode then leave_beacon_selection(player, nil)
+            else exit_modal_dialog(player, "cancel", {}) end
     
         -- Toggle the main dialog
-		elseif event.element.name == "fp_frame_main_dialog" then
+        elseif event.element.name == "fp_frame_main_dialog" then
             toggle_main_dialog(player)
             
         end
@@ -284,6 +304,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Maxes the amount of modules on a modules-dialog
         elseif event.element.name == "fp_button_max_modules" then
             max_module_amount(player)
+
+        -- Gives the player the beacon-selector
+        elseif event.element.name == "fp_button_beacon_selector" then
+            enter_beacon_selection(player)
 
         -- Reacts to a modal dialog button being pressed
         elseif string.find(event.element.name, "^fp_button_modal_dialog_[a-z]+$") then

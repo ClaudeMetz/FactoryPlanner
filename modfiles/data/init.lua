@@ -203,6 +203,7 @@ function reset_ui_state(player)
     ui_state_table.floor_total = false  -- Whether the floor or subfactory totals are displayed
     ui_state_table.archive_open = false  -- Wether the players subfactory archive is currently open
     ui_state_table.view_state = nil  -- The state of the production views
+    ui_state_table.selection_mode = false  -- Whether the player is currently using a selector
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.recipe_filter_preferences = 
       {disabled = false, hidden = false}  -- The preferred state of both recipe filters

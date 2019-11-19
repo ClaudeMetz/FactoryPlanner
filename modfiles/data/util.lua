@@ -345,7 +345,8 @@ local function construct_floor(player, floor, recipes)
             local module_data = recipe_data.beacon.module
             local module_proto = find_module(module_data.name)
 
-            local beacon = Beacon.init_by_protos(beacon_proto, beacon_data.amount, module_proto, module_data.amount)
+            local beacon = Beacon.init_by_protos(beacon_proto, beacon_data.amount, module_proto, module_data.amount,
+              recipe_data.beacon.total_amount)
             Line.set_beacon(line, beacon)
         end
 

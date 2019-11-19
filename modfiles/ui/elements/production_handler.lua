@@ -317,13 +317,13 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
             if direction == "positive" then
                 if alt then
                     local new_beacon = Beacon.init_by_protos(beacon.proto, beacon.amount + 1, beacon.module.proto,
-                      beacon.module.amount)
+                      beacon.module.amount, beacon.total_amount)
                     Line.set_beacon(line, new_beacon)
                 else
                     local new_proto = global.all_beacons.beacons[beacon.proto.id + 1]
                     if new_proto ~= nil then
                         local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
-                          beacon.module.amount)
+                          beacon.module.amount, beacon.total_amount)
                         Line.set_beacon(line, new_beacon)
                     end
                 end
@@ -335,14 +335,14 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
                         Line.remove_beacon(line)
                     else
                         local new_beacon = Beacon.init_by_protos(beacon.proto, new_amount, beacon.module.proto,
-                      beacon.module.amount)
+                      beacon.module.amount, beacon.total_amount)
                     Line.set_beacon(line, new_beacon)
                     end
                 else
                     local new_proto = global.all_beacons.beacons[beacon.proto.id - 1]
                     if new_proto ~= nil then
                         local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
-                          beacon.module.amount)
+                          beacon.module.amount, beacon.total_amount)
                         Line.set_beacon(line, new_beacon)
                     end
                 end

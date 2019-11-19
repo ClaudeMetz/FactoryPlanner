@@ -79,6 +79,22 @@ function toggle_modal_dialog(player, frame_modal_dialog)
     end
 end
 
+-- Sets selection mode and configures the related GUI's
+function set_selection_mode(player, state)
+    local ui_state = get_ui_state(player)
+    ui_state.selection_mode = state
+    player.gui.screen["fp_frame_main_dialog"].visible = not state
+
+    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+    frame_modal_dialog.ignored_by_interaction = state
+    if state == true then
+        frame_modal_dialog.location = {25, 50}
+    else
+        frame_modal_dialog.force_auto_center()
+        player.opened = frame_modal_dialog
+    end
+end
+
 
 -- Refreshes the entire main dialog, optionally including it's dimensions
 -- Creates the dialog if it doesn't exist; Recreates it if needs to
