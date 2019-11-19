@@ -321,8 +321,7 @@ function refresh_module_selection(flow_modal_dialog, ui_state, type, line)
                 elseif characteristics.existing_amount ~= nil then
                     button_module.number = characteristics.existing_amount
                     style = "fp_button_icon_medium_cyan"
-                    tooltip = {"", tooltip, "\n", {"fp.existing_module_a"}, " ", characteristics.existing_amount,
-                      " ", {"fp.existing_module_b"}}
+                    tooltip = {"", tooltip, "\n", {"fp.existing_module", characteristics.existing_amount}}
                 end
                 tooltip = {"", tooltip, ui_util.generate_module_effects_tooltip_proto(module)}
 

@@ -140,17 +140,18 @@ function create_line_table_row(player, line)
         if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
         local machine_text = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
 
+        local limit = line.machine.limit
         local style, limit_notice = "fp_button_icon_medium_recipe", ""
-        if line.machine.limit ~= nil then
+        if limit ~= nil then
             if line.machine.hard_limit then
                 style = "fp_button_icon_medium_cyan"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_hard"}, " -"}
+                limit_notice = {"", "\n- ", {"fp.machine_limit_hard", limit}, " -"}
             elseif line.production_ratio < line.uncapped_production_ratio then
                 style = "fp_button_icon_medium_yellow"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_enforced"}, " -"}
+                limit_notice = {"", "\n- ", {"fp.machine_limit_enforced", limit}, " -"}
             else
                 style = "fp_button_icon_medium_green"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_set"}, " -"}
+                limit_notice = {"", "\n- ", {"fp.machine_limit_set", limit}, " -"}
             end
         end
 

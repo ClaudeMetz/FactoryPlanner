@@ -268,7 +268,8 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
         end
     end
     
-    return tooltip
+    if table_size(tooltip) > 1 then return {"", "\n", tooltip}
+    else return tooltip end
 end
 
 -- Returns a tooltip containing the attributes of the given beacon prototype

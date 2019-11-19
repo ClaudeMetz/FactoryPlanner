@@ -130,9 +130,8 @@ function refresh_production_pane(player)
                   "\n", {"fp.cycle_production_views"}}
             elseif view.name == "belts_or_lanes" then
                 local belts_lanes_label = (player_table.settings.belts_or_lanes == "belts") 
-                  and {"fp.cbelts"} or {"fp.clanes"}
-                button.tooltip = {"", {"fp.belts_or_lanes_a"}, " ", belts_lanes_label, " ",
-                  {"fp.belts_or_lanes_b"}, "\n", {"fp.cycle_production_views"}}
+                  and {"fp.belts"} or {"fp.lanes"}
+                button.tooltip = {"", {"fp.belts_or_lanes", belts_lanes_label}, "\n", {"fp.cycle_production_views"}}
             end
 
             -- It's disabled if it's selected or not enabled by the view
