@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.65
+Date: 19. 11. 2019
   Features:
     - You can now set a hard limit on the amount of machines on a recipe line
     - You can now also set an absolute number of beacons for every recipe, which includes them in energy calculations. There's also a selection tool to count already placed beacons.
