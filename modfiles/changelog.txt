@@ -2,16 +2,17 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - You can now set a hard limit on the machine amount of a recipe line
-    - You can now also set an absolute number of beacons for every recipe, including them in energy calculations. There's also a selection tool to incorporate already placed beacons.
+    - You can now set a hard limit on the amount of machines on a recipe line
+    - You can now also set an absolute number of beacons for every recipe, which includes them in energy calculations. There's also a selection tool to count already placed beacons.
     - Added a performance mode setting that disables certain performance-intensive features
     - Added a hotkey to go up a floor in a subfactory (SHIFT+R by default)
   Changes:
     - Improved performance of the calculation model
     - Made the localisation more compatible with other mods. Everything had to be moved around, so translation mods will have to do a bit of work to be compatible again. If you're having trouble, join the Discord and I'll try to help.
   Bugfixes:
-    - Fixed the 'Machine rounding precision' setting not working correctly
     - Fixed a calculation error regarding productivity on certain types of recipes
+    - Fixed the 'Machine rounding precision' setting not working correctly
+    - Fixed that the current beacon wasn't being selected when editing
     - Fixed SI-unit localisations not actually being shown
     - Made time-shorthands (s, m, h) properly localisable
 
