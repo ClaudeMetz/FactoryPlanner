@@ -176,15 +176,15 @@ function generate_chooser_machine_buttons(player)
 end
 
 -- Recieves the result of the machine choice and applies it
-function apply_chooser_machine_choice(player, machine_id)
+function apply_machine_choice(player, machine_id)
     local context = get_context(player)
     local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(machine_id)]
     data_util.machine.change(player, context.line, machine, nil)
     calculation.update(player, context.subfactory, false)
 end
 
--- Recieves the result of the machine limit choice and applies it
-function apply_options_machine_choice(player, machine, options)
+-- Recieves the result of the machine limit options and applies it
+function apply_machine_options(player, machine, options)
     local context = get_context(player)
     -- tonumber() has already converted an empty string to nil
     if options.machine_limit == nil then options.hard_limit = false end
@@ -457,7 +457,7 @@ function generate_chooser_fuel_buttons(player)
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_chooser_fuel_choice(player, new_fuel_id)
+function apply_fuel_choice(player, new_fuel_id)
     local context = get_context(player)
     local line = context.line
 
