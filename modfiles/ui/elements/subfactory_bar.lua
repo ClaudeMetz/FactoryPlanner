@@ -164,7 +164,7 @@ end
 
 
 -- Moves selection to the clicked element, edits it, or shifts it's position left or right
-function handle_subfactory_element_click(player, subfactory_id, click, direction)
+function handle_subfactory_element_click(player, subfactory_id, click, direction, action)
     local ui_state = get_ui_state(player)
     local subfactory = Factory.get(ui_state.context.factory, "Subfactory", subfactory_id)
 
@@ -182,9 +182,12 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
         if click == "left" and old_subfactory == subfactory then
             handle_floor_change_click(player, "top")
 
-        -- Edit clicked subfactory
         elseif click == "right" then
-            enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
+            if action == "edit" then
+                enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
+            elseif action == "delete" then
+                handle_subfactory_deletion(player)
+            end
         
         -- Refresh if the selected subfactory is indeed changed
         else

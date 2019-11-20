@@ -136,7 +136,7 @@ end
 
 
 -- Opens clicked element in FNEI or shifts it left or right
-function handle_ingredient_element_click(player, ingredient_id, click, direction, alt)
+function handle_ingredient_element_click(player, ingredient_id, click, direction, action, alt)
     local subfactory = get_context(player).subfactory
     local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
 
@@ -153,9 +153,10 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
 end
 
 -- Handles click on a subfactory pane product button
-function handle_product_element_click(player, product_id, click, direction, alt)
+function handle_product_element_click(player, product_id, click, direction, action, alt)
     local context = get_context(player)
-    local product = Subfactory.get(context.subfactory, "Product", product_id)
+    local subfactory = context.subfactory
+    local product = Subfactory.get(subfactory, "Product", product_id)
 
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(product, click)
@@ -164,10 +165,10 @@ function handle_product_element_click(player, product_id, click, direction, alt)
         return
 
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(context.subfactory, product, direction)
+        Subfactory.shift(subfactory, product, direction)
         refresh_item_table(player, "Product")
 
-    else  -- Open modal dialogs
+    else
         if click == "left" then
             if context.floor.level == 1 then
                 enter_modal_dialog(player, {type="recipe_picker", object=product, modal_data={production_type="produce"}})
@@ -175,14 +176,25 @@ function handle_product_element_click(player, product_id, click, direction, alt)
                 ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1)
             end
         elseif click == "right" then
-            enter_modal_dialog(player, {type="item_picker", object=product, submit=true, delete=true})
+            if action == "edit" then
+                enter_modal_dialog(player, {type="item_picker", object=product, submit=true, delete=true})
+
+            elseif action == "delete" then
+                Subfactory.remove(subfactory, product)
+
+                -- Remove useless recipes after a product has been deleted
+                calculation.update(player, subfactory, false)
+                Subfactory.remove_useless_lines(subfactory)
+
+                refresh_main_dialog(player)
+            end
         end
     end
 end
 
 
 -- Handles click on a subfactory pane byproduct button
-function handle_byproduct_element_click(player, byproduct_id, click, direction, alt)
+function handle_byproduct_element_click(player, byproduct_id, click, direction, action, alt)
     local context = get_context(player)
     local byproduct = Subfactory.get(context.subfactory, "Byproduct", byproduct_id)
     
@@ -205,6 +217,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
         end
     end
 end
+
 
 
 -- Constructs the info pane including timescale settings

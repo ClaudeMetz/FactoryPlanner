@@ -214,7 +214,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     local ui_state = get_ui_state(player)
     
     -- Determine click type and direction
-    local click, direction = nil, nil
+    local click, direction, action
 
     if event.button == defines.mouse_button_type.left then click = "left"
     elseif event.button == defines.mouse_button_type.right then click = "right" end
@@ -222,6 +222,9 @@ script.on_event(defines.events.on_gui_click, function(event)
     if click == "left" then
         if not event.control and event.shift then direction = "positive" 
         elseif event.control and not event.shift then direction = "negative" end
+    elseif click == "right" then
+        if event.control and not event.shift and not event.alt then action = "delete"
+        elseif not event.control and not event.shift and not event.alt then action = "edit" end
     end
 
     -- Handle the actual click
@@ -317,7 +320,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a subfactory button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_subfactory_element_click(player, subfactory_id, click, direction)
+            handle_subfactory_element_click(player, subfactory_id, click, direction, action)
             
         -- Changes the timescale of the current subfactory
         elseif string.find(event.element.name, "^fp_button_timescale_%d+$") then
@@ -327,7 +330,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to any subfactory_pane item button being pressed (class name being a string is fine)
         elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-zA-Z]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, event.alt)
+            _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, action, event.alt)
 
         -- Reacts to a item group button being pressed (item or recipe group)
         elseif string.find(event.element.name, "^fp_sprite%-button_[a-z]+_group_%d+$") then
@@ -357,7 +360,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to the recipe button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_recipe_%d+$") then
             local line_id = tonumber(string.match(event.element.name, "%d+"))
-            handle_line_recipe_click(player, line_id, click, direction, event.alt)
+            handle_line_recipe_click(player, line_id, click, direction, action, event.alt)
 
         -- Reacts to the machine button on an (assembly) line being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+$") then
@@ -377,7 +380,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Handles click on any module button on an (assembly) line
         elseif string.find(event.element.name, "^fp_sprite%-button_line_module_%d+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            handle_line_module_click(player, split_string[5], split_string[6], click, direction, event.alt)
+            handle_line_module_click(player, split_string[5], split_string[6], click, direction, action, event.alt)
 
         -- Handles click on the add-beacon-button on an (assembly) line
         elseif string.find(event.element.name, "^fp_sprite%-button_line_add_beacon_%d+$") then
@@ -387,7 +390,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Handles click on any beacon (module or beacon) button on an (assembly) line
         elseif string.find(event.element.name, "^fp_sprite%-button_line_beacon_[a-z]+_%d+$") then
             local split_string = ui_util.split(event.element.name, "_")
-            handle_line_beacon_click(player, split_string[6], split_string[5], click, direction, event.alt)
+            handle_line_beacon_click(player, split_string[6], split_string[5], click, direction, action, event.alt)
 
         -- Handles click on any module/beacon button on a modules/beacons modal dialog
         elseif string.find(event.element.name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
