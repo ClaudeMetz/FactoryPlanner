@@ -56,19 +56,19 @@ end)
 -- Fires on pressing of the keyboard shortcut to go up a floor
 script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
-    handle_floor_change_click(player, "up")
+    if is_main_dialog_in_focus(player) then handle_floor_change_click(player, "up") end
 end)
 
 -- Fires on pressing of the keyboard shortcut to refresh the production table
 script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
-    calculation.update(player, get_context(player).subfactory, true)
+    if is_main_dialog_in_focus(player) then calculation.update(player, get_context(player).subfactory, true) end
 end)
 
 -- Fires on pressing the keyboard shortcut to cycle production views
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
-    change_view_state(player, nil)
+    if is_main_dialog_in_focus(player) then change_view_state(player, nil) end
 end)
 
 -- Fires on pressing of the keyboard shortcut to confirm a dialog

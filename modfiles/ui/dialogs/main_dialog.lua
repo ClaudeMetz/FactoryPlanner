@@ -46,6 +46,12 @@ function toggle_button_interface(player)
     mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
 end
 
+-- Returns true when the main dialog is open while no modal dialogs are
+function is_main_dialog_in_focus(player)
+    return (player.gui.screen["fp_frame_main_dialog"].visible == true
+      and get_ui_state(player).modal_dialog_type == nil)
+end
+
 
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
