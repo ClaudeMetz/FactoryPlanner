@@ -11,7 +11,7 @@ function open_preferences_dialog(flow_modal_dialog)
 
     -- General preferences
     flow_modal_dialog.add{type="label", name="label_general_info", caption={"", {"fp.preferences_title_general"}, ":"},
-      style="fp_preferences_title_label", tooltip={"fp.preferences_title_general"}}
+      style="fp_preferences_title_label", tooltip={"fp.preferences_title_general_tt"}}
     local table_general_prefs = flow_modal_dialog.add{type="table", name="table_general_preferences", column_count=1}
     table_general_prefs.style.top_margin = 2
     table_general_prefs.style.bottom_margin = 8
