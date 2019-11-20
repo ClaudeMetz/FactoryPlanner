@@ -1,5 +1,5 @@
 -- Handles any clicks on the recipe icon of an (assembly) line
-function handle_line_recipe_click(player, line_id, click, direction, alt)
+function handle_line_recipe_click(player, line_id, click, direction, action, alt)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
@@ -35,7 +35,7 @@ function handle_line_recipe_click(player, line_id, click, direction, alt)
             refresh_main_dialog(player)
             
         -- Handle removal of clicked (assembly) line
-        elseif click == "right" then
+        elseif click == "right" and action == "delete" then
             if archive_status then return end
 
             if line.subfloor == nil then
@@ -194,7 +194,7 @@ end
 
 
 -- Handles a click on an existing module or on the add-module-button
-function handle_line_module_click(player, line_id, module_id, click, direction, alt)
+function handle_line_module_click(player, line_id, module_id, click, direction, action, alt)
     if ui_util.check_archive_status(player) then return end
 
     local ui_state = get_ui_state(player)
@@ -245,22 +245,21 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
 
             calculation.update(player, ui_state.context.subfactory, true)
 
-        else
-            if click == "left" then  -- open the modules modal dialog
+        elseif click == "right" then
+            if action == "edit" then
                 enter_modal_dialog(player, {type="module", object=module, submit=true, delete=true,
-                  modal_data={empty_slots=(limit + module.amount), selected_module=module.proto}})
+                    modal_data={empty_slots=(limit + module.amount), selected_module=module.proto}})
 
-            else  -- click == "right"; delete the module
+            elseif action == "delete" then
                 Line.remove(line, module)
                 calculation.update(player, ui_state.context.subfactory, true)
-
             end
         end
     end
 end
 
 -- Handles a click on an existing beacon/beacon-module or on the add-beacon-button
-function handle_line_beacon_click(player, line_id, type, click, direction, alt)
+function handle_line_beacon_click(player, line_id, type, click, direction, action, alt)
     if ui_util.check_archive_status(player) then return end
 
     local ui_state = get_ui_state(player)
@@ -351,13 +350,13 @@ function handle_line_beacon_click(player, line_id, type, click, direction, alt)
 
         calculation.update(player, ui_state.context.subfactory, true)
 
-    else
-        if click == "left" then
+    elseif click == "right" then
+        if action == "edit" then
             local beacon = line.beacon
             enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
               {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
 
-        else  -- click == "right"
+        elseif action == "delete" then
             Line.remove_beacon(line)
             calculation.update(player, ui_state.context.subfactory, true)
         end
