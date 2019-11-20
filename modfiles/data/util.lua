@@ -337,16 +337,16 @@ local function construct_floor(player, floor, recipes)
             end
         end
 
-        -- Optionally, add beacon
-        if recipe_data.beacon ~= nil then
-            local beacon_data = recipe_data.beacon.beacon
+        -- Optionally, add beacons
+        if recipe_data.beacons ~= nil then
+            local beacon_data = recipe_data.beacons.beacon
             local beacon_proto = global.all_beacons.beacons[global.all_beacons.map[beacon_data.name]]
 
-            local module_data = recipe_data.beacon.module
+            local module_data = recipe_data.beacons.module
             local module_proto = find_module(module_data.name)
 
             local beacon = Beacon.init_by_protos(beacon_proto, beacon_data.amount, module_proto, module_data.amount,
-              recipe_data.beacon.total_amount)
+              recipe_data.beacons.total_amount)
             Line.set_beacon(line, beacon)
         end
 
@@ -431,7 +431,7 @@ function data_util.add_example_subfactory(player)
     
     -- Always add the example subfactory as a non-archived one
     local subfactory = Factory.add(factory, Subfactory.init("Example", 
-      {type="item", name="automation-science-pack"}, "one_minute"))
+      {type="item", name="production-science-pack"}, "one_minute"))
     factory.selected_subfactory = subfactory
     data_util.context.set_factory(player, factory)
     ui_state.archive_open = false
@@ -439,19 +439,9 @@ function data_util.add_example_subfactory(player)
     -- Products
     local products = {
         {
-            name = "automation-science-pack",
+            name = "production-science-pack",
             type = "item",
-            required_amount = 60
-        },
-        {
-            name = "logistic-science-pack",
-            type = "item",
-            required_amount = 60
-        },
-        {
-            name = "military-science-pack",
-            type = "item",
-            required_amount = 60
+            required_amount = 180
         }
     }
     add_products(subfactory, products)
@@ -461,47 +451,58 @@ function data_util.add_example_subfactory(player)
     -- (Order is important; sub-tables represent their own subfloors (recursively))
     local recipes = {
         {
-            name="automation-science-pack",
-            machine="assembling-machine-2",
-            modules={{name="speed-module", amount=2}}
-        },
-        {
-            {name="logistic-science-pack", machine="assembling-machine-2"},
-            {name="transport-belt", machine="assembling-machine-1"},
-            {name="inserter", machine="assembling-machine-1"}
-        },
-        {
             {
-                name="military-science-pack",
-                machine="assembling-machine-2",
-                modules={{name="productivity-module-2", amount=2}},
-                beacon={beacon={name="beacon", amount=8}, module={name="speed-module-2", amount=2}}
+                name="production-science-pack",
+                machine="assembling-machine-3",
+                modules={{name="productivity-module-3", amount=4}},
+                beacons={beacon={name="beacon", amount=8}, module={name="speed-module-3", amount=2}}
             },
             {
-                name="grenade",
-                machine="assembling-machine-2",
-                modules={{name="speed-module-3", amount=2}}
+                name="rail",
+                machine="assembling-machine-2"
             },
-            {name="stone-wall", machine="assembling-machine-1"},
-            {name="piercing-rounds-magazine", machine="assembling-machine-1"},
-            {name="firearm-magazine", machine="assembling-machine-1"}
-        }, 
-        {name="iron-gear-wheel", machine="assembling-machine-1"},
+            {
+                name="iron-stick",
+                machine="assembling-machine-2"
+            },
+            {
+                name="electric-furnace",
+                machine="assembling-machine-2"
+            },
+            {
+                name="productivity-module",
+                machine="assembling-machine-2",
+                modules={{name="speed-module-2", amount=2}},
+            }
+        },
         {
-            {name="electronic-circuit", machine="assembling-machine-1"},
-            {name="copper-cable", machine="assembling-machine-1"}
-        }, 
-        {name="steel-plate", machine="steel-furnace"},
-        {name="stone-brick", machine="steel-furnace"},
+            name="advanced-circuit",
+            machine="assembling-machine-3",
+            modules={{name="productivity-module-3", amount=4}},
+            beacons={beacon={name="beacon", amount=8}, module={name="speed-module-3", amount=2}}
+        },
+        {
+            name="electronic-circuit",
+            machine="assembling-machine-2"
+        },
+        {
+            name="copper-cable",
+            machine="assembling-machine-2"
+        },
+        {
+            name="steel-plate",
+            machine="electric-furnace",
+            modules={{name="productivity-module-3", amount=2}},
+            beacons={beacon={name="beacon", amount=8}, module={name="speed-module-3", amount=2}}
+        },
+        {
+            name="stone-brick",
+            machine="electric-furnace"
+        },
         {
             name="impostor-stone",
             machine="electric-mining-drill",
-            modules={{name="speed-module-2", amount=1}, {name="effectivity-module-2", amount=1}}
-        },
-        {
-            name="impostor-coal",
-            machine="electric-mining-drill",
-            beacon={beacon={name="beacon", amount=6}, module={name="speed-module-3", amount=2}}
+            modules={{name="productivity-module-2", amount=2}, {name="speed-module-2", amount=1}}
         }
     }
     construct_floor(player, ui_state.context.floor, recipes)
