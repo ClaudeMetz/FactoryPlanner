@@ -11,6 +11,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     local table_tutorial = flow_modal_dialog.add{type="table", name="table_tutorial", column_count=1}
     table_tutorial.style.bottom_margin = 8
 
+
     -- Interactive
     local interactive_title = table_tutorial.add{type="label", name="label_interactive_title",
       caption={"fp.interactive"}}
@@ -41,13 +42,21 @@ function open_tutorial_dialog(flow_modal_dialog)
     local switch = ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode, 
       {"fp.tutorial_mode"}, {"fp.tutorial_mode_tt"})
 
-    -- General Tips
+
+    -- Interface
     local interface_title = table_tutorial.add{type="label", name="label_interface_title", caption={"fp.interface"}}
     interface_title.style.font = "fp-font-bold-20p"
     local label_interface = table_tutorial.add{type="label", name="label_tutorial_interface", caption={"fp.interface_text"}}
     label_interface.style.single_line = false
-    label_interface.style.bottom_margin = 20
 
+    local fnei_label = (remote.interfaces["fnei"] ~= nil) and {"fp.interface_controls_fnei"} or ""
+    local label_controls = table_tutorial.add{type="label", name="label_tutorial_controls",
+      caption={"", {"fp.interface_controls"}, fnei_label}}
+    label_controls.style.single_line = false
+    label_controls.style.margin = {6, 0, 16, 6}
+
+
+    -- Usage
     local usage_title = table_tutorial.add{type="label", name="label_usage_title", caption={"fp.usage"}}
     usage_title.style.font = "fp-font-bold-20p"
     local label_usage = table_tutorial.add{type="label", name="label_tutorial_usage", caption={"fp.usage_text"}}
@@ -59,8 +68,8 @@ function open_tutorial_dialog(flow_modal_dialog)
     local protips_title = table_tutorial.add{type="label", name="label_protips_title", caption={"fp.protips"}}
     protips_title.style.font = "fp-font-bold-20p"
 
-    local protip_names = {"hovering", "list_ordering", "machine_changing", "machine_preferences", "interface_width",
-      "fnei", "recipe_consolidation", "recursive_subfloors"}
+    local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings", 
+      "recursive_subfloors", "views", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
     for _, name in ipairs(protip_names) do
         local label = table_tutorial.add{type="label", name="label_tutorial_" .. name, 
           caption={"", "- ", {"fp.pro_" .. name}}}

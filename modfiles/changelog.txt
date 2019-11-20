@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
+    - Improved and extended the Tutorial and Pro Tips
     - Changed the example subfactory
   Bugfixes:
     - 
