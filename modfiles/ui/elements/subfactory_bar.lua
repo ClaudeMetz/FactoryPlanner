@@ -173,17 +173,22 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
         Factory.shift(ui_state.context.factory, subfactory, direction)
         refresh_subfactory_bar(player, false)
 
+    -- Change selected subfactory
     else
         old_subfactory = ui_state.context.subfactory
         data_util.context.set_subfactory(player, subfactory)
-        -- Change selected subfactory
-        if click == "left" then
-            -- Reset Floor when clicking on selected subfactory
+
+        -- Reset Floor when clicking on selected subfactory
+        if click == "left" and old_subfactory == subfactory then
             handle_floor_change_click(player, "top")
 
         -- Edit clicked subfactory
         elseif click == "right" then
             enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
+        
+        -- Refresh if the selected subfactory is indeed changed
+        else
+            refresh_main_dialog(player)
         end
     end
 end

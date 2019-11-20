@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Improved and extended the Tutorial and Pro Tips
     - Changed the example subfactory
   Bugfixes:
-    - 
+    - Fixed the selected floor not being conserved when changing subfactories
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.65
