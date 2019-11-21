@@ -4,9 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added support for fluid temperatures (mainly relevant for steam)
   Changes:
-    - 
-  Bugfixes:
-    - 
+    - Re-added left-click on the module and beacon buttons
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.67
