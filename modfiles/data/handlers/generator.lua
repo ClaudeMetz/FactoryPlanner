@@ -1,7 +1,7 @@
 generator = {}
 
 -- Inserts given prototype into given table t and adds it to t's map
--- Example: type = "recipes"
+-- Example: type_name = "recipes"
 local function insert_proto(t, type_name, proto, add_identifier)
     table.insert(t[type_name], proto)
     local id = #t[type_name]
@@ -76,6 +76,18 @@ local function is_barreling_recipe(proto)
 end
 
 
+-- Returns the appropriate prototype name for the given item, incorporating temperature
+local function format_temperature_name(item, name)
+    return (item.temperature) and string.gsub(name, "-[0-9]+$", "") or name
+end
+
+-- Returns the appropriate localised string for the given item, incorporating temperature
+local function format_temperature_localised_name(item, proto)
+    return (item.temperature ~= nil) and {"", proto.localised_name, " (",
+      item.temperature, {"fp.unit_celsius"}, ")"} or proto.localised_name
+end
+
+
 -- Determines the actual amount of items that a recipe product or ingredient equates to
 local function generate_formatted_item(base_item, type)
     local actual_amount, proddable_amount = 0, 0
@@ -106,11 +118,17 @@ local function generate_formatted_item(base_item, type)
         end
     end
 
+    -- This will probably screw up the main_product detection down the line
+    if base_item.temperature ~= nil then
+        base_item.name = base_item.name .. "-" .. base_item.temperature
+    end
+
     return {
         name = base_item.name,
         type = base_item.type,
         amount = actual_amount,
-        proddable_amount = proddable_amount
+        proddable_amount = proddable_amount,
+        temperature = base_item.temperature
     }
 end
 
@@ -228,8 +246,10 @@ function add_recipe_tooltip(recipe)
             multi_insert{"\n    ", {"fp.none"}}
         else
             for _, item in ipairs(recipe[item_type]) do
-                multi_insert{("\n    " .. "[" .. item.type .. "=" .. item.name .. "] " .. item.amount .. "x "),
-                  game[item.type .. "_prototypes"][item.name].localised_name}
+                local name = format_temperature_name(item, item.name)
+                local proto = game[item.type .. "_prototypes"][name]
+                local localised_name = format_temperature_localised_name(item, proto)
+                multi_insert{("\n    " .. "[" .. item.type .. "=" .. name .. "] " .. item.amount .. "x "), localised_name}
             end
         end
     end
@@ -330,7 +350,6 @@ function generator.all_recipes()
     end
 
     -- Adding mining recipes
-    -- (Inspired by https://github.com/npo6ka/FNEI/commit/58fef0cd4bd6d71a60b9431cb6fa4d96d2248c76)
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
@@ -393,25 +412,35 @@ function generator.all_recipes()
             add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
         end
-    end
     
-    -- Adds a recipe for producing (vanilla) steam
-    local steam_recipe = mining_recipe()
-    steam_recipe.name = "impostor-steam"
-    steam_recipe.localised_name = {"fluid-name.steam"}   -- official locale
-    steam_recipe.sprite = "fluid/steam"
-    steam_recipe.category = "steam"
-    steam_recipe.order = "z"
-    steam_recipe.subgroup = {name="fluids", order="z", valid=true}
-    steam_recipe.energy = 1
-    steam_recipe.emissions_multiplier = 1
-    steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
-    steam_recipe.products = {{type="fluid", name="steam", amount=60}}
-    steam_recipe.main_product = steam_recipe.products[1]
+        -- Adds a recipe for producing steam from a boiler
+        for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
+            if fluidbox.production_type == "output" and fluidbox.filter
+                and fluidbox.filter.name == "steam" then
+                -- Exclude any boilers that use heat as their energy source
+                if proto.burner_prototype or proto.electric_energy_source_prototype then
+                    local temperature = proto.target_temperature
+                    local recipe = mining_recipe()
+                    recipe.name = "impostor-steam-" .. temperature
+                    recipe.localised_name = {"", {"fluid-name.steam"}, " at ", temperature, {"fp.unit_celsius"}}
+                    recipe.sprite = "fluid/steam"
+                    recipe.category = "steam-" .. temperature
+                    recipe.order = "z-" .. temperature
+                    recipe.subgroup = {name="fluids", order="z", valid=true}
+                    recipe.energy = 1
+                    recipe.emissions_multiplier = 1
+                    recipe.ingredients = {{type="fluid", name="water", amount=60}}
+                    recipe.products = {{type="fluid", name="steam", amount=60, temperature=temperature}}
+                    recipe.main_product = recipe.products[1]
 
-    format_recipe_products_and_ingredients(steam_recipe)
-    add_recipe_tooltip(steam_recipe)
-    insert_proto(all_recipes, "recipes", steam_recipe, true)
+                    format_recipe_products_and_ingredients(recipe)
+                    add_recipe_tooltip(recipe)
+                    -- Prevent duplicate recipes, in case more than one boiler produces the same temperature of steam
+                    if all_recipes.map[recipe.name] == nil then insert_proto(all_recipes, "recipes", recipe, true) end
+                end
+            end
+        end
+    end
     
     -- Adds a convenient space science recipe
     local rocket_recipe = {
@@ -471,9 +500,11 @@ function generator.all_items()
     local function add_item(table, item)        
         local type = item.proto.type
         local name = item.proto.name
-        if table[type] == nil then table[type] = {} end
+        table[type] = table[type] or {}
+        table[type][name] = table[type][name] or {}
         -- Determine whether this item is used as a product at least once
-        table[type][name] = table[type][name] or item.is_product
+        table[type][name].is_product = table[type][name].is_product or item.is_product
+        table[type][name].temperature = item.proto.temperature
     end
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
@@ -486,15 +517,16 @@ function generator.all_items()
             add_item(relevant_items, {proto=ingredient, is_product=false})
         end
     end
-    -- Manually add the rocket-part item for the custom space recipe
-    add_item(relevant_items, {proto=game["item_prototypes"]["rocket-part"], is_product=true})
     
     -- Adding all standard items minus the undesirable ones
     local undesirables = undesirable_items()
     for type, item_table in pairs(relevant_items) do
-        for item_name, is_product in pairs(item_table) do
+        for item_name, item_details in pairs(item_table) do
             if not undesirables[type][item_name] then
-                local proto = game[type .. "_prototypes"][item_name]
+                local proto_name = format_temperature_name(item_details, item_name)
+                local proto = game[type .. "_prototypes"][proto_name]
+                local localised_name = format_temperature_localised_name(item_details, proto)
+                local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
                 local hidden = false  -- "entity" types are never hidden
                 if type == "item" then hidden = proto.has_flag("hidden")
@@ -502,12 +534,12 @@ function generator.all_items()
                 
                 if not hidden or item_name == "rocket-part" then  -- exclude hidden items
                     local item = {
-                        name = proto.name,
+                        name = item_name,
                         type = type,
                         sprite = type .. "/" .. proto.name,
-                        localised_name = proto.localised_name,
-                        ingredient_only = not is_product,
-                        order = proto.order,
+                        localised_name = localised_name,
+                        ingredient_only = not item_details.is_product,
+                        order = order,
                         group = generate_group_table(proto.group),
                         subgroup = generate_group_table(proto.subgroup)
                     }
@@ -707,13 +739,14 @@ function generator.all_machines()
 
                     -- Add the machine if it has a valid input fluidbox
                     if input_fluidbox ~= nil then
-                        local machine = generate_category_entry("steam", proto)
+                        local category = "steam-" .. proto.target_temperature
+                        local machine = generate_category_entry(category, proto)
                         
                         temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
                         energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy_usage / energy_per_unit
 
-                        deep_insert_proto(all_machines, "categories", "steam", "machines", machine)
+                        deep_insert_proto(all_machines, "categories", category, "machines", machine)
                     end
                 end
             end
