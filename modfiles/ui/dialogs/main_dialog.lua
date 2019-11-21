@@ -48,7 +48,8 @@ end
 
 -- Returns true when the main dialog is open while no modal dialogs are
 function is_main_dialog_in_focus(player)
-    return (player.gui.screen["fp_frame_main_dialog"].visible == true
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    return (main_dialog ~= nil and main_dialog.visible
       and get_ui_state(player).modal_dialog_type == nil)
 end
 
