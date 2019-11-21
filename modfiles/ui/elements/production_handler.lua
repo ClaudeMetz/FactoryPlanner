@@ -245,15 +245,13 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
 
             calculation.update(player, ui_state.context.subfactory, true)
 
-        elseif click == "right" then
-            if action == "edit" then
-                enter_modal_dialog(player, {type="module", object=module, submit=true, delete=true,
-                    modal_data={empty_slots=(limit + module.amount), selected_module=module.proto}})
+        elseif action == "delete" then
+            Line.remove(line, module)
+            calculation.update(player, ui_state.context.subfactory, true)
 
-            elseif action == "delete" then
-                Line.remove(line, module)
-                calculation.update(player, ui_state.context.subfactory, true)
-            end
+        elseif action == "edit" or click == "left" then
+            enter_modal_dialog(player, {type="module", object=module, submit=true, delete=true,
+              modal_data={empty_slots=(limit + module.amount), selected_module=module.proto}})
         end
     end
 end
@@ -350,16 +348,14 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
 
         calculation.update(player, ui_state.context.subfactory, true)
 
-    elseif click == "right" then
-        if action == "edit" then
-            local beacon = line.beacon
-            enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
-              {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+    elseif action == "delete" then
+        Line.remove_beacon(line)
+        calculation.update(player, ui_state.context.subfactory, true)
 
-        elseif action == "delete" then
-            Line.remove_beacon(line)
-            calculation.update(player, ui_state.context.subfactory, true)
-        end
+    elseif action == "edit" or click == "left" then
+        local beacon = line.beacon
+        enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
+          {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
     end
 end
 
