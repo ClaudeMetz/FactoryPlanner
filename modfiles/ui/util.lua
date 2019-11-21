@@ -291,7 +291,7 @@ end
 
 -- Returns a tooltip containing the attributes of the given machine prototype
 function ui_util.generate_machine_attributes_tooltip(machine)
-    return {"", {"fp.crafting_speed"}, ": ", machine.speed, "\n",
+    return {"", {"fp.crafting_speed"}, ": ", ui_util.format_number(machine.speed, 4), "\n",
              {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
              {"fp.module_slots"}, ": ", machine.module_limit}
 end
