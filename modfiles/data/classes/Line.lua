@@ -199,13 +199,16 @@ function Line.get_module_characteristics(self, module_proto)
     local recipe_proto = self.recipe.proto
     local machine_proto = self.machine.proto
 
-    -- First, check for recipe compatibility
-    if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
-      recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
-        compatible = false
+    if not self.recipe.valid or not self.machine.valid then compatible = false end
+
+    if compatible then
+        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
+          recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
+            compatible = false
+        end
     end
 
-    if compatible then  -- if it's not compatible anyway, no point in continuing
+    if compatible then
         local allowed_effects = machine_proto.allowed_effects
         if allowed_effects == nil then
             compatible = false
@@ -218,7 +221,7 @@ function Line.get_module_characteristics(self, module_proto)
         end
     end
 
-    if compatible then  -- if it's not compatible anyway, no point in continuing
+    if compatible then
         for _, module in pairs(Line.get_in_order(self, "Module")) do
             if module.proto == module_proto then
                 existing_amount = module.amount
@@ -239,13 +242,16 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
     local recipe_proto = self.recipe.proto
     local machine_proto = self.machine.proto
 
-    -- First, check for recipe compatibility
-    if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
-    recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
-        compatible = false
+    if not self.recipe.valid or not self.machine.valid then compatible = false end
+
+    if compatible then
+        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
+          recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
+            compatible = false
+          end
     end
 
-    if compatible then  -- if it's not compatible anyway, no point in continuing
+    if compatible then
         if machine_proto.allowed_effects == nil or beacon_proto.allowed_effects == nil then
             compatible = false
         else
