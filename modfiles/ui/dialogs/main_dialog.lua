@@ -107,7 +107,8 @@ end
 -- Creates the dialog if it doesn't exist; Recreates it if needs to
 function refresh_main_dialog(player, full_refresh)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if main_dialog == nil or full_refresh then
+    
+    if (main_dialog == nil and not full_refresh) or (main_dialog ~= nil and full_refresh) then
         if main_dialog ~= nil then main_dialog.clear()
         else main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"} end
         
@@ -115,7 +116,7 @@ function refresh_main_dialog(player, full_refresh)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
         main_dialog.style.minimal_width = dimensions.width
         main_dialog.style.height = dimensions.height
-        main_dialog.visible = not full_refresh  -- hide dialog on a full refresh
+        main_dialog.visible = (not full_refresh) or false  -- hide dialog on a full refresh
 
         add_titlebar_to(main_dialog)
         add_actionbar_to(main_dialog)
@@ -124,7 +125,7 @@ function refresh_main_dialog(player, full_refresh)
         add_subfactory_pane_to(main_dialog)
         add_production_pane_to(main_dialog)
 
-    elseif main_dialog.visible then
+    elseif main_dialog ~= nil and main_dialog.visible then
         -- Re-center the main dialog because it get screwed up sometimes for reasons
         local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
