@@ -8,7 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a bug where byproducts where sometimes not used as ingredients
     - Added a missing locale key
-    - Fixed a migration crash
+    - Fixed a couple migration crashes
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.69
