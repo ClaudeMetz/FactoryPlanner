@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - 
   Bugfixes:
+    - Fixed a bug where byproducts where sometimes not used as ingredients
     - Added a missing locale key
     - Fixed a migration crash
 

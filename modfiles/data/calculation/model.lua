@@ -28,9 +28,9 @@ function model.update_floor(floor_data, aggregate)
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
         if subfloor ~= nil then
-            -- Initialize aggregate with the requirments from the current one
+            -- Initialize aggregate with the requirements from the current one
             local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
-            for _, product in ipairs(line_data.recipe_proto.products) do
+            for _, product in ipairs(structures.class.to_array(aggregate.Product)) do
                 subfloor_aggregate.Product[product.type][product.name] = aggregate.Product[product.type][product.name]
             end
             
