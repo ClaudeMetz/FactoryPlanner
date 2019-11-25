@@ -96,7 +96,7 @@ function create_line_table_row(player, line)
         enabled = false
     else
         if line.subfloor then
-            tooltip = {"", tooltip, "\n", "- Subfloor attached -"}
+            tooltip = {"", tooltip, "\n", {"fp.subfloor_attached"}}
 
             style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
               "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
