@@ -293,6 +293,7 @@ function Line.summarize_effects(self)
     local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
 
     -- Machine base productivity
+    if not self.machine or not self.machine.proto then return end
     module_effects.productivity = module_effects.productivity + self.machine.proto.base_productivity
 
     -- Module effects
