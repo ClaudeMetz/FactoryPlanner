@@ -32,9 +32,11 @@ function Fuel.update_validity(self)
     end
 
     -- Check fuel category compatibility
-    local burner = self.parent.machine.proto.burner
-    if self.valid and not (burner and burner.categories[self.fuel_category]) then
-        self.valid = false
+    if self.valid and self.parent.valid and self.parent.machine and self.parent.machine.proto then
+        local burner = self.parent.machine.proto.burner
+        if not (burner and burner.categories[self.fuel_category]) then
+            self.valid = false
+        end
     end
 
     return self.valid
