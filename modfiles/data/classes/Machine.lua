@@ -18,6 +18,7 @@ end
 
 -- Update the validity of this machine
 function Machine.update_validity(self, recipe)
+    if self.category == nil or self.proto == nil then return false end
     local category_name = (type(self.category) == "string") and self.category or self.category.name
     local new_category_id = new.all_machines.map[category_name]
 
