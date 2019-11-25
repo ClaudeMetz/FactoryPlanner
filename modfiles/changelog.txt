@@ -1,10 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
-  Features:
-    - 
-  Changes:
-    - 
+Version: 0.17.70
+Date: 26. 11. 2019
   Bugfixes:
     - Fixed a bug where byproducts where sometimes not used as ingredients
     - Added a missing locale key
