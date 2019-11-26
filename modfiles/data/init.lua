@@ -13,10 +13,11 @@ require("data.classes.Line")
 require("data.handlers.migrator")
 require("data.handlers.generator")
 require("data.handlers.loader")
+require("data.handlers.constructor")
 require("data.calculation.interface")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Sets up global data structure of the mod
 script.on_init(function()
@@ -44,7 +45,7 @@ script.on_event(defines.events.on_player_created, function(event)
     player_gui_init(player)
 
     -- Runs setup if developer mode is active
-    data_util.run_dev_config(player)
+    constructor.dev_config(player)
 end)
 
 -- Fires when a player is irreversibly removed from a game
