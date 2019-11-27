@@ -28,10 +28,19 @@ function model.update_floor(floor_data, aggregate)
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
         if subfloor ~= nil then
-            -- Initialize aggregate with the requirements from the current one
+            -- Convert proto product table to class for easier and faster access
+            local proto_products = structures.class.init()
+            for _, product in pairs(line_data.recipe_proto.products) do
+                proto_products[product.type][product.name] = true
+            end
+
+            -- Determine the products that are relevant for this subfloor
             local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
             for _, product in ipairs(structures.class.to_array(aggregate.Product)) do
-                subfloor_aggregate.Product[product.type][product.name] = aggregate.Product[product.type][product.name]
+                local type, name = product.type, product.name
+                if proto_products[type][name] ~= nil then
+                    subfloor_aggregate.Product[type][name] = aggregate.Product[type][name]
+                end
             end
             
             local floor_products = structures.class.to_array(subfloor_aggregate.Product)
@@ -43,7 +52,6 @@ function model.update_floor(floor_data, aggregate)
                 subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
             end
             
-
             -- Update the main aggregate with the results
             aggregate.energy_consumption = subfloor_aggregate.energy_consumption
             aggregate.pollution = subfloor_aggregate.pollution
