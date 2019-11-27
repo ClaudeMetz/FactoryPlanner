@@ -81,12 +81,16 @@ function refresh_utility_components_structure(flow_modal_dialog)
         for _, category_data in pairs(data) do
             for _, component in pairs(category_data) do
                 if component.amount > 0 then
-                    local button = table_components.add{type="sprite-button", name=("sprite-button_" .. component.proto.name),
-                      sprite=component.proto.sprite, tooltip=component.proto.localised_name, style="fp_button_icon_medium_blank"}
+                    local button = table_components.add{type="sprite-button", name=("sprite-button_" ..
+                      component.proto.name), sprite=component.proto.sprite, tooltip=component.proto.localised_name,
+                      style="fp_button_icon_medium_blank", enabled=false}
                     button.number = component.amount
-                    button.enabled = false
                 end
             end
+        end
+
+        if table_size(table_components.children_names) == 0 then
+            table_components.add{type="label", caption={"fp.no_components", {"fp." .. name}}}
         end
     end
 
