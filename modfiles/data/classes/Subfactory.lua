@@ -15,6 +15,7 @@ function Subfactory.init(name, icon, timescale_setting)
         Ingredient = Collection.init(),
         Floor = Collection.init(),
         selected_floor = nil,
+        scopes = {},
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory"
@@ -37,11 +38,27 @@ function Subfactory.init(name, icon, timescale_setting)
     return subfactory
 end
 
+
 -- Exceptionally, a setter method to centralize edge-case handling
 function Subfactory.set_icon(subfactory, icon)
     if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
     subfactory.icon = icon
 end
+
+-- Gets the scope by the given name, or a default state
+function Subfactory.get_scope(self, name, raw)
+    if self.scopes == nil then self.scopes = {} end
+    self.scopes[name] = self.scopes[name] or "left"
+    if raw then return self.scopes[name]
+    else return ((self.scopes[name] == "left") and "Subfactory" or "Floor") end
+end
+
+-- Sets the given scope by to the given state
+function Subfactory.set_scope(self, name, state)
+    if self.scopes == nil then self.scopes = {} end
+    self.scopes[name] = state
+end
+
 
 function Subfactory.add(self, object)
     object.parent = self
@@ -124,6 +141,19 @@ function Subfactory.combine_item_collections(self, primary_items, secondary_item
     end
 
     return combination
+end
+
+
+-- Returns the machines and modules needed to actually build this subfactory
+function Subfactory.get_component_data(self)
+    local components = {machines={}, modules={}}
+
+    for _, floor in pairs(Floor.get_in_order(self, "Floor")) do
+        -- Relies on the floor-function to do the heavy lifting
+        Floor.get_component_data(floor, components)
+    end
+
+    return components
 end
 
 

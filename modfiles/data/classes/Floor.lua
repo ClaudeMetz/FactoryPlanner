@@ -73,6 +73,66 @@ function Floor.shift(self, dataset, direction)
 end
 
 
+-- Returns the machines and modules needed to actually build this floor
+function Floor.get_component_data(self, component_table)
+    local components = component_table or {machines={}, modules={}}
+
+    local function deep_insert(table, object)
+        table[object.proto.category] = table[object.proto.category] or {}
+        local entry = table[object.proto.category][object.proto.name]
+        if entry == nil then
+            table[object.proto.category][object.proto.name] = {
+                proto = object.proto,
+                amount = object.amount
+            }
+        else
+            entry.amount = entry.amount + object.amount
+        end
+    end
+
+    for _, line in pairs(Floor.get_in_order(self, "Line")) do
+        if component_table ~= nil and line.subfloor ~= nil then
+            --[[ continue ]]
+            
+        else
+            local ceil_machine_count = math.ceil(line.machine.count)
+
+            -- Machines
+            deep_insert(components.machines, {
+                proto = line.machine.proto,
+                amount = ceil_machine_count
+            })
+
+            -- Modules
+            for _, module in pairs(Line.get_in_order(line, "Module")) do
+                deep_insert(components.modules, {
+                    proto = module.proto,
+                    amount = ceil_machine_count * module.amount
+                })
+            end
+
+            -- Beacons
+            local beacon = line.beacon
+            if beacon and beacon.total_amount then
+                local ceil_total_amount = math.ceil(beacon.total_amount)
+
+                deep_insert(components.machines, {
+                    proto = beacon.proto,
+                    amount = ceil_total_amount
+                })
+                
+                deep_insert(components.modules, {
+                    proto = beacon.module.proto,
+                    amount = ceil_total_amount * beacon.module.amount
+                })
+            end
+        end
+    end
+    
+    return components
+end
+
+
 -- Update validity of this floor and its subfloors
 function Floor.update_validity(self)
     local classes = {Line = "Line"}

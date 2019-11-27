@@ -258,15 +258,23 @@ function refresh_info_pane(player)
     end
 
 
-    -- Notes
-    local table_notes = table_info_elements.add{type="table", name="table_notes", column_count=2}
-    local label_notes = table_notes.add{type="label", name="label_notes_title", caption={"", {"fp.notes"}, ":  "}}
-    label_notes.style.font = "fp-font-14p"
-    label_notes.style.bottom_padding = 2
-    local button_notes = table_notes.add{type="button", name="fp_button_view_notes", caption={"fp.view_notes"},
-      style="fp_button_mini", mouse_button_filter={"left"}}
-    button_notes.tooltip = (string.len(subfactory.notes) < 750) and
-      subfactory.notes or string.sub(subfactory.notes, 1, 750) .. "\n[...]"
+    -- Utility dialog
+    local table_utility = table_info_elements.add{type="table", name="table_utility", column_count=2}
+    table_utility.add{type="label", name="label_utility", caption={"", {"fp.utility"}, ": "}}
+    
+    local table_ut = table_utility.add{type="table", name="table_ut", column_count=2}
+    table_ut.style.horizontal_spacing = 20
+    table_ut.add{type="button", name="fp_button_open_utility_dialog", caption={"fp.view_utilities"}, style="fp_button_mini",
+      mouse_button_filter={"left"}}
+    
+    -- Only show the notes tooltip-label if there are any notes to show
+    if subfactory.notes ~= "" then
+        table_ut.draw_vertical_lines = true
+
+        local label_notes = table_ut.add{type="label", name="label_notes", caption={"", {"fp.notes"}, " [img=info]"}}
+        label_notes.tooltip = (string.len(subfactory.notes) < 1000) and
+          subfactory.notes or string.sub(subfactory.notes, 1, 1000) .. "\n[...]"
+    end
 
 
     -- Power Usage + Pollution

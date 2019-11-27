@@ -139,7 +139,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     end
 end)
 
--- Fires on any radiobutton change
+-- Fires on any switch change
 script.on_event(defines.events.on_gui_switch_state_changed, function(event)
     local player = game.get_player(event.player_index)
 
@@ -153,6 +153,11 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
         local filter_name = string.gsub(event.element.name, "fp_switch_picker_filter_condition_", "")
         handle_filter_switch_flick(player, filter_name, event.element.switch_state)
 
+    -- Refreshes the data attached to the clicked scope-switch
+    elseif string.find(event.element.name, "^fp_switch_utility_scope_[a-z]+$") then
+        local scope_type = string.gsub(event.element.name, "fp_switch_utility_scope_", "")
+        handle_utility_scope_change(player, scope_type, event.element.switch_state)
+    
     end
 end)
 
@@ -276,9 +281,9 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_button_toggle_archive" then
             toggle_archive_view(player)
             
-        -- Opens notes dialog
-        elseif event.element.name == "fp_button_view_notes" then
-            enter_modal_dialog(player, {type="notes", submit=true})
+        -- Opens utilitys dialog
+        elseif event.element.name == "fp_button_open_utility_dialog" then
+            enter_modal_dialog(player, {type="utility", submit=true})
 
         -- Changes into the manual override of the mining prod mode
         elseif event.element.name == "fp_button_mining_prod_override" then
