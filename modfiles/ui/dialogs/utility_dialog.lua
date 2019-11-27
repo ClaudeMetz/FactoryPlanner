@@ -78,14 +78,12 @@ function refresh_utility_components_structure(flow_modal_dialog)
         label.style.font = "default-bold"
         
         local table_components = table.add{type="table", column_count=10}
-        for _, category_data in pairs(data) do
-            for _, component in pairs(category_data) do
-                if component.amount > 0 then
-                    local button = table_components.add{type="sprite-button", name=("sprite-button_" ..
-                      component.proto.name), sprite=component.proto.sprite, tooltip=component.proto.localised_name,
-                      style="fp_button_icon_medium_blank", enabled=false}
-                    button.number = component.amount
-                end
+        for _, component in pairs(data) do
+            if component.amount > 0 then
+                local button = table_components.add{type="sprite-button", name=("sprite-button_" ..
+                  component.proto.name), sprite=component.proto.sprite, tooltip=component.proto.localised_name,
+                  style="fp_button_icon_medium_blank", enabled=false}
+                button.number = component.amount
             end
         end
 

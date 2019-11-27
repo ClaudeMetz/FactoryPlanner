@@ -1,12 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.00
 Date: 00. 00. 0000
-  Features:
-    - 
-  Changes:
-    - 
   Bugfixes:
-    - Added an info text when no machines/modules are needed in the utility dialog
+    - Added an info-label when no machines/modules are needed in the utility dialog
+    - Fixed a crash when opening the utility dialog under certain circumstances
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.71
