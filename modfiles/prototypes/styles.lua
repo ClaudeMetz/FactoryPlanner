@@ -50,7 +50,8 @@ data.raw["gui-style"].default["fp_sprite_button"] = {
 data.raw["gui-style"].default["fp_subfactory_sprite_button"] = {
     type = "button_style",
     parent = "fp_sprite_button",
-    height = 38
+    height = 38,
+    clicked_vertical_offset = 0
 }
 
 data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
