@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - 
   Bugfixes:
-    - 
+    - Added an info text when no machines/modules are needed in the utility dialog
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.71
