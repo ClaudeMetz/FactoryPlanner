@@ -77,11 +77,10 @@ end
 function Floor.get_component_data(self, component_table)
     local components = component_table or {machines={}, modules={}}
 
-    local function deep_insert(table, object)
-        table[object.proto.category] = table[object.proto.category] or {}
-        local entry = table[object.proto.category][object.proto.name]
+    local function add_to_count(table, object)
+        local entry = table[object.proto.name]
         if entry == nil then
-            table[object.proto.category][object.proto.name] = {
+            table[object.proto.name] = {
                 proto = object.proto,
                 amount = object.amount
             }
@@ -98,14 +97,14 @@ function Floor.get_component_data(self, component_table)
             local ceil_machine_count = math.ceil(line.machine.count)
 
             -- Machines
-            deep_insert(components.machines, {
+            add_to_count(components.machines, {
                 proto = line.machine.proto,
                 amount = ceil_machine_count
             })
 
             -- Modules
             for _, module in pairs(Line.get_in_order(line, "Module")) do
-                deep_insert(components.modules, {
+                add_to_count(components.modules, {
                     proto = module.proto,
                     amount = ceil_machine_count * module.amount
                 })
@@ -116,12 +115,12 @@ function Floor.get_component_data(self, component_table)
             if beacon and beacon.total_amount then
                 local ceil_total_amount = math.ceil(beacon.total_amount)
 
-                deep_insert(components.machines, {
+                add_to_count(components.machines, {
                     proto = beacon.proto,
                     amount = ceil_total_amount
                 })
                 
-                deep_insert(components.modules, {
+                add_to_count(components.modules, {
                     proto = beacon.module.proto,
                     amount = ceil_total_amount * beacon.module.amount
                 })
