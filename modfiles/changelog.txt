@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.17.00
+Date: 00. 00. 0000
+  Features:
+    - Converted the notes dialog into a utility dialog. It now contains the subfactory notes as well as an overview of how many machines/beacons/modules you'll need to build your current subfactory/floor. In the future, there will be more functionality added to this dialog.
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
 Version: 0.17.70
 Date: 26. 11. 2019
   Bugfixes:

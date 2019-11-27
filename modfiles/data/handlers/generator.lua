@@ -871,6 +871,7 @@ function generator.all_beacons()
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "entity/" .. proto.name,
+                category = "fp_beacon",  -- custom category to be similar to machines
                 allowed_effects = format_allowed_effects(proto.allowed_effects),
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
