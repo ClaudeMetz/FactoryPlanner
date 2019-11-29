@@ -17,7 +17,7 @@ require("data.handlers.constructor")
 require("data.calculation.interface")
 
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
---devmode = true  -- Enables certain conveniences for development
+devmode = true  -- Enables certain conveniences for development
 
 -- Sets up global data structure of the mod
 script.on_init(function()
@@ -76,9 +76,10 @@ function run_on_load()
         produce = generator.product_recipe_map(),
         consume = generator.ingredient_recipe_map()
     }
+    ordered_recipe_groups = generator.ordered_recipe_groups()
     sorted_objects = {
         items = generator.sorted_items(),
-        recipes = generator.sorted_recipes()
+        --recipes = generator.sorted_recipes()
     }
     identifier_item_map = generator.identifier_item_map()
     module_tier_map = generator.module_tier_map()

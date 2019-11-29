@@ -171,7 +171,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
     else
         if click == "left" then
             if context.floor.level == 1 then
-                enter_modal_dialog(player, {type="recipe_picker", object=product, modal_data={production_type="produce"}})
+                enter_modal_dialog(player, {type="recipe", object=product, modal_data={production_type="produce"}})
             else
                 ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1)
             end
@@ -211,7 +211,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
     elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, {type="recipe_picker", object=byproduct, modal_data={production_type="consume"}})
+            --enter_modal_dialog(player, {type="recipe", object=byproduct, modal_data={production_type="consume"}})
         else
             --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1)
         end

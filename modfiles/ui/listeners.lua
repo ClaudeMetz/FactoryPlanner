@@ -148,10 +148,10 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
         local state = ui_util.switch.convert_to_boolean(event.element.switch_state)
         get_preferences(player).tutorial_mode = state
 
-    -- Applies the disabled/hidden filter to a picker dialog
-    elseif string.find(event.element.name, "^fp_switch_picker_filter_condition_[a-z]+$") then
-        local filter_name = string.gsub(event.element.name, "fp_switch_picker_filter_condition_", "")
-        handle_filter_switch_flick(player, filter_name, event.element.switch_state)
+    -- Applies the disabled/hidden filter to the recipe dialog
+    elseif string.find(event.element.name, "^fp_switch_recipe_filter_[a-z]+$") then
+        local filter_name = string.gsub(event.element.name, "fp_switch_recipe_filter_", "")
+        handle_recipe_filter_switch_flick(player, filter_name, event.element.switch_state)
 
     -- Refreshes the data attached to the clicked scope-switch
     elseif string.find(event.element.name, "^fp_switch_utility_scope_[a-z]+$") then
@@ -346,6 +346,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_picker_[a-z]+_object_[0-9_]+$") then
             local split_string = ui_util.split(event.element.name, "_")
             _G["handle_picker_" .. split_string[4] .. "_click"](player, event.element)
+
+        -- Reacts to a recipe picker button being pressed
+        elseif string.find(event.element.name, "^fp_button_recipe_pick_[0-9]+$") then
+            local recipe_id = tonumber(string.match(event.element.name, "%d+"))
+            attempt_adding_recipe_line(player, recipe_id)
 
         -- Reacts to a chooser element button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
