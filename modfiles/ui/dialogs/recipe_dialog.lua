@@ -145,7 +145,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
 
         -- Only actually create this group if it contains any relevant recipes
         if relevant_recipes ~= nil then
-            local tooltip = (devmode) and {"", group.localised_name, "\n", group.name} or group.localised_name
+            local tooltip = (devmode) and {"", group.localised_name, ("\n" .. group.name)} or group.localised_name
             local group_sprite = table_recipes.add{type="sprite", name=("sprite_group_" .. group.name),
               sprite=("item-group/" .. group.name), tooltip=tooltip}
             group_sprite.style.stretch_image_to_widget_size = true

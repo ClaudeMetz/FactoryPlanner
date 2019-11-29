@@ -258,12 +258,12 @@ function add_recipe_tooltip(recipe)
     recipe.tooltip = tooltip
 end
 
--- Adds the tooltip for the given item
+--[[ -- Adds the tooltip for the given item
 local function add_item_tooltip(item)
     local tooltip = item.localised_name
     if devmode then tooltip = {"", tooltip, ("\n" .. item.name)} end
     item.tooltip = tooltip
-end
+end ]]
 
 
 -- Sorts the objects according to their group, subgroup and order
@@ -588,12 +588,13 @@ function generator.all_items()
                         sprite = type .. "/" .. proto.name,
                         localised_name = localised_name,
                         ingredient_only = not item_details.is_product,
+                        temperature = item_details.temperature,
                         order = order,
                         group = generate_group_table(proto.group),
                         subgroup = generate_group_table(proto.subgroup)
                     }
 
-                    add_item_tooltip(item)
+                    --add_item_tooltip(item)
                     deep_insert_proto(all_items, "types", type, "items", item, true)
                 end
             end
@@ -673,14 +674,8 @@ end
 -- Returns the names of the item groups that shouldn't be included
 function generator.undesirable_item_groups()
     return {
-        item = {
-            ["creative-mod_creative-tools"] = false,
-            ["im-tools"] = false
-        },
-        recipe = {
-            ["creative-mod_creative-tools"] = false,
-            ["im-tools"] = false
-        }
+        ["creative-mod_creative-tools"] = false,
+        ["im-tools"] = false
     }
 end
 

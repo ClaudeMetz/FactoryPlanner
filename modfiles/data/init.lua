@@ -72,16 +72,15 @@ end
 
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
+    ordered_recipe_groups = generator.ordered_recipe_groups()
     recipe_maps = {
         produce = generator.product_recipe_map(),
         consume = generator.ingredient_recipe_map()
     }
-    ordered_recipe_groups = generator.ordered_recipe_groups()
-    sorted_objects = {
-        items = generator.sorted_items(),
-        --recipes = generator.sorted_recipes()
-    }
+
+    sorted_items = generator.sorted_items()
     identifier_item_map = generator.identifier_item_map()
+    
     module_tier_map = generator.module_tier_map()
 end
 
@@ -212,7 +211,7 @@ function reset_ui_state(player)
     ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.flow_modal_dialog_height = nil  -- Will be determined when opening modal dialogs
-    ui_state_table.item_picker_location = nil  -- Used to remember the item picker location
+    --ui_state_table.item_picker_location = nil  -- Used to remember the item picker location
 end
 
 
