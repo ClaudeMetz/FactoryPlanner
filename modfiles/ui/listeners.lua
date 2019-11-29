@@ -174,9 +174,10 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         handle_comment_change(player, event.element)
         
     -- Activates the instant filter based on user search-string entry
-    elseif event.element.name == "fp_textfield_picker_search_bar" and
+    elseif event.element.name == "fp_textfield_item_picker_search_bar" and
       not get_settings(player).performance_mode then
-        picker.search(player)
+        local picker_flow = event.element.parent.parent
+        item_picker.filter(picker_flow, event.element.text, false)
 
     -- Persists mining productivity changes
     elseif event.element.name == "fp_textfield_mining_prod" then
@@ -291,7 +292,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif event.element.name == "fp_sprite-button_add_product" then
-            enter_modal_dialog(player, {type="item_picker", submit=true})
+            enter_modal_dialog(player, {type="product", submit=true})
         
         -- Toggles the TopLevelItems-amount display state
         elseif event.element.name == "fp_button_item_amount_toggle" then
@@ -337,15 +338,16 @@ script.on_event(defines.events.on_gui_click, function(event)
             local split_string = ui_util.split(event.element.name, "_")
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, action, event.alt)
 
-        -- Reacts to a item group button being pressed (item or recipe group)
-        elseif string.find(event.element.name, "^fp_sprite%-button_[a-z]+_group_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
-            picker.select_item_group(player, split_string[3], split_string[5])
+        -- Reacts to an item group button being pressed
+        elseif string.find(event.element.name, "^fp_sprite%-button_item_group_%d+$") then
+            local picker_flow = event.element.parent.parent.parent
+            local group_id = tonumber(string.match(event.element.name, "%d+"))
+            item_picker.select_group(picker_flow, group_id)
 
-        -- Reacts to a picker object button being pressed (the variable can me one or more ids)
-        elseif string.find(event.element.name, "^fp_sprite%-button_picker_[a-z]+_object_[0-9_]+$") then
-            local split_string = ui_util.split(event.element.name, "_")
-            _G["handle_picker_" .. split_string[4] .. "_click"](player, event.element)
+        -- Reacts to an item picker button being pressed
+        elseif string.find(event.element.name, "^fp_button_item_pick_%d+_%d+$") then
+            local item_identifier = string.gsub(event.element.name, "fp_button_item_pick_", "")
+            _G["handle_item_picker_" .. ui_state.modal_dialog_type .. "_click"](player, item_identifier)
 
         -- Reacts to a recipe picker button being pressed
         elseif string.find(event.element.name, "^fp_button_recipe_pick_[0-9]+$") then

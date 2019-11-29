@@ -177,7 +177,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
             end
         elseif click == "right" then
             if action == "edit" then
-                enter_modal_dialog(player, {type="item_picker", object=product, submit=true, delete=true})
+                enter_modal_dialog(player, {type="product", object=product, submit=true, delete=true})
 
             elseif action == "delete" then
                 Subfactory.remove(subfactory, product)

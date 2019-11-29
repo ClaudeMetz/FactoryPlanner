@@ -31,6 +31,7 @@ function player_gui_reset(player)
     local guis = {
         mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
         screen["fp_frame_main_dialog"],
+        screen["fp_frame_modal_dialog"],
         unpack(cached_dialogs)
     }
     for _, gui in pairs(guis) do
