@@ -344,7 +344,7 @@ function generator.all_recipes()
             }
             
             format_recipe_products_and_ingredients(recipe)
-            add_recipe_tooltip(recipe)
+            --add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
         end
     end
@@ -488,7 +488,7 @@ function generator.all_recipes()
     return all_recipes
 end
 
--- Generates a list of all recipes, sorted for display in the picker
+--[[ -- Generates a list of all recipes, sorted for display in the picker
 function generator.sorted_recipes()
     local recipes = {}
     for _, recipe in ipairs(global.all_recipes.recipes) do
@@ -496,6 +496,37 @@ function generator.sorted_recipes()
         if recipe.group.valid and recipe.subgroup.valid then table.insert(recipes, recipe) end
     end
     return create_object_tree(recipes)
+end ]]
+
+-- Returns a list of recipe groups in their proper order
+function generator.ordered_recipe_groups()
+    group_dict = {}
+
+    -- Make a dict with all recipe groups
+    if not global.all_recipes.recipes then return end
+    for _, recipe in pairs(global.all_recipes.recipes) do
+        if group_dict[recipe.group.name] == nil then
+            group_dict[recipe.group.name] = recipe.group
+        end
+    end
+
+    -- Invert it
+    local groups = {}
+    for _, group in pairs(group_dict) do
+        table.insert(groups, group)
+    end
+
+    -- Sort it
+    local function sorting_function(a, b)
+        if a.order < b.order then
+            return true
+        elseif a.order > b.order then
+            return false
+        end
+    end
+    table.sort(groups, sorting_function)
+
+    return groups
 end
 
 
