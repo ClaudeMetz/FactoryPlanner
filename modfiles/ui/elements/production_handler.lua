@@ -204,7 +204,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
     local limit = Line.empty_slots(line)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
-        enter_modal_dialog(player, {type="module", object=nil, submit=true, modal_data={empty_slots=limit}})
+        enter_modal_dialog(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     else  -- meaning an existing module was clicked
         local module = Line.get(line, "Module", module_id)
@@ -250,8 +250,8 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "edit" or click == "left" then
-            enter_modal_dialog(player, {type="module", object=module, submit=true, delete=true,
-              modal_data={empty_slots=(limit + module.amount), selected_module=module.proto}})
+            enter_modal_dialog(player, {type="module", submit=true, delete=true, modal_data={selected_object=module,
+              empty_slots=(limit + module.amount), selected_module=module.proto}})
         end
     end
 end
@@ -267,7 +267,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
 
     if type == nil then  -- meaning the add-beacon-button was pressed
         local limit = get_preferences(player).preferred_beacon.module_limit
-        enter_modal_dialog(player, {type="beacon", object=nil, submit=true, modal_data={empty_slots=limit}})
+        enter_modal_dialog(player, {type="beacon", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction
         if type == "module" then
@@ -354,8 +354,8 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
 
     elseif action == "edit" or click == "left" then
         local beacon = line.beacon
-        enter_modal_dialog(player, {type="beacon", object=beacon, submit=true, delete=true, modal_data=
-          {empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+        enter_modal_dialog(player, {type="beacon", submit=true, delete=true, modal_data={selected_object=beacon,
+          empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
     end
 end
 
@@ -396,7 +396,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         -- Pick recipe to produce said ingredient
         elseif click == "left" and item.proto.type ~= "entity" then
             if item.class == "Ingredient" or item.class == "Fuel" then
-                enter_modal_dialog(player, {type="recipe", object=item, modal_data={production_type="produce"}})
+                enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="produce"}})
 
             elseif item.class == "Product" then
                 if line.Product.count < 2 then
@@ -408,7 +408,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                 end
 
             elseif item.class == "Byproduct" then
-                --enter_modal_dialog(player, {type="recipe", object=item, modal_data={production_type="consume"}})
+                --enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}})
             end
         end
     end

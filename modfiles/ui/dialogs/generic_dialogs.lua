@@ -3,9 +3,8 @@
 
 -- **** CHOOSER ****
 -- Handles populating the chooser dialog
-function open_chooser_dialog(flow_modal_dialog)
+function open_chooser_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local modal_data = get_ui_state(player).modal_data
     flow_modal_dialog.parent.caption = {"", {"fp.choose"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_chooser_text", caption=modal_data.text}
 
@@ -34,9 +33,8 @@ end
 
 -- **** OPTIONS ****
 -- Handles populating the options dialog
-function open_options_dialog(flow_modal_dialog)
+function open_options_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local modal_data = get_ui_state(player).modal_data
 
     flow_modal_dialog.parent.caption = {"", {"fp.set"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_options_text", caption=modal_data.text}

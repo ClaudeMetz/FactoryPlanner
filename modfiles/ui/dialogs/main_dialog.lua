@@ -89,8 +89,7 @@ end
 
 -- Sets selection mode and configures the related GUI's
 function set_selection_mode(player, state)
-    local ui_state = get_ui_state(player)
-    ui_state.selection_mode = state
+    get_flags(player).selection_mode = state
     player.gui.screen["fp_frame_main_dialog"].visible = not state
 
     local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]

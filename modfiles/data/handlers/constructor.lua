@@ -137,7 +137,7 @@ function constructor.example_subfactory(player)
       {type="item", name="production-science-pack"}, "one_minute"))
     factory.selected_subfactory = subfactory
     data_util.context.set_factory(player, factory)
-    ui_state.archive_open = false
+    ui_state.flags.archive_open = false
     
     -- Products
     local products = {

@@ -26,6 +26,7 @@ end
 -- Disables edit and delete buttons if there exist no subfactories
 function refresh_actionbar(player)
     local ui_state = get_ui_state(player)
+    local archive_open = ui_state.flags.archive_open
     local actionbar = player.gui.screen["fp_frame_main_dialog"]["flow_action_bar"]
     local new_button = actionbar["fp_button_new_subfactory"]
     local delete_button = actionbar["fp_button_delete_subfactory"]
@@ -38,11 +39,11 @@ function refresh_actionbar(player)
     delete_button.enabled = subfactory_exists
 
     archive_button.enabled = subfactory_exists
-    archive_button.tooltip = (ui_state.archive_open) and 
+    archive_button.tooltip = (archive_open) and 
       {"fp.action_unarchive_subfactory"} or {"fp.action_archive_subfactory"}
 
     local archived_subfactories_count = get_table(player).archive.Subfactory.count
-    toggle_archive_button.enabled = (ui_state.archive_open or archived_subfactories_count > 0)
+    toggle_archive_button.enabled = (archive_open or archived_subfactories_count > 0)
     local archive_tooltip = {"fp.toggle_archive"}
     if not toggle_archive_button.enabled then 
         archive_tooltip = {"", archive_tooltip, "\n", {"fp.archive_empty"}}
@@ -65,7 +66,7 @@ function refresh_actionbar(player)
         ui_util.set_label_color(delete_button, "default_button")
     end
 
-    if ui_state.archive_open then
+    if archive_open then
         new_button.enabled = false
         archive_button.caption = {"fp.unarchive"}
         toggle_archive_button.caption = {"fp.close_archive"}
@@ -109,7 +110,7 @@ function handle_subfactory_archivation(player)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     local subfactory = ui_state.context.subfactory
-    local archive_open = ui_state.archive_open
+    local archive_open = ui_state.flags.archive_open
 
     local origin = archive_open and player_table.archive or player_table.factory
     local destination = archive_open and player_table.factory or player_table.archive
@@ -126,8 +127,8 @@ end
 function toggle_archive_view(player)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
-    local archive_open = not ui_state.archive_open  -- already negated right here
-    ui_state.archive_open = archive_open
+    local archive_open = not ui_state.flags.archive_open  -- already negated right here
+    ui_state.flags.archive_open = archive_open
 
     local factory = archive_open and player_table.archive or player_table.factory
     data_util.context.set_factory(player, factory)

@@ -1,9 +1,10 @@
 -- Handles populating the utility modal dialog
 function open_utility_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"fp.utilities"}
+    local context = get_context(game.get_player(flow_modal_dialog.player_index))
     
-    refresh_utility_components_structure(flow_modal_dialog)
-    create_utility_notes_structure(flow_modal_dialog)
+    refresh_utility_components_structure(flow_modal_dialog, context)
+    create_utility_notes_structure(flow_modal_dialog, context)
 end
 
 -- Handles closing of the utility dialog
@@ -25,7 +26,7 @@ function get_utility_condition_instructions()
 end
 
 -- Adds a titlebar for the given type of utility, optionally including a scope switch
-local function add_utility_titlebar(flow, type, tooltip, scope)
+local function add_utility_titlebar(flow, type, tooltip, scope, context)
     local flow_titlebar = flow.add{type="flow", name="flow_titlebar", direction="horizontal"}
     flow_titlebar.style.vertical_align = "center"
 
@@ -41,7 +42,6 @@ local function add_utility_titlebar(flow, type, tooltip, scope)
         local spacer = flow_titlebar.add{type="flow", direction="horizontal"}
         spacer.style.horizontally_stretchable = true
 
-        local context = get_context(game.get_player(flow.player_index))
         local state = Subfactory.get_scope(context.subfactory, type, true)
         local switch = flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type), switch_state=state,
           left_label_caption={"fp.csubfactory"}, right_label_caption={"fp.floor"}}
@@ -50,20 +50,21 @@ end
 
 -- Handles the changing of the given scope by the user
 function handle_utility_scope_change(player, type, state)
-    Subfactory.set_scope(get_context(player).subfactory, type, state)
+    local context = get_context(player)
+    Subfactory.set_scope(context.subfactory, type, state)
 
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
-    _G["refresh_utility_" .. type .. "_structure"](flow_modal_dialog)
+    _G["refresh_utility_" .. type .. "_structure"](flow_modal_dialog, context)
 end
 
 
 -- Refreshes the flow displaying the appropriate subfactory/floor components
-function refresh_utility_components_structure(flow_modal_dialog)
+function refresh_utility_components_structure(flow_modal_dialog, context)
     local flow = flow_modal_dialog["flow_components"]
     if flow == nil then
         flow = flow_modal_dialog.add{type="flow", name="flow_components", direction="vertical"}
         flow.style.bottom_margin = 12
-        add_utility_titlebar(flow, "components", true, true)
+        add_utility_titlebar(flow, "components", true, true, context)
         flow.add{type="table", name="table_components", column_count=2}
     end
 
@@ -92,7 +93,6 @@ function refresh_utility_components_structure(flow_modal_dialog)
         end
     end
 
-    local context = get_context(game.get_player(flow_modal_dialog.player_index))
     local scope = Subfactory.get_scope(context.subfactory, "components", false)
     local data = _G[scope].get_component_data(context[scope:lower()], nil)
 
@@ -101,13 +101,12 @@ function refresh_utility_components_structure(flow_modal_dialog)
 end
 
 -- Creates the flow containing this subfactories notes
-function create_utility_notes_structure(flow_modal_dialog)
+function create_utility_notes_structure(flow_modal_dialog, context)
     local flow = flow_modal_dialog.add{type="flow", name="flow_notes", direction="vertical"}
 
-    add_utility_titlebar(flow, "notes", false, false)
+    add_utility_titlebar(flow, "notes", false, false, context)
     
-    local subfactory = get_context(game.get_player(flow_modal_dialog.player_index)).subfactory
-    local text_box = flow.add{type="text-box", name="text-box_notes", text=subfactory.notes}
+    local text_box = flow.add{type="text-box", name="text-box_notes", text=context.subfactory.notes}
     text_box.style.width = 500
     text_box.style.height = 250
     text_box.word_wrap = true

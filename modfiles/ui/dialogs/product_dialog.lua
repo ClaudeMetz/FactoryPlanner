@@ -1,10 +1,9 @@
 require("ui.elements.item_picker")
 
 -- Handles populating the item picker dialog
-function open_product_dialog(flow_modal_dialog)
+function open_product_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local ui_state = get_ui_state(player)
-    local product = ui_state.selected_object
+    local product = modal_data.product
 
     flow_modal_dialog.parent.caption = (product == nil) and {"fp.add_product"} or {"fp.edit_product"}
     flow_modal_dialog.style.bottom_margin = 8
@@ -26,7 +25,7 @@ function close_product_dialog(flow_modal_dialog, action, data)
     local player = game.get_player(flow_modal_dialog.player_index)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
-    local product = ui_state.selected_object
+    local product = ui_state.modal_data.product
 
     if action == "submit" then
         local req_amount = tonumber(data.required_amount)
@@ -111,7 +110,7 @@ end
 -- Reacts to a picker item button being pressed
 function handle_item_picker_product_click(player, identifier)
     local item_proto = identifier_item_map[identifier]
-    get_ui_state(player).modal_data.selected_item = item_proto
+    get_modal_data(player).selected_item = item_proto
 
     local flow_product_bar = player.gui.screen["fp_frame_modal_dialog_product"]["flow_modal_dialog"]["flow_product_bar"]
     flow_product_bar["sprite-button_product"].sprite = item_proto.sprite

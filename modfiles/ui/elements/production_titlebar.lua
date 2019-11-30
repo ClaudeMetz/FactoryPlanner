@@ -174,14 +174,14 @@ end
 
 -- Toggles the button-style and ui_state of floor_total
 function toggle_floor_total_display(player, button)
-    local ui_state = get_ui_state(player)
+    local flags = get_flags(player)
 
     if button.style.name == "button" then
-        ui_state.floor_total = true
+        flags.floor_total = true
         button.style = "fp_button_selected"
         button.style.right_margin = 16
     else
-        ui_state.floor_total = false
+        flags.floor_total = false
         button.style = "button"
     end
 

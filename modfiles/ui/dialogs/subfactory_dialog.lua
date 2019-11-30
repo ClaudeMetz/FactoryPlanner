@@ -1,11 +1,10 @@
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
-function open_subfactory_dialog(flow_modal_dialog)
+function open_subfactory_dialog(flow_modal_dialog, modal_data)
     local player = game.players[flow_modal_dialog.player_index]
-    local ui_state = get_ui_state(player)
+    local subfactory = modal_data.subfactory
     
-    if ui_state.selected_object ~= nil then  -- Meaning this is an edit
+    if subfactory ~= nil then  -- Meaning this is an edit
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
-        local subfactory = ui_state.selected_object
         local icon = subfactory.icon
         if icon ~= nil then
             if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
@@ -24,7 +23,7 @@ function close_subfactory_dialog(flow_modal_dialog, action, data)
     local ui_state = get_ui_state(player)
 
     if action == "submit" then
-        local subfactory = ui_state.selected_object
+        local subfactory = ui_state.modal_data.subfactory
         if subfactory ~= nil then
             subfactory.name = data.name
             Subfactory.set_icon(subfactory, data.icon)  -- Exceptional setter for edge case handling

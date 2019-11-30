@@ -1,13 +1,12 @@
 -- Handles populating the recipe dialog
-function open_recipe_dialog(flow_modal_dialog)
+function open_recipe_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
-    local ui_state = get_ui_state(player)
-    local product = ui_state.selected_object
+    local product = modal_data.product
 
     flow_modal_dialog.parent.caption = {"fp.add_recipe"}
 
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, product, ui_state.modal_data.production_type)
+    local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
 
     if error ~= nil then
         ui_util.message.enqueue(player, error, "error", 2)
@@ -15,7 +14,7 @@ function open_recipe_dialog(flow_modal_dialog)
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
         if type(result) == "number" then  -- the given number being the recipe_id
-            ui_state.modal_data.message = show.message
+            modal_data.message = show.message
             attempt_adding_recipe_line(player, result)
         
         else  -- Otherwise, show the appropriately filtered dialog
@@ -25,9 +24,9 @@ function open_recipe_dialog(flow_modal_dialog)
                 table.insert(groups[recipe.group.name], recipe)
             end
 
-            ui_state.modal_data.groups = groups
-            ui_state.modal_data.recipes = result
-            ui_state.modal_data.filters = show.filters
+            modal_data.groups = groups
+            modal_data.recipes = result
+            modal_data.filters = show.filters
 
             create_recipe_dialog_structure(player, flow_modal_dialog)
             apply_recipe_filter(player)
@@ -73,7 +72,7 @@ function run_preliminary_checks(player, product, production_type)
     -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
     -- (This logic is probably inefficient, but it's clear and way faster than the loop above anyways)
     local show = { filters={} }
-    local user_prefs = get_ui_state(player).recipe_filter_preferences
+    local user_prefs = get_preferences(player).recipe_filters
     local relevant_recipes_count = table_size(relevant_recipes)
     if relevant_recipes_count - counts.disabled - counts.hidden - counts.disabled_hidden > 0 then
         show.filters.disabled = user_prefs.disabled or false
@@ -211,11 +210,10 @@ function apply_recipe_filter(player)
     flow_modal_dialog["label_warning_message"].visible = not any_recipe_visible
 
     -- Determine the scroll-pane height to avoid double scroll-bars in the dialog
-    local flow_modal_dialog_height = ui_state.flow_modal_dialog_height
     local warning_label_height = (not any_recipe_visible) and 36 or 0
     local desired_scroll_pane_height = 5 + (table_size(modal_data.groups) * 72)
     flow_modal_dialog["scroll-pane_recipes"].style.height = 
-      math.min(desired_scroll_pane_height, flow_modal_dialog_height - 65) - warning_label_height
+      math.min(desired_scroll_pane_height, modal_data.flow_modal_dialog_height - 65) - warning_label_height
 end
 
 
@@ -226,7 +224,7 @@ function handle_recipe_filter_switch_flick(player, type, state)
     ui_state.modal_data.filters[type] = boolean_state
     
     -- Remember the user selection for this type of filter
-    ui_state.recipe_filter_preferences[type] = boolean_state
+    get_preferences(player).recipe_filters[type] = boolean_state
 
     apply_recipe_filter(player)
 end
