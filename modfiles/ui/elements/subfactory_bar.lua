@@ -134,7 +134,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
 
         elseif click == "right" then
             if action == "edit" then
-                enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
+                enter_modal_dialog(player, {type="subfactory", submit=true, delete=true, modal_data={subfactory=subfactory}})
             elseif action == "delete" then
                 handle_subfactory_deletion(player)
             end

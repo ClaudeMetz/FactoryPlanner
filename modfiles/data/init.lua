@@ -183,6 +183,7 @@ function reload_preferences(player, table)
     local preferences = global.players[player.index].preferences
 
     preferences.tutorial_mode = preferences.tutorial_mode or true
+    preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
@@ -197,21 +198,20 @@ function reset_ui_state(player)
     global.players[player.index].ui_state = {}
     local ui_state_table = global.players[player.index].ui_state
     
-    ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
-    ui_state_table.selected_object = nil  -- The object relevant for a modal dialog
-    ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
-    ui_state_table.current_activity = nil  -- The current unique main dialog activity
-    ui_state_table.floor_total = false  -- Whether the floor or subfactory totals are displayed
-    ui_state_table.archive_open = false  -- Wether the players subfactory archive is currently open
-    ui_state_table.view_state = nil  -- The state of the production views
-    ui_state_table.selection_mode = false  -- Whether the player is currently using a selector
-    ui_state_table.message_queue = {}  -- The general message queue
-    ui_state_table.recipe_filter_preferences = 
-      {disabled = false, hidden = false}  -- The preferred state of both recipe filters
-    ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
-    ui_state_table.flow_modal_dialog_height = nil  -- Will be determined when opening modal dialogs
-    --ui_state_table.item_picker_location = nil  -- Used to remember the item picker location
+    ui_state_table.current_activity = nil  -- The current unique main dialog activity
+    ui_state_table.view_state = nil  -- The state of the production views
+    ui_state_table.message_queue = {}  -- The general message queue
+    ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
+    
+    ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
+    ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    
+    ui_state_table.flags = {
+        floor_total = false,  -- Whether the floor or subfactory totals are displayed
+        archive_open = false,  -- Wether the players subfactory archive is currently open
+        selection_mode = false  -- Whether the player is currently using a selector
+    }
 end
 
 
@@ -232,7 +232,14 @@ function get_ui_state(player)
     return global.players[player.index].ui_state
 end
 
--- The context is part of the ui state, but used frequently enough to warrant a getter
 function get_context(player)
     return global.players[player.index].ui_state.context
+end
+
+function get_modal_data(player)
+    return global.players[player.index].ui_state.modal_data
+end
+
+function get_flags(player)
+    return global.players[player.index].ui_state.flags
 end

@@ -14,7 +14,6 @@ cached_dialogs = {"fp_frame_modal_dialog_product"}
 function enter_modal_dialog(player, dialog_settings)
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
-    ui_state.selected_object = dialog_settings.object
     ui_state.modal_data = dialog_settings.modal_data or {}
 
     ui_state.current_activity = nil
@@ -22,10 +21,10 @@ function enter_modal_dialog(player, dialog_settings)
     
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
-    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings)
+    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings, ui_state.modal_data)
     
     toggle_modal_dialog(player, flow_modal_dialog.parent)
-    _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog)
+    _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog, ui_state.modal_data)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -67,9 +66,7 @@ function exit_modal_dialog(player, button, data)
     
     -- Close modal dialog
     ui_state.modal_dialog_type = nil
-    ui_state.selected_object = nil
     ui_state.modal_data = nil
-    ui_state.flow_modal_dialog_height = nil
     ui_state.context.line = nil
     
     if preserve then flow_modal_dialog.parent.visible = false
@@ -122,7 +119,7 @@ end
 
 
 -- Creates barebones modal dialog
-function create_base_modal_dialog(player, condition_instructions, dialog_settings)
+function create_base_modal_dialog(player, condition_instructions, dialog_settings, modal_data)
     local frame_name, flow_modal_dialog, cached = "fp_frame_modal_dialog", nil, false
     local cached_frame_name = "fp_frame_modal_dialog_" .. dialog_settings.type
 
@@ -207,10 +204,9 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
     end
 
     -- Adjust the dialog size to the main dialog height
-    local ui_state = get_ui_state(player)
-    local main_dialog_dimensions = ui_state.main_dialog_dimensions
-    ui_state.flow_modal_dialog_height = (main_dialog_dimensions.height - 120) * 0.95
-    flow_modal_dialog.style.maximal_height = ui_state.flow_modal_dialog_height
+    local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
+    modal_data.flow_modal_dialog_height = (main_dialog_dimensions.height - 120) * 0.95
+    flow_modal_dialog.style.maximal_height = modal_data.flow_modal_dialog_height
     
     -- Adjust visibility of the submit and delete buttons and the spacer
     local button_bar = frame_modal_dialog["flow_modal_dialog_button_bar"]

@@ -219,9 +219,8 @@ function item_picker.filter(picker_flow, searchterm, first_run)
     flow_picker_panel["table_item_groups"].style.height = group_row_count * 70
     
     -- Set scroll-pane height to be the same for all item groups
-    local flow_modal_dialog_height = ui_state.flow_modal_dialog_height
     scroll_pane_height = scroll_pane_height + (math.ceil(total_group_count / item_picker.groups_per_row) * 70)
-    local picker_panel_height = math.min(scroll_pane_height, (flow_modal_dialog_height - 100))
+    local picker_panel_height = math.min(scroll_pane_height, (ui_state.modal_data.flow_modal_dialog_height - 100))
       - (group_row_count * 70) - warning_label_height
     for _, child in ipairs(flow_picker_panel.children_names) do
         if string.find(child, "^scroll%-pane_subgroups_%d+$") then

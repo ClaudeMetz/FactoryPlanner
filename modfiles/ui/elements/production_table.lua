@@ -82,7 +82,7 @@ function create_line_table_row(player, line)
 
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
-    local archive_open = ui_state.archive_open
+    local archive_open = ui_state.flags.archive_open
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
 

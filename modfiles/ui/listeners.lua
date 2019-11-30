@@ -100,7 +100,7 @@ end)
 script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
     local player = game.get_player(event.player_index)
     -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-    if get_ui_state(player).selection_mode and not player.cursor_stack.valid_for_read then
+    if get_flags(player).selection_mode and not player.cursor_stack.valid_for_read then
         leave_beacon_selection(player, nil)
     end
 end)
@@ -109,14 +109,13 @@ end)
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.get_player(event.player_index)
-    local ui_state = get_ui_state(player)
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
       and string.find(event.element.name, "^fp_.+$") then
 
         -- Close or hide any modal dialog or leave selection mode
         if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
-            if ui_state.selection_mode then leave_beacon_selection(player, nil)
+            if get_flags(player).selection_mode then leave_beacon_selection(player, nil)
             else exit_modal_dialog(player, "cancel", {}) end
     
         -- Toggle the main dialog
@@ -268,7 +267,8 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Opens the edit-subfactory dialog
         elseif event.element.name == "fp_button_edit_subfactory" then
             local subfactory = ui_state.context.subfactory
-            enter_modal_dialog(player, {type="subfactory", object=subfactory, submit=true, delete=true})
+            enter_modal_dialog(player, {type="subfactory", submit=true,
+              delete=true, modal_data={subfactory=subfactory}})
 
         -- Reacts to the archive button being pressed
         elseif event.element.name == "fp_button_archive_subfactory" then

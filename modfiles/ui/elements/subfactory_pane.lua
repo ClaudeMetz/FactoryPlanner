@@ -71,7 +71,7 @@ function refresh_item_table(player, class)
     item_table.clear()
 
     -- Only show the totals for the current floor, if the toggle is active
-    if get_ui_state(player).floor_total and subfactory.selected_floor.level > 1 then
+    if get_flags(player).floor_total and subfactory.selected_floor.level > 1 then
         local parent_line = get_context(player).floor.origin_line
         if parent_line ~= nil and parent_line[class].count > 0 then
             local items = (class ~= "Ingredient") and Line.get_in_order(parent_line, class) or Collection.get_in_order(
@@ -171,13 +171,13 @@ function handle_product_element_click(player, product_id, click, direction, acti
     else
         if click == "left" then
             if context.floor.level == 1 then
-                enter_modal_dialog(player, {type="recipe", object=product, modal_data={production_type="produce"}})
+                enter_modal_dialog(player, {type="recipe", modal_data={product=product, production_type="produce"}})
             else
                 ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1)
             end
         elseif click == "right" then
             if action == "edit" then
-                enter_modal_dialog(player, {type="product", object=product, submit=true, delete=true})
+                enter_modal_dialog(player, {type="product", submit=true, delete=true, modal_data={product=product}})
 
             elseif action == "delete" then
                 Subfactory.remove(subfactory, product)
@@ -211,7 +211,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
     elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, {type="recipe", object=byproduct, modal_data={production_type="consume"}})
+            --enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
         else
             --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1)
         end
@@ -285,7 +285,7 @@ function refresh_info_pane(player)
     -- Show either subfactory or floor energy/pollution, depending on the floor_total toggle
     local origin_line = context.floor.origin_line
     local energy_consumption, pollution
-    if ui_state.floor_total and origin_line ~= nil then
+    if ui_state.flags.floor_total and origin_line ~= nil then
         energy_consumption = origin_line.energy_consumption
         pollution = origin_line.pollution
     else

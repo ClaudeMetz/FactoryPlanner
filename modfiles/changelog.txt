@@ -2,7 +2,8 @@
 Version: 0.17.00
 Date: 00. 00. 0000
   Features:
-    - Reworked the recipe picker to be quicker to use. Most recipes now also use the new, fancy tooltips.
+    - Reworked the recipe picker to be quicker to use and open faster. Most recipes now also use the new, fancy tooltips.
+    - The item/product picker now also uses the new tooltips.
   Changes:
     - 
   Bugfixes:
