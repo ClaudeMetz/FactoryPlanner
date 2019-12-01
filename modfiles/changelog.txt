@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Reworked the recipe picker to be easier to use. Most recipes now use the fancy new tooltips.
   Changes:
-    - 
+    - Various graphical and performance improvements
   Bugfixes:
     - 
 
