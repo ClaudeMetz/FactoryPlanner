@@ -30,9 +30,12 @@ function create_error_bar(flow, subfactory_id)
     local table = flow.add{type="table", name="table_error_bar", column_count=2}
     local label_2 = table.add{type="label", name="label_error_bar_2", caption={"", "   ", {"fp.error_bar_2"}, " "}}
     label_2.style.font = "fp-font-16p"
-    local button = table.add{type="button", name="fp_button_error_bar_repair",
-      caption={"fp.error_bar_delete"}, mouse_button_filter={"left"}}
-    button.style.font = "fp-font-16p"    
+    local button = table.add{type="button", name="fp_button_error_bar_repair", caption={"fp.error_bar_repair"},
+      tooltip={"fp.error_bar_repair_tt"}, mouse_button_filter={"left"}}
+    button.style.font = "fp-font-16p"
+    button.style.padding = {0, 4}
+    button.style.height = 28
+    button.style.minimal_width = 0
 end
 
 -- Repairs the current subfactory
