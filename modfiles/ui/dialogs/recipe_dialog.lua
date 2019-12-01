@@ -157,7 +157,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
 
                 if recipe.custom then  -- can't use choose-elem-buttons for custom recipes
                     button_recipe = recipe_table.add{type="sprite-button", name="fp_button_recipe_pick_"
-                    .. recipe.id, sprite=recipe.sprite, tooltip=recipe.tooltip, mouse_button_filter={"left"}}
+                      .. recipe.id, sprite=recipe.sprite, tooltip=recipe.tooltip, mouse_button_filter={"left"}}
                 else
                     button_recipe = recipe_table.add{type="choose-elem-button", name="fp_button_recipe_pick_"
                       .. recipe.id, elem_type="recipe", recipe=recipe.name, mouse_button_filter={"left"}}

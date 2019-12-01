@@ -258,12 +258,12 @@ function add_recipe_tooltip(recipe)
     recipe.tooltip = tooltip
 end
 
---[[ -- Adds the tooltip for the given item
+-- Adds the tooltip for the given item
 local function add_item_tooltip(item)
     local tooltip = item.localised_name
-    if devmode then tooltip = {"", tooltip, ("\n" .. item.name)} end
+    if devmode then tooltip = {"", item.localised_name, ("\n" .. item.name)} end
     item.tooltip = tooltip
-end ]]
+end
 
 
 -- Sorts the objects according to their group, subgroup and order
@@ -594,7 +594,7 @@ function generator.all_items()
                         subgroup = generate_group_table(proto.subgroup)
                     }
 
-                    --add_item_tooltip(item)
+                    add_item_tooltip(item)
                     deep_insert_proto(all_items, "types", type, "items", item, true)
                 end
             end

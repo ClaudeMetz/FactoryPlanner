@@ -83,16 +83,8 @@ function item_picker.create(parent)
                 subgroup_table_cache[subgroup_name] = table_subgroup
             end
 
-            if item.temperature then  -- Can't use choose-elem-buttons for items with temperature
-                table_subgroup.add{type="sprite-button", name="fp_button_item_pick_" .. item.identifier,
-                  sprite=item.sprite, tooltip=item.localised_name, mouse_button_filter={"left"},
-                  style="fp_button_icon_medium_recipe"}
-            else
-                local item_button = table_subgroup.add{type="choose-elem-button", name="fp_button_item_pick_"
-                  .. item.identifier, elem_type=item.type, [item.type]=item.name, mouse_button_filter={"left"},
-                  style="fp_button_icon_medium_recipe"}
-                item_button.locked = true
-            end
+            table_subgroup.add{type="sprite-button", name="fp_button_item_pick_" .. item.identifier,
+              sprite=item.sprite, tooltip=item.localised_name, mouse_button_filter={"left"}}
         end
     end
 
@@ -104,7 +96,7 @@ end
 function item_picker.select_group(picker_flow, group_id)
     local flow_picker_panel = picker_flow["flow_picker_panel"]
     for _, group_button in pairs(flow_picker_panel["table_item_groups"].children) do
-        local id = tonumber(string.match(group_button.name, "%d+"))
+        local id = string.match(group_button.name, "%d+")
         local scroll_pane_items = flow_picker_panel["scroll-pane_subgroups_" .. id]
 
         if id == group_id then
@@ -158,7 +150,7 @@ function item_picker.filter(picker_flow, searchterm, first_run)
         local specific_scroll_pane_height = 0
         local subgroup_count = 0
 
-        local group_id = tonumber(string.match(group_element.name, "%d+"))
+        local group_id = string.match(group_element.name, "%d+")
         local subgroup_elements = flow_picker_panel["scroll-pane_subgroups_".. group_id]["table_subgroups"].children
 
         for _, subgroup_element in pairs(subgroup_elements) do

@@ -11,7 +11,7 @@ function open_product_dialog(flow_modal_dialog, modal_data)
     local picker_flow = item_picker.create(flow_modal_dialog)
 
     if product == nil then
-        item_picker.select_group(picker_flow, 1)  -- select the first item group by default
+        item_picker.select_group(picker_flow, "1")  -- select the first item group by default
         item_picker.reset_searchfield(picker_flow)
         item_picker.filter(picker_flow, "", true)
         picker_flow.visible = true
