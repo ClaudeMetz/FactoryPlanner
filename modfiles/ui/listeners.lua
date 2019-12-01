@@ -341,7 +341,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to an item group button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_item_group_%d+$") then
             local picker_flow = event.element.parent.parent.parent
-            local group_id = tonumber(string.match(event.element.name, "%d+"))
+            local group_id = string.match(event.element.name, "%d+")
             item_picker.select_group(picker_flow, group_id)
 
         -- Reacts to an item picker button being pressed
