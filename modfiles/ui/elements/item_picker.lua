@@ -212,7 +212,7 @@ function item_picker.filter(picker_flow, searchterm, first_run)
     
     -- Set scroll-pane height to be the same for all item groups
     scroll_pane_height = scroll_pane_height + (math.ceil(total_group_count / item_picker.groups_per_row) * 70)
-    local picker_panel_height = math.min(scroll_pane_height, (ui_state.modal_data.flow_modal_dialog_height - 100))
+    local picker_panel_height = math.min(scroll_pane_height, (ui_state.modal_data.dialog_maximal_height - 100))
       - (group_row_count * 70) - warning_label_height
     for _, child in ipairs(flow_picker_panel.children_names) do
         if string.find(child, "^scroll%-pane_subgroups_%d+$") then

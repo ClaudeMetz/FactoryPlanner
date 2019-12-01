@@ -144,6 +144,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         end
 
         -- Show preserved modal dialog
+        frame_modal_dialog.force_auto_center()
         frame_modal_dialog.visible = true
         flow_modal_dialog = frame_modal_dialog["flow_modal_dialog"]
 
@@ -205,8 +206,8 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
 
     -- Adjust the dialog size to the main dialog height
     local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
-    modal_data.flow_modal_dialog_height = (main_dialog_dimensions.height - 120) * 0.95
-    flow_modal_dialog.style.maximal_height = modal_data.flow_modal_dialog_height
+    modal_data.dialog_maximal_height = (main_dialog_dimensions.height - 120) * 0.95
+    flow_modal_dialog.style.maximal_height = modal_data.dialog_maximal_height
     
     -- Adjust visibility of the submit and delete buttons and the spacer
     local button_bar = frame_modal_dialog["flow_modal_dialog_button_bar"]

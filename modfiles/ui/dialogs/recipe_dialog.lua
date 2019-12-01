@@ -30,6 +30,7 @@ function open_recipe_dialog(flow_modal_dialog, modal_data)
 
             create_recipe_dialog_structure(player, flow_modal_dialog)
             apply_recipe_filter(player)
+            flow_modal_dialog.parent.force_auto_center()  -- this is needed here, not sure why
         end
     end
 end
@@ -212,8 +213,9 @@ function apply_recipe_filter(player)
     -- Determine the scroll-pane height to avoid double scroll-bars in the dialog
     local warning_label_height = (not any_recipe_visible) and 36 or 0
     local desired_scroll_pane_height = 5 + (table_size(modal_data.groups) * 72)
-    flow_modal_dialog["scroll-pane_recipes"].style.height = 
-      math.min(desired_scroll_pane_height, modal_data.flow_modal_dialog_height - 65) - warning_label_height
+    local scroll_pane_height = math.min(desired_scroll_pane_height, 
+      modal_data.dialog_maximal_height - 65) - warning_label_height
+    flow_modal_dialog["scroll-pane_recipes"].style.height = scroll_pane_height
 end
 
 
