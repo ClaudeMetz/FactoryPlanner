@@ -19,6 +19,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-font-mono-15p",
+        from = "default-mono",
+        size = 15
+    },
+    {
+        type = "font",
         name = "fp-font-mono-16p",
         from = "default-mono",
         size = 16
