@@ -441,6 +441,24 @@ function generator.all_recipes()
             end
         end
     end
+
+    -- Add a general steam recipe that works with every boiler
+    local steam_recipe = mining_recipe()
+    steam_recipe.name = "fp-general-steam"
+    steam_recipe.localised_name = {"fluid-name.steam"}
+    steam_recipe.sprite = "fluid/steam"
+    steam_recipe.category = "general-steam"
+    steam_recipe.order = "z-0"
+    steam_recipe.subgroup = {name="fluids", order="z", valid=true}
+    steam_recipe.energy = 1
+    steam_recipe.emissions_multiplier = 1
+    steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
+    steam_recipe.products = {{type="fluid", name="steam", amount=60}}
+    steam_recipe.main_product = steam_recipe.products[1]
+
+    format_recipe_products_and_ingredients(steam_recipe)
+    add_recipe_tooltip(steam_recipe)
+    insert_proto(all_recipes, "recipes", steam_recipe, true)
     
     -- Adds a convenient space science recipe
     local rocket_recipe = {
@@ -722,7 +740,7 @@ function generator.all_machines()
             deep_insert_proto(all_machines, "categories", proto.name, "machines", machine)
         end
 
-        -- Add machines that produce steam
+        -- Add machines that produce steam (ie. boilers)
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
               and fluidbox.filter.name == "steam" then
@@ -747,6 +765,11 @@ function generator.all_machines()
                         machine.speed = machine.energy_usage / energy_per_unit
 
                         deep_insert_proto(all_machines, "categories", category, "machines", machine)
+
+                        -- Add every boiler to the general steam category (steam without temperature)
+                        local general_machine = util.table.deepcopy(machine)
+                        general_machine.category = "general-steam"
+                        deep_insert_proto(all_machines, "categories", "general-steam", "machines", general_machine)
                     end
                 end
             end
