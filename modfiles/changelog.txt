@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.17.00
-Date: 00. 00. 0000
+Version: 0.17.73
+Date: 03. 12. 2019
   Bugfixes:
     - Fixed that you couldn't add recipes for steam that doesn't specify a temperature
     - Added a missing font
