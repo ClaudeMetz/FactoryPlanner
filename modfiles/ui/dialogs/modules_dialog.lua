@@ -33,7 +33,7 @@ function close_module_dialog(flow_modal_dialog, action, data)
         Line.remove(line, module)
     end
 
-    calculation.update(player, ui_state.context.subfactory, false)
+    calculation.update(player, ui_state.context.subfactory, true)
 end
 
 
@@ -97,7 +97,7 @@ function close_beacon_dialog(flow_modal_dialog, action, data)
         Line.remove_beacon(line)
     end
 
-    calculation.update(player, ui_state.context.subfactory, false)
+    calculation.update(player, ui_state.context.subfactory, true)
 end
 
 

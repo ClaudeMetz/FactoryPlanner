@@ -82,6 +82,6 @@ end
 -- Creates the example subfactory and shows it to the user
 function handle_add_example_subfactory_click(player)
     local subfactory = constructor.example_subfactory(player)
-    calculation.update(player, subfactory, false)
+    calculation.update(player, subfactory, true)
     exit_modal_dialog(player, "cancel", {})
 end

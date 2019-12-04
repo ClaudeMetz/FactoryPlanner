@@ -88,28 +88,9 @@ function create_line_table_row(player, line)
 
 
     -- Recipe button
-    local tooltip, style, enabled = {"", line.recipe.proto.localised_name}, "fp_button_icon_medium_blank", true
-
-    -- Make the first line of every subfloor uninteractable, it stays constant
-    if floor.level > 1 and line.gui_position == 1 then
-        style = "fp_button_icon_medium_hidden"
-        enabled = false
-    else
-        if line.subfloor then
-            tooltip = {"", tooltip, "\n", {"fp.subfloor_attached"}}
-
-            style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
-              "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
-        end
-
-        -- Tutorial tooltip only needed for interactable buttons
-        tooltip = ui_util.add_tutorial_tooltip(player, nil, tooltip, "recipe", true, true)
-    end
-
-    table_production.add{type="sprite-button", name="fp_sprite-button_line_recipe_" .. line.id, style=style,
-      sprite=line.recipe.proto.sprite, tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
-
+    refresh_recipe_button(player, line, table_production)
     
+
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
       text=line.percentage, enabled=(not archive_open)}
@@ -119,52 +100,7 @@ function create_line_table_row(player, line)
 
 
     -- Machine button
-    local table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
-      column_count=#line.machine.category.machines}
-    table_machines.style.horizontal_spacing = 3
-    table_machines.style.horizontal_align = "center"
-
-    local context_line = ui_state.context.line
-    if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        for _, machine_proto in ipairs(line.machine.category.machines) do
-            if data_util.machine.is_applicable(machine_proto, line.recipe) then
-                local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id ..
-                  "_" .. machine_proto.id, mouse_button_filter={"left"}}
-                setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
-            end
-        end
-    else
-        local machine_proto = line.machine.proto
-        local total_effects = Line.get_total_effects(line, player)
-        local machine_count = ui_util.format_number(line.machine.count, 4)
-        if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
-        local machine_text = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
-
-        local limit = line.machine.limit
-        local style, limit_notice = "fp_button_icon_medium_recipe", ""
-        if limit ~= nil then
-            if line.machine.hard_limit then
-                style = "fp_button_icon_medium_cyan"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_hard", limit}, " -"}
-            elseif line.production_ratio < line.uncapped_production_ratio then
-                style = "fp_button_icon_medium_yellow"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_enforced", limit}, " -"}
-            else
-                style = "fp_button_icon_medium_green"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_set", limit}, " -"}
-            end
-        end
-
-        local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
-          sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
-          tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
-          ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory)}}
-        button.number = (player_table.settings.round_button_numbers) and math.ceil(machine_count) or machine_count
-        button.style.padding = 1
-
-        ui_util.add_tutorial_tooltip(player, button, nil, "machine", true, false)
-        add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
-    end
+    refresh_machine_table(player, line, table_production)
 
 
     -- Modules
@@ -233,6 +169,101 @@ function create_line_table_row(player, line)
         ui_util.setup_textfield(textfield_comment)
     end
 end
+
+
+-- Separate function so it can be refreshed independently
+function refresh_recipe_button(player, line, table_production)
+    local ui_state = get_ui_state(player)
+    local tooltip, style, enabled = {"", line.recipe.proto.localised_name}, "fp_button_icon_medium_blank", true
+
+    -- Make the first line of every subfloor uninteractable, it stays constant
+    if ui_state.context.floor.level > 1 and line.gui_position == 1 then
+        style = "fp_button_icon_medium_hidden"
+        enabled = false
+    else
+        if line.subfloor then
+            tooltip = {"", tooltip, "\n", {"fp.subfloor_attached"}}
+
+            style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
+              "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
+        end
+
+        -- Tutorial tooltip only needed for interactable buttons
+        tooltip = ui_util.add_tutorial_tooltip(player, nil, tooltip, "recipe", true, true)
+    end
+
+    local button_name = "fp_sprite-button_line_recipe_" .. line.id
+    local button_recipe = table_production[button_name]
+
+    -- Either create or refresh the recipe button
+    if button_recipe == nil then
+        table_production.add{type="sprite-button", name=button_name, style=style, sprite=line.recipe.proto.sprite,
+          tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
+    else
+        button_recipe.tooltip = tooltip
+        button_recipe.style = style
+        button_recipe.enabled = enabled
+    end
+end
+
+-- Separate function so it can be refreshed independently
+function refresh_machine_table(player, line, table_production)
+    local ui_state = get_ui_state(player)
+
+    -- Create or clear the machine flow
+    local table_machines = table_production["flow_line_machines_" .. line.id]
+    if table_machines == nil then
+        table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
+        column_count=#line.machine.category.machines}
+        table_machines.style.horizontal_spacing = 3
+        table_machines.style.horizontal_align = "center"
+    else
+        table_machines.clear()
+    end
+
+    local context_line = ui_state.context.line
+    if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
+        for _, machine_proto in ipairs(line.machine.category.machines) do
+            if data_util.machine.is_applicable(machine_proto, line.recipe) then
+                local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id ..
+                  "_" .. machine_proto.id, mouse_button_filter={"left"}}
+                setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
+            end
+        end
+    else
+        local machine_proto = line.machine.proto
+        local total_effects = Line.get_total_effects(line, player)
+        local machine_count = ui_util.format_number(line.machine.count, 4)
+        if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
+        local machine_text = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
+
+        local limit = line.machine.limit
+        local style, limit_notice = "fp_button_icon_medium_recipe", ""
+        if limit ~= nil then
+            if line.machine.hard_limit then
+                style = "fp_button_icon_medium_cyan"
+                limit_notice = {"", "\n- ", {"fp.machine_limit_hard", limit}, " -"}
+            elseif line.production_ratio < line.uncapped_production_ratio then
+                style = "fp_button_icon_medium_yellow"
+                limit_notice = {"", "\n- ", {"fp.machine_limit_enforced", limit}, " -"}
+            else
+                style = "fp_button_icon_medium_green"
+                limit_notice = {"", "\n- ", {"fp.machine_limit_set", limit}, " -"}
+            end
+        end
+
+        local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
+          sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
+          tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
+          ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory)}}
+        button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
+        button.style.padding = 1
+
+        ui_util.add_tutorial_tooltip(player, button, nil, "machine", true, false)
+        add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
+    end
+end
+
 
 -- Sets up the given button for a machine choice situation
 function setup_machine_choice_button(player, button, machine_proto, current_machine_proto_id, button_size)

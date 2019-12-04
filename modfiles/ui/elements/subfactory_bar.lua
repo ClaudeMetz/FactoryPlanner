@@ -134,13 +134,14 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
 
         elseif click == "right" then
             if action == "edit" then
-                enter_modal_dialog(player, {type="subfactory", submit=true, delete=true, modal_data={subfactory=subfactory}})
+                enter_modal_dialog(player, {type="subfactory", submit=true,
+                  delete=true, modal_data={subfactory=subfactory}})
             elseif action == "delete" then
                 handle_subfactory_deletion(player)
             end
         
-        -- Refresh if the selected subfactory is indeed changed
-        else
+        else  -- refresh if the selected subfactory is indeed changed
+            ui_state.current_activity = nil
             refresh_main_dialog(player)
         end
     end

@@ -27,6 +27,7 @@ end
 function handle_chooser_element_click(player, element_id)
     _G["apply_" .. get_ui_state(player).modal_data.reciever_name .. "_choice"](player, element_id)
     exit_modal_dialog(player, "cancel", {})
+    refresh_main_dialog(player)
 end
 
 
@@ -55,8 +56,9 @@ end
 function close_options_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         local player = game.get_player(flow_modal_dialog.player_index)
-        local object = get_ui_state(player).modal_data.object
-        _G["apply_" .. get_ui_state(player).modal_data.reciever_name .. "_options"](player, object, data)
+        local modal_data = get_ui_state(player).modal_data
+        _G["apply_" .. modal_data.reciever_name .. "_options"](player, modal_data.object, data)
+        refresh_main_dialog(player)
     end
 end
 
