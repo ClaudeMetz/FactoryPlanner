@@ -17,7 +17,7 @@ function enter_modal_dialog(player, dialog_settings)
     ui_state.modal_data = dialog_settings.modal_data or {}
 
     ui_state.current_activity = nil
-    refresh_main_dialog(player)
+    refresh_current_activity(player)
     
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
@@ -60,9 +60,9 @@ function exit_modal_dialog(player, button, data)
             closing_function(flow_modal_dialog, button, data)  -- can't be nil in this case
         else return end  -- so the modal dialog doesn't close
 
-    elseif button == "delete" or button == "cancel" then
+    elseif button == "delete" then
         if closing_function ~= nil then closing_function(flow_modal_dialog, button, data) end
-    end
+    end  -- no action needs to be taken if this dialog is canceled
     
     -- Close modal dialog
     ui_state.modal_dialog_type = nil
@@ -72,6 +72,7 @@ function exit_modal_dialog(player, button, data)
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end
 
+    ui_util.message.refresh(player)
     toggle_modal_dialog(player, nil)
 end
 

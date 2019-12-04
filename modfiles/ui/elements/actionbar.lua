@@ -98,11 +98,11 @@ function handle_subfactory_deletion(player)
         reset_subfactory_selection(player, factory, removed_gui_position)
 
         ui_state.current_activity = nil
+        refresh_main_dialog(player)
     else
         ui_state.current_activity = "deleting_subfactory"
+        refresh_current_activity(player)
     end
-
-    refresh_main_dialog(player)
 end
 
 -- Handles (un)archiving the current subfactory

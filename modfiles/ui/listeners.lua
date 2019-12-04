@@ -164,17 +164,13 @@ end)
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.get_player(event.player_index)
     
-    -- Persists (assembly) line percentage changes
-    if string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
-        handle_percentage_change(player, event.element)
-
-    -- Persists (assembly) line comment changes
-    elseif string.find(event.element.name, "^fp_textfield_line_comment_%d+$") then
-        handle_comment_change(player, event.element)
-        
+    -- Limits the subfactory name length (implemented here for better responsiveness)
+    if event.element.name == "fp_textfield_subfactory_name" then
+        event.element.text = string.sub(event.element.text, 1, 24)
+    
     -- Activates the instant filter based on user search-string entry
     elseif event.element.name == "fp_textfield_item_picker_search_bar" and
-      not get_settings(player).performance_mode then
+        not get_settings(player).performance_mode then
         local picker_flow = event.element.parent.parent
         item_picker.filter(picker_flow, event.element.text, false)
 
@@ -182,10 +178,14 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     elseif event.element.name == "fp_textfield_mining_prod" then
         handle_mining_prod_change(player, event.element)
 
-    -- Limits the subfactory name length (implemented here for better responsiveness)
-    elseif event.element.name == "fp_textfield_subfactory_name" then
-        event.element.text = string.sub(event.element.text, 1, 24)
+    -- Persists (assembly) line percentage changes
+    elseif string.find(event.element.name, "^fp_textfield_line_percentage_%d+$") then
+        handle_percentage_change(player, event.element)
 
+    -- Persists (assembly) line comment changes
+    elseif string.find(event.element.name, "^fp_textfield_line_comment_%d+$") then
+        handle_comment_change(player, event.element)
+        
     end
 end)
 
@@ -424,8 +424,5 @@ script.on_event(defines.events.on_gui_click, function(event)
             handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
         
         end
-
-        -- Only reset hint if one of this mod's actual controls is pressed
-        ui_util.message.refresh(player)
     end
 end)

@@ -49,7 +49,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
                 else
                     ui_state.current_activity = "deleting_line"
                     ui_state.context.line = line
-                    refresh_main_dialog(player)
+                    refresh_current_activity(player)
                 end
             end
         end
@@ -106,7 +106,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
                 if #line.machine.category.machines < 5 then  -- up to 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                    refresh_main_dialog(player)
+                    refresh_current_activity(player)
 
                 else  -- Open a chooser dialog presenting all machine choices
                     local modal_data = {
@@ -180,7 +180,7 @@ function apply_machine_choice(player, machine_id)
     local context = get_context(player)
     local machine = global.all_machines.categories[context.line.machine.category.id].machines[tonumber(machine_id)]
     data_util.machine.change(player, context.line, machine, nil)
-    calculation.update(player, context.subfactory, false)
+    calculation.update(player, context.subfactory, true)
 end
 
 -- Recieves the result of the machine limit options and applies it
@@ -189,7 +189,7 @@ function apply_machine_options(player, machine, options)
     -- tonumber() has already converted an empty string to nil
     if options.machine_limit == nil then options.hard_limit = false end
     Line.set_machine_limit(context.line, options.machine_limit, options.hard_limit)
-    calculation.update(player, context.subfactory, false)
+    calculation.update(player, context.subfactory, true)
 end
 
 
@@ -400,7 +400,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
             elseif item.class == "Product" then
                 if line.Product.count < 2 then
-                    ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1)
+                    ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
                 else
                     local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
                     Line.set_priority_product(line, priority_product_proto)
@@ -481,7 +481,7 @@ function apply_fuel_choice(player, new_fuel_id)
         apply_fuel_to_floor(line.subfloor)
     end
 
-    calculation.update(player, context.subfactory, false)
+    calculation.update(player, context.subfactory, true)
 end
 
 

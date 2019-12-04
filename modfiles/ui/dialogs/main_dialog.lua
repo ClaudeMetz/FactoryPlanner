@@ -83,7 +83,6 @@ function toggle_modal_dialog(player, frame_modal_dialog)
     else
         player.opened = main_dialog
         main_dialog.ignored_by_interaction = false
-        refresh_main_dialog(player)
     end
 end
 
@@ -138,6 +137,34 @@ function refresh_main_dialog(player, full_refresh)
     ui_util.message.refresh(player)
     return main_dialog
 end
+
+-- Refreshes elements using ui_state.current_activity with less performance impact than refresh_main_dialog
+function refresh_current_activity(player)
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local ui_state = get_ui_state(player)
+
+    if main_dialog ~= nil and main_dialog.visible then
+        refresh_actionbar(player)
+
+        local subfactory = ui_state.context.subfactory
+        if subfactory ~= nil then
+            local table_info_elements = main_dialog["table_subfactory_pane"]
+              ["flow_info"]["scroll-pane"]["table_info_elements"]
+            refresh_mining_prod_table(player, subfactory, table_info_elements)
+        end
+
+        local line = ui_state.context.line
+        if line ~= nil then
+            local table_production = main_dialog["flow_production_pane"]
+              ["scroll-pane_production_pane"]["table_production_pane"]
+            refresh_recipe_button(player, line, table_production)
+            refresh_machine_table(player, line, table_production)
+        end
+        
+        ui_util.message.refresh(player)
+    end
+end
+
 
 -- Creates the titlebar including name and exit-button
 function add_titlebar_to(main_dialog)

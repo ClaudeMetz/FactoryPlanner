@@ -173,7 +173,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
             if context.floor.level == 1 then
                 enter_modal_dialog(player, {type="recipe", modal_data={product=product, production_type="produce"}})
             else
-                ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1)
+                ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
             end
         elseif click == "right" then
             if action == "edit" then
@@ -186,7 +186,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
                 calculation.update(player, subfactory, false)
                 Subfactory.remove_useless_lines(subfactory)
 
-                refresh_main_dialog(player)
+                calculation.update(player, subfactory, true)
             end
         end
     end
@@ -213,7 +213,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
         if floor.level == 1 then
             --enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
         else
-            --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1)
+            --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
         end
     end
 end
@@ -315,11 +315,21 @@ function refresh_info_pane(player)
 
 
     -- Mining Productivity
-    local table_mining_prod = table_info_elements.add{type="table", name="table_mining_prod", column_count=3}
+    refresh_mining_prod_table(player, subfactory, table_info_elements)
+end
+
+-- Separate function so it can be refreshed independently
+function refresh_mining_prod_table(player, subfactory, table_info_elements)
+    local ui_state = get_ui_state(player)
+
+    local table_mining_prod = table_info_elements["table_mining_prod"] or 
+      table_info_elements.add{type="table", name="table_mining_prod", column_count=3}
+    table_mining_prod.clear()
+    
     table_mining_prod.add{type="label", name="label_mining_prod_title",
       caption={"", {"fp.mining_prod"}, " [img=info]: "}, tooltip={"fp.mining_prod_tt"}}
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
-
+    
     if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then
         subfactory.mining_productivity = subfactory.mining_productivity or 0  -- switch from no mining prod to a custom one
         local textfield_prod_bonus = table_mining_prod.add{type="textfield", name="fp_textfield_mining_prod",
@@ -356,7 +366,7 @@ function mining_prod_override(player)
     if ui_util.check_archive_status(player) then return end
 
     get_ui_state(player).current_activity = "overriding_mining_prod"
-    refresh_main_dialog(player)
+    refresh_current_activity(player)
 end
 
 -- Persists changes to the overriden mining productivity

@@ -9,7 +9,7 @@ function open_recipe_dialog(flow_modal_dialog, modal_data)
     local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
 
     if error ~= nil then
-        ui_util.message.enqueue(player, error, "error", 2)
+        ui_util.message.enqueue(player, error, "error", 1)
         exit_modal_dialog(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
@@ -237,13 +237,14 @@ function attempt_adding_recipe_line(player, recipe_id)
     
     local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type), nil)
     if line == false then
-        ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 2)
+        ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 1)
     else
         Floor.add(ui_state.context.floor, line)
-        calculation.update(player, ui_state.context.subfactory, false)
-
+        
         local message = ui_state.modal_data.message
-        if message ~= nil then ui_util.message.enqueue(player, message.text, message.type, 1) end
+        if message ~= nil then ui_util.message.enqueue(player, message.text, message.type, 2) end
+
+        calculation.update(player, ui_state.context.subfactory, true)
     end
 
     exit_modal_dialog(player, "cancel", {})

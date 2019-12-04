@@ -30,7 +30,7 @@ end
 function ui_util.check_archive_status(player, mute)
     if get_flags(player).archive_open then
         if not mute then 
-            ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1)
+            ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
         end
         return true
     else
@@ -422,8 +422,9 @@ end
 -- **** Messages ****
 -- Enqueues the given message into the message queue
 -- Possible types are error, warning, hint
-function ui_util.message.enqueue(player, message, type, lifetime)
+function ui_util.message.enqueue(player, message, type, lifetime, instant_refresh)
     table.insert(get_ui_state(player).message_queue, {text=message, type=type, lifetime=lifetime})
+    if instant_refresh then ui_util.message.refresh(player) end
 end
 
 -- Refreshes the current message, taking into account priotities and lifetimes
