@@ -82,6 +82,8 @@ function run_on_load()
     identifier_item_map = generator.identifier_item_map()
     
     module_tier_map = generator.module_tier_map()
+
+    top_crafting_machine_sprite = generator.find_crafting_machine_sprite()
 end
 
 -- Runs through all updates that need to be made after the config changed
