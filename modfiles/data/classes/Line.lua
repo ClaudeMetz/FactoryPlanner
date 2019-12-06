@@ -1,7 +1,7 @@
 -- 'Class' representing an assembly line producing a single recipe
 Line = {}
 
-function Line.init(player, recipe, machine)
+function Line.init(player, recipe)
     local line = {
         recipe = recipe,
         percentage = 100,
@@ -24,15 +24,8 @@ function Line.init(player, recipe, machine)
         class = "Line"
     }
     
-    -- If machine is specified, it gets used, otherwise it'll fall back to the default
-    if machine == nil then
-        -- Hack together a pseudo-category for machine.change to use to find the default
-        line.machine = { category = { id = global.all_machines.map[recipe.proto.category] } }
-    end
     -- Return false if no fitting machine can be found (needs error handling on the other end)
-    if data_util.machine.change(player, line, machine, nil) == false then
-        return false
-    end
+    if data_util.machine.change(player, line, nil, nil) == false then return false end
 
     -- Initialise total_effects
     Line.summarize_effects(line)
@@ -426,7 +419,7 @@ function Line.attempt_repair(self, player)
         if self.machine.category == nil then  -- No category means that it could not be repaired
             if self.valid then  -- If the line is still valid here, it has a valid recipe
                 -- Try if a new line with the new category would be valid, remove it otherwise
-                local new_line = Line.init(player, self.recipe, nil)
+                local new_line = Line.init(player, self.recipe)
                 if new_line ~= false then
                     Floor.replace(self.parent, self, new_line)
 
@@ -441,6 +434,7 @@ function Line.attempt_repair(self, player)
             end
         else
             -- Set the machine to the default one; remove of none is compatible anymore
+            -- (Recipe needs to be valid at this point, which it is)
             if not data_util.machine.change(player, self, nil, nil) then
                 self.valid = false
             end
