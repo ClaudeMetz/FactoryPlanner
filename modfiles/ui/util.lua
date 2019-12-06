@@ -89,7 +89,46 @@ function ui_util.setup_numeric_textfield(textfield, decimal, negative)
 end
 
 
+-- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
+function ui_util.determine_item_amount_and_appendage(player_table, view_name, item_type, amount, machine_count)
+    local timescale = player_table.ui_state.context.subfactory.timescale
+    local number, appendage = nil, ""
+    
+    if view_name == "items_per_timescale" then
+        number = amount
+
+        local type_text = (item_type == "fluid") and {"fp.fluid"} or
+          ((number == 1) and {"fp.item"} or {"fp.items"})
+        appendage = {"", type_text, "/", ui_util.format_timescale(timescale, true, false)}
+
+    elseif view_name == "belts_or_lanes" and item_type ~= "fluid" then
+        local throughput = player_table.preferences.preferred_belt.throughput
+        local show_belts = (player_table.settings.belts_or_lanes == "belts")
+        local divisor = (show_belts) and throughput or (throughput / 2)
+        number = amount / divisor / timescale
+
+        appendage = (show_belts) and ((number == 1) and {"fp.belt"} or {"fp.belts"}) or
+          ((number == 1) and {"fp.lane"} or {"fp.lanes"})
+
+    elseif view_name == "items_per_second_per_machine" and item_type ~= "fluid" then
+        -- Show items/s/1 (machine) if it's a top level item
+        local number_of_machines = (machine_count ~= nil) and machine_count or 1
+        number = amount / timescale / number_of_machines
+
+        local type_text = (item_type == "fluid") and {"fp.fluid"} or
+          ((number == 1) and {"fp.item"} or {"fp.items"})
+        -- Shows items/s/machine if a machine_count is given
+        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.machine"}} or ""
+        appendage = {"", type_text, "/", {"fp.unit_second"}, per_machine}
+
+    end
+
+    return number, appendage  -- number might be nil here
+end
+
+
 -- Returns the number to put on an item button according to the current view
+-- (Left untouched for ui_util.setup_item_button, will be removed at some point)
 function ui_util.calculate_item_button_number(player_table, view, amount, type, machine_count)
     local timescale = player_table.ui_state.context.subfactory.timescale
     
@@ -112,6 +151,7 @@ end
 
 -- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
 -- (Relates to the view_state, doesn't do anything if views are uninitialised)
+-- (Only used in production_table now, will be refactored at some point)
 function ui_util.setup_item_button(player_table, button, item, line, imitate_top_level)
     local view_state = player_table.ui_state.view_state
     -- This gets refreshed after the view state is initialised
