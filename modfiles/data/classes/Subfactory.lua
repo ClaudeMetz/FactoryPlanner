@@ -175,7 +175,7 @@ function Subfactory.attempt_repair(self, player)
     Floor.delete_empty(self.selected_floor)
     local top_floor = Subfactory.get(self, "Floor", 1)
     self.selected_floor = top_floor
-    data_util.context.set_floor(player, top_floor)
+    ui_util.context.set_floor(player, top_floor)
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     -- (Return value is not caught here because the top level floor won't be removed)

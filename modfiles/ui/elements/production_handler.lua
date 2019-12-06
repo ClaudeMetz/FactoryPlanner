@@ -31,7 +31,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
                 calculation.update(player, subfactory, false)
             end
             ui_state.current_activity = nil
-            data_util.context.set_floor(player, line.subfloor)
+            ui_util.context.set_floor(player, line.subfloor)
             refresh_main_dialog(player)
             
         -- Handle removal of clicked (assembly) line
