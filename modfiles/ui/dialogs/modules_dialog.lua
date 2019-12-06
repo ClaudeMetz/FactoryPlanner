@@ -204,7 +204,7 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
                 style = "fp_button_icon_medium_green"
                 tooltip = {"", tooltip, "\n", {"fp.current_beacon"}}
             end
-            tooltip = {"", tooltip, "\n", ui_util.generate_beacon_attributes_tooltip(beacon_proto)}
+            tooltip = {"", tooltip, "\n", ui_util.attributes.beacon(beacon_proto)}
 
             button_beacon.tooltip = tooltip
             button_beacon.style = style

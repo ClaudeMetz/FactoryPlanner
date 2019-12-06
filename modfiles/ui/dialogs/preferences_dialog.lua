@@ -84,7 +84,7 @@ function refresh_preferences_dialog(player)
             else 
                 button.style = "fp_button_icon_medium_hidden"
             end
-            button.tooltip = {"", tooltip, "\n", ui_util["generate_" .. name .. "_attributes_tooltip"](proto)}
+            button.tooltip = {"", tooltip, "\n", ui_util.attributes[name](proto)}
         end
     end
 
@@ -110,7 +110,7 @@ function refresh_preferences_dialog(player)
                 else 
                     button_machine.style = "fp_button_icon_medium_hidden"
                 end
-                button_machine.tooltip = {"", tooltip, "\n", ui_util.generate_machine_attributes_tooltip(machine)}
+                button_machine.tooltip = {"", tooltip, "\n", ui_util.attributes.machine(machine)}
             end
         end
     end

@@ -439,7 +439,7 @@ function generate_chooser_fuel_buttons(player)
               fuel_proto.type, fuel_amount, line.machine.count)
             tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
         end
-        tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel_proto)}
+        tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
 
         local button = generate_blank_chooser_button(player, new_fuel_id)
         if old_fuel_id == new_fuel_id then button.style = "fp_button_icon_large_green" end
