@@ -11,8 +11,9 @@ end
 function close_utility_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         local player = game.get_player(flow_modal_dialog.player_index)
-        get_context(player).subfactory.notes = data.notes
-        refresh_info_pane(player)
+        local subfactory = get_context(player).subfactory
+        subfactory.notes = data.notes
+        refresh_utility_table(player, subfactory)
     end
 end
 

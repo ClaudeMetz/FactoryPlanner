@@ -418,7 +418,7 @@ end
 function generate_chooser_fuel_buttons(player)
     local player_table = get_table(player)
     local ui_state = get_ui_state(player)
-    local view = ui_state.view_state[ui_state.view_state.selected_view_id]
+    local view_name = ui_state.view_state[ui_state.view_state.selected_view_id].name
     local line = ui_state.context.line
 
     local old_fuel_id = global.all_fuels.map[ui_state.modal_data.object.proto.name]
@@ -435,12 +435,9 @@ function generate_chooser_fuel_buttons(player)
             fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine.proto.burner,
               fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
 
-            fuel_amount = ui_util.calculate_item_button_number(player_table, view, fuel_amount,
-              fuel_proto.type, line.machine.count)
-            fuel_amount = ui_util.format_number(fuel_amount, 4)
-
-            local m = (tonumber(fuel_amount) == 1) and {"fp.item"} or {"fp.items"}
-            tooltip = {"", tooltip, "\n", fuel_amount, " ", m}
+            fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+              fuel_proto.type, fuel_amount, line.machine.count)
+            tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
         end
         tooltip = {"", tooltip, "\n", ui_util.generate_fuel_attributes_tooltip(fuel_proto)}
 
