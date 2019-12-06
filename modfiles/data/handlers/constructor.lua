@@ -81,7 +81,7 @@ function constructor.dev_config(player)
 
         -- Subfactories
         local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}, "one_minute"))
-        data_util.context.set_subfactory(player, subfactory)
+        ui_util.context.set_subfactory(player, subfactory)
         Factory.add(factory, Subfactory.init("Beta", nil, "one_minute"))
         Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}, "one_minute"))
 
@@ -136,7 +136,7 @@ function constructor.example_subfactory(player)
     local subfactory = Factory.add(factory, Subfactory.init("Example", 
       {type="item", name="production-science-pack"}, "one_minute"))
     factory.selected_subfactory = subfactory
-    data_util.context.set_factory(player, factory)
+    ui_util.context.set_factory(player, factory)
     ui_state.flags.archive_open = false
     
     -- Products

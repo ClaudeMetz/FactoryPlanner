@@ -154,7 +154,7 @@ function update_player_table(player, table)
 
         -- If any subfactories exist, select the first one
         local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
-        if #subfactories > 0 then data_util.context.set_subfactory(player, subfactories[1]) end
+        if #subfactories > 0 then ui_util.context.set_subfactory(player, subfactories[1]) end
     end
     
     return player_table
@@ -204,7 +204,7 @@ function reset_ui_state(player)
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
-    ui_state_table.context = data_util.context.create(player)  -- The currently displayed set of data
+    ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
     
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use

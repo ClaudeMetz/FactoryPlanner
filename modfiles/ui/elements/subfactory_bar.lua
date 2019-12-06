@@ -125,7 +125,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
     -- Change selected subfactory
     else
         old_subfactory = ui_state.context.subfactory
-        data_util.context.set_subfactory(player, subfactory)
+        ui_util.context.set_subfactory(player, subfactory)
 
         -- Reset Floor when clicking on selected subfactory
         if click == "left" and old_subfactory == subfactory then

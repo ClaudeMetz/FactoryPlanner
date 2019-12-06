@@ -161,7 +161,7 @@ function handle_floor_change_click(player, destination)
 
     -- Only need to refresh if the floor was indeed changed
     if selected_floor ~= nil then
-        data_util.context.set_floor(player, selected_floor)
+        ui_util.context.set_floor(player, selected_floor)
 
         -- Remove floor if no recipes have been added to it
         Floor.delete_empty(floor)

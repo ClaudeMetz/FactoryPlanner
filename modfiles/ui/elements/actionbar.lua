@@ -84,7 +84,7 @@ end
 local function reset_subfactory_selection(player, factory, removed_gui_position)
     if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
     local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
-    data_util.context.set_subfactory(player, subfactory)
+    ui_util.context.set_subfactory(player, subfactory)
 end
 
 
@@ -131,7 +131,7 @@ function toggle_archive_view(player)
     ui_state.flags.archive_open = archive_open
 
     local factory = archive_open and player_table.archive or player_table.factory
-    data_util.context.set_factory(player, factory)
+    ui_util.context.set_factory(player, factory)
 
     ui_state.current_activity = nil
     refresh_main_dialog(player)
