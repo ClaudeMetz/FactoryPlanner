@@ -418,7 +418,7 @@ end
 function generate_chooser_fuel_buttons(player)
     local player_table = get_table(player)
     local ui_state = get_ui_state(player)
-    local view_name = ui_state.view_state[ui_state.view_state.selected_view_id].name
+    local view_name = ui_state.view_state.selected_view.name
     local line = ui_state.context.line
 
     local old_fuel_id = global.all_fuels.map[ui_state.modal_data.object.proto.name]

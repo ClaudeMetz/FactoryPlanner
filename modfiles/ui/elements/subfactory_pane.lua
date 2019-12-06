@@ -2,7 +2,8 @@ require("info_pane")
 
 -- Creates the subfactory pane that includes the products, byproducts and ingredients, and an info-pane
 function add_subfactory_pane_to(main_dialog)
-    local table_subfactory = main_dialog.add{type="table", name="table_subfactory_pane", column_count=4, style="table"}
+    local table_subfactory = main_dialog.add{type="table", name="table_subfactory_pane",
+      column_count=4, style="table", visible=false}
     table_subfactory.draw_vertical_lines = true
     table_subfactory.style.vertically_squashable = false
     table_subfactory.style.height = 153
@@ -105,8 +106,7 @@ function _refresh_item_table(player, item_table, class, items)
     
     local ui_name = class:gsub("^%u", string.lower)
     local floor_total = ui_state.flags.floor_total
-    local view_state = ui_state.view_state
-    local view_name = view_state[view_state.selected_view_id].name
+    local view_name = ui_state.view_state.selected_view.name
 
     local round_belts = (view_name == "belts_or_lanes" and player_table.settings.round_button_numbers)
     local style = "fp_button_icon_large_blank"
