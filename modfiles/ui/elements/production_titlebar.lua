@@ -214,9 +214,9 @@ function refresh_view_state(player, subfactory)
             caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. crafting_machine_sprite_path .. "]"},
             enabled = true,
             selected = false
-        },
-        selected_view_id = 1
+        }
     }
+    view_state.selected_view = view_state[1]
 
     -- Conserves the selection state from the previous view_state, if available
     if player_table.ui_state.view_state ~= nil then
@@ -271,7 +271,7 @@ function correct_view_state(view_state, id_to_select)
         view = view_state[id_to_select]
         if view.enabled then
             view.selected = true
-            view_state.selected_view_id = id_to_select
+            view_state.selected_view = view
             break
         else
             id_to_select = (id_to_select % #view_state) + 1

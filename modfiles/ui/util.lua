@@ -157,7 +157,7 @@ function ui_util.setup_item_button(player_table, button, item, line, imitate_top
     -- This gets refreshed after the view state is initialised
     if view_state == nil then return end
 
-    local view = view_state[view_state.selected_view_id]
+    local view = view_state.selected_view
     local amount = (item.top_level and item.class == "Product") and item.required_amount or item.amount
     local machine_count = (line ~= nil) and line.machine.count or nil
     local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type, machine_count)
