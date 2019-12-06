@@ -27,11 +27,9 @@ end
 
 
 -- Checks whether the archive is open; posts an error and returns true if it is
-function ui_util.check_archive_status(player, mute)
+function ui_util.check_archive_status(player)
     if get_flags(player).archive_open then
-        if not mute then 
-            ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
-        end
+        ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
         return true
     else
         return false

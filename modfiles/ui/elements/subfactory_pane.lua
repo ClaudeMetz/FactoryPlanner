@@ -91,7 +91,7 @@ function refresh_item_table(player, class)
     if class == "Product" then
         local button_add = item_table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
           style="fp_sprite-button_inset", tooltip={"fp.add_a_product"}, mouse_button_filter={"left"},
-          enabled=(not ui_util.check_archive_status(player, true))}
+          enabled=(not ui_state.flags.archive_open)}
         button_add.style.height = 36
         button_add.style.width = 36
         button_add.style.padding = 3
