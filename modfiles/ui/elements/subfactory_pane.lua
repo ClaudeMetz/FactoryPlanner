@@ -109,8 +109,8 @@ function _refresh_item_table(player, item_table, class, items)
     local view_name = ui_state.view_state.selected_view.name
 
     local round_belts = (view_name == "belts_or_lanes" and player_table.settings.round_button_numbers)
+    local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, ("tl_" .. ui_name), true)
     local style = "fp_button_icon_large_blank"
-    --local tutorial_tooltip = ""
 
     for _, item in ipairs(items) do
         local item_amount, secondary_number = item.amount, ""
@@ -147,14 +147,12 @@ function _refresh_item_table(player, item_table, class, items)
 
         if (raw_amount ~= nil and ((raw_amount > margin_of_error)) or (class == "Product" and not floor_total)) then
             local number_line = (raw_amount ~= nil) and {"", ui_util.format_number(raw_amount, 4) .. " ", appendage} or ""
-            local tooltip = {"", item.proto.localised_name, "\n" .. secondary_number, number_line}
+            local tooltip = {"", item.proto.localised_name, "\n" .. secondary_number, number_line, tutorial_tooltip}
             local button_number = (round_belts and raw_amount ~= nil) and math.ceil(raw_amount) or raw_amount
 
             local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
               .. item.id, sprite=item.proto.sprite, number=button_number, tooltip=tooltip,
               style=style, enabled=(not floor_total), mouse_button_filter={"left-and-right"}}
-
-            if not floor_total then ui_util.add_tutorial_tooltip(player, button, nil, "tl_" .. ui_name, true, true) end
         end
     end
 end

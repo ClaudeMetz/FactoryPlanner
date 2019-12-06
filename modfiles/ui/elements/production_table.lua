@@ -135,15 +135,16 @@ function create_line_table_row(player, line)
             flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
 
             local m = (beacon.amount == 1) and {"fp.beacon"} or {"fp.beacons"}
-            local b = (beacon.total_amount ~= nil) and {"", " (", {"fp.total"}, ": ", beacon.total_amount, ")"} or "" 
+            local b = (beacon.total_amount ~= nil) and {"", " (", {"fp.total"}, ": ", beacon.total_amount, ")"} or ""
+            local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "beacon_beacon", true)
+            
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_"
               .. line.id, sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
-              " ", m, b, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil)}}
+              " ", m, b, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil), tutorial_tooltip}}
             button_beacon.style.padding = 2
 
             if beacon.total_amount ~= nil then ui_util.add_overlay_sprite(button_beacon, "fp_sprite_purple_circle", 32) end
-            ui_util.add_tutorial_tooltip(player, button_beacon, nil, "beacon_beacon", true, false)
         end
     end
     
@@ -189,7 +190,7 @@ function refresh_recipe_button(player, line, table_production)
         end
 
         -- Tutorial tooltip only needed for interactable buttons
-        tooltip = ui_util.add_tutorial_tooltip(player, nil, tooltip, "recipe", true, true)
+        tooltip = {"", tooltip, ui_util.tutorial_tooltip(player, nil, "recipe", true)}
     end
 
     local button_name = "fp_sprite-button_line_recipe_" .. line.id
@@ -252,14 +253,14 @@ function refresh_machine_table(player, line, table_production)
             end
         end
 
+        local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "machine", true)
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
           tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
-          ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory)}}
+          ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory), tutorial_tooltip}}
         button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
-        ui_util.add_tutorial_tooltip(player, button, nil, "machine", true, false)
         add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
     end
 end
@@ -325,22 +326,25 @@ end
 -- Creates and places a single module button
 function create_module_button(flow, line, module, type, button_name)
     local m = (module.amount == 1) and {"fp.module"} or {"fp.modules"}
+    local tutorial_tooltip = ui_util.tutorial_tooltip(game.get_player(flow.player_index), nil, type, true)
+
     local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.proto.sprite,
       style="fp_button_icon_medium_recipe", number=module.amount, mouse_button_filter={"left-and-right"},
       tooltip={"", module.proto.localised_name, "\n", module.amount, " ", m,
-      ui_util.generate_module_effects_tooltip_proto(module)}}
+      ui_util.generate_module_effects_tooltip_proto(module), tutorial_tooltip}}
     button_module.style.padding = 2
-
-    ui_util.add_tutorial_tooltip(game.get_player(flow.player_index), button_module, nil, type, true, false)
 end
 
 -- Creates the flow containing all line items of the given type
 function create_item_button_flow(player_table, gui_table, line, group, classes, styles)
+    local player = game.get_player(gui_table.player_index)
     local settings = player_table.settings
+
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
 
     for index, class in ipairs(classes) do
         local style = "fp_button_icon_medium_" .. styles[index]
+        local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
         
         for _, item in ipairs(Line.get_in_order(line, class)) do
             local actual_style = style
@@ -368,9 +372,8 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
               .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, mouse_button_filter={"left-and-right"}}
 
             ui_util.setup_item_button(player_table, button, item, line)
+            button.tooltip = {"", button.tooltip, tutorial_tooltip}  -- to refactor
             if button.number ~= nil and button.number < margin_of_error then button.visible = false end
-            
-            ui_util.add_tutorial_tooltip(game.get_player(flow.player_index), button, nil, string.lower(class), true, true)
         end
     end
 end
