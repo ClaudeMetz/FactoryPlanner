@@ -1,10 +1,13 @@
 ui_util = {
     context = {},
+    attributes = {},
     switch = {},
     message = {},
     fnei = {}
 }
 
+
+-- ** GUI utilities **
 -- Readjusts the size of the main dialog according to the user settings
 function ui_util.recalculate_main_dialog_dimensions(player)
     local player_table = get_table(player)
@@ -26,17 +29,19 @@ function ui_util.properly_center_frame(player, frame, width, height)
     frame.location = {x_offset, y_offset}
 end
 
-
--- Checks whether the archive is open; posts an error and returns true if it is
-function ui_util.check_archive_status(player)
-    if get_flags(player).archive_open then
-        ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
-        return true
-    else
-        return false
-    end
+-- Sets basic attributes on the given textfield
+function ui_util.setup_textfield(textfield)
+    textfield.lose_focus_on_confirm = true
+    textfield.clear_and_focus_on_right_click = true
 end
 
+-- Sets up the given textfield as a numeric one, with the specified options
+function ui_util.setup_numeric_textfield(textfield, decimal, negative)
+    ui_util.setup_textfield(textfield)
+    textfield.numeric = true
+    textfield.allow_decimal = (decimal or false)
+    textfield.allow_negative = (negative or false)
+end
 
 -- File-local to so this dict isn't recreated on every call of the function following it
 local font_colors = {
@@ -49,18 +54,29 @@ local font_colors = {
     black = {r = 0, g = 0, b = 0},
     default_button = {r = 0, g = 0, b = 0}
 }
-
 -- Sets the font color of the given label / button-label
 function ui_util.set_label_color(ui_element, color)
     if color == nil then return
     else ui_element.style.font_color = font_colors[color] end
 end
 
+-- Adds the given sprite to the top left corner of the given button
+function ui_util.add_overlay_sprite(button, sprite, button_size)
+    local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite}
+    overlay.ignored_by_interaction = true
+    overlay.resize_to_sprite = false
 
+    -- Set size dynamically according to the button sprite size
+    local adjusted_size = math.floor(button_size / 3.2)
+    overlay.style.height = adjusted_size
+    overlay.style.width = adjusted_size
+end
+
+
+-- ** Tooltips **
 -- File-local to so this dict isn't recreated on every call of the function following it
 local fnei_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
   product=true, byproduct=true, ingredient=true, fuel=true}
-
 -- Either adds the tutorial tooltip to the button, or returns it if none is given
 function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
     if get_preferences(player).tutorial_mode then
@@ -76,22 +92,6 @@ function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
         return ""
     end
 end
-
-
--- Sets basic attributes on the given textfield
-function ui_util.setup_textfield(textfield)
-    textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
-end
-
--- Sets up the given textfield as a numeric one, with the specified options
-function ui_util.setup_numeric_textfield(textfield, decimal, negative)
-    ui_util.setup_textfield(textfield)
-    textfield.numeric = true
-    textfield.allow_decimal = (decimal or false)
-    textfield.allow_negative = (negative or false)
-end
-
 
 -- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
 function ui_util.determine_item_amount_and_appendage(player_table, view_name, item_type, amount, machine_count)
@@ -129,121 +129,6 @@ function ui_util.determine_item_amount_and_appendage(player_table, view_name, it
 
     return number, appendage  -- number might be nil here
 end
-
-
--- Returns the number to put on an item button according to the current view
--- (Left untouched for ui_util.setup_item_button, will be removed at some point)
-function ui_util.calculate_item_button_number(player_table, view, amount, type, machine_count)
-    local timescale = player_table.ui_state.context.subfactory.timescale
-    
-    local number = nil
-    if view.name == "items_per_timescale" then
-        number = amount
-    elseif view.name == "belts_or_lanes" and type ~= "fluid" then
-        local throughput = player_table.preferences.preferred_belt.throughput
-        local divisor = (player_table.settings.belts_or_lanes == "belts") and throughput or (throughput / 2)
-        number = amount / divisor / timescale
-    elseif view.name == "items_per_second_per_machine" and type ~= "fluid" then
-        -- Show items/s/1 (machine) if it's a top level item, or machine_count is at 0
-        machine_count = (machine_count ~= nil and machine_count ~= 0) and machine_count or 1
-        number = amount / timescale / machine_count
-    end
-
-    return number  -- number might be nil here
-end
-
-
--- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
--- (Relates to the view_state, doesn't do anything if views are uninitialised)
--- (Only used in production_table now, will be refactored at some point)
-function ui_util.setup_item_button(player_table, button, item, line, imitate_top_level)
-    local view_state = player_table.ui_state.view_state
-    -- This gets refreshed after the view state is initialised
-    if view_state == nil then return end
-
-    local view = view_state.selected_view
-    local amount = (item.top_level and item.class == "Product") and item.required_amount or item.amount
-    local machine_count = (line ~= nil) and line.machine.count or nil
-    local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type, machine_count)
-    
-    -- Special handling for mining recipes concerning their localised name
-    local localised_name = (item.proto.type == "entity") and {"", {"fp.raw"}, " ", item.proto.localised_name}
-      or item.proto.localised_name
-    
-    -- Determine caption
-    local function determine_type_text()
-        if item.proto.type == "fluid" then return {"fp.fluid"}
-        else return ((number == 1) and {"fp.item"} or {"fp.items"}) end
-    end
-    
-    local caption = nil
-    -- Determine caption appendage
-    if view.name == "items_per_timescale" then
-        local timescale = player_table.ui_state.context.subfactory.timescale
-        caption = {"", determine_type_text(), "/", ui_util.format_timescale(timescale, true, false)}
-
-    elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
-        local belts = (player_table.settings.belts_or_lanes == "belts")
-        if belts then
-            caption = (number == 1) and {"fp.belt"} or {"fp.belts"}
-        else
-            caption = (number == 1) and {"fp.lane"} or {"fp.lanes"}
-        end
-
-    elseif view.name == "items_per_second_per_machine" and item.proto.type ~= "fluid" then
-        -- Only show "/machine" if it's not a top level item, where it'll just show items/s
-        local s_machine = (machine_count ~= nil) and {"", "/", {"fp.machine"}} or ""
-        caption = {"", determine_type_text(), "/", {"fp.unit_second"}, s_machine}
-
-    end
-
-    -- Compose tooltip, respecting top level products
-    if number ~= nil then
-        number = ui_util.format_number(number, 4)
-        
-        local number_string, indication, satisfaction = nil, "", ""
-        if item.class == "Product" then
-            if line ~= nil and line.priority_product_proto == item.proto then 
-                indication = {"", " (", {"fp.priority"}, ")"}
-            end
-
-            if item.top_level then
-                local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount,
-                  item.proto.type, nil)
-                number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", number}
-            end
-
-        elseif item.class == "Ingredient" and (not item.top_level and not imitate_top_level)
-          and player_table.settings.ingredient_satisfaction then
-            local satisfaction_percentage = (item.satisfied_amount / item.amount) * 100
-            satisfaction = {"", "\n", ui_util.format_number(satisfaction_percentage, 4), "% ", {"fp.satisfied"}}
-
-        elseif item.class == "Fuel" then  -- is never a top level item
-            indication = {"", " (", {"fp.fuel"}, ")"}
-        end
-        if number_string == nil then number_string = {"", number} end
-
-        button.number = (view.name == "belts_or_lanes" and player_table.settings.round_button_numbers)
-          and math.ceil(number) or number
-        button.tooltip = {"", localised_name, indication, "\n", number_string, " ", caption, satisfaction}
-
-    else
-        button.tooltip = localised_name
-    end
-end
-
--- Adds the given sprite to the top left corner of the given button
-function ui_util.add_overlay_sprite(button, sprite, button_size)
-    local overlay = button.add{type="sprite", name="sprite_machine_button_overlay", sprite=sprite}
-    overlay.ignored_by_interaction = true
-    overlay.resize_to_sprite = false
-
-    -- Set size dynamically according to the button sprite size
-    local adjusted_size = math.floor(button_size / 3.2)
-    overlay.style.height = adjusted_size
-    overlay.style.width = adjusted_size
-end
-
 
 -- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
 function ui_util.generate_module_effects_tooltip_proto(module)
@@ -298,31 +183,8 @@ function ui_util.generate_module_effects_tooltip(effects, machine_proto, player,
     else return tooltip end
 end
 
--- Returns a tooltip containing the attributes of the given beacon prototype
-function ui_util.generate_beacon_attributes_tooltip(beacon)
-    return {"", {"fp.module_slots"}, ": ", beacon.module_limit, "\n",
-              {"fp.effectivity"}, ": ", (beacon.effectivity * 100), "%", "\n",
-              {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
-end
 
--- Returns a tooltip containing the attributes of the given fuel prototype
-function ui_util.generate_fuel_attributes_tooltip(fuel)
-    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3)}
-end
-
--- Returns a tooltip containing the attributes of the given belt prototype
-function ui_util.generate_belt_attributes_tooltip(belt)
-    return {"", {"fp.throughput"}, ": ", belt.throughput, " ", {"fp.items"}, "/", {"fp.unit_second"}}
-end
-
--- Returns a tooltip containing the attributes of the given machine prototype
-function ui_util.generate_machine_attributes_tooltip(machine)
-    return {"", {"fp.crafting_speed"}, ": ", ui_util.format_number(machine.speed, 4), "\n",
-             {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
-             {"fp.module_slots"}, ": ", machine.module_limit}
-end
-
-
+-- ** Number formatting **
 -- Formats given number to given number of significant digits
 function ui_util.format_number(number, precision)
     if number == nil then return nil end
@@ -348,20 +210,6 @@ function ui_util.format_number(number, precision)
         -- Show the number in the shortest possible way
         return ("%." .. precision .. "g"):format(number)
     end
-end
-
--- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
-function ui_util.format_timescale(timescale, raw, whole_word)
-    local ts = nil
-    if timescale == 1 then
-        ts = whole_word and {"fp.second"} or {"fp.unit_second"}
-    elseif timescale == 60 then
-        ts = whole_word and {"fp.minute"} or {"fp.unit_minute"}
-    elseif timescale == 3600 then
-        ts = whole_word and {"fp.hour"} or {"fp.unit_hour"}
-    end
-    if raw then return ts
-    else return {"", "1", ts} end
 end
 
 -- Returns string representing the given power 
@@ -390,7 +238,33 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
--- **** CONTEXT ****
+-- ** Misc **
+-- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
+function ui_util.format_timescale(timescale, raw, whole_word)
+    local ts = nil
+    if timescale == 1 then
+        ts = whole_word and {"fp.second"} or {"fp.unit_second"}
+    elseif timescale == 60 then
+        ts = whole_word and {"fp.minute"} or {"fp.unit_minute"}
+    elseif timescale == 3600 then
+        ts = whole_word and {"fp.hour"} or {"fp.unit_hour"}
+    end
+    if raw then return ts
+    else return {"", "1", ts} end
+end
+
+-- Checks whether the archive is open; posts an error and returns true if it is
+function ui_util.check_archive_status(player)
+    if get_flags(player).archive_open then
+        ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
+        return true
+    else
+        return false
+    end
+end
+
+
+-- **** Context ****
 -- Creates a blank context referencing which part of the Factory is currently displayed
 function ui_util.context.create(player)
     return {
@@ -425,6 +299,32 @@ function ui_util.context.set_floor(player, floor)
     context.subfactory.selected_floor = floor
     context.floor = floor
     context.line = nil
+end
+
+
+-- **** Attributes ****
+-- Returns a tooltip containing the attributes of the given beacon prototype
+function ui_util.attributes.beacon(beacon)
+    return {"", {"fp.module_slots"}, ": ", beacon.module_limit, "\n",
+              {"fp.effectivity"}, ": ", (beacon.effectivity * 100), "%", "\n",
+              {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+end
+
+-- Returns a tooltip containing the attributes of the given fuel prototype
+function ui_util.attributes.fuel(fuel)
+    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3)}
+end
+
+-- Returns a tooltip containing the attributes of the given belt prototype
+function ui_util.attributes.belt(belt)
+    return {"", {"fp.throughput"}, ": ", belt.throughput, " ", {"fp.items"}, "/", {"fp.unit_second"}}
+end
+
+-- Returns a tooltip containing the attributes of the given machine prototype
+function ui_util.attributes.machine(machine)
+    return {"", {"fp.crafting_speed"}, ": ", ui_util.format_number(machine.speed, 4), "\n",
+             {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
+             {"fp.module_slots"}, ": ", machine.module_limit}
 end
 
 
@@ -551,5 +451,109 @@ function ui_util.fnei.show_recipe(recipe, line_products)
         else
             remote.call("fnei", "show_recipe", recipe.proto.name)
         end
+    end
+end
+
+
+
+-- ** CRAPHEAP **
+-- Returns the number to put on an item button according to the current view
+-- (Left untouched for ui_util.setup_item_button, will be removed at some point)
+function ui_util.calculate_item_button_number(player_table, view, amount, type, machine_count)
+    local timescale = player_table.ui_state.context.subfactory.timescale
+    
+    local number = nil
+    if view.name == "items_per_timescale" then
+        number = amount
+    elseif view.name == "belts_or_lanes" and type ~= "fluid" then
+        local throughput = player_table.preferences.preferred_belt.throughput
+        local divisor = (player_table.settings.belts_or_lanes == "belts") and throughput or (throughput / 2)
+        number = amount / divisor / timescale
+    elseif view.name == "items_per_second_per_machine" and type ~= "fluid" then
+        -- Show items/s/1 (machine) if it's a top level item, or machine_count is at 0
+        machine_count = (machine_count ~= nil and machine_count ~= 0) and machine_count or 1
+        number = amount / timescale / machine_count
+    end
+
+    return number  -- number might be nil here
+end
+
+
+-- Adds an appropriate number and tooltip to the given button using the given item/top-level-item
+-- (Relates to the view_state, doesn't do anything if views are uninitialised)
+-- (Only used in production_table now, will be refactored at some point)
+function ui_util.setup_item_button(player_table, button, item, line, imitate_top_level)
+    local view_state = player_table.ui_state.view_state
+    -- This gets refreshed after the view state is initialised
+    if view_state == nil then return end
+
+    local view = view_state.selected_view
+    local amount = (item.top_level and item.class == "Product") and item.required_amount or item.amount
+    local machine_count = (line ~= nil) and line.machine.count or nil
+    local number = ui_util.calculate_item_button_number(player_table, view, amount, item.proto.type, machine_count)
+    
+    -- Special handling for mining recipes concerning their localised name
+    local localised_name = (item.proto.type == "entity") and {"", {"fp.raw"}, " ", item.proto.localised_name}
+      or item.proto.localised_name
+    
+    -- Determine caption
+    local function determine_type_text()
+        if item.proto.type == "fluid" then return {"fp.fluid"}
+        else return ((number == 1) and {"fp.item"} or {"fp.items"}) end
+    end
+    
+    local caption = nil
+    -- Determine caption appendage
+    if view.name == "items_per_timescale" then
+        local timescale = player_table.ui_state.context.subfactory.timescale
+        caption = {"", determine_type_text(), "/", ui_util.format_timescale(timescale, true, false)}
+
+    elseif view.name == "belts_or_lanes" and item.proto.type ~= "fluid" then
+        local belts = (player_table.settings.belts_or_lanes == "belts")
+        if belts then
+            caption = (number == 1) and {"fp.belt"} or {"fp.belts"}
+        else
+            caption = (number == 1) and {"fp.lane"} or {"fp.lanes"}
+        end
+
+    elseif view.name == "items_per_second_per_machine" and item.proto.type ~= "fluid" then
+        -- Only show "/machine" if it's not a top level item, where it'll just show items/s
+        local s_machine = (machine_count ~= nil) and {"", "/", {"fp.machine"}} or ""
+        caption = {"", determine_type_text(), "/", {"fp.unit_second"}, s_machine}
+
+    end
+
+    -- Compose tooltip, respecting top level products
+    if number ~= nil then
+        number = ui_util.format_number(number, 4)
+        
+        local number_string, indication, satisfaction = nil, "", ""
+        if item.class == "Product" then
+            if line ~= nil and line.priority_product_proto == item.proto then 
+                indication = {"", " (", {"fp.priority"}, ")"}
+            end
+
+            if item.top_level then
+                local formatted_amount = ui_util.calculate_item_button_number(player_table, view, item.amount,
+                  item.proto.type, nil)
+                number_string = {"", ui_util.format_number(formatted_amount, 4), " / ", number}
+            end
+
+        elseif item.class == "Ingredient" and (not item.top_level and not imitate_top_level)
+          and player_table.settings.ingredient_satisfaction then
+            local satisfaction_percentage = (item.satisfied_amount / item.amount) * 100
+            satisfaction = {"", "\n", ui_util.format_number(satisfaction_percentage, 4), "% ", {"fp.satisfied"}}
+
+        elseif item.class == "Fuel" then  -- is never a top level item
+            indication = {"", " (", {"fp.fuel"}, ")"}
+        end
+        if number_string == nil then number_string = {"", number} end
+
+        button.number = (view.name == "belts_or_lanes" and player_table.settings.round_button_numbers)
+          and math.ceil(number) or number
+        button.tooltip = {"", localised_name, indication, "\n", number_string, " ", caption, satisfaction}
+
+    else
+        button.tooltip = localised_name
     end
 end
