@@ -340,40 +340,60 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
     local player = game.get_player(gui_table.player_index)
     local settings = player_table.settings
 
+    local view_name = player_table.ui_state.view_state.selected_view.name
+    local round_belts = (view_name == "belts_or_lanes" and settings.round_button_numbers)
+
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
 
     for index, class in ipairs(classes) do
         local style = "fp_button_icon_medium_" .. styles[index]
         local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
+        local indication = (class == "Fuel") and {"", " (", {"fp.fuel"}, ")"} or ""
         
         for _, item in ipairs(Line.get_in_order(line, class)) do
-            local actual_style = style
+            local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+              item.proto.type, item.amount, math.ceil(line.machine.count))
+              
+            if raw_amount ~= nil and raw_amount > margin_of_error then
+                -- Determine potential different button style and the potential satisfaction line
+                local actual_style, satisfaction_line = style, ""
 
-            if item.proto.type == "entity" then
-                actual_style = "fp_button_icon_medium_blank" 
+                if item.proto.type == "entity" then
+                    actual_style = "fp_button_icon_medium_blank" 
 
-            elseif class == "Product" and line.priority_product_proto ~= nil and 
-              line.priority_product_proto.type == item.proto.type and 
-              line.priority_product_proto.name == item.proto.name then
-                actual_style = "fp_button_icon_medium_green"
-
-            elseif class == "Ingredient" and not settings.performance_mode and settings.ingredient_satisfaction then
-                local satisfaction_percentage = tonumber(string.format("%.3f", (item.satisfied_amount / item.amount) * 100))
-                if satisfaction_percentage == 0 then
-                    actual_style = "fp_button_icon_medium_red"
-                elseif satisfaction_percentage < 100 then
-                    actual_style = "fp_button_icon_medium_yellow"
-                elseif satisfaction_percentage >= 100 then
+                elseif class == "Product" and line.priority_product_proto ~= nil and 
+                  line.priority_product_proto.type == item.proto.type and 
+                  line.priority_product_proto.name == item.proto.name then
                     actual_style = "fp_button_icon_medium_green"
+
+                elseif class == "Ingredient" and not settings.performance_mode and settings.ingredient_satisfaction then
+                    local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
+
+                    local satisfaction = tonumber(satisfaction_percentage)
+                    if satisfaction == 0 then
+                        actual_style = "fp_button_icon_medium_red"
+                    elseif satisfaction < 100 then
+                        actual_style = "fp_button_icon_medium_yellow"
+                    elseif satisfaction >= 100 then
+                        actual_style = "fp_button_icon_medium_green"
+                    end
+
+                    satisfaction_line = {"", "\n", satisfaction_percentage, "% ", {"fp.satisfied"}}
                 end
+
+                -- Determine the correct indication
+                if class == "Product" and line.priority_product_proto == item.proto then 
+                    indication = {"", " (", {"fp.priority"}, ")"}
+                end
+
+                local number_line = (raw_amount ~= nil) and {"", ui_util.format_number(raw_amount, 4) .. " ", appendage} or ""
+                local tooltip = {"", item.proto.localised_name, indication, "\n", number_line, satisfaction_line, tutorial_tooltip}
+                local button_number = (round_belts and raw_amount ~= nil) and math.ceil(raw_amount) or raw_amount
+
+                local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
+                  .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, number=button_number, tooltip=tooltip,
+                  mouse_button_filter={"left-and-right"}}
             end
-
-            local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-              .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, mouse_button_filter={"left-and-right"}}
-
-            ui_util.setup_item_button(player_table, button, item, line)
-            button.tooltip = {"", button.tooltip, tutorial_tooltip}  -- to refactor
-            if button.number ~= nil and button.number < margin_of_error then button.visible = false end
         end
     end
 end
