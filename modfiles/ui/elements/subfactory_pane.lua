@@ -113,39 +113,37 @@ function _refresh_item_table(player, item_table, class, items)
     local style = "fp_button_icon_large_blank"
 
     for _, item in ipairs(items) do
-        local item_amount, secondary_number = item.amount, ""
-
-        if not floor_total then
-            -- Determine item amount to be shown on the button
-            item_amount = item.required_amount
-
-            -- Format the secondary number for the tooltip
-            local secondary_amount = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-                item.proto.type, item.amount, nil)  -- appendage is not needed here, thus ignored
-            if secondary_amount ~= nil then secondary_number = ui_util.format_number(secondary_amount, 4) .. " / " end
-
-            -- Determine style needed for top level items
-            if item.class == "Ingredient" then
-                style = "fp_button_icon_large_blank"
-            elseif item.class == "Byproduct" then
-                style = "fp_button_icon_large_red"
-            else  -- item.class == "Product"
-                if item.amount <= 0 then
-                    style = "fp_button_icon_large_red"
-                elseif item.amount < item.required_amount then
-                    style = "fp_button_icon_large_yellow"
-                elseif item.amount == item.required_amount then
-                    style = "fp_button_icon_large_green"
-                else  -- overproduction, should not happen normally
-                    style = "fp_button_icon_large_cyan"
-                end
-            end
-        end
-
+        local item_amount = (floor_total) and item.amount or item.required_amount
         local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item_amount, nil)
 
         if (raw_amount ~= nil and ((raw_amount > margin_of_error)) or (class == "Product" and not floor_total)) then
+            local secondary_number = ""
+
+            if not floor_total then
+                -- Format the secondary number for the tooltip
+                local secondary_amount = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+                  item.proto.type, item.amount, nil)  -- appendage is not needed here, thus ignored
+                if secondary_amount ~= nil then secondary_number = ui_util.format_number(secondary_amount, 4) .. " / " end
+
+                -- Determine style needed for top level items
+                if item.class == "Ingredient" then
+                    style = "fp_button_icon_large_blank"
+                elseif item.class == "Byproduct" then
+                    style = "fp_button_icon_large_red"
+                else  -- item.class == "Product"
+                    if item.amount <= 0 then
+                        style = "fp_button_icon_large_red"
+                    elseif item.amount < item.required_amount then
+                        style = "fp_button_icon_large_yellow"
+                    elseif item.amount == item.required_amount then
+                        style = "fp_button_icon_large_green"
+                    else  -- overproduction, should not happen normally
+                        style = "fp_button_icon_large_cyan"
+                    end
+                end
+            end
+
             local number_line = (raw_amount ~= nil) and {"", ui_util.format_number(raw_amount, 4) .. " ", appendage} or ""
             local tooltip = {"", item.proto.localised_name, "\n" .. secondary_number, number_line, tutorial_tooltip}
             local button_number = (round_belts and raw_amount ~= nil) and math.ceil(raw_amount) or raw_amount
