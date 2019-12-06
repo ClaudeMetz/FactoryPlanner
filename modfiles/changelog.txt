@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Various graphical and performance improvements
   Bugfixes:
-    - 
+    - Fixed an infinite loop when trying to add a recipe that has no machine it can use
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.17.73

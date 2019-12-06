@@ -13,8 +13,9 @@ function data_util.machine.set_default(player, category_id, machine_id)
 end
 
 -- Returns the default machine for the given category
-function data_util.machine.get_default(player, category)
-    return get_preferences(player).default_machines.categories[category.id]
+function data_util.machine.get_default(player, category_name)
+    local category_id = global.all_machines.map[category_name]
+    return get_preferences(player).default_machines.categories[category_id]
 end
 
 -- Returns whether the given machine can produce the given recipe
@@ -34,7 +35,9 @@ end
 function data_util.machine.change(player, line, machine, direction)
     -- Set the machine to the default one
     if machine == nil and direction == nil then
-        local default_machine = data_util.machine.get_default(player, line.machine.category)
+        local default_machine = data_util.machine.get_default(player, line.recipe.proto.category)
+        -- If no default machine is found, this category has no machines
+        if default_machine == nil then return false end
         return data_util.machine.change(player, line, default_machine, nil)
 
     -- Set machine directly

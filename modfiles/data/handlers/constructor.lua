@@ -30,8 +30,8 @@ local function construct_floor(player, floor, recipes)
         local production_type = recipe_data.production_type or "produce"
         local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.name], production_type)
         local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
-        local machine = category.machines[category.map[recipe_data.machine]]
-        local line = Floor.add(floor, Line.init(player, recipe, machine))
+        local line = Floor.add(floor, Line.init(player, recipe))
+        line.machine.proto = category.machines[category.map[recipe_data.machine]]
 
         -- Optionally, add modules
         if recipe_data.modules ~= nil then
@@ -108,9 +108,9 @@ function constructor.dev_config(player)
                 required_amount = 250
             },
             {
-                name = "rocket-part",
-                type = "item",
-                required_amount = 540
+                name = "steam",
+                type = "fluid",
+                required_amount = 1000
             }
         }
         add_products(subfactory, products)

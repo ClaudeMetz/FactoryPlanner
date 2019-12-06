@@ -104,7 +104,7 @@ function refresh_preferences_dialog(player)
                   .. category_id .. "_" .. machine_id, sprite=machine.sprite, mouse_button_filter={"left"}}
                   
                 local tooltip = machine.localised_name
-                if data_util.machine.get_default(player, category) == machine then
+                if data_util.machine.get_default(player, category.name) == machine then
                     button_machine.style = "fp_button_icon_medium_green"
                     tooltip = {"", tooltip, " (", {"fp.selected"}, ")"}
                 else 
