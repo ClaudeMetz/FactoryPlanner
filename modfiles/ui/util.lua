@@ -58,19 +58,25 @@ function ui_util.set_label_color(ui_element, color)
     end
 end
 
- 
--- Adds the appropriate tutorial tooltip if the preference is enabled
-function ui_util.add_tutorial_tooltip(player, button, tooltip, type, line_break, fnei)
+
+-- File-local to so this dict isn't recreated on every call of the function following it
+local fnei_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
+  product=true, byproduct=true, ingredient=true, fuel=true}
+
+-- Either adds the tutorial tooltip to the button, or returns it if none is given
+function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
     if get_preferences(player).tutorial_mode then
         local b = line_break and "\n\n" or ""
-        local f = (fnei and remote.interfaces["fnei"] ~= nil) and {"fp.tut_fnei"} or ""
+        local f = (fnei_types[tut_type] and remote.interfaces["fnei"]) and {"fp.tut_fnei"} or ""
         if button ~= nil then
-            button.tooltip = {"", button.tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. type}, f}
-        elseif tooltip ~= nil then
-            return {"", tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. type}, f}
+            button.tooltip = {"", button.tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. tut_type}, f}
+        else
+            return {"", b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. tut_type}, f}
         end
-    -- Return the tooltip as-is if Tutorial Mode is inactive
-    elseif tooltip then return tooltip end
+    -- Return empty string if there should be a return value
+    elseif button == nil then
+        return ""
+    end
 end
 
 

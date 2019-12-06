@@ -106,8 +106,7 @@ function attempt_element_creation(player, table, width_remaining, subfactory, se
         return 0
     else
         button.style.width = width_used
-        button.tooltip = tooltip
-        ui_util.add_tutorial_tooltip(player, button, nil, "subfactory", (tooltip ~= ""), false)
+        button.tooltip = {"", tooltip, ui_util.tutorial_tooltip(player, nil, "subfactory", (tooltip ~= ""))}
         return width_used
     end
 end
