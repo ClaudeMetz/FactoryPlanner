@@ -195,7 +195,6 @@ function refresh_view_state(player, subfactory)
     local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
     local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"fp.cbelts"} or {"fp.clanes"}
     local bl_sprite = player_table.preferences.preferred_belt.rich_text
-    local crafting_machine_sprite_path = ui_util.find_crafting_machine_sprite()
     local view_state = {
         [1] = {
             name = "items_per_timescale",
@@ -211,7 +210,7 @@ function refresh_view_state(player, subfactory)
         },
         [3] = {
             name = "items_per_second_per_machine",
-            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. crafting_machine_sprite_path .. "]"},
+            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. top_crafting_machine_sprite .. "]"},
             enabled = true,
             selected = false
         }

@@ -244,24 +244,6 @@ function ui_util.add_overlay_sprite(button, sprite, button_size)
 end
 
 
--- Determines a suitable crafting machine sprite path, according to what is available
-function ui_util.find_crafting_machine_sprite()
-    -- Try these categories first, one of them should exist
-    local categories = {"crafting", "advanced-crafting", "basic-crafting"}
-    for _, category_name in ipairs(categories) do
-        local category_id = global.all_machines.map[category_name]
-        if category_id ~= nil then
-            local machines = global.all_machines.categories[category_id].machines
-            return machines[table_size(machines)].sprite
-        end
-    end
-
-    -- If none of the specified categories exist, just pick the top tier machine of the first one
-    local machines = global.all_machines.categories[1].machines
-    return machines[table_size(machines)].sprite
-end
-
-
 -- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
 function ui_util.generate_module_effects_tooltip_proto(module)
     -- First, generate the appropriate effects table
