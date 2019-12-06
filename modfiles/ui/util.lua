@@ -389,19 +389,6 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
--- Splits given string
-function ui_util.split(s, separator)
-    local r = {}
-    for token in string.gmatch(s, "[^" .. separator .. "]+") do
-        if tonumber(token) ~= nil then
-            token = tonumber(token)
-        end
-        table.insert(r, token) 
-    end
-    return r
-end
-
-
 -- **** Switch utility ****
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state

@@ -17,7 +17,7 @@ function Floor.init(line)
     -- If a line is given, add it as the first line of the new floor
     -- (This means that this floor is the subfloor of the given line)
     if line ~= nil then
-        local subline = data_util.deepcopy(line)
+        local subline = cutil.deepcopy(line)
         subline.comment = nil
         Floor.add(floor, subline)
     end

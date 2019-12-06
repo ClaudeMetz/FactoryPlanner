@@ -335,7 +335,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             
         -- Reacts to any subfactory_pane item button being pressed (class name being a string is fine)
         elseif string.find(event.element.name, "^fp_sprite%-button_subpane_[a-zA-Z]+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             _G["handle_" .. split_string[4] .. "_element_click"](player, split_string[5], click, direction, action, event.alt)
 
         -- Reacts to an item group button being pressed
@@ -381,7 +381,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             
         -- Changes the machine of the selected (assembly) line
         elseif string.find(event.element.name, "^fp_sprite%-button_line_machine_%d+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             handle_machine_change(player, split_string[5], split_string[6], click, direction)
 
         -- Handles click on the add-module-button on an (assembly) line
@@ -391,7 +391,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Handles click on any module button on an (assembly) line
         elseif string.find(event.element.name, "^fp_sprite%-button_line_module_%d+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             handle_line_module_click(player, split_string[5], split_string[6], click, direction, action, event.alt)
 
         -- Handles click on the add-beacon-button on an (assembly) line
@@ -401,7 +401,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         
         -- Handles click on any beacon (module or beacon) button on an (assembly) line
         elseif string.find(event.element.name, "^fp_sprite%-button_line_beacon_[a-z]+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             handle_line_beacon_click(player, split_string[6], split_string[5], click, direction, action, event.alt)
 
         -- Handles click on any module/beacon button on a modules/beacons modal dialog
@@ -410,17 +410,17 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Reacts to any 1d-prototype preference button being pressed
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_[a-z]+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             handle_preferences_change(player, split_string[4], split_string[5])
 
         -- Reacts to any preferences machine button being pressed (special case of a 2d-prototype preference)
         elseif string.find(event.element.name, "^fp_sprite%-button_preferences_machine_%d+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             handle_preferences_machine_change(player, split_string[5], split_string[6])
 
         -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
-            local split_string = ui_util.split(event.element.name, "_")
+            local split_string = cutil.split(event.element.name, "_")
             handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
         
         end
