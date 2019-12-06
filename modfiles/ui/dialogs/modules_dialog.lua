@@ -347,7 +347,7 @@ function handle_module_beacon_picker_click(player, button)
     local modal_data = ui_state.modal_data
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     
-    local split_name = ui_util.split(button.name, "_")
+    local split_name = cutil.split(button.name, "_")
     if split_name[3] == "module" then
         if button.style.name ~= "fp_button_icon_medium_cyan" then  -- do nothing on existing modules
             local module_proto = global.all_modules.categories[split_name[5]].modules[split_name[6]]

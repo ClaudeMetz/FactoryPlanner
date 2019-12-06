@@ -126,7 +126,7 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
         -- Total effects
         if line.machine.proto.mining then
             -- If there is mining prod, a copy of the table is required
-            local effects = data_util.shallowcopy(line.total_effects)
+            local effects = cutil.shallowcopy(line.total_effects)
             effects.productivity = effects.productivity + mining_productivity
             line_data.total_effects = effects
         else

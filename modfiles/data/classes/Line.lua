@@ -89,7 +89,7 @@ function Line.set_beacon(self, beacon, secondary)
     beacon.parent = self
     self.beacon = beacon
     
-    Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(data_util.deepcopy(beacon)))
+    Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(cutil.deepcopy(beacon)))
     Beacon.trim_modules(self.beacon)
     Line.summarize_effects(self)
 end
@@ -107,7 +107,7 @@ function Line.add(self, object, secondary)
     local dataset = Collection.add(self[object.class], object)
 
     if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.add, secondary, table.pack(data_util.deepcopy(object)))
+        Line.carry_over_changes(self, Line.add, secondary, table.pack(cutil.deepcopy(object)))
         Line.normalize_modules(self)
     end
 
@@ -116,7 +116,7 @@ end
 
 function Line.remove(self, dataset, secondary)
     if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.remove, secondary, table.pack(data_util.deepcopy(dataset)))
+        Line.carry_over_changes(self, Line.remove, secondary, table.pack(cutil.deepcopy(dataset)))
     end
     
     local removed_gui_position = Collection.remove(self[dataset.class], dataset)
@@ -129,7 +129,7 @@ function Line.replace(self, dataset, object, secondary)
     local dataset = Collection.replace(self[dataset.class], dataset, object)
 
     if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.replace, secondary, table.pack(data_util.deepcopy(dataset), object))
+        Line.carry_over_changes(self, Line.replace, secondary, table.pack(cutil.deepcopy(dataset), object))
         Line.normalize_modules(self)
     end
 
@@ -270,7 +270,7 @@ end
 
 -- Returns the total effects influencing this line, including mining productivity
 function Line.get_total_effects(self, player)
-    local effects = data_util.shallowcopy(self.total_effects)
+    local effects = cutil.shallowcopy(self.total_effects)
 
     -- Add mining productivity, if applicable
     local mining_productivity = 0
