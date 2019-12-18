@@ -21,14 +21,14 @@ def update_changelog():
     print("- changelog entry added")
 
     # Disable devmode
-    tmp_path = cwd / "data" / "tmp"
-    init_file_path = cwd / "data" / "init.lua"
-    with tmp_path.open("w") as new_file, init_file_path.open("r") as old_file:
+    tmp_path = cwd / "tmp"
+    control_file_path = cwd / "control.lua"
+    with tmp_path.open("w") as new_file, control_file_path.open("r") as old_file:
         for line in old_file:
             line = re.sub(r"^--devmode = true", "devmode = true", line)
             new_file.write(line)
-    init_file_path.unlink()
-    tmp_path.rename(init_file_path)
+    control_file_path.unlink()
+    tmp_path.rename(control_file_path)
     print("- devmode enabled")
 
 

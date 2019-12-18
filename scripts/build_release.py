@@ -44,14 +44,14 @@ def build_release():
     print("- mod folder symlink updated")
 
     # Disable devmode if it is active
-    tmp_path = modfiles_path / "data" / "tmp"
-    init_file_path = modfiles_path / "data" / "init.lua"
-    with tmp_path.open("w") as new_file, init_file_path.open("r") as old_file:
+    tmp_path = modfiles_path / "tmp"
+    control_file_path = modfiles_path / "control.lua"
+    with tmp_path.open("w") as new_file, control_file_path.open("r") as old_file:
         for line in old_file:
             line = re.sub(r"^devmode = true", "--devmode = true", line)
             new_file.write(line)
-    init_file_path.unlink()
-    tmp_path.rename(init_file_path)
+    control_file_path.unlink()
+    tmp_path.rename(control_file_path)
     print("- devmode disabled")
 
     # Update changelog file for release

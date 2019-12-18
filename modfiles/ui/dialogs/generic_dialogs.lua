@@ -1,6 +1,5 @@
 -- This file contains general-purpose dialogs that are generic and used in several places
 
-
 -- **** CHOOSER ****
 -- Handles populating the chooser dialog
 function open_chooser_dialog(flow_modal_dialog, modal_data)
