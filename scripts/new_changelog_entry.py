@@ -1,14 +1,14 @@
-# This script adds a new, blank changelog entry, and enables devmode
-# It needs to be run in the same directory as the changelog that should be updated
-# Folder structure needs to be the same as FP for the devmode-enabling to work
+# This script adds a new, blank changelog entry and enables devmode
+# It needs to be run in the root of the folder that contains the mod files
+# Folder structure needs to be the same as Factory Planner to work
 
 import re
 from pathlib import Path
 
 cwd = Path.cwd()
 
-def update_changelog():
-    # Update changelog file for further development
+def new_changelog_entry():
+    # Add a blank changelog entry for further development
     changelog_path = cwd / "changelog.txt"
     new_changelog_entry = ("-----------------------------------------------------------------------------------------------"
                            "----\nVersion: 0.00.00\nDate: 00. 00. 0000\n  Features:\n    - \n  Changes:\n    - \n  "
@@ -33,6 +33,6 @@ def update_changelog():
 
 
 if __name__ == "__main__":
-    proceed = input("Sure to update the changelog? (y/n): ")
+    proceed = input("Sure to add a changelog entry? (y/n): ")
     if proceed == "y":
-        update_changelog()
+        new_changelog_entry()

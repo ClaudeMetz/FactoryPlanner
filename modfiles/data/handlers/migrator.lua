@@ -1,4 +1,3 @@
---require("data.migrations.migration_0_17_0")
 require("data.migrations.migration_0_17_13")
 require("data.migrations.migration_0_17_21")
 require("data.migrations.migration_0_17_27")
@@ -15,23 +14,19 @@ require("data.migrations.migration_0_17_65")
 -- It decides whether and which migrations should be applied, in appropriate order
 
 -- Returns a table containing all existing migrations in order
--- The appropriate migration file needs to be required at the top
-function migration_masterlist()
-    return {
-        --[0] = {version="0.17.0"},
-        [1] = {version="0.17.13"},
-        [2] = {version="0.17.21"},
-        [3] = {version="0.17.27"},
-        [4] = {version="0.17.29"},
-        [5] = {version="0.17.38"},
-        [6] = {version="0.17.51"},
-        [7] = {version="0.17.55"},
-        [8] = {version="0.17.56"},
-        [9] = {version="0.17.57"},
-        [10] = {version="0.17.61"},
-        [11] = {version="0.17.65"}
-    }
-end
+migration_masterlist = {
+    [1] = {version="0.17.13"},
+    [2] = {version="0.17.21"},
+    [3] = {version="0.17.27"},
+    [4] = {version="0.17.29"},
+    [5] = {version="0.17.38"},
+    [6] = {version="0.17.51"},
+    [7] = {version="0.17.55"},
+    [8] = {version="0.17.56"},
+    [9] = {version="0.17.57"},
+    [10] = {version="0.17.61"},
+    [11] = {version="0.17.65"},
+}
 
 -- Applies any appropriate migrations to the global table
 function attempt_global_migration()
@@ -77,7 +72,7 @@ function determine_migrations(previous_version)
     local migrations = {}
     
     local found = false
-    for _, migration in ipairs(migration_masterlist()) do
+    for _, migration in ipairs(migration_masterlist) do
         if compare_versions(previous_version, migration.version) then found = true end
         if found then table.insert(migrations, migration.version) end
     end

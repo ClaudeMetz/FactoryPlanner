@@ -22,6 +22,7 @@ cwd = Path.cwd()
 repo = git.Repo(cwd / MODNAME)
 
 def build_release():
+    # Determine the next mod version
     modfiles_path = cwd / MODNAME / "modfiles"
     info_json_path = modfiles_path / "info.json"
     with info_json_path.open("r") as file:
