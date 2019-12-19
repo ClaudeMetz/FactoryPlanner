@@ -5,7 +5,6 @@ data:extend({
         action = "lua",
         toggleable = false,
         order = "fp-a[open]",
-        localised_name = {"shortcut.fp_open_interface"},
         associated_control_input = "fp_toggle_main_dialog",
         icon =
         {
