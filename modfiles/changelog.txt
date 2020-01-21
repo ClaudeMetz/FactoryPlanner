@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.18.00
-Date: 00. 00. 0000
+Version: 0.18.1
+Date: 21. 01. 2020
   Features:
     - Update for 0.18. It also contains some smaller features and a lot of background optimizations. There are still quite a few bugs that have been reported and not fixed, I wanted to get the 0.18 patch out quickly. Thanks to everyone that reported things, it's very much appreciated. I kind of fell off the development-train in December because of exams and the festivities, and haven't gotten back on the horse really. I'll try to address the outstanding bugs soon, and hopefully get back to feature development at some point.
   Changes:
