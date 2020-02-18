@@ -163,14 +163,10 @@ end)
 -- Fires on any changes to a textbox/-field
 script.on_event(defines.events.on_gui_text_changed, function(event)
     local player = game.get_player(event.player_index)
-    
-    -- Limits the subfactory name length (implemented here for better responsiveness)
-    if event.element.name == "fp_textfield_subfactory_name" then
-        event.element.text = string.sub(event.element.text, 1, 24)
-    
+
     -- Activates the instant filter based on user search-string entry
-    elseif event.element.name == "fp_textfield_item_picker_search_bar" and
-        not get_settings(player).performance_mode then
+    if event.element.name == "fp_textfield_item_picker_search_bar" and
+      not get_settings(player).performance_mode then
         local picker_flow = event.element.parent.parent
         item_picker.filter(picker_flow, event.element.text, false)
 
