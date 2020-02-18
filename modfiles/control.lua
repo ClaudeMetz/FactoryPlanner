@@ -10,4 +10,5 @@ cached_dialogs = {"fp_frame_modal_dialog_product"}  -- Global variable to write 
 if devmode then
     Profiler = require("lualib.profiler")
     require("lualib.llog")
+    llog_excludes = {parent=true, type=true, category=true, subfloor=true, origin_line=true, tooltip=true}
 end
