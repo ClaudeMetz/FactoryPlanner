@@ -71,27 +71,30 @@ function refresh_item_table(player, class)
     
     local subfactory = ui_state.context.subfactory
     local items = nil
+    local display_mode = (ui_state.flags.floor_total and subfactory.selected_floor.level > 1)
+      and "floor_total" or "standard"
     
     -- Only show the totals for the current floor if the toggle is active
-    if ui_state.flags.floor_total and subfactory.selected_floor.level > 1 then
-        local parent_line = ui_state.context.floor.origin_line
-        if parent_line ~= nil and parent_line[class].count > 0 then
+    if display_mode == "floor_total" then
+        local parent_line = ui_state.context.floor.origin_line  -- must exist if selected_floor.level > 1
+        if parent_line[class].count > 0 then
+            -- Combine Fuel and Ingredients into a single item list
             items = (class ~= "Ingredient") and Line.get_in_order(parent_line, class) or Collection.get_in_order(
               Subfactory.combine_item_collections(subfactory, parent_line.Ingredient, parent_line.Fuel))
         end
 
-    -- Otherwise, show the subfactory totals
+    -- Otherwise, show the subfactory totals, if there are any
     elseif subfactory[class].count > 0 then
         items = Subfactory.get_in_order(subfactory, class)
     end
 
-    if items ~= nil then _refresh_item_table(player, item_table, class, items) end
+    if items ~= nil then _refresh_item_table(player, item_table, class, items, display_mode) end
 
     -- Add button to add new products to its table
     if class == "Product" then
         local button_add = item_table.add{type="sprite-button", name="fp_sprite-button_add_product", sprite="fp_sprite_plus",
           style="fp_sprite-button_inset", tooltip={"fp.add_a_product"}, mouse_button_filter={"left"},
-          enabled=(not ui_state.flags.archive_open)}
+          visible=(display_mode == "standard"), enabled=(not ui_state.flags.archive_open)}
         button_add.style.height = 36
         button_add.style.width = 36
         button_add.style.padding = 3
@@ -100,38 +103,32 @@ end
 
 
 -- Refreshes the item table of the given class
-function _refresh_item_table(player, item_table, class, items)
+function _refresh_item_table(player, item_table, class, items, display_mode)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     
     local ui_name = class:gsub("^%u", string.lower)
-    local floor_total = ui_state.flags.floor_total
     local view_name = ui_state.view_state.selected_view.name
 
     local round_belts = (view_name == "belts_or_lanes" and player_table.settings.round_button_numbers)
     local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, ("tl_" .. ui_name), true)
-    local style = "fp_button_icon_large_blank"
+    local style = "fp_button_icon_large_blank"  -- will remain untouched if the display mode is 'floor_total'
 
     for _, item in ipairs(items) do
-        local item_amount = (floor_total) and item.amount or item.required_amount
-        local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+        local item_amount = (display_mode == "standard" and class == "Product") and item.required_amount or item.amount
+        local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item_amount, nil)
-
-        if (raw_amount ~= nil and ((raw_amount > margin_of_error)) or (class == "Product" and not floor_total)) then
+          
+        if display_amount ~= nil and display_amount > margin_of_error then
             local secondary_number = ""
 
-            if not floor_total then
-                -- Format the secondary number for the tooltip
-                local secondary_amount = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-                  item.proto.type, item.amount, nil)  -- appendage is not needed here, thus ignored
-                if secondary_amount ~= nil then secondary_number = ui_util.format_number(secondary_amount, 4) .. " / " end
-
-                -- Determine style needed for top level items
-                if item.class == "Ingredient" then
+            if display_mode == "standard" then
+                -- Determine style needed for top level items, plus some adjustments for Products
+                if class == "Ingredient" then
                     style = "fp_button_icon_large_blank"
-                elseif item.class == "Byproduct" then
+                elseif class == "Byproduct" then
                     style = "fp_button_icon_large_red"
-                else  -- item.class == "Product"
+                else  -- class == "Product"
                     if item.amount <= 0 then
                         style = "fp_button_icon_large_red"
                     elseif item.amount < item.required_amount then
@@ -141,16 +138,21 @@ function _refresh_item_table(player, item_table, class, items)
                     else  -- overproduction, should not happen normally
                         style = "fp_button_icon_large_cyan"
                     end
+
+                    -- Add the secondary amount to Products only
+                    local secondary_amount = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+                      item.proto.type, item.amount, nil)  -- appendage is not needed here, thus ignored
+                    secondary_number = (secondary_amount) and ui_util.format_number(secondary_amount, 4) .. " / " or ""
                 end
             end
 
-            local number_line = (raw_amount ~= nil) and {"", ui_util.format_number(raw_amount, 4) .. " ", appendage} or ""
+            local number_line = {"", ui_util.format_number(display_amount, 4) .. " ", appendage}
             local tooltip = {"", item.proto.localised_name, "\n" .. secondary_number, number_line, tutorial_tooltip}
-            local button_number = (round_belts and raw_amount ~= nil) and math.ceil(raw_amount) or raw_amount
+            local button_number = (round_belts) and math.ceil(display_amount) or display_amount
 
             local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
               .. item.id, sprite=item.proto.sprite, number=button_number, tooltip=tooltip,
-              style=style, enabled=(not floor_total), mouse_button_filter={"left-and-right"}}
+              style=style, enabled=(display_mode == "standard"), mouse_button_filter={"left-and-right"}}
         end
     end
 end

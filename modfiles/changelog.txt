@@ -1,12 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    - 
   Changes:
     - Improved responsiveness of the subfactory name-entry in multiplayer
   Bugfixes:
-    - 
+    - Fixed the ingredients and byproducts not showing up at the subfactory level
+    - Fixed some wonkiness related to the 'Floor Total' view
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.1
