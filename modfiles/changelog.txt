@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - Add exception for the mod 'Deep Mine' so the preferences dialog doesn't crash when it is installed
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.2
 Date: 20. 02. 2020
   Changes:
