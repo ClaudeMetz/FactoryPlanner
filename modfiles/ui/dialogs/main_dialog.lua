@@ -147,14 +147,14 @@ function refresh_current_activity(player)
         refresh_actionbar(player)
 
         local subfactory = ui_state.context.subfactory
-        if subfactory ~= nil then
+        if subfactory ~= nil and subfactory.valid then
             local table_info_elements = main_dialog["table_subfactory_pane"]
               ["flow_info"]["scroll-pane"]["table_info_elements"]
             refresh_mining_prod_table(player, subfactory, table_info_elements)
         end
 
         local line = ui_state.context.line
-        if line ~= nil then
+        if line ~= nil and subfactory.valid then
             local table_production = main_dialog["flow_production_pane"]
               ["scroll-pane_production_pane"]["table_production_pane"]
             refresh_recipe_button(player, line, table_production)
