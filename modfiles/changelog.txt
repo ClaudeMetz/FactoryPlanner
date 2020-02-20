@@ -2,9 +2,10 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
-  Changes:
+    - Added pollution information to machine tooltips
     - Added a tooltip explaining what the percentage-textfield on the recipe-lines does
+  Changes:
+    - 
   Bugfixes:
     - Add exception for the mod 'Deep Mine' so the preferences dialog doesn't crash when it is installed
     - Fixed a crash when using the beacon selection tool
