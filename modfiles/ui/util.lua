@@ -305,9 +305,9 @@ end
 -- **** Attributes ****
 -- Returns a tooltip containing the attributes of the given beacon prototype
 function ui_util.attributes.beacon(beacon)
-    return {"", {"fp.module_slots"}, ": ", beacon.module_limit, "\n",
-              {"fp.effectivity"}, ": ", (beacon.effectivity * 100), "%", "\n",
-              {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+    return {"", {"fp.module_slots"}, ": " .. beacon.module_limit .. "\n",
+           {"fp.effectivity"}, ": " .. (beacon.effectivity * 100) .. "%\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
 end
 
 -- Returns a tooltip containing the attributes of the given fuel prototype
@@ -317,14 +317,16 @@ end
 
 -- Returns a tooltip containing the attributes of the given belt prototype
 function ui_util.attributes.belt(belt)
-    return {"", {"fp.throughput"}, ": ", belt.throughput, " ", {"fp.items"}, "/", {"fp.unit_second"}}
+    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.items"}, "/", {"fp.unit_second"}}
 end
 
 -- Returns a tooltip containing the attributes of the given machine prototype
 function ui_util.attributes.machine(machine)
-    return {"", {"fp.crafting_speed"}, ": ", ui_util.format_number(machine.speed, 4), "\n",
-             {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
-             {"fp.module_slots"}, ": ", machine.module_limit}
+    local pollution = machine.energy_usage * machine.emissions * 60
+    return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
+           {"fp.cpollution"}, ": ", ui_util.format_SI_value(pollution, "P/s", 3), "\n",
+           {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
 
