@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.3
+Date: 21. 02. 2020
   Features:
     - Added pollution information to machine tooltips
     - Added a tooltip explaining what the percentage-textfield on the recipe-lines does
