@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - 
   Bugfixes:
     - Add exception for the mod 'Deep Mine' so the preferences dialog doesn't crash when it is installed
+    - Fixed a crash when using the beacon selection tool
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.2

@@ -92,7 +92,9 @@ script.on_event(defines.events.on_player_selected_area, function(event)
     local player = game.get_player(event.player_index)
 
     if event.item == "fp_beacon_selector" then
-        leave_beacon_selection(player, table_size(event.entities))
+        if get_flags(player).selection_mode then
+            leave_beacon_selection(player, table_size(event.entities))
+        end
     end
 end)
 
