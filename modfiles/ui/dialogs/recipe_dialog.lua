@@ -130,7 +130,6 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
 
     -- Recipes
     local scroll_pane_recipes = flow_modal_dialog.add{type="scroll-pane", name="scroll-pane_recipes", direction="vertical"}
-    scroll_pane_recipes.style.horizontally_stretchable = true
     scroll_pane_recipes.style.margin = {8, 2}
     scroll_pane_recipes.style.padding = 2
 
@@ -185,10 +184,10 @@ function apply_recipe_filter(player)
     local modal_data = ui_state.modal_data
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
-    local any_recipe_visible = false
+    local any_recipe_visible, desired_scroll_pane_height = false, 0
     -- Go through all groups to update every recipe's visibility
     for group_name, recipe_list in pairs(modal_data.groups) do
-        local one_recipe_visible = false
+        local recipes_visible = 0
 
         for _, recipe in pairs(recipe_list) do
             local button = table_recipes["table_recipe_group_" .. group_name]["fp_button_recipe_pick_" .. recipe.id]
@@ -198,13 +197,16 @@ function apply_recipe_filter(player)
             -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and recipe.hidden))
             button.visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
 
-            one_recipe_visible = one_recipe_visible or button.visible
+            if button.visible then recipes_visible = recipes_visible + 1 end
         end
         
-        any_recipe_visible = any_recipe_visible or one_recipe_visible
+        any_recipe_visible = (recipes_visible > 0)
         -- Hide the whole table row if no recipe in it is visible
-        table_recipes["sprite_group_" .. group_name].visible = one_recipe_visible
-        table_recipes["table_recipe_group_" .. group_name].visible = one_recipe_visible
+        table_recipes["sprite_group_" .. group_name].visible = any_recipe_visible
+        table_recipes["table_recipe_group_" .. group_name].visible = any_recipe_visible
+
+        local additional_height = math.max(73, (math.ceil(recipes_visible / 8) * 36))
+        desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
 
     -- Show warning if no recipes are shown
@@ -212,7 +214,6 @@ function apply_recipe_filter(player)
 
     -- Determine the scroll-pane height to avoid double scroll-bars in the dialog
     local warning_label_height = (not any_recipe_visible) and 36 or 0
-    local desired_scroll_pane_height = 5 + (table_size(modal_data.groups) * 72)
     local scroll_pane_height = math.min(desired_scroll_pane_height, 
       modal_data.dialog_maximal_height - 65) - warning_label_height
     flow_modal_dialog["scroll-pane_recipes"].style.height = scroll_pane_height
