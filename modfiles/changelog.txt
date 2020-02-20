@@ -7,9 +7,10 @@ Date: 00. 00. 0000
   Changes:
     - 
   Bugfixes:
-    - Add exception for the mod 'Deep Mine' so the preferences dialog doesn't crash when it is installed
+    - Added exception for the mod 'Deep Mine' so the preferences dialog doesn't crash when it is installed
     - Fixed a crash when using the beacon selection tool
     - Fixed a crash when adding a new subfactory while viewing an invalid one
+    - Fixed the main interface not refreshing after changing some prefernces
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.2

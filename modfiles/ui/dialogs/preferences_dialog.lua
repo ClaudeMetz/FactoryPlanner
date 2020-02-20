@@ -121,6 +121,7 @@ end
 function handle_preferences_change(player, type, id)
     get_preferences(player)["preferred_" .. type] = global["all_" .. type .. "s"][type .. "s"][id]
     refresh_preferences_dialog(player)
+    if type == "belt" then refresh_production_pane(player) end
 end
 
 -- Changes the default machine of the given category

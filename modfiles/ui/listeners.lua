@@ -146,8 +146,8 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
 
     -- Changes the tutorial-mode preference
     if event.element.name == "fp_switch_tutorial_mode" then
-        local state = ui_util.switch.convert_to_boolean(event.element.switch_state)
-        get_preferences(player).tutorial_mode = state
+        local new_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
+        handle_tutorial_mode_change(player, new_state)
 
     -- Applies the disabled/hidden filter to the recipe dialog
     elseif string.find(event.element.name, "^fp_switch_recipe_filter_[a-z]+$") then
