@@ -37,7 +37,7 @@ function refresh_production_table(player)
             -- Table titles
             local title_strings = {
                 {name="recipe", label={"fp.recipe"}},
-                {name="percent", label="%"}, 
+                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}}, 
                 {name="machine", label={"fp.cmachine"}},
                 {name="modules", label={"fp.cmodules"}},
                 {name="beacons", label={"fp.cbeacons"}},
@@ -48,7 +48,8 @@ function refresh_production_table(player)
             }
 
             for _, title in ipairs(title_strings) do
-                local title = table_production.add{type="label", name="label_title_" .. title.name, caption=title.label}
+                local title = table_production.add{type="label", name="label_title_" .. title.name, caption=title.label,
+                  tooltip=title.tooltip}
                 title.style.font = "fp-font-16p"
             end
 
