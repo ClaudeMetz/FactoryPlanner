@@ -58,7 +58,8 @@ function get_module_condition_instructions(modal_data)
             [2] = {
                 label = generate_module_condition_text(modal_data),
                 check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil 
-                          or tonumber(data.module_amount) <= 0 or tonumber(data.module_amount) > modal_data.empty_slots)) end),
+                          or tonumber(data.module_amount) <= 0
+                          or tonumber(data.module_amount) > modal_data.empty_slots)) end),
                 refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
                 show_on_edit = true
             }
@@ -118,8 +119,9 @@ function get_beacon_condition_instructions(modal_data)
             [1] = {
                 label = {"fp.beacon_instruction_1"},
                 -- Beacon sprite can never be not set, as it is prefilled with the default
-                check = (function(data) return (data.beacon_amount  == "" or tonumber(data.beacon_amount) == 0
-                    or data.module_sprite == "" or data.module_amount == "") end),
+                check = (function(data) return (tonumber(data.beacon_amount) == nil
+                          or tonumber(data.beacon_amount) == 0 or data.module_sprite == ""
+                          or data.module_amount == "") end),
                 refocus = (function(flow) set_appropriate_focus(flow, nil) end),
                 show_on_edit = true
             },
