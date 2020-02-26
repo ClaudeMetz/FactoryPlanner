@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Fixed a crash when opening preferences when using modded items with infinite fuel values
     - Fixed a crash when submitting the product picker without a product selected
     - Fixed several crashes related to invalid inputs in dialog windows
+    - Mitigated all crashes caused by mod-created hidden modules/beacons
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.3

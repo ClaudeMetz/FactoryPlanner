@@ -827,6 +827,7 @@ end
 -- Generates a table containing all available transport belts
 function generator.all_belts()
     local all_belts = {belts = {}, map = {}}
+
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
             insert_proto(all_belts, "belts", {
@@ -838,6 +839,7 @@ function generator.all_belts()
             })
         end
     end
+
     return all_belts
 end
 
@@ -869,38 +871,27 @@ function generator.all_fuels()
 end
 
 
--- Returns the names of the 'modules' that shouldn't be included
-local function undesirable_modules()
-    return {
-        ["seablock-mining-prod-module"] = false
-    }
-end
-
-
 -- Generates a table containing all available modules
 function generator.all_modules()
     local all_modules = {categories = {}, map = {}}
-    local undesirables = undesirable_modules()
 
     for _, proto in pairs(game.item_prototypes) do
-        if proto.type == "module" and not proto.has_flag("hidden")
-          and undesirables[proto.name] == nil then
-            -- Convert limitations-table to a [recipe_name] -> true format
-            local limitations = {}
-            for _, recipe_name in pairs(proto.limitations) do
-                limitations[recipe_name] = true
-            end
+        if proto.type == "module" and not proto.has_flag("hidden") then
+            local limitations = {}  -- Convert limitations-table to a [recipe_name] -> true format
+            for _, recipe_name in pairs(proto.limitations) do limitations[recipe_name] = true end
             
-            local module = {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "item/" .. proto.name,
-                category = proto.category,
-                tier = proto.tier,
-                effects = proto.module_effects or {},
-                limitations = limitations
-            }
-            deep_insert_proto(all_modules, "categories", proto.category, "modules", module)
+            local sprite = "item/" .. proto.name
+            if game.is_valid_sprite_path(sprite) then
+                deep_insert_proto(all_modules, "categories", proto.category, "modules", {
+                    name = proto.name,
+                    localised_name = proto.localised_name,
+                    sprite = sprite,
+                    category = proto.category,
+                    tier = proto.tier,
+                    effects = proto.module_effects or {},
+                    limitations = limitations
+                })
+            end
         end
     end
 
@@ -923,32 +914,25 @@ function generator.module_tier_map()
 end
 
 
--- Returns the names of the 'beacons' that shouldn't be included
-local function undesirable_beacons()
-    return {
-        ["seablock-mining-prod-provider"] = false,
-        ["deep-mine-beacon"] = false
-    }
-end
-
 -- Generates a table containing all available beacons
 function generator.all_beacons()
     local all_beacons = {beacons = {}, map = {}}
-    local undesirables = undesirable_beacons()
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden")
-          and undesirables[proto.name] == nil then
-            insert_proto(all_beacons, "beacons", {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "entity/" .. proto.name,
-                category = "fp_beacon",  -- custom category to be similar to machines
-                allowed_effects = format_allowed_effects(proto.allowed_effects),
-                module_limit = proto.module_inventory_size,
-                effectivity = proto.distribution_effectivity,
-                energy_usage = proto.energy_usage or proto.max_energy_usage or 0
-            })
+        if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then
+            local sprite = "entity/" .. proto.name
+            if game.is_valid_sprite_path(sprite) then
+                insert_proto(all_beacons, "beacons", {
+                    name = proto.name,
+                    localised_name = proto.localised_name,
+                    sprite = sprite,
+                    category = "fp_beacon",  -- custom category to be similar to machines
+                    allowed_effects = format_allowed_effects(proto.allowed_effects),
+                    module_limit = proto.module_inventory_size,
+                    effectivity = proto.distribution_effectivity,
+                    energy_usage = proto.energy_usage or proto.max_energy_usage or 0
+                })
+            end
         end
     end
 
