@@ -1,11 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    - 
-  Changes:
-    - 
   Bugfixes:
+    - Fixed a crash when opening preferences when using modded items with infinite fuel values
     - Fixed a crash when submitting the product picker without a product selected
     - Fixed several crashes related to invalid inputs in dialog windows
 
