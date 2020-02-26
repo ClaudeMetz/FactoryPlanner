@@ -289,20 +289,6 @@ local function create_object_tree(objects)
 end
 
 
--- Returns the names of the recipes that shouldn't be included
-local function undesirable_recipes()
-    local undesirables = 
-    {
-        --[[ ["small-plane"] = false,
-        ["electric-energy-interface"] = false,
-        ["railgun"] = false,
-        ["railgun-dart"] = false,
-        ["player-port"] = false ]]
-    }
-    
-    return undesirables
-end
-
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
     local all_recipes = {recipes = {}, map = {}}
@@ -317,12 +303,11 @@ function generator.all_recipes()
         }
     end
     
-    local undesirables = undesirable_recipes()
-    -- Adding all standard recipes minus the undesirable ones
+    -- Adding all standard recipes
     for recipe_name, proto in pairs(game.recipe_prototypes) do
-        -- Avoid any recipes that are undesirable or have no machine to produce them
+        -- Avoid any recipes that have no machine to produce them
         local category_id = new.all_machines.map[proto.category]
-        if undesirables[recipe_name] == nil and category_id ~= nil then
+        if category_id ~= nil then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
@@ -530,18 +515,6 @@ function generator.ordered_recipe_groups()
 end
 
 
--- Returns the names of the recipes that shouldn't be included
-local function undesirable_items()
-    return {
-        item = {
-        },
-        fluid = {
-        },
-        entity = {
-        }
-    }
-end
-
 -- Returns all relevant items and fluids
 function generator.all_items()
     local all_items = {types = {}, map = {}}
@@ -567,36 +540,33 @@ function generator.all_items()
         end
     end
     
-    -- Adding all standard items minus the undesirable ones
-    local undesirables = undesirable_items()
+    -- Adding all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            if not undesirables[type][item_name] then
-                local proto_name = format_temperature_name(item_details, item_name)
-                local proto = game[type .. "_prototypes"][proto_name]
-                local localised_name = format_temperature_localised_name(item_details, proto)
-                local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
+            local proto_name = format_temperature_name(item_details, item_name)
+            local proto = game[type .. "_prototypes"][proto_name]
+            local localised_name = format_temperature_localised_name(item_details, proto)
+            local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
-                local hidden = false  -- "entity" types are never hidden
-                if type == "item" then hidden = proto.has_flag("hidden")
-                elseif type == "fluid" then hidden = proto.hidden end
-                
-                if not hidden or item_name == "rocket-part" then  -- exclude hidden items
-                    local item = {
-                        name = item_name,
-                        type = type,
-                        sprite = type .. "/" .. proto.name,
-                        localised_name = localised_name,
-                        ingredient_only = not item_details.is_product,
-                        temperature = item_details.temperature,
-                        order = order,
-                        group = generate_group_table(proto.group),
-                        subgroup = generate_group_table(proto.subgroup)
-                    }
+            local hidden = false  -- "entity" types are never hidden
+            if type == "item" then hidden = proto.has_flag("hidden")
+            elseif type == "fluid" then hidden = proto.hidden end
+            
+            if not hidden or item_name == "rocket-part" then  -- exclude hidden items
+                local item = {
+                    name = item_name,
+                    type = type,
+                    sprite = type .. "/" .. proto.name,
+                    localised_name = localised_name,
+                    ingredient_only = not item_details.is_product,
+                    temperature = item_details.temperature,
+                    order = order,
+                    group = generate_group_table(proto.group),
+                    subgroup = generate_group_table(proto.subgroup)
+                }
 
-                    add_item_tooltip(item)
-                    deep_insert_proto(all_items, "types", type, "items", item, true)
-                end
+                add_item_tooltip(item)
+                deep_insert_proto(all_items, "types", type, "items", item, true)
             end
         end
     end
@@ -671,25 +641,6 @@ function generator.identifier_item_map()
 end
 
 
--- Returns the names of the item groups that shouldn't be included
-function generator.undesirable_item_groups()
-    return {
-        ["creative-mod_creative-tools"] = false,
-        ["im-tools"] = false
-    }
-end
-
-
-
--- Returns the names of the 'machines' that shouldn't be included
-local function undesirable_machines()
-    return {
-        --[[ ["escape-pod-assembler"] = false,
-        ["crash-site-assembling-machine-1-repaired"] = false,
-        ["crash-site-assembling-machine-2-repaired"] = false ]]
-    }
-end
-
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
     local all_machines = {categories = {}, map = {}}
@@ -728,10 +679,8 @@ function generator.all_machines()
         return machine
     end
 
-    local undesirables = undesirable_machines()
     for _, proto in pairs(game.entity_prototypes) do
-        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil and 
-          undesirables[proto.name] == nil then
+        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil then
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then 
                     local machine = generate_category_entry(category, proto)

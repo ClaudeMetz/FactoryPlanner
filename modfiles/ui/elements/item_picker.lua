@@ -35,7 +35,7 @@ function item_picker.create(parent)
     table_item_groups.style.vertical_spacing = 3
     table_item_groups.style.minimal_width = item_picker.groups_per_row * (64 + 9)
 
-    local undesirables = generator.undesirable_item_groups()
+    local undesirable_item_groups = {["creative-mod_creative-tools"]=false, ["im-tools"]=false}
     local group_id_cache, group_button_cache, subgroup_flow_cache, subgroup_table_cache = {}, {}, {}, {}
 
     for _, item in ipairs(sorted_items) do  -- global variable
@@ -47,7 +47,7 @@ function item_picker.create(parent)
             group_id = cache_count
         end
 
-        if undesirables[group_name] == nil then  -- ignore undesirable item groups
+        if undesirable_item_groups[group_name] == nil then
             local button_group = group_button_cache[group_id]
             local scroll_pane_subgroups, table_subgroups = nil, nil
 
