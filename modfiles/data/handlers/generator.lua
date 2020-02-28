@@ -289,6 +289,24 @@ local function create_object_tree(objects)
 end
 
 
+-- Determines every recipe that is researchable or enabled by default
+local function determine_researchable_recipes()
+    local map = {}
+
+    for _, proto in pairs(game.technology_prototypes) do
+        if not proto.hidden then
+            for _, effect in pairs(proto.effects) do
+                if effect.type == "unlock-recipe" then
+                    map[effect.recipe] = true
+                end
+            end
+        end
+    end
+    
+    return map
+end
+
+
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
     local all_recipes = {recipes = {}, map = {}}
@@ -303,11 +321,12 @@ function generator.all_recipes()
         }
     end
     
+    local researchable_recipes = determine_researchable_recipes()
     -- Adding all standard recipes
     for recipe_name, proto in pairs(game.recipe_prototypes) do
-        -- Avoid any recipes that have no machine to produce them
+        -- Avoid any recipes that have no machine to produce them or are unresearchable
         local category_id = new.all_machines.map[proto.category]
-        if category_id ~= nil then
+        if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name]) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
