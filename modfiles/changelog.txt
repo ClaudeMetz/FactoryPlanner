@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - 
   Bugfixes:
+    - Fixed energy consumption and pollution not being added up correctly if your subfactory contains subfloors
     - Hide recipes that can't ever be researched, which led Factory Planner to crash
 
 ---------------------------------------------------------------------------------------------------

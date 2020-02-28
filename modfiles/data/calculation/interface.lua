@@ -48,7 +48,7 @@ end
 function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
-
+    llog(result.energy_consumption)
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
 
@@ -76,7 +76,7 @@ function calculation.interface.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
-
+    llog(result.energy_consumption)
     line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
