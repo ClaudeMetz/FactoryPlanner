@@ -238,6 +238,38 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
+-- **** Rate Limiting ****
+local event_timeouts = {
+    ["fp_floor_up"] = 10,
+    ["fp_confirm_dialog"] = 20,
+    [defines.events.on_player_selected_area] = 20,
+    ["filter_item_picker"] = 6,
+    ["submit_modal_dialog"] = 20,
+    [defines.events.on_gui_click] = 20
+}
+
+-- Returns whether the given event should be prevented from carrying out it's action due to rate limiting
+function ui_util.rate_limiting_active(player, event_name, object_name)
+    local last_action = get_ui_state(player).last_action
+    local timeout = event_timeouts[event_name]
+    local current_tick = game.tick
+    
+    -- Always allow action if there is no last_action or the ticks are paused
+    local limiting_active = (table_size(last_action) > 0 and not game.tick_paused
+      and event_name == last_action.event_name and object_name == last_action.object_name
+      and (current_tick - last_action.tick) < timeout)
+
+    -- Only update the last action if an action will indeed be carried out
+    if not limiting_active then
+        last_action.tick = current_tick
+        last_action.event_name = event_name
+        last_action.object_name = object_name
+    end
+
+    return limiting_active
+end
+
+
 -- ** Misc **
 -- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
 function ui_util.format_timescale(timescale, raw, whole_word)
