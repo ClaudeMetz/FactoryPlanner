@@ -199,6 +199,7 @@ function reset_ui_state(player)
     
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
+    ui_state_table.last_action = {}  -- The last user action, used for rate limiting
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
