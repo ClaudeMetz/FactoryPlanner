@@ -367,7 +367,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
                   line.priority_product_proto.name == item.proto.name then
                     actual_style = "fp_button_icon_medium_green"
 
-                elseif class == "Ingredient" and not settings.performance_mode and settings.ingredient_satisfaction then
+                elseif class == "Ingredient" and settings.ingredient_satisfaction then
                     local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
 
                     local satisfaction = tonumber(satisfaction_percentage)

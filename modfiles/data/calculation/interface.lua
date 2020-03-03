@@ -63,12 +63,12 @@ function calculation.interface.set_subfactory_result(result)
     calculation.util.update_items(subfactory, result, "Ingredient")
 
     -- Determine satisfaction-amounts for all line ingredients
-    if not player_table.settings.performance_mode then
+    --if not player_table.settings.performance_mode then
         local top_floor = Subfactory.get(subfactory, "Floor", 1)
         local aggregate = structures.aggregate.init()  -- gets modified by the two functions
         calculation.util.determine_net_ingredients(top_floor, aggregate)
         calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
-    end
+    --end
 end
 
 -- Updates the given line of the given floor of the active subfactory
