@@ -1,6 +1,6 @@
-require("ui.util")
 require("ui.dialogs.main_dialog")
 require("ui.dialogs.modal_dialog")
+require("ui.util")
 
 -- Fires when mods settings change to incorporate them
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
@@ -112,17 +112,16 @@ end)
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.get_player(event.player_index)
-    local element_name = event.element.name
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
-      and string.find(element_name, "^fp_.+$") then
+      and string.find(event.element.name, "^fp_.+$") then
         -- Close or hide any modal dialog or leave selection mode
-        if string.find(element_name, "^fp_frame_modal_dialog[a-z_]*$") then
+        if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
             if get_flags(player).selection_mode then leave_beacon_selection(player, nil)
             else exit_modal_dialog(player, "cancel", {}) end
     
         -- Toggle the main dialog
-        elseif element_name == "fp_frame_main_dialog" then
+        elseif event.element.name == "fp_frame_main_dialog" then
             toggle_main_dialog(player)
             
         end
@@ -175,10 +174,13 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         -- Activates the instant filter based on user search-string entry
         if element_name == "fp_textfield_item_picker_search_bar" and
           not get_settings(player).performance_mode then
-            if ui_util.rate_limiting_active(player, "filter_item_picker", element_name) then return end
+            if ui_util.rate_limiting_active(player, "filter_item_picker", element_name) then
+                -- create/update the nth_tick handler only when rate limiting is active
+                ui_util.set_nth_tick_refresh(player, event.element)
+                return
+            end
 
-            local picker_flow = event.element.parent.parent
-            item_picker.filter(picker_flow, event.element.text, false)
+            item_picker.handle_searchfield_change(event.element)
 
         -- Persists mining productivity changes
         elseif element_name == "fp_textfield_mining_prod" then

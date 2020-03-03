@@ -126,6 +126,9 @@ function item_picker.filter(picker_flow, searchterm, first_run)
     local ui_state = get_ui_state(game.get_player(picker_flow.player_index))
     local search_term = searchterm:gsub("^%s*(.-)%s*$", "%1"):lower()
 
+    -- Check if the dialog is still open, don't bother filtering otherwise
+    if ui_state.modal_data == nil then return end
+
     local existing_products = {}
     if first_run then  -- Need to re-apply button styles on first_run (ie. opening of the dialog)
         for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
@@ -219,4 +222,12 @@ function item_picker.filter(picker_flow, searchterm, first_run)
             flow_picker_panel[child].style.height = picker_panel_height
         end
     end    
+end
+
+-- Handles any change to the given item picker textfield
+function item_picker.handle_searchfield_change(textfield)
+    if textfield and textfield.valid then
+        local picker_flow = textfield.parent.parent
+        item_picker.filter(picker_flow, textfield.text, false)
+    end
 end

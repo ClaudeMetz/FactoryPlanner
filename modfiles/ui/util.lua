@@ -239,19 +239,19 @@ end
 
 
 -- **** Rate Limiting ****
-local event_timeouts = {
-    ["fp_floor_up"] = 10,
-    ["fp_confirm_dialog"] = 20,
-    [defines.events.on_player_selected_area] = 20,
-    ["filter_item_picker"] = 6,
-    ["submit_modal_dialog"] = 20,
-    [defines.events.on_gui_click] = 20
+ui_util.rate_limiting_events = {
+    ["fp_floor_up"] = {timeout = 10},
+    ["fp_confirm_dialog"] = {timeout = 20},
+    [defines.events.on_player_selected_area] = {timeout = 20},
+    ["filter_item_picker"] = {timeout = 6, handler = item_picker.handle_searchfield_change},
+    ["submit_modal_dialog"] = {timeout = 20},
+    [defines.events.on_gui_click] = {timeout = 20}
 }
 
 -- Returns whether the given event should be prevented from carrying out it's action due to rate limiting
 function ui_util.rate_limiting_active(player, event_name, object_name)
     local last_action = get_ui_state(player).last_action
-    local timeout = event_timeouts[event_name]
+    local timeout = ui_util.rate_limiting_events[event_name].timeout
     local current_tick = game.tick
     
     -- Always allow action if there is no last_action or the ticks are paused
@@ -267,6 +267,25 @@ function ui_util.rate_limiting_active(player, event_name, object_name)
     end
 
     return limiting_active
+end
+
+-- Function to register an on_nth_tick to run the relevant handler once more after the last rate limiting occured
+function ui_util.set_nth_tick_refresh(player, element)
+    local last_action = get_ui_state(player).last_action
+    local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
+    local nth_tick = game.tick + rate_limiting_event.timeout
+
+    -- Unregister the previous action as the new one will replace it
+    if last_action.nth_tick then script.on_nth_tick(last_action.nth_tick, nil) end
+    last_action.nth_tick = nth_tick
+    last_action.element = element  -- needed to re-create the handler on_load
+
+    script.on_nth_tick(nth_tick, function(event)
+        rate_limiting_event.handler(element)
+        last_action.nth_tick = nil
+        last_action.element = nil
+        script.on_nth_tick(event.nth_tick, nil)
+    end)
 end
 
 
