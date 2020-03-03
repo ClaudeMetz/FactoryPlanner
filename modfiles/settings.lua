@@ -14,19 +14,12 @@ data:extend({
         order = "b"
     },
     {
-        type = "bool-setting",
-        name = "fp_performance_mode",
-        setting_type = "runtime-per-user",
-        default_value = false,
-        order = "c"
-    },
-    {
         type = "int-setting",
         name = "fp_subfactory_items_per_row",
         setting_type = "runtime-per-user",
         default_value = 8,
         allowed_values = {6, 7, 8, 9, 10, 11, 12},
-        order = "d"
+        order = "c"
     },
     {
         type = "int-setting",
@@ -34,7 +27,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 14,
         allowed_values = {8, 10, 12, 14, 16, 18, 20},
-        order = "e"
+        order = "d"
     },
     {
         type = "string-setting",
@@ -42,7 +35,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "f"
+        order = "e"
     },
     {
         type = "string-setting",
@@ -50,28 +43,28 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
-        order = "g"
+        order = "f"
     },
     {
         type = "bool-setting",
         name = "fp_line_comments",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "h"
+        order = "g"
     },
     {
         type = "bool-setting",
         name = "fp_ingredient_satisfaction",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "i"
+        order = "h"
     },
     {
         type = "bool-setting",
         name = "fp_round_button_numbers",
         setting_type = "runtime-per-user",
         default_value = false,
-        order = "j"
+        order = "i"
     },
     {
         type = "double-setting",
@@ -80,6 +73,6 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "k"
+        order = "j"
     }
 })

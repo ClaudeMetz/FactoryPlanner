@@ -2,9 +2,9 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added rate limiting to most interface interactions, improving performance and avoiding crashes in high-latency multiplayer situations (This might lead to some crashes and/or desyncs, I would really appreciate it if you reported those to me)
+    - Added rate limiting to most interface interactions, improving performance and avoiding crashes in high-latency multiplayer situations
   Changes:
-    - 
+    - Removed Performance Mode, as it no longer did anything
   Bugfixes:
     - 
 
