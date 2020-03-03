@@ -1,3 +1,5 @@
+local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "ingredient_satisfaction", "round_button_numbers"}
+
 -- Handles populating the preferences dialog
 function open_preferences_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"fp.preferences"}
@@ -23,7 +25,6 @@ function open_preferences_dialog(flow_modal_dialog)
           caption={"", " ", {"fp.preferences_" .. name}, " [img=info]"}, tooltip={"fp.preferences_" .. name .. "_tt"}}
     end
 
-    local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes"}
     for _, preference_name in ipairs(preference_names) do add_general_preference(preference_name) end
 
 
@@ -60,7 +61,6 @@ function refresh_preferences_dialog(player)
 
     -- General preferences
     local table_general_prefs = flow_modal_dialog["table_general_preferences"]
-    local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes"}
     for _, preference_name in ipairs(preference_names) do
         table_general_prefs["fp_checkbox_preferences_" .. preference_name].state = preferences[preference_name]
     end
@@ -116,6 +116,19 @@ function refresh_preferences_dialog(player)
     end
 end
 
+
+-- Saves the given preference change
+function handle_general_preference_change(player, radiobutton)
+    local preference = string.gsub(radiobutton.name, "fp_checkbox_preferences_", "")
+    get_preferences(player)[preference] = radiobutton.state
+    
+    if preference == "ingredient_satisfaction" and radiobutton.state == true then
+        calculation.util.update_all_ingredient_satisfactions(player)
+        refresh_production_pane(player)
+    elseif preference == "ingredient_satisfaction" then
+        refresh_production_pane(player)
+    end
+end
 
 -- Changes the preferred prototype for the given prototype preference type
 function handle_preferences_change(player, type, id)
