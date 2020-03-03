@@ -53,26 +53,12 @@ data:extend({
         order = "g"
     },
     {
-        type = "bool-setting",
-        name = "fp_ingredient_satisfaction",
-        setting_type = "runtime-per-user",
-        default_value = false,
-        order = "h"
-    },
-    {
-        type = "bool-setting",
-        name = "fp_round_button_numbers",
-        setting_type = "runtime-per-user",
-        default_value = false,
-        order = "i"
-    },
-    {
         type = "double-setting",
         name = "fp_indicate_rounding",
         setting_type = "runtime-per-user",
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "j"
+        order = "h"
     }
 })

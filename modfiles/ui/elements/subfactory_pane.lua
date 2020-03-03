@@ -110,7 +110,7 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
     local ui_name = class:gsub("^%u", string.lower)
     local view_name = ui_state.view_state.selected_view.name
 
-    local round_belts = (view_name == "belts_or_lanes" and player_table.settings.round_button_numbers)
+    local round_belts = (view_name == "belts_or_lanes" and player_table.preferences.round_button_numbers)
     local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, ("tl_" .. ui_name), true)
     local style = "fp_button_icon_large_blank"  -- will remain untouched if the display mode is 'floor_total'
 

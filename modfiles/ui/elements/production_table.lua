@@ -259,7 +259,7 @@ function refresh_machine_table(player, line, table_production)
           sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
           tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
           ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory), tutorial_tooltip}}
-        button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
+        button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
         add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
@@ -277,7 +277,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto, 
       Line.get_total_effects(line, player), line.uncapped_production_ratio, subfactory.timescale)
     machine_count = ui_util.format_number(machine_count, 4)
-    button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
+    button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
     
     -- Table to easily determine the appropriate style dependent on button_size and select-state
     local styles = {
@@ -339,10 +339,10 @@ end
 -- Creates the flow containing all line items of the given type
 function create_item_button_flow(player_table, gui_table, line, group, classes, styles)
     local player = game.get_player(gui_table.player_index)
-    local settings = player_table.settings
+    local preferences = player_table.preferences
 
     local view_name = player_table.ui_state.view_state.selected_view.name
-    local round_belts = (view_name == "belts_or_lanes" and settings.round_button_numbers)
+    local round_belts = (view_name == "belts_or_lanes" and preferences.round_button_numbers)
 
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
 
@@ -367,7 +367,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
                   line.priority_product_proto.name == item.proto.name then
                     actual_style = "fp_button_icon_medium_green"
 
-                elseif class == "Ingredient" and settings.ingredient_satisfaction then
+                elseif class == "Ingredient" and preferences.ingredient_satisfaction then
                     local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
 
                     local satisfaction = tonumber(satisfaction_percentage)
