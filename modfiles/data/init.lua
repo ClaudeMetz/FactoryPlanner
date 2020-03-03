@@ -69,6 +69,22 @@ end
 
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
+    -- Re-register conditional on_nth_tick events
+    for _, player_table in pairs(global.players or {}) do
+        local last_action = player_table.ui_state.last_action
+        if last_action and table_size(last_action) > 0 and last_action.nth_tick ~= nil then
+            local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
+
+            script.on_nth_tick(last_action.nth_tick, function(event)
+                rate_limiting_event.handler(last_action.element)
+                last_action.nth_tick = nil
+                last_action.element = nil
+                script.on_nth_tick(event.nth_tick, nil)
+            end)
+        end
+    end
+
+    -- Create lua-global tables to pre-cache relevant tables
     ordered_recipe_groups = generator.ordered_recipe_groups()
     recipe_maps = {
         produce = generator.product_recipe_map(),
