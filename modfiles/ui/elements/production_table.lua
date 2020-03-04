@@ -8,23 +8,23 @@ function refresh_production_table(player)
 
     flow_production["label_production_info"].visible = false
     local scroll_pane_production = flow_production["scroll-pane_production_pane"]
-    local line_comments = get_settings(player).line_comments
+    local optional_columns = get_preferences(player).optional_production_columns
 
     -- Production table needs to be destroyed to change it's column count
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
     
-    local column_count = line_comments and 10 or 9
+    local column_count = 9
+    for _, optional_column in pairs(optional_columns) do
+        if optional_column == true then column_count = column_count + 1 end
+    end
+
     local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
       column_count=column_count}
     table_production.style = "table_with_selection"
     table_production.style.horizontal_spacing = 16
     table_production.style.top_padding = 0
     table_production.style.left_margin = 6
-    for i=1, column_count do
-        if i < 7 then table_production.style.column_alignments[i] = "middle-center"
-        else table_production.style.column_alignments[i] = "middle-left" end
-    end
 
     local context = get_context(player)
     if context.subfactory ~= nil and context.subfactory.valid then
@@ -33,28 +33,9 @@ function refresh_production_table(player)
             flow_production["label_production_info"].visible = true
         else
             scroll_pane_production.visible = true
-            
-            -- Table titles
-            local title_strings = {
-                {name="recipe", label={"fp.recipe"}},
-                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}}, 
-                {name="machine", label={"fp.cmachine"}},
-                {name="modules", label={"fp.cmodules"}},
-                {name="beacons", label={"fp.cbeacons"}},
-                {name="energy", label={"fp.energy"}},
-                {name="products", label={"fp.products"}},
-                {name="byproducts", label={"fp.byproducts"}},
-                {name="ingredients", label={"fp.ingredients"}}
-            }
 
-            for _, title in ipairs(title_strings) do
-                local title = table_production.add{type="label", name="label_title_" .. title.name, caption=title.label,
-                  tooltip=title.tooltip}
-                title.style.font = "fp-font-16p"
-            end
-
-            -- If enabled, add the comment column and its clear button
-            if line_comments then
+            -- Custom column creation
+            local function add_line_comments_column()
                 local flow = table_production.add{type="flow", name="flow_comment_clear", direction="horizontal"}
                 flow.style.vertical_align = "center"
                 local title = flow.add{type="label", name="label_title_comment", caption={"", {"fp.comments"}, " "}}
@@ -66,6 +47,35 @@ function refresh_production_table(player)
                 button.style.height = 20
                 button.style.left_padding = 1
                 button.style.right_padding = 1
+            end
+            
+            -- Table titles
+            local title_strings = {
+                {name="recipe", label={"fp.recipe"}, alignment="middle-center"},
+                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}, alignment="middle-center"}, 
+                {name="machine", label={"fp.cmachine"}, alignment="middle-center"},
+                {name="modules", label={"fp.cmodules"}, alignment="middle-center"},
+                {name="beacons", label={"fp.cbeacons"}, alignment="middle-center"},
+                {name="energy", label={"fp.energy"}, alignment="middle-center"},
+                {name="pollution", label={"fp.cpollution"}, alignment="middle-center"},
+                {name="products", label={"fp.products"}, alignment="middle-left"},
+                {name="byproducts", label={"fp.byproducts"}, alignment="middle-left"},
+                {name="ingredients", label={"fp.ingredients"}, alignment="middle-left"},
+                {name="line_comments", custom_function=add_line_comments_column, alignment="middle-left"}
+            }
+
+            for index, title in ipairs(title_strings) do
+                if optional_columns[title.name] == nil or optional_columns[title.name] == true then
+                    table_production.style.column_alignments[index] = title.alignment
+
+                    if title.custom_function then
+                        title.custom_function()
+                    else
+                        local title = table_production.add{type="label", name="label_title_" .. title.name,
+                          caption=title.label, tooltip=title.tooltip}
+                        title.style.font = "fp-font-16p"
+                    end
+                end
             end
 
             -- Table rows
@@ -86,6 +96,7 @@ function create_line_table_row(player, line)
     local archive_open = ui_state.flags.archive_open
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
+    local optional_columns = get_preferences(player).optional_production_columns
 
 
     -- Recipe button
@@ -150,11 +161,20 @@ function create_line_table_row(player, line)
     end
     
 
-    -- Energy label
+    -- Energy label (don't add pollution to the tooltip if it gets it's own column)
+    local pollution_line = (optional_columns.pollution) and "" or {"", "\n", {"fp.cpollution"}, ": ",
+      ui_util.format_SI_value(line.pollution, "P/s", 3)}
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
-      ui_util.format_SI_value(line.energy_consumption, "W", 5), "\n", {"fp.cpollution"}, ": ",
-      ui_util.format_SI_value(line.pollution, "P/s", 3)}}
+      ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
+
+
+    -- Pollution label
+    if optional_columns.pollution then
+        local label_pollution = table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
+          caption=ui_util.format_SI_value(line.pollution, "P/s", 3),
+          tooltip={"", ui_util.format_SI_value(line.pollution, "P/s", 5)}}
+    end
 
 
     -- Item buttons
@@ -164,7 +184,7 @@ function create_line_table_row(player, line)
 
     
     -- Comment textfield
-    if get_settings(player).line_comments then
+    if optional_columns.line_comments then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
           text=(line.comment or "")}
         textfield_comment.style.width = 160
