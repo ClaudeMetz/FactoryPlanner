@@ -186,7 +186,6 @@ function reload_settings(player)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
-    settings_table.line_comments = settings["fp_line_comments"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
 end
 
@@ -204,6 +203,12 @@ function reload_preferences(player, table)
     preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
     preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
     preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines(table)
+
+    preferences.optional_production_columns = preferences.optional_production_columns or 
+      {
+          ["pollution"] = false,
+          ["line_comments"] = false
+      }
 end
 
 -- (Re)sets the UI state of the given player

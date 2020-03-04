@@ -1,4 +1,5 @@
-local preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "ingredient_satisfaction", "round_button_numbers"}
+local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "ingredient_satisfaction", "round_button_numbers"}
+local production_preference_names = {"pollution", "line_comments"}
 
 -- Handles populating the preferences dialog
 function open_preferences_dialog(flow_modal_dialog)
@@ -25,9 +26,25 @@ function open_preferences_dialog(flow_modal_dialog)
           caption={"", " ", {"fp.preferences_" .. name}, " [img=info]"}, tooltip={"fp.preferences_" .. name .. "_tt"}}
     end
 
-    for _, preference_name in ipairs(preference_names) do add_general_preference(preference_name) end
+    for _, preference_name in ipairs(general_preference_names) do add_general_preference(preference_name) end
 
+    -- Production table preferences
+    flow_modal_dialog.add{type="label", name="label_production_info", caption={"", {"fp.preferences_title_production"}, ":"},
+      style="fp_preferences_title_label", tooltip={"fp.preferences_title_production_tt"}}
+    local table_production_prefs = flow_modal_dialog.add{type="table", name="table_production_preferences", column_count=1}
+    table_production_prefs.style.top_margin = 2
+    table_production_prefs.style.bottom_margin = 8
+    table_production_prefs.style.left_margin = 16
 
+    -- Creates the checkbox for a production preference 
+    local function add_production_preference(name)
+        table_production_prefs.add{type="checkbox", name=("fp_checkbox_production_preferences_" .. name), state=false,
+          caption={"", " ", {"fp.production_preferences_" .. name}, " [img=info]"},
+          tooltip={"fp.production_preferences_" .. name .. "_tt"}}
+    end
+
+    for _, preference_name in ipairs(production_preference_names) do add_production_preference(preference_name) end
+    
     -- Prototype preferences
     local function add_prototype_preference(name)
         flow_modal_dialog.add{type="label", name=("label_".. name .. "_info"), caption={"", {"fp.preferences_title_" .. name}, ":"},
@@ -61,8 +78,15 @@ function refresh_preferences_dialog(player)
 
     -- General preferences
     local table_general_prefs = flow_modal_dialog["table_general_preferences"]
-    for _, preference_name in ipairs(preference_names) do
+    for _, preference_name in ipairs(general_preference_names) do
         table_general_prefs["fp_checkbox_preferences_" .. preference_name].state = preferences[preference_name]
+    end
+
+    -- Production preferences
+    local table_production_prefs = flow_modal_dialog["table_production_preferences"]
+    for _, preference_name in ipairs(production_preference_names) do
+        table_production_prefs["fp_checkbox_production_preferences_" .. preference_name].state
+          = preferences.optional_production_columns[preference_name]
     end
 
     -- Prototype preferences
@@ -117,7 +141,7 @@ function refresh_preferences_dialog(player)
 end
 
 
--- Saves the given preference change
+-- Saves the given general preference change
 function handle_general_preference_change(player, radiobutton)
     local preference = string.gsub(radiobutton.name, "fp_checkbox_preferences_", "")
     get_preferences(player)[preference] = radiobutton.state
@@ -128,6 +152,13 @@ function handle_general_preference_change(player, radiobutton)
     elseif preference == "ingredient_satisfaction" then
         refresh_production_pane(player)
     end
+end
+
+-- Saves the given production preference change
+function handle_production_preference_change(player, radiobutton)
+    local preference = string.gsub(radiobutton.name, "fp_checkbox_production_preferences_", "")
+    get_preferences(player).optional_production_columns[preference] = radiobutton.state
+    refresh_production_pane(player)
 end
 
 -- Changes the preferred prototype for the given prototype preference type

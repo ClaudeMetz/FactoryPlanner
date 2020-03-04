@@ -22,7 +22,6 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         -- Refreshes the view selection or recipe machine buttons appropriately
         elseif event.setting == "fp_view_belts_or_lanes" or
-          event.setting == "fp_line_comments" or
           event.setting == "fp_indicate_rounding" then
             refresh_production_pane(player)
 
@@ -127,9 +126,13 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
 
-    -- Toggles the selected preference
+    -- Toggles the selected general preference
     if string.find(element_name, "^fp_checkbox_preferences_[a-z_]+$") then
         handle_general_preference_change(player, event.element)
+
+    -- Toggles the selected production preference
+    elseif string.find(element_name, "^fp_checkbox_production_preferences_[a-z_]+$") then
+        handle_production_preference_change(player, event.element)
 
     end
 end)
