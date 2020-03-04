@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Changed some mod settings to be preferences
     - Removed Performance Mode, as it no longer did anything
   Bugfixes:
-    - 
+    - Fixed the recipe dialog dimensions to be less jumpy
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.6

@@ -1,3 +1,5 @@
+local recipes_per_row = 8
+
 -- Handles populating the recipe dialog
 function open_recipe_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
@@ -151,7 +153,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
             group_sprite.style.height = 64
             group_sprite.style.width = 64
 
-            local recipe_table = table_recipes.add{type="table", name=("table_recipe_group_" .. group.name), column_count=8}
+            local recipe_table = table_recipes.add{type="table", name=("table_recipe_group_" .. group.name), column_count=recipes_per_row}
             for _, recipe in pairs(relevant_recipes) do
                 local button_recipe
 
@@ -187,7 +189,7 @@ function apply_recipe_filter(player)
     local any_recipe_visible, desired_scroll_pane_height = false, 0
     -- Go through all groups to update every recipe's visibility
     for group_name, recipe_list in pairs(modal_data.groups) do
-        local recipes_visible = 0
+        local any_group_recipe_visible = false
 
         for _, recipe in pairs(recipe_list) do
             local button = table_recipes["table_recipe_group_" .. group_name]["fp_button_recipe_pick_" .. recipe.id]
@@ -195,17 +197,18 @@ function apply_recipe_filter(player)
     
             -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
             -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and recipe.hidden))
-            button.visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
-
-            if button.visible then recipes_visible = recipes_visible + 1 end
+            local visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
+            
+            button.visible = visible
+            any_group_recipe_visible = visible or false
         end
         
-        any_recipe_visible = (recipes_visible > 0)
         -- Hide the whole table row if no recipe in it is visible
-        table_recipes["sprite_group_" .. group_name].visible = any_recipe_visible
-        table_recipes["table_recipe_group_" .. group_name].visible = any_recipe_visible
+        table_recipes["sprite_group_" .. group_name].visible = any_group_recipe_visible
+        table_recipes["table_recipe_group_" .. group_name].visible = any_group_recipe_visible
+        any_recipe_visible = any_group_recipe_visible or false
 
-        local additional_height = math.max(73, (math.ceil(recipes_visible / 8) * 36))
+        local additional_height = math.max(73, (math.ceil(table_size(recipe_list) / recipes_per_row) * 38))
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
 
@@ -217,6 +220,7 @@ function apply_recipe_filter(player)
     local scroll_pane_height = math.min(desired_scroll_pane_height, 
       modal_data.dialog_maximal_height - 65) - warning_label_height
     flow_modal_dialog["scroll-pane_recipes"].style.height = scroll_pane_height
+    flow_modal_dialog["scroll-pane_recipes"].style.width = 370
 end
 
 
