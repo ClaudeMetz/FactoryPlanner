@@ -15,10 +15,16 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
 
         -- Can't shift second line into the first position on subfloors
         -- (Top line ignores interaction, so no special handling there)
-        if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) then
-            Floor.shift(floor, line, direction)
+        if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) 
+          and Floor.shift(floor, line, direction) then
             calculation.update(player, subfactory, true)
+        else
+            local direction_string = (direction == "negative") and {"fp.up"} or {"fp.down"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lrecipe"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
         end
+        
+        refresh_current_activity(player)
 
     else
         -- Attaches a subfloor to this line
@@ -215,6 +221,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
                 local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                -- (TODO add error messages to this sometime)
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Line.replace(line, module, new_module)
@@ -277,6 +284,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
                 local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                -- (TODO add error messages to this sometime)
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Beacon.set_module(line.beacon, new_module)
@@ -309,6 +317,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
 
         else  -- type == "beacon"
             local beacon = line.beacon
+            -- (TODO add error messages to this sometime)
 
             -- alt modifies the beacon amount, no alt modifies the beacon tier
             if direction == "positive" then
@@ -372,8 +381,16 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         ui_util.fnei.show_item(item, click)
 
     elseif direction ~= nil then  -- Shift item in the given direction
-        Line.shift(line, item, direction)
-        refresh_production_table(player)
+        if Line.shift(line, item, direction) then
+            refresh_production_table(player)
+        else
+            local lower_class = string.lower(class)
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.l" .. lower_class}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+
+        refresh_current_activity(player)
         
     else
         if click == "right" and item.class == "Fuel" then

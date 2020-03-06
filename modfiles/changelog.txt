@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added a preference that allows you to enable additional production table columns, such as pollution info and comment fields
     - Added rate limiting to most interface interactions, improving performance and avoiding crashes in high-latency multiplayer situations
+    - Added some more warning messages when an action couldn't be executed
   Changes:
     - Changed some mod settings to be preferences
     - Removed Performance Mode, as it no longer did anything

@@ -98,6 +98,8 @@ function data_util.machine.change(player, line, machine, direction)
                 local new_machine = category.machines[proto.id + 1]
                 return data_util.machine.change(player, line, new_machine, nil)
             else
+                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
+                ui_util.message.enqueue(player, message, "error", 1, false)
                 return false
             end
         else  -- direction == "negative"
@@ -105,6 +107,8 @@ function data_util.machine.change(player, line, machine, direction)
                 local new_machine = category.machines[proto.id - 1]
                 return data_util.machine.change(player, line, new_machine, nil)
             else
+                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
+                ui_util.message.enqueue(player, message, "error", 1, false)
                 return false            
             end
         end
