@@ -32,7 +32,7 @@ function Factory.get_by_gui_position(self, class, gui_position)
 end
 
 function Factory.shift(self, dataset, direction)
-    Collection.shift(self[dataset.class], dataset, direction)
+    return Collection.shift(self[dataset.class], dataset, direction)
 end
 
 -- Updates the validity of the factory from top to bottom

@@ -170,8 +170,15 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
         return
         
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(subfactory, ingredient, direction)
-        refresh_item_table(player, "Ingredient")
+        if Subfactory.shift(subfactory, ingredient, direction) then
+            refresh_item_table(player, "Ingredient")
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lingredient"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
     end
 end
 
@@ -188,8 +195,15 @@ function handle_product_element_click(player, product_id, click, direction, acti
         return
 
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(subfactory, product, direction)
-        refresh_item_table(player, "Product")
+        if Subfactory.shift(subfactory, product, direction) then
+            refresh_item_table(player, "Product")
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lproduct"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
 
     else
         if click == "left" then
@@ -217,8 +231,8 @@ end
 
 -- Handles click on a subfactory pane byproduct button
 function handle_byproduct_element_click(player, byproduct_id, click, direction, action, alt)
-    local context = get_context(player)
-    local byproduct = Subfactory.get(context.subfactory, "Byproduct", byproduct_id)
+    local subfactory = get_context(player).subfactory
+    local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
     
     if alt then  -- Open item in FNEI
         ui_util.fnei.show_item(byproduct, click)
@@ -227,8 +241,15 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
         return
 
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(context.subfactory, byproduct, direction)
-        refresh_item_table(player, "Byproduct")
+        if Subfactory.shift(subfactory, byproduct, direction) then
+            refresh_item_table(player, "Byproduct")
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lbyproduct"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
 
     elseif click == "left" then
         local floor = context.floor

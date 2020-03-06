@@ -93,9 +93,9 @@ function run_preliminary_checks(player, product, production_type)
         return nil, {"fp.error_no_relevant_recipe"}, show
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
-        -- Show hint if adding unresearched recipe (no hints on custom recipes)
+        -- Show warning if adding unresearched recipe (no hints on custom recipes)
         if not chosen_recipe.custom and not force_recipes[chosen_recipe.name].enabled then
-            show.message={text={"fp.hint_disabled_recipe"}, type="warning"}
+            show.message={text={"fp.warning_disabled_recipe"}, type="warning"}
         end
         return chosen_recipe.id, nil, show
     else  -- 2+ relevant recipes

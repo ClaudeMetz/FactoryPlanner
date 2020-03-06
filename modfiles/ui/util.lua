@@ -245,7 +245,7 @@ ui_util.rate_limiting_events = {
     [defines.events.on_player_selected_area] = {timeout = 20},
     ["filter_item_picker"] = {timeout = 6, handler = item_picker.handle_searchfield_change},
     ["submit_modal_dialog"] = {timeout = 20},
-    [defines.events.on_gui_click] = {timeout = 20}
+    [defines.events.on_gui_click] = {timeout = 10}
 }
 
 -- Returns whether the given event should be prevented from carrying out it's action due to rate limiting
