@@ -14,6 +14,7 @@ require("data.handlers.migrator")
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.constructor")
+require("data.handlers.remote")
 require("data.calculation.interface")
 
 -- Sets up global data structure of the mod
@@ -195,20 +196,20 @@ function reload_preferences(player, table)
 
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
+    preferences.alt_action = data_util.update_alt_action(preferences.alt_action)
+
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
     preferences.round_button_numbers = preferences.round_button_numbers or false
+    
+    preferences.optional_production_columns = preferences.optional_production_columns or 
+      {["pollution"] = false, ["line_comments"] = false}
+
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
     preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
     preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
     preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines(table)
-
-    preferences.optional_production_columns = preferences.optional_production_columns or 
-      {
-          ["pollution"] = false,
-          ["line_comments"] = false
-      }
 end
 
 -- (Re)sets the UI state of the given player

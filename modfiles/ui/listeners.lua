@@ -82,6 +82,7 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
     end
 end)
 
+
 -- Fires when the user makes a selection using a selection-tool
 script.on_event(defines.events.on_player_selected_area, function(event)
     local player = game.get_player(event.player_index)
@@ -120,6 +121,28 @@ script.on_event(defines.events.on_gui_closed, function(event)
         end
 	end
 end)
+
+-- Fires on any confirmation of a textfield
+script.on_event(defines.events.on_gui_confirmed, function(event)
+    local player = game.get_player(event.player_index)
+    local element_name = event.element.name
+    
+    -- Re-run calculations when the mining prod changes, or cancel custom mining prod 'mode'
+    if element_name == "fp_textfield_mining_prod" then
+        handle_mining_prod_confirmation(player)
+
+    -- Re-run calculations when a line percentage change is confirmed
+    elseif string.find(element_name, "^fp_textfield_line_percentage_%d+$") then
+        handle_percentage_confirmation(player, event.element)
+
+    -- Submit any modal dialog, if it is open
+    elseif get_ui_state(player).modal_dialog_type ~= nil then
+        if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
+        exit_modal_dialog(player, "submit", {})
+
+    end
+end)
+
 
 -- Fires on any radiobutton change
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
@@ -193,26 +216,17 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     end
 end)
 
--- Fires on any confirmation of a textfield
-script.on_event(defines.events.on_gui_confirmed, function(event)
+-- Fires on any dropdown and listbox change
+script.on_event(defines.events.on_gui_selection_state_changed, function(event)
     local player = game.get_player(event.player_index)
-    local element_name = event.element.name
-    
-    -- Re-run calculations when the mining prod changes, or cancel custom mining prod 'mode'
-    if element_name == "fp_textfield_mining_prod" then
-        handle_mining_prod_confirmation(player)
 
-    -- Re-run calculations when a line percentage change is confirmed
-    elseif string.find(element_name, "^fp_textfield_line_percentage_%d+$") then
-        handle_percentage_confirmation(player, event.element)
-
-    -- Submit any modal dialog, if it is open
-    elseif get_ui_state(player).modal_dialog_type ~= nil then
-        if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
-        exit_modal_dialog(player, "submit", {})
-
+    -- Changes the current alt_action
+    if event.element.name == "fp_drop_down_alt_action" then
+        local selected_index = event.element.selected_index
+        handle_alt_action_change(player, selected_index)
     end
 end)
+
 
 -- Fires on any click on a GUI element
 script.on_event(defines.events.on_gui_click, function(event)
