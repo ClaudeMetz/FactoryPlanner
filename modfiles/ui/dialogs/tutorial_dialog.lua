@@ -49,9 +49,9 @@ function open_tutorial_dialog(flow_modal_dialog)
     local label_interface = table_tutorial.add{type="label", name="label_tutorial_interface", caption={"fp.interface_text"}}
     label_interface.style.single_line = false
 
-    local fnei_label = (remote.interfaces["fnei"] ~= nil) and {"fp.interface_controls_fnei"} or ""
+    local alt_action_string = {"fp.alt_action_" .. get_preferences(player).alt_action}
     local label_controls = table_tutorial.add{type="label", name="label_tutorial_controls",
-      caption={"", {"fp.interface_controls"}, fnei_label}}
+      caption={"fp.interface_controls", alt_action_string}}
     label_controls.style.single_line = false
     label_controls.style.margin = {6, 0, 16, 6}
 

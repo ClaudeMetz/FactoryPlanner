@@ -754,8 +754,8 @@ function generator.all_machines()
                         local category = "steam-" .. proto.target_temperature
                         local machine = generate_category_entry(category, proto)
                         
-                        temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
-                        energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
+                        local temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
+                        local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy_usage / energy_per_unit
 
                         deep_insert_proto(all_machines, "categories", category, "machines", machine)

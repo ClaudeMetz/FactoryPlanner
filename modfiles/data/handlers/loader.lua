@@ -23,6 +23,9 @@ function loader.setup()
     for _, data_type in ipairs(data_types) do
         new["all_" .. data_type] = generator["all_" .. data_type]()
     end
+
+    -- Generate alt_actions table
+    global.alt_actions = loader.util.determine_alt_actions()
 end
 
 -- Updates the relevant data of the given player to fit the new data
@@ -101,4 +104,19 @@ function loader.machines.run(player_table)
     end
 
     preferences.default_machines = default_machines
+end
+
+
+-- **** ALT ACTIONS ****
+-- Returns a table with the names of all valid alt-actions
+function loader.util.determine_alt_actions()
+    local alt_actions = {["none"] = 1}
+    local index = 2
+
+    if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == remote_actions.fnei.version then
+        alt_actions["fnei"] = index
+        index = index + 1
+    end
+
+    return alt_actions
 end

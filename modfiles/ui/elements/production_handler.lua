@@ -7,8 +7,9 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
 
     local archive_status = ui_util.check_archive_status(player)
     
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_recipe(line.recipe, Line.get_in_order(line, "Product"))
+    if alt then
+        ui_util.execute_alt_action(player, "show_recipe",
+          {recipe=line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
         if archive_status then return end
@@ -377,8 +378,8 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
     local line = Floor.get(ui_state.context.floor, "Line", line_id)
     local item = Line.get(line, class, item_id)
 
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(item, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=item.proto, click=click})
 
     elseif direction ~= nil then  -- Shift item in the given direction
         if Line.shift(line, item, direction) then

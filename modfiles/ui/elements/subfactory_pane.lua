@@ -158,13 +158,13 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
 end
 
 
--- Opens clicked element in FNEI or shifts it left or right
+-- Handles click on a subfactory pane ingredient button
 function handle_ingredient_element_click(player, ingredient_id, click, direction, action, alt)
     local subfactory = get_context(player).subfactory
     local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
 
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(ingredient, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=ingredient.proto, click=click})
         
     elseif ui_util.check_archive_status(player) then 
         return
@@ -188,8 +188,8 @@ function handle_product_element_click(player, product_id, click, direction, acti
     local subfactory = context.subfactory
     local product = Subfactory.get(subfactory, "Product", product_id)
 
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(product, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=product.proto, click=click})
         
     elseif ui_util.check_archive_status(player) then
         return
@@ -234,8 +234,8 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
     local subfactory = get_context(player).subfactory
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
     
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(byproduct, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=byproduct.proto, click=click})
 
     elseif ui_util.check_archive_status(player) then 
         return

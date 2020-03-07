@@ -166,3 +166,10 @@ function data_util.run_invalid_dataset_repair(player, parent, classes)
         Collection.repair_invalid_datasets(parent[type], player, class, parent)
     end
 end
+
+
+-- Returns the alt_action if it is valid, returns the default otherwise
+function data_util.update_alt_action(alt_action)
+    if alt_action ~= nil and global.alt_actions[alt_action] then return alt_action
+    else return "none" end
+end
