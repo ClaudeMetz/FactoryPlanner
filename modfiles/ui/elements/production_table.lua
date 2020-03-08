@@ -196,7 +196,8 @@ end
 -- Separate function so it can be refreshed independently
 function refresh_recipe_button(player, line, table_production)
     local ui_state = get_ui_state(player)
-    local tooltip, style, enabled = {"", line.recipe.proto.localised_name}, "fp_button_icon_medium_blank", true
+    local tooltip, style, enabled = line.recipe.proto.localised_name, "fp_button_icon_medium_blank", true
+    if devmode then tooltip = {"", tooltip, "\n", line.recipe.proto.name} end
 
     -- Make the first line of every subfloor uninteractable, it stays constant
     if ui_state.context.floor.level > 1 and line.gui_position == 1 then

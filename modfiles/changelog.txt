@@ -13,6 +13,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed the recipe dialog dimensions to be less jumpy
     - Fixed a crash that was caused by the mod assuming that the steam prototype will always exist
+    - Fixed a problem where byproducts and ingredients where added up incorrectly in some cases
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.6

@@ -216,15 +216,11 @@ function model.update_line(line_data, aggregate)
         -- Ingredients should be taken out of byproducts as much as possible for the aggregate
         local available_byproduct = aggregate.Byproduct[ingredient.type][ingredient.name]
         if available_byproduct ~= nil then
-            if available_byproduct == ingredient_amount then
+            if available_byproduct >= ingredient_amount then
                 structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
-
-            elseif available_byproduct < ingredient_amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
+            else  -- available_byproduct < ingredient_amount
+                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, available_byproduct)
                 structures.aggregate.add(aggregate, "Product", ingredient, (ingredient_amount - available_byproduct))
-
-            elseif available_byproduct > ingredient_amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
             end
         else
             structures.aggregate.add(aggregate, "Product", ingredient, ingredient_amount)
