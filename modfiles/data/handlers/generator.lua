@@ -447,22 +447,24 @@ function generator.all_recipes()
     end
 
     -- Add a general steam recipe that works with every boiler
-    local steam_recipe = mining_recipe()
-    steam_recipe.name = "fp-general-steam"
-    steam_recipe.localised_name = {"fluid-name.steam"}
-    steam_recipe.sprite = "fluid/steam"
-    steam_recipe.category = "general-steam"
-    steam_recipe.order = "z-0"
-    steam_recipe.subgroup = {name="fluids", order="z", valid=true}
-    steam_recipe.energy = 1
-    steam_recipe.emissions_multiplier = 1
-    steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
-    steam_recipe.products = {{type="fluid", name="steam", amount=60}}
-    steam_recipe.main_product = steam_recipe.products[1]
+    if game["fluid_prototypes"]["steam"] then  -- make sure the steam prototype exists
+        local steam_recipe = mining_recipe()
+        steam_recipe.name = "fp-general-steam"
+        steam_recipe.localised_name = {"fluid-name.steam"}
+        steam_recipe.sprite = "fluid/steam"
+        steam_recipe.category = "general-steam"
+        steam_recipe.order = "z-0"
+        steam_recipe.subgroup = {name="fluids", order="z", valid=true}
+        steam_recipe.energy = 1
+        steam_recipe.emissions_multiplier = 1
+        steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
+        steam_recipe.products = {{type="fluid", name="steam", amount=60}}
+        steam_recipe.main_product = steam_recipe.products[1]
 
-    format_recipe_products_and_ingredients(steam_recipe)
-    add_recipe_tooltip(steam_recipe)
-    insert_proto(all_recipes, "recipes", steam_recipe, true)
+        format_recipe_products_and_ingredients(steam_recipe)
+        add_recipe_tooltip(steam_recipe)
+        insert_proto(all_recipes, "recipes", steam_recipe, true)
+    end
     
     -- Adds a convenient space science recipe
     local rocket_recipe = {
