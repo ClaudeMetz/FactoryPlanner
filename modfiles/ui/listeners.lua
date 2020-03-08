@@ -203,6 +203,10 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
 
             item_picker.handle_searchfield_change(event.element)
 
+        -- Persists notes changes
+        elseif element_name == "fp_text-box_notes" then
+            handle_notes_change(player, event.element)
+
         -- Persists mining productivity changes
         elseif element_name == "fp_textfield_mining_prod" then
             handle_mining_prod_change(player, event.element)
@@ -297,7 +301,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             
         -- Opens utilitys dialog
         elseif element_name == "fp_button_open_utility_dialog" then
-            enter_modal_dialog(player, {type="utility", submit=true})
+            enter_modal_dialog(player, {type="utility"})
 
         -- Changes into the manual override of the mining prod mode
         elseif element_name == "fp_button_mining_prod_override" then
