@@ -40,36 +40,39 @@ script.on_event(defines.events.on_player_display_scale_changed, function(event)
 end)
 
 
--- Fires on pressing the 'Open/Close' keyboard shortcut
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)
     toggle_main_dialog(player)
 end)
 
--- Fires on pressing of the keyboard shortcut to go up a floor
 script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
     if is_main_dialog_in_focus(player) then handle_floor_change_click(player, "up") end
 end)
 
--- Fires on pressing of the keyboard shortcut to refresh the production table
 script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
     if is_main_dialog_in_focus(player) then calculation.update(player, get_context(player).subfactory, true) end
 end)
 
--- Fires on pressing the keyboard shortcut to cycle production views
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
     if is_main_dialog_in_focus(player) then change_view_state(player, nil) end
 end)
 
--- Fires on pressing of the keyboard shortcut to confirm a dialog
 script.on_event("fp_confirm_dialog", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
     exit_modal_dialog(player, "submit", {})
+end)
+
+script.on_event("fp_focus_searchfield", function(event)
+    local player = game.get_player(event.player_index)
+    if get_ui_state(player).modal_dialog_type == "product" then
+        player.gui.screen["fp_frame_modal_dialog_product"]["flow_modal_dialog"]["flow_item_picker"]
+          ["table_search_bar"]["fp_textfield_item_picker_search_bar"].focus()
+    end
 end)
 
 
