@@ -70,6 +70,15 @@ end
 
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
+    -- Register the RecipeBook event to re-open the main dialog after hitting its back-button
+    if remote.interfaces["RecipeBook"] ~= nil then
+        script.on_event(remote.call("RecipeBook", "reopen_source_event"), function(event)
+            if event.source_data.mod_name == "factoryplanner" then
+                toggle_main_dialog(game.get_player(event.player_index))
+            end
+        end)
+    end
+
     -- Re-register conditional on_nth_tick events
     for _, player_table in pairs(global.players or {}) do
         local last_action = player_table.ui_state.last_action
