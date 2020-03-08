@@ -322,7 +322,7 @@ function ui_util.execute_alt_action(player, action_type, data)
 
     local remote_action = remote_actions[alt_action]
     if remote_action ~= nil and remote_action[action_type] then
-        remote_actions[action_type](alt_action, data)
+        remote_actions[action_type](player, alt_action, data)
     end
 end
 

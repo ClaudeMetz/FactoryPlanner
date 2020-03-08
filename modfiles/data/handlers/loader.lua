@@ -117,6 +117,17 @@ function loader.util.determine_alt_actions()
         alt_actions["fnei"] = index
         index = index + 1
     end
+    
+    if remote.interfaces["wiiuf"] ~= nil and remote.call("wiiuf", "version") == remote_actions.wiiruf.version then
+        alt_actions["wiiruf"] = index
+        index = index + 1
+    end
+
+    -- RecipeBook doesn't provide a version remote interface yet, this will be refactored when it does
+    if remote.interfaces["RecipeBook"] ~= nil --[[ and remote.call("RecipeBook", "version") == remote_actions.wiiruf.version ]] then
+        alt_actions["recipebook"] = index
+        index = index + 1
+    end
 
     return alt_actions
 end
