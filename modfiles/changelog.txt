@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Removed Performance Mode, as it no longer did anything
   Bugfixes:
     - Fixed the recipe dialog dimensions to be less jumpy
+    - Fixed a crash that was caused by the mod assuming that the steam prototype will always exist
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.6
