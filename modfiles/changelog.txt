@@ -16,6 +16,7 @@ Date: 00. 00. 0000
     - Fixed the recipe dialog dimensions to be less jumpy
     - Fixed a crash that was caused by the mod assuming that the steam prototype will always exist
     - Fixed a problem where byproducts and ingredients where added up incorrectly in some cases
+    - Fixed a problem where fluid buttons didn't show up when certain views were active
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.6
