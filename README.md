@@ -6,8 +6,16 @@ It enables players to plan out their production in detail, specifying the recipe
 
 Something similar has already been done by [Helmod](https://mods.factorio.com/mod/helmod). One major goal of this was to provide a more intuitive and convenient experience than that Helmod, all while providing features that are equally as powerful. It should have better performance and allow for complex recipes to be handled appropriately. Not all of these goals have been reached, and some features are still missing, but in due time, the mod will improve to meet it's goals.
 
-There is a public [Trello board](https://trello.com/b/0FP7eMlu/factory-planner) organizing what's on my radar. Suggestions and bug reports go to the [mod portal](https://mods.factorio.com/mod/factoryplanner/discussion) for now. You might also join the Factory Planner [Discord](https://discord.gg/ABqNEQc) to talk to me more directly/casually.
+There is a public [Trello board](https://trello.com/b/0FP7eMlu/factory-planner) organizing what's on my radar. Suggestions and bug reports are centralized on the [mod portal](https://mods.factorio.com/mod/factoryplanner/discussion). You might also join the Factory Planner [Discord](https://discord.gg/ABqNEQc) to talk to me more directly/casually.
 
 ## Contribute
 
-If you want to contribute to Factory Planner in any form, please join the [Discord](https://discord.gg/ABqNEQc) and talk to me about what you have in mind first. This mod is still in active development, and I might already have a plan for what you're thinking about. But I'm happy to hear about any ideas you have. Issues are disabled for this repo because I'd like to centralize them on the [mod portal](https://mods.factorio.com/mod/factoryplanner/discussion) so non-technical users can participate more easily.
+If you want to contribute code to Factory Planner, please join the [Discord](https://discord.gg/ABqNEQc) and talk to me about what you have in mind first. This mod is still in active development, and I might already have a plan for what you're thinking about. But I'm happy to hear about any ideas you have. Issues are disabled for this repo because I'd like to centralize them on the [mod portal](https://mods.factorio.com/mod/factoryplanner/discussion) so non-technical users can participate more easily.
+
+### Localisation
+
+Localisation of Factory Planner is handled entirely through a separate [project](https://github.com/ClaudeMetz/FactoryPlannerLocale) on Github. If you're interested in helping out, feel free take a look. There are further explanations on the project's page. If you have any technical questions, there's a localisation-specific channel on the [Discord](https://discord.gg/ABqNEQc).
+
+## License
+
+This mod is licensed under [MIT](https://en.wikipedia.org/wiki/Public_domain), with the exception of the localisation, which is in the [public domain](https://unlicense.org).

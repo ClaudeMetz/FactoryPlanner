@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Added a keyboard shortcut to refocus the product picker searchfield
     - Added some more warning messages when an action couldn't be executed
   Changes:
+    - Created a centralized localisation project. If you want to contribute, take a look at the Github page for this project.
     - Changed some mod settings to be preferences
     - Removed Performance Mode, as it no longer did anything
     - The utility dialog now automatically saves changes to your notes
