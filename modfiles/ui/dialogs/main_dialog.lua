@@ -176,8 +176,8 @@ function add_titlebar_to(main_dialog)
 
     -- Hint
     local label_hint = titlebar.add{type="label", name="label_titlebar_hint"}
-    label_hint.style.font = "fp-font-16p"
-    label_hint.style.top_margin = 8
+    label_hint.style.font = "fp-font-semibold-18p"
+    label_hint.style.top_margin = 6
     label_hint.style.left_margin = 14
 
     -- Spacer

@@ -42,6 +42,7 @@ end
 function run_preliminary_checks(player, product, production_type)
     local force_recipes = player.force.recipes
     local relevant_recipes = {}
+    local user_disabled_recipe = false
     local counts = {
         disabled = 0,
         hidden = 0,
@@ -60,14 +61,19 @@ function run_preliminary_checks(player, product, production_type)
                 table.insert(relevant_recipes, recipe)
 
             -- Only add recipes that exist on the current force (and aren't preferenced-out)
-            elseif force_recipe ~= nil and not ((preferences.ignore_barreling_recipes and recipe.barreling)
-              or (preferences.ignore_recycling_recipes and recipe.recycling)) then
-                table.insert(relevant_recipes, recipe)
+            elseif force_recipe ~= nil then
+                local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
+                  or (preferences.ignore_recycling_recipes and recipe.recycling)
+                user_disabled_recipe = user_disabled_recipe or user_disabled
 
-                if not force_recipe.enabled and force_recipe.hidden then
-                    counts.disabled_hidden = counts.disabled_hidden + 1
-                elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
-                elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
+                if not user_disabled then
+                    table.insert(relevant_recipes, recipe)
+
+                    if not force_recipe.enabled and force_recipe.hidden then
+                        counts.disabled_hidden = counts.disabled_hidden + 1
+                    elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
+                    elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
+                end
             end
         end
     end
@@ -90,7 +96,8 @@ function run_preliminary_checks(player, product, production_type)
     
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
-        return nil, {"fp.error_no_relevant_recipe"}, show
+        local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
+        return nil, error, show
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
         -- Show warning if adding unresearched recipe (no hints on custom recipes)
