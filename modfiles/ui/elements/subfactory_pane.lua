@@ -118,8 +118,8 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
         local item_amount = (display_mode == "standard" and class == "Product") and item.required_amount or item.amount
         local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item_amount, nil)
-          
-        if display_amount ~= nil and display_amount > margin_of_error then
+
+        if display_amount == nil or display_amount > margin_of_error then
             local secondary_number = ""
 
             if display_mode == "standard" then
@@ -146,9 +146,13 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
                 end
             end
 
-            local number_line = {"", ui_util.format_number(display_amount, 4) .. " ", appendage}
-            local tooltip = {"", item.proto.localised_name, "\n" .. secondary_number, number_line, tutorial_tooltip}
-            local button_number = (round_belts) and math.ceil(display_amount) or display_amount
+            local number_line, button_number = "", nil
+            if display_amount ~= nil then  -- Don't show a number if no display_amount was determined (fluids)
+                number_line = {"", "\n" .. secondary_number .. ui_util.format_number(display_amount, 4)
+                  .. " ", appendage}
+                button_number = (round_belts) and math.ceil(display_amount) or display_amount
+            end
+            local tooltip = {"", item.proto.localised_name, number_line, tutorial_tooltip}
 
             local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
               .. item.id, sprite=item.proto.sprite, number=button_number, tooltip=tooltip,

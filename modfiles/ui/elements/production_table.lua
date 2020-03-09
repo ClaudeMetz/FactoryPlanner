@@ -376,7 +376,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
             local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
               item.proto.type, item.amount, math.ceil(line.machine.count))
               
-            if raw_amount ~= nil and raw_amount > margin_of_error then
+            if raw_amount == nil or raw_amount > margin_of_error then
                 -- Determine potential different button style and the potential satisfaction line
                 local actual_style, satisfaction_line = style, ""
 
@@ -408,9 +408,12 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
                     indication = {"", " (", {"fp.priority"}, ")"}
                 end
 
-                local number_line = (raw_amount ~= nil) and {"", ui_util.format_number(raw_amount, 4) .. " ", appendage} or ""
-                local tooltip = {"", item.proto.localised_name, indication, "\n", number_line, satisfaction_line, tutorial_tooltip}
-                local button_number = (round_belts and raw_amount ~= nil) and math.ceil(raw_amount) or raw_amount
+                local number_line, button_number = "", nil
+                if raw_amount ~= nil then
+                    number_line = {"", "\n" .. ui_util.format_number(raw_amount, 4) .. " ", appendage}
+                    button_number = (round_belts) and math.ceil(raw_amount) or raw_amount
+                end
+                local tooltip = {"", item.proto.localised_name, indication, number_line, satisfaction_line, tutorial_tooltip}
 
                 local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
                   .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, number=button_number, tooltip=tooltip,
