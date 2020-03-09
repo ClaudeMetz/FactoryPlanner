@@ -61,6 +61,12 @@ data:extend({
     },
     {
         type = "font",
+        name = "fp-font-semibold-18p",
+        from = "default-semibold",
+        size = 18
+    },
+    {
+        type = "font",
         name = "fp-font-20p",
         from = "default",
         size = 20
