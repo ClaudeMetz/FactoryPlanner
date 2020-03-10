@@ -4,6 +4,6 @@
 [submodule "scripts"]
 	path = scripts
 	url = https://github.com/ClaudeMetz/FactorioScripts
-[submodule "modfiles/locale"]
+[submodule "locale"]
 	path = locale
 	url = https://github.com/ClaudeMetz/FactoryPlannerLocale
