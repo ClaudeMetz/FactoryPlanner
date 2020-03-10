@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.7
+Date: 10. 03. 2020
   Features:
     - Added a preference that allows you to enable additional production table columns, such as pollution info and comment fields
     - Added a preference that allows you to select an action when alt-clicking on recipes or items. You can choose between opening them in FNEI, WIIRUF or Recipe Book.
