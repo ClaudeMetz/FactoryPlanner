@@ -1,10 +1,34 @@
 require("model")
 require("structures")
+require("matrix_solver")
+require("ui.dialogs.modal_dialog")
 
 calculation = {
     interface = {},
     util = {}
 }
+
+-- scottmsul note: why is refresh an optional parameter to calculation.update? Should it be a parameter here? For now always refresh.
+function calculation.start_matrix_solver(player, subfactory)
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_items = matrix_solver.get_items(subfactory_data)
+    items = matrix_solver.get_items(subfactory_data)
+    local dialog_settings = {
+        type = "matrix_solver",
+        submit = true,
+        modal_data = { items=items }
+    }
+    enter_modal_dialog(player, dialog_settings)
+end
+
+function calculation.run_matrix_solver(player, subfactory, variables)
+    local player_table = get_table(player)
+    player_table.active_subfactory = subfactory
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    matrix_solver.run_matrix_solver(player, subfactory_data, variables)
+    player_table.active_subfactory = nil
+    refresh_main_dialog(player)
+end
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
@@ -84,14 +108,14 @@ function calculation.interface.set_line_result(result)
     line.uncapped_production_ratio = result.uncapped_production_ratio
 
     -- Reset the priority_product if there's <2 products
-    if structures.class.count(result.Product) < 2 then
-        Line.set_priority_product(line, nil)
-    end
+    -- if structures.class.count(result.Product) < 2 then
+    --     Line.set_priority_product(line, nil)
+    -- end
 
     calculation.util.update_items(line, result, "Product")
-    calculation.util.update_items(line, result, "Byproduct")
+    -- calculation.util.update_items(line, result, "Byproduct")
     calculation.util.update_items(line, result, "Ingredient")
-    calculation.util.update_items(line, result, "Fuel")
+    -- calculation.util.update_items(line, result, "Fuel")
 end
 
 

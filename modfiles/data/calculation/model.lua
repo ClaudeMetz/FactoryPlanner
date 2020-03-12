@@ -1,3 +1,5 @@
+require("matrix_solver")
+
 -- Contains the 'meat and potatoes' calculation model that struggles with some more complex setups
 model = {}
 

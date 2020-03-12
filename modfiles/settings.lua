@@ -81,5 +81,12 @@ data:extend({
         minimum_value = 0,
         maximum_value = 0.4,
         order = "k"
+    },
+    {
+        type = "bool-setting",
+        name = "fp_scottmsul_matrix_solver",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "l"
     }
 })

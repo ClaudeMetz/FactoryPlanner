@@ -300,6 +300,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.element.name == "fp_sprite-button_refresh_production" then
             calculation.update(player, ui_state.context.subfactory, true)
 
+        -- Runs the matrix solver
+        -- todo - change this to enter_modal_dialog
+        elseif event.element.name == "fp_sprite-button_matrix_solver" then
+           calculation.start_matrix_solver(player, ui_state.context.subfactory)
+
         -- Clears all the comments on the current floor
         elseif event.element.name == "fp_button_production_clear_comments" then
             clear_recipe_comments(player)
@@ -420,7 +425,12 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(event.element.name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
             local split_string = cutil.split(event.element.name, "_")
             handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
-        
+
+        elseif string.find(event.element.name, "^fp_sprite%-button_matrix_solver_item_[a-zA-Z]+_%d+_%d+$") then
+            local split_string = cutil.split(event.element.name, "_")
+            local item_variable_type = split_string[6]
+            local item_id = split_string[7].."_"..split_string[8]
+            handle_matrix_solver_item_press(player, item_variable_type, item_id)
         end
     end
 end)

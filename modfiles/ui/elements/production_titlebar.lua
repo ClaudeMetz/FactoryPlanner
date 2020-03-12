@@ -3,7 +3,7 @@ function add_production_pane_to(main_dialog)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
 
     -- Production titlebar
-    local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=7}
+    local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=8}
     table_titlebar.style.bottom_margin = 8
 
     -- Refresh button
@@ -12,6 +12,13 @@ function add_production_pane_to(main_dialog)
     button_refresh.style.width = 22
     button_refresh.style.height = 22
     button_refresh.style.left_margin = 8
+
+    -- Matrix solver button
+    local button_matrix_solver = table_titlebar.add{type="sprite-button", name="fp_sprite-button_matrix_solver",
+      sprite="utility/shuffle", style="fp_sprite_button", tooltip={"fp.matrix_solver"}}
+    button_matrix_solver.style.width = 22
+    button_matrix_solver.style.height = 22
+    button_matrix_solver.style.left_margin = 8
 
     -- Title
     local title = table_titlebar.add{type="label", name="label_production_pane_title", 
