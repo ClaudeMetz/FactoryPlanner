@@ -108,14 +108,14 @@ function calculation.interface.set_line_result(result)
     line.uncapped_production_ratio = result.uncapped_production_ratio
 
     -- Reset the priority_product if there's <2 products
-    -- if structures.class.count(result.Product) < 2 then
-    --     Line.set_priority_product(line, nil)
-    -- end
+    if structures.class.count(result.Product) < 2 then
+        Line.set_priority_product(line, nil)
+    end
 
     calculation.util.update_items(line, result, "Product")
-    -- calculation.util.update_items(line, result, "Byproduct")
+    calculation.util.update_items(line, result, "Byproduct")
     calculation.util.update_items(line, result, "Ingredient")
-    -- calculation.util.update_items(line, result, "Fuel")
+    calculation.util.update_items(line, result, "Fuel")
 end
 
 

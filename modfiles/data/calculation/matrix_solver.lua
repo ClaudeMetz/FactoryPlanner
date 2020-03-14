@@ -223,8 +223,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
                 -- see if this works
                 Product = line_aggregate.Product,
                 Byproduct = structures.class.init(),
-                Ingredient = line_aggregate.Ingredient
-                -- Fuel = structures.class.init()
+                Ingredient = line_aggregate.Ingredient,
+                Fuel = line_aggregate.Fuel
             }
         end
     end
@@ -296,12 +296,12 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
     return matrix
 end
 
-function matrix_solver.get_line_aggregate(line, player_index, machine_count)
+function matrix_solver.get_line_aggregate(line_data, player_index, machine_count)
     local line_aggregate = structures.aggregate.init(player_index, 1)
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
-    local recipe_proto = line.recipe_proto
-    local timescale = line.timescale
-    local amount_per_timescale = machine_count * timescale * line.machine_proto.speed / recipe_proto.energy
+    local recipe_proto = line_data.recipe_proto
+    local timescale = line_data.timescale
+    local amount_per_timescale = machine_count * timescale * line_data.machine_proto.speed / recipe_proto.energy
     structures.aggregate.add(line_aggregate, "Product", recipe_proto.main_product, recipe_proto.main_product.amount * amount_per_timescale)
     for _, product in pairs(recipe_proto.products) do
         structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale)
@@ -309,8 +309,33 @@ function matrix_solver.get_line_aggregate(line, player_index, machine_count)
     for _, ingredient in pairs(recipe_proto.ingredients) do
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
     end
-    line_aggregate.energy_consumption = line.machine_proto.energy_usage * machine_count * timescale
-    line_aggregate.pollution = line.machine_proto.emissions * machine_count * timescale
+
+    local energy_consumption = line_data.machine_proto.energy_usage * machine_count * timescale
+    local pollution = line_data.machine_proto.emissions * machine_count * timescale
+
+    line_aggregate.energy_consumption = energy_consumption
+    line_aggregate.pollution = pollution
+
+    -- copied from model.lua
+    local Fuel = structures.class.init()
+    local burner = line_data.machine_proto.burner
+
+    if burner ~= nil and burner.categories["chemical"] then  -- only handles chemical fuels for now
+        local fuel_proto = line_data.fuel_proto  -- Lines without subfloors will always have a fuel_proto attached
+        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, burner,
+          fuel_proto.fuel_value, line_data.timescale)
+
+        local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
+        structures.class.add(Fuel, fuel)
+        structures.aggregate.add(line_aggregate, "Fuel", fuel)
+
+        -- This is to work around the fuel not being detected as a possible product
+        structures.aggregate.add(line_aggregate, "Product", fuel)
+        structures.aggregate.subtract(line_aggregate, "Ingredient", fuel)
+
+        energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+    end
+
     return line_aggregate
 end
 
