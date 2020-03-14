@@ -23,43 +23,21 @@ If a recipe has loops, typically the user needs to make voids.
 matrix_solver = {}
 
 -- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_id"
-function get_item_id(obj)
-    local item_type_name = obj.type
-    local item_name = obj.name
+function matrix_solver.get_item_key(item_type_name, item_name)
     local item_type_id = global.all_items.map[item_type_name]
     local item_id = global.all_items.types[item_type_id].map[item_name]
     return tostring(item_type_id)..'_'..tostring(item_id)
 end
 
 function matrix_solver.get_items(subfactory_data)
-    local recipe_inputs = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "ingredients", type = "list"},
-        {key = "recipe_proto", type = "value"},
-        {key = "lines", type = "list"},
-        {key = "top_floor", type = "value"}})
-    local recipe_main_products = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "main_product", type = "value"},
-        {key = "recipe_proto", type = "value"},
-        {key = "lines", type = "list"},
-        {key = "top_floor", type = "value"}})
-    local recipe_products = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "products", type = "list"},
-        {key = "recipe_proto", type = "value"},
-        {key = "lines", type = "list"},
-        {key = "top_floor", type = "value"}})
-    local desired_outputs = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "proto", type = "value"},
-        {key = "top_level_products", type = "list"}
-    })
-    local recipe_outputs = matrix_solver.union_sets(recipe_main_products, recipe_products)
-    local all_items = matrix_solver.union_sets(recipe_inputs, recipe_outputs, desired_outputs)
-    local raw_inputs = matrix_solver.set_diff(recipe_inputs, recipe_outputs)
-    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(recipe_outputs, recipe_inputs), desired_outputs)
-    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, recipe_outputs)
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local desired_outputs = subfactory_metadata.desired_outputs
+    local line_inputs = subfactory_metadata.line_inputs
+    local line_outputs = subfactory_metadata.line_outputs
+    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
+    local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
+    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
+    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
     local initial_free_variables = matrix_solver.union_sets(raw_inputs, by_products, unproduced_outputs)
     local initial_constrained_variables = matrix_solver.set_diff(all_items, initial_free_variables)
     return {
@@ -76,40 +54,6 @@ function matrix_solver.set_diff(a, b)
         end
     end
     return result
-end
-
--- recursively iterates through the struct using the keys
--- returns a set with the values, represented as a table with each key set to true
-function matrix_solver.extract_set(struct, keys)
-    local inner_keys = cutil.shallowcopy(keys)
-    local curr_key = table.remove(inner_keys)
-
-    local curr_key_name = curr_key["key"]
-    local curr_key_type = curr_key["type"]
-    if curr_key_type == "value" then
-        if struct[curr_key_name] == nil then return {} end
-        local inner_struct = struct[curr_key_name]
-        local result = matrix_solver.extract_set(inner_struct, inner_keys)
-        return result
-    elseif curr_key_type == "list" then
-        if struct[curr_key_name] == nil then return {} end
-        local result = {}
-        for k, inner_struct in pairs(struct[curr_key_name]) do
-            if inner_struct == nil then
-                return {}
-            end
-            local curr_result = matrix_solver.extract_set(inner_struct, inner_keys)
-            for k, v in pairs(curr_result) do
-                result[k] = v
-            end
-        end
-        return result
-    -- base case
-    elseif curr_key_type == "function" then
-        local result = {}
-        result[curr_key_name(struct)] = true
-        return result
-    end
 end
 
 function matrix_solver.union_sets(...)
@@ -147,30 +91,11 @@ function matrix_solver.intersect_sets(...)
 end
 
 function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
-    local recipe_inputs = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "ingredients", type = "list"},
-        {key = "recipe_proto", type = "value"},
-        {key = "lines", type = "list"},
-        {key = "top_floor", type = "value"}})
-    local recipe_main_products = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "main_product", type = "value"},
-        {key = "recipe_proto", type = "value"},
-        {key = "lines", type = "list"},
-        {key = "top_floor", type = "value"}})
-    local recipe_products = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "products", type = "list"},
-        {key = "recipe_proto", type = "value"},
-        {key = "lines", type = "list"},
-        {key = "top_floor", type = "value"}})
-    local desired_outputs = matrix_solver.extract_set(subfactory_data, {
-        {key = get_item_id, type = "function"},
-        {key = "proto", type = "value"},
-        {key = "top_level_products", type = "list"}
-    })
-    local all_items = matrix_solver.union_sets(recipe_inputs, recipe_main_products, recipe_products, desired_outputs)
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local desired_outputs = subfactory_metadata.desired_outputs
+    local line_inputs = subfactory_metadata.line_inputs
+    local line_outputs = subfactory_metadata.line_outputs
+    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
     local rows = matrix_solver.get_mapping_struct(all_items)
     local lines = {}
     for i=1, #subfactory_data.top_floor.lines do lines["line_"..i]=true end
@@ -228,6 +153,39 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
             }
         end
     end
+end
+
+-- finds items which must be inputs or ouptuts to the entire subfactory
+function matrix_solver.get_subfactory_metadata(subfactory_data)
+    local desired_outputs = {}
+    for _, product in pairs(subfactory_data.top_level_products) do
+        local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
+        desired_outputs[item_key] = true
+    end
+
+    local line_inputs = {}
+    local line_outputs = {}
+    for _, line in pairs(subfactory_data.top_floor.lines) do
+        line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, 1)
+        for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
+            for item_name, _ in pairs(item_data) do
+                local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+                line_inputs[item_key] = true
+            end
+        end
+        for item_type_name, item_data in pairs(line_aggregate.Product) do
+            for item_name, _ in pairs(item_data) do
+                local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+                line_outputs[item_key] = true
+            end
+        end
+    end
+    result = {
+        desired_outputs = desired_outputs,
+        line_inputs = line_inputs,
+        line_outputs = line_outputs
+    }
+    return result
 end
 
 function matrix_solver.get_matrix(subfactory_data, rows, columns)
