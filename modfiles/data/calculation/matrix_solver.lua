@@ -181,16 +181,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     local col_set = matrix_solver.union_sets(lines, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
-    llog('ROWS')
-    llog(rows)
-    llog('COLUMNS')
-    llog(columns)
-    llog('MATRIX BEFORE')
-    matrix_solver.print_matrix(matrix)
 
     matrix_solver.to_reduced_row_echelon_form(matrix)
-    llog('MATRIX AFTER')
-    matrix_solver.print_matrix(matrix)
 
     local aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
     for _, product in ipairs(subfactory_data.top_level_products) do
@@ -267,28 +259,29 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
         else
             local line_id = col_split_str[2]
             local line = subfactory_data.top_floor.lines[line_id]
-            -- "energy" is the recipe's raw crafting time
-            local energy = line.recipe_proto.energy
-            local timescale = line.timescale
-            local crafting_speed = line.machine_proto.speed
 
-            -- add ingredients
-            for _, ingredient in ipairs(line.recipe_proto.ingredients) do
-                local item_id = get_item_id(ingredient)
-                local row_num = rows.map[item_id]
-                local amount = ingredient.amount
-                matrix[row_num][col_num] = matrix[row_num][col_num] - amount * energy * crafting_speed
+            -- use amounts for 1 building as matrix entries
+            line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, 1)
+
+            for item_type_name, items in pairs(line_aggregate.Product) do
+                for item_name, amount in pairs(items) do
+                    local item_type_id = global.all_items.map[item_type_name]
+                    local item_id = global.all_items.types[item_type_id].map[item_name]
+                    local item_key = item_type_id..'_'..item_id
+                    local row_num = rows.map[item_key]
+                    matrix[row_num][col_num] = matrix[row_num][col_num] + amount
+                end
             end
 
-            -- todo - add modules and beacons
-            -- also probably need to add timescale
-
-            -- add main output
-            local main_product = line.recipe_proto.main_product
-            local item_id = get_item_id(main_product)
-            local row_num = rows.map[item_id]
-            local amount = main_product.amount
-            matrix[row_num][col_num] = matrix[row_num][col_num] + amount * crafting_speed * timescale / energy
+            for item_type_name, items in pairs(line_aggregate.Ingredient) do
+                for item_name, amount in pairs(items) do
+                    local item_type_id = global.all_items.map[item_type_name]
+                    local item_id = global.all_items.types[item_type_id].map[item_name]
+                    local item_key = item_type_id..'_'..item_id
+                    local row_num = rows.map[item_key]
+                    matrix[row_num][col_num] = matrix[row_num][col_num] - amount
+                end
+            end
         end
     end
 
