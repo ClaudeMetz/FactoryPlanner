@@ -274,9 +274,8 @@ function matrix_solver.get_line_aggregate(line_data, player_index, machine_count
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale
     local amount_per_timescale = machine_count * timescale * line_data.machine_proto.speed / recipe_proto.energy
-    structures.aggregate.add(line_aggregate, "Product", recipe_proto.main_product, recipe_proto.main_product.amount * amount_per_timescale)
     for _, product in pairs(recipe_proto.products) do
-        structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale)
+        structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale)
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
