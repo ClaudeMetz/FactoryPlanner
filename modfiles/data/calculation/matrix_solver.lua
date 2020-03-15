@@ -173,7 +173,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     end
 end
 
--- finds items which must be inputs or ouptuts to the entire subfactory
+-- finds inputs and outputs for each lines and desired outputs
 function matrix_solver.get_subfactory_metadata(subfactory_data)
     local desired_outputs = {}
     for _, product in pairs(subfactory_data.top_level_products) do
@@ -241,9 +241,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
-                    local item_type_id = global.all_items.map[item_type_name]
-                    local item_id = global.all_items.types[item_type_id].map[item_name]
-                    local item_key = item_type_id..'_'..item_id
+                    local item_key = matrix_solver.get_item_key(item_type_name, item_name)
                     local row_num = rows.map[item_key]
                     matrix[row_num][col_num] = matrix[row_num][col_num] + amount
                 end
@@ -251,9 +249,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
 
             for item_type_name, items in pairs(line_aggregate.Ingredient) do
                 for item_name, amount in pairs(items) do
-                    local item_type_id = global.all_items.map[item_type_name]
-                    local item_id = global.all_items.types[item_type_id].map[item_name]
-                    local item_key = item_type_id..'_'..item_id
+                    local item_key = matrix_solver.get_item_key(item_type_name, item_name)
                     local row_num = rows.map[item_key]
                     matrix[row_num][col_num] = matrix[row_num][col_num] - amount
                 end
