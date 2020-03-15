@@ -191,6 +191,12 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
                 line_inputs[item_key] = true
             end
         end
+        for item_type_name, item_data in pairs(line_aggregate.Fuel) do
+            for item_name, _ in pairs(item_data) do
+                local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+                line_inputs[item_key] = true
+            end
+        end
         for item_type_name, item_data in pairs(line_aggregate.Product) do
             for item_name, _ in pairs(item_data) do
                 local item_key = matrix_solver.get_item_key(item_type_name, item_name)
@@ -254,6 +260,14 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
                     matrix[row_num][col_num] = matrix[row_num][col_num] - amount
                 end
             end
+
+            for item_type_name, items in pairs(line_aggregate.Fuel) do
+                for item_name, amount in pairs(items) do
+                    local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+                    local row_num = rows.map[item_key]
+                    matrix[row_num][col_num] = matrix[row_num][col_num] - amount
+                end
+            end
         end
     end
 
@@ -281,13 +295,13 @@ function matrix_solver.get_line_aggregate(line_data, player_index, machine_count
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
     end
 
-    local energy_consumption = line_data.machine_proto.energy_usage * machine_count * timescale
-    local pollution = line_data.machine_proto.emissions * machine_count * timescale
+    -- some of this is copied from model.lua
+    -- Determine energy consumption (including potential fuel needs) and pollution
+    local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
+      machine_count, line_data.total_effects)
+    local pollution = calculation.util.determine_pollution(line_data.machine_proto, line_data.recipe_proto,
+      line_data.fuel_proto, line_data.total_effects, energy_consumption)
 
-    line_aggregate.energy_consumption = energy_consumption
-    line_aggregate.pollution = pollution
-
-    -- copied from model.lua
     local Fuel = structures.class.init()
     local burner = line_data.machine_proto.burner
 
@@ -300,12 +314,11 @@ function matrix_solver.get_line_aggregate(line_data, player_index, machine_count
         structures.class.add(Fuel, fuel)
         structures.aggregate.add(line_aggregate, "Fuel", fuel)
 
-        -- This is to work around the fuel not being detected as a possible product
-        structures.aggregate.add(line_aggregate, "Product", fuel)
-        structures.aggregate.subtract(line_aggregate, "Ingredient", fuel)
-
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
     end
+
+    line_aggregate.energy_consumption = energy_consumption
+    line_aggregate.pollution = pollution
 
     return line_aggregate
 end
