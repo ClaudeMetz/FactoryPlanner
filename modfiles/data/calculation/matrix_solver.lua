@@ -127,10 +127,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
 
     matrix_solver.to_reduced_row_echelon_form(matrix)
 
-    local aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
-    for _, product in ipairs(subfactory_data.top_level_products) do
-        structures.aggregate.add(aggregate, "Product", product)
-    end
+    local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
 
     -- need to call the following functions:
     -- calculation.interface.set_line_result for each line (see bottom of model.lua)
@@ -146,13 +143,14 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
             -- matrix[row_num][col_num] = 1
         -- "line"
         else
-            -- local line_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
             -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
             local lines_table_id = col_split_str[2]
             local line = subfactory_data.top_floor.lines[lines_table_id]
             local line_id = line.id
             local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
             local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, machine_count)
+
+            structures.aggregate.add_aggregate(line_aggregate, main_aggregate)
 
             calculation.interface.set_line_result {
                 player_index = player.index,
@@ -171,6 +169,15 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
             }
         end
     end
+
+    calculation.interface.set_subfactory_result {
+        player_index = subfactory_data.player_index,
+        energy_consumption = main_aggregate.energy_consumption,
+        pollution = main_aggregate.pollution,
+        Product = main_aggregate.Product,
+        Byproduct = main_aggregate.Byproduct,
+        Ingredient = main_aggregate.Ingredient
+    }
 end
 
 -- finds inputs and outputs for each line and desired outputs
