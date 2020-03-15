@@ -29,6 +29,24 @@ function matrix_solver.get_item_key(item_type_name, item_name)
     return tostring(item_type_id)..'_'..tostring(item_id)
 end
 
+-- this is really only used for debugging
+function matrix_solver.get_item_name(item_key)
+    local split_str = cutil.split(item_key, "_")
+    local item_type_id = split_str[1]
+    local item_id = split_str[2]
+    local item_info = global.all_items.types[item_type_id].items[item_id]
+    return item_info.type.."_"..item_info.name
+end
+
+function matrix_solver.get_item_names(items)
+    item_name_set = {}
+    for k, _ in pairs(items) do
+        local item_name = matrix_solver.get_item_name(k)
+        item_name_set[item_name] = true
+    end
+    return item_name_set
+end
+
 function matrix_solver.get_items(subfactory_data)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local desired_outputs = subfactory_metadata.desired_outputs
