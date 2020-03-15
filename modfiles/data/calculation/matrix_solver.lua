@@ -173,7 +173,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     end
 end
 
--- finds inputs and outputs for each lines and desired outputs
+-- finds inputs and outputs for each line and desired outputs
 function matrix_solver.get_subfactory_metadata(subfactory_data)
     local desired_outputs = {}
     for _, product in pairs(subfactory_data.top_level_products) do
@@ -287,9 +287,12 @@ function matrix_solver.get_line_aggregate(line_data, player_index, machine_count
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale
-    local amount_per_timescale = machine_count * timescale * line_data.machine_proto.speed / recipe_proto.energy
+    local machine_speed = line_data.machine_proto.speed
+    local speed_multipler = (1 + math.max(line_data.total_effects.speed, -0.8))
+    local productivity_multiplier = (1 + math.max(line_data.total_effects.productivity, 0))
+    local amount_per_timescale = machine_count * timescale * machine_speed * speed_multipler / recipe_proto.energy
     for _, product in pairs(recipe_proto.products) do
-        structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale)
+        structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
