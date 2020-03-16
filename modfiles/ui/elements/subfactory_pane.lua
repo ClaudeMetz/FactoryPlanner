@@ -255,12 +255,12 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
         
         refresh_current_activity(player)
 
-    elseif click == "left" then
+    --[[ elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
+            enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
         else
-            --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
-        end
+            ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
+        end ]]
     end
 end
