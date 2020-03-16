@@ -29,6 +29,13 @@ function matrix_solver.get_item_key(item_type_name, item_name)
     return tostring(item_type_id)..'_'..tostring(item_id)
 end
 
+function matrix_solver.get_item(item_key)
+    local split_str = cutil.split(item_key, "_")
+    local item_type_id = split_str[1]
+    local item_id = split_str[2]
+    return global.all_items.types[item_type_id].items[item_id]
+end
+
 -- this is really only used for debugging
 function matrix_solver.get_item_name(item_key)
     local split_str = cutil.split(item_key, "_")
@@ -49,13 +56,10 @@ end
 
 function matrix_solver.get_items(subfactory_data)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
-    local desired_outputs = subfactory_metadata.desired_outputs
-    local line_inputs = subfactory_metadata.line_inputs
-    local line_outputs = subfactory_metadata.line_outputs
-    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
-    local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
-    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
-    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
+    local all_items = subfactory_metadata.all_items
+    local raw_inputs = subfactory_metadata.raw_inputs
+    local by_products = subfactory_metadata.by_products
+    local unproduced_outputs = subfactory_metadata.unproduced_outputs
     local initial_free_variables = matrix_solver.union_sets(raw_inputs, by_products, unproduced_outputs)
     local initial_constrained_variables = matrix_solver.set_diff(all_items, initial_free_variables)
     return {
@@ -110,10 +114,7 @@ end
 
 function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
-    local desired_outputs = subfactory_metadata.desired_outputs
-    local line_inputs = subfactory_metadata.line_inputs
-    local line_outputs = subfactory_metadata.line_outputs
-    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
+    local all_items = subfactory_metadata.all_items
     local rows = matrix_solver.get_mapping_struct(all_items)
     local lines = {}
     for i=1, #subfactory_data.top_floor.lines do lines["line_"..i]=true end
@@ -137,12 +138,20 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
         local col_str = columns.values[col_num]
         local col_split_str = cutil.split(col_str, "_")
         local col_type = col_split_str[1]
-        if col_type == "item" then
-            -- local item_id = col_split_str[2].."_"..col_split_str[3]
-            -- local row_num = rows.map[item_id]
-            -- matrix[row_num][col_num] = 1
-        -- "line"
-        else
+        if col_type == "item" then -- free variable
+            local item_key = col_split_str[2].."_"..col_split_str[3]
+            local item = matrix_solver.get_item(item_key)
+            local amount = matrix[col_num][#columns.values+1]
+            if subfactory_metadata.unproduced_outputs[item_key] then
+                -- set_subfactory_result expects Products for _unproduced_ outputs
+                structures.aggregate.add(main_aggregate, "Product", item, amount)
+            elseif subfactory_metadata.by_products[item_key] then
+                -- set_subfactory_result expects _negative_ values for the byproducts
+                structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
+            elseif subfactory_metadata.raw_inputs[item_key] then
+                structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
+            end
+        else -- line
             -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
             local lines_table_id = col_split_str[2]
             local line = subfactory_data.top_floor.lines[lines_table_id]
@@ -150,7 +159,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
             local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
             local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, machine_count)
 
-            structures.aggregate.add_aggregate(line_aggregate, main_aggregate)
+            main_aggregate.energy_consumption = main_aggregate.energy_consumption + line_aggregate.energy_consumption
+            main_aggregate.pollution = main_aggregate.pollution + line_aggregate.pollution
 
             calculation.interface.set_line_result {
                 player_index = player.index,
@@ -211,10 +221,16 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
             end
         end
     end
+    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
+    local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
+    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
+    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
     result = {
         desired_outputs = desired_outputs,
-        line_inputs = line_inputs,
-        line_outputs = line_outputs
+        all_items = all_items,
+        raw_inputs = raw_inputs,
+        by_products = by_products,
+        unproduced_outputs = unproduced_outputs
     }
     return result
 end
