@@ -45,13 +45,13 @@ function matrix_solver.get_item_name(item_key)
     return item_info.type.."_"..item_info.name
 end
 
-function matrix_solver.get_item_names(items)
+function matrix_solver.llog_items(items)
     item_name_set = {}
     for k, _ in pairs(items) do
         local item_name = matrix_solver.get_item_name(k)
-        item_name_set[item_name] = true
+        item_name_set[item_name] = k
     end
-    return item_name_set
+    llog(item_name_set)
 end
 
 function matrix_solver.get_items(subfactory_data)
@@ -116,13 +116,29 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local rows = matrix_solver.get_mapping_struct(all_items)
-    local lines = {}
-    for i=1, #subfactory_data.top_floor.lines do lines["line_"..i]=true end
+
+    -- storing the line keys as "line_(lines index 1)_(lines index 2)_..." for arbitrary depths of subfloors
+    local function get_line_names(prefix, lines)
+        local line_names = {}
+        for i, line in ipairs(lines) do
+            local line_key = prefix.."_"..i
+            -- these are exclusive because only actual recipes are allowed to be inputs to the matrix solver
+            if line.subfloor == nil then
+                line_names[line_key] = true
+            else
+                local subfloor_line_names = get_line_names(line_key, line.subfloor.lines)
+                line_names = matrix_solver.union_sets(line_names, subfloor_line_names)
+            end
+        end
+        return line_names
+    end
+    local line_names = get_line_names("line", subfactory_data.top_floor.lines)
+
     local free_variables = {}
     for i, v in ipairs(variables.free) do
         free_variables["item_"..v] = true
     end
-    local col_set = matrix_solver.union_sets(lines, free_variables)
+    local col_set = matrix_solver.union_sets(line_names, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
@@ -152,9 +168,14 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
                 structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
             end
         else -- line
-            -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
-            local lines_table_id = col_split_str[2]
-            local line = subfactory_data.top_floor.lines[lines_table_id]
+            local floor = subfactory_data.top_floor
+            for i=2, #col_split_str-1 do
+                local line_table_id = col_split_str[i]
+                floor = floor.lines[line_table_id].subfloor
+            end
+            local line_table_id = col_split_str[#col_split_str]
+            local line = floor.lines[line_table_id]
+            local floor_id = floor.id
             local line_id = line.id
             local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
             local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, machine_count)
@@ -164,14 +185,13 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
 
             calculation.interface.set_line_result {
                 player_index = player.index,
-                floor_id = 1, --TODO: set this properly
+                floor_id = floor_id,
                 line_id = line_id,
                 machine_count = machine_count,
                 energy_consumption = line_aggregate.energy_consumption,
                 pollution = line_aggregate.pollution,
                 production_ratio = 1,
                 uncapped_production_ratio = 1,
-                -- see if this works
                 Product = line_aggregate.Product,
                 Byproduct = structures.class.init(),
                 Ingredient = line_aggregate.Ingredient,
@@ -197,11 +217,28 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
         local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
         desired_outputs[item_key] = true
     end
+    local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines, subfactory_data.player_index)
+    local line_inputs = lines_metadata.line_inputs
+    local line_outputs = lines_metadata.line_outputs
+    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
+    local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
+    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
+    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
+    result = {
+        desired_outputs = desired_outputs,
+        all_items = all_items,
+        raw_inputs = raw_inputs,
+        by_products = by_products,
+        unproduced_outputs = unproduced_outputs
+    }
+    return result
+end
 
+function matrix_solver.get_lines_metadata(lines, player_index)
     local line_inputs = {}
     local line_outputs = {}
-    for _, line in pairs(subfactory_data.top_floor.lines) do
-        line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, 1)
+    for _, line in pairs(lines) do
+        line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1)
         for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
             for item_name, _ in pairs(item_data) do
                 local item_key = matrix_solver.get_item_key(item_type_name, item_name)
@@ -220,19 +257,16 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
                 line_outputs[item_key] = true
             end
         end
+        if line.subfloor ~= nil then
+            floor_metadata = matrix_solver.get_lines_metadata(line.subfloor.lines, player_index)
+            line_inputs = matrix_solver.union_sets(line_inputs, floor_metadata.line_inputs)
+            line_outputs = matrix_solver.union_sets(line_outputs, floor_metadata.line_outputs)
+        end
     end
-    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
-    local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
-    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
-    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
-    result = {
-        desired_outputs = desired_outputs,
-        all_items = all_items,
-        raw_inputs = raw_inputs,
-        by_products = by_products,
-        unproduced_outputs = unproduced_outputs
+    return {
+        line_inputs = line_inputs,
+        line_outputs = line_outputs
     }
-    return result
 end
 
 function matrix_solver.get_matrix(subfactory_data, rows, columns)
@@ -260,10 +294,14 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
             local item_id = col_split_str[2].."_"..col_split_str[3]
             local row_num = rows.map[item_id]
             matrix[row_num][col_num] = 1
-        -- "line"
-        else
-            local line_id = col_split_str[2]
-            local line = subfactory_data.top_floor.lines[line_id]
+        else -- "line"
+            local floor = subfactory_data.top_floor
+            for i=2, #col_split_str-1 do
+                local line_table_id = col_split_str[i]
+                floor = floor.lines[line_table_id].subfloor
+            end
+            local line_table_id = col_split_str[#col_split_str]
+            local line = floor.lines[line_table_id]
 
             -- use amounts for 1 building as matrix entries
             line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, 1)
