@@ -64,7 +64,7 @@ end
 
 -- **** RecipeBook ****
 -- This indicates the version of the RecipeBook remote interface this is compatible with
---remote_actions.recipebook.version = 1
+remote_actions.recipebook.version = 1
 
 local source_data = {mod_name="factoryplanner", gui_name="main_dialog"}
 
