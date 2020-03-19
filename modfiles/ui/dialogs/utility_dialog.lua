@@ -54,10 +54,14 @@ function refresh_utility_components_structure(flow_modal_dialog, context)
         local table_components = table.add{type="table", column_count=10}
         for _, component in pairs(data) do
             if component.amount > 0 then
+                local singular_name = name:sub(1, -2)
+                local component_text = (component.amount == 1) and {"fp." .. singular_name} or {"fp." .. name}
+                local tooltip = {"", component.proto.localised_name, "\n" ..
+                  ui_util.format_number(component.amount, 4) .. " ", component_text}
+
                 local button = table_components.add{type="sprite-button", name=("sprite-button_" ..
-                  component.proto.name), sprite=component.proto.sprite, tooltip=component.proto.localised_name,
-                  style="fp_button_icon_medium_blank", enabled=false}
-                button.number = component.amount
+                  component.proto.name), sprite=component.proto.sprite, tooltip=tooltip,
+                  style="fp_button_icon_medium_blank", number=component.amount, enabled=false}
             end
         end
 
