@@ -146,6 +146,45 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
 
     local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
 
+    local function set_line_results(prefix, floor)
+        local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
+        for i, line in ipairs(floor.lines) do
+            local line_key = prefix.."_"..i
+            local line_aggregate = nil
+            if line.subfloor == nil then
+                local col_num = columns.map[line_key]
+                local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
+                line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count)
+            else
+                line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
+                matrix_solver.consolidate(line_aggregate)
+            end
+
+            -- this seems to be how the model sets the machine_count for subfloors - by the machine_count of the subfloor's top line
+            if i==1 then floor_aggregate.machine_count = line_aggregate.machine_count end
+
+            structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
+
+            calculation.interface.set_line_result {
+                player_index = player.index,
+                floor_id = floor.id,
+                line_id = line.id,
+                machine_count = line_aggregate.machine_count,
+                energy_consumption = line_aggregate.energy_consumption,
+                pollution = line_aggregate.pollution,
+                production_ratio = 1,
+                uncapped_production_ratio = 1,
+                Product = line_aggregate.Product,
+                Byproduct = structures.class.init(),
+                Ingredient = line_aggregate.Ingredient,
+                Fuel = line_aggregate.Fuel
+            }
+        end
+        return floor_aggregate
+    end
+
+    local top_floor_aggregate = set_line_results("line", subfactory_data.top_floor)
+
     -- need to call the following functions:
     -- calculation.interface.set_line_result for each line (see bottom of model.lua)
     -- calculation.interface.set_subfactory_result for summary results (see top of model.lua)
@@ -168,35 +207,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
                 structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
             end
         else -- line
-            local floor = subfactory_data.top_floor
-            for i=2, #col_split_str-1 do
-                local line_table_id = col_split_str[i]
-                floor = floor.lines[line_table_id].subfloor
-            end
-            local line_table_id = col_split_str[#col_split_str]
-            local line = floor.lines[line_table_id]
-            local floor_id = floor.id
-            local line_id = line.id
-            local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-            local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, machine_count)
-
-            main_aggregate.energy_consumption = main_aggregate.energy_consumption + line_aggregate.energy_consumption
-            main_aggregate.pollution = main_aggregate.pollution + line_aggregate.pollution
-
-            calculation.interface.set_line_result {
-                player_index = player.index,
-                floor_id = floor_id,
-                line_id = line_id,
-                machine_count = machine_count,
-                energy_consumption = line_aggregate.energy_consumption,
-                pollution = line_aggregate.pollution,
-                production_ratio = 1,
-                uncapped_production_ratio = 1,
-                Product = line_aggregate.Product,
-                Byproduct = structures.class.init(),
-                Ingredient = line_aggregate.Ingredient,
-                Fuel = line_aggregate.Fuel
-            }
+            -- set_line_results was moved earlier in order to handle subfloor results
         end
     end
 
@@ -209,6 +220,41 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
         Ingredient = main_aggregate.Ingredient
     }
 end
+
+-- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.
+-- If the input and output are identical to within rounding error, delete from both.
+-- This is mainly for calculating line aggregates with subfloors for the matrix solver.
+function matrix_solver.consolidate(aggregate)
+    -- Items cannot be both products or byproducts, but they can be both ingredients and fuels.
+    -- In the case that an item appears as an output, an ingredient, and a fuel, delete from fuel first.
+    local function compare_classes(input_class, output_class)
+        for type, type_table in pairs(aggregate[output_class]) do
+            for item, output_amount in pairs(type_table) do
+                if aggregate[input_class][type] ~= nil then
+                    if aggregate[input_class][type][item] ~= nil then
+                        local input_amount = aggregate[input_class][type][item]
+                        net_amount = output_amount - input_amount
+                        if net_amount > 0.01 then
+                            aggregate[input_class][type][item] = nil
+                            structures.aggregate.subtract(aggregate, output_class, item, input_amount)
+                        elseif net_amount < -0.01 then
+                            aggregate.Product[type][item] = nil
+                            structures.aggregate.subtract(aggregate, input_class, item, output_amount)
+                        else
+                            aggregate[input_class][type][item] = nil
+                            aggregate.Product[type][item] = nil
+                        end
+                    end
+                end
+            end
+        end
+    end
+    compare_classes("Fuel", "Product")
+    compare_classes("Fuel", "Byproduct")
+    compare_classes("Ingredient", "Product")
+    compare_classes("Ingredient", "Byproduct")
+end
+
 
 -- finds inputs and outputs for each line and desired outputs
 function matrix_solver.get_subfactory_metadata(subfactory_data)
@@ -238,7 +284,7 @@ function matrix_solver.get_lines_metadata(lines, player_index)
     local line_inputs = {}
     local line_outputs = {}
     for _, line in pairs(lines) do
-        line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1)
+        line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1)
         for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
             for item_name, _ in pairs(item_data) do
                 local item_key = matrix_solver.get_item_key(item_type_name, item_name)
@@ -304,7 +350,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
             local line = floor.lines[line_table_id]
 
             -- use amounts for 1 building as matrix entries
-            line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, 1)
+            line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, 1)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -343,8 +389,9 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
     return matrix
 end
 
-function matrix_solver.get_line_aggregate(line_data, player_index, machine_count)
-    local line_aggregate = structures.aggregate.init(player_index, 1)
+function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, machine_count)
+    local line_aggregate = structures.aggregate.init(player_index, floor_id)
+    line_aggregate.machine_count = machine_count
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale

@@ -40,6 +40,23 @@ function structures.aggregate.combine_classes(aggregate, main_class_name, second
     end
 end
 
+function structures.aggregate.add_aggregate(from_aggregate, to_aggregate)
+    to_aggregate.energy_consumption = to_aggregate.energy_consumption + from_aggregate.energy_consumption
+    to_aggregate.pollution = to_aggregate.pollution + from_aggregate.pollution
+    for _, item in ipairs(structures.class.to_array(from_aggregate.Product)) do
+        structures.aggregate.add(to_aggregate, "Product", item)
+    end
+    for _, item in ipairs(structures.class.to_array(from_aggregate.Byproduct)) do
+        structures.aggregate.add(to_aggregate, "Byproduct", item)
+    end
+    for _, item in ipairs(structures.class.to_array(from_aggregate.Ingredient)) do
+        structures.aggregate.add(to_aggregate, "Ingredient", item)
+    end
+    for _, item in ipairs(structures.class.to_array(from_aggregate.Fuel)) do
+        structures.aggregate.add(to_aggregate, "Fuel", item)
+    end
+end
+
 function structures.class.init()
     return {
         item = {},
