@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
-    - 
+    - Added exact numbers to the utility dialog machine/module tooltips
   Bugfixes:
     - 
 
