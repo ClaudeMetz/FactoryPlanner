@@ -185,36 +185,30 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
 
     local top_floor_aggregate = set_line_results("line", subfactory_data.top_floor)
 
-    -- need to call the following functions:
-    -- calculation.interface.set_line_result for each line (see bottom of model.lua)
-    -- calculation.interface.set_subfactory_result for summary results (see top of model.lua)
-    -- both of these require creating aggregate and class objects from structures.lua
-    for col_num=1, #columns.values do
-        local col_str = columns.values[col_num]
-        local col_split_str = cutil.split(col_str, "_")
-        local col_type = col_split_str[1]
-        if col_type == "item" then -- free variable
-            local item_key = col_split_str[2].."_"..col_split_str[3]
-            local item = matrix_solver.get_item(item_key)
-            local amount = matrix[col_num][#columns.values+1]
-            if subfactory_metadata.unproduced_outputs[item_key] then
-                -- set_subfactory_result expects Products for _unproduced_ outputs
-                structures.aggregate.add(main_aggregate, "Product", item, amount)
-            elseif subfactory_metadata.by_products[item_key] then
-                -- set_subfactory_result expects _negative_ values for the byproducts
-                structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
-            elseif subfactory_metadata.raw_inputs[item_key] then
-                structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
-            end
-        else -- line
-            -- set_line_results was moved earlier in order to handle subfloor results
+    -- set main_aggregate free variables
+    for item_line_key, _ in pairs(free_variables) do
+        local col_num = columns.map[item_line_key]
+        local split_str = cutil.split(item_line_key, "_")
+        local item_key = split_str[2].."_"..split_str[3]
+        local item = matrix_solver.get_item(item_key)
+        local amount = matrix[col_num][#columns.values+1]
+        if subfactory_metadata.desired_outputs[item_key] then
+            -- When calling set_subfactory_result we set products for items that were _not_ produced.
+            -- If a free product is non-zero that implies it wasn't created by the subfactory.
+            structures.aggregate.add(main_aggregate, "Product", item, amount)
+        elseif amount < 0 then
+            -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
+            -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
+            structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
+        else
+            structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
         end
     end
 
     calculation.interface.set_subfactory_result {
         player_index = subfactory_data.player_index,
-        energy_consumption = main_aggregate.energy_consumption,
-        pollution = main_aggregate.pollution,
+        energy_consumption = top_floor_aggregate.energy_consumption,
+        pollution = top_floor_aggregate.pollution,
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient
