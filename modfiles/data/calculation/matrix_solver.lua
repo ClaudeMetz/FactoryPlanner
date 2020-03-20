@@ -154,7 +154,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
                 local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-                line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count)
+                line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, subfactory_metadata)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_solver.consolidate(line_aggregate)
@@ -175,7 +175,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
                 production_ratio = 1,
                 uncapped_production_ratio = 1,
                 Product = line_aggregate.Product,
-                Byproduct = structures.class.init(),
+                Byproduct = line_aggregate.Byproduct,
                 Ingredient = line_aggregate.Ingredient,
                 Fuel = line_aggregate.Fuel
             }
@@ -383,7 +383,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
     return matrix
 end
 
-function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, machine_count)
+function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, machine_count, subfactory_metadata)
     local line_aggregate = structures.aggregate.init(player_index, floor_id)
     line_aggregate.machine_count = machine_count
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
@@ -394,7 +394,12 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local productivity_multiplier = (1 + math.max(line_data.total_effects.productivity, 0))
     local amount_per_timescale = machine_count * timescale * machine_speed * speed_multipler / recipe_proto.energy
     for _, product in pairs(recipe_proto.products) do
-        structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)
+        local item_key = matrix_solver.get_item_key(product.type, product.name)
+        if subfactory_metadata~= nil and subfactory_metadata.by_products[item_key] then
+            structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale * productivity_multiplier)
+        else
+            structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)
+        end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
         structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
