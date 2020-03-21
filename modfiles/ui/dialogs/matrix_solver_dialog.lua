@@ -24,7 +24,7 @@ function open_matrix_solver_dialog(flow_modal_dialog, modal_data)
 
     flow.add{type="label", name="label_num_rows"}
     flow.add{type="label", name="label_num_cols"}
-    
+
     refresh_matrix_solver_items(flow_modal_dialog, modal_data)
 end
 
@@ -40,6 +40,32 @@ function close_matrix_solver_dialog(flow_modal_dialog, action, data)
         eliminated = modal_data.eliminated_items
     }
     calculation.run_matrix_solver(player, subfactory, variables)
+end
+
+function get_matrix_solver_condition_instructions(modal_data)
+    return {
+        data = {
+            num_rows = (function(flow_modal_dialog)
+                local num_rows_text = flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption
+                local split_text = cutil.split(num_rows_text, " ") -- this seems pretty hacky
+                llog(split_text)
+                return split_text[3]
+            end),
+            num_cols = (function(flow_modal_dialog)
+                local num_cols_text = flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption
+                local split_text = cutil.split(num_cols_text, " ") -- this seems pretty hacky
+                llog(split_text)
+                return split_text[3]
+            end)
+        },
+        conditions = {
+            [1] = {
+                label = "Number of rows must match number of columns",
+                check = (function(data) return (data.num_rows ~= data.num_cols) end),
+                show_on_edit=true -- not sure what this does
+            }
+        }
+    }
 end
 
 -- item_variable_type is either "eliminated" or "free"
