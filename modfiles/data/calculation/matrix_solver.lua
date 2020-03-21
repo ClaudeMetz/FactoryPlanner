@@ -54,7 +54,7 @@ function matrix_solver.llog_items(items)
     llog(item_name_set)
 end
 
-function matrix_solver.get_items(subfactory_data)
+function matrix_solver.get_modal_data(subfactory_data)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local raw_inputs = subfactory_metadata.raw_inputs
@@ -63,8 +63,12 @@ function matrix_solver.get_items(subfactory_data)
     local initial_free_variables = matrix_solver.union_sets(raw_inputs, by_products, unproduced_outputs)
     local initial_constrained_variables = matrix_solver.set_diff(all_items, initial_free_variables)
     return {
-        free = matrix_solver.set_to_ordered_list(initial_free_variables),
-        constrained = matrix_solver.set_to_ordered_list(initial_constrained_variables)
+        recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
+        ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
+        products = matrix_solver.set_to_ordered_list(subfactory_metadata.desired_outputs),
+        by_products = matrix_solver.set_to_ordered_list(subfactory_metadata.by_products),
+        free_items = matrix_solver.set_to_ordered_list(initial_free_variables),
+        constrained_items = matrix_solver.set_to_ordered_list(initial_constrained_variables)
     }
 end
 
@@ -265,6 +269,7 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
     local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
     local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
     result = {
+        recipes = lines_metadata.line_recipes,
         desired_outputs = desired_outputs,
         all_items = all_items,
         raw_inputs = raw_inputs,
@@ -275,9 +280,11 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
 end
 
 function matrix_solver.get_lines_metadata(lines, player_index)
+    local line_recipes = {}
     local line_inputs = {}
     local line_outputs = {}
     for _, line in pairs(lines) do
+        line_recipes[line.recipe_proto.id] = true
         line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1)
         for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
             for item_name, _ in pairs(item_data) do
@@ -304,6 +311,7 @@ function matrix_solver.get_lines_metadata(lines, player_index)
         end
     end
     return {
+        line_recipes = line_recipes,
         line_inputs = line_inputs,
         line_outputs = line_outputs
     }

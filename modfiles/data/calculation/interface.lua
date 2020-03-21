@@ -11,12 +11,11 @@ calculation = {
 -- scottmsul note: why is refresh an optional parameter to calculation.update? Should it be a parameter here? For now always refresh.
 function calculation.start_matrix_solver(player, subfactory)
     local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-    local subfactory_items = matrix_solver.get_items(subfactory_data)
-    items = matrix_solver.get_items(subfactory_data)
+    local modal_data = matrix_solver.get_modal_data(subfactory_data)
     local dialog_settings = {
         type = "matrix_solver",
         submit = true,
-        modal_data = { items=items }
+        modal_data = modal_data
     }
     enter_modal_dialog(player, dialog_settings)
 end
