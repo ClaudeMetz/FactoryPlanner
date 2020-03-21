@@ -58,10 +58,10 @@ function matrix_solver.get_modal_data(subfactory_data)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local raw_inputs = subfactory_metadata.raw_inputs
-    local by_products = subfactory_metadata.by_products
+    local byproducts = subfactory_metadata.byproducts
     local unproduced_outputs = subfactory_metadata.unproduced_outputs
     local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
-    local free_variables = matrix_solver.union_sets(raw_inputs, by_products, unproduced_outputs)
+    local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
     local initial_eliminated_variables = matrix_solver.set_diff(all_items, free_variables)
     -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
     initial_eliminated_variables = matrix_solver.set_diff(initial_eliminated_variables, produced_outputs)
@@ -69,7 +69,7 @@ function matrix_solver.get_modal_data(subfactory_data)
         recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
         ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
         products = matrix_solver.set_to_ordered_list(produced_outputs),
-        by_products = matrix_solver.set_to_ordered_list(subfactory_metadata.by_products),
+        byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
         eliminated_items = matrix_solver.set_to_ordered_list(initial_eliminated_variables),
         free_items = {} -- always start empty, but allow the user to select
     }
@@ -141,7 +141,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     end
     local line_names = get_line_names("line", subfactory_data.top_floor.lines)
 
-    local raw_free_variables = matrix_solver.union_sets(subfactory_metadata.raw_inputs, subfactory_metadata.by_products, subfactory_metadata.unproduced_outputs)
+    local raw_free_variables = matrix_solver.union_sets(subfactory_metadata.raw_inputs, subfactory_metadata.byproducts, subfactory_metadata.unproduced_outputs)
     local free_variables = {}
     for k, _ in pairs(raw_free_variables) do
         free_variables["item_"..k] = true
@@ -273,14 +273,14 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
     local line_outputs = lines_metadata.line_outputs
     local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
     local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
-    local by_products = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
+    local byproducts = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
     local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
     result = {
         recipes = lines_metadata.line_recipes,
         desired_outputs = desired_outputs,
         all_items = all_items,
         raw_inputs = raw_inputs,
-        by_products = by_products,
+        byproducts = byproducts,
         unproduced_outputs = unproduced_outputs
     }
     return result
@@ -410,7 +410,7 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local amount_per_timescale = machine_count * timescale * machine_speed * speed_multipler / recipe_proto.energy
     for _, product in pairs(recipe_proto.products) do
         local item_key = matrix_solver.get_item_key(product.type, product.name)
-        if subfactory_metadata~= nil and subfactory_metadata.by_products[item_key] then
+        if subfactory_metadata~= nil and subfactory_metadata.byproducts[item_key] then
             structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale * productivity_multiplier)
         else
             structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)

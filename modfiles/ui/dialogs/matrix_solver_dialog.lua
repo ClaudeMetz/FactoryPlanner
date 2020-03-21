@@ -13,8 +13,8 @@ function open_matrix_solver_dialog(flow_modal_dialog, modal_data)
     flow.add{type="label", name="label_products", caption={"fp.matrix_solver_products"}}
     flow.add{type="flow", name="flow_matrix_solver_products", direction="horizontal"}
 
-    flow.add{type="label", name="label_by_products", caption={"fp.matrix_solver_by_products"}}
-    flow.add{type="flow", name="flow_matrix_solver_by_products", direction="horizontal"}
+    flow.add{type="label", name="label_byproducts", caption={"fp.matrix_solver_byproducts"}}
+    flow.add{type="flow", name="flow_matrix_solver_byproducts", direction="horizontal"}
 
     flow.add{type="label", name="label_eliminated_items", caption={"fp.matrix_solver_eliminated"}}
     flow.add{type="flow", name="flow_matrix_solver_eliminated_items", direction="horizontal"}
@@ -125,11 +125,11 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data)
         product_buttons.add(get_item_button(item_id, "product", "fp_button_icon_large_blank"))
     end
 
-    local by_product_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_by_products"]
-    local by_products = modal_data.by_products
-    by_product_buttons.clear()
-    for _, item_id in ipairs(by_products) do
-        by_product_buttons.add(get_item_button(item_id, "by_product", "fp_button_icon_large_blank"))
+    local byproduct_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_byproducts"]
+    local byproducts = modal_data.byproducts
+    byproduct_buttons.clear()
+    for _, item_id in ipairs(byproducts) do
+        byproduct_buttons.add(get_item_button(item_id, "byproduct", "fp_button_icon_large_blank"))
     end
 
     local free_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_free_items"]
@@ -146,9 +146,9 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data)
         eliminated_buttons.add(get_item_button(item_id, "eliminated", nil))
     end
 
-    local num_rows = #ingredients + #products + #by_products + #eliminated_items + #free_items
+    local num_rows = #ingredients + #products + #byproducts + #eliminated_items + #free_items
     flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption = "Total Rows: "..num_rows
-    local num_cols = #recipes + #ingredients + #by_products + #free_items
+    local num_cols = #recipes + #ingredients + #byproducts + #free_items
     flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption = "Total Columns: "..num_cols
 end
 
