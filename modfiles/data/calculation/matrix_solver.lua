@@ -60,15 +60,18 @@ function matrix_solver.get_modal_data(subfactory_data)
     local raw_inputs = subfactory_metadata.raw_inputs
     local by_products = subfactory_metadata.by_products
     local unproduced_outputs = subfactory_metadata.unproduced_outputs
-    local initial_free_variables = matrix_solver.union_sets(raw_inputs, by_products, unproduced_outputs)
-    local initial_constrained_variables = matrix_solver.set_diff(all_items, initial_free_variables)
+    local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
+    local free_variables = matrix_solver.union_sets(raw_inputs, by_products, unproduced_outputs)
+    local initial_eliminated_variables = matrix_solver.set_diff(all_items, free_variables)
+    -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
+    initial_eliminated_variables = matrix_solver.set_diff(initial_eliminated_variables, produced_outputs)
     return {
         recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
         ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
-        products = matrix_solver.set_to_ordered_list(subfactory_metadata.desired_outputs),
+        products = matrix_solver.set_to_ordered_list(produced_outputs),
         by_products = matrix_solver.set_to_ordered_list(subfactory_metadata.by_products),
-        free_items = matrix_solver.set_to_ordered_list(initial_free_variables),
-        constrained_items = matrix_solver.set_to_ordered_list(initial_constrained_variables)
+        eliminated_items = matrix_solver.set_to_ordered_list(initial_eliminated_variables),
+        free_items = {} -- always start empty, but allow the user to select
     }
 end
 
@@ -138,7 +141,11 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     end
     local line_names = get_line_names("line", subfactory_data.top_floor.lines)
 
+    local raw_free_variables = matrix_solver.union_sets(subfactory_metadata.raw_inputs, subfactory_metadata.by_products, subfactory_metadata.unproduced_outputs)
     local free_variables = {}
+    for k, _ in pairs(raw_free_variables) do
+        free_variables["item_"..k] = true
+    end
     for i, v in ipairs(variables.free) do
         free_variables["item_"..v] = true
     end

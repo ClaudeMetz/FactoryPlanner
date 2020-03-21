@@ -6,16 +6,25 @@ function open_matrix_solver_dialog(flow_modal_dialog, modal_data)
     end
     flow.add{type="label", name="label_recipes", caption={"fp.matrix_solver_recipes"}}
     flow.add{type="flow", name="flow_matrix_solver_recipes", direction="horizontal"}
+
     flow.add{type="label", name="label_ingredients", caption={"fp.matrix_solver_ingredients"}}
     flow.add{type="flow", name="flow_matrix_solver_ingredients", direction="horizontal"}
+
     flow.add{type="label", name="label_products", caption={"fp.matrix_solver_products"}}
     flow.add{type="flow", name="flow_matrix_solver_products", direction="horizontal"}
+
     flow.add{type="label", name="label_by_products", caption={"fp.matrix_solver_by_products"}}
     flow.add{type="flow", name="flow_matrix_solver_by_products", direction="horizontal"}
+
+    flow.add{type="label", name="label_eliminated_items", caption={"fp.matrix_solver_eliminated"}}
+    flow.add{type="flow", name="flow_matrix_solver_eliminated_items", direction="horizontal"}
+
     flow.add{type="label", name="label_free_items", caption={"fp.matrix_solver_free"}}
     flow.add{type="flow", name="flow_matrix_solver_free_items", direction="horizontal"}
-    flow.add{type="label", name="label_constrained_items", caption={"fp.matrix_solver_constrained"}}
-    flow.add{type="flow", name="flow_matrix_solver_constrained_items", direction="horizontal"}
+
+    flow.add{type="label", name="label_num_rows"}
+    flow.add{type="label", name="label_num_cols"}
+    
     refresh_matrix_solver_items(flow_modal_dialog, modal_data)
 end
 
@@ -26,15 +35,14 @@ function close_matrix_solver_dialog(flow_modal_dialog, action, data)
     local modal_data = ui_state.modal_data
     local subfactory = ui_state.context.subfactory
 
-    -- what gets passed in here?
     local variables = {
         free = modal_data.free_items,
-        constrained = modal_data.constrained_items
+        eliminated = modal_data.eliminated_items
     }
     calculation.run_matrix_solver(player, subfactory, variables)
 end
 
--- item_variable_type is either "constrained" or "free"
+-- item_variable_type is either "eliminated" or "free"
 function get_item_button(item_id, item_variable_type, style)
     return {
         type="sprite-button",
@@ -51,21 +59,21 @@ function get_sprite(item_id)
     return global.all_items.types[item_type_id].items[item_id].sprite
 end
 
-function handle_matrix_solver_item_press(player, item_variable_type, item_id)
+function handle_matrix_solver_free_item_press(player, item_id)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
+    remove(modal_data.free_items, item_id)
+    insert(modal_data.eliminated_items, item_id)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
-    local old_variable_table
-    local new_variable_table
-    if item_variable_type == "free" then
-        old_variable_table = modal_data.free_items
-        new_variable_table = modal_data.constrained_items
-    else
-        old_variable_table = modal_data.constrained_items
-        new_variable_table = modal_data.free_items
-    end
-    remove(old_variable_table, item_id)
-    insert(new_variable_table, item_id)
+    refresh_matrix_solver_items(flow_modal_dialog, modal_data)
+end
+
+function handle_matrix_solver_eliminated_item_press(player, item_id)
+    local ui_state = get_ui_state(player)
+    local modal_data = ui_state.modal_data
+    remove(modal_data.eliminated_items, item_id)
+    insert(modal_data.free_items, item_id)
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     refresh_matrix_solver_items(flow_modal_dialog, modal_data)
 end
 
@@ -107,12 +115,17 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data)
         free_buttons.add(get_item_button(item_id, "free", nil))
     end
 
-    local constrained_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_constrained_items"]
-    local constrained_items = modal_data.constrained_items
-    constrained_buttons.clear()
-    for _, item_id in ipairs(constrained_items) do
-        constrained_buttons.add(get_item_button(item_id, "constrained", nil))
+    local eliminated_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_eliminated_items"]
+    local eliminated_items = modal_data.eliminated_items
+    eliminated_buttons.clear()
+    for _, item_id in ipairs(eliminated_items) do
+        eliminated_buttons.add(get_item_button(item_id, "eliminated", nil))
     end
+
+    local num_rows = #ingredients + #products + #by_products + #eliminated_items + #free_items
+    flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption = "Total Rows: "..num_rows
+    local num_cols = #recipes + #ingredients + #by_products + #free_items
+    flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption = "Total Columns: "..num_cols
 end
 
 -- utility function that removes from a sorted array in place
