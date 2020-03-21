@@ -48,13 +48,11 @@ function get_matrix_solver_condition_instructions(modal_data)
             num_rows = (function(flow_modal_dialog)
                 local num_rows_text = flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption
                 local split_text = cutil.split(num_rows_text, " ") -- this seems pretty hacky
-                llog(split_text)
                 return split_text[3]
             end),
             num_cols = (function(flow_modal_dialog)
                 local num_cols_text = flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption
                 local split_text = cutil.split(num_cols_text, " ") -- this seems pretty hacky
-                llog(split_text)
                 return split_text[3]
             end)
         },
