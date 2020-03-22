@@ -412,9 +412,18 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale
     local machine_speed = line_data.machine_proto.speed
-    local speed_multipler = (1 + math.max(line_data.total_effects.speed, -0.8))
+    local speed_multiplier = (1 + math.max(line_data.total_effects.speed, -0.8))
     local productivity_multiplier = (1 + math.max(line_data.total_effects.productivity, 0))
-    local amount_per_timescale = machine_count * timescale * machine_speed * speed_multipler / recipe_proto.energy
+    local energy = recipe_proto.energy
+    -- hacky workaround for recipes with zero energy - this really messes up the matrix
+    if energy==0 then energy=0.000000001 end
+    local time_per_craft = energy / (machine_speed * speed_multiplier)
+    if recipe_proto.name == "rocket-part" then
+        -- extra time for launch sequence
+        -- the factorio wiki says 40.33, but I saw this elsewhere in the code (and this agrees with the online factorio calculator). Not sure which is correct.
+        time_per_craft = time_per_craft + 41.25/100
+    end
+    local amount_per_timescale = machine_count * timescale / time_per_craft
     for _, product in pairs(recipe_proto.products) do
         local item_key = matrix_solver.get_item_key(product.type, product.name)
         if subfactory_metadata~= nil and subfactory_metadata.byproducts[item_key] then
