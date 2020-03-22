@@ -6,19 +6,21 @@ Algorithm Overview
 ------------------
 The algorithm is based on the post here: https://kirkmcdonald.github.io/posts/calculation.html
 We solve the matrix equation Ax = b, where:
-    - A is a matrix whose entry in row i and col j is the output/sec/building for item i and recipe j (negative is input, positive is output)
+    - A is a matrix whose entry in row i and col j is the output/timescale/building for item i and recipe j (negative is input, positive is output)
     - x is the vector of unknowns that we're solving for, and whose jth entry will be the # buildings needed for recipe j
-    - b is the vector of whose ith entry is the desired output/sec for item i
+    - b is the vector whose ith entry is the desired output/timescale for item i
 Note the current implementation requires a square matrix.
 If there are more recipes than items, the problem is under-constrained and some recipes must be deleted.
 If there are more items than recipes, the problem is over-constrained (this is more common).
-    In this case we can construct "pseudo-recipes" for certrain items that produce 1/sec/"building".
+    In this case we can construct "pseudo-recipes" for certrain items that produce 1/timescale/"building".
     Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or output after solving.
-    The "solution" will be equal to the extra input or output for that item.
-    Typically these pseudo-recipes will be for external inputs or non-recycled by-products.
+    The solved "number of buildings" will be equal to the extra input or output needed for that item.
+    Typically these pseudo-recipes will be for external inputs or non-fully-recycled byproducts.
 Currently the algorithm assumes any item which is part of at least one input and one output in any recipe is not a free variable,
-    though this could be updated to make the choice free variables more customizable.
-If a recipe has loops, typically the user needs to make voids.
+    though the user can click on constrained items in the matrix dialog to make them free variables.
+    The dialog calls constrained intermediate items "eliminated" since their output is constrained to zero.
+If a recipe has loops, typically the user needs to make voids or free variables.
+    Note that currently the factory planner doesn't do anything if a user clicks on byproducts, so at this time it is impossible to make voids.
 --]]
 matrix_solver = {}
 
