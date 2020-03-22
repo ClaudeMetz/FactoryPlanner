@@ -7,25 +7,6 @@ function open_utility_dialog(flow_modal_dialog)
     create_utility_notes_structure(flow_modal_dialog, context)
 end
 
--- Handles closing of the utility dialog
-function close_utility_dialog(flow_modal_dialog, action, data)
-    if action == "submit" then
-        local player = game.get_player(flow_modal_dialog.player_index)
-        local subfactory = get_context(player).subfactory
-        subfactory.notes = data.notes
-        refresh_utility_table(player, subfactory)
-    end
-end
-
--- Returns all necessary instructions to create and run conditions on the modal dialog
-function get_utility_condition_instructions()
-    return {
-        data = {
-            notes = (function(flow_modal_dialog) return flow_modal_dialog["flow_notes"]["text-box_notes"].text end)
-        },
-        conditions = nil
-    }
-end
 
 -- Adds a titlebar for the given type of utility, optionally including a scope switch
 local function add_utility_titlebar(flow, type, tooltip, scope, context)
@@ -49,16 +30,6 @@ local function add_utility_titlebar(flow, type, tooltip, scope, context)
           left_label_caption={"fp.csubfactory"}, right_label_caption={"fp.floor"}}
     end
 end
-
--- Handles the changing of the given scope by the user
-function handle_utility_scope_change(player, type, state)
-    local context = get_context(player)
-    Subfactory.set_scope(context.subfactory, type, state)
-
-    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
-    _G["refresh_utility_" .. type .. "_structure"](flow_modal_dialog, context)
-end
-
 
 -- Refreshes the flow displaying the appropriate subfactory/floor components
 function refresh_utility_components_structure(flow_modal_dialog, context)
@@ -108,8 +79,25 @@ function create_utility_notes_structure(flow_modal_dialog, context)
 
     add_utility_titlebar(flow, "notes", false, false, context)
     
-    local text_box = flow.add{type="text-box", name="text-box_notes", text=context.subfactory.notes}
+    local text_box = flow.add{type="text-box", name="fp_text-box_notes", text=context.subfactory.notes}
     text_box.style.width = 500
     text_box.style.height = 250
     text_box.word_wrap = true
+end
+
+
+-- Handles the changing of the given scope by the user
+function handle_utility_scope_change(player, type, state)
+    local context = get_context(player)
+    Subfactory.set_scope(context.subfactory, type, state)
+
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
+    _G["refresh_utility_" .. type .. "_structure"](flow_modal_dialog, context)
+end
+
+-- Handles changes to the subfactory notes
+function handle_notes_change(player, textbox)
+    local subfactory = get_context(player).subfactory
+    subfactory.notes = textbox.text
+    refresh_utility_table(player, subfactory)
 end

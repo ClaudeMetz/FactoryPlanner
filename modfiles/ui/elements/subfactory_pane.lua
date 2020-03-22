@@ -110,7 +110,7 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
     local ui_name = class:gsub("^%u", string.lower)
     local view_name = ui_state.view_state.selected_view.name
 
-    local round_belts = (view_name == "belts_or_lanes" and player_table.settings.round_button_numbers)
+    local round_belts = (view_name == "belts_or_lanes" and player_table.preferences.round_button_numbers)
     local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, ("tl_" .. ui_name), true)
     local style = "fp_button_icon_large_blank"  -- will remain untouched if the display mode is 'floor_total'
 
@@ -118,8 +118,8 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
         local item_amount = (display_mode == "standard" and class == "Product") and item.required_amount or item.amount
         local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item_amount, nil)
-          
-        if display_amount ~= nil and display_amount > margin_of_error then
+
+        if display_amount == nil or display_amount > margin_of_error then
             local secondary_number = ""
 
             if display_mode == "standard" then
@@ -146,9 +146,13 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
                 end
             end
 
-            local number_line = {"", ui_util.format_number(display_amount, 4) .. " ", appendage}
-            local tooltip = {"", item.proto.localised_name, "\n" .. secondary_number, number_line, tutorial_tooltip}
-            local button_number = (round_belts) and math.ceil(display_amount) or display_amount
+            local number_line, button_number = "", nil
+            if display_amount ~= nil then  -- Don't show a number if no display_amount was determined (fluids)
+                number_line = {"", "\n" .. secondary_number .. ui_util.format_number(display_amount, 4)
+                  .. " ", appendage}
+                button_number = (round_belts) and math.ceil(display_amount) or display_amount
+            end
+            local tooltip = {"", item.proto.localised_name, number_line, tutorial_tooltip}
 
             local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
               .. item.id, sprite=item.proto.sprite, number=button_number, tooltip=tooltip,
@@ -158,20 +162,27 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
 end
 
 
--- Opens clicked element in FNEI or shifts it left or right
+-- Handles click on a subfactory pane ingredient button
 function handle_ingredient_element_click(player, ingredient_id, click, direction, action, alt)
     local subfactory = get_context(player).subfactory
     local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
 
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(ingredient, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=ingredient.proto, click=click})
         
     elseif ui_util.check_archive_status(player) then 
         return
         
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(subfactory, ingredient, direction)
-        refresh_item_table(player, "Ingredient")
+        if Subfactory.shift(subfactory, ingredient, direction) then
+            refresh_item_table(player, "Ingredient")
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lingredient"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
     end
 end
 
@@ -181,15 +192,22 @@ function handle_product_element_click(player, product_id, click, direction, acti
     local subfactory = context.subfactory
     local product = Subfactory.get(subfactory, "Product", product_id)
 
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(product, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=product.proto, click=click})
         
     elseif ui_util.check_archive_status(player) then
         return
 
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(subfactory, product, direction)
-        refresh_item_table(player, "Product")
+        if Subfactory.shift(subfactory, product, direction) then
+            refresh_item_table(player, "Product")
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lproduct"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
 
     else
         if click == "left" then
@@ -217,25 +235,32 @@ end
 
 -- Handles click on a subfactory pane byproduct button
 function handle_byproduct_element_click(player, byproduct_id, click, direction, action, alt)
-    local context = get_context(player)
-    local byproduct = Subfactory.get(context.subfactory, "Byproduct", byproduct_id)
+    local subfactory = get_context(player).subfactory
+    local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
     
-    if alt then  -- Open item in FNEI
-        ui_util.fnei.show_item(byproduct, click)
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=byproduct.proto, click=click})
 
     elseif ui_util.check_archive_status(player) then 
         return
 
     elseif direction ~= nil then  -- Shift product in the given direction
-        Subfactory.shift(context.subfactory, byproduct, direction)
-        refresh_item_table(player, "Byproduct")
+        if Subfactory.shift(subfactory, byproduct, direction) then
+            refresh_item_table(player, "Byproduct")
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lbyproduct"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
 
-    elseif click == "left" then
+    --[[ elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            --enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
+            enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
         else
-            --ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
-        end
+            ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
+        end ]]
     end
 end

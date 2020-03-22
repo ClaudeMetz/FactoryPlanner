@@ -69,7 +69,7 @@ function Floor.get_in_order(self, class, reverse)
 end
 
 function Floor.shift(self, dataset, direction)
-    Collection.shift(self[dataset.class], dataset, direction)
+    return Collection.shift(self[dataset.class], dataset, direction)
 end
 
 

@@ -98,6 +98,8 @@ function data_util.machine.change(player, line, machine, direction)
                 local new_machine = category.machines[proto.id + 1]
                 return data_util.machine.change(player, line, new_machine, nil)
             else
+                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
+                ui_util.message.enqueue(player, message, "error", 1, false)
                 return false
             end
         else  -- direction == "negative"
@@ -105,6 +107,8 @@ function data_util.machine.change(player, line, machine, direction)
                 local new_machine = category.machines[proto.id - 1]
                 return data_util.machine.change(player, line, new_machine, nil)
             else
+                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
+                ui_util.message.enqueue(player, message, "error", 1, false)
                 return false            
             end
         end
@@ -161,4 +165,11 @@ function data_util.run_invalid_dataset_repair(player, parent, classes)
     for type, class in pairs(classes) do
         Collection.repair_invalid_datasets(parent[type], player, class, parent)
     end
+end
+
+
+-- Returns the alt_action if it is valid, returns the default otherwise
+function data_util.update_alt_action(alt_action)
+    if alt_action ~= nil and global.alt_actions[alt_action] then return alt_action
+    else return "none" end
 end

@@ -35,7 +35,7 @@ function item_picker.create(parent)
     table_item_groups.style.vertical_spacing = 3
     table_item_groups.style.minimal_width = item_picker.groups_per_row * (64 + 9)
 
-    local undesirables = generator.undesirable_item_groups()
+    local undesirable_item_groups = {["creative-mod_creative-tools"]=false, ["im-tools"]=false}
     local group_id_cache, group_button_cache, subgroup_flow_cache, subgroup_table_cache = {}, {}, {}, {}
 
     for _, item in ipairs(sorted_items) do  -- global variable
@@ -47,7 +47,7 @@ function item_picker.create(parent)
             group_id = cache_count
         end
 
-        if undesirables[group_name] == nil then  -- ignore undesirable item groups
+        if undesirable_item_groups[group_name] == nil then
             local button_group = group_button_cache[group_id]
             local scroll_pane_subgroups, table_subgroups = nil, nil
 
@@ -125,6 +125,9 @@ function item_picker.filter(picker_flow, searchterm, first_run)
     local warning_label = picker_flow["label_warning_message"]
     local ui_state = get_ui_state(game.get_player(picker_flow.player_index))
     local search_term = searchterm:gsub("^%s*(.-)%s*$", "%1"):lower()
+
+    -- Check if the dialog is still open, don't bother filtering otherwise
+    if ui_state.modal_data == nil then return end
 
     local existing_products = {}
     if first_run then  -- Need to re-apply button styles on first_run (ie. opening of the dialog)
@@ -219,4 +222,12 @@ function item_picker.filter(picker_flow, searchterm, first_run)
             flow_picker_panel[child].style.height = picker_panel_height
         end
     end    
+end
+
+-- Handles any change to the given item picker textfield
+function item_picker.handle_searchfield_change(textfield)
+    if textfield and textfield.valid then
+        local picker_flow = textfield.parent.parent
+        item_picker.filter(picker_flow, textfield.text, false)
+    end
 end

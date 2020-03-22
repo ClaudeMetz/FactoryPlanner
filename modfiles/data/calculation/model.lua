@@ -55,8 +55,8 @@ function model.update_floor(floor_data, aggregate)
             end
             
             -- Update the main aggregate with the results
-            aggregate.energy_consumption = subfloor_aggregate.energy_consumption
-            aggregate.pollution = subfloor_aggregate.pollution
+            aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
+            aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
 
             local function update_main_aggregate(class_name, destination_class_name)
                 for _, item in ipairs(structures.class.to_array(subfloor_aggregate[class_name])) do
@@ -218,15 +218,11 @@ function model.update_line(line_data, aggregate)
         -- Ingredients should be taken out of byproducts as much as possible for the aggregate
         local available_byproduct = aggregate.Byproduct[ingredient.type][ingredient.name]
         if available_byproduct ~= nil then
-            if available_byproduct == ingredient_amount then
+            if available_byproduct >= ingredient_amount then
                 structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
-
-            elseif available_byproduct < ingredient_amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
+            else  -- available_byproduct < ingredient_amount
+                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, available_byproduct)
                 structures.aggregate.add(aggregate, "Product", ingredient, (ingredient_amount - available_byproduct))
-
-            elseif available_byproduct > ingredient_amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
             end
         else
             structures.aggregate.add(aggregate, "Product", ingredient, ingredient_amount)

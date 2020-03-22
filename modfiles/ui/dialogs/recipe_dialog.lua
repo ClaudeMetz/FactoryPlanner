@@ -1,3 +1,5 @@
+local recipes_per_row = 8
+
 -- Handles populating the recipe dialog
 function open_recipe_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
@@ -40,6 +42,7 @@ end
 function run_preliminary_checks(player, product, production_type)
     local force_recipes = player.force.recipes
     local relevant_recipes = {}
+    local user_disabled_recipe = false
     local counts = {
         disabled = 0,
         hidden = 0,
@@ -58,14 +61,19 @@ function run_preliminary_checks(player, product, production_type)
                 table.insert(relevant_recipes, recipe)
 
             -- Only add recipes that exist on the current force (and aren't preferenced-out)
-            elseif force_recipe ~= nil and not ((preferences.ignore_barreling_recipes and recipe.barreling)
-              or (preferences.ignore_recycling_recipes and recipe.recycling)) then
-                table.insert(relevant_recipes, recipe)
+            elseif force_recipe ~= nil then
+                local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
+                  or (preferences.ignore_recycling_recipes and recipe.recycling)
+                user_disabled_recipe = user_disabled_recipe or user_disabled
 
-                if not force_recipe.enabled and force_recipe.hidden then
-                    counts.disabled_hidden = counts.disabled_hidden + 1
-                elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
-                elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
+                if not user_disabled then
+                    table.insert(relevant_recipes, recipe)
+
+                    if not force_recipe.enabled and force_recipe.hidden then
+                        counts.disabled_hidden = counts.disabled_hidden + 1
+                    elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
+                    elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
+                end
             end
         end
     end
@@ -88,12 +96,13 @@ function run_preliminary_checks(player, product, production_type)
     
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
-        return nil, {"fp.error_no_relevant_recipe"}, show
+        local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
+        return nil, error, show
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
-        -- Show hint if adding unresearched recipe (no hints on custom recipes)
+        -- Show warning if adding unresearched recipe (no hints on custom recipes)
         if not chosen_recipe.custom and not force_recipes[chosen_recipe.name].enabled then
-            show.message={text={"fp.hint_disabled_recipe"}, type="warning"}
+            show.message={text={"fp.warning_disabled_recipe"}, type="warning"}
         end
         return chosen_recipe.id, nil, show
     else  -- 2+ relevant recipes
@@ -151,7 +160,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
             group_sprite.style.height = 64
             group_sprite.style.width = 64
 
-            local recipe_table = table_recipes.add{type="table", name=("table_recipe_group_" .. group.name), column_count=8}
+            local recipe_table = table_recipes.add{type="table", name=("table_recipe_group_" .. group.name), column_count=recipes_per_row}
             for _, recipe in pairs(relevant_recipes) do
                 local button_recipe
 
@@ -187,7 +196,7 @@ function apply_recipe_filter(player)
     local any_recipe_visible, desired_scroll_pane_height = false, 0
     -- Go through all groups to update every recipe's visibility
     for group_name, recipe_list in pairs(modal_data.groups) do
-        local recipes_visible = 0
+        local any_group_recipe_visible = false
 
         for _, recipe in pairs(recipe_list) do
             local button = table_recipes["table_recipe_group_" .. group_name]["fp_button_recipe_pick_" .. recipe.id]
@@ -195,17 +204,18 @@ function apply_recipe_filter(player)
     
             -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
             -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and recipe.hidden))
-            button.visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
-
-            if button.visible then recipes_visible = recipes_visible + 1 end
+            local visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
+            
+            button.visible = visible
+            any_group_recipe_visible = visible or false
         end
         
-        any_recipe_visible = (recipes_visible > 0)
         -- Hide the whole table row if no recipe in it is visible
-        table_recipes["sprite_group_" .. group_name].visible = any_recipe_visible
-        table_recipes["table_recipe_group_" .. group_name].visible = any_recipe_visible
+        table_recipes["sprite_group_" .. group_name].visible = any_group_recipe_visible
+        table_recipes["table_recipe_group_" .. group_name].visible = any_group_recipe_visible
+        any_recipe_visible = any_group_recipe_visible or false
 
-        local additional_height = math.max(73, (math.ceil(recipes_visible / 8) * 36))
+        local additional_height = math.max(73, (math.ceil(table_size(recipe_list) / recipes_per_row) * 38))
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
 
@@ -217,6 +227,7 @@ function apply_recipe_filter(player)
     local scroll_pane_height = math.min(desired_scroll_pane_height, 
       modal_data.dialog_maximal_height - 65) - warning_label_height
     flow_modal_dialog["scroll-pane_recipes"].style.height = scroll_pane_height
+    flow_modal_dialog["scroll-pane_recipes"].style.width = 370
 end
 
 

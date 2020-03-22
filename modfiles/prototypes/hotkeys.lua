@@ -34,5 +34,12 @@ data:extend({
         alternative_key_sequence = "KP_ENTER",
         consuming = "none",
         order = "e"
+    },
+    {
+        type = "custom-input",
+        name = "fp_focus_searchfield",
+        key_sequence = "CONTROL + F",
+        consuming = "none",
+        order = "f"
     }
 })

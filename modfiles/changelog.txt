@@ -1,4 +1,53 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.18.8
+Date: 16. 03. 2020
+  Bugfixes:
+    - Fixed a crash when left-clicking a top level byproduct
+
+---------------------------------------------------------------------------------------------------
+Version: 0.18.7
+Date: 10. 03. 2020
+  Features:
+    - Added a preference that allows you to enable additional production table columns, such as pollution info and comment fields
+    - Added a preference that allows you to select an action when alt-clicking on recipes or items. You can choose between opening them in FNEI, WIIRUF or Recipe Book.
+    - Added rate limiting to most interface interactions, improving performance and avoiding crashes in high-latency multiplayer situations
+    - Added a keyboard shortcut to refocus the product picker searchfield
+    - Added some more warning messages when an action couldn't be executed
+  Changes:
+    - Created a centralized localisation project. If you want to contribute, take a look at this mod's Github page.
+    - Changed some mod settings to be preferences
+    - Removed Performance Mode, as it no longer did anything
+    - The utility dialog now automatically saves changes to your notes
+    - Improved the warning message when there is no (enabled) recipe to craft the given product
+  Bugfixes:
+    - Fixed the recipe dialog dimensions to be less jumpy
+    - Fixed a crash that was caused by the mod assuming that the steam prototype will always exist
+    - Fixed a problem where byproducts and ingredients where added up incorrectly in some cases
+    - Fixed a problem where fluid buttons didn't show up when certain views were active
+
+---------------------------------------------------------------------------------------------------
+Version: 0.18.6
+Date: 29. 02. 2020
+  Bugfixes:
+    - Removed superfluous logging that lead to crashes
+
+---------------------------------------------------------------------------------------------------
+Version: 0.18.5
+Date: 29. 02. 2020
+  Bugfixes:
+    - Fixed energy consumption and pollution not being added up correctly if your subfactory contains subfloors
+    - Hide recipes that can't ever be researched, which led Factory Planner to crash
+
+---------------------------------------------------------------------------------------------------
+Version: 0.18.4
+Date: 26. 02. 2020
+  Bugfixes:
+    - Fixed a crash when opening preferences when using modded items with infinite fuel values
+    - Fixed a crash when submitting the product picker without a product selected
+    - Fixed several crashes related to invalid inputs in dialog windows
+    - Mitigated all crashes caused by mod-created hidden modules/beacons
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.3
 Date: 21. 02. 2020
   Features:

@@ -59,10 +59,11 @@ function get_product_condition_instructions()
         conditions = {
             [1] = {
                 label = {"fp.product_instruction_1"},
-                check = (function(data) return (data.item_sprite == "" or data.required_amount == ""
-                    or tonumber(data.required_amount) == 0) end),
+                check = (function(data) return (data.item_sprite == "" or tonumber(data.required_amount) == nil
+                  or tonumber(data.required_amount) <= 0) end),
                 refocus = (function(flow, data)
-                    if data.item_sprite == "" then flow["table_search_bar"]["fp_textfield_picker_search_bar"].focus()
+                    if data.item_sprite == "" then flow["flow_item_picker"]["table_search_bar"]
+                      ["fp_textfield_item_picker_search_bar"].focus()
                     else flow["flow_product_bar"]["textfield_product_amount"].focus() end
                 end),
                 show_on_edit = true

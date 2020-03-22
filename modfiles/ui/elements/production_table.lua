@@ -8,23 +8,23 @@ function refresh_production_table(player)
 
     flow_production["label_production_info"].visible = false
     local scroll_pane_production = flow_production["scroll-pane_production_pane"]
-    local line_comments = get_settings(player).line_comments
+    local optional_columns = get_preferences(player).optional_production_columns
 
     -- Production table needs to be destroyed to change it's column count
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
     
-    local column_count = line_comments and 10 or 9
+    local column_count = 9
+    for _, optional_column in pairs(optional_columns) do
+        if optional_column == true then column_count = column_count + 1 end
+    end
+
     local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
       column_count=column_count}
     table_production.style = "table_with_selection"
     table_production.style.horizontal_spacing = 16
     table_production.style.top_padding = 0
     table_production.style.left_margin = 6
-    for i=1, column_count do
-        if i < 7 then table_production.style.column_alignments[i] = "middle-center"
-        else table_production.style.column_alignments[i] = "middle-left" end
-    end
 
     local context = get_context(player)
     if context.subfactory ~= nil and context.subfactory.valid then
@@ -33,28 +33,9 @@ function refresh_production_table(player)
             flow_production["label_production_info"].visible = true
         else
             scroll_pane_production.visible = true
-            
-            -- Table titles
-            local title_strings = {
-                {name="recipe", label={"fp.recipe"}},
-                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}}, 
-                {name="machine", label={"fp.cmachine"}},
-                {name="modules", label={"fp.cmodules"}},
-                {name="beacons", label={"fp.cbeacons"}},
-                {name="energy", label={"fp.energy"}},
-                {name="products", label={"fp.products"}},
-                {name="byproducts", label={"fp.byproducts"}},
-                {name="ingredients", label={"fp.ingredients"}}
-            }
 
-            for _, title in ipairs(title_strings) do
-                local title = table_production.add{type="label", name="label_title_" .. title.name, caption=title.label,
-                  tooltip=title.tooltip}
-                title.style.font = "fp-font-16p"
-            end
-
-            -- If enabled, add the comment column and its clear button
-            if line_comments then
+            -- Custom column creation
+            local function add_line_comments_column()
                 local flow = table_production.add{type="flow", name="flow_comment_clear", direction="horizontal"}
                 flow.style.vertical_align = "center"
                 local title = flow.add{type="label", name="label_title_comment", caption={"", {"fp.comments"}, " "}}
@@ -66,6 +47,35 @@ function refresh_production_table(player)
                 button.style.height = 20
                 button.style.left_padding = 1
                 button.style.right_padding = 1
+            end
+            
+            -- Table titles
+            local title_strings = {
+                {name="recipe", label={"fp.recipe"}, alignment="middle-center"},
+                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}, alignment="middle-center"}, 
+                {name="machine", label={"fp.cmachine"}, alignment="middle-center"},
+                {name="modules", label={"fp.cmodules"}, alignment="middle-center"},
+                {name="beacons", label={"fp.cbeacons"}, alignment="middle-center"},
+                {name="energy", label={"fp.energy"}, alignment="middle-center"},
+                {name="pollution", label={"fp.cpollution"}, alignment="middle-center"},
+                {name="products", label={"fp.products"}, alignment="middle-left"},
+                {name="byproducts", label={"fp.byproducts"}, alignment="middle-left"},
+                {name="ingredients", label={"fp.ingredients"}, alignment="middle-left"},
+                {name="line_comments", custom_function=add_line_comments_column, alignment="middle-left"}
+            }
+
+            for index, title in ipairs(title_strings) do
+                if optional_columns[title.name] == nil or optional_columns[title.name] == true then
+                    table_production.style.column_alignments[index] = title.alignment
+
+                    if title.custom_function then
+                        title.custom_function()
+                    else
+                        local title = table_production.add{type="label", name="label_title_" .. title.name,
+                          caption=title.label, tooltip=title.tooltip}
+                        title.style.font = "fp-font-16p"
+                    end
+                end
             end
 
             -- Table rows
@@ -86,6 +96,7 @@ function create_line_table_row(player, line)
     local archive_open = ui_state.flags.archive_open
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
+    local optional_columns = get_preferences(player).optional_production_columns
 
 
     -- Recipe button
@@ -150,11 +161,20 @@ function create_line_table_row(player, line)
     end
     
 
-    -- Energy label
+    -- Energy label (don't add pollution to the tooltip if it gets it's own column)
+    local pollution_line = (optional_columns.pollution) and "" or {"", "\n", {"fp.cpollution"}, ": ",
+      ui_util.format_SI_value(line.pollution, "P/s", 3)}
     local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
-      ui_util.format_SI_value(line.energy_consumption, "W", 5), "\n", {"fp.cpollution"}, ": ",
-      ui_util.format_SI_value(line.pollution, "P/s", 3)}}
+      ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
+
+
+    -- Pollution label
+    if optional_columns.pollution then
+        local label_pollution = table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
+          caption=ui_util.format_SI_value(line.pollution, "P/s", 3),
+          tooltip={"", ui_util.format_SI_value(line.pollution, "P/s", 5)}}
+    end
 
 
     -- Item buttons
@@ -164,7 +184,7 @@ function create_line_table_row(player, line)
 
     
     -- Comment textfield
-    if get_settings(player).line_comments then
+    if optional_columns.line_comments then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
           text=(line.comment or "")}
         textfield_comment.style.width = 160
@@ -176,7 +196,8 @@ end
 -- Separate function so it can be refreshed independently
 function refresh_recipe_button(player, line, table_production)
     local ui_state = get_ui_state(player)
-    local tooltip, style, enabled = {"", line.recipe.proto.localised_name}, "fp_button_icon_medium_blank", true
+    local tooltip, style, enabled = line.recipe.proto.localised_name, "fp_button_icon_medium_blank", true
+    if devmode then tooltip = {"", tooltip, "\n", line.recipe.proto.name} end
 
     -- Make the first line of every subfloor uninteractable, it stays constant
     if ui_state.context.floor.level > 1 and line.gui_position == 1 then
@@ -259,7 +280,7 @@ function refresh_machine_table(player, line, table_production)
           sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
           tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
           ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory), tutorial_tooltip}}
-        button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
+        button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
         add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
@@ -277,7 +298,7 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto, 
       Line.get_total_effects(line, player), line.uncapped_production_ratio, subfactory.timescale)
     machine_count = ui_util.format_number(machine_count, 4)
-    button.number = (get_settings(player).round_button_numbers) and math.ceil(machine_count) or machine_count
+    button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
     
     -- Table to easily determine the appropriate style dependent on button_size and select-state
     local styles = {
@@ -339,10 +360,10 @@ end
 -- Creates the flow containing all line items of the given type
 function create_item_button_flow(player_table, gui_table, line, group, classes, styles)
     local player = game.get_player(gui_table.player_index)
-    local settings = player_table.settings
+    local preferences = player_table.preferences
 
     local view_name = player_table.ui_state.view_state.selected_view.name
-    local round_belts = (view_name == "belts_or_lanes" and settings.round_button_numbers)
+    local round_belts = (view_name == "belts_or_lanes" and preferences.round_button_numbers)
 
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
 
@@ -355,7 +376,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
             local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
               item.proto.type, item.amount, math.ceil(line.machine.count))
               
-            if raw_amount ~= nil and raw_amount > margin_of_error then
+            if raw_amount == nil or raw_amount > margin_of_error then
                 -- Determine potential different button style and the potential satisfaction line
                 local actual_style, satisfaction_line = style, ""
 
@@ -367,7 +388,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
                   line.priority_product_proto.name == item.proto.name then
                     actual_style = "fp_button_icon_medium_green"
 
-                elseif class == "Ingredient" and not settings.performance_mode and settings.ingredient_satisfaction then
+                elseif class == "Ingredient" and preferences.ingredient_satisfaction then
                     local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
 
                     local satisfaction = tonumber(satisfaction_percentage)
@@ -387,9 +408,12 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
                     indication = {"", " (", {"fp.priority"}, ")"}
                 end
 
-                local number_line = (raw_amount ~= nil) and {"", ui_util.format_number(raw_amount, 4) .. " ", appendage} or ""
-                local tooltip = {"", item.proto.localised_name, indication, "\n", number_line, satisfaction_line, tutorial_tooltip}
-                local button_number = (round_belts and raw_amount ~= nil) and math.ceil(raw_amount) or raw_amount
+                local number_line, button_number = "", nil
+                if raw_amount ~= nil then
+                    number_line = {"", "\n" .. ui_util.format_number(raw_amount, 4) .. " ", appendage}
+                    button_number = (round_belts) and math.ceil(raw_amount) or raw_amount
+                end
+                local tooltip = {"", item.proto.localised_name, indication, number_line, satisfaction_line, tutorial_tooltip}
 
                 local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
                   .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, number=button_number, tooltip=tooltip,

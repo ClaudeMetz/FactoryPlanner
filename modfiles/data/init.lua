@@ -14,6 +14,7 @@ require("data.handlers.migrator")
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.constructor")
+require("data.handlers.remote")
 require("data.calculation.interface")
 
 -- Sets up global data structure of the mod
@@ -69,6 +70,31 @@ end
 
 -- Central place to consolidate what should run on_load and on_init
 function run_on_load()
+    -- Register the RecipeBook event to re-open the main dialog after hitting its back-button
+    if remote.interfaces["RecipeBook"] ~= nil then
+        script.on_event(remote.call("RecipeBook", "reopen_source_event"), function(event)
+            if event.source_data.mod_name == "factoryplanner" then
+                toggle_main_dialog(game.get_player(event.player_index))
+            end
+        end)
+    end
+
+    -- Re-register conditional on_nth_tick events
+    for _, player_table in pairs(global.players or {}) do
+        local last_action = player_table.ui_state.last_action
+        if last_action and table_size(last_action) > 0 and last_action.nth_tick ~= nil then
+            local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
+
+            script.on_nth_tick(last_action.nth_tick, function(event)
+                rate_limiting_event.handler(last_action.element)
+                last_action.nth_tick = nil
+                last_action.element = nil
+                script.on_nth_tick(event.nth_tick, nil)
+            end)
+        end
+    end
+
+    -- Create lua-global tables to pre-cache relevant tables
     ordered_recipe_groups = generator.ordered_recipe_groups()
     recipe_maps = {
         produce = generator.product_recipe_map(),
@@ -166,14 +192,10 @@ function reload_settings(player)
     
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
-    settings_table.performance_mode = settings["fp_performance_mode"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
-    settings_table.line_comments = settings["fp_line_comments"].value
-    settings_table.ingredient_satisfaction = settings["fp_ingredient_satisfaction"].value
-    settings_table.round_button_numbers = settings["fp_round_button_numbers"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
 end
 
@@ -183,8 +205,16 @@ function reload_preferences(player, table)
 
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
+    preferences.alt_action = data_util.update_alt_action(preferences.alt_action)
+
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
+    preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
+    preferences.round_button_numbers = preferences.round_button_numbers or false
+    
+    preferences.optional_production_columns = preferences.optional_production_columns or 
+      {["pollution"] = false, ["line_comments"] = false}
+
     preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
     preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
     preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
@@ -199,6 +229,7 @@ function reset_ui_state(player)
     
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
+    ui_state_table.last_action = {}  -- The last user action, used for rate limiting
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data

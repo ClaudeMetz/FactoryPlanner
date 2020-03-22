@@ -87,7 +87,7 @@ function Subfactory.get_by_name(self, class, name)
 end
 
 function Subfactory.shift(self, dataset, direction)
-    Collection.shift(self[dataset.class], dataset, direction)
+    return Collection.shift(self[dataset.class], dataset, direction)
 end
 
 

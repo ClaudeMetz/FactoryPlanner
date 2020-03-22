@@ -71,7 +71,7 @@ end
 function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
-
+    
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
 
@@ -86,7 +86,7 @@ function calculation.interface.set_subfactory_result(result)
     calculation.util.update_items(subfactory, result, "Ingredient")
 
     -- Determine satisfaction-amounts for all line ingredients
-    if not player_table.settings.performance_mode then
+    if player_table.preferences.ingredient_satisfaction then
         local top_floor = Subfactory.get(subfactory, "Floor", 1)
         local aggregate = structures.aggregate.init()  -- gets modified by the two functions
         calculation.util.determine_net_ingredients(top_floor, aggregate)
@@ -99,7 +99,7 @@ function calculation.interface.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
-
+    
     line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
@@ -257,6 +257,21 @@ function calculation.util.update_ingredient_satisfaction(floor, aggregate)
 
                 ingredient.satisfied_amount = ingredient.amount - removed_amount
                 structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type, name=ingredient.proto.name}, removed_amount)
+            end
+        end
+    end
+end
+
+-- Goes through all subfactories to update their ingredient satisfaction numbers
+function calculation.util.update_all_ingredient_satisfactions(player)
+    local factories = {"factory", "archive"}
+    for _, player_table in pairs(global.players) do
+        for _, factory_name in pairs(factories) do
+            for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
+                local top_floor = Subfactory.get(subfactory, "Floor", 1)
+                local aggregate = structures.aggregate.init()  -- gets modified by the two functions
+                calculation.util.determine_net_ingredients(top_floor, aggregate)
+                calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
             end
         end
     end

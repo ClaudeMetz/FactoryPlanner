@@ -2,8 +2,7 @@ ui_util = {
     context = {},
     attributes = {},
     switch = {},
-    message = {},
-    fnei = {}
+    message = {}
 }
 
 
@@ -75,13 +74,16 @@ end
 
 -- ** Tooltips **
 -- File-local to so this dict isn't recreated on every call of the function following it
-local fnei_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
+local valid_alt_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
   product=true, byproduct=true, ingredient=true, fuel=true}
 -- Either adds the tutorial tooltip to the button, or returns it if none is given
 function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
-    if get_preferences(player).tutorial_mode then
+    local preferences = get_preferences(player)
+    if preferences.tutorial_mode then
         local b = line_break and "\n\n" or ""
-        local f = (fnei_types[tut_type] and remote.interfaces["fnei"]) and {"fp.tut_fnei"} or ""
+        local alt_action = get_preferences(player).alt_action
+        local f = (valid_alt_types[tut_type] and alt_action ~= "none")
+          and {"fp.tut_alt_action", {"fp.alt_action_" .. alt_action}} or ""
         if button ~= nil then
             button.tooltip = {"", button.tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. tut_type}, f}
         else
@@ -238,6 +240,57 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
+-- **** Rate Limiting ****
+ui_util.rate_limiting_events = {
+    ["fp_floor_up"] = {timeout = 10},
+    ["fp_confirm_dialog"] = {timeout = 20},
+    [defines.events.on_player_selected_area] = {timeout = 20},
+    ["filter_item_picker"] = {timeout = 6, handler = item_picker.handle_searchfield_change},
+    ["submit_modal_dialog"] = {timeout = 20},
+    [defines.events.on_gui_click] = {timeout = 10}
+}
+
+-- Returns whether the given event should be prevented from carrying out it's action due to rate limiting
+function ui_util.rate_limiting_active(player, event_name, object_name)
+    local last_action = get_ui_state(player).last_action
+    local timeout = ui_util.rate_limiting_events[event_name].timeout
+    local current_tick = game.tick
+    
+    -- Always allow action if there is no last_action or the ticks are paused
+    local limiting_active = (table_size(last_action) > 0 and not game.tick_paused
+      and event_name == last_action.event_name and object_name == last_action.object_name
+      and (current_tick - last_action.tick) < timeout)
+
+    -- Only update the last action if an action will indeed be carried out
+    if not limiting_active then
+        last_action.tick = current_tick
+        last_action.event_name = event_name
+        last_action.object_name = object_name
+    end
+
+    return limiting_active
+end
+
+-- Function to register an on_nth_tick to run the relevant handler once more after the last rate limiting occured
+function ui_util.set_nth_tick_refresh(player, element)
+    local last_action = get_ui_state(player).last_action
+    local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
+    local nth_tick = game.tick + rate_limiting_event.timeout
+
+    -- Unregister the previous action as the new one will replace it
+    if last_action.nth_tick then script.on_nth_tick(last_action.nth_tick, nil) end
+    last_action.nth_tick = nth_tick
+    last_action.element = element  -- needed to re-create the handler on_load
+
+    script.on_nth_tick(nth_tick, function(event)
+        rate_limiting_event.handler(element)
+        last_action.nth_tick = nil
+        last_action.element = nil
+        script.on_nth_tick(event.nth_tick, nil)
+    end)
+end
+
+
 -- ** Misc **
 -- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
 function ui_util.format_timescale(timescale, raw, whole_word)
@@ -260,6 +313,16 @@ function ui_util.check_archive_status(player)
         return true
     else
         return false
+    end
+end
+
+-- Executes an alt-action on the given action_type and data
+function ui_util.execute_alt_action(player, action_type, data)
+    local alt_action = get_preferences(player).alt_action
+
+    local remote_action = remote_actions[alt_action]
+    if remote_action ~= nil and remote_action[action_type] then
+        remote_actions[action_type](player, alt_action, data)
     end
 end
 
@@ -422,36 +485,4 @@ function ui_util.message.refresh(player)
     local label_hint = main_dialog["flow_titlebar"]["label_titlebar_hint"]
     label_hint.caption = new_message
     ui_util.set_label_color(label_hint, new_color)
-end
-
-
--- **** FNEI ****
--- This indicates the version of the FNEI remote interface this is compatible with
-local fnei_version = 2
-
--- Opens FNEI to show the given item
--- Mirrors FNEI's distinction between left and right clicks
-function ui_util.fnei.show_item(item, click)
-    if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
-        local action_type = (click == "left") and "craft" or "usage"
-        remote.call("fnei", "show_recipe_for_prot", action_type, item.proto.type, item.proto.name)
-    end
-end
-
--- Opens FNEI to show the given recipe
-function ui_util.fnei.show_recipe(recipe, line_products)
-    if remote.interfaces["fnei"] ~= nil and remote.call("fnei", "version") == fnei_version then
-        -- Try to determine the relevant product to use as context for the recipe in FNEI
-        if recipe.proto.main_product then
-            local product = recipe.proto.main_product
-            remote.call("fnei", "show_recipe", recipe.proto.name, product.name)
-        elseif #line_products == 1 then
-            local product = line_products[1]
-            remote.call("fnei", "show_recipe", recipe.proto.name, product.proto.name)
-
-        -- If no appropriate context can be determined, FNEI will choose the first ingredient in the list
-        else
-            remote.call("fnei", "show_recipe", recipe.proto.name)
-        end
-    end
 end

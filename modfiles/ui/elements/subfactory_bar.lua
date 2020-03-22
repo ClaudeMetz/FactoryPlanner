@@ -119,8 +119,15 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
 
     -- Shift subfactory in the given direction
     if direction ~= nil then
-        Factory.shift(ui_state.context.factory, subfactory, direction)
-        refresh_subfactory_bar(player, false)
+        if Factory.shift(ui_state.context.factory, subfactory, direction) then
+            refresh_subfactory_bar(player, false)
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
+            ui_util.message.enqueue(player, message, "error", 1, false)
+        end
+        
+        refresh_current_activity(player)
 
     -- Change selected subfactory
     else

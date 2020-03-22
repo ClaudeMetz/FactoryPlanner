@@ -87,8 +87,8 @@ function Collection.shift(self, main_dataset, direction)
 
     -- Doesn't shift if outmost elements are being shifted further outward
     if (main_gui_position == 1 and direction == "negative") or
-      (main_gui_position == self.count and direction == "positive") then 
-        return 
+      (main_gui_position == self.count and direction == "positive") then
+        return false
     end
 
     local secondary_gui_position
@@ -101,6 +101,8 @@ function Collection.shift(self, main_dataset, direction)
 
     main_dataset.gui_position = secondary_gui_position
     secondary_dataset.gui_position = main_gui_position
+    
+    return true
 end
 
 -- Updates the validity of all datasets in this Collection

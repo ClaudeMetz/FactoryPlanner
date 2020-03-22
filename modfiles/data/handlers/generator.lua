@@ -289,19 +289,23 @@ local function create_object_tree(objects)
 end
 
 
--- Returns the names of the recipes that shouldn't be included
-local function undesirable_recipes()
-    local undesirables = 
-    {
-        --[[ ["small-plane"] = false,
-        ["electric-energy-interface"] = false,
-        ["railgun"] = false,
-        ["railgun-dart"] = false,
-        ["player-port"] = false ]]
-    }
+-- Determines every recipe that is researchable or enabled by default
+local function determine_researchable_recipes()
+    local map = {}
+
+    for _, proto in pairs(game.technology_prototypes) do
+        if not proto.hidden then
+            for _, effect in pairs(proto.effects) do
+                if effect.type == "unlock-recipe" then
+                    map[effect.recipe] = true
+                end
+            end
+        end
+    end
     
-    return undesirables
+    return map
 end
+
 
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
@@ -317,12 +321,12 @@ function generator.all_recipes()
         }
     end
     
-    local undesirables = undesirable_recipes()
-    -- Adding all standard recipes minus the undesirable ones
+    local researchable_recipes = determine_researchable_recipes()
+    -- Adding all standard recipes
     for recipe_name, proto in pairs(game.recipe_prototypes) do
-        -- Avoid any recipes that are undesirable or have no machine to produce them
+        -- Avoid any recipes that have no machine to produce them or are unresearchable
         local category_id = new.all_machines.map[proto.category]
-        if undesirables[recipe_name] == nil and category_id ~= nil then
+        if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name]) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
@@ -443,22 +447,24 @@ function generator.all_recipes()
     end
 
     -- Add a general steam recipe that works with every boiler
-    local steam_recipe = mining_recipe()
-    steam_recipe.name = "fp-general-steam"
-    steam_recipe.localised_name = {"fluid-name.steam"}
-    steam_recipe.sprite = "fluid/steam"
-    steam_recipe.category = "general-steam"
-    steam_recipe.order = "z-0"
-    steam_recipe.subgroup = {name="fluids", order="z", valid=true}
-    steam_recipe.energy = 1
-    steam_recipe.emissions_multiplier = 1
-    steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
-    steam_recipe.products = {{type="fluid", name="steam", amount=60}}
-    steam_recipe.main_product = steam_recipe.products[1]
+    if game["fluid_prototypes"]["steam"] then  -- make sure the steam prototype exists
+        local steam_recipe = mining_recipe()
+        steam_recipe.name = "fp-general-steam"
+        steam_recipe.localised_name = {"fluid-name.steam"}
+        steam_recipe.sprite = "fluid/steam"
+        steam_recipe.category = "general-steam"
+        steam_recipe.order = "z-0"
+        steam_recipe.subgroup = {name="fluids", order="z", valid=true}
+        steam_recipe.energy = 1
+        steam_recipe.emissions_multiplier = 1
+        steam_recipe.ingredients = {{type="fluid", name="water", amount=60}}
+        steam_recipe.products = {{type="fluid", name="steam", amount=60}}
+        steam_recipe.main_product = steam_recipe.products[1]
 
-    format_recipe_products_and_ingredients(steam_recipe)
-    add_recipe_tooltip(steam_recipe)
-    insert_proto(all_recipes, "recipes", steam_recipe, true)
+        format_recipe_products_and_ingredients(steam_recipe)
+        add_recipe_tooltip(steam_recipe)
+        insert_proto(all_recipes, "recipes", steam_recipe, true)
+    end
     
     -- Adds a convenient space science recipe
     local rocket_recipe = {
@@ -530,18 +536,6 @@ function generator.ordered_recipe_groups()
 end
 
 
--- Returns the names of the recipes that shouldn't be included
-local function undesirable_items()
-    return {
-        item = {
-        },
-        fluid = {
-        },
-        entity = {
-        }
-    }
-end
-
 -- Returns all relevant items and fluids
 function generator.all_items()
     local all_items = {types = {}, map = {}}
@@ -567,36 +561,33 @@ function generator.all_items()
         end
     end
     
-    -- Adding all standard items minus the undesirable ones
-    local undesirables = undesirable_items()
+    -- Adding all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            if not undesirables[type][item_name] then
-                local proto_name = format_temperature_name(item_details, item_name)
-                local proto = game[type .. "_prototypes"][proto_name]
-                local localised_name = format_temperature_localised_name(item_details, proto)
-                local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
+            local proto_name = format_temperature_name(item_details, item_name)
+            local proto = game[type .. "_prototypes"][proto_name]
+            local localised_name = format_temperature_localised_name(item_details, proto)
+            local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
-                local hidden = false  -- "entity" types are never hidden
-                if type == "item" then hidden = proto.has_flag("hidden")
-                elseif type == "fluid" then hidden = proto.hidden end
-                
-                if not hidden or item_name == "rocket-part" then  -- exclude hidden items
-                    local item = {
-                        name = item_name,
-                        type = type,
-                        sprite = type .. "/" .. proto.name,
-                        localised_name = localised_name,
-                        ingredient_only = not item_details.is_product,
-                        temperature = item_details.temperature,
-                        order = order,
-                        group = generate_group_table(proto.group),
-                        subgroup = generate_group_table(proto.subgroup)
-                    }
+            local hidden = false  -- "entity" types are never hidden
+            if type == "item" then hidden = proto.has_flag("hidden")
+            elseif type == "fluid" then hidden = proto.hidden end
+            
+            if not hidden or item_name == "rocket-part" then  -- exclude hidden items
+                local item = {
+                    name = item_name,
+                    type = type,
+                    sprite = type .. "/" .. proto.name,
+                    localised_name = localised_name,
+                    ingredient_only = not item_details.is_product,
+                    temperature = item_details.temperature,
+                    order = order,
+                    group = generate_group_table(proto.group),
+                    subgroup = generate_group_table(proto.subgroup)
+                }
 
-                    add_item_tooltip(item)
-                    deep_insert_proto(all_items, "types", type, "items", item, true)
-                end
+                add_item_tooltip(item)
+                deep_insert_proto(all_items, "types", type, "items", item, true)
             end
         end
     end
@@ -671,25 +662,6 @@ function generator.identifier_item_map()
 end
 
 
--- Returns the names of the item groups that shouldn't be included
-function generator.undesirable_item_groups()
-    return {
-        ["creative-mod_creative-tools"] = false,
-        ["im-tools"] = false
-    }
-end
-
-
-
--- Returns the names of the 'machines' that shouldn't be included
-local function undesirable_machines()
-    return {
-        --[[ ["escape-pod-assembler"] = false,
-        ["crash-site-assembling-machine-1-repaired"] = false,
-        ["crash-site-assembling-machine-2-repaired"] = false ]]
-    }
-end
-
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
     local all_machines = {categories = {}, map = {}}
@@ -728,10 +700,8 @@ function generator.all_machines()
         return machine
     end
 
-    local undesirables = undesirable_machines()
     for _, proto in pairs(game.entity_prototypes) do
-        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil and 
-          undesirables[proto.name] == nil then
+        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil then
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then 
                     local machine = generate_category_entry(category, proto)
@@ -786,8 +756,8 @@ function generator.all_machines()
                         local category = "steam-" .. proto.target_temperature
                         local machine = generate_category_entry(category, proto)
                         
-                        temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
-                        energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
+                        local temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
+                        local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy_usage / energy_per_unit
 
                         deep_insert_proto(all_machines, "categories", category, "machines", machine)
@@ -827,6 +797,7 @@ end
 -- Generates a table containing all available transport belts
 function generator.all_belts()
     local all_belts = {belts = {}, map = {}}
+
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
             insert_proto(all_belts, "belts", {
@@ -838,6 +809,7 @@ function generator.all_belts()
             })
         end
     end
+
     return all_belts
 end
 
@@ -847,9 +819,12 @@ end
 function generator.all_fuels()
     local all_fuels = {fuels = {}, map = {}}
     local items = new.all_items.types[new.all_items.map["item"]]
+
     for _, proto in pairs(game.item_prototypes) do
-        -- Only use fuels that were actually detected/accepted to be items
-        if proto.fuel_value and proto.fuel_category == "chemical" and items.map[proto.name] then
+        -- Only use fuels that were actually detected/accepted to be items,
+        -- and have non-zero and non-infinite fuel values
+        if proto.fuel_value and proto.fuel_category == "chemical" and items.map[proto.name]
+          and proto.fuel_value ~= 0 and proto.fuel_value ~= math.huge then
             insert_proto(all_fuels, "fuels", {
                 name = proto.name,
                 type = proto.type,
@@ -861,45 +836,35 @@ function generator.all_fuels()
             })
         end
     end
+    
     return all_fuels
-end
-
-
--- Returns the names of the 'modules' that shouldn't be included
-local function undesirable_modules()
-    return {
-        ["seablock-mining-prod-module"] = false
-    }
 end
 
 
 -- Generates a table containing all available modules
 function generator.all_modules()
     local all_modules = {categories = {}, map = {}}
-    local undesirables = undesirable_modules()
 
     for _, proto in pairs(game.item_prototypes) do
-        if proto.type == "module" and not proto.has_flag("hidden")
-          and undesirables[proto.name] == nil then
-            -- Convert limitations-table to a [recipe_name] -> true format
-            local limitations = {}
-            for _, recipe_name in pairs(proto.limitations) do
-                limitations[recipe_name] = true
-            end
+        if proto.type == "module" and not proto.has_flag("hidden") then
+            local limitations = {}  -- Convert limitations-table to a [recipe_name] -> true format
+            for _, recipe_name in pairs(proto.limitations) do limitations[recipe_name] = true end
             
-            local module = {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "item/" .. proto.name,
-                category = proto.category,
-                tier = proto.tier,
-                effects = proto.module_effects or {},
-                limitations = limitations
-            }
-            deep_insert_proto(all_modules, "categories", proto.category, "modules", module)
+            local sprite = "item/" .. proto.name
+            if game.is_valid_sprite_path(sprite) then
+                deep_insert_proto(all_modules, "categories", proto.category, "modules", {
+                    name = proto.name,
+                    localised_name = proto.localised_name,
+                    sprite = sprite,
+                    category = proto.category,
+                    tier = proto.tier,
+                    effects = proto.module_effects or {},
+                    limitations = limitations
+                })
+            end
         end
     end
-    
+
     return all_modules
 end
 
@@ -919,32 +884,25 @@ function generator.module_tier_map()
 end
 
 
--- Returns the names of the 'beacons' that shouldn't be included
-local function undesirable_beacons()
-    return {
-        ["seablock-mining-prod-provider"] = false,
-        ["deep-mine-beacon"] = false
-    }
-end
-
 -- Generates a table containing all available beacons
 function generator.all_beacons()
     local all_beacons = {beacons = {}, map = {}}
-    local undesirables = undesirable_beacons()
 
     for _, proto in pairs(game.entity_prototypes) do
-        if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden")
-          and undesirables[proto.name] == nil then
-            insert_proto(all_beacons, "beacons", {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "entity/" .. proto.name,
-                category = "fp_beacon",  -- custom category to be similar to machines
-                allowed_effects = format_allowed_effects(proto.allowed_effects),
-                module_limit = proto.module_inventory_size,
-                effectivity = proto.distribution_effectivity,
-                energy_usage = proto.energy_usage or proto.max_energy_usage or 0
-            })
+        if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then
+            local sprite = "entity/" .. proto.name
+            if game.is_valid_sprite_path(sprite) then
+                insert_proto(all_beacons, "beacons", {
+                    name = proto.name,
+                    localised_name = proto.localised_name,
+                    sprite = sprite,
+                    category = "fp_beacon",  -- custom category to be similar to machines
+                    allowed_effects = format_allowed_effects(proto.allowed_effects),
+                    module_limit = proto.module_inventory_size,
+                    effectivity = proto.distribution_effectivity,
+                    energy_usage = proto.energy_usage or proto.max_energy_usage or 0
+                })
+            end
         end
     end
 
