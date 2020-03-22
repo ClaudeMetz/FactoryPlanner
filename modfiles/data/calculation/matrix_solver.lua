@@ -239,19 +239,20 @@ function matrix_solver.consolidate(aggregate)
     local function compare_classes(input_class, output_class)
         for type, type_table in pairs(aggregate[output_class]) do
             for item, output_amount in pairs(type_table) do
+                item_table = {
+                    type=type,
+                    name=item
+                }
                 if aggregate[input_class][type] ~= nil then
                     if aggregate[input_class][type][item] ~= nil then
                         local input_amount = aggregate[input_class][type][item]
                         net_amount = output_amount - input_amount
-                        if net_amount > 0.01 then
-                            aggregate[input_class][type][item] = nil
-                            structures.aggregate.subtract(aggregate, output_class, item, input_amount)
-                        elseif net_amount < -0.01 then
-                            aggregate.Product[type][item] = nil
-                            structures.aggregate.subtract(aggregate, input_class, item, output_amount)
+                        if net_amount > 0 then
+                            structures.aggregate.subtract(aggregate, input_class, item_table, input_amount)
+                            structures.aggregate.subtract(aggregate, output_class, item_table, input_amount)
                         else
-                            aggregate[input_class][type][item] = nil
-                            aggregate.Product[type][item] = nil
+                            structures.aggregate.subtract(aggregate, input_class, item_table, output_amount)
+                            structures.aggregate.subtract(aggregate, output_class, item_table, output_amount)
                         end
                     end
                 end
@@ -448,6 +449,8 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
 
     line_aggregate.energy_consumption = energy_consumption
     line_aggregate.pollution = pollution
+
+    matrix_solver.consolidate(line_aggregate)
 
     return line_aggregate
 end
