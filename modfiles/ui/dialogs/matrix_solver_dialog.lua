@@ -105,9 +105,9 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data)
     local recipe_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_recipes"]
     local recipes = modal_data.recipes
     recipe_buttons.clear()
-    for _, recipe_id in ipairs(recipes) do
+    for i, recipe_id in ipairs(recipes) do
         local sprite = global.all_recipes.recipes[recipe_id].sprite
-        recipe_buttons.add{type="sprite-button", name="fp_sprite-button_matrix_solver_recipe_"..recipe_id, sprite=sprite,
+        recipe_buttons.add{type="sprite-button", name="fp_sprite-button_matrix_solver_recipe_"..i, sprite=sprite,
             style="fp_button_icon_large_blank", enabled=false}
     end
 
