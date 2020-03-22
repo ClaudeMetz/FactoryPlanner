@@ -321,7 +321,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Runs the matrix solver
         -- todo - change this to enter_modal_dialog
-        elseif event.element.name == "fp_sprite-button_matrix_solver" then
+        elseif element_name == "fp_sprite-button_matrix_solver" then
            calculation.start_matrix_solver(player, ui_state.context.subfactory)
 
         -- Clears all the comments on the current floor
@@ -445,13 +445,13 @@ script.on_event(defines.events.on_gui_click, function(event)
             local split_string = cutil.split(element_name, "_")
             handle_item_button_click(player, split_string[4], split_string[5], split_string[6], click, direction, event.alt)
 
-        elseif string.find(event.element.name, "^fp_sprite%-button_matrix_solver_item_free_%d+_%d+$") then
-            local split_string = cutil.split(event.element.name, "_")
+        elseif string.find(element_name, "^fp_sprite%-button_matrix_solver_item_free_%d+_%d+$") then
+            local split_string = cutil.split(element_name, "_")
             local item_id = split_string[7].."_"..split_string[8]
             handle_matrix_solver_free_item_press(player, item_id)
 
-        elseif string.find(event.element.name, "^fp_sprite%-button_matrix_solver_item_eliminated_%d+_%d+$") then
-            local split_string = cutil.split(event.element.name, "_")
+        elseif string.find(element_name, "^fp_sprite%-button_matrix_solver_item_eliminated_%d+_%d+$") then
+            local split_string = cutil.split(element_name, "_")
             local item_id = split_string[7].."_"..split_string[8]
             handle_matrix_solver_eliminated_item_press(player, item_id)
         end
