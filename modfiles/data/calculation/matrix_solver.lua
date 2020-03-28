@@ -67,12 +67,8 @@ function matrix_solver.get_modal_data(subfactory_data)
     local initial_eliminated_variables = matrix_solver.set_diff(all_items, free_variables)
     -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
     initial_eliminated_variables = matrix_solver.set_diff(initial_eliminated_variables, produced_outputs)
-    local recipes = {}
-    for _, line in pairs(subfactory_data.top_floor.lines) do
-        table.insert(recipes, line.recipe_proto.id)
-    end
     return {
-        recipes = recipes,
+        recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
         ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
         products = matrix_solver.set_to_ordered_list(produced_outputs),
         byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
@@ -320,6 +316,7 @@ function matrix_solver.get_lines_metadata(lines, player_index)
         end
         if line.subfloor ~= nil then
             floor_metadata = matrix_solver.get_lines_metadata(line.subfloor.lines, player_index)
+            line_recipes = matrix_solver.union_sets(line_recipes, floor_metadata.line_recipes)
             line_inputs = matrix_solver.union_sets(line_inputs, floor_metadata.line_inputs)
             line_outputs = matrix_solver.union_sets(line_outputs, floor_metadata.line_outputs)
         end
