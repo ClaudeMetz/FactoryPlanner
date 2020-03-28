@@ -58,8 +58,21 @@ function model.update_floor(floor_data, aggregate)
 
             local function update_main_aggregate(class_name, destination_class_name)
                 for _, item in ipairs(structures.class.to_array(subfloor_aggregate[class_name])) do
-                    local amount = (class_name == "Product") and -item.amount or item.amount
-                    structures.aggregate.add(aggregate, destination_class_name, item, amount)
+                    local byproduct_amount = aggregate.Byproduct[item.type][item.name]
+
+                    if (class_name == "Ingredient" or class_name == "Fuel") and byproduct_amount ~= nil then
+                        if byproduct_amount >= item.amount then
+                            structures.aggregate.subtract(aggregate, "Byproduct", item)
+                        else
+                            structures.aggregate.subtract(aggregate, "Byproduct", item, byproduct_amount)
+                            structures.aggregate.add(aggregate, destination_class_name,
+                              item, (item.amount - byproduct_amount))
+                        end
+
+                    else
+                        local amount = (class_name == "Product") and -item.amount or item.amount
+                        structures.aggregate.add(aggregate, destination_class_name, item, amount)
+                    end
                 end
             end
             
