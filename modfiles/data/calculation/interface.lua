@@ -9,39 +9,69 @@ calculation = {
 }
 
 -- scottmsul note: why is refresh an optional parameter to calculation.update? Should it be a parameter here? For now always refresh.
-function calculation.start_matrix_solver(player, subfactory)
+function calculation.start_matrix_solver(player, subfactory, refresh, show_dialog)
     local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
     local modal_data = matrix_solver.get_modal_data(subfactory_data)
+    modal_data["refresh"] = refresh
     local dialog_settings = {
         type = "matrix_solver",
         submit = true,
         modal_data = modal_data
     }
-    enter_modal_dialog(player, dialog_settings)
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local num_rows = #subfactory_metadata.all_items
+    local num_cols = #subfactory_metadata.recipes + #subfactory_metadata.raw_inputs + #subfactory_metadata.byproducts
+    if num_rows~=num_cols then show_dialog = true end
+    
+    if show_dialog then
+        if refresh then refresh_main_dialog(player) end
+        enter_modal_dialog(player, dialog_settings)
+    else
+        -- TODO: store free/eliminated variables in the subfactory, don't duplicate code here with matrix_solver
+        local all_items = subfactory_metadata.all_items
+        local raw_inputs = subfactory_metadata.raw_inputs
+        local byproducts = subfactory_metadata.byproducts
+        local unproduced_outputs = subfactory_metadata.unproduced_outputs
+        local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
+        local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
+        local initial_eliminated_variables = matrix_solver.set_diff(all_items, free_variables)
+        local variables = {
+            free = {},
+            eliminated = matrix_solver.set_to_ordered_list(initial_eliminated_variables)
+        }
+        calculation.run_matrix_solver(player, subfactory, variables, refresh)
+    end
 end
 
-function calculation.run_matrix_solver(player, subfactory, variables)
-    local player_table = get_table(player)
-    player_table.active_subfactory = subfactory
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-    matrix_solver.run_matrix_solver(player, subfactory_data, variables)
-    player_table.active_subfactory = nil
-    refresh_main_dialog(player)
+function calculation.run_matrix_solver(player, subfactory, variables, refresh)
+    if subfactory ~= nil and subfactory.valid then
+        local player_table = get_table(player)
+        player_table.active_subfactory = subfactory
+        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+        matrix_solver.run_matrix_solver(player, subfactory_data, variables)
+        player_table.active_subfactory = nil
+    end
+    if refresh then refresh_main_dialog(player) end
 end
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
-    if subfactory ~= nil and subfactory.valid then
-        local player_table = get_table(player)
-        -- Save the active subfactory in global so the model doesn't have to pass it around
-        player_table.active_subfactory = subfactory
-        
-        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        model.update_subfactory(subfactory_data)
-        player_table.active_subfactory = nil
+    local mode = "MATRIX_SOLVER"
+    
+    if mode == "LINE_SOLVER" then
+        if subfactory ~= nil and subfactory.valid then
+            local player_table = get_table(player)
+            -- Save the active subfactory in global so the model doesn't have to pass it around
+            player_table.active_subfactory = subfactory
+            
+            local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+            model.update_subfactory(subfactory_data)
+            player_table.active_subfactory = nil
+        end
+        if refresh then refresh_main_dialog(player) end
+    elseif mode == "MATRIX_SOLVER" then
+        calculation.start_matrix_solver(player, subfactory, refresh, false)
     end
-
-    if refresh then refresh_main_dialog(player) end
 end
 
 

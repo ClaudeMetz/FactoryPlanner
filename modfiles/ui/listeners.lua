@@ -322,7 +322,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Runs the matrix solver
         -- todo - change this to enter_modal_dialog
         elseif element_name == "fp_sprite-button_matrix_solver" then
-           calculation.start_matrix_solver(player, ui_state.context.subfactory)
+            calculation.start_matrix_solver(player, ui_state.context.subfactory, true, true)
 
         -- Clears all the comments on the current floor
         elseif element_name == "fp_button_production_clear_comments" then

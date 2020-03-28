@@ -250,14 +250,14 @@ function attempt_adding_recipe_line(player, recipe_id)
     local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
     if line == false then
         ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 1)
+        exit_modal_dialog(player, "cancel", {})
     else
         Floor.add(ui_state.context.floor, line)
         
         local message = ui_state.modal_data.message
         if message ~= nil then ui_util.message.enqueue(player, message.text, message.type, 2) end
 
+        exit_modal_dialog(player, "cancel", {})
         calculation.update(player, ui_state.context.subfactory, true)
     end
-
-    exit_modal_dialog(player, "cancel", {})
 end

@@ -67,6 +67,7 @@ function matrix_solver.get_modal_data(subfactory_data)
     local initial_eliminated_variables = matrix_solver.set_diff(all_items, free_variables)
     -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
     initial_eliminated_variables = matrix_solver.set_diff(initial_eliminated_variables, produced_outputs)
+    -- TODO: store free/eliminated variables in the subfactory, don't duplicate code here with matrix_solver
     return {
         recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
         ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
