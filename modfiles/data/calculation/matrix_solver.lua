@@ -56,28 +56,6 @@ function matrix_solver.llog_items(items)
     llog(item_name_set)
 end
 
-function matrix_solver.get_modal_data(subfactory_data)
-    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
-    local all_items = subfactory_metadata.all_items
-    local raw_inputs = subfactory_metadata.raw_inputs
-    local byproducts = subfactory_metadata.byproducts
-    local unproduced_outputs = subfactory_metadata.unproduced_outputs
-    local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
-    local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
-    local initial_eliminated_variables = matrix_solver.set_diff(all_items, free_variables)
-    -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
-    initial_eliminated_variables = matrix_solver.set_diff(initial_eliminated_variables, produced_outputs)
-    -- TODO: store free/eliminated variables in the subfactory, don't duplicate code here with matrix_solver
-    return {
-        recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
-        ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
-        products = matrix_solver.set_to_ordered_list(produced_outputs),
-        byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
-        eliminated_items = matrix_solver.set_to_ordered_list(initial_eliminated_variables),
-        free_items = {} -- always start empty, but allow the user to select
-    }
-end
-
 function matrix_solver.set_diff(a, b)
     local result = {}
     for k, _ in pairs(a) do
@@ -225,7 +203,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
         pollution = top_floor_aggregate.pollution,
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
-        Ingredient = main_aggregate.Ingredient
+        Ingredient = main_aggregate.Ingredient,
+        variables = variables
     }
 end
 

@@ -34,12 +34,13 @@ function close_matrix_solver_dialog(flow_modal_dialog, action, data)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
     local subfactory = ui_state.context.subfactory
+    local refresh = modal_data["refresh"]
 
     local variables = {
         free = modal_data.free_items,
         eliminated = modal_data.eliminated_items
     }
-    calculation.run_matrix_solver(player, subfactory, variables)
+    calculation.run_matrix_solver(player, subfactory, variables, refresh)
 end
 
 function get_matrix_solver_condition_instructions(modal_data)
