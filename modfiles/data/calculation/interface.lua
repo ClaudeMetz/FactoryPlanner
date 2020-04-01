@@ -69,6 +69,10 @@ function calculation.get_matrix_solver_modal_data(player, subfactory)
 
 end
 
+function calculation.check_linear_dependence(player, subfactory, variables)
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    return matrix_solver.run_matrix_solver(player, subfactory_data, variables, true)
+end
 
 function calculation.run_matrix_solver(player, subfactory, variables, refresh)
     if subfactory ~= nil and subfactory.valid then
@@ -83,6 +87,7 @@ end
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
+    -- TODO for claude: set this mode correctly
     local mode = "MATRIX_SOLVER"
     
     if mode == "LINE_SOLVER" then

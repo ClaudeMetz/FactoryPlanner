@@ -24,7 +24,7 @@ If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 matrix_solver = {}
 
--- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_id"
+-- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_key"
 function matrix_solver.get_item_key(item_type_name, item_name)
     local item_type_id = global.all_items.map[item_type_name]
     local item_id = global.all_items.types[item_type_id].map[item_name]
@@ -100,7 +100,7 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
-function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
+function matrix_solver.run_matrix_solver(player, subfactory_data, variables, check_linear_dependence)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local rows = matrix_solver.get_mapping_struct(all_items)
@@ -135,6 +135,28 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
     matrix_solver.to_reduced_row_echelon_form(matrix)
+    if check_linear_dependence then
+        local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix)
+        local linearly_dependent_variables = {}
+        for col, _ in pairs(linearly_dependent_cols) do
+            local col_name = columns.values[col]
+            local col_split_str = cutil.split(col_name, "_")
+            if col_split_str[1] == "line" then
+                local floor = subfactory_data.top_floor
+                for i=2, #col_split_str-1 do
+                    local line_table_id = col_split_str[i]
+                    floor = floor.lines[line_table_id].subfloor
+                end
+                local line_table_id = col_split_str[#col_split_str]
+                local line = floor.lines[line_table_id]
+                local recipe_id = line.recipe_proto.id
+                linearly_dependent_variables["recipe_"..recipe_id] = true
+            else -- item
+                linearly_dependent_variables[col_name] = true
+            end
+        end
+        return linearly_dependent_variables
+    end
 
     local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
 
