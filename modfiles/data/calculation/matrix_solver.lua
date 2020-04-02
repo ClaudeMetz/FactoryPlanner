@@ -574,3 +574,25 @@ function matrix_solver.to_reduced_row_echelon_form(m)
     end
     -- END REDUCED ROW ECHELON FORM PART
 end
+
+function matrix_solver.find_linearly_dependent_cols(matrix)
+    local row_index = 1
+    local num_rows = #matrix
+    local num_cols = #matrix[1]-1
+    local ones_map = {}
+    local col_set = {}
+    for col_index=1, num_cols do
+        if matrix[row_index][col_index]==1 then
+            ones_map[row_index] = col_index
+            row_index = row_index+1
+        else
+            col_set[col_index] = true
+            for i=1, row_index do
+                if matrix[i][col_index] ~= 0 then
+                    col_set[ones_map[i]] = true
+                end
+            end
+        end
+    end
+    return col_set
+end
