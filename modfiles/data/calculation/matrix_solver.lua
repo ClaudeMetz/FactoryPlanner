@@ -77,7 +77,6 @@ function matrix_solver.union_sets(...)
     return result
 end
 
--- not even used :/
 function matrix_solver.intersect_sets(...)
     local arg = {...}
     local counts = {}
