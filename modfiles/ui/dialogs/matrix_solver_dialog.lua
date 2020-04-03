@@ -112,19 +112,21 @@ function get_item_button(item_id, item_variable_type, linearly_dependent_cols)
     else
         style = "fp_button_icon_large_blank"
     end
+    local item = get_item(item_id)
     return {
         type="sprite-button",
         name="fp_sprite-button_matrix_solver_item_"..item_variable_type.."_"..item_id,
-        sprite=get_sprite(item_id),
+        sprite=item.sprite,
+        tooltip=item.localised_name,
         style=style
     }
 end
 
-function get_sprite(item_id)
+function get_item(item_id)
     local split_string = cutil.split(item_id, "_")
     local item_type_id = split_string[1]
     local item_id = split_string[2]
-    return global.all_items.types[item_type_id].items[item_id].sprite
+    return global.all_items.types[item_type_id].items[item_id]
 end
 
 function handle_matrix_solver_free_item_press(player, item_id)
@@ -150,11 +152,13 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data, linearly_dep
     local recipes = modal_data.recipes
     recipe_buttons.clear()
     for i, recipe_id in ipairs(recipes) do
-        local sprite = global.all_recipes.recipes[recipe_id].sprite
+        local recipe = global.all_recipes.recipes[recipe_id]
+        local sprite = recipe.sprite
+        local tooltip = recipe.localised_name
         local button_style
         if linearly_dependent_cols["recipe_"..recipe_id] then button_style="fp_button_icon_large_red" else button_style="fp_button_icon_large_blank" end
-        recipe_buttons.add{type="sprite-button", name="fp_sprite-button_matrix_solver_recipe_"..recipe_id, sprite=sprite,
-            style=button_style, enabled=false}
+        recipe_buttons.add{type="sprite-button", name="fp_sprite-button_matrix_solver_recipe_"..recipe_id,
+            sprite=sprite, tooltip=tooltip, style=button_style, enabled=false}
     end
 
     local ingredient_buttons = flow_modal_dialog["flow_matrix_solver_items"]["flow_matrix_solver_ingredients"]
