@@ -1,4 +1,4 @@
-local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "ingredient_satisfaction", "round_button_numbers", "use_matrix_solver"}
+local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "ingredient_satisfaction", "round_button_numbers", "prefer_matrix_solver"}
 local production_preference_names = {"pollution", "line_comments"}
 
 -- Handles populating the preferences dialog
