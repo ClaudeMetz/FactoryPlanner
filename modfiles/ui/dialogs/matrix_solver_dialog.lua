@@ -197,9 +197,9 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data, linearly_dep
     end
 
     local num_rows = #ingredients + #products + #byproducts + #eliminated_items + #free_items
-    flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption = "Total Rows: "..num_rows
+    flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption = {"", {"fp.matrix_solver_total_rows"}, ": ", num_rows}
     local num_cols = #recipes + #ingredients + #byproducts + #free_items
-    flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption = "Total Columns: "..num_cols
+    flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption = {"", {"fp.matrix_solver_total_cols"}, ": ", num_cols}
 end
 
 -- utility function that removes from a sorted array in place
