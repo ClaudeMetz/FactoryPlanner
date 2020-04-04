@@ -306,6 +306,15 @@ function ui_util.format_timescale(timescale, raw, whole_word)
     else return {"", "1", ts} end
 end
 
+-- Formats the given 'modifier keys' to a clearer table
+function ui_util.format_modifier_keys(direction, alt)
+    return {
+        shift = (direction == "positive"),
+        control = (direction == "negative"),
+        alt = alt
+    }
+end
+
 -- Checks whether the archive is open; posts an error and returns true if it is
 function ui_util.check_archive_status(player)
     if get_flags(player).archive_open then
