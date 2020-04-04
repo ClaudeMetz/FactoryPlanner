@@ -315,12 +315,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_item_amount_toggle" then
             toggle_floor_total_display(player, event.element)
 
-        -- Refreshes the production table
+        -- Refreshes the production table with the line-by-line algorithm
         elseif element_name == "fp_sprite-button_refresh_production" then
-            calculation.update(player, ui_state.context.subfactory, true)
+            calculation.start_line_by_line_solver(player, ui_state.context.subfactory, true)
 
         -- Runs the matrix solver
-        -- todo - change this to enter_modal_dialog
         elseif element_name == "fp_sprite-button_matrix_solver" then
             calculation.start_matrix_solver(player, ui_state.context.subfactory, true, true)
 

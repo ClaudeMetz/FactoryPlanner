@@ -8,7 +8,30 @@ calculation = {
     util = {}
 }
 
--- scottmsul note: why is refresh an optional parameter to calculation.update? Should it be a parameter here? For now always refresh.
+-- Updates the whole subfactory calculations from top to bottom
+function calculation.update(player, subfactory, refresh)
+    local player_table = get_table(player)
+    local use_matrix_solver = player_table.preferences.use_matrix_solver
+    if use_matrix_solver then
+        calculation.start_matrix_solver(player, subfactory, refresh, false)
+    else
+        calculation.start_line_by_line_solver(player, subfactory, refresh)
+    end
+end
+
+function calculation.start_line_by_line_solver(player, subfactory, refresh)
+    if subfactory ~= nil and subfactory.valid then
+        local player_table = get_table(player)
+        -- Save the active subfactory in global so the model doesn't have to pass it around
+        player_table.active_subfactory = subfactory
+        
+        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+        model.update_subfactory(subfactory_data)
+        player_table.active_subfactory = nil
+    end
+    if refresh then refresh_main_dialog(player) end
+end
+
 function calculation.start_matrix_solver(player, subfactory, refresh, show_dialog)
     local modal_data= calculation.get_matrix_solver_modal_data(player, subfactory)
     modal_data["refresh"] = refresh
@@ -87,28 +110,6 @@ function calculation.run_matrix_solver(player, subfactory, variables, refresh)
     if refresh then refresh_main_dialog(player) end
 end
 
--- Updates the whole subfactory calculations from top to bottom
-function calculation.update(player, subfactory, refresh)
-    -- TODO for claude: set this mode correctly
-    local mode = "MATRIX_SOLVER"
-    
-    if mode == "LINE_SOLVER" then
-        if subfactory ~= nil and subfactory.valid then
-            local player_table = get_table(player)
-            -- Save the active subfactory in global so the model doesn't have to pass it around
-            player_table.active_subfactory = subfactory
-            
-            local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-            model.update_subfactory(subfactory_data)
-            player_table.active_subfactory = nil
-        end
-        if refresh then refresh_main_dialog(player) end
-    elseif mode == "MATRIX_SOLVER" then
-        calculation.start_matrix_solver(player, subfactory, refresh, false)
-    end
-end
-
-
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
 function calculation.interface.get_subfactory_data(player, subfactory)
     local subfactory_data = {
@@ -142,9 +143,7 @@ function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
 
-    -- TODO for claude: set this mode correctly
-    local mode = "MATRIX_SOLVER"
-    if mode == "MATRIX_SOLVER" then
+    if result.variables ~= nil then
         subfactory.matrix_solver_variables = result.variables
     end
     
