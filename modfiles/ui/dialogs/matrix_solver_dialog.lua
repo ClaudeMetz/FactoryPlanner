@@ -157,7 +157,7 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data, linearly_dep
         local tooltip = recipe.localised_name
         local button_style
         if linearly_dependent_cols["recipe_"..recipe_id] then button_style="fp_button_icon_large_red" else button_style="fp_button_icon_large_blank" end
-        recipe_buttons.add{type="sprite-button", name="fp_sprite-button_matrix_solver_recipe_"..recipe_id,
+        recipe_buttons.add{type="sprite-button", name="fp_sprite-button_matrix_solver_recipe_"..recipe_id.."_"..i,
             sprite=sprite, tooltip=tooltip, style=button_style, enabled=false}
     end
 

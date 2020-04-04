@@ -83,7 +83,7 @@ function calculation.get_matrix_solver_modal_data(player, subfactory)
     -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
     eliminated_items = matrix_solver.set_diff(eliminated_items, produced_outputs)
     local result = {
-        recipes = matrix_solver.set_to_ordered_list(subfactory_metadata.recipes),
+        recipes = subfactory_metadata.recipes,
         ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
         products = matrix_solver.set_to_ordered_list(produced_outputs),
         byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
