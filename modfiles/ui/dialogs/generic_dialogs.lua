@@ -23,8 +23,9 @@ function generate_blank_chooser_button(player, name)
 end
 
 -- Handles click on an element presented by the chooser
-function handle_chooser_element_click(player, element_id)
-    _G["apply_" .. get_ui_state(player).modal_data.reciever_name .. "_choice"](player, element_id)
+function handle_chooser_element_click(player, element_id, direction, alt)
+    local modifier_keys = ui_util.format_modifier_keys(direction, alt)
+    _G["apply_" .. get_ui_state(player).modal_data.reciever_name .. "_choice"](player, element_id, modifier_keys)
     exit_modal_dialog(player, "cancel", {})
     refresh_main_dialog(player)
 end

@@ -2,11 +2,9 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Shift-clicking when changing the machine for a recipe now sets that machine as the default
   Changes:
     - Updated the remote interface for Recipe Book to support its new version
-  Bugfixes:
-    - 
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.9
