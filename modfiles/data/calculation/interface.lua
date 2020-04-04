@@ -10,9 +10,9 @@ calculation = {
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
-    local player_table = get_table(player)
-    local use_matrix_solver = player_table.preferences.use_matrix_solver
-    if use_matrix_solver then
+    local preferences = get_preferences(player)
+    local prefer_matrix_solver = preferences.prefer_matrix_solver
+    if prefer_matrix_solver then
         calculation.start_matrix_solver(player, subfactory, refresh, false)
     else
         calculation.start_line_by_line_solver(player, subfactory, refresh)
@@ -129,9 +129,7 @@ function calculation.interface.get_subfactory_data(player, subfactory)
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
     subfactory_data.top_floor = calculation.util.generate_floor_data(player, subfactory, top_floor)
 
-    -- TODO for claude: set this mode correctly
-    local mode = "MATRIX_SOLVER"
-    if mode == "MATRIX_SOLVER" then
+    if subfactory.matrix_solver_variables ~= nil then
         subfactory_data.matrix_solver_variables = subfactory.matrix_solver_variables
     end
 

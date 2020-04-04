@@ -427,9 +427,9 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
             elseif item.class == "Byproduct" then
                 -- only enabled when matrix solver is preferred solver
-                local player_table = get_table(player)
-                local use_matrix_solver = player_table.preferences.use_matrix_solver
-                if use_matrix_solver then
+                local preferences = get_preferences(player)
+                local prefer_matrix_solver = preferences.prefer_matrix_solver
+                if prefer_matrix_solver then
                     enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}})
                 end
             end
