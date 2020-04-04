@@ -295,7 +295,6 @@ function matrix_solver.get_lines_metadata(lines, player_index)
     local line_inputs = {}
     local line_outputs = {}
     for _, line in pairs(lines) do
-        table.insert(line_recipes, line.recipe_proto.id)
         line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1)
         for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
             for item_name, _ in pairs(item_data) do
@@ -320,9 +319,10 @@ function matrix_solver.get_lines_metadata(lines, player_index)
             for i, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
                 table.insert(line_recipes, subfloor_line_recipe)
             end
-            line_recipes = matrix_solver.union_sets(line_recipes, floor_metadata.line_recipes)
             line_inputs = matrix_solver.union_sets(line_inputs, floor_metadata.line_inputs)
             line_outputs = matrix_solver.union_sets(line_outputs, floor_metadata.line_outputs)
+        else
+            table.insert(line_recipes, line.recipe_proto.id)
         end
     end
     return {
