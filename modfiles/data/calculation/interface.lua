@@ -77,7 +77,7 @@ function calculation.get_matrix_solver_modal_data(player, subfactory)
             free_items[free_item] = true
         end
         -- make sure that any items that no longer exist are removed
-        free_items = matrix_solver.intersect_sets(free_items, all_items)
+        free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
         eliminated_items = matrix_solver.set_diff(intermediate_items, free_items)
     end
     -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
