@@ -47,9 +47,34 @@ function matrix_solver.get_item_name(item_key)
     return item_info.type.."_"..item_info.name
 end
 
-function matrix_solver.llog_items(items)
+function matrix_solver.print_rows(rows)
+    matrix_solver.print_items_list(rows.values)
+end
+
+function matrix_solver.print_columns(columns)
+    for i, k in ipairs(columns.values) do
+        local col_split_str = cutil.split(k, "_")
+        if col_split_str[1]=="line" then
+            llog(k)
+        else
+            local item_key = col_split_str[2].."_"..col_split_str[3]
+            llog(matrix_solver.get_item_name(item_key))
+        end
+    end
+end
+
+function matrix_solver.print_items_set(items)
     item_name_set = {}
     for k, _ in pairs(items) do
+        local item_name = matrix_solver.get_item_name(k)
+        item_name_set[item_name] = k
+    end
+    llog(item_name_set)
+end
+
+function matrix_solver.print_items_list(items)
+    item_name_set = {}
+    for _, k in ipairs(items) do
         local item_name = matrix_solver.get_item_name(k)
         item_name_set[item_name] = k
     end
@@ -102,7 +127,8 @@ end
 function matrix_solver.run_matrix_solver(player, subfactory_data, variables, check_linear_dependence)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
-    local rows = matrix_solver.get_mapping_struct(all_items)
+    local row_items = matrix_solver.set_diff(all_items, subfactory_metadata.unproduced_outputs)
+    local rows = matrix_solver.get_mapping_struct(row_items)
 
     -- storing the line keys as "line_(lines index 1)_(lines index 2)_..." for arbitrary depths of subfloors
     local function get_line_names(prefix, lines)
@@ -121,7 +147,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables, che
     end
     local line_names = get_line_names("line", subfactory_data.top_floor.lines)
 
-    local raw_free_variables = matrix_solver.union_sets(subfactory_metadata.raw_inputs, subfactory_metadata.byproducts, subfactory_metadata.unproduced_outputs)
+    local raw_free_variables = matrix_solver.union_sets(subfactory_metadata.raw_inputs, subfactory_metadata.byproducts)
     local free_variables = {}
     for k, _ in pairs(raw_free_variables) do
         free_variables["item_"..k] = true
@@ -399,8 +425,11 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
     for _, product in ipairs(subfactory_data.top_level_products) do
         local item_id = product.proto.identifier
         local row_num = rows.map[item_id]
-        local amount = product.required_amount
-        matrix[row_num][#columns.values+1] = amount
+        -- will be nil for unproduced outputs
+        if row_num ~= nil then
+            local amount = product.required_amount
+            matrix[row_num][#columns.values+1] = amount
+        end
     end
 
     return matrix
