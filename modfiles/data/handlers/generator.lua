@@ -824,7 +824,7 @@ function generator.all_fuels()
         -- Only use fuels that were actually detected/accepted to be items,
         -- and have non-zero and non-infinite fuel values
         if proto.fuel_value and proto.fuel_category == "chemical" and items.map[proto.name]
-          and proto.fuel_value ~= 0 and proto.fuel_value ~= math.huge then
+          and proto.fuel_value ~= 0 and proto.fuel_value < 1e+21 then
             insert_proto(all_fuels, "fuels", {
                 name = proto.name,
                 type = proto.type,
