@@ -76,6 +76,13 @@ function open_tutorial_dialog(flow_modal_dialog)
         label.style.single_line = false
         label.style.top_margin = 8
     end
+    
+    -- matrix solver
+    local matrix_solver_title = table_tutorial.add{type="label", name="label_matrix_solver_title", caption={"fp.matrix_solver_title"}}
+    matrix_solver_title.style.font = "fp-font-bold-20p"
+    local matrix_solver_text = table_tutorial.add{type="label", name="label_matrix_solver_text", caption={"fp.matrix_solver_text"}}
+    matrix_solver_text.style.single_line = false
+    matrix_solver_text.style.bottom_margin = 20
 end
 
 

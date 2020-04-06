@@ -1,5 +1,7 @@
 require("model")
 require("structures")
+require("matrix_solver")
+require("ui.dialogs.modal_dialog")
 
 calculation = {
     interface = {},
@@ -8,6 +10,16 @@ calculation = {
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
+    local preferences = get_preferences(player)
+    local prefer_matrix_solver = preferences.prefer_matrix_solver
+    if prefer_matrix_solver then
+        calculation.start_matrix_solver(player, subfactory, refresh, false)
+    else
+        calculation.start_line_by_line_solver(player, subfactory, refresh)
+    end
+end
+
+function calculation.start_line_by_line_solver(player, subfactory, refresh)
     if subfactory ~= nil and subfactory.valid then
         local player_table = get_table(player)
         -- Save the active subfactory in global so the model doesn't have to pass it around
@@ -17,10 +29,86 @@ function calculation.update(player, subfactory, refresh)
         model.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
     end
-
     if refresh then refresh_main_dialog(player) end
 end
 
+function calculation.start_matrix_solver(player, subfactory, refresh, show_dialog)
+    local modal_data= calculation.get_matrix_solver_modal_data(player, subfactory)
+    modal_data["refresh"] = refresh
+    local dialog_settings = {
+        type = "matrix_solver",
+        submit = true,
+        modal_data = modal_data
+    }
+    local num_rows = #modal_data.ingredients + #modal_data.products + #modal_data.byproducts + #modal_data.eliminated_items + #modal_data.free_items
+    local num_cols = #modal_data.recipes + #modal_data.ingredients + #modal_data.byproducts + #modal_data.free_items
+    if num_rows~=num_cols then show_dialog = true end
+    
+    if show_dialog then
+        if refresh then refresh_main_dialog(player) end
+        enter_modal_dialog(player, dialog_settings)
+    else
+        local variables = {
+            free=modal_data.free_items,
+            eliminated=modal_data.eliminated_items
+        }
+        calculation.run_matrix_solver(player, subfactory, variables, refresh)
+    end
+end
+
+function calculation.get_matrix_solver_modal_data(player, subfactory)
+    local eliminated_items = {}
+    local free_items = {}
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local all_items = subfactory_metadata.all_items
+    local raw_inputs = subfactory_metadata.raw_inputs
+    local byproducts = subfactory_metadata.byproducts
+    local unproduced_outputs = subfactory_metadata.unproduced_outputs
+    local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
+    local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
+    local intermediate_items = matrix_solver.set_diff(all_items, free_variables)
+    if subfactory.matrix_solver_variables == nil then
+        eliminated_items = intermediate_items
+    else
+        -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
+        local free_items_list = subfactory.matrix_solver_variables.free
+        for _, free_item in ipairs(free_items_list) do
+            free_items[free_item] = true
+        end
+        -- make sure that any items that no longer exist are removed
+        free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
+        eliminated_items = matrix_solver.set_diff(intermediate_items, free_items)
+    end
+    -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
+    eliminated_items = matrix_solver.set_diff(eliminated_items, produced_outputs)
+    local result = {
+        recipes = subfactory_metadata.recipes,
+        ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
+        products = matrix_solver.set_to_ordered_list(produced_outputs),
+        byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
+        eliminated_items = matrix_solver.set_to_ordered_list(eliminated_items),
+        free_items = matrix_solver.set_to_ordered_list(free_items)
+    }
+    return result
+
+end
+
+function calculation.check_linear_dependence(player, subfactory, variables)
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    return matrix_solver.run_matrix_solver(player, subfactory_data, variables, true)
+end
+
+function calculation.run_matrix_solver(player, subfactory, variables, refresh)
+    if subfactory ~= nil and subfactory.valid then
+        local player_table = get_table(player)
+        player_table.active_subfactory = subfactory
+        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+        matrix_solver.run_matrix_solver(player, subfactory_data, variables)
+        player_table.active_subfactory = nil
+    end
+    if refresh then refresh_main_dialog(player) end
+end
 
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
 function calculation.interface.get_subfactory_data(player, subfactory)
@@ -41,6 +129,10 @@ function calculation.interface.get_subfactory_data(player, subfactory)
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
     subfactory_data.top_floor = calculation.util.generate_floor_data(player, subfactory, top_floor)
 
+    if subfactory.matrix_solver_variables ~= nil then
+        subfactory_data.matrix_solver_variables = subfactory.matrix_solver_variables
+    end
+
     return subfactory_data
 end
 
@@ -48,6 +140,10 @@ end
 function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
+
+    if result.variables ~= nil then
+        subfactory.matrix_solver_variables = result.variables
+    end
     
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
