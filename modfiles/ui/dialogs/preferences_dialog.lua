@@ -171,10 +171,8 @@ function handle_general_preference_change(player, radiobutton)
     local preference = string.gsub(radiobutton.name, "fp_checkbox_preferences_", "")
     get_preferences(player)[preference] = radiobutton.state
     
-    if preference == "ingredient_satisfaction" and radiobutton.state == true then
-        calculation.util.update_all_ingredient_satisfactions(player)
-        refresh_production_pane(player)
-    elseif preference == "ingredient_satisfaction" then
+    if preference == "ingredient_satisfaction" or preference == "round_button_numbers" then
+        if radiobutton.state == true then calculation.util.update_all_ingredient_satisfactions(player) end
         refresh_production_pane(player)
     end
 end
