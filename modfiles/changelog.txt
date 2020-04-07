@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.11
+Date: 07. 04. 2020
   Changes:
     - Added an indication to the tooltip of 'raw ore'-items, differentiating them from mined ore
   Bugfixes:
