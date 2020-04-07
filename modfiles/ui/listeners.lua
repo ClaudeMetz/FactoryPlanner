@@ -378,7 +378,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a chooser element button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
             local element_id = string.gsub(element_name, "fp_sprite%-button_chooser_element_", "")
-            handle_chooser_element_click(player, element_id)
+            handle_chooser_element_click(player, element_id, direction, event.alt)
 
         -- Reacts to a floor-changing button being pressed (up/top)
         elseif string.find(element_name, "^fp_button_floor_[a-z]+$") then

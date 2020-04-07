@@ -317,8 +317,9 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
 
     local s = (selected) and {"", " (", {"fp.selected"}, ")"} or ""
     local m = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
+    local tt = ui_util.tutorial_tooltip(player, nil, "machine_choice", true)
     button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
-      " ", m, "\n", ui_util.attributes.machine(machine_proto)}
+      " ", m, "\n", ui_util.attributes.machine(machine_proto), tt}
 
     add_rounding_overlay(player, button, {count=tonumber(machine_count), sprite_size=button_size})
 end

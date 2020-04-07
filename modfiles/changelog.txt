@@ -1,4 +1,20 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.18.10
+Date: 04. 04. 2020
+  Features:
+    - Shift-clicking when changing the machine for a recipe now sets that machine as the default
+  Changes:
+    - Updated the remote interface for Recipe Book to support its new version
+
+---------------------------------------------------------------------------------------------------
+Version: 0.18.9
+Date: 29. 03. 2020
+  Changes:
+    - Added exact numbers to the utility dialog machine/module tooltips
+  Bugfixes:
+    - Fixed a calculation issue where byproducts where not being used up by recipes on subfloors
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.8
 Date: 16. 03. 2020
   Bugfixes:

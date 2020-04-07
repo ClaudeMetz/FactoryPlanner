@@ -64,16 +64,16 @@ end
 
 -- **** RecipeBook ****
 -- This indicates the version of the RecipeBook remote interface this is compatible with
---remote_actions.recipebook.version = 1
+remote_actions.recipebook.version = 2
 
 local source_data = {mod_name="factoryplanner", gui_name="main_dialog"}
 
 -- Opens RecipeBook to show the given item
 function remote_actions.recipebook.show_item(player, item_proto, _)
-    remote.call("RecipeBook", "open_info_gui", player.index, "material", item_proto.name, source_data)
+    remote.call("RecipeBook", "open_gui", player.index, "material", {item_proto.type, item_proto.name}, source_data)
 end
 
 -- Opens RecipeBook to show the given recipe
 function remote_actions.recipebook.show_recipe(player, recipe_proto, _)
-    remote.call("RecipeBook", "open_info_gui", player.index, "recipe", recipe_proto.name, source_data)
+    remote.call("RecipeBook", "open_gui", player.index, "recipe", recipe_proto.name, source_data)
 end
