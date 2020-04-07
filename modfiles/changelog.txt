@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - 
   Bugfixes:
     - Fixed a crash with infinite values in certain modded situations
+    - Fixed that a change to preferences would not always refresh the main interface
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.10
