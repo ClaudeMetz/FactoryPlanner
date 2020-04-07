@@ -231,16 +231,21 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables, che
         local item_key = split_str[2].."_"..split_str[3]
         local item = matrix_solver.get_item(item_key)
         local amount = matrix[col_num][#columns.values+1]
-        if subfactory_metadata.desired_outputs[item_key] then
-            -- When calling set_subfactory_result we set products for items that were _not_ produced.
-            -- If a free product is non-zero that implies it wasn't created by the subfactory.
-            structures.aggregate.add(main_aggregate, "Product", item, amount)
-        elseif amount < 0 then
+        if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
             structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
         else
             structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
+        end
+    end
+    
+    -- set products for unproduced items
+    for _, product in pairs(subfactory_data.top_level_products) do
+        local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
+        if subfactory_metadata.unproduced_outputs[item_key] then
+            local item = matrix_solver.get_item(item_key)
+            structures.aggregate.add(main_aggregate, "Product", item, product.required_amount)
         end
     end
 
