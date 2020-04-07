@@ -371,7 +371,7 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
     for index, class in ipairs(classes) do
         local style = "fp_button_icon_medium_" .. styles[index]
         local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
-        local indication = (class == "Fuel") and {"", " (", {"fp.fuel"}, ")"} or ""
+        local indication = (class == "Fuel") and {"fp.indication", {"fp.fuel"}} or ""
         
         for _, item in ipairs(Line.get_in_order(line, class)) do
             local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
@@ -406,7 +406,9 @@ function create_item_button_flow(player_table, gui_table, line, group, classes, 
 
                 -- Determine the correct indication
                 if class == "Product" and line.priority_product_proto == item.proto then 
-                    indication = {"", " (", {"fp.priority"}, ")"}
+                    indication = {"fp.indication", {"fp.priority"}}
+                elseif class == "Ingredient" and item.proto.type == "entity" then
+                    indication = {"fp.indication", {"fp.raw_ore"}}
                 end
 
                 local number_line, button_number = "", nil

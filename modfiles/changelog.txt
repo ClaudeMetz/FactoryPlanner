@@ -1,10 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    - 
   Changes:
-    - 
+    - Added an indication to the tooltip of 'raw ore'-items, differentiating them from mined ore
   Bugfixes:
     - Fixed a crash with infinite values in certain modded situations
     - Fixed that a change to preferences would not always refresh the main interface
