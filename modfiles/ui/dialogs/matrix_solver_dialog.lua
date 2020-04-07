@@ -132,8 +132,8 @@ end
 function handle_matrix_solver_free_item_press(player, item_id)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
-    remove(modal_data.free_items, item_id)
-    insert(modal_data.eliminated_items, item_id)
+    cutil.array.remove(modal_data.free_items, item_id)
+    cutil.array.insert(modal_data.eliminated_items, item_id)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     refresh_matrix_solver_items(flow_modal_dialog, modal_data, {})
 end
@@ -141,8 +141,8 @@ end
 function handle_matrix_solver_eliminated_item_press(player, item_id)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
-    remove(modal_data.eliminated_items, item_id)
-    insert(modal_data.free_items, item_id)
+    cutil.array.remove(modal_data.eliminated_items, item_id)
+    cutil.array.insert(modal_data.free_items, item_id)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     refresh_matrix_solver_items(flow_modal_dialog, modal_data, {})
 end
@@ -200,39 +200,4 @@ function refresh_matrix_solver_items(flow_modal_dialog, modal_data, linearly_dep
     flow_modal_dialog["flow_matrix_solver_items"]["label_num_rows"].caption = {"", {"fp.matrix_solver_total_rows"}, ": ", num_rows}
     local num_cols = #recipes + #ingredients + #byproducts + #free_items
     flow_modal_dialog["flow_matrix_solver_items"]["label_num_cols"].caption = {"", {"fp.matrix_solver_total_cols"}, ": ", num_cols}
-end
-
--- utility function that removes from a sorted array in place
-function remove(orig_table, value)
-    local i = 1
-    local found = false
-    while i<=#orig_table and (not found) do
-        local curr = orig_table[i]
-        if curr >= value then
-            found = true
-        end
-        if curr == value then
-            table.remove(orig_table, i)
-        end
-        i = i+1
-    end
-end
-
--- utility function that inserts into a sorted array in place
-function insert(orig_table, value)
-    local i = 1
-    local found = false
-    while i<=#orig_table and (not found) do
-        local curr = orig_table[i]
-        if curr >= value then
-            found=true
-        end
-        if curr > value then
-            table.insert(orig_table, i, value)
-        end
-        i = i+1
-    end
-    if not found then
-        table.insert(orig_table, value)
-    end
 end
