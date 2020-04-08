@@ -545,6 +545,7 @@ end
 -- Contains the raw matrix solver. Converts an NxN+1 matrix to reduced row-echelon form.
 function matrix_solver.to_reduced_row_echelon_form(m)
     local num_rows = #m
+    if #m==0 then return m end
     local num_cols = #m[1]
 
     -- BEGIN ECHELON FORM PART - this makes an upper triangular matrix with all leading 1s
