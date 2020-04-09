@@ -126,11 +126,10 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
-function matrix_solver.run_matrix_solver(player, subfactory_data, variables, check_linear_dependence)
+function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_items, check_linear_dependence)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
-    local row_items = matrix_solver.set_diff(all_items, subfactory_metadata.unproduced_outputs)
-    local rows = matrix_solver.get_mapping_struct(row_items)
+    local rows = matrix_solver.get_mapping_struct(all_items)
 
     -- storing the line keys as "line_(lines index 1)_(lines index 2)_..." for arbitrary depths of subfloors
     local function get_line_names(prefix, lines)
@@ -154,7 +153,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables, che
     for k, _ in pairs(raw_free_variables) do
         free_variables["item_"..k] = true
     end
-    for i, v in ipairs(variables.free) do
+    for i, v in ipairs(matrix_free_items) do
         free_variables["item_"..v] = true
     end
     local col_set = matrix_solver.union_sets(line_names, free_variables)
@@ -258,7 +257,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, variables, che
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient,
-        variables = variables
+        matrix_free_items = matrix_free_items
     }
 end
 

@@ -48,11 +48,7 @@ function calculation.start_matrix_solver(player, subfactory, refresh, show_dialo
         if refresh then refresh_main_dialog(player) end
         enter_modal_dialog(player, dialog_settings)
     else
-        local variables = {
-            free=modal_data.free_items,
-            eliminated=modal_data.eliminated_items
-        }
-        calculation.run_matrix_solver(player, subfactory, variables, refresh)
+        calculation.run_matrix_solver(player, subfactory, modal_data.free_items, refresh)
     end
 end
 
@@ -68,11 +64,11 @@ function calculation.get_matrix_solver_modal_data(player, subfactory)
     local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
     local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = matrix_solver.set_diff(all_items, free_variables)
-    if subfactory.matrix_solver_variables == nil then
+    if subfactory.matrix_free_items == nil then
         eliminated_items = intermediate_items
     else
         -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
-        local free_items_list = subfactory.matrix_solver_variables.free
+        local free_items_list = subfactory.matrix_free_items
         for _, free_item in ipairs(free_items_list) do
             free_items[free_item] = true
         end
@@ -94,17 +90,17 @@ function calculation.get_matrix_solver_modal_data(player, subfactory)
 
 end
 
-function calculation.check_linear_dependence(player, subfactory, variables)
+function calculation.check_linear_dependence(player, subfactory, matrix_free_items)
     local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-    return matrix_solver.run_matrix_solver(player, subfactory_data, variables, true)
+    return matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_items, true)
 end
 
-function calculation.run_matrix_solver(player, subfactory, variables, refresh)
+function calculation.run_matrix_solver(player, subfactory, matrix_free_items, refresh)
     if subfactory ~= nil and subfactory.valid then
         local player_table = get_table(player)
         player_table.active_subfactory = subfactory
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        matrix_solver.run_matrix_solver(player, subfactory_data, variables)
+        matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_items)
         player_table.active_subfactory = nil
     end
     if refresh then refresh_main_dialog(player) end
@@ -129,8 +125,8 @@ function calculation.interface.get_subfactory_data(player, subfactory)
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
     subfactory_data.top_floor = calculation.util.generate_floor_data(player, subfactory, top_floor)
 
-    if subfactory.matrix_solver_variables ~= nil then
-        subfactory_data.matrix_solver_variables = subfactory.matrix_solver_variables
+    if subfactory.matrix_free_items ~= nil then
+        subfactory_data.matrix_free_items = subfactory.matrix_free_items
     end
 
     return subfactory_data
@@ -141,8 +137,8 @@ function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
 
-    if result.variables ~= nil then
-        subfactory.matrix_solver_variables = result.variables
+    if result.matrix_free_items ~= nil then
+        subfactory.matrix_free_items = result.matrix_free_items
     end
     
     subfactory.energy_consumption = result.energy_consumption

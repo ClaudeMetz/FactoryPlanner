@@ -36,11 +36,7 @@ function close_matrix_solver_dialog(flow_modal_dialog, action, data)
     local subfactory = ui_state.context.subfactory
     local refresh = modal_data["refresh"]
 
-    local variables = {
-        free = modal_data.free_items,
-        eliminated = modal_data.eliminated_items
-    }
-    calculation.run_matrix_solver(player, subfactory, variables, refresh)
+    calculation.run_matrix_solver(player, subfactory, modal_data.free_items, refresh)
 end
 
 function get_matrix_solver_condition_instructions(modal_data)
@@ -70,11 +66,7 @@ function get_matrix_solver_condition_instructions(modal_data)
                     return {}
                 end
                 local subfactory = ui_state.context.subfactory
-                local variables = {
-                    free = modal_data.free_items,
-                    eliminated = modal_data.eliminated_items
-                }
-                return calculation.check_linear_dependence(player, subfactory, variables)
+                return calculation.check_linear_dependence(player, subfactory, modal_data.free_items)
             end),
             flow_modal_dialog = (function(flow_modal_dialog) return flow_modal_dialog end)
         },

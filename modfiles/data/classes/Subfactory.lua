@@ -19,7 +19,7 @@ function Subfactory.init(name, icon, timescale_setting)
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory",
-        matrix_solver_variables = nil,
+        matrix_free_items = {},
     }
 
     Subfactory.set_icon(subfactory, icon)
