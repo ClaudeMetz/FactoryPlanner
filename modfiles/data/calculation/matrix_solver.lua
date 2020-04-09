@@ -308,10 +308,10 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
     local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines, subfactory_data.player_index)
     local line_inputs = lines_metadata.line_inputs
     local line_outputs = lines_metadata.line_outputs
-    local all_items = matrix_solver.union_sets(desired_outputs, line_inputs, line_outputs)
+    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
+    local all_items = matrix_solver.union_sets(line_inputs, line_outputs)
     local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
     local byproducts = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
-    local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
     result = {
         recipes = lines_metadata.line_recipes,
         desired_outputs = desired_outputs,
