@@ -48,10 +48,12 @@ function matrix_solver.get_item_name(item_key)
 end
 
 function matrix_solver.print_rows(rows)
+    llog('ROWS')
     matrix_solver.print_items_list(rows.values)
 end
 
 function matrix_solver.print_columns(columns)
+    llog('COLUMNS')
     for i, k in ipairs(columns.values) do
         local col_split_str = cutil.split(k, "_")
         if col_split_str[1]=="line" then
