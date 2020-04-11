@@ -184,8 +184,6 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
         return linearly_dependent_variables
     end
 
-    local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
-
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
         for i, line in ipairs(floor.lines) do
@@ -194,7 +192,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
                 local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-                line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, subfactory_metadata)
+                line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, subfactory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_solver.consolidate(line_aggregate)
@@ -205,7 +203,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 
-            calculation.interface.set_line_result {
+            calculation.interface.set_line_result{
                 player_index = player.index,
                 floor_id = floor.id,
                 line_id = line.id,
@@ -224,6 +222,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
     end
 
     local top_floor_aggregate = set_line_results("line", subfactory_data.top_floor)
+
+    local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
 
     -- set main_aggregate free variables
     for item_line_key, _ in pairs(free_variables) do
@@ -441,7 +441,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
     return matrix
 end
 
-function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, machine_count, subfactory_metadata)
+function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, machine_count, subfactory_metadata, free_variables)
     local line_aggregate = structures.aggregate.init(player_index, floor_id)
     line_aggregate.machine_count = machine_count
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
@@ -462,7 +462,7 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local amount_per_timescale = machine_count * timescale / time_per_craft
     for _, product in pairs(recipe_proto.products) do
         local item_key = matrix_solver.get_item_key(product.type, product.name)
-        if subfactory_metadata~= nil and subfactory_metadata.byproducts[item_key] then
+        if subfactory_metadata~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
             structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale * productivity_multiplier)
         else
             structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)
