@@ -46,7 +46,11 @@ function calculation.start_matrix_solver(player, subfactory, refresh, show_dialo
     
     if show_dialog then
         if refresh then refresh_main_dialog(player) end
-        enter_modal_dialog(player, dialog_settings)
+        -- only show dialog if no other dialogs open (otherwise this crashes the game)
+        local ui_state = get_ui_state(player)
+        if ui_state.modal_dialog_type == nil then
+            enter_modal_dialog(player, dialog_settings)
+        end
     else
         calculation.run_matrix_solver(player, subfactory, modal_data.free_items, refresh)
     end
