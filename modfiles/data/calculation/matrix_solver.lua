@@ -581,6 +581,10 @@ function matrix_solver.to_reduced_row_echelon_form(m)
                 local factor = m[i][curr_col]
                 for j = curr_col, num_cols do
                     m[i][j] = m[i][j] - m[pivot_row][j] * factor
+                    -- check rounding errors from floating point arthmetic
+                    if math.abs(m[i][j]) < 1e-10 then
+                        m[i][j] = 0
+                    end
                 end
             end
 
