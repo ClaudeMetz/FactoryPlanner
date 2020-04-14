@@ -48,21 +48,27 @@ function matrix_solver.get_item_name(item_key)
 end
 
 function matrix_solver.print_rows(rows)
-    llog('ROWS')
-    matrix_solver.print_items_list(rows.values)
+    s = 'ROWS\n'
+    for i, k in ipairs(rows.values) do
+        local item_name = matrix_solver.get_item_name(k)
+        s = s..'ROW '..i..': '..item_name..'\n'
+    end
+    llog(s)
 end
 
 function matrix_solver.print_columns(columns)
-    llog('COLUMNS')
+    s = 'COLUMNS\n'
     for i, k in ipairs(columns.values) do
         local col_split_str = cutil.split(k, "_")
         if col_split_str[1]=="line" then
-            llog(k)
+            s = s..'COL '..i..': '..k..'\n'
         else
             local item_key = col_split_str[2].."_"..col_split_str[3]
-            llog(matrix_solver.get_item_name(item_key))
+            local item_name = matrix_solver.get_item_name(item_key)
+            s = s..'COL '..i..': '..item_name..'\n'
         end
     end
+    llog(s)
 end
 
 function matrix_solver.print_items_set(items)
