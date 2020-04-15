@@ -10,9 +10,7 @@ calculation = {
 
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
-    local preferences = get_preferences(player)
-    local prefer_matrix_solver = preferences.prefer_matrix_solver
-    if prefer_matrix_solver then
+    if get_settings(player).prefer_matrix_solver then
         calculation.start_matrix_solver(player, subfactory, refresh, false)
     else
         calculation.start_line_by_line_solver(player, subfactory, refresh)

@@ -440,10 +440,8 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                 end
 
             elseif item.class == "Byproduct" then
-                -- only enabled when matrix solver is preferred solver
-                local preferences = get_preferences(player)
-                local prefer_matrix_solver = preferences.prefer_matrix_solver
-                if prefer_matrix_solver then
+                -- Byproduct recipes can only be added when the matrix solver is active
+                if get_settings(player).prefer_matrix_solver then
                     enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}})
                 end
             end

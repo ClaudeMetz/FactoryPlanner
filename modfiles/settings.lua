@@ -46,12 +46,19 @@ data:extend({
         order = "f"
     },
     {
+        type = "bool-setting",
+        name = "fp_prefer_matrix_solver",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "g"
+    },
+    {
         type = "double-setting",
         name = "fp_indicate_rounding",
         setting_type = "runtime-per-user",
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "g"
+        order = "h"
     }
 })

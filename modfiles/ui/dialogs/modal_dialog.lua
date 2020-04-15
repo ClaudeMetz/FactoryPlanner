@@ -4,9 +4,9 @@ require("preferences_dialog")
 require("subfactory_dialog")
 require("utility_dialog")
 require("product_dialog")
+require("matrix_solver_dialog")
 require("recipe_dialog")
 require("modules_dialog")
-require("matrix_solver_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
