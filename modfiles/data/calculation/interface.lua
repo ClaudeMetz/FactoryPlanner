@@ -1,7 +1,7 @@
 require("model")
 require("structures")
 require("matrix_solver")
-require("ui.dialogs.modal_dialog")
+require("ui.dialogs.modal_dialog")  -- TODO remove
 
 calculation = {
     interface = {},

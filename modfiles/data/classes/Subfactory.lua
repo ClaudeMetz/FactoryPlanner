@@ -14,12 +14,12 @@ function Subfactory.init(name, icon, timescale_setting)
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
         Floor = Collection.init(),
+        matrix_free_items = nil,
         selected_floor = nil,
         scopes = {},
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory",
-        matrix_free_items = {},
     }
 
     Subfactory.set_icon(subfactory, icon)
@@ -125,7 +125,6 @@ function Subfactory.combine_item_collections(self, primary_items, secondary_item
     
     -- First, go through all primary items and combine them with any identical secondary ones
     for _, dataset in ipairs(Collection.get_in_order(primary_items)) do
-        --log(serpent.block(dataset))
         local primary_item = Collection.add(combination, create_item_copy(dataset))
         local secondary_item = Collection.get_by_name(secondary_items, dataset.proto.name)
         if secondary_item ~= nil then
@@ -163,6 +162,23 @@ end
 function Subfactory.update_validity(self)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Floor = "Floor"}
     self.valid = data_util.run_validation_updates(self, classes)
+
+    -- Silently update matrix_free_items, removing any invalid prototype references
+    for index, proto in pairs(self.matrix_free_items) do
+        local new_type_id = new.all_items.map[proto.type]
+        if new_type_id == nil then
+            table.remove(self.matrix_free_items, index)
+        else
+            local new_type = new.all_items.types[new_type_id]
+            local new_item_id = new_type.map[proto.name]
+            if new_item_id == nil then
+                table.remove(self.matrix_free_items, index)
+            else
+                self.matrix_free_items[index] = new_type.items[new_item_id]
+            end
+        end
+    end
+
     return self.valid
 end
 
