@@ -141,6 +141,44 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
+function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
+    local eliminated_items = {}
+    local free_items = {}
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local all_items = subfactory_metadata.all_items
+    local raw_inputs = subfactory_metadata.raw_inputs
+    local byproducts = subfactory_metadata.byproducts
+    local unproduced_outputs = subfactory_metadata.unproduced_outputs
+    local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
+    local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
+    local intermediate_items = matrix_solver.set_diff(all_items, free_variables)
+    if subfactory.matrix_free_items == nil then
+        eliminated_items = intermediate_items
+    else
+        -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
+        local free_items_list = subfactory.matrix_free_items
+        for _, free_item in ipairs(free_items_list) do
+            free_items[free_item["identifier"]] = true
+        end
+        -- make sure that any items that no longer exist are removed
+        free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
+        eliminated_items = matrix_solver.set_diff(intermediate_items, free_items)
+    end
+    -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
+    eliminated_items = matrix_solver.set_diff(eliminated_items, produced_outputs)
+    local result = {
+        recipes = subfactory_metadata.recipes,
+        ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
+        products = matrix_solver.set_to_ordered_list(produced_outputs),
+        byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
+        eliminated_items = matrix_solver.set_to_ordered_list(eliminated_items),
+        free_items = matrix_solver.set_to_ordered_list(free_items)
+    }
+    return result
+
+end
+
 function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_items, check_linear_dependence)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
