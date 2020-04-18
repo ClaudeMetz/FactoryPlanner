@@ -164,17 +164,19 @@ function Subfactory.update_validity(self)
     self.valid = data_util.run_validation_updates(self, classes)
 
     -- Silently update matrix_free_items, removing any invalid prototype references
-    for index, proto in pairs(self.matrix_free_items) do
-        local new_type_id = new.all_items.map[proto.type]
-        if new_type_id == nil then
-            table.remove(self.matrix_free_items, index)
-        else
-            local new_type = new.all_items.types[new_type_id]
-            local new_item_id = new_type.map[proto.name]
-            if new_item_id == nil then
+    if self.matrix_free_items ~= nil then
+        for index, proto in pairs(self.matrix_free_items) do
+            local new_type_id = new.all_items.map[proto.type]
+            if new_type_id == nil then
                 table.remove(self.matrix_free_items, index)
             else
-                self.matrix_free_items[index] = new_type.items[new_item_id]
+                local new_type = new.all_items.types[new_type_id]
+                local new_item_id = new_type.map[proto.name]
+                if new_item_id == nil then
+                    table.remove(self.matrix_free_items, index)
+                else
+                    self.matrix_free_items[index] = new_type.items[new_item_id]
+                end
             end
         end
     end
