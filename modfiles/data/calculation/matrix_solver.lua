@@ -24,6 +24,15 @@ If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 matrix_solver = {}
 
+function matrix_solver.get_item_protos(item_keys)
+    local item_protos = {}
+    for i, item_key in ipairs(item_keys) do
+        local item_proto = matrix_solver.get_item(item_key)
+        item_protos[i] = item_proto
+    end
+    return item_protos
+end
+
 -- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_key"
 function matrix_solver.get_item_key(item_type_name, item_name)
     local item_type_id = global.all_items.map[item_type_name]
@@ -256,6 +265,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
         end
     end
 
+    matrix_free_item_protos = matrix_solver.get_item_protos(matrix_free_items)
+
     calculation.interface.set_subfactory_result {
         player_index = subfactory_data.player_index,
         energy_consumption = top_floor_aggregate.energy_consumption,
@@ -263,7 +274,7 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient,
-        matrix_free_items = matrix_free_items
+        matrix_free_items = matrix_free_item_protos
     }
 end
 

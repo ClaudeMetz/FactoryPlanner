@@ -72,7 +72,7 @@ function calculation.get_matrix_solver_modal_data(player, subfactory)
         -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
         local free_items_list = subfactory.matrix_free_items
         for _, free_item in ipairs(free_items_list) do
-            free_items[free_item] = true
+            free_items[free_item["identifier"]] = true
         end
         -- make sure that any items that no longer exist are removed
         free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
