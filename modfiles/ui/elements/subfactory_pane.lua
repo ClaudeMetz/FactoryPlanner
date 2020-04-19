@@ -235,7 +235,8 @@ end
 
 -- Handles click on a subfactory pane byproduct button
 function handle_byproduct_element_click(player, byproduct_id, click, direction, action, alt)
-    local subfactory = get_context(player).subfactory
+    local context = get_context(player)
+    local subfactory = context.subfactory
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
     
     if alt then
