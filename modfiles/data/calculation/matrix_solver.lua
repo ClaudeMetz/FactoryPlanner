@@ -176,8 +176,47 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
         free_items = matrix_solver.set_to_ordered_list(free_items)
     }
     return result
-
 end
+
+function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data)
+    local linear_dependence_data = {
+        linearly_dependent_recipes = {},
+        linearly_dependent_items = {},
+        potential_free_items = {}
+    }
+    local num_rows = #modal_data.ingredients + #modal_data.products + #modal_data.byproducts + #modal_data.eliminated_items + #modal_data.free_items
+    local num_cols = #modal_data.recipes + #modal_data.ingredients + #modal_data.byproducts + #modal_data.free_items
+    -- return early if these don't match since the matrix solver can crash when these are different
+    if num_rows < num_cols then
+        return linear_dependence_data
+    end
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local linearly_dependent_cols = matrix_solver.run_matrix_solver(player, subfactory_data, modal_data.free_items, true)
+    for col_name, _ in pairs(linearly_dependent_cols) do
+        local col_split_str = cutil.split(col_name, "_")
+        if col_split_str[1] == "recipe" then
+            local recipe_key = col_split_str[2]
+            linear_dependence_data.linearly_dependent_recipes[recipe_key] = true
+        else -- "item"
+            local item_key = col_split_str[2].."_"..col_split_str[3]
+            linear_dependence_data.linearly_dependent_items[item_key] = true
+        end
+    end
+    -- check which eliminated items could be made free while still retaining linear independence
+    if #linearly_dependent_cols == 0 and num_cols < num_rows then
+        local eliminated_items = modal_data.eliminated_items
+        for _, eliminated_item in ipairs(eliminated_items) do
+            local curr_free_items = cutil.shallowcopy(modal_data.free_items)
+            cutil.array.insert(curr_free_items, eliminated_item)
+            linearly_dependent_cols = matrix_solver.run_matrix_solver(player, subfactory_data, curr_free_items, true)
+            if next(linearly_dependent_cols) == nil then
+                linear_dependence_data.potential_free_items[eliminated_item] = true
+            end
+        end
+    end
+    return linear_dependence_data
+end
+
 
 function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_items, check_linear_dependence)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)

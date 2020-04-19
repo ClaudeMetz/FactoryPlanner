@@ -53,11 +53,6 @@ function calculation.start_matrix_solver(player, subfactory, refresh, show_dialo
     end
 end
 
-function calculation.check_linear_dependence(player, subfactory, matrix_free_items)
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-    return matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_items, true)
-end
-
 function calculation.run_matrix_solver(player, subfactory, matrix_free_items, refresh)
     if subfactory ~= nil and subfactory.valid then
         local player_table = get_table(player)
