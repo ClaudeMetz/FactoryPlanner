@@ -3,14 +3,14 @@ data:extend({
         type = "custom-input",
         name = "fp_toggle_main_dialog",
         key_sequence = "CONTROL + R",
-        consuming = "script-only",
+        consuming = "game-only",
         order = "a"
     },
     {
         type = "custom-input",
         name = "fp_floor_up",
         key_sequence = "SHIFT + R",
-        consuming = "script-only",
+        consuming = "none",
         order = "b"
     },
     {
