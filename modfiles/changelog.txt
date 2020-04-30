@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.12
+Date: 30. 04. 2020
   Bugfixes:
     - Fixed the usage of an outdated format for hotkeys that was no longer supported with Factorio 0.18.22
 
