@@ -41,8 +41,8 @@ function calculation.start_matrix_solver(player, subfactory, refresh, show_dialo
     local num_cols = #modal_data.recipes + #modal_data.ingredients + #modal_data.byproducts + #modal_data.free_items
     if num_rows~=num_cols then show_dialog = true end
     
-    if show_dialog then
-        if refresh then refresh_main_dialog(player) end
+    if refresh and show_dialog then
+        refresh_main_dialog(player)
         -- only show dialog if no other dialogs open (otherwise this crashes the game)
         local ui_state = get_ui_state(player)
         if ui_state.modal_dialog_type == nil then
