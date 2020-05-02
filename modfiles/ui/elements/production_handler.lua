@@ -161,12 +161,6 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
             local category_id = line.machine.category.id
-
-            if direction == "positive" then
-                -- Set preferred machine if button is shift-clicked
-                data_util.machine.set_default(player, category_id, machine_id)
-            end
-
             local new_machine = global.all_machines.categories[category_id].machines[machine_id]
             data_util.machine.change(player, line, new_machine, nil)
             ui_state.current_activity = nil
@@ -190,15 +184,9 @@ function generate_chooser_machine_buttons(player)
 end
 
 -- Recieves the result of the machine choice and applies it
-function apply_machine_choice(player, machine_id, modifier_keys)
+function apply_machine_choice(player, machine_id)
     local context = get_context(player)
     local category_id, machine_id = context.line.machine.category.id, tonumber(machine_id)
-
-    if modifier_keys.shift then
-        -- Set preferred machine if button is shift-clicked
-        data_util.machine.set_default(player, category_id, machine_id)
-    end
-
     local machine = global.all_machines.categories[category_id].machines[machine_id]
     data_util.machine.change(player, context.line, machine, nil)
     calculation.update(player, context.subfactory, true)
