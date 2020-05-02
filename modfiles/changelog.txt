@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - Reworded the tooltip for the production percentage-column to be more correct
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.12
 Date: 30. 04. 2020
   Bugfixes:
