@@ -258,6 +258,9 @@ end
 -- **** FORMULAE ****
 -- Determine the amount of machines needed to produce the given recipe in the given context
 function calculation.util.determine_machine_count(machine_proto, recipe_proto, total_effects, production_ratio, timescale)
+    -- Stupid exception because this is all a giant hack
+    if recipe_proto.name == "fp-space-science-pack" then return 1e-16 end
+    
     local launch_delay = 0
     if recipe_proto.name == "rocket-part" then
         local rockets_produced = production_ratio / 100
