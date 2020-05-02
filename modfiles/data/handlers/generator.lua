@@ -75,6 +75,16 @@ local function is_barreling_recipe(proto)
     end
 end
 
+-- Determines whether this recipe is annoying or not
+-- Compatible with: Klonan's Transport/Mining Drones
+local function is_annoying_recipe(proto)
+    if string.match(proto.name, "^request%-.*") or string.match(proto.name, "^mine%-.*") then
+        return true
+    else
+        return false
+    end
+end
+
 
 -- Returns the appropriate prototype name for the given item, incorporating temperature
 local function format_temperature_name(item, name)
@@ -326,7 +336,8 @@ function generator.all_recipes()
     for recipe_name, proto in pairs(game.recipe_prototypes) do
         -- Avoid any recipes that have no machine to produce them or are unresearchable
         local category_id = new.all_machines.map[proto.category]
-        if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name]) then
+        if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name])
+         and not is_annoying_recipe(proto) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
