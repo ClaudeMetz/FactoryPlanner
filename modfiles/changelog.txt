@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
+    - Added an exception so that Klonan's Transport/Mining Drone pseudo-recipes won't show up in the recipe picker
     - Reworded the tooltip for the production percentage-column to be more correct
   Bugfixes:
     - 
