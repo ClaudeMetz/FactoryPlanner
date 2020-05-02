@@ -192,7 +192,7 @@ function ui_util.format_number(number, precision)
     if number == nil then return nil end
     
     -- To avoid scientific notation, chop off the decimals points for big numbers
-    if (number / (10 ^ precision)) > 1 then
+    if (number / (10 ^ precision)) >= 1 then
         return ("%d"):format(number)
     else
         -- Set very small numbers to 0
