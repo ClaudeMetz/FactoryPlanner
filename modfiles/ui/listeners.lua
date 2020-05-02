@@ -394,7 +394,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to the machine button on an (assembly) line being pressed
         elseif string.find(element_name, "^fp_sprite%-button_line_machine_%d+$") then
             local line_id = tonumber(string.match(element_name, "%d+"))
-            handle_machine_change(player, line_id, nil, click, direction)
+            handle_machine_change(player, line_id, nil, click, direction, event.alt)
             
         -- Changes the machine of the selected (assembly) line
         elseif string.find(element_name, "^fp_sprite%-button_line_machine_%d+_%d+$") then

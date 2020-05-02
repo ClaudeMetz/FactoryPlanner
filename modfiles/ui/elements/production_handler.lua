@@ -91,7 +91,7 @@ end
 
 
 -- Handles the machine changing process
-function handle_machine_change(player, line_id, machine_id, click, direction)
+function handle_machine_change(player, line_id, machine_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
     local ui_state = get_ui_state(player)
@@ -104,6 +104,13 @@ function handle_machine_change(player, line_id, machine_id, click, direction)
         -- Change the machine to be one tier lower/higher if possible
         if direction ~= nil then
             data_util.machine.change(player, line, nil, direction)
+            calculation.update(player, subfactory, true)
+
+        -- Reset this machine to its default if ALT was pressed
+        elseif alt then
+            data_util.machine.change(player, line, nil, nil)
+            line.machine.limit = nil
+            line.machine.hard_limit = false
             calculation.update(player, subfactory, true)
 
         -- Display all the options for this machine category
