@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.13
+Date: 16. 05. 2020
   Features:
     - You can now alt-click the machine of any recipe to reset it to default, removing any configured limits
   Changes:
