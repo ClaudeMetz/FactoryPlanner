@@ -32,8 +32,10 @@ function player_gui_reset(player)
         mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
         screen["fp_frame_main_dialog"],
         screen["fp_frame_modal_dialog"],
+        screen["fp_frame_modal_dialog_product"],  -- TODO remove when proper solution is found
         unpack(cached_dialogs)
     }
+    
     for _, gui in pairs(guis) do
         if type(gui) == "string" then gui = screen[gui] end
         if gui ~= nil and gui.valid then gui.destroy() end
