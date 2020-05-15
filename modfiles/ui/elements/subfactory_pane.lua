@@ -227,6 +227,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
                 -- Remove useless recipes after a product has been deleted
                 calculation.update(player, subfactory, false)
                 Subfactory.remove_useless_lines(subfactory)
+                ui_util.context.set_floor(player, Subfactory.get(subfactory, "Floor", 1))
 
                 calculation.update(player, subfactory, true)
             end

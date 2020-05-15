@@ -42,6 +42,7 @@ function close_product_dialog(flow_modal_dialog, action, data)
         -- Remove useless recipes after a product has been deleted
         calculation.update(player, subfactory, false)
         Subfactory.remove_useless_lines(subfactory)
+        ui_util.context.set_floor(player, Subfactory.get(subfactory, "Floor", 1))
     end
 
     calculation.update(player, subfactory, true)
