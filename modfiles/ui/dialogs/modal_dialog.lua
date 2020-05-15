@@ -14,6 +14,7 @@ function enter_modal_dialog(player, dialog_settings)
     ui_state.modal_data = dialog_settings.modal_data or {}
 
     ui_state.current_activity = nil
+    ui_state.context.line = nil
     refresh_current_activity(player)
     
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
