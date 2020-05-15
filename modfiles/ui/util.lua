@@ -223,7 +223,9 @@ function ui_util.format_SI_value(value, unit, precision)
         ["P/s"] = {"", {"fp.unit_pollution"}, "/", {"fp.unit_second"}}
     }
 
-    value = value or 0
+    local sign = (value >= 0) and "" or "-"
+    value = math.abs(value) or 0
+    
     local scale_counter = 0
     -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
     while scale_counter < #scale and value > (1000 ^ (scale_counter + 1)) do
@@ -236,7 +238,7 @@ function ui_util.format_SI_value(value, unit, precision)
     end
 
     value = value / (1000 ^ scale_counter)
-    return {"", ui_util.format_number(value, precision) .. " " .. scale[scale_counter + 1], units[unit]}
+    return {"", sign .. ui_util.format_number(value, precision) .. " " .. scale[scale_counter + 1], units[unit]}
 end
 
 
@@ -395,6 +397,9 @@ end
 -- Returns a tooltip containing the attributes of the given machine prototype
 function ui_util.attributes.machine(machine)
     local pollution = machine.energy_usage * machine.emissions * 60
+    if machine.name == "bio-generator-temperate-1" then
+        llog(machine.energy_usage, machine.emissions)
+    end
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
            {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
            {"fp.cpollution"}, ": ", ui_util.format_SI_value(pollution, "P/s", 3), "\n",

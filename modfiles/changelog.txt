@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Reworded the tooltip for the production percentage-column to be more correct
   Bugfixes:
     - Fixed that rocket silo recipes would be calculated incorrectly, which had lead to inaccurate machine counts and wacky numbers when using the items/s/machine view
+    - Fixed that machines with negative pollution values would display as having 0 pollution
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.12
