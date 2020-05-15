@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Fixed that machines with negative pollution values would display as having 0 pollution
     - Fixed that you could be stranded on a non-existant subfloor after deleting its main recipe
     - Fixed that alt-tabbing or changing resolution while FP is pausing the game could cause it to be stuck in the paused state
+    - Fixed that deleting subfloors could sometimes leave behind remnants that lead to a crash when clicked on
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.12
