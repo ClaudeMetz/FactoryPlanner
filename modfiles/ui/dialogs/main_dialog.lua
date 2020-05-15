@@ -115,7 +115,10 @@ function refresh_main_dialog(player, full_refresh)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
         main_dialog.style.minimal_width = dimensions.width
         main_dialog.style.height = dimensions.height
+
         main_dialog.visible = (not full_refresh) or false  -- hide dialog on a full refresh
+        game.tick_paused = main_dialog.visible  -- adjust pause-state accordingly
+        player.opened = (main_dialog.visible) and main_dialog or nil  -- same for player.opened
 
         add_titlebar_to(main_dialog)
         add_actionbar_to(main_dialog)
