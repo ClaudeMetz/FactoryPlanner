@@ -105,6 +105,7 @@ function Subfactory.remove_useless_lines(self)
 
     local top_floor = Subfactory.get(self, "Floor", 1)
     clear_floor(top_floor)
+    self.selected_floor = top_floor
 end
 
 
