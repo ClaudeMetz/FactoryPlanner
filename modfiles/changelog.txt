@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Removed the functionality to shift-click a machine choice to set it as the default
     - Added an exception so that Klonan's Transport/Mining Drone pseudo-recipes won't show up in the recipe picker
     - Reworded the tooltip for the production percentage-column to be more correct
+    - Added the mod name and description to the locale file, so it can be localised to other languages
   Bugfixes:
     - Added a temporary fix for some dialogs showing up behind the main interface. I'll have to wait on the reaction of the devs for a proper fix. For now, opening the product picker dialog will be slower. Sorry about that.
     - Fixed that rocket silo recipes would be calculated incorrectly, which had lead to inaccurate machine counts and wacky numbers when using the items/s/machine view
@@ -14,7 +15,7 @@ Date: 00. 00. 0000
     - Fixed that you could be stranded on a non-existant subfloor after deleting its main recipe
     - Fixed that alt-tabbing or changing resolution while FP is pausing the game could cause it to be stuck in the paused state
     - Fixed that deleting subfloors could sometimes leave behind remnants that lead to a crash when clicked on
-    - Fixed that energy consumption for machines in tooltips was off by a factor of 60. The calculations were still correct.
+    - Fixed that energy consumption for machines in tooltips was off by a factor of 60; The calculations were still correct
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.12
