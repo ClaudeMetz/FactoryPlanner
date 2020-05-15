@@ -396,10 +396,10 @@ end
 
 -- Returns a tooltip containing the attributes of the given machine prototype
 function ui_util.attributes.machine(machine)
-    local pollution = machine.energy_usage * machine.emissions * 60
+    local energy_usage = machine.energy_usage * 60
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage, "W", 3), "\n",
-           {"fp.cpollution"}, ": ", ui_util.format_SI_value(pollution, "P/s", 3), "\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
+           {"fp.cpollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions, "P/s", 3), "\n",
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
