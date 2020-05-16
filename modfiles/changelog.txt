@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Bugfixes:
+    - Fixed that the game could be paused unexpectedly
     - Fixed a crash when selecting a product from the item picker
     - Fixed a crash when opening certain dialogs
 

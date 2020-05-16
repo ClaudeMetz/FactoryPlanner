@@ -56,6 +56,14 @@ function is_main_dialog_in_focus(player)
       and get_ui_state(player).modal_dialog_type == nil)
 end
 
+-- Sets the game.paused-state appropriately
+function set_pause_state(player, main_dialog)
+    if get_settings(player).pause_on_interface and not game.is_multiplayer() and 
+      player.controller_type ~= defines.controllers.editor then
+        game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
+    end
+end
+
 
 -- Toggles the main dialog open and closed
 function toggle_main_dialog(player)
@@ -64,13 +72,9 @@ function toggle_main_dialog(player)
         local main_dialog = player.gui.screen["fp_frame_main_dialog"]
         if main_dialog ~= nil then main_dialog.visible = not main_dialog.visible end
         main_dialog = refresh_main_dialog(player)
-        player.opened = main_dialog.visible and main_dialog or nil
 
-        -- Handle the pause_on_open_interface option
-        if get_settings(player).pause_on_interface and not game.is_multiplayer() and 
-          player.controller_type ~= defines.controllers.editor then
-            game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
-        end
+        player.opened = main_dialog.visible and main_dialog or nil
+        set_pause_state(player, main_dialog)
     end
 end
 
@@ -119,7 +123,7 @@ function refresh_main_dialog(player, full_refresh)
         main_dialog.style.height = dimensions.height
 
         main_dialog.visible = (not full_refresh) or false  -- hide dialog on a full refresh
-        game.tick_paused = main_dialog.visible  -- adjust pause-state accordingly
+        set_pause_state(player, main_dialog)  -- Adjust the paused-state accordingly
         player.opened = (main_dialog.visible) and main_dialog or nil  -- same for player.opened
 
         add_titlebar_to(main_dialog)
