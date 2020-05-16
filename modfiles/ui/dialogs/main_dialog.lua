@@ -93,7 +93,7 @@ function set_selection_mode(player, state)
     get_flags(player).selection_mode = state
     player.gui.screen["fp_frame_main_dialog"].visible = not state
 
-    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+    local frame_modal_dialog = ui_util.find_modal_dialog(player)
     frame_modal_dialog.ignored_by_interaction = state
     if state == true then
         frame_modal_dialog.location = {25, 50}

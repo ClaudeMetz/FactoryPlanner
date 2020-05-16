@@ -114,7 +114,7 @@ function handle_item_picker_product_click(player, identifier)
     local item_proto = identifier_item_map[identifier]
     get_modal_data(player).selected_item = item_proto
 
-    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog_product"]["flow_modal_dialog"]["flow_product_bar"]
+    local flow_product_bar = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_product_bar"]
     flow_product_bar["sprite-button_product"].sprite = item_proto.sprite
     flow_product_bar["sprite-button_product"].tooltip = item_proto.localised_name
     flow_product_bar["textfield_product_amount"].focus()
