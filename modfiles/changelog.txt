@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when selecting a product from the item picker
+    - Fixed a crash when opening certain dialogs
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.13
