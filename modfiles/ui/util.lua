@@ -337,6 +337,12 @@ function ui_util.execute_alt_action(player, action_type, data)
     end
 end
 
+-- Tries to find the currently open modal dialog and returns it
+function ui_util.find_modal_dialog(player)
+    local candidate_frame_name = "fp_frame_modal_dialog_" .. get_ui_state(player).modal_dialog_type
+    return player.gui.screen[candidate_frame_name] or player.gui.screen["fp_frame_modal_dialog"] or nil
+end
+
 
 -- **** Context ****
 -- Creates a blank context referencing which part of the Factory is currently displayed

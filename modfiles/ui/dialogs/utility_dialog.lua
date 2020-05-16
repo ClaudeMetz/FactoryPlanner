@@ -95,7 +95,7 @@ function handle_utility_scope_change(player, type, state)
     local context = get_context(player)
     Subfactory.set_scope(context.subfactory, type, state)
 
-    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
+    local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
     _G["refresh_utility_" .. type .. "_structure"](flow_modal_dialog, context)
 end
 
