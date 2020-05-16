@@ -52,6 +52,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
                 if ui_state.current_activity == "deleting_line" then
                     Floor.remove(floor, line)
                     ui_state.current_activity = nil
+                    ui_state.context.line = nil
                     calculation.update(player, subfactory, true)
                 else
                     ui_state.current_activity = "deleting_line"
