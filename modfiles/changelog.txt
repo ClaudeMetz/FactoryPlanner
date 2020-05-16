@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.14
+Date: 16. 05. 2020
   Bugfixes:
     - Fixed that the game could be paused unexpectedly
     - Fixed a crash when selecting a product from the item picker
