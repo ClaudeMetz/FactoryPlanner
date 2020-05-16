@@ -48,7 +48,7 @@ function calculation.start_matrix_solver(player, subfactory, refresh, show_dialo
         if ui_state.modal_dialog_type == nil then
             enter_modal_dialog(player, dialog_settings)
         end
-    else
+    elseif num_rows==num_cols then
         calculation.run_matrix_solver(player, subfactory, modal_data.free_items, refresh)
     end
 end
