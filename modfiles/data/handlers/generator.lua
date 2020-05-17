@@ -584,22 +584,21 @@ function generator.all_items()
             if type == "item" then hidden = proto.has_flag("hidden")
             elseif type == "fluid" then hidden = proto.hidden end
             
-            if not hidden or item_name == "rocket-part" then  -- exclude hidden items
-                local item = {
-                    name = item_name,
-                    type = type,
-                    sprite = type .. "/" .. proto.name,
-                    localised_name = localised_name,
-                    ingredient_only = not item_details.is_product,
-                    temperature = item_details.temperature,
-                    order = order,
-                    group = generate_group_table(proto.group),
-                    subgroup = generate_group_table(proto.subgroup)
-                }
+            local item = {
+                name = item_name,
+                type = type,
+                sprite = type .. "/" .. proto.name,
+                localised_name = localised_name,
+                hidden = hidden,
+                ingredient_only = not item_details.is_product,
+                temperature = item_details.temperature,
+                order = order,
+                group = generate_group_table(proto.group),
+                subgroup = generate_group_table(proto.subgroup)
+            }
 
-                add_item_tooltip(item)
-                deep_insert_proto(all_items, "types", type, "items", item, true)
-            end
+            add_item_tooltip(item)
+            deep_insert_proto(all_items, "types", type, "items", item, true)
         end
     end
     
