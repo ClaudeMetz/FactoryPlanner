@@ -207,13 +207,13 @@ function apply_recipe_filter(player)
             local visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
             
             button.visible = visible
-            any_group_recipe_visible = visible or false
+            any_group_recipe_visible = visible or any_group_recipe_visible
         end
         
         -- Hide the whole table row if no recipe in it is visible
         table_recipes["sprite_group_" .. group_name].visible = any_group_recipe_visible
         table_recipes["table_recipe_group_" .. group_name].visible = any_group_recipe_visible
-        any_recipe_visible = any_group_recipe_visible or false
+        any_recipe_visible = any_group_recipe_visible or any_recipe_visible
 
         local additional_height = math.max(73, (math.ceil(table_size(recipe_list) / recipes_per_row) * 38))
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
