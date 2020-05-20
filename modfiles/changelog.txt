@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.15
+Date: 20. 05. 2020
   Bugfixes:
     - Fixed a bug where the recipe picker didn't show the appropriate recipes in some cases
     - Fixed that adding recipes which used hidden items would crash
