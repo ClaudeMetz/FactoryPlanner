@@ -339,8 +339,13 @@ end
 
 -- Tries to find the currently open modal dialog and returns it
 function ui_util.find_modal_dialog(player)
-    local candidate_frame_name = "fp_frame_modal_dialog_" .. get_ui_state(player).modal_dialog_type
-    return player.gui.screen[candidate_frame_name] or player.gui.screen["fp_frame_modal_dialog"] or nil
+    local modal_dialog_type = get_ui_state(player).modal_dialog_type
+    if modal_dialog_type == nil then
+        return nil
+    else
+        local candidate_frame_name = "fp_frame_modal_dialog_" .. modal_dialog_type
+        return player.gui.screen[candidate_frame_name] or player.gui.screen["fp_frame_modal_dialog"]
+    end
 end
 
 
@@ -467,6 +472,8 @@ end
 function ui_util.message.refresh(player)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
     if main_dialog == nil then return end
+    local flow_titlebar = main_dialog["flow_titlebar"]
+    if flow_titlebar == nil then return end
 
     -- The message types are ordered by priority
     local types = {
@@ -499,7 +506,7 @@ function ui_util.message.refresh(player)
         if message.lifetime <= 0 then table.remove(ui_state.message_queue, index) end
     end
     
-    local label_hint = main_dialog["flow_titlebar"]["label_titlebar_hint"]
+    local label_hint = flow_titlebar["label_titlebar_hint"]
     label_hint.caption = new_message
     ui_util.set_label_color(label_hint, new_color)
 end
