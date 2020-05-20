@@ -1,15 +1,12 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    - 
-  Changes:
-    - 
   Bugfixes:
     - Fixed a bug where the recipe picker didn't show the appropriate recipes in some cases
     - Fixed that adding recipes which used hidden items would crash
-    - (Probably) fixed a crash when the space science-item is being removed by another mod
+    - Fixed that a recipe would sometimes show as being able to use fluids as ingredients/products, while actually not being able to do so
     - Fixed a crash when alt-tabbing or changing resolution while a popup dialog was open
+    - (Probably) fixed a crash when the space science-item is being removed by another mod
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.14

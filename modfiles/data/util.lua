@@ -18,14 +18,18 @@ function data_util.machine.get_default(player, category_name)
     return get_preferences(player).default_machines.categories[category_id]
 end
 
--- Returns whether the given machine can produce the given recipe
-function data_util.machine.is_applicable(machine_proto, recipe)
-    local item_ingredients_count = 0
-    for _, ingredient in pairs(recipe.proto.ingredients) do
+-- Returns whether the given machine can produce the given recipe prototype
+function data_util.machine.is_applicable(machine_proto, recipe_proto)
+    local item_ingredients_count, uses_fluids = 0, false
+    for _, ingredient in pairs(recipe_proto.ingredients) do
         -- Ingredient count does not include fluid ingredients
-        if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1 end
+        if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1
+        elseif ingredient.type == "fluid" then uses_fluids = true end
     end
-    return (item_ingredients_count <= machine_proto.ingredient_limit)
+
+    -- The logic is simplified, second statement reads like this:
+    -- (not uses_fluids or (uses_fluids and machine_proto.can_use_fluids))
+    return (item_ingredients_count <= machine_proto.ingredient_limit) and (not uses_fluids or machine_proto.can_use_fluids)
 end
 
 
@@ -45,7 +49,7 @@ function data_util.machine.change(player, line, machine, direction)
         local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
         -- Try setting a higher tier machine until it sticks or nothing happens
         -- Returns false if no machine fits at all, so an appropriate error can be displayed
-        if not data_util.machine.is_applicable(machine.proto, line.recipe) then
+        if not data_util.machine.is_applicable(machine.proto, line.recipe.proto) then
             return data_util.machine.change(player, line, machine, "positive")
 
         else
