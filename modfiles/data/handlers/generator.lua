@@ -397,7 +397,6 @@ function generator.all_recipes()
                         name = proto.mineable_properties.required_fluid,
                         amount = proto.mineable_properties.fluid_amount
                     })
-                    if recipe.category == "basic-solid" then recipe.category = "complex-solid" end
                 end
 
                 format_recipe_products_and_ingredients(recipe)
@@ -700,6 +699,7 @@ function generator.all_machines()
             localised_name = proto.localised_name,
             sprite = "entity/" .. proto.name,
             ingredient_limit = (proto.ingredient_count or 255),
+            can_use_fluids = (table_size(proto.fluidbox_prototypes) > 0),
             speed = speed,
             energy_usage = energy_usage,
             emissions = emissions,
@@ -715,7 +715,7 @@ function generator.all_machines()
     for _, proto in pairs(game.entity_prototypes) do
         if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil then
             for category, enabled in pairs(proto.crafting_categories) do
-                if enabled then 
+                if enabled then
                     local machine = generate_category_entry(category, proto)
                     deep_insert_proto(all_machines, "categories", category, "machines", machine)
                 end
@@ -724,20 +724,11 @@ function generator.all_machines()
         -- Add mining machines
         elseif proto.resource_categories then
             for category, enabled in pairs(proto.resource_categories) do
-                -- Only supports solid mining recipes for now (no oil etc.)
+                -- Only supports solid mining recipes for now (no oil, etc.)
                 if enabled and category ~= "basic-fluid" then
                     local machine = generate_category_entry(category, proto)
                     machine.mining = true
                     deep_insert_proto(all_machines, "categories", category, "machines", machine)
-
-                    -- Add separate category for mining with fluids that avoids the burner-miner
-                    if category == "basic-solid" then
-                        if not proto.burner_prototype then
-                            local machine = generate_category_entry("complex-solid", proto)
-                            machine.mining = true
-                            deep_insert_proto(all_machines, "categories", "complex-solid", "machines", machine)
-                        end
-                    end
                 end
             end
         

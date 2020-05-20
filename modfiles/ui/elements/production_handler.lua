@@ -115,10 +115,20 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
             calculation.update(player, subfactory, true)
 
         -- Display all the options for this machine category
-        elseif click == "left" then            
+        elseif click == "left" then
+            -- Determine how many machines are applicable to this recipe
+            -- This detection will run twice, which might be worth optimizing at some point
+            local recipe_proto = line.recipe.proto
+            local applicable_machine_count = 0
+            for _, machine_proto in pairs(line.machine.category.machines) do
+                if data_util.machine.is_applicable(machine_proto, recipe_proto) then
+                    applicable_machine_count = applicable_machine_count + 1
+                end
+            end
+
             -- Changing machines only makes sense if there are more than one in it's category
-            if #line.machine.category.machines > 1 then
-                if #line.machine.category.machines < 5 then  -- up to 4 machines, no picker is needed
+            if applicable_machine_count > 1 then
+                if applicable_machine_count < 5 then  -- up to 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                     refresh_current_activity(player)
@@ -127,7 +137,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
                     local modal_data = {
                         reciever_name = "machine",
                         title = {"fp.machine"},
-                        text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
+                        text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
                         object = line.machine
                     }
                     
@@ -183,7 +193,7 @@ function generate_chooser_machine_buttons(player)
     local line = ui_state.context.line
 
     for machine_id, machine in ipairs(line.machine.category.machines) do
-        if data_util.machine.is_applicable(machine, line.recipe) then
+        if data_util.machine.is_applicable(machine, line.recipe.proto) then
             local button = generate_blank_chooser_button(player, machine_id)
             -- The actual button is setup by the method shared by non-chooser machine buttons
             setup_machine_choice_button(player, button, machine, ui_state.modal_data.object.proto.id, 36)

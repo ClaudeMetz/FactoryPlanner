@@ -43,7 +43,7 @@ function Machine.update_validity(self, recipe)
     end
 
     -- If the machine is valid, it might still not be applicable
-    if self.valid and (not recipe.valid or not data_util.machine.is_applicable(self.proto, recipe)) then
+    if self.valid and (not recipe.valid or not data_util.machine.is_applicable(self.proto, recipe.proto)) then
         self.valid = false
     end
     
