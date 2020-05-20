@@ -302,8 +302,8 @@ function matrix_solver.run_matrix_solver(player, subfactory_data, matrix_free_it
                 machine_count = line_aggregate.machine_count,
                 energy_consumption = line_aggregate.energy_consumption,
                 pollution = line_aggregate.pollution,
-                production_ratio = 1,
-                uncapped_production_ratio = 1,
+                production_ratio = line_aggregate.production_ratio,
+                uncapped_production_ratio = line_aggregate.uncapped_production_ratio,
                 Product = line_aggregate.Product,
                 Byproduct = line_aggregate.Byproduct,
                 Ingredient = line_aggregate.Ingredient,
@@ -554,6 +554,8 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
         time_per_craft = time_per_craft + 41.25/100
     end
     local amount_per_timescale = machine_count * timescale / time_per_craft
+    line_aggregate.production_ratio = amount_per_timescale
+    line_aggregate.uncapped_production_ratio = amount_per_timescale
     for _, product in pairs(recipe_proto.products) do
         local item_key = matrix_solver.get_item_key(product.type, product.name)
         if subfactory_metadata~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
