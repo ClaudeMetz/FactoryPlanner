@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that adding recipes which used hidden items would crash
     - (Probably) fixed a crash when the space science-item is being removed by another mod
+    - Fixed a crash when alt-tabbing or changing resolution while a popup dialog was open
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.14
