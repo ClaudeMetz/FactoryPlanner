@@ -337,7 +337,7 @@ function generator.all_recipes()
         -- Avoid any recipes that have no machine to produce them or are unresearchable
         local category_id = new.all_machines.map[proto.category]
         if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name])
-         and not is_annoying_recipe(proto) then
+          and not is_annoying_recipe(proto) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
@@ -357,7 +357,7 @@ function generator.all_recipes()
                 group = generate_group_table(proto.group),
                 subgroup = generate_group_table(proto.subgroup)
             }
-            
+
             format_recipe_products_and_ingredients(recipe)
             --add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
@@ -478,29 +478,31 @@ function generator.all_recipes()
     end
     
     -- Adds a convenient space science recipe
-    local rocket_recipe = {
-        name = "fp-space-science-pack",
-        localised_name = {"item-name.space-science-pack"},  -- official locale
-        sprite = "item/space-science-pack",
-        category = "rocket-building",
-        hidden = false,
-        energy = 0,
-        emissions_multiplier = 1,
-        group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
-          order="c", valid=true},
-        subgroup = {name="science-pack", order="g", valid=true},
-        order = "x[fp-space-science-pack]",
-        ingredients = {
-            {type="item", name="rocket-part", amount=100},
-            {type="item", name="satellite", amount=1}
-        },
-        products = {{type="item", name="space-science-pack", amount=1000}},
-        custom = true
-    }
+    if game["item_prototypes"]["space-science-pack"] then
+        local rocket_recipe = {
+            name = "fp-space-science-pack",
+            localised_name = {"item-name.space-science-pack"},  -- official locale
+            sprite = "item/space-science-pack",
+            category = "rocket-building",
+            hidden = false,
+            energy = 0,
+            emissions_multiplier = 1,
+            group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
+            order="c", valid=true},
+            subgroup = {name="science-pack", order="g", valid=true},
+            order = "x[fp-space-science-pack]",
+            ingredients = {
+                {type="item", name="rocket-part", amount=100},
+                {type="item", name="satellite", amount=1}
+            },
+            products = {{type="item", name="space-science-pack", amount=1000}},
+            custom = true
+        }
 
-    format_recipe_products_and_ingredients(rocket_recipe)
-    add_recipe_tooltip(rocket_recipe)
-    insert_proto(all_recipes, "recipes", rocket_recipe, true)
+        format_recipe_products_and_ingredients(rocket_recipe)
+        add_recipe_tooltip(rocket_recipe)
+        insert_proto(all_recipes, "recipes", rocket_recipe, true)
+    end
     
     return all_recipes
 end
