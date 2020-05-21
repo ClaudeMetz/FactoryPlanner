@@ -216,7 +216,7 @@ end
 
 -- Returns string representing the given power 
 function ui_util.format_SI_value(value, unit, precision)
-    local scale = {"", "k", "M", "G", "T", "P", "E", "Z", "Y"}
+    local prefixes = {"", "kilo", "mega", "giga", "tera", "peta", "exa", "zetta", "yotta"}
     local units = {
         ["W"] = {"fp.unit_watt"},
         ["J"] = {"fp.unit_joule"},
@@ -228,7 +228,7 @@ function ui_util.format_SI_value(value, unit, precision)
     
     local scale_counter = 0
     -- Determine unit of the energy consumption, while keeping the result above 1 (ie no 0.1kW, but 100W)
-    while scale_counter < #scale and value > (1000 ^ (scale_counter + 1)) do
+    while scale_counter < #prefixes and value > (1000 ^ (scale_counter + 1)) do
         scale_counter = scale_counter + 1
     end
 
@@ -238,7 +238,8 @@ function ui_util.format_SI_value(value, unit, precision)
     end
 
     value = value / (1000 ^ scale_counter)
-    return {"", sign .. ui_util.format_number(value, precision) .. " " .. scale[scale_counter + 1], units[unit]}
+    local prefix = (scale_counter == 0) and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
+    return {"", sign .. ui_util.format_number(value, precision) .. " ", prefix, units[unit]}
 end
 
 
