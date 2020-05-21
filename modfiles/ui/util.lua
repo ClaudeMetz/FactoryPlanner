@@ -116,7 +116,7 @@ function ui_util.determine_item_amount_and_appendage(player_table, view_name, it
         appendage = (show_belts) and ((number == 1) and {"fp.belt"} or {"fp.belts"}) or
           ((number == 1) and {"fp.lane"} or {"fp.lanes"})
 
-    elseif view_name == "items_per_second_per_machine" and item_type ~= "fluid" then
+    elseif view_name == "items_per_second_per_machine" then
         -- Show items/s/1 (machine) if it's a top level item
         local number_of_machines = (machine_count ~= nil) and machine_count or 1
         number = amount / timescale / number_of_machines

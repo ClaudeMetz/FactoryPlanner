@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - 
   Changes:
     - Now allows SI prefixes to be localised
+    - The 'items/s/machine'-view now also works for fluids
   Bugfixes:
     - 
 
