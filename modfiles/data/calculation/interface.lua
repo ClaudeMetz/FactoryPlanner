@@ -262,7 +262,7 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
     if recipe_proto.name == "fp-space-science-pack" then return 1e-16 end
     
     local launch_delay = 0
-    if recipe_proto.name == "rocket-part" then
+    if machine_proto.category == "rocket-building" then
         local rockets_produced = production_ratio / 100
         local launch_sequence_time = 41.25 / timescale  -- in seconds
         -- Not sure why this forumla works, but it seemingly does
@@ -275,11 +275,22 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
 end
 
 -- Calculates the production ratio from a given machine limit
--- (Forumla derived from determine_machine_count, not sure how to work in the launch_delay correctly)
 function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_limit, timescale)
+    -- Stupid exception because this is all a giant hack
+    if recipe_proto.name == "fp-space-science-pack" then return 1e-16 end
+
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
     local productivity_multiplier = (1 + math.max(total_effects.productivity, 0))
-    return (machine_limit --[[ -launch_delay ]]) * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier
+
+    -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
+    if machine_proto.category == "rocket-building" then
+        -- Formula reduced by Wolfram Alpha
+        return (80 * machine_limit * machine_speed * timescale) / 
+          ((33 * machine_speed) + (80 * recipe_proto.energy)) * productivity_multiplier
+    else
+        return (machine_limit - launch_delay) * timescale * 
+          (machine_speed / recipe_proto.energy) * productivity_multiplier
+    end
 end
 
 -- Calculates the ingredient/product amount after applying productivity bonuses

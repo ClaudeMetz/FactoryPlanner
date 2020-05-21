@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Now allows SI prefixes to be localised
     - The 'items/s/machine'-view now also works for fluids
   Bugfixes:
-    - 
+    - Fixed that setting hard limits on rocket silo recipes would not work correctly
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.15
