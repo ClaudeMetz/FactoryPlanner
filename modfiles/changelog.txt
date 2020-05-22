@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.16
+Date: 22. 05. 2020
   Changes:
     - The 'items/s/machine'-view now also works for fluids
     - The interface now remains open when alt-tabbing or resizing the Factorio window
