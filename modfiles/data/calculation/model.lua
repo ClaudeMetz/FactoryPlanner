@@ -270,11 +270,7 @@ function model.update_line(line_data, aggregate)
         
         local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
         structures.class.add(Fuel, fuel)
-        structures.aggregate.add(aggregate, "Fuel", fuel)
-
-        -- This is to work around the fuel not being detected as a possible product
         structures.aggregate.add(aggregate, "Product", fuel)
-        structures.aggregate.subtract(aggregate, "Ingredient", fuel)
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
     end

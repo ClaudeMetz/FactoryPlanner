@@ -12,6 +12,7 @@ Date: 00. 00. 0000
     - Fixed that setting hard limits on rocket silo recipes would not work correctly
     - Fixed that migration caused any subfactory that contained fuels to always need repair
     - Fixed that desired products that are also ingredients didn't show up as such at the top level
+    - Fixed that fuel would sometimes show up on the top floor as an ingredient when it's already being produced on a subfloor
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.15
