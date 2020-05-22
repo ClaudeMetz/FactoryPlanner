@@ -142,6 +142,24 @@ local function generate_formatted_item(base_item, type)
     }
 end
 
+-- Combines items that occur more than once into one entry
+local function combine_identical_items(item_list)
+    local touched_items = {item = {}, fluid = {}, entity = {}}
+    for index, item in pairs(item_list) do
+        if item.temperature == nil then  -- don't care to deal with temperature crap
+            local touched_item = touched_items[item.type][item.name]
+            if touched_item ~= nil then
+                touched_item.amount = touched_item.amount + item.amount
+                touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
+
+                item_list[index] = nil
+            else
+                touched_items[item.type][item.name] = item
+            end
+        end
+    end
+end
+
 -- Determines the type_count for the given item list
 local function determine_item_counts(item_list)
     local type_counts = {items = 0, fluids = 0}
@@ -213,8 +231,9 @@ local function format_recipe_products_and_ingredients(recipe_proto)
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
         table.insert(ingredients, formatted_ingredient)
     end
-    recipe_proto.ingredients = ingredients
+    --combine_identical_items(ingredients)  -- not needed here (probably)
     recipe_proto.type_counts.ingredients = determine_item_counts(ingredients)
+    recipe_proto.ingredients = ingredients
 
     local products = {}
     for _, base_product in ipairs(recipe_proto.products) do
@@ -228,8 +247,9 @@ local function format_recipe_products_and_ingredients(recipe_proto)
             recipe_proto.main_product = formatted_product
         end
     end
-    recipe_proto.products = products
+    combine_identical_items(products)
     recipe_proto.type_counts.products = determine_item_counts(products)
+    recipe_proto.products = products
     
     -- Determine the net amount after the actual amounts have been calculated
     for _, formatted_ingredient in ipairs(recipe_proto.ingredients) do
