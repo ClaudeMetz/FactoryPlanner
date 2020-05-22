@@ -285,11 +285,10 @@ function calculation.util.determine_production_ratio(machine_proto, recipe_proto
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
     if machine_proto.category == "rocket-building" then
         -- Formula reduced by Wolfram Alpha
-        return (80 * machine_limit * machine_speed * timescale) / 
-          ((33 * machine_speed) + (80 * recipe_proto.energy)) * productivity_multiplier
+        return ((80 * machine_limit * machine_speed * timescale) / 
+          ((33 * machine_speed) + (80 * recipe_proto.energy)) * productivity_multiplier)
     else
-        return (machine_limit - launch_delay) * timescale * 
-          (machine_speed / recipe_proto.energy) * productivity_multiplier
+        return (machine_limit * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier)
     end
 end
 
