@@ -509,9 +509,6 @@ function apply_fuel_choice(player, new_fuel_id)
     
     if line.subfloor == nil then  -- subfloor-less lines are always limited to 1 fuel type
         Line.get_by_gui_position(line, "Fuel", 1).proto = new_fuel
-        if line.id == 1 and line.parent and line.parent.level > 1 then
-            Line.get_by_gui_position(line.parent.origin_line, "Fuel", 1).proto = new_fuel
-        end
     else
         apply_fuel_to_floor(line.subfloor)
     end
