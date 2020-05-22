@@ -20,16 +20,11 @@ end
 
 -- Returns whether the given machine can produce the given recipe prototype
 function data_util.machine.is_applicable(machine_proto, recipe_proto)
-    local item_ingredients_count, uses_fluids = 0, false
-    for _, ingredient in pairs(recipe_proto.ingredients) do
-        -- Ingredient count does not include fluid ingredients
-        if ingredient.type == "item" then item_ingredients_count = item_ingredients_count + 1
-        elseif ingredient.type == "fluid" then uses_fluids = true end
-    end
+    local valid_ingredient_count = (machine_proto.ingredient_limit >= recipe_proto.type_counts.ingredients.items)
+    local valid_input_channels = (machine_proto.fluid_channels.input >= recipe_proto.type_counts.ingredients.fluids)
+    local valid_output_channels = (machine_proto.fluid_channels.output >= recipe_proto.type_counts.products.fluids)
 
-    -- The logic is simplified, second statement reads like this:
-    -- (not uses_fluids or (uses_fluids and machine_proto.can_use_fluids))
-    return (item_ingredients_count <= machine_proto.ingredient_limit) and (not uses_fluids or machine_proto.can_use_fluids)
+    return (valid_ingredient_count and valid_input_channels and valid_output_channels)
 end
 
 

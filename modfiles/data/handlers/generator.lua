@@ -142,6 +142,21 @@ local function generate_formatted_item(base_item, type)
     }
 end
 
+-- Determines the type_count for the given item list
+local function determine_item_counts(item_list)
+    local type_counts = {items = 0, fluids = 0}
+
+    for _, item in pairs(item_list) do
+        if item.type == "fluid" then
+            type_counts.fluids = type_counts.fluids + 1
+        else  -- "item" and "entity"
+            type_counts.items = type_counts.items + 1
+        end
+    end
+
+    return type_counts
+end
+
 -- Determines the net amount that the given recipe consumes of the given item (might be negative)
 local function determine_net_ingredient_amount(recipe_proto, item)
     local net_amount = 0
@@ -199,6 +214,7 @@ local function format_recipe_products_and_ingredients(recipe_proto)
         table.insert(ingredients, formatted_ingredient)
     end
     recipe_proto.ingredients = ingredients
+    recipe_proto.type_counts.ingredients = determine_item_counts(ingredients)
 
     local products = {}
     for _, base_product in ipairs(recipe_proto.products) do
@@ -213,6 +229,7 @@ local function format_recipe_products_and_ingredients(recipe_proto)
         end
     end
     recipe_proto.products = products
+    recipe_proto.type_counts.products = determine_item_counts(products)
     
     -- Determine the net amount after the actual amounts have been calculated
     for _, formatted_ingredient in ipairs(recipe_proto.ingredients) do
@@ -326,6 +343,7 @@ function generator.all_recipes()
             hidden = false,
             group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
               order="c", valid=true},
+            type_counts = {},
             use_limitations = false,
             custom = true
         }
@@ -348,6 +366,7 @@ function generator.all_recipes()
                 ingredients = proto.ingredients,
                 products = proto.products,
                 main_product = proto.main_product,
+                type_counts = {},  -- filled out by format_* below
                 recycling = is_recycling_recipe(proto),
                 barreling = is_barreling_recipe(proto),
                 use_limitations = true,
@@ -495,6 +514,7 @@ function generator.all_recipes()
                 {type="item", name="satellite", amount=1}
             },
             products = {{type="item", name="space-science-pack", amount=1000}},
+            type_counts = {},  -- filled out by format_* below
             custom = true
         }
 
@@ -682,6 +702,7 @@ function generator.all_machines()
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
 
+        -- Determine data related to the energy source
         local burner, emissions = nil, 0  -- emissions remain at 0 if no energy source is present
         if proto.burner_prototype then
             burner = {
@@ -693,13 +714,25 @@ function generator.all_machines()
             emissions = proto.electric_energy_source_prototype.emissions
         end
 
+        -- Determine fluid input/output channels
+        local fluid_channels = {input = 0, output = 0}
+        if proto.fluid_energy_source_prototype then fluid_channels.input = fluid_channels.input - 1 end
+
+        for _, fluidbox in pairs(proto.fluidbox_prototypes) do
+            if fluidbox.production_type == "output" then
+                fluid_channels.output = fluid_channels.output + 1
+            else  -- "input" and "input-output"
+                fluid_channels.input = fluid_channels.input + 1
+            end
+        end
+        
         local machine = {
             name = proto.name,
             category = category,
             localised_name = proto.localised_name,
             sprite = "entity/" .. proto.name,
             ingredient_limit = (proto.ingredient_count or 255),
-            can_use_fluids = (table_size(proto.fluidbox_prototypes) > 0),
+            fluid_channels = fluid_channels,
             speed = speed,
             energy_usage = energy_usage,
             emissions = emissions,
