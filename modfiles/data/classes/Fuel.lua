@@ -34,7 +34,7 @@ function Fuel.update_validity(self)
     -- Check fuel category compatibility
     if self.valid and self.parent.valid and self.parent.machine and self.parent.machine.proto then
         local burner = self.parent.machine.proto.burner
-        if not (burner and burner.categories[self.fuel_category]) then
+        if not burner or burner.categories[self.proto.fuel_category] == nil then
             self.valid = false
         end
     end
@@ -53,7 +53,7 @@ function Fuel.attempt_repair(self, player)
 
     -- Fix fuel category compatibility
     local burner = self.parent.machine.proto.burner
-    if self.valid and not (burner and burner.categories[self.fuel_category]) then
+    if self.valid and (not burner or burner.categories[self.proto.fuel_category] == nil) then
         self.valid = false
     end
 
