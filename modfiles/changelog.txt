@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - The 'items/s/machine'-view now also works for fluids
   Bugfixes:
     - Fixed that setting hard limits on rocket silo recipes would not work correctly
+    - Fixed that migration caused any subfactory that contained fuels to always need repair
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.15

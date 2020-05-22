@@ -76,6 +76,8 @@ end
 -- Initiates the data table with some values for development purposes
 function constructor.dev_config(player)
     if devmode then
+        get_preferences(player).tutorial_mode = false
+
         local context = get_context(player)
         local factory = context.factory
 
