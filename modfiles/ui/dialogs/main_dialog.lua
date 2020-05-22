@@ -94,16 +94,20 @@ end
 
 -- Sets selection mode and configures the related GUI's
 function set_selection_mode(player, state)
-    get_flags(player).selection_mode = state
-    player.gui.screen["fp_frame_main_dialog"].visible = not state
+    local ui_state = get_ui_state(player)
 
-    local frame_modal_dialog = ui_util.find_modal_dialog(player)
-    frame_modal_dialog.ignored_by_interaction = state
-    if state == true then
-        frame_modal_dialog.location = {25, 50}
-    else
-        frame_modal_dialog.force_auto_center()
-        player.opened = frame_modal_dialog
+    if ui_state.modal_dialog_type == "beacon" then
+        ui_state.flags.selection_mode = state
+        player.gui.screen["fp_frame_main_dialog"].visible = not state
+        
+        local frame_modal_dialog = ui_util.find_modal_dialog(player)
+        frame_modal_dialog.ignored_by_interaction = state
+        if state == true then
+            frame_modal_dialog.location = {25, 50}
+        else
+            frame_modal_dialog.force_auto_center()
+            player.opened = frame_modal_dialog
+        end
     end
 end
 
@@ -122,9 +126,11 @@ function refresh_main_dialog(player, full_refresh)
         main_dialog.style.minimal_width = dimensions.width
         main_dialog.style.height = dimensions.height
 
-        main_dialog.visible = (not full_refresh) or false  -- hide dialog on a full refresh
         set_pause_state(player, main_dialog)  -- Adjust the paused-state accordingly
-        player.opened = (main_dialog.visible) and main_dialog or nil  -- same for player.opened
+        local ui_state = get_ui_state(player)
+        if ui_state.modal_dialog_type == "beacon" and ui_state.flags.selection_mode then
+            leave_beacon_selection(player, 0)  -- Leave the beacon selection mode if it is active
+        end
 
         add_titlebar_to(main_dialog)
         add_actionbar_to(main_dialog)
