@@ -4,8 +4,9 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
-    - Now allows SI prefixes to be localised
     - The 'items/s/machine'-view now also works for fluids
+    - The interface now remains open when alt-tabbing or resizing the Factorio window
+    - Now allows SI prefixes to be localised
   Bugfixes:
     - Fixed how the mod detects which machines can produce certain recipes in the proper way
     - Fixed that setting hard limits on rocket silo recipes would not work correctly
