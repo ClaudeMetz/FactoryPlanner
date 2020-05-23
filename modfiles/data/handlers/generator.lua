@@ -152,7 +152,8 @@ local function combine_identical_items(item_list)
                 touched_item.amount = touched_item.amount + item.amount
                 touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
 
-                item_list[index] = nil
+                -- Using the table.remove function to preserve array-format
+                table.remove(item_list, index)
             else
                 touched_items[item.type][item.name] = item
             end
@@ -227,7 +228,7 @@ end
 -- Formats the products/ingredients of a recipe for more convenient use
 local function format_recipe_products_and_ingredients(recipe_proto)
     local ingredients = {}
-    for _, base_ingredient in ipairs(recipe_proto.ingredients) do
+    for _, base_ingredient in pairs(recipe_proto.ingredients) do
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
         table.insert(ingredients, formatted_ingredient)
     end
@@ -236,7 +237,7 @@ local function format_recipe_products_and_ingredients(recipe_proto)
     recipe_proto.ingredients = ingredients
 
     local products = {}
-    for _, base_product in ipairs(recipe_proto.products) do
+    for _, base_product in pairs(recipe_proto.products) do
         local formatted_product = generate_formatted_item(base_product, "product")
         table.insert(products, formatted_product)
 
@@ -252,12 +253,12 @@ local function format_recipe_products_and_ingredients(recipe_proto)
     recipe_proto.products = products
     
     -- Determine the net amount after the actual amounts have been calculated
-    for _, formatted_ingredient in ipairs(recipe_proto.ingredients) do
+    for _, formatted_ingredient in pairs(recipe_proto.ingredients) do
         formatted_ingredient.net_amount = determine_net_ingredient_amount(recipe_proto, formatted_ingredient)
     end
 
     -- Determine the net amount after the actual amounts have been calculated
-    for _, formatted_product in ipairs(recipe_proto.products) do
+    for _, formatted_product in pairs(recipe_proto.products) do
         formatted_product.net_amount = determine_net_product_amount(recipe_proto, formatted_product)
     end
 end
