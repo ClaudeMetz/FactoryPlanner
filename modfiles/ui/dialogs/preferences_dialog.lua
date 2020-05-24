@@ -54,6 +54,33 @@ function open_preferences_dialog(flow_modal_dialog)
     end
 
     for _, preference_name in ipairs(production_preference_names) do add_production_preference(preference_name) end
+
+    -- Module/Beacon defaults
+    flow_modal_dialog.add{type="label", name="label_module_beacon_defaults", 
+      caption={"", {"fp.preferences_title_mb_defaults"}, ":"}, style="fp_preferences_title_label",
+      tooltip={"fp.preferences_title_mb_defaults_tt"}}
+    local flow_mb_defaults = flow_modal_dialog.add{type="flow", name="flow_module_beacon_defaults",
+      direction="horizontal"}
+    flow_mb_defaults.style.margin = {2, 0, 8, 6}
+    flow_mb_defaults.style.vertical_align = "center"
+
+    local function add_mb_default(kind)
+        flow_mb_defaults.add{type="label", caption={"", {"fp.c" .. kind}, ": "}}
+        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", name="fp_choose-elem-button_default_" .. kind, elem_type="item"}
+        choose_elem_button.elem_filters = {{filter="type", type="module"}, 
+          {filter="flag", flag="hidden", mode="and", invert=true}}
+        choose_elem_button.style.width = 28
+        choose_elem_button.style.height = 28
+        choose_elem_button.style.right_margin = 12
+    end
+
+    add_mb_default("module")
+    add_mb_default("beacon")
+
+    flow_mb_defaults.add{type="label", caption={"", {"fp.beacon_count"}, ": "}}
+    local textfield_beacon_count = flow_mb_defaults.add{type="textfield", name="fp_textfield_default_beacon_count"}
+    ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
+    textfield_beacon_count.style.width = 42
     
     -- Prototype preferences
     local function add_prototype_preference(name)
@@ -78,6 +105,10 @@ function open_preferences_dialog(flow_modal_dialog)
     table_all_machines.style.bottom_padding = 4
 
     refresh_preferences_dialog(flow_modal_dialog.gui.player)
+
+    -- Not sure why this is necessary, but it goes wonky otherwise
+    -- This is only been necessary when a choose-elem-button is present, weirdly
+    flow_modal_dialog.parent.force_auto_center()
 end
 
 
@@ -102,6 +133,15 @@ function refresh_preferences_dialog(player)
         table_production_prefs["fp_checkbox_production_preferences_" .. preference_name].state
           = preferences.optional_production_columns[preference_name]
     end
+
+    -- Module/Beacon defaults preferences
+    local flow_mb_defaults = flow_modal_dialog["flow_module_beacon_defaults"]
+    local mb_defaults = preferences.mb_defaults
+    flow_mb_defaults["fp_choose-elem-button_default_module"].elem_value =
+      (mb_defaults.module) and mb_defaults.module.name or nil
+    flow_mb_defaults["fp_choose-elem-button_default_beacon"].elem_value =
+      (mb_defaults.beacon) and mb_defaults.beacon.name or nil
+    flow_mb_defaults["fp_textfield_default_beacon_count"].text = mb_defaults.beacon_count or ""
 
     -- Prototype preferences
     -- Refreshes the given prototype preference GUI, if it exists (for 1d-prototypes)
@@ -182,6 +222,27 @@ function handle_production_preference_change(player, radiobutton)
     local preference = string.gsub(radiobutton.name, "fp_checkbox_production_preferences_", "")
     get_preferences(player).optional_production_columns[preference] = radiobutton.state
     refresh_production_pane(player)
+end
+
+-- Saves changes to the module/beacon defaults
+function handle_mb_defaults_change(player, button)
+    local type = string.gsub(button.name, "fp_choose%-elem%-button_default_", "")
+    local module_name = button.elem_value
+
+    -- Find the appropriate prototype from the list by its name
+    for _, category in pairs(global.all_modules.categories) do
+        for _, module_proto in pairs(category.modules) do
+            if module_proto.name == module_name then
+                get_preferences(player).mb_defaults[type] = module_proto
+                return
+            end
+        end
+    end
+end
+
+-- Saves changes to the default beacon count
+function handle_default_beacon_count_change(player, textfield)
+    get_preferences(player).mb_defaults.beacon_count = tonumber(textfield.text)
 end
 
 -- Changes the preferred prototype for the given prototype preference type

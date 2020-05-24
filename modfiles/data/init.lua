@@ -205,7 +205,10 @@ function reload_preferences(player, table)
 
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
+
     preferences.alt_action = data_util.update_alt_action(preferences.alt_action)
+    preferences.mb_defaults = preferences.mb_defaults or
+      {module = nil, beacon = nil, beacon_count = nil}
 
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
