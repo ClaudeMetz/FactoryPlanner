@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Added a preference where you can specify a default module for both machines and beacons, as well as a default beacon count. These preferences cause newly created recipe lines to automatically be maxed out with the specified modules and beacons. This makes it less work to create a fully beacon-ed setup. This functionality is pretty bare-bones and not very smart, but it's a good start.
   Bugfixes:
     - Fixed a crash when loading a map that used certain kinds of recipes
+    - Fixed the rocket-part item not being visible anymore in the product picker
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.17
