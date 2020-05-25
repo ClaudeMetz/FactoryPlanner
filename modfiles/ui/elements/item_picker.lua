@@ -163,9 +163,9 @@ function item_picker.filter(picker_flow, searchterm, first_run)
                 local item = identifier_item_map[string.gsub(item_element.name, "fp_button_item_pick_", "")]
                 
                 local visible = false
-                -- Set visibility of items (and item-groups) appropriately
-                if (not item.hidden) and (not item.ingredient_only)
-                  and string.find(item.name, search_term, 1, true) then
+                -- Set visibility of items (and item-groups) appropriately (exception for rocket-part)
+                if item.name == "rocket-part" or (not item.hidden and not item.ingredient_only
+                  and string.find(item.name, search_term, 1, true)) then
                     visible = true
 
                     -- Only need to refresh button style if needed
