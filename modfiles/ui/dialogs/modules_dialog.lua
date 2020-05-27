@@ -259,9 +259,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
 
     flow.add{type="label", name="label_" .. type, caption={"fp.c" .. type}}
     local button = flow.add{type="sprite-button", name="sprite-button_" .. type, sprite=sprite, tooltip=tooltip,
-      style="slot_button"}
-    button.style.width = 28
-    button.style.height = 28
+      style="fp_sprite-button_choose_elem"}
     button.style.right_margin = 12
 
     flow.add{type="label", name="label_" .. type .. "_amount", caption={"fp.amount"}}

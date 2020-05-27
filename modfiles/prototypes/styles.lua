@@ -159,6 +159,14 @@ data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
     padding = 2
 }
 
+data.raw["gui-style"].default["fp_sprite-button_choose_elem"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_inset",
+    height = 30,
+    width = 30,
+    padding = 0
+}
+
 data.raw["gui-style"].default["fp_table_subgroup"] = {
     type = "table_style",
     horizontal_spacing = 2,

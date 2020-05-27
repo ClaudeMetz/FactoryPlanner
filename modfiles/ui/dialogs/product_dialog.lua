@@ -93,10 +93,8 @@ function refresh_product_bar(flow_modal_dialog, product)
     flow.clear()
     
     flow.add{type="label", name="label_product", caption={"fp.product"}}
-    local button = flow.add{type="sprite-button", name="sprite-button_product", sprite=sprite, tooltip=tooltip,
-      style="slot_button"}
-    button.style.width = 28
-    button.style.height = 28
+    local button = flow.add{type="sprite-button", name="sprite-button_product", sprite=sprite,
+      tooltip=tooltip, style="fp_sprite-button_choose_elem"}
     button.style.right_margin = 14
     
     flow.add{type="label", name="label_product_amount", caption={"fp.amount"}}

@@ -66,11 +66,10 @@ function open_preferences_dialog(flow_modal_dialog)
 
     local function add_mb_default(kind)
         flow_mb_defaults.add{type="label", caption={"", {"fp.c" .. kind}, ": "}}
-        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", name="fp_choose-elem-button_default_" .. kind, elem_type="item"}
+        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
+          name="fp_choose-elem-button_default_" .. kind, style="fp_sprite-button_choose_elem"}
         choose_elem_button.elem_filters = {{filter="type", type="module"}, 
           {filter="flag", flag="hidden", mode="and", invert=true}}
-        choose_elem_button.style.width = 28
-        choose_elem_button.style.height = 28
         choose_elem_button.style.right_margin = 12
     end
 

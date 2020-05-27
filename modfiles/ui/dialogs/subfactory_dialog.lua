@@ -88,6 +88,8 @@ function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon
 
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"fp.icon"}}
-    table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon",
-      elem_type="signal", signal=icon}
+    local button = table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon",
+      elem_type="signal", signal=icon, style="fp_sprite-button_choose_elem"}
+    button.style.height = 34
+    button.style.width = 34
 end
