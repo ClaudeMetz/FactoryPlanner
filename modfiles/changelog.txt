@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.19
+Date: 27. 05. 2020
   Changes:
     - Adjusted some interface styles due to changes that came with Factorio 0.18.27
 
