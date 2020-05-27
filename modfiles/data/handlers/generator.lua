@@ -746,18 +746,25 @@ function generator.all_machines()
 
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
-        local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
 
         -- Determine data related to the energy source
-        local burner, emissions = nil, 0  -- emissions remain at 0 if no energy source is present
+        local energy_type, emissions, burner = nil, 0, nil  -- emissions remain at 0 if no energy source is present
+        local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
+
         if proto.burner_prototype then
+            energy_type = "burner"
+            emissions = proto.burner_prototype.emissions
+
             burner = {
                 categories = proto.burner_prototype.fuel_categories,
                 effectivity = proto.burner_prototype.effectivity
             }
-            emissions = proto.burner_prototype.emissions
         elseif proto.electric_energy_source_prototype then
+            energy_type = "electric"
             emissions = proto.electric_energy_source_prototype.emissions
+        elseif proto.void_energy_source_prototype then
+            energy_type = "void"
+            emissions = proto.void_energy_source_prototype.emissions
         end
 
         -- Determine fluid input/output channels
@@ -780,6 +787,7 @@ function generator.all_machines()
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
             speed = speed,
+            energy_type = energy_type,
             energy_usage = energy_usage,
             emissions = emissions,
             base_productivity = (proto.base_productivity or 0),
