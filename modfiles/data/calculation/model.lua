@@ -248,24 +248,26 @@ function model.update_line(line_data, aggregate)
 
 
     -- Determine machine count
-    local machine_count = calculation.util.determine_machine_count(line_data.machine_proto, line_data.recipe_proto,
+    local machine_proto = line_data.machine_proto
+    local machine_count = calculation.util.determine_machine_count(machine_proto, line_data.recipe_proto,
       line_data.total_effects, production_ratio, line_data.timescale)
     -- Set the machine count of the current aggregate to the one of the first line (relevant for subfloors)
     aggregate.machine_count = aggregate.machine_count or machine_count
 
 
     -- Determine energy consumption (including potential fuel needs) and pollution
-    local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
+    local energy_consumption = calculation.util.determine_energy_consumption(machine_proto,
       machine_count, line_data.total_effects)
-    local pollution = calculation.util.determine_pollution(line_data.machine_proto, line_data.recipe_proto,
+    local pollution = calculation.util.determine_pollution(machine_proto, line_data.recipe_proto,
       line_data.fuel_proto, line_data.total_effects, energy_consumption)
     
     local Fuel = structures.class.init()
-    local burner = line_data.machine_proto.burner
+    local energy_type = line_data.machine_proto.energy_type
 
-    if burner ~= nil and burner.categories["chemical"] then  -- only handles chemical fuels for now
+    -- Only handles chemical fuels for now
+    if energy_type == "burner" and machine_proto.burner.categories["chemical"] then
         local fuel_proto = line_data.fuel_proto  -- Lines without subfloors will always have a fuel_proto attached
-        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, burner, 
+        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner, 
           fuel_proto.fuel_value, line_data.timescale)
         
         local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
@@ -273,6 +275,8 @@ function model.update_line(line_data, aggregate)
         structures.aggregate.add(aggregate, "Product", fuel)
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+    elseif energy_type == "void" then
+        energy_consumption = 0
     end
 
     -- Include beacon energy consumption
