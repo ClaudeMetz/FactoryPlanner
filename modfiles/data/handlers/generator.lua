@@ -3,6 +3,7 @@ generator = {}
 -- Inserts given prototype into given table t and adds it to t's map
 -- Example: type_name = "recipes"
 local function insert_proto(t, type_name, proto, add_identifier)
+    if proto == nil then return end
     table.insert(t[type_name], proto)
     local id = #t[type_name]
     proto.id = id
@@ -14,6 +15,8 @@ end
 -- (category and type are generic terms here, describing the first and second level of t)
 -- Example: category_name = "categories", category = "steam", type_name = "machines"
 local function deep_insert_proto(t, category_name, category, type_name, proto, add_identifier)
+    if proto == nil then return end
+
     if t.map[category] == nil then
         table.insert(t[category_name], {[type_name] = {}, map = {}, name = category})
         local id = #t[category_name]
@@ -39,6 +42,24 @@ local function format_allowed_effects(allowed_effects)
         if allowed == true then return allowed_effects end
     end
     return nil  -- all effects are false
+end
+
+-- Finds a sprite for the given entity prototype
+local function determine_entity_sprite(proto)
+    local entity_sprite = "entity/" .. proto.name
+    if game.is_valid_sprite_path(entity_sprite) then
+        return entity_sprite
+    end
+
+    local items_to_place_this = proto.items_to_place_this
+    if items_to_place_this and table_size(items_to_place_this) > 0 then
+        local item_sprite = "item/" .. items_to_place_this[1].name
+        if game.is_valid_sprite_path(item_sprite) then
+            return item_sprite
+        end
+    end
+
+    return nil
 end
 
 
@@ -719,6 +740,10 @@ function generator.all_machines()
     local all_machines = {categories = {}, map = {}}
     
     local function generate_category_entry(category, proto)        
+        -- First, determine if there is a valid sprite for this machine
+        local sprite = determine_entity_sprite(proto)
+        if sprite == nil then return nil end
+
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
         local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
@@ -751,7 +776,7 @@ function generator.all_machines()
             name = proto.name,
             category = category,
             localised_name = proto.localised_name,
-            sprite = "entity/" .. proto.name,
+            sprite = sprite,
             ingredient_limit = (proto.ingredient_count or 255),
             fluid_channels = fluid_channels,
             speed = speed,
@@ -857,13 +882,16 @@ function generator.all_belts()
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
-            insert_proto(all_belts, "belts", {
-                name = proto.name,
-                localised_name = proto.localised_name,
-                sprite = "entity/" .. proto.name,
-                rich_text = "[entity=" .. proto.name .. "]",
-                throughput = proto.belt_speed * 480
-            })
+            local sprite = determine_entity_sprite(proto)
+            if sprite ~= nil then
+                insert_proto(all_belts, "belts", {
+                    name = proto.name,
+                    localised_name = proto.localised_name,
+                    sprite = sprite,
+                    rich_text = "[entity=" .. proto.name .. "]",
+                    throughput = proto.belt_speed * 480
+                })
+            end
         end
     end
 
@@ -947,8 +975,8 @@ function generator.all_beacons()
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then
-            local sprite = "entity/" .. proto.name
-            if game.is_valid_sprite_path(sprite) then
+            local sprite = determine_entity_sprite(proto)
+            if sprite ~= nil then
                 insert_proto(all_beacons, "beacons", {
                     name = proto.name,
                     localised_name = proto.localised_name,
