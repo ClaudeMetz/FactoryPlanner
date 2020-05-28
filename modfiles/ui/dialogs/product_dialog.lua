@@ -18,6 +18,10 @@ function open_product_dialog(flow_modal_dialog, modal_data)
     else
         picker_flow.visible = false
     end
+
+    -- Not sure why this is necessary, but it goes wonky otherwise
+    -- This is only been necessary when a choose-elem-button is present, weirdly
+    flow_modal_dialog.parent.force_auto_center()
 end
 
 -- Handles closing of the item picker dialog
@@ -28,7 +32,14 @@ function close_product_dialog(flow_modal_dialog, action, data)
     local product = ui_state.modal_data.product
 
     if action == "submit" then
-        local req_amount = tonumber(data.required_amount)
+        local modal_data = ui_state.modal_data
+        local req_amount = {
+            defined_by = modal_data.amount_defined_by,
+            amount = tonumber(data[modal_data.amount_defined_by .. "_amount"]),
+            timescale = subfactory.timescale,
+            belt_proto = modal_data.belt_proto
+        }
+
         if product == nil then  -- add product if it doesn't exist (ie. this is not an edit)
             local top_level_item = Item.init_by_proto(ui_state.modal_data.selected_item, "Product", 0, req_amount)
             Subfactory.add(subfactory, top_level_item)
@@ -53,19 +64,21 @@ function get_product_condition_instructions()
     return {
         data = {
             item_sprite = (function(flow_modal_dialog) return
-              flow_modal_dialog["flow_product_bar"]["sprite-button_product"].sprite end),
-            required_amount = (function(flow_modal_dialog) return
-               flow_modal_dialog["flow_product_bar"]["textfield_product_amount"].text end)
+              flow_modal_dialog["flow_product_bar"]["flow_product_amount"]["sprite-button_product"].sprite end),
+            amount_amount = (function(flow_modal_dialog) return
+               flow_modal_dialog["flow_product_bar"]["flow_product_amount"]["fp_textfield_product_amount"].text end),
+            belts_amount = (function(flow_modal_dialog) return
+                flow_modal_dialog["flow_product_bar"]["flow_product_belts"]["fp_textfield_product_belts"].text end)
         },
         conditions = {
             [1] = {
                 label = {"fp.product_instruction_1"},
-                check = (function(data) return (data.item_sprite == "" or tonumber(data.required_amount) == nil
-                  or tonumber(data.required_amount) <= 0) end),
+                check = (function(data) return (data.item_sprite == "" or (tonumber(data.amount_amount) == nil
+                  and tonumber(data.belts_amount) == nil)) end),
                 refocus = (function(flow, data)
                     if data.item_sprite == "" then flow["flow_item_picker"]["table_search_bar"]
                       ["fp_textfield_item_picker_search_bar"].focus()
-                    else flow["flow_product_bar"]["textfield_product_amount"].focus() end
+                    else flow["flow_product_bar"]["flow_product_amount"]["fp_textfield_product_amount"].focus() end
                 end),
                 show_on_edit = true
             }
@@ -76,44 +89,152 @@ end
 
 -- Adds a row containing the picked item and it's required_amount
 function refresh_product_bar(flow_modal_dialog, product)
-    local sprite, required_amount
+    local player = game.get_player(flow_modal_dialog.player_index)
+    local modal_data = get_modal_data(player)
+    modal_data.timescale = get_context(player).subfactory.timescale -- needed for calculations
+    
+    local item_sprite, item_tooltip, belt_name, required_amount, belt_amount
     if product ~= nil then  -- Adjustments if the product is being edited
-        sprite = product.proto.sprite
-        required_amount = product.required_amount
-        tooltip = product.proto.localised_name
+        modal_data.amount_defined_by = product.required_amount.defined_by
+        modal_data.belt_proto = product.required_amount.belt_proto
+
+        item_sprite = product.proto.sprite
+        item_tooltip = product.proto.localised_name
+
+        belt_name = (modal_data.belt_proto ~= nil) and modal_data.belt_proto.name or nil
+
+        if modal_data.amount_defined_by == "amount" then
+            item_amount = product.required_amount.amount
+        else  -- defined_by == "belts"
+            belt_amount = product.required_amount.amount
+        end
+    else
+        -- Set a default defined_by for new products
+        modal_data.amount_defined_by = "amount"
     end
     
-    local flow = flow_modal_dialog["flow_product_bar"]
-    if flow == nil then
-        flow = flow_modal_dialog.add{type="flow", name="flow_product_bar", column_count=4}
-        flow.style.bottom_margin = 8
-        flow.style.horizontal_spacing = 8
-        flow.style.vertical_align = "center"
+    local flow_product_bar = flow_modal_dialog["flow_product_bar"]
+    if flow_product_bar == nil then
+        flow_product_bar = flow_modal_dialog.add{type="flow", name="flow_product_bar", direction="vertical"}
+        flow_product_bar.style.vertical_spacing = 8
     end
-    flow.clear()
+    flow_product_bar.clear()
     
-    flow.add{type="label", name="label_product", caption={"fp.product"}}
-    local button = flow.add{type="sprite-button", name="sprite-button_product", sprite=sprite,
-      tooltip=tooltip, style="fp_sprite-button_choose_elem"}
+    -- Product choice and amount
+    local flow_product_amount = flow_product_bar.add{type="flow", name="flow_product_amount", direction="horizontal"}
+    flow_product_amount.style.horizontal_spacing = 8
+    flow_product_amount.style.vertical_align = "center"
+
+    flow_product_amount.add{type="label", caption={"fp.product"}}
+    local button = flow_product_amount.add{type="sprite-button", name="sprite-button_product", sprite=item_sprite,
+      tooltip=item_tooltip, style="fp_sprite-button_choose_elem"}
     button.style.right_margin = 14
     
-    flow.add{type="label", name="label_product_amount", caption={"fp.amount"}}
-    local textfield = flow.add{type="textfield", name="textfield_product_amount", text=required_amount}
-    textfield.style.width = 80
+    flow_product_amount.add{type="label", caption={"fp.amount"}}
+    local textfield = flow_product_amount.add{type="textfield", name="fp_textfield_product_amount", text=item_amount}
     ui_util.setup_numeric_textfield(textfield, true, false)
-    if product ~= nil then textfield.focus() end
-    
-    return flow
+    textfield.style.width = 80
+
+    -- Product amount specification by belt
+    local flow_product_belts = flow_product_bar.add{type="flow", name="flow_product_belts", direction="horizontal"}
+    flow_product_belts.style.vertical_align = "center"
+
+    local label_belt_amount = flow_product_belts.add{type="label", caption={"fp.amount_by_belts"}}
+    label_belt_amount.style.right_margin = 10
+
+    local textfield = flow_product_belts.add{type="textfield", name="fp_textfield_product_belts", text=belt_amount,
+      enabled=(modal_data.belt_proto~=nil)}
+    ui_util.setup_numeric_textfield(textfield, true, false)
+    textfield.style.width = 60
+
+    local label_X = flow_product_belts.add{type="label", caption="X"}
+    label_X.style.margin = {0, 3}
+
+    local choose_elem_button = flow_product_belts.add{type="choose-elem-button", elem_type="entity",
+      name="fp_choose-elem-button_product_belts", style="fp_sprite-button_choose_elem"}
+    choose_elem_button.elem_filters = {{filter="type", type="transport-belt"}}
+    choose_elem_button.elem_value = belt_name  -- needs to be set after the filter
+
+    set_appropriate_amount_focus(flow_product_bar, modal_data)
+    update_product_amounts(flow_product_bar, modal_data)
+
+    return flow_product_bar
+end
+
+-- Focus the textfield that this product is currently defined_by
+function set_appropriate_amount_focus(flow_product_bar, modal_data)
+    local defined_by = modal_data.amount_defined_by
+    flow_product_bar["flow_product_" .. defined_by]["fp_textfield_product_" .. defined_by].focus()
+end
+
+-- Updates the product and belt amounts according to the amount_defined_by-state
+function update_product_amounts(flow_product_bar, modal_data)
+    local textfield_amount = flow_product_bar["flow_product_amount"]["fp_textfield_product_amount"]
+    local textfield_belts = flow_product_bar["flow_product_belts"]["fp_textfield_product_belts"]
+
+    local belt_proto = modal_data.belt_proto
+    if modal_data.amount_defined_by == "amount" and belt_proto ~= nil then
+        local defining_amount = tonumber(textfield_amount.text)
+        if defining_amount ~= nil then
+            local belts_amount = defining_amount / belt_proto.throughput / modal_data.timescale
+            textfield_belts.text = ui_util.format_number(belts_amount, 4)
+        else
+            textfield_belts.text = ""
+        end
+    elseif modal_data.amount_defined_by == "belts" then
+        local defining_amount = tonumber(textfield_belts.text)
+        if defining_amount ~= nil then
+            local amount_amount = defining_amount * belt_proto.throughput * modal_data.timescale
+            textfield_amount.text = amount_amount
+        else
+            textfield_amount.text = ""
+        end
+    end
 end
 
 
 -- Reacts to a picker item button being pressed
 function handle_item_picker_product_click(player, identifier)
     local item_proto = identifier_item_map[identifier]
-    get_modal_data(player).selected_item = item_proto
+    local modal_data = get_modal_data(player)
+    modal_data.selected_item = item_proto
 
     local flow_product_bar = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_product_bar"]
-    flow_product_bar["sprite-button_product"].sprite = item_proto.sprite
-    flow_product_bar["sprite-button_product"].tooltip = item_proto.localised_name
-    flow_product_bar["textfield_product_amount"].focus()
+    local sprite_button_product = flow_product_bar["flow_product_amount"]["sprite-button_product"]
+    sprite_button_product.sprite = item_proto.sprite
+    sprite_button_product.tooltip = item_proto.localised_name
+
+    set_appropriate_amount_focus(flow_product_bar, modal_data)
+end
+
+
+-- Updates the product bar with the new selection of belt
+function handle_product_belt_change(player, belt_name)
+    local belt_proto = global.all_belts.belts[global.all_belts.map[belt_name]]
+
+    local modal_data = get_modal_data(player)
+    modal_data.belt_proto = belt_proto
+
+    local flow_product_bar = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_product_bar"]
+    local textfield_product_belts = flow_product_bar["flow_product_belts"]["fp_textfield_product_belts"]
+    textfield_product_belts.enabled = (belt_proto ~= nil)
+
+    if belt_proto == nil then
+        modal_data.amount_defined_by = "amount"
+        textfield_product_belts.text = ""
+    else
+        update_product_amounts(flow_product_bar, modal_data)
+        modal_data.amount_defined_by = "belts"
+    end
+
+    set_appropriate_amount_focus(flow_product_bar, modal_data)
+end
+
+-- Updates the product bar amounts according to the amount_defined_by-state
+function handle_product_amount_change(player, defined_by)
+    local modal_data = get_modal_data(player)
+    modal_data.amount_defined_by = defined_by
+
+    local flow_product_bar = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_product_bar"]
+    update_product_amounts(flow_product_bar, modal_data)
 end

@@ -5,7 +5,12 @@ constructor = {}
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products)
     for _, product in ipairs(products) do
-        local item = Item.init_by_item(product, "Product", 0, (product.required_amount or 0))
+        -- Doesn't support belt-defined top level products for now
+        local req_amount = {
+            defined_by = "amount",
+            amount = product.required_amount
+        }
+        local item = Item.init_by_item(product, "Product", 0, req_amount)
         Subfactory.add(subfactory, item)
     end
 end

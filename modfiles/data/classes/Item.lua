@@ -5,17 +5,22 @@ Item = {}
 -- This is set up as a top-level item if a required_amount is given
 function Item.init_by_proto(proto, class, amount, required_amount)
     local type = global.all_items.types[global.all_items.map[proto.type]]
+
+    -- Special case for non-product top level items
+    if required_amount == 0 then required_amount = {defined_by="amount", amount=0} end
+
     return {
         proto = proto,
         type = type,
         amount = amount or 0,  -- produced amount
-        required_amount = required_amount,
-        satisfied_amount = 0,
+        required_amount = required_amount,  -- is a table
+        satisfied_amount = 0,  -- used with ingredient satisfaction
         top_level = (required_amount ~= nil),
         valid = true,
         class = class
     }
 end
+
 
 -- Initialised by passing a basic item table {name, type, amount}
 -- This is set up as a top-level item if a required_amount is given
@@ -23,6 +28,17 @@ function Item.init_by_item(item, class, amount, required_amount)
     local type = global.all_items.types[global.all_items.map[item.type]]
     local proto = type.items[type.map[item.name]]
     return Item.init_by_proto(proto, class, amount, required_amount)
+end
+
+
+-- Returns the converted numeric required_amount for this (top level) item
+function Item.required_amount(self)
+    local req_amount = self.required_amount
+    if req_amount.defined_by == "amount" then
+        return req_amount.amount
+    else  -- defined_by == "belts"
+        return req_amount.amount * req_amount.belt_proto.throughput * req_amount.timescale
+    end
 end
 
 
@@ -50,6 +66,17 @@ function Item.update_validity(self)
         self.proto = self.proto.name
         self.valid = false
     end
+
+    -- Check the belt_proto related to the required_amounts of top level items
+    if self.valid and self.top_level then
+        local belt_proto = self.required_amount.belt_proto
+        if belt_proto ~= nil then
+            if new.all_belts.map[belt_proto.name] == nil then
+                self.required_amount.belt_proto = belt_proto.name
+                self.valid = false
+            end
+        end
+    end
     
     return self.valid
 end
@@ -74,6 +101,18 @@ function Item.attempt_repair(self, player)
         self.valid = true
     else
         self.valid = false
+    end
+
+    -- Try and repair the belt_proto related to the required_amounts
+    -- (Doesn't seem to work, but w/e, the invalidity check works)
+    if self.valid and self.top_level then
+        local belt_proto = self.required_amount.belt_proto
+        if belt_proto and type(belt_proto) == "string" then
+            -- valid stays true
+            self.required_amount.belt_proto = new.all_belts.belts[new.all_belts.map[belt_proto]]
+        else
+            self.valid = false
+        end
     end
 
     return self.valid

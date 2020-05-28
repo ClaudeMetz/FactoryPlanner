@@ -115,7 +115,8 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
     local style = "fp_button_icon_large_blank"  -- will remain untouched if the display mode is 'floor_total'
 
     for _, item in ipairs(items) do
-        local item_amount = (display_mode == "standard" and class == "Product") and item.required_amount or item.amount
+        local required_amount = Item.required_amount(item)
+        local item_amount = (display_mode == "standard" and class == "Product") and required_amount or item.amount
         local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item_amount, nil)
 
@@ -131,9 +132,9 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
                 else  -- class == "Product"
                     if item.amount <= 0 then
                         style = "fp_button_icon_large_red"
-                    elseif item.amount < item.required_amount then
+                    elseif item.amount < required_amount then
                         style = "fp_button_icon_large_yellow"
-                    elseif item.amount == item.required_amount then
+                    elseif item.amount == required_amount then
                         style = "fp_button_icon_large_green"
                     else  -- overproduction, should not happen normally
                         style = "fp_button_icon_large_cyan"
