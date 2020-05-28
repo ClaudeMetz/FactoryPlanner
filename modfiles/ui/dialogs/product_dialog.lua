@@ -93,7 +93,8 @@ function refresh_product_bar(flow_modal_dialog, product)
     local modal_data = get_modal_data(player)
     modal_data.timescale = get_context(player).subfactory.timescale -- needed for calculations
     
-    local item_sprite, item_tooltip, belt_name, required_amount, belt_amount
+    local item_sprite, item_tooltip, belt_name
+    local item_amount, belt_amount = "", ""
     if product ~= nil then  -- Adjustments if the product is being edited
         modal_data.amount_defined_by = product.required_amount.defined_by
         modal_data.belt_proto = product.required_amount.belt_proto
