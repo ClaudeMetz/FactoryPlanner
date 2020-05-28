@@ -146,7 +146,16 @@ function handle_subfactory_timescale_change(player, timescale)
     if ui_util.check_archive_status(player) then return end
 
     local subfactory = get_context(player).subfactory
+    local old_timescale = subfactory.timescale
     subfactory.timescale = timescale
+
+    -- Adjust the required_amount according to the new timescale
+    local timescale_ratio = (timescale / old_timescale)
+    for _, top_level_product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
+        local required_amount = top_level_product.required_amount
+        required_amount.amount = required_amount.amount * timescale_ratio
+    end
+
     get_ui_state(player).current_activity = nil
     calculation.update(player, subfactory, true)
 end

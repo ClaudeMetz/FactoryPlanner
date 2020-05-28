@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added a way to specify product amounts by multiples of belts
   Changes:
-    - 
+    - Changing the timescale of a subfactory now adjusts the desired products accordingly
   Bugfixes:
     - Fixed a crash with certain mods when loading a map
     - Now displays power consumption and emissions correctly for machines with a void power source
