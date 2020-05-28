@@ -214,6 +214,11 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         elseif element_name == "fp_textfield_mining_prod" then
             handle_mining_prod_change(player, event.element)
 
+        -- Updates the product dialog amounts
+        elseif string.find(element_name, "^fp_textfield_product_[a-z]+$") then
+            local defined_by = string.gsub(element_name, "fp_textfield_product_", "")
+            handle_product_amount_change(player, defined_by)
+
         -- Persists (assembly) line percentage changes
         elseif string.find(element_name, "^fp_textfield_line_percentage_%d+$") then
             handle_percentage_change(player, event.element)
@@ -241,8 +246,13 @@ end)
 script.on_event(defines.events.on_gui_elem_changed, function(event)
     local player = game.get_player(event.player_index)
 
+    -- Changes the reference belt for the currently open product
+    if event.element.name == "fp_choose-elem-button_product_belts" then
+        local belt_name = event.element.elem_value
+        handle_product_belt_change(player, belt_name)
+
     -- Persists changes to the module/beacon defaults
-    if string.find(event.element.name, "^fp_choose%-elem%-button_default_[a-z]+$") then
+    elseif string.find(event.element.name, "^fp_choose%-elem%-button_default_[a-z]+$") then
         handle_mb_defaults_change(player, event.element)
     end
 end)

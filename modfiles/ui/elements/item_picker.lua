@@ -7,6 +7,10 @@ function item_picker.create(parent)
     if parent["flow_item_picker"] ~= nil then return parent["flow_item_picker"] end
     local picker_flow = parent.add{type="flow", name="flow_item_picker", direction="vertical"}
 
+    -- Separation line
+    local separation_line = picker_flow.add{type="line"}
+    separation_line.style.margin = {8, 4}
+
     -- Search bar
     local table_search = picker_flow.add{type="flow", name="table_search_bar", direction="horizontal"}
     table_search.style.horizontal_spacing = 12
