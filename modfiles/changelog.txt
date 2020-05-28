@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash with certain mods when loading a map
     - Now displays power consumption and emissions correctly for machines with a void power source
+    - Fixed an issue where a recipe line would sometimes show byproducts that shouldn't exist
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.19
