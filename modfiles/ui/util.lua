@@ -129,6 +129,11 @@ function ui_util.determine_item_amount_and_appendage(player_table, view_name, it
 
     end
 
+    -- If no number would be shown, but the amount is still tiny, adjust the number to be
+    -- smaller than the margin of error, so it gets automatically hidden afterwards
+    -- Kinda hacky way to do this, but doesn't matter probably ¯\_(ツ)_/¯
+    if number == nil and amount < margin_of_error then number = margin_of_error - 1 end
+
     return number, appendage  -- number might be nil here
 end
 
