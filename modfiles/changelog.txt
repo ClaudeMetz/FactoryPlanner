@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.21
+Date: 29. 05. 2020
   Bugfixes:
     - Fixed that you could set an amount of 0 on a product, leading to it disappearing
 
