@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.23
+Date: 30. 05. 2020
   Changes:
     - Added support for any modded rocket silo recipes, instead of only vanilla space science
     - Combined the two rocket building recipes into one, making it so you don't have to produce rocket parts anymore, you just select the end product (most of the time, this will be space science), and it'll show the ingredients directly, removing an unnecessary step
