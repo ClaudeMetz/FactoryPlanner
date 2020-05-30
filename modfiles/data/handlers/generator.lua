@@ -425,6 +425,14 @@ function generator.all_recipes()
         end
     end
 
+    -- Determine all the items that can be inserted usefully into a rocket silo
+    local rocket_silo_inputs = {}
+    for _, item in pairs(game.item_prototypes) do
+        if table_size(item.rocket_launch_products) > 0 then
+            table.insert(rocket_silo_inputs, item)
+        end
+    end
+
     -- Adding mining recipes
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
@@ -486,13 +494,40 @@ function generator.all_recipes()
             format_recipe_products_and_ingredients(recipe)
             add_recipe_tooltip(recipe)
             insert_proto(all_recipes, "recipes", recipe, true)
+
+        -- Detect all the implicit rocket silo recipes
+        elseif proto.rocket_parts_required ~= nil then
+            -- Add recipe for all 'launchable' items
+            for _, item in pairs(rocket_silo_inputs) do
+                local recipe = mining_recipe()
+                recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. item.name
+                recipe.localised_name = item.localised_name
+                recipe.sprite = "item/" .. item.name
+                recipe.category = "rocket-building"
+                recipe.energy = 0
+                recipe.emissions_multiplier = 1
+                recipe.group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
+                  order="c", valid=true}
+                recipe.subgroup = {name="science-pack", order="g", valid=true}
+                recipe.order = "x-silo-" .. proto.order .. "-" .. item.order
+                recipe.ingredients = {
+                    {type="item", name="rocket-part", amount=proto.rocket_parts_required},
+                    {type="item", name=item.name, amount=1}
+                }
+                recipe.products = item.rocket_launch_products
+                recipe.main_product = recipe.products[1]
+                
+                format_recipe_products_and_ingredients(recipe)
+                add_recipe_tooltip(recipe)
+                insert_proto(all_recipes, "recipes", recipe, true)
+            end
         end
     
         -- Adds a recipe for producing steam from a boiler
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
                 and fluidbox.filter.name == "steam" then
-                -- Exclude any boilers that use heat as their energy source
+                -- Exclude any boilers that use heat or fluid as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     local temperature = proto.target_temperature
                     local recipe = mining_recipe()
@@ -535,34 +570,6 @@ function generator.all_recipes()
         format_recipe_products_and_ingredients(steam_recipe)
         add_recipe_tooltip(steam_recipe)
         insert_proto(all_recipes, "recipes", steam_recipe, true)
-    end
-    
-    -- Adds a convenient space science recipe
-    if game["item_prototypes"]["space-science-pack"] then
-        local rocket_recipe = {
-            name = "fp-space-science-pack",
-            localised_name = {"item-name.space-science-pack"},  -- official locale
-            sprite = "item/space-science-pack",
-            category = "rocket-building",
-            hidden = false,
-            energy = 0,
-            emissions_multiplier = 1,
-            group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
-            order="c", valid=true},
-            subgroup = {name="science-pack", order="g", valid=true},
-            order = "x[fp-space-science-pack]",
-            ingredients = {
-                {type="item", name="rocket-part", amount=100},
-                {type="item", name="satellite", amount=1}
-            },
-            products = {{type="item", name="space-science-pack", amount=1000}},
-            type_counts = {},  -- filled out by format_* below
-            custom = true
-        }
-
-        format_recipe_products_and_ingredients(rocket_recipe)
-        add_recipe_tooltip(rocket_recipe)
-        insert_proto(all_recipes, "recipes", rocket_recipe, true)
     end
     
     return all_recipes
