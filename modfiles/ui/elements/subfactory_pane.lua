@@ -10,7 +10,7 @@ function add_subfactory_pane_to(main_dialog)
     table_subfactory.style.bottom_margin = 10
     
     local player = game.get_player(main_dialog.player_index)
-    local pane_width = ((get_ui_state(player).main_dialog_dimensions.width - 2*18) / 4)
+    local pane_width = (get_ui_state(player).main_dialog_dimensions.width - 2*18) / 4
     local panes = {"info", "ingredient", "product", "byproduct"}
 
     for _, pane_name in ipairs(panes) do
@@ -81,6 +81,9 @@ function refresh_item_table(player, class)
             -- Combine Fuel and Ingredients into a single item list
             items = (class ~= "Ingredient") and Line.get_in_order(parent_line, class) or Collection.get_in_order(
               Subfactory.combine_item_collections(subfactory, parent_line.Ingredient, parent_line.Fuel))
+
+            -- Adjust items to the required_amount-format that top level items use
+            for _, item in pairs(items) do item.required_amount = {defined_by = "amount", amount = item.amount} end
         end
 
     -- Otherwise, show the subfactory totals, if there are any
