@@ -123,7 +123,8 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
         local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item_amount, nil)
 
-        if display_amount == nil or display_amount > margin_of_error then
+        if display_amount == nil or display_amount > margin_of_error
+          or (display_amount == 0 and class == "Product") then
             local secondary_number = ""
 
             if display_mode == "standard" then
