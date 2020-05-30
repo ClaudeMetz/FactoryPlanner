@@ -75,7 +75,7 @@ function get_product_condition_instructions()
                 label = {"fp.product_instruction_1"},
                 -- Only checking >0 on one of them is enough, as they'll be identical when one is zero
                 check = (function(data) return (data.item_sprite == "" or (tonumber(data.amount_amount) == nil
-                  and tonumber(data.belts_amount) == nil) or tonumber(data.amount_amount) <= 0) end),
+                  and tonumber(data.belts_amount) == nil)) end),
                 refocus = (function(flow, data)
                     if data.item_sprite == "" then flow["flow_item_picker"]["table_search_bar"]
                       ["fp_textfield_item_picker_search_bar"].focus()
