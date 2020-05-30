@@ -69,7 +69,7 @@ function data_util.machine.change(player, line, machine, direction)
             Line.summarize_effects(line)
 
             -- Adjust beacon (ie. remove if machine does not allow beacons)
-            if line.machine.proto.allowed_effects == nil or line.recipe.proto.name == "fp-space-science-pack" then
+            if line.machine.proto.allowed_effects == nil then
                 Line.remove_beacon(line)
             end
 
