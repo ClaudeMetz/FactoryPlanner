@@ -258,15 +258,10 @@ end
 -- **** FORMULAE ****
 -- Determine the amount of machines needed to produce the given recipe in the given context
 function calculation.util.determine_machine_count(machine_proto, recipe_proto, total_effects, production_ratio, timescale)
-    -- Stupid exception because this is all a giant hack
-    if recipe_proto.name == "fp-space-science-pack" then return 1e-16 end
-    
     local launch_delay = 0
     if machine_proto.category == "rocket-building" then
-        local rockets_produced = production_ratio / 100
         local launch_sequence_time = 41.25 / timescale  -- in seconds
-        -- Not sure why this forumla works, but it seemingly does
-        launch_delay = launch_sequence_time * rockets_produced
+        launch_delay = launch_sequence_time * production_ratio
     end
     
     local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
@@ -276,17 +271,14 @@ end
 
 -- Calculates the production ratio from a given machine limit
 function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_limit, timescale)
-    -- Stupid exception because this is all a giant hack
-    if recipe_proto.name == "fp-space-science-pack" then return 1e-16 end
-
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
     local productivity_multiplier = (1 + math.max(total_effects.productivity, 0))
 
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
     if machine_proto.category == "rocket-building" then
         -- Formula reduced by Wolfram Alpha
-        return ((80 * machine_limit * machine_speed * timescale) / 
-          ((33 * machine_speed) + (80 * recipe_proto.energy)) * productivity_multiplier)
+        return ((4 * machine_limit * machine_speed * timescale) / 
+          ((165 * machine_speed) + (4 * recipe_proto.energy)) * productivity_multiplier)
     else
         return (machine_limit * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier)
     end
