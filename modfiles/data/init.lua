@@ -13,45 +13,9 @@ require("data.classes.Line")
 require("data.handlers.migrator")
 require("data.handlers.generator")
 require("data.handlers.loader")
-require("data.handlers.constructor")
+require("data.handlers.builder")
 require("data.handlers.remote")
 require("data.calculation.interface")
-
--- Sets up global data structure of the mod
-script.on_init(function()
-    global_init()
-end)
-
--- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
-script.on_configuration_changed(function()
-    handle_configuration_change()
-end)
-
--- Creates some lua-global tables for convenience and performance
-script.on_load(function()
-    run_on_load()
-end)
-
--- Fires when a player loads into a game for the first time
-script.on_event(defines.events.on_player_created, function(event)
-    local player = game.get_player(event.player_index)
-
-    -- Sets up the player_table for the new player
-    update_player_table(player, global)
-
-    -- Sets up the GUI for the new player
-    player_gui_init(player)
-
-    -- Runs setup if developer mode is active
-    constructor.dev_config(player)
-end)
-
--- Fires when a player is irreversibly removed from a game
-script.on_event(defines.events.on_player_removed, function(event)
-    -- Removes the player from the global table
-    global.players[event.player_index] = nil
-end)
-
 
 -- Initiates all factorio-global variables
 function global_init()
@@ -246,6 +210,36 @@ function reset_ui_state(player)
         selection_mode = false  -- Whether the player is currently using a selector
     }
 end
+
+
+-- Sets up global data structure of the mod
+script.on_init(global_init)
+
+-- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
+script.on_configuration_changed(handle_configuration_change)
+
+-- Creates some lua-global tables for convenience and performance
+script.on_load(run_on_load)
+
+-- Fires when a player loads into a game for the first time
+script.on_event(defines.events.on_player_created, function(event)
+    local player = game.get_player(event.player_index)
+
+    -- Sets up the player_table for the new player
+    update_player_table(player, global)
+
+    -- Sets up the GUI for the new player
+    player_gui_init(player)
+
+    -- Runs setup if developer mode is active
+    builder.dev_config(player)
+end)
+
+-- Fires when a player is irreversibly removed from a game
+script.on_event(defines.events.on_player_removed, function(event)
+    -- Removes the player from the global table
+    global.players[event.player_index] = nil
+end)
 
 
 -- Returns the player table for the given player

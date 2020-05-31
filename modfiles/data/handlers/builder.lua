@@ -1,16 +1,22 @@
 -- Contains the methods and definitions to generate subfactories by code
-constructor = {}
+builder = {}
 
 -- Following are a couple helper functions for populating (sub)factories
 -- Adds all given products to the given subfactory (table definition see above)
-local function add_products(subfactory, products)
+local function add_products(subfactory, products, timescale)
     for _, product in ipairs(products) do
-        -- Doesn't support belt-defined top level products for now
+        local prod = {name=product.name, type=product.type}
         local req_amount = {
-            defined_by = "amount",
-            amount = product.required_amount
+            defined_by = product.defined_by,
+            amount = product.amount
         }
-        local item = Item.init_by_item(product, "Product", 0, req_amount)
+        if product.defined_by == "belts" then  -- Make adjustments if this is being defined by belts
+            local belt_proto = global.all_belts.belts[global.all_belts.map[product.belt_name]]
+            req_amount.timescale = timescale
+            req_amount.belt_proto = belt_proto
+        end
+
+        local item = Item.init_by_item(prod, "Product", 0, req_amount)
         Subfactory.add(subfactory, item)
     end
 end
@@ -79,7 +85,7 @@ end
 
 
 -- Initiates the data table with some values for development purposes
-function constructor.dev_config(player)
+function builder.dev_config(player)
     if devmode then
         get_preferences(player).tutorial_mode = false
 
@@ -97,30 +103,36 @@ function constructor.dev_config(player)
             {
                 name = "electronic-circuit",
                 type = "item",
-                required_amount = 400
+                defined_by = "amount",
+                amount = 400
             },
             {
                 name = "uranium-235",
                 type = "item",
-                required_amount = 10
+                defined_by = "amount",
+                amount = 10
             },
             {
                 name = "iron-ore",
                 type = "item",
-                required_amount = 100
+                defined_by = "belts",
+                amount = 0.5,
+                belt_name = "transport-belt"
             },
             {
                 name = "light-oil",
                 type = "fluid",
-                required_amount = 250
+                defined_by = "amount",
+                amount = 250
             },
             {
                 name = "steam",
                 type = "fluid",
-                required_amount = 1000
+                defined_by = "amount",
+                amount = 1000
             }
         }
-        add_products(subfactory, products)
+        add_products(subfactory, products, subfactory.timescale)
         
         -- Floors
         local recipes = {
@@ -133,8 +145,9 @@ function constructor.dev_config(player)
     end
 end
 
+
 -- Adds an example subfactory for new users to explore (returns that subfactory)
-function constructor.example_subfactory(player)
+function builder.example_subfactory(player)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     local factory = player_table.factory
@@ -151,10 +164,11 @@ function constructor.example_subfactory(player)
         {
             name = "production-science-pack",
             type = "item",
-            required_amount = 180
+            defined_by = "amount",
+            amount = 180
         }
     }
-    add_products(subfactory, products)
+    add_products(subfactory, products, subfactory.timescale)
     
     -- Recipes    
     -- This table describes the desired hierarchical structure of the subfactory
