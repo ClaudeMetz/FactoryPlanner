@@ -582,16 +582,6 @@ function generator.all_recipes()
     return all_recipes
 end
 
---[[ -- Generates a list of all recipes, sorted for display in the picker
-function generator.sorted_recipes()
-    local recipes = {}
-    for _, recipe in ipairs(global.all_recipes.recipes) do
-        -- Silly checks needed here for migration purposes
-        if recipe.group.valid and recipe.subgroup.valid then table.insert(recipes, recipe) end
-    end
-    return create_object_tree(recipes)
-end ]]
-
 -- Returns a list of recipe groups in their proper order
 function generator.ordered_recipe_groups()
     group_dict = {}

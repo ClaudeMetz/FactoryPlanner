@@ -25,7 +25,7 @@ function loader.setup()
     end
 
     -- Generate alt_actions table
-    global.alt_actions = loader.util.determine_alt_actions()
+    global.alt_actions = remote_actions.util.determine_alt_actions()
 end
 
 -- Updates the relevant data of the given player to fit the new data
@@ -104,30 +104,4 @@ function loader.machines.run(player_table)
     end
 
     preferences.default_machines = default_machines
-end
-
-
--- **** ALT ACTIONS ****
--- Returns a table with the names of all valid alt-actions
-function loader.util.determine_alt_actions()
-    local alt_actions = {["none"] = 1}
-
-    local remote_interfaces = {
-        [1] = {internal_name = "fnei", interface_name = "fnei"},
-        [2] = {internal_name = "wiiruf", interface_name = "wiiuf"},
-        [3] = {internal_name = "recipebook", interface_name = "RecipeBook"}
-    }
-
-    local action_index = table_size(alt_actions)
-    for _, remote_interface in ipairs(remote_interfaces) do
-        if remote.interfaces[remote_interface.interface_name] ~= nil
-          and remote.call(remote_interface.interface_name, "version")
-          == remote_actions[remote_interface.internal_name].version then
-
-            action_index = action_index + 1
-            alt_actions[remote_interface.internal_name] = action_index
-        end
-    end
-
-    return alt_actions
 end
