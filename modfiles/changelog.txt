@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - 
   Bugfixes:
-    - 
+    - Fixed a crash on load in certain modded situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.23

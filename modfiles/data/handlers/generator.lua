@@ -500,31 +500,33 @@ function generator.all_recipes()
             -- Add recipe for all 'launchable' items
             for _, item in pairs(rocket_silo_inputs) do
                 local fixed_recipe = game.recipe_prototypes[proto.fixed_recipe]
-                local silo_product = game.item_prototypes[item.rocket_launch_products[1].name]
+                if fixed_recipe ~= nil then
+                    local silo_product = game.item_prototypes[item.rocket_launch_products[1].name]
 
-                local recipe = mining_recipe()
-                recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. item.name
-                recipe.localised_name = silo_product.localised_name
-                recipe.sprite = "item/" .. silo_product.name
-                recipe.category = "rocket-building"
-                recipe.energy = fixed_recipe.energy * proto.rocket_parts_required
-                recipe.emissions_multiplier = 1
-                recipe.group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
-                  order="c", valid=true}
-                recipe.subgroup = {name="science-pack", order="g", valid=true}
-                recipe.order = "x-silo-" .. proto.order .. "-" .. item.order
+                    local recipe = mining_recipe()
+                    recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. item.name
+                    recipe.localised_name = silo_product.localised_name
+                    recipe.sprite = "item/" .. silo_product.name
+                    recipe.category = "rocket-building"
+                    recipe.energy = fixed_recipe.energy * proto.rocket_parts_required
+                    recipe.emissions_multiplier = 1
+                    recipe.group = {name="intermediate-products", localised_name={"item-group-name.intermediate-products"},
+                    order="c", valid=true}
+                    recipe.subgroup = {name="science-pack", order="g", valid=true}
+                    recipe.order = "x-silo-" .. proto.order .. "-" .. item.order
 
-                recipe.ingredients = fixed_recipe.ingredients
-                for _, ingredient in pairs(recipe.ingredients) do
-                    ingredient.amount = ingredient.amount * proto.rocket_parts_required
+                    recipe.ingredients = fixed_recipe.ingredients
+                    for _, ingredient in pairs(recipe.ingredients) do
+                        ingredient.amount = ingredient.amount * proto.rocket_parts_required
+                    end
+                    table.insert(recipe.ingredients, {type="item", name=item.name, amount=1})
+                    recipe.products = item.rocket_launch_products
+                    recipe.main_product = recipe.products[1]
+                    
+                    format_recipe_products_and_ingredients(recipe)
+                    add_recipe_tooltip(recipe)
+                    insert_proto(all_recipes, "recipes", recipe, true)
                 end
-                table.insert(recipe.ingredients, {type="item", name=item.name, amount=1})
-                recipe.products = item.rocket_launch_products
-                recipe.main_product = recipe.products[1]
-                
-                format_recipe_products_and_ingredients(recipe)
-                add_recipe_tooltip(recipe)
-                insert_proto(all_recipes, "recipes", recipe, true)
             end
         end
     
