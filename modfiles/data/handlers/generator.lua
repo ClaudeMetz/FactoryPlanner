@@ -335,29 +335,6 @@ local function add_item_tooltip(item)
 end
 
 
--- Sorts the objects according to their group, subgroup and order
-local function create_object_tree(objects)
-    local function sorting_function(a, b)
-        if a.group.order < b.group.order then
-            return true
-        elseif a.group.order > b.group.order then
-            return false
-        elseif a.subgroup.order < b.subgroup.order then
-            return true
-        elseif a.subgroup.order > b.subgroup.order then
-            return false
-        elseif a.order < b.order then
-            return true
-        elseif a.order > b.order then
-            return false
-        end
-    end
-    
-    table.sort(objects, sorting_function)
-    return objects
-end
-
-
 -- Determines every recipe that is researchable or enabled by default
 local function determine_researchable_recipes()
     local map = {}
@@ -582,37 +559,6 @@ function generator.all_recipes()
     return all_recipes
 end
 
--- Returns a list of recipe groups in their proper order
-function generator.ordered_recipe_groups()
-    group_dict = {}
-
-    -- Make a dict with all recipe groups
-    if not global.all_recipes.recipes then return end
-    for _, recipe in pairs(global.all_recipes.recipes) do
-        if group_dict[recipe.group.name] == nil then
-            group_dict[recipe.group.name] = recipe.group
-        end
-    end
-
-    -- Invert it
-    local groups = {}
-    for _, group in pairs(group_dict) do
-        table.insert(groups, group)
-    end
-
-    -- Sort it
-    local function sorting_function(a, b)
-        if a.order < b.order then
-            return true
-        elseif a.order > b.order then
-            return false
-        end
-    end
-    table.sort(groups, sorting_function)
-
-    return groups
-end
-
 
 -- Returns all relevant items and fluids
 function generator.all_items()
@@ -670,72 +616,6 @@ function generator.all_items()
     end
     
     return all_items
-end
-
--- Generates a list of all items, sorted for display in the picker
-function generator.sorted_items()
-    -- Combines item and fluid prototypes into an unsorted number-indexed array
-    local items = {}
-    local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
-        for _, item in pairs(all_items.types[all_items.map[type]].items) do
-            -- Silly checks needed here for migration purposes
-            if item.group.valid and item.subgroup.valid then table.insert(items, item) end
-        end
-    end
-    return create_object_tree(items)
-end
-
-
--- Maps all items to the recipes that produce them ([item_type][item_name] = {[recipe_id] = true}
-function generator.product_recipe_map()
-    local map = {}
-
-    if not global.all_recipes.recipes then return end
-    for _, recipe in pairs(global.all_recipes.recipes) do
-        for _, product in ipairs(recipe.products) do
-            -- Ignores recipes that produce a net item/fluid amount <= 0
-            if product.net_amount and product.net_amount > 0 then
-                map[product.type] = map[product.type] or {}
-                map[product.type][product.name] = map[product.type][product.name] or {}
-                map[product.type][product.name][recipe.id] = true
-            end
-        end
-    end
-    
-    return map
-end
-
--- Maps all items to the recipes that consume them ([item_type][item_name] = {[recipe_id] = true}
-function generator.ingredient_recipe_map()
-    local map = {}
-
-    if not global.all_recipes.recipes then return end
-    for _, recipe in pairs(global.all_recipes.recipes) do
-        for _, ingredient in ipairs(recipe.ingredients) do
-            -- Ignores recipes that consume a net item/fluid amount <= 0
-            if ingredient.net_amount and ingredient.net_amount > 0 then
-                map[ingredient.type] = map[ingredient.type] or {}
-                map[ingredient.type][ingredient.name] = map[ingredient.type][ingredient.name] or {}
-                map[ingredient.type][ingredient.name][recipe.id] = true
-            end
-        end
-    end
-
-    return map
-end
-
--- Generates a table mapping item identifier to their prototypes
-function generator.identifier_item_map()
-    local map = {}
-    local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
-        for _, item in pairs(all_items.types[all_items.map[type]].items) do
-            -- Identifier existance-check for migration reasons
-            if item.identifier ~= nil then map[item.identifier] = item end
-        end
-    end
-    return map
 end
 
 
@@ -870,24 +750,6 @@ function generator.all_machines()
 end
 
 
--- Determines a suitable crafting machine sprite path, according to what is available
-function generator.find_crafting_machine_sprite()
-    -- Try these categories first, one of them should exist
-    local categories = {"crafting", "advanced-crafting", "basic-crafting"}
-    for _, category_name in ipairs(categories) do
-        local category_id = global.all_machines.map[category_name]
-        if category_id ~= nil then
-            local machines = global.all_machines.categories[category_id].machines
-            return machines[table_size(machines)].sprite
-        end
-    end
-
-    -- If none of the specified categories exist, just pick the top tier machine of the first one
-    local machines = global.all_machines.categories[1].machines
-    return machines[table_size(machines)].sprite
-end
-
-
 -- Generates a table containing all available transport belts
 function generator.all_belts()
     local all_belts = {belts = {}, map = {}}
@@ -963,21 +825,6 @@ function generator.all_modules()
     end
 
     return all_modules
-end
-
--- Generates a table containing all module per category, ordered by tier
-function generator.module_tier_map()
-    local map = {}
-
-    if not global.all_modules then return end
-    for _, category in pairs(global.all_modules.categories) do
-        map[category.id] = {}
-        for _, module in pairs(category.modules) do
-            map[category.id][module.tier] = module
-        end
-    end
-    
-    return map
 end
 
 
