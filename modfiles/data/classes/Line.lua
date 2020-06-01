@@ -25,7 +25,7 @@ function Line.init(player, recipe)
     }
     
     -- Return false if no fitting machine can be found (needs error handling on the other end)
-    if data_util.machine.change(player, line, nil, nil) == false then return false end
+    if Line.change_machine(line, player, nil, nil) == false then return false end
 
     -- Initialise total_effects
     Line.summarize_effects(line)
@@ -164,6 +164,101 @@ function Line.carry_over_changes(self, f, secondary, arg)
         end
     end
 end
+
+
+-- Returns whether the given machine can be used for this line/recipe
+function Line.is_machine_applicable(self, machine_proto)
+    local recipe_proto = self.recipe.proto
+    local valid_ingredient_count = (machine_proto.ingredient_limit >= recipe_proto.type_counts.ingredients.items)
+    local valid_input_channels = (machine_proto.fluid_channels.input >= recipe_proto.type_counts.ingredients.fluids)
+    local valid_output_channels = (machine_proto.fluid_channels.output >= recipe_proto.type_counts.products.fluids)
+
+    return (valid_ingredient_count and valid_input_channels and valid_output_channels)
+end
+
+-- Changes the machine either to the given machine or moves it in the given direction
+-- Returns false if no machine is applied because none can be found, true otherwise
+function Line.change_machine(self, player, machine, direction)
+    -- Set the machine to the default one
+    if machine == nil and direction == nil then
+        local default_machine = data_util.machine.get_default(player, self.recipe.proto.category)
+        -- If no default machine is found, this category has no machines
+        if default_machine == nil then return false end
+        return Line.change_machine(self, player, default_machine, nil)
+
+    -- Set machine directly
+    elseif machine ~= nil and direction == nil then
+        local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
+        -- Try setting a higher tier machine until it sticks or nothing happens
+        -- Returns false if no machine fits at all, so an appropriate error can be displayed
+        if not Line.is_machine_applicable(self, machine.proto) then
+            return Line.change_machine(self, player, machine, "positive")
+
+        else
+            -- Carry over the machine limit
+            if machine and self.machine then
+                machine.limit = self.machine.limit
+                machine.hard_limit = self.machine.hard_limit
+            end
+            self.machine = machine
+
+            -- Adjust parent line
+            if self.parent then  -- if no parent exists, nothing is overwritten anyway
+                if self.subfloor then
+                    Floor.get(self.subfloor, "Line", 1).machine = machine
+                elseif self.id == 1 and self.parent.origin_line then
+                    self.parent.origin_line.machine = machine
+                end
+            end
+
+            -- Adjust modules (ie. trim them if needed)
+            Line.trim_modules(self)
+            Line.summarize_effects(self)
+
+            -- Adjust beacon (ie. remove if machine does not allow beacons)
+            if self.machine.proto.allowed_effects == nil then Line.remove_beacon(self) end
+
+            return true
+        end
+
+    -- Bump machine in the given direction (takes given machine, if available)
+    elseif direction ~= nil then
+        local category, proto
+        if machine ~= nil then
+            if machine.proto then
+                category = machine.category
+                proto = machine.proto
+            else
+                category = global.all_machines.categories[global.all_machines.map[machine.category]]
+                proto = machine
+            end
+        else
+            category = self.machine.category
+            proto = self.machine.proto
+        end
+        
+        if direction == "positive" then
+            if proto.id < #category.machines then
+                local new_machine = category.machines[proto.id + 1]
+                return Line.change_machine(self, player, new_machine, nil)
+            else
+                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
+                ui_util.message.enqueue(player, message, "error", 1, false)
+                return false
+            end
+        else  -- direction == "negative"
+            if proto.id > 1 then
+                local new_machine = category.machines[proto.id - 1]
+                return Line.change_machine(self, player, new_machine, nil)
+            else
+                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
+                ui_util.message.enqueue(player, message, "error", 1, false)
+                return false
+            end
+        end
+    end
+end
+
 
 -- Normalizes the modules of this Line after they've been changed
 function Line.normalize_modules(self)
@@ -376,7 +471,7 @@ function Line.update_validity(self)
     end
 
     -- Validate Machine
-    if not Machine.update_validity(self.machine, self.recipe) then
+    if not Machine.update_validity(self.machine, self) then
         self.valid = false
     end
 
@@ -435,7 +530,7 @@ function Line.attempt_repair(self, player)
         else
             -- Set the machine to the default one; remove of none is compatible anymore
             -- (Recipe needs to be valid at this point, which it is)
-            if not data_util.machine.change(player, self, nil, nil) then
+            if not Line.change_machine(self, player, nil, nil) then
                 self.valid = false
             end
         end

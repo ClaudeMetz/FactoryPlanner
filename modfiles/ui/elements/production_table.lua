@@ -247,7 +247,7 @@ function refresh_machine_table(player, line, table_production)
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
         for _, machine_proto in ipairs(line.machine.category.machines) do
-            if data_util.machine.is_applicable(machine_proto, line.recipe.proto) then
+            if Line.is_machine_applicable(line, machine_proto) then
                 local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id ..
                   "_" .. machine_proto.id, mouse_button_filter={"left"}}
                 setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
