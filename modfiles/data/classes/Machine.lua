@@ -17,7 +17,7 @@ end
 
 
 -- Update the validity of this machine
-function Machine.update_validity(self, recipe)
+function Machine.update_validity(self, line)
     if self.category == nil or self.proto == nil then return false end
     local category_name = (type(self.category) == "string") and self.category or self.category.name
     local new_category_id = new.all_machines.map[category_name]
@@ -43,7 +43,7 @@ function Machine.update_validity(self, recipe)
     end
 
     -- If the machine is valid, it might still not be applicable
-    if self.valid and (not recipe.valid or not data_util.machine.is_applicable(self.proto, recipe.proto)) then
+    if self.valid and (not line.recipe.valid or not Line.is_machine_applicable(line, self.proto)) then
         self.valid = false
     end
     

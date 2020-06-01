@@ -104,12 +104,12 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
     if machine_id == nil then
         -- Change the machine to be one tier lower/higher if possible
         if direction ~= nil then
-            data_util.machine.change(player, line, nil, direction)
+            Line.change_machine(line, player, nil, direction)
             calculation.update(player, subfactory, true)
 
         -- Reset this machine to its default if ALT was pressed
         elseif alt then
-            data_util.machine.change(player, line, nil, nil)
+            Line.change_machine(line, player, nil, nil)
             line.machine.limit = nil
             line.machine.hard_limit = false
             calculation.update(player, subfactory, true)
@@ -118,10 +118,9 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
         elseif click == "left" then
             -- Determine how many machines are applicable to this recipe
             -- This detection will run twice, which might be worth optimizing at some point
-            local recipe_proto = line.recipe.proto
             local applicable_machine_count = 0
             for _, machine_proto in pairs(line.machine.category.machines) do
-                if data_util.machine.is_applicable(machine_proto, recipe_proto) then
+                if Line.is_machine_applicable(line, machine_proto) then
                     applicable_machine_count = applicable_machine_count + 1
                 end
             end
@@ -180,7 +179,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
         if click == "left" then
             local category_id = line.machine.category.id
             local new_machine = global.all_machines.categories[category_id].machines[machine_id]
-            data_util.machine.change(player, line, new_machine, nil)
+            Line.change_machine(line, player, new_machine, nil)
             ui_state.current_activity = nil
             calculation.update(player, subfactory, true)
         end
@@ -192,11 +191,11 @@ function generate_chooser_machine_buttons(player)
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
 
-    for machine_id, machine in ipairs(line.machine.category.machines) do
-        if data_util.machine.is_applicable(machine, line.recipe.proto) then
+    for machine_id, machine_proto in ipairs(line.machine.category.machines) do
+        if Line.is_machine_applicable(line, machine_proto) then
             local button = generate_blank_chooser_button(player, machine_id)
             -- The actual button is setup by the method shared by non-chooser machine buttons
-            setup_machine_choice_button(player, button, machine, ui_state.modal_data.object.proto.id, 36)
+            setup_machine_choice_button(player, button, machine_proto, ui_state.modal_data.object.proto.id, 36)
         end
     end
 end
@@ -206,7 +205,7 @@ function apply_machine_choice(player, machine_id)
     local context = get_context(player)
     local category_id, machine_id = context.line.machine.category.id, tonumber(machine_id)
     local machine = global.all_machines.categories[category_id].machines[machine_id]
-    data_util.machine.change(player, context.line, machine, nil)
+    Line.change_machine(context.line, player, machine, nil)
     calculation.update(player, context.subfactory, true)
 end
 
