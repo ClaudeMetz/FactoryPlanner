@@ -466,7 +466,7 @@ function Line.update_validity(self)
 
     -- Validate Items + Modules + Fuel
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module", Fuel = "Fuel"}
-    if not data_util.run_validation_updates(self, classes) then
+    if not run_validation_updates(self, classes) then
         self.valid = false
     end
 
@@ -507,7 +507,7 @@ function Line.attempt_repair(self, player)
 
     -- Repair Items + Modules + Fuel
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module", Fuel = "Fuel"}
-    data_util.run_invalid_dataset_repair(player, self, classes)
+    run_invalid_dataset_repair(player, self, classes)
 
     -- Repair Machine
     if self.valid and not self.machine.valid and not Machine.attempt_repair(self.machine) then

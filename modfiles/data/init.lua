@@ -10,10 +10,10 @@ require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
-require("data.handlers.migrator")
-require("data.handlers.generator")
-require("data.handlers.loader")
 require("data.handlers.builder")
+require("data.handlers.generator")
+require("data.handlers.migrator")
+require("data.handlers.prototyper")
 require("data.handlers.remote")
 require("data.calculation.interface")
 
@@ -22,9 +22,9 @@ function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
     
-    -- Run through the loader without the need to apply (run) it on any player
-    loader.setup()
-    loader.finish()
+    -- Run through the prototyper without the need to apply (run) it on any player
+    prototyper.setup()
+    prototyper.finish()
 
     -- Create player tables for all existing players
     for index, player in pairs(game.players) do
@@ -75,7 +75,7 @@ end
 
 -- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
-    loader.setup()  -- Setup loader
+    prototyper.setup()  -- Setup prototyper
     attempt_global_migration()  -- Migrate global
 
     -- Runs through all players, even new ones (those with no player_table)
@@ -86,15 +86,15 @@ function handle_configuration_change()
         -- Create or update player_table
         local player_table = update_player_table(player, new)
 
-        -- Run the loader on the player
-        loader.run(player_table)
+        -- Run the prototyper on the player
+        prototyper.run(player_table)
 
         player_gui_reset(player)  -- Destroys all existing GUI's
         player_gui_init(player)  -- Initializes some parts of the GUI
     end
 
-    -- Complete loader process by saving new data to global
-    loader.finish()
+    -- Complete prototyper process by saving new data to global
+    prototyper.finish()
 
     -- Update factory and archive calculations in case some numbers changed
     local factories = {"factory", "archive"}
@@ -241,6 +241,25 @@ script.on_event(defines.events.on_player_removed, function(event)
     -- Removes the player from the global table
     global.players[event.player_index] = nil
 end)
+
+
+-- Updates validity of every class specified by the classes parameter
+function run_validation_updates(parent, classes)
+    local valid = true
+    for type, class in pairs(classes) do
+        if not Collection.update_validity(parent[type], class) then
+            valid = false
+        end
+    end
+    return valid
+end
+
+-- Tries to repair every specified class, deletes them if this is unsuccessfull
+function run_invalid_dataset_repair(player, parent, classes)
+    for type, class in pairs(classes) do
+        Collection.repair_invalid_datasets(parent[type], player, class, parent)
+    end
+end
 
 
 -- Returns the player table for the given player

@@ -49,23 +49,3 @@ end
 function data_util.base_data.preferred_beacon(table)
     return table.all_beacons.beacons[1]
 end
-
-
--- **** MISC ****
--- Updates validity of every class specified by the classes parameter
-function data_util.run_validation_updates(parent, classes)
-    local valid = true
-    for type, class in pairs(classes) do
-        if not Collection.update_validity(parent[type], class) then
-            valid = false
-        end
-    end
-    return valid
-end
-
--- Tries to repair every specified class, deletes them if this is unsuccessfull
-function data_util.run_invalid_dataset_repair(player, parent, classes)
-    for type, class in pairs(classes) do
-        Collection.repair_invalid_datasets(parent[type], player, class, parent)
-    end
-end
