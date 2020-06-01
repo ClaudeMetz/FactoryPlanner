@@ -12,6 +12,7 @@ require("data.classes.Floor")
 require("data.classes.Line")
 require("data.handlers.builder")
 require("data.handlers.generator")
+require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.remote")
@@ -30,47 +31,6 @@ function global_init()
     for index, player in pairs(game.players) do
         update_player_table(player, global)
     end
-end
-
--- Central place to consolidate what should run on_load and on_init
-function run_on_load()
-    -- Register the RecipeBook event to re-open the main dialog after hitting its back-button
-    if remote.interfaces["RecipeBook"] ~= nil then
-        script.on_event(remote.call("RecipeBook", "reopen_source_event"), function(event)
-            if event.source_data.mod_name == "factoryplanner" then
-                toggle_main_dialog(game.get_player(event.player_index))
-            end
-        end)
-    end
-
-    -- Re-register conditional on_nth_tick events
-    for _, player_table in pairs(global.players or {}) do
-        local last_action = player_table.ui_state.last_action
-        if last_action and table_size(last_action) > 0 and last_action.nth_tick ~= nil then
-            local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
-
-            script.on_nth_tick(last_action.nth_tick, function(event)
-                rate_limiting_event.handler(last_action.element)
-                last_action.nth_tick = nil
-                last_action.element = nil
-                script.on_nth_tick(event.nth_tick, nil)
-            end)
-        end
-    end
-
-    -- Create lua-global tables to pre-cache relevant tables
-    ordered_recipe_groups = generator.ordered_recipe_groups()
-    recipe_maps = {
-        produce = generator.product_recipe_map(),
-        consume = generator.ingredient_recipe_map()
-    }
-
-    sorted_items = generator.sorted_items()
-    identifier_item_map = generator.identifier_item_map()
-    
-    module_tier_map = generator.module_tier_map()
-
-    top_crafting_machine_sprite = generator.find_crafting_machine_sprite()
 end
 
 -- Runs through all updates that need to be made after the config changed

@@ -48,7 +48,7 @@ function prototyper.finish()
     end
     new = nil
 
-    run_on_load()
+    loader.run()
 end
 
 
