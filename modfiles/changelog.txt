@@ -1,8 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    - 
   Changes:
     - This update contains an unusually large amount of background changes, so there might be some instability (ie. crashes) for a day or two, until I can sort them all out
   Bugfixes:
