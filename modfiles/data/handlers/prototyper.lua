@@ -1,4 +1,4 @@
-loader = {
+prototyper = {
     util = {},
     machines = {},
     belts = {},
@@ -6,8 +6,8 @@ loader = {
     beacons = {}
 }
 
--- The purpose of a loader is to recreate the global tables containing all relevant data types.
--- It also updates the factories to the new id's of all those datasets.
+-- The purpose of the prototyper is to recreate the global tables containing all relevant data types.
+-- It also handles some other things related to prototypes, such as updating preferred ones, etc.
 -- Its purpose is to not lose any data, so if a dataset of a factory-dataset doesn't exist anymore
 -- in the newly loaded global tables, it saves the name in string-form instead and makes the
 -- concerned factory-dataset invalid. This accomplishes that invalid data is only permanently
@@ -18,7 +18,7 @@ loader = {
 local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons"}
 
 -- Generates the new data and mapping_tables and saves them to lua-globals
-function loader.setup()
+function prototyper.setup()
     new = {}
     for _, data_type in ipairs(data_types) do
         new["all_" .. data_type] = generator["all_" .. data_type]()
@@ -29,10 +29,10 @@ function loader.setup()
 end
 
 -- Updates the relevant data of the given player to fit the new data
-function loader.run(player_table)
+function prototyper.run(player_table)
     -- Then, update the default/preferred datasets
     for _, data_type in ipairs(data_types) do
-        local f = loader[data_type]
+        local f = prototyper[data_type]
         if f ~= nil then f.run(player_table) end
     end
 
@@ -42,7 +42,7 @@ function loader.run(player_table)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
-function loader.finish()
+function prototyper.finish()
     for _, data_type in ipairs(data_types) do
         global["all_" .. data_type] = new["all_" .. data_type]
     end
@@ -53,7 +53,7 @@ end
 
 
 -- Runs the update proceedure for a simple 1-dimensional kind of prototype
-function loader.util.simple_update(player_table, type)
+function prototyper.util.simple_update(player_table, type)
     local preferences = player_table.preferences
     local plural_type = type .. "s"
     local new_id = new["all_" .. plural_type].map[preferences["preferred_" .. type].name]
@@ -66,22 +66,22 @@ end
 
 
 -- Update preferred belt
-function loader.belts.run(player_table)
-    loader.util.simple_update(player_table, "belt") 
+function prototyper.belts.run(player_table)
+    prototyper.util.simple_update(player_table, "belt") 
 end
 
 -- Update preferred fuel
-function loader.fuels.run(player_table)
-    loader.util.simple_update(player_table, "fuel") 
+function prototyper.fuels.run(player_table)
+    prototyper.util.simple_update(player_table, "fuel") 
 end
 
 -- Update preferred beacon
-function loader.beacons.run(player_table)
-    loader.util.simple_update(player_table, "beacon") 
+function prototyper.beacons.run(player_table)
+    prototyper.util.simple_update(player_table, "beacon") 
 end
 
 -- Update default machines
-function loader.machines.run(player_table)
+function prototyper.machines.run(player_table)
     local preferences = player_table.preferences
     local default_machines = {categories = {}, map = {}}
 

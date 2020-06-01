@@ -162,7 +162,7 @@ end
 -- Floors can be checked in any order and separately without problem
 function Subfactory.update_validity(self)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Floor = "Floor"}
-    self.valid = data_util.run_validation_updates(self, classes)
+    self.valid = run_validation_updates(self, classes)
     return self.valid
 end
 
@@ -170,7 +170,7 @@ end
 -- (In general, Subfactory Items are not repairable and can only be deleted)
 function Subfactory.attempt_repair(self, player)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    data_util.run_invalid_dataset_repair(player, self, classes)
+    run_invalid_dataset_repair(player, self, classes)
     
     -- Set selected floor to the top one in case the selected one gets deleted
     Floor.delete_empty(self.selected_floor)

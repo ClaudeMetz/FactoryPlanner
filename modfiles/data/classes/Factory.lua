@@ -38,5 +38,5 @@ end
 -- Updates the validity of the factory from top to bottom
 function Factory.update_validity(self)
     local classes = {Subfactory = "Subfactory"}
-    self.valid = data_util.run_validation_updates(self, classes)
+    self.valid = run_validation_updates(self, classes)
 end
