@@ -194,7 +194,7 @@ function refresh_view_state(player, subfactory)
     local player_table = get_table(player)
     local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
     local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"fp.cbelts"} or {"fp.clanes"}
-    local bl_sprite = player_table.preferences.preferred_belt.rich_text
+    local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
     local view_state = {
         [1] = {
             name = "items_per_timescale",

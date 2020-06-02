@@ -13,13 +13,6 @@ data.raw["gui-style"].default["fp_button_titlebar"] = {
     height = 34
 }
 
-data.raw["gui-style"].default["fp_preferences_table"] = {
-    type = "table_style",
-    top_margin = 4,
-    left_margin = 16,
-    bottom_padding = 8
-}
-
 data.raw["gui-style"].default["fp_button_action"] = {
     type = "button_style",
     font = "fp-font-semibold-16p"

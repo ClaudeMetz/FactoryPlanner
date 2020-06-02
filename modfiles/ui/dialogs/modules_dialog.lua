@@ -242,7 +242,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
             local preferences = get_preferences(player)
 
             -- Set the default beacon
-            local preferred_beacon = preferences.preferred_beacon
+            local preferred_beacon = prototyper.defaults.get(player, "beacons")
             modal_data.selected_beacon = preferred_beacon
             sprite = preferred_beacon.sprite
             tooltip = preferred_beacon.localised_name

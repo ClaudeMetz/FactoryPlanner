@@ -267,7 +267,7 @@ function attempt_adding_recipe_line(player, recipe_id)
 
         -- Add default beacon modules, if desired by the user
         local beacon_module, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
-        local beacon_proto = preferences.preferred_beacon  -- this will always exist
+        local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
         if beacon_module ~= nil and beacon_count ~= nil and 
           Line.get_beacon_module_characteristics(line, beacon_proto, beacon_module).compatible then
             local new_beacon = Beacon.init_by_protos(beacon_proto, beacon_count, beacon_module,

@@ -1,4 +1,3 @@
-require("data.util")
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Fuel")
@@ -29,7 +28,7 @@ function global_init()
 
     -- Create player tables for all existing players
     for index, player in pairs(game.players) do
-        update_player_table(player, global)
+        update_player_table(player)
     end
 end
 
@@ -44,7 +43,7 @@ function handle_configuration_change()
         attempt_player_table_migration(player)
         
         -- Create or update player_table
-        local player_table = update_player_table(player, new)
+        local player_table = update_player_table(player)
 
         -- Run the prototyper on the player
         prototyper.run(player_table)
@@ -71,10 +70,10 @@ end
 
 -- Makes sure that the given player has a player_table and a reset gui state
 -- The table attribute specified what table the data should be loaded from (either global or new)
-function update_player_table(player, table)
+function update_player_table(player)
     local function reload_data()
         reload_settings(player)  -- reloads the settings of the player
-        reload_preferences(player, table) -- reloads and adjusts the player's preferences
+        reload_preferences(player) -- reloads and adjusts the player's preferences
         reset_ui_state(player)  -- Resets the player's UI state
     end
 
@@ -124,7 +123,7 @@ function reload_settings(player)
 end
 
 -- Reloads the user preferences, incorporating previous preferences if possible
-function reload_preferences(player, table)
+function reload_preferences(player)
     local preferences = global.players[player.index].preferences
 
     preferences.tutorial_mode = preferences.tutorial_mode or true
@@ -142,10 +141,13 @@ function reload_preferences(player, table)
     preferences.optional_production_columns = preferences.optional_production_columns or 
       {["pollution"] = false, ["line_comments"] = false}
 
-    preferences.preferred_belt = preferences.preferred_belt or data_util.base_data.preferred_belt(table)
-    preferences.preferred_fuel = preferences.preferred_fuel or data_util.base_data.preferred_fuel(table)
-    preferences.preferred_beacon = preferences.preferred_beacon or data_util.base_data.preferred_beacon(table)
-    preferences.default_machines = preferences.default_machines or data_util.base_data.default_machines(table)
+    preferences.default_prototypes = preferences.default_prototypes or {}
+    preferences.default_prototypes = {
+        belts = preferences.default_prototypes.belts or prototyper.defaults.get_fallback("belts"),
+        beacons = preferences.default_prototypes.beacons or prototyper.defaults.get_fallback("beacons"),
+        fuels = preferences.default_prototypes.fuels or prototyper.defaults.get_fallback("fuels"),
+        machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines")
+    }
 end
 
 -- (Re)sets the UI state of the given player
@@ -187,7 +189,7 @@ script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
     -- Sets up the player_table for the new player
-    update_player_table(player, global)
+    update_player_table(player)
 
     -- Sets up the GUI for the new player
     player_gui_init(player)

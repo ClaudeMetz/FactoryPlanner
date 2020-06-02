@@ -103,7 +103,7 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
         lines = {}
     }
 
-    local preferred_fuel = get_preferences(player).preferred_fuel
+    local preferred_fuel = prototyper.defaults.get(player, "fuels")
     local mining_productivity = (subfactory.mining_productivity ~= nil) and
       (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
