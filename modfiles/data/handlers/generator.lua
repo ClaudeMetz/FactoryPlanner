@@ -275,7 +275,7 @@ end
 
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
-    local all_machines = {categories = {}, map = {}}
+    local all_machines = {categories = {}, map = {}, structure_type = "complex"}
     
     local function generate_category_entry(category, proto)        
         -- First, determine if there is a valid sprite for this machine
@@ -407,7 +407,7 @@ end
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
-    local all_belts = {belts = {}, map = {}}
+    local all_belts = {belts = {}, map = {}, structure_type = "simple"}
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
@@ -431,7 +431,7 @@ end
 -- Generates a table containing all fuels that can be used in a burner
 -- (only supports chemical fuels for now)
 function generator.all_fuels()
-    local all_fuels = {fuels = {}, map = {}}
+    local all_fuels = {fuels = {}, map = {}, structure_type = "simple"}
     local items = new.all_items.types[new.all_items.map["item"]]
 
     for _, proto in pairs(game.item_prototypes) do
@@ -485,7 +485,7 @@ end
 
 -- Generates a table containing all available beacons
 function generator.all_beacons()
-    local all_beacons = {beacons = {}, map = {}}
+    local all_beacons = {beacons = {}, map = {}, structure_type = "simple"}
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then

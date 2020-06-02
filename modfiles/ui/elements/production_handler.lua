@@ -293,7 +293,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
     ui_state.context.line = line
 
     if type == nil then  -- meaning the add-beacon-button was pressed
-        local limit = get_preferences(player).preferred_beacon.module_limit
+        local limit = prototyper.defaults.get(player, "beacons").module_limit
         enter_modal_dialog(player, {type="beacon", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction

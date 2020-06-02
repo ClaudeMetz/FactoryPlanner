@@ -1,9 +1,5 @@
 prototyper = {
-    util = {},
-    machines = {},
-    belts = {},
-    fuels = {},
-    beacons = {}
+    defaults = {}
 }
 
 -- The purpose of the prototyper is to recreate the global tables containing all relevant data types.
@@ -16,6 +12,7 @@ prototyper = {
 
 -- (Load order is important here: machines->recipes->items->fuels)
 local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons"}
+
 
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function prototyper.setup()
@@ -32,8 +29,9 @@ end
 function prototyper.run(player_table)
     -- Then, update the default/preferred datasets
     for _, data_type in ipairs(data_types) do
-        local f = prototyper[data_type]
-        if f ~= nil then f.run(player_table) end
+        if player_table.preferences.default_prototypes[data_type] ~= nil then
+            prototyper.defaults.migrate(player_table, data_type)
+        end
     end
 
     -- Update the validity of all elements of the factory and archive
@@ -52,56 +50,94 @@ function prototyper.finish()
 end
 
 
--- Runs the update proceedure for a simple 1-dimensional kind of prototype
-function prototyper.util.simple_update(player_table, type)
-    local preferences = player_table.preferences
-    local plural_type = type .. "s"
-    local new_id = new["all_" .. plural_type].map[preferences["preferred_" .. type].name]
-    if new_id ~= nil then
-        preferences["preferred_" .. type] = new["all_" .. plural_type][plural_type][new_id]
-    else
-        preferences["preferred_" .. type] = data_util.base_data["preferred_" .. type](new)
-    end  
-end
+-- **** DEFAULTS ****
+-- Returns the fallback default for the given type of
+function prototyper.defaults.get_fallback(type)
+    -- Use the lua-global new-table if it exists, use global otherwise
+    local data_table = new or global
+    local all_prototypes = data_table["all_" .. type]
+    
+    -- Simple prototype structures return a single prototype as a fallback
+    local fallback = {structure_type = all_prototypes.structure_type}
+    if all_prototypes.structure_type == "simple" then
+        fallback.prototype = all_prototypes[type][1]
 
-
--- Update preferred belt
-function prototyper.belts.run(player_table)
-    prototyper.util.simple_update(player_table, "belt") 
-end
-
--- Update preferred fuel
-function prototyper.fuels.run(player_table)
-    prototyper.util.simple_update(player_table, "fuel") 
-end
-
--- Update preferred beacon
-function prototyper.beacons.run(player_table)
-    prototyper.util.simple_update(player_table, "beacon") 
-end
-
--- Update default machines
-function prototyper.machines.run(player_table)
-    local preferences = player_table.preferences
-    local default_machines = {categories = {}, map = {}}
-
-    for new_category_id, new_category in ipairs(new.all_machines.categories) do
-        local machine_found = false
-        local old_category_id = preferences.default_machines.map[new_category.name]
-        if old_category_id ~= nil then  -- Category found, default machine might not exist anymore
-            local old_default_machine = preferences.default_machines.categories[old_category_id]
-            local new_machine_id = new_category.map[old_default_machine.name]
-            if new_machine_id ~= nil then  -- Old machine still exists, apply it
-                default_machines.categories[new_category_id] = new_category.machines[new_machine_id]
-                default_machines.map[new_category.name] = new_category_id
-                machine_found = true
-            end
-        end
-        if not machine_found then  -- Choose new default, if the old default is no longer valid
-            default_machines.categories[new_category_id] = new_category.machines[1]
-            default_machines.map[new_category.name] = new_category_id
+    -- Complex prototype structures return a table containing a fallback for every category
+    else  -- structure_type == "complex"
+        fallback.prototypes = {}
+        for category_id, category in pairs(all_prototypes.categories) do
+            fallback.prototypes[category_id] = category[type][1]
         end
     end
 
-    preferences.default_machines = default_machines
+    return fallback
+end
+
+
+-- Returns the default prototype for the given type, incorporating the category if given
+function prototyper.defaults.get(player, type, category_id)
+    local default = get_preferences(player).default_prototypes[type]
+    if default.structure_type == "simple" then
+        return default.prototype
+    else  -- structure_type == "complex"
+        return default.prototypes[category_id]
+    end
+end
+
+-- Sets the default prototype for the given type, incorporating the category if given
+function prototyper.defaults.set(player, type, prototype_id, category_id)
+    local default = get_preferences(player).default_prototypes[type]
+    if default.structure_type == "simple" then
+        local new_prototype = global["all_" .. type][type][prototype_id]
+        default.prototype = new_prototype
+    else  -- structure_type == "complex"
+        local new_category = global["all_" .. type].categories[category_id]
+        local new_prototype = new_category[type][prototype_id]
+        default.prototypes[category_id] = new_prototype
+    end
+end
+
+
+-- Migrates the default_prototypes preferences, trying to preserve the users choices
+function prototyper.defaults.migrate(player_table, type)
+    local new_prototypes = new["all_" .. type]
+    local default_prototypes = player_table.preferences.default_prototypes
+    local default = default_prototypes[type]
+
+    if default.structure_type == "simple" then
+        -- Use the same prototype if an equivalent can be found, use fallback otherwise
+        local new_prototype_id = new_prototypes.map[default.prototype.name]
+        default.prototype = (new_prototype_id ~= nil) and new_prototypes[type][new_prototype_id]
+          or prototyper.defaults.get_fallback(type).prototype
+
+    else  -- structure_type == "complex"
+        local category_map = {}  -- Needs a map of category_name -> old_prototype
+        for _, prototype in pairs(default.prototypes) do category_map[prototype.category] = prototype end
+
+        -- Invalid categories need to be removed to avoid prototypes hanging around, thus new array
+        local new_default = {prototypes = {}, structure_type = "complex"}
+        local fallback = prototyper.defaults.get_fallback(type)
+
+        -- Go through the new categories and see if an old, valid default to carry over exists
+        for category_id, category in pairs(new_prototypes.categories) do
+            local old_default_matched = false
+            local old_default_prototype = category_map[category.name]
+
+            if old_default_prototype ~= nil then  -- old category still exists
+                local new_prototype_id = category.map[old_default_prototype.name]
+
+                if new_prototype_id ~= nil then  -- machine in that category exists too
+                    new_default.prototypes[category_id] = category[type][new_prototype_id]
+                    old_default_matched = true
+                end
+            end
+
+            -- If no old default could be matched up, use the fallback default
+            if not old_default_matched then
+                new_default.prototypes[category_id] = fallback.prototypes[category_id]
+            end
+        end
+
+        default_prototypes[type] = new_default
+    end
 end

@@ -108,7 +108,8 @@ function ui_util.determine_item_amount_and_appendage(player_table, view_name, it
         appendage = {"", type_text, "/", ui_util.format_timescale(timescale, true, false)}
 
     elseif view_name == "belts_or_lanes" and item_type ~= "fluid" then
-        local throughput = player_table.preferences.preferred_belt.throughput
+        local player = game.get_player(player_table.index)
+        local throughput = prototyper.defaults.get(player, "belts").throughput
         local show_belts = (player_table.settings.belts_or_lanes == "belts")
         local divisor = (show_belts) and throughput or (throughput / 2)
         number = amount / divisor / timescale

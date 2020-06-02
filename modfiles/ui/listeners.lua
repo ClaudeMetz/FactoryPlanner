@@ -152,13 +152,12 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
 
-    -- Toggles the selected general preference
-    if string.find(element_name, "^fp_checkbox_preferences_[a-z_]+$") then
-        handle_general_preference_change(player, event.element)
-
-    -- Toggles the selected production preference
-    elseif string.find(element_name, "^fp_checkbox_production_preferences_[a-z_]+$") then
-        handle_production_preference_change(player, event.element)
+    -- Toggles the selected general or production preference
+    -- (This type/preference detection is stupid)
+    if string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
+        local type = cutil.split(element_name, "_")[3]
+        local preference = string.gsub(element_name, "fp_checkbox_" .. type .. "_preferences_", "")
+        handle_checkbox_preference_change(player, type, preference, event.element.state)
 
     end
 end)
@@ -204,7 +203,7 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
 
         -- Persists default beacon count changes
         elseif element_name == "fp_textfield_default_beacon_count" then
-            handle_default_beacon_count_change(player, event.element)
+            get_preferences(player).mb_defaults.beacon_count = tonumber(event.element.text)
 
         -- Persists notes changes
         elseif element_name == "fp_text-box_notes" then
@@ -448,15 +447,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
             handle_module_beacon_picker_click(player, event.element)
 
-        -- Reacts to any 1d-prototype preference button being pressed
-        elseif string.find(element_name, "^fp_sprite%-button_preferences_[a-z]+_%d+$") then
+        -- Reacts to any default prototype preference button being pressed
+        elseif string.find(element_name, "^fp_sprite%-button_preferences_[a-z]+_%d+_?%d*$") then
             local split_string = cutil.split(element_name, "_")
-            handle_preferences_change(player, split_string[4], split_string[5])
-
-        -- Reacts to any preferences machine button being pressed (special case of a 2d-prototype preference)
-        elseif string.find(element_name, "^fp_sprite%-button_preferences_machine_%d+_%d+$") then
-            local split_string = cutil.split(element_name, "_")
-            handle_preferences_machine_change(player, split_string[5], split_string[6])
+            handle_prototype_preference_change(player, split_string[4], split_string[5], split_string[6])
 
         -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
         elseif string.find(element_name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
