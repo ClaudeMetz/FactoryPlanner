@@ -136,7 +136,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
                     local modal_data = {
                         reciever_name = "machine",
                         title = {"fp.machine"},
-                        text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
+                        text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
                         object = line.machine
                     }
                     
