@@ -179,7 +179,7 @@ script.on_init(global_init)
 script.on_configuration_changed(handle_configuration_change)
 
 -- Creates some lua-global tables for convenience and performance
-script.on_load(run_on_load)
+script.on_load(loader.run)
 
 
 -- Fires when a player loads into a game for the first time
