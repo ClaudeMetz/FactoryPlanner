@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when changing a machine through a popup-dialog
+    - Fixed a series of crashes related to loading a save
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.24
