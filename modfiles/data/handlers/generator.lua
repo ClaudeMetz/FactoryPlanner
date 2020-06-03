@@ -99,7 +99,8 @@ function generator.all_recipes()
                     table.insert(recipe.ingredients, {
                         type = "fluid",
                         name = proto.mineable_properties.required_fluid,
-                        amount = proto.mineable_properties.fluid_amount
+                        -- fluid_amount is given for a 'set' of mining ops, with a set being 10 ore
+                        amount = proto.mineable_properties.fluid_amount / 10
                     })
                 end
 
