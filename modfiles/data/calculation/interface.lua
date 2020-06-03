@@ -103,7 +103,6 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
         lines = {}
     }
 
-    local preferred_fuel = prototyper.defaults.get(player, "fuels")
     local mining_productivity = (subfactory.mining_productivity ~= nil) and
       (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
@@ -140,12 +139,13 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
         end
 
         -- Fuel proto
-        if line_data.subfloor == nil then  -- the fuel_proto is only needed when there's no subfloor
-            if line.Fuel.count == 1 then  -- use the already configured Fuel, if available
-                line_data.fuel_proto = Line.get_by_gui_position(line, "Fuel", 1).proto
-            else  -- otherwise, use the preferred fuel
-                line_data.fuel_proto = preferred_fuel
-            end
+        local burner = line.machine.proto.burner
+        if line.Fuel.count == 1 then  -- use the already configured Fuel, if available
+            line_data.fuel_proto = Line.get_by_gui_position(line, "Fuel", 1).proto
+        elseif burner ~= nil then  -- Use the first category of the machine's burner as the default one
+            local fuel_category_name, _ = next(burner.categories, nil)
+            local fuel_category_id = global.all_fuels.map[fuel_category_name]
+            line_data.fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
         end
 
         -- Subfloor

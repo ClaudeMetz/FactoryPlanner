@@ -18,6 +18,8 @@ function loader.run()
 
     sorted_items = loader.caching.sorted_items()
     identifier_item_map = loader.caching.identifier_item_map()
+
+    item_fuel_map = loader.caching.item_fuel_map()
     
     module_tier_map = loader.caching.module_tier_map()
 
@@ -143,6 +145,7 @@ end
 -- Generates a table mapping item identifier to their prototypes
 function loader.caching.identifier_item_map()
     local map = {}
+
     local all_items = global.all_items
     for _, type in pairs({"item", "fluid"}) do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
@@ -150,6 +153,24 @@ function loader.caching.identifier_item_map()
             if item.identifier ~= nil then map[item.identifier] = item end
         end
     end
+
+    return map
+end
+
+
+-- Maps every fuel_proto to a (item[type][name] -> fuel_proto)-map
+-- This is possible because every fuel can only be in one category at a time
+function loader.caching.item_fuel_map()
+    local map = {}
+
+    if not global.all_fuels.categories then return end
+    for _, category in pairs(global.all_fuels.categories) do
+        for _, fuel_proto in pairs(category.fuels) do
+            map[fuel_proto.type] = map[fuel_proto.type] or {}
+            map[fuel_proto.type][fuel_proto.name] = fuel_proto
+        end
+    end
+
     return map
 end
 

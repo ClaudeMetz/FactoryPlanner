@@ -144,11 +144,10 @@ function refresh_preferences_dialog(player)
 
         else  -- structure_type == "complex"
             local all_categories = global["all_" .. type].categories
-            flow_proto_pref.parent.visible = (table_size(all_categories) > 1)
 
             local table_all_categories = flow_proto_pref.add{type="table", name="table_all_" .. type .. "_categories",
               column_count=2}
-            table_all_categories.style.horizontal_spacing = 12
+            table_all_categories.style.horizontal_spacing = 16
 
             for category_id, category in ipairs(all_categories) do
                 local all_prototypes = category[type]
@@ -176,6 +175,7 @@ function create_default_prototype_category(flow, type, all_prototypes, default_p
     local category_addendum = (category_id ~= nil) and ("_" .. category_id) or ""
     local table_prototypes = flow.add{type="table", name=("table_prototypes_" .. type .. category_addendum),
       column_count=column_count}
+    table_prototypes.style.bottom_margin = 6
 
     for proto_id, proto in ipairs(all_prototypes) do
         local button = table_prototypes.add{type="sprite-button", name="fp_sprite-button_preferences_" .. type .. "_"
