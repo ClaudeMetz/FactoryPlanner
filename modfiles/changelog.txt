@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - 
   Bugfixes:
     - Fixed a bug where mining fluid calculations were off by a factor of 10
+    - Fixed some minor graphical inconsistencies
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.25
