@@ -203,8 +203,13 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
     end
 
     -- Adjust the dialog size to the main dialog height
+    local conditions_height = 0
+    if condition_instructions and condition_instructions.conditions then
+        local condition_count = table_size(condition_instructions.conditions)
+        conditions_height = 30 * condition_count
+    end
     local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
-    modal_data.dialog_maximal_height = (main_dialog_dimensions.height - 120) * 0.95
+    modal_data.dialog_maximal_height = (main_dialog_dimensions.height - conditions_height - 60) * 0.95
     flow_modal_dialog.style.maximal_height = modal_data.dialog_maximal_height
     
     -- Adjust visibility of the submit and delete buttons and the spacer

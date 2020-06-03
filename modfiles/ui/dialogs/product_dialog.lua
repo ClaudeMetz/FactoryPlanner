@@ -6,7 +6,6 @@ function open_product_dialog(flow_modal_dialog, modal_data)
     local product = modal_data.product
 
     flow_modal_dialog.parent.caption = (product == nil) and {"fp.add_product"} or {"fp.edit_product"}
-    flow_modal_dialog.style.bottom_margin = 8
     flow_modal_dialog.style.padding = 8
     refresh_product_bar(flow_modal_dialog, product)
     local picker_flow = item_picker.create(flow_modal_dialog)
