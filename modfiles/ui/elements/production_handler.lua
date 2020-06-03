@@ -458,60 +458,45 @@ function generate_chooser_fuel_buttons(player)
     local view_name = ui_state.view_state.selected_view.name
     local line = ui_state.context.line
 
-    local old_fuel_id = global.all_fuels.map[ui_state.modal_data.object.proto.name]
-    local machine = line.machine
-    for new_fuel_id, fuel_proto in pairs(global.all_fuels.fuels) do
-        local selected = (old_fuel_id == new_fuel_id) and {"", " (", {"fp.selected"}, ")"} or ""
-        local tooltip = {"", fuel_proto.localised_name, selected}
+    local old_fuel_proto = ui_state.modal_data.object.proto
+    local machine = line.machine  -- This machine is implicitly powered by a burner if this code runs
+    for category_name, _ in pairs(machine.proto.burner.categories) do
+        local category_id = global.all_fuels.map[category_name]
+        for fuel_id, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
+            local selected_fuel = (old_fuel_proto.type == fuel_proto.type and old_fuel_proto.name == fuel_proto.name)
+            local selected = (selected_fuel) and {"", " (", {"fp.selected"}, ")"} or ""
+            local tooltip = {"", fuel_proto.localised_name, selected}
 
-        local fuel_amount = nil
-        -- Only add number information if this line has no subfloor (really difficult calculations otherwise)
-        if line.subfloor == nil then
-            local energy_consumption = calculation.util.determine_energy_consumption(machine.proto, machine.count,
-              line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
-            fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine.proto.burner,
-              fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
+            local fuel_amount = nil
+            -- Only add number information if this line has no subfloor (really difficult calculations otherwise)
+            if line.subfloor == nil then
+                local energy_consumption = calculation.util.determine_energy_consumption(machine.proto, machine.count,
+                line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
+                fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine.proto.burner,
+                fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
 
-            fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-              fuel_proto.type, fuel_amount, line.machine.count)
-            tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
+                fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+                fuel_proto.type, fuel_amount, line.machine.count)
+                tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
+            end
+            tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
+
+            local fuel_id_string = category_id .. "_" .. fuel_id
+            local button = generate_blank_chooser_button(player, fuel_id_string)
+            if selected_fuel then button.style = "fp_button_icon_large_green" end
+            button.sprite = fuel_proto.sprite
+            button.number = fuel_amount
+            button.tooltip = tooltip
         end
-        tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
-
-        local button = generate_blank_chooser_button(player, new_fuel_id)
-        if old_fuel_id == new_fuel_id then button.style = "fp_button_icon_large_green" end
-        button.sprite = fuel_proto.sprite
-        button.number = fuel_amount
-        button.tooltip = tooltip
     end
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_fuel_choice(player, new_fuel_id)
+function apply_fuel_choice(player, new_fuel_id_string)
     local context = get_context(player)
-    local line = context.line
-
-    local old_fuel = get_ui_state(player).modal_data.object.proto
-    local new_fuel = global.all_fuels.fuels[tonumber(new_fuel_id)]
-    
-    -- Sets the new fuel to all relevant lines on the given floor and all it's subfloors
-    local function apply_fuel_to_floor(floor)
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            if line.subfloor == nil then
-                local current_fuel = Line.get_by_name(line, "Fuel", old_fuel.name)
-                if current_fuel ~= nil then current_fuel.proto = new_fuel end
-            else
-                apply_fuel_to_floor(line.subfloor)
-            end
-        end
-    end
-    
-    if line.subfloor == nil then  -- subfloor-less lines are always limited to 1 fuel type
-        Line.get_by_gui_position(line, "Fuel", 1).proto = new_fuel
-    else
-        apply_fuel_to_floor(line.subfloor)
-    end
-
+    local split_string = cutil.split(new_fuel_id_string, "_")
+    local new_fuel = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
+    Line.get_by_gui_position(context.line, "Fuel", 1).proto = new_fuel
     calculation.update(player, context.subfactory, true)
 end
 

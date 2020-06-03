@@ -431,25 +431,41 @@ end
 -- Generates a table containing all fuels that can be used in a burner
 -- (only supports chemical fuels for now)
 function generator.all_fuels()
-    local all_fuels = {fuels = {}, map = {}, structure_type = "simple"}
+    local all_fuels = {categories = {}, map = {}, structure_type = "complex"}
     local items = new.all_items.types[new.all_items.map["item"]]
 
+    -- Determine all the fuel categories that the machine prototypes use
+    local fuel_categories = {}
+    for _, categories in pairs(new.all_machines.categories) do
+        for _, machine in pairs(categories.machines) do
+            if machine.burner then 
+                for category_name, _ in pairs(machine.burner.categories) do
+                    fuel_categories[category_name] = true
+                end
+            end
+        end
+    end
+
+    -- Add solid fuels
     for _, proto in pairs(game.item_prototypes) do
-        -- Only use fuels that were actually detected/accepted to be items,
-        -- and have non-zero and non-infinite fuel values
-        if proto.fuel_value and proto.fuel_category == "chemical" and items.map[proto.name]
-          and proto.fuel_value ~= 0 and proto.fuel_value < 1e+21 then
-            gen_util.insert_proto(all_fuels, "fuels", {
+        local fuel_value, fuel_category = proto.fuel_value, proto.fuel_category
+        -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
+        if fuel_value and items.map[proto.name] and fuel_categories[fuel_category] ~= nil
+          and fuel_value ~= 0 and fuel_value < 1e+21 then
+            gen_util.deep_insert_proto(all_fuels, "categories", fuel_category, "fuels", {
                 name = proto.name,
                 type = proto.type,
-                sprite = proto.type .. "/" .. proto.name,
                 localised_name = proto.localised_name,
-                fuel_category = proto.fuel_category,
-                fuel_value = proto.fuel_value,
+                sprite = proto.type .. "/" .. proto.name,
+                category = fuel_category,
+                fuel_value = fuel_value,
                 emissions_multiplier = proto.fuel_emissions_multiplier
             })
         end
     end
+
+    -- Add liquid fuels
+    -- TBD
     
     return all_fuels
 end

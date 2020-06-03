@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Now supports any kind of fuel, which includes things like mining drills from Pyanodon's and others
   Changes:
     - 
   Bugfixes:

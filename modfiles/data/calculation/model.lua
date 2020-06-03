@@ -264,19 +264,17 @@ function model.update_line(line_data, aggregate)
     local Fuel = structures.class.init()
     local energy_type = line_data.machine_proto.energy_type
 
-    -- Only handles chemical fuels for now
-    if energy_type == "burner" and machine_proto.burner.categories["chemical"] then
-        local fuel_proto = line_data.fuel_proto  -- Lines without subfloors will always have a fuel_proto attached
+    if energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
         local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner, 
-          fuel_proto.fuel_value, line_data.timescale)
+        line_data.fuel_proto.fuel_value, line_data.timescale)
         
-        local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
+        local fuel = {type=line_data.fuel_proto.type, name=line_data.fuel_proto.name, amount=fuel_amount}
         structures.class.add(Fuel, fuel)
         structures.aggregate.add(aggregate, "Product", fuel)
 
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
     elseif energy_type == "void" then
-        energy_consumption = 0
+        energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
 
     -- Include beacon energy consumption
