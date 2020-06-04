@@ -4,6 +4,10 @@ function migration_0_18_27.global()
 end
 
 function migration_0_18_27.player_table(player, player_table)
+    player_table.preferences.preferred_belt = nil
+    player_table.preferences.preferred_beacon = nil
+    player_table.preferences.preferred_fuel = nil
+    player_table.preferences.default_machines = nil
 end
 
 function migration_0_18_27.subfactory(player, subfactory)
