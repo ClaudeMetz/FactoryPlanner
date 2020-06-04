@@ -6,7 +6,7 @@ function open_product_dialog(flow_modal_dialog, modal_data)
     local product = modal_data.product
 
     flow_modal_dialog.parent.caption = (product == nil) and {"fp.add_product"} or {"fp.edit_product"}
-    flow_modal_dialog.style.bottom_margin = 8
+    flow_modal_dialog.style.padding = 8
     refresh_product_bar(flow_modal_dialog, product)
     local picker_flow = item_picker.create(flow_modal_dialog)
 
@@ -97,6 +97,7 @@ function refresh_product_bar(flow_modal_dialog, product)
     local item_sprite, item_tooltip, belt_name
     local item_amount, belt_amount = "", ""
     if product ~= nil then  -- Adjustments if the product is being edited
+        modal_data.selected_item = product.proto
         modal_data.amount_defined_by = product.required_amount.defined_by
         modal_data.belt_proto = product.required_amount.belt_proto
 
@@ -157,10 +158,28 @@ function refresh_product_bar(flow_modal_dialog, product)
     choose_elem_button.elem_filters = {{filter="type", type="transport-belt"}}
     choose_elem_button.elem_value = belt_name  -- needs to be set after the filter
 
-    set_appropriate_amount_focus(flow_product_bar, modal_data)
+    adjust_for_item_type(flow_product_bar, modal_data)
     update_product_amounts(flow_product_bar, modal_data)
+    set_appropriate_amount_focus(flow_product_bar, modal_data)
 
     return flow_product_bar
+end
+
+
+-- Adjusts the dialog according to the product type, disallowing fluids to be set by belt
+function adjust_for_item_type(flow_product_bar, modal_data)
+    local item_proto = modal_data.selected_item
+    
+    if item_proto ~= nil then
+        local choose_elem_button = flow_product_bar["flow_product_belts"]["fp_choose-elem-button_product_belts"]
+        choose_elem_button.enabled = (item_proto.type == "item")
+        
+        if item_proto.type == "fluid" then
+            choose_elem_button.elem_value = nil
+            local player = game.get_player(flow_product_bar.player_index)
+            handle_product_belt_change(player, "")
+        end
+    end
 end
 
 -- Focus the textfield that this product is currently defined_by
@@ -206,6 +225,7 @@ function handle_item_picker_product_click(player, identifier)
     sprite_button_product.sprite = item_proto.sprite
     sprite_button_product.tooltip = item_proto.localised_name
 
+    adjust_for_item_type(flow_product_bar, modal_data)
     set_appropriate_amount_focus(flow_product_bar, modal_data)
 end
 

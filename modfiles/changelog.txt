@@ -9,6 +9,14 @@ Date: 00. 00. 0000
     - 
 
 ---------------------------------------------------------------------------------------------------
+Version: 0.18.26
+Date: 03. 06. 2020
+  Bugfixes:
+    - Fixed a bug where mining fluid calculations were off by a factor of 10
+    - Fixed that you could define a fluid-product amount by belts, which is nonsensical
+    - Fixed some minor graphical inconsistencies
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.25
 Date: 02. 06. 2020
   Bugfixes:
