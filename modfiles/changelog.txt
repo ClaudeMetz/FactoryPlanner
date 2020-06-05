@@ -2,7 +2,8 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Now supports any kind of fuel, which includes things like mining drills from Pyanodon's and others. Might reset some of the fuels you selected to their default. I'm sorry about this, I tried to migrate it where I could, but there were large background changes that made it so it doesn't work in every case.
+    - Now supports any kind of item-fuel, which includes things like mining drills from Pyanodon's and others. Might reset some of the fuels you selected to their default. I'm sorry about this, I tried to migrate it where I could, but there were large background changes that made it so it doesn't work in every case.
+    - Also added support for some fluid-fuels. Machines like Bob's steam assembler are still not supported, as the way they work is complicated and requires more background work from my side.
   Changes:
     - 
   Bugfixes:

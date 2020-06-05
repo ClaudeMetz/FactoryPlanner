@@ -290,17 +290,25 @@ function generator.all_machines()
         local energy_type, emissions, burner = nil, 0, nil  -- emissions remain at 0 if no energy source is present
         local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
 
-        if proto.burner_prototype then
+        -- Determine the details of this entities energy source
+        local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
+        if burner_prototype then
             energy_type = "burner"
-            emissions = proto.burner_prototype.emissions
+            emissions = burner_prototype.emissions
+            burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories}
 
-            burner = {
-                categories = proto.burner_prototype.fuel_categories,
-                effectivity = proto.burner_prototype.effectivity
-            }
+        -- Only supports fluid energy that burns_fluid for no, as it works the same way as solid burners
+        -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
+        elseif fluid_burner_prototype and fluid_burner_prototype.burns_fluid
+          and not fluid_burner_prototype.fluid_box.filter then
+            energy_type = "burner"
+            emissions = fluid_burner_prototype.emissions
+            burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true}}
+
         elseif proto.electric_energy_source_prototype then
             energy_type = "electric"
             emissions = proto.electric_energy_source_prototype.emissions
+
         elseif proto.void_energy_source_prototype then
             energy_type = "void"
             emissions = proto.void_energy_source_prototype.emissions
@@ -308,8 +316,8 @@ function generator.all_machines()
 
         -- Determine fluid input/output channels
         local fluid_channels = {input = 0, output = 0}
-        if proto.fluid_energy_source_prototype then fluid_channels.input = fluid_channels.input - 1 end
-
+        if fluid_burner_prototype then fluid_channels.input = fluid_channels.input - 1 end
+        
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
                 fluid_channels.output = fluid_channels.output + 1
@@ -433,31 +441,31 @@ end
 -- (only supports chemical fuels for now)
 function generator.all_fuels()
     local all_fuels = {categories = {}, map = {}, structure_type = "complex"}
-    local items = new.all_items.types[new.all_items.map["item"]]
 
     -- Determine all the fuel categories that the machine prototypes use
-    local fuel_categories = {}
+    local used_fuel_categories = {}
     for _, categories in pairs(new.all_machines.categories) do
         for _, machine in pairs(categories.machines) do
             if machine.burner then 
                 for category_name, _ in pairs(machine.burner.categories) do
-                    fuel_categories[category_name] = true
+                    used_fuel_categories[category_name] = true
                 end
             end
         end
     end
 
     -- Add solid fuels
+    local items = new.all_items.types[new.all_items.map["item"]]
     for _, proto in pairs(game.item_prototypes) do
         local fuel_value, fuel_category = proto.fuel_value, proto.fuel_category
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
-        if fuel_value and items.map[proto.name] and fuel_categories[fuel_category] ~= nil
-          and fuel_value ~= 0 and fuel_value < 1e+21 then
+        if fuel_value and items.map[proto.name] and used_fuel_categories[fuel_category] ~= nil
+          and fuel_value > 0 and fuel_value < 1e+21 then
             gen_util.deep_insert_proto(all_fuels, "categories", fuel_category, "fuels", {
                 name = proto.name,
-                type = proto.type,
+                type = "item",
                 localised_name = proto.localised_name,
-                sprite = proto.type .. "/" .. proto.name,
+                sprite = "item/" .. proto.name,
                 category = fuel_category,
                 fuel_value = fuel_value,
                 emissions_multiplier = proto.fuel_emissions_multiplier
@@ -466,7 +474,22 @@ function generator.all_fuels()
     end
 
     -- Add liquid fuels
-    -- TBD
+    local fluids = new.all_items.types[new.all_items.map["fluid"]]
+    for _, proto in pairs(game.fluid_prototypes) do
+        local fuel_value, fuel_category = proto.fuel_value, "fluid-fuel"
+        -- Only use fuels that have actually been detected/accepted as fluids
+        if fuel_value and fluids.map[proto.name] and fuel_value > 0 and fuel_value < 1e+21 then
+            gen_util.deep_insert_proto(all_fuels, "categories", fuel_category, "fuels", {
+                name = proto.name,
+                type = "fluid",
+                localised_name = proto.localised_name,
+                sprite = "fluid/" .. proto.name,
+                category = fuel_category,
+                fuel_value = fuel_value,
+                emissions_multiplier = proto.emissions_multiplier
+            })
+        end
+    end
     
     return all_fuels
 end
