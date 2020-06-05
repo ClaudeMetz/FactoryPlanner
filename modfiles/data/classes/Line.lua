@@ -196,6 +196,16 @@ function Line.change_machine(self, player, machine, direction)
             return Line.change_machine(self, player, machine, "positive")
 
         else
+            -- Reset the fuel if machine fuel category changes (terrible way to do this)
+            local old_machine, new_machine = self.machine, machine.proto
+            if old_machine and not (new_machine.energy_type == "burner" and old_machine.proto.energy_type == "burner"
+              and new_machine.burner.categories[Line.get(self, "Fuel", 1).proto.category]) then
+                
+                -- crashes with subfloors; Just gonna change how fuel is saved on a line
+                
+                self.Fuel = Collection.init()
+            end
+
             -- Carry over the machine limit
             if machine and self.machine then
                 machine.limit = self.machine.limit
