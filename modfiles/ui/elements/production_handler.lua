@@ -393,8 +393,8 @@ end
 function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
-    local ui_state = get_ui_state(player)
-    local line = Floor.get(ui_state.context.floor, "Line", line_id)
+    local context = get_context(player)
+    local line = Floor.get(context.floor, "Line", line_id)
     local item = Line.get(line, class, item_id)
 
     if alt then
@@ -412,41 +412,52 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
         refresh_current_activity(player)
         
+    -- Pick recipe to produce said ingredient
+    elseif click == "left" and item.proto.type ~= "entity" then
+        if item.class == "Ingredient" then
+            enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="produce"}})
+
+        elseif item.class == "Product" then
+            if line.Product.count < 2 then
+                ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
+            else
+                local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+                Line.set_priority_product(line, priority_product_proto)
+                calculation.update(player, context.subfactory, true)
+            end
+
+        elseif item.class == "Byproduct" then
+            --enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}})
+        end
+    end
+end
+
+
+-- Handles a click on an line fuel button
+function handle_fuel_button_click(player, line_id, click, alt)
+    if ui_util.check_archive_status(player) then return end
+
+    local context = get_context(player)
+    local line = Floor.get(context.floor, "Line", line_id)
+    local fuel = line.fuel
+
+    if alt then
+        ui_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
+
     else
-        if click == "right" and item.class == "Fuel" then
+        if click == "left" then
+            enter_modal_dialog(player, {type="recipe", modal_data={product=fuel, production_type="produce"}})
+
+        elseif click == "right" then
             local modal_data = {
                 reciever_name = "fuel",
                 title = {"fp.fuel"},
-                object = item
+                text = {"", {"fp.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"},
+                object = fuel
             }
 
-            -- Set different message depending on whether this fuel is on a line with a subfloor or not
-            if line.subfloor == nil then
-                modal_data.text = {"", {"fp.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"}
-            else
-                modal_data.text = {"", {"fp.chooser_fuel_floor"}, " '", item.proto.localised_name, "':"}
-            end
-
-            ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+            context.line = line  -- won't be reset after use, but that doesn't matter
             enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
-
-        -- Pick recipe to produce said ingredient
-        elseif click == "left" and item.proto.type ~= "entity" then
-            if item.class == "Ingredient" or item.class == "Fuel" then
-                enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="produce"}})
-
-            elseif item.class == "Product" then
-                if line.Product.count < 2 then
-                    ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
-                else
-                    local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
-                    Line.set_priority_product(line, priority_product_proto)
-                    calculation.update(player, ui_state.context.subfactory, true)
-                end
-
-            elseif item.class == "Byproduct" then
-                --enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}})
-            end
         end
     end
 end
@@ -496,7 +507,7 @@ function apply_fuel_choice(player, new_fuel_id_string)
     local context = get_context(player)
     local split_string = cutil.split(new_fuel_id_string, "_")
     local new_fuel = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
-    Line.get_by_gui_position(context.line, "Fuel", 1).proto = new_fuel
+    context.line.fuel.proto = new_fuel
     calculation.update(player, context.subfactory, true)
 end
 

@@ -178,9 +178,9 @@ function create_line_table_row(player, line)
 
 
     -- Item buttons
-    create_item_button_flow(player_table, table_production, line, "products", {"Product"}, {"blank"})
-    create_item_button_flow(player_table, table_production, line, "byproducts", {"Byproduct"}, {"red"})
-    create_item_button_flow(player_table, table_production, line, "ingredients", {"Ingredient", "Fuel"}, {"green", "cyan"})
+    create_item_button_flow(player_table, table_production, line, "Product", "blank")
+    create_item_button_flow(player_table, table_production, line, "Byproduct", "red")
+    create_item_button_flow(player_table, table_production, line, "Ingredient", "green")
 
     
     -- Comment textfield
@@ -345,6 +345,7 @@ function add_rounding_overlay(player, button, data)
     end
 end
 
+
 -- Creates and places a single module button
 function create_module_button(flow, line, module, type, button_name)
     local m = (module.amount == 1) and {"fp.module"} or {"fp.modules"}
@@ -357,70 +358,84 @@ function create_module_button(flow, line, module, type, button_name)
     button_module.style.padding = 2
 end
 
+
 -- Creates the flow containing all line items of the given type
-function create_item_button_flow(player_table, gui_table, line, group, classes, styles)
+function create_item_button_flow(player_table, gui_table, line, class, style)
     local player = game.get_player(gui_table.player_index)
     local preferences = player_table.preferences
 
     local view_name = player_table.ui_state.view_state.selected_view.name
     local round_belts = (view_name == "belts_or_lanes" and preferences.round_button_numbers)
 
-    local flow = gui_table.add{type="flow", name="flow_line_products_" .. group .. "_" .. line.id, direction="horizontal"}
+    local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id,
+      direction="horizontal"}
 
-    for index, class in ipairs(classes) do
-        local style = "fp_button_icon_medium_" .. styles[index]
-        local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
-        local indication = (class == "Fuel") and {"fp.indication", {"fp.fuel"}} or ""
-        
-        for _, item in ipairs(Line.get_in_order(line, class)) do
-            local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-              item.proto.type, item.amount, math.ceil(line.machine.count))
-              
-            if raw_amount == nil or raw_amount > margin_of_error then
-                -- Determine potential different button style and the potential satisfaction line
-                local actual_style, satisfaction_line = style, ""
+    local style = "fp_button_icon_medium_" .. style
+    local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
 
-                if item.proto.type == "entity" then
-                    actual_style = "fp_button_icon_medium_blank" 
+    local function create_item_button(item, indication)
+        local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+          item.proto.type, item.amount, math.ceil(line.machine.count))
+            
+        if raw_amount == nil or raw_amount > margin_of_error then
+            -- Determine potential different button style and the potential satisfaction line
+            local actual_style, satisfaction_line, indication = style, "", (indication or "")
 
-                elseif class == "Product" and line.priority_product_proto ~= nil and 
-                  line.priority_product_proto.type == item.proto.type and 
-                  line.priority_product_proto.name == item.proto.name then
+            if item.proto.type == "entity" then
+                actual_style = "fp_button_icon_medium_blank"
+
+            elseif class == "Product" and line.priority_product_proto ~= nil and 
+                line.priority_product_proto.type == item.proto.type and 
+                line.priority_product_proto.name == item.proto.name then
+                actual_style = "fp_button_icon_medium_green"
+
+            elseif class == "Ingredient" and preferences.ingredient_satisfaction then
+                local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
+
+                local satisfaction = tonumber(satisfaction_percentage)
+                if satisfaction == 0 then
+                    actual_style = "fp_button_icon_medium_red"
+                elseif satisfaction < 100 then
+                    actual_style = "fp_button_icon_medium_yellow"
+                elseif satisfaction >= 100 then
                     actual_style = "fp_button_icon_medium_green"
-
-                elseif class == "Ingredient" and preferences.ingredient_satisfaction then
-                    local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
-
-                    local satisfaction = tonumber(satisfaction_percentage)
-                    if satisfaction == 0 then
-                        actual_style = "fp_button_icon_medium_red"
-                    elseif satisfaction < 100 then
-                        actual_style = "fp_button_icon_medium_yellow"
-                    elseif satisfaction >= 100 then
-                        actual_style = "fp_button_icon_medium_green"
-                    end
-
-                    satisfaction_line = {"", "\n", satisfaction_percentage, "% ", {"fp.satisfied"}}
                 end
 
-                -- Determine the correct indication
-                if class == "Product" and line.priority_product_proto == item.proto then 
-                    indication = {"fp.indication", {"fp.priority"}}
-                elseif class == "Ingredient" and item.proto.type == "entity" then
-                    indication = {"fp.indication", {"fp.raw_ore"}}
-                end
-
-                local number_line, button_number = "", nil
-                if raw_amount ~= nil then
-                    number_line = {"", "\n" .. ui_util.format_number(raw_amount, 4) .. " ", appendage}
-                    button_number = (round_belts) and math.ceil(raw_amount) or raw_amount
-                end
-                local tooltip = {"", item.proto.localised_name, indication, number_line, satisfaction_line, tutorial_tooltip}
-
-                local button = flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-                  .. "_" .. item.id, sprite=item.proto.sprite, style=actual_style, number=button_number, tooltip=tooltip,
-                  mouse_button_filter={"left-and-right"}}
+                satisfaction_line = {"", "\n", satisfaction_percentage, "% ", {"fp.satisfied"}}
             end
+
+            -- Determine the correct indication
+            if class == "Product" and line.priority_product_proto == item.proto then
+                indication = {"fp.indication", {"fp.priority"}}
+            elseif class == "Ingredient" and item.proto.type == "entity" then
+                indication = {"fp.indication", {"fp.raw_ore"}}
+            end
+
+            local number_line, button_number = "", nil
+            if raw_amount ~= nil then
+                number_line = {"", "\n" .. ui_util.format_number(raw_amount, 4) .. " ", appendage}
+                button_number = (round_belts) and math.ceil(raw_amount) or raw_amount
+            end
+            local tooltip = {"", item.proto.localised_name, indication, number_line, satisfaction_line,
+              tutorial_tooltip}
+
+            flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
+              .. "_" .. (item.id or 1), sprite=item.proto.sprite, style=actual_style, number=button_number,
+              tooltip=tooltip, mouse_button_filter={"left-and-right"}}
         end
+    end
+    
+    -- Create all the buttons of the given class
+    for _, item in ipairs(Line.get_in_order(line, class)) do
+        create_item_button(item)
+    end
+
+    -- Add the fuel button if necessary
+    if class == "Ingredient" and line.fuel then
+        local indication = {"fp.indication", {"fp.fuel"}}
+        class = "Fuel"
+        style = "fp_button_icon_medium_cyan"
+        tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "fuel", true)
+        create_item_button(line.fuel, indication)
     end
 end

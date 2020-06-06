@@ -21,7 +21,7 @@ end
 
 
 -- Update the validity of this fuel
-function Fuel.update_validity(self)
+function Fuel.update_validity(self, line)
     if self.category == nil or self.proto == nil then return false end
     local category_name = (type(self.category) == "string") and self.category or self.category.name
     local new_category_id = new.all_fuels.map[category_name]
@@ -47,9 +47,8 @@ function Fuel.update_validity(self)
     end
 
     -- Check fuel category compatibility
-    if self.valid and self.parent.valid and self.parent.machine and self.parent.machine.valid
-      and self.parent.machine.proto then
-        local burner = self.parent.machine.proto.burner
+    if self.valid and line.valid and line.machine and line.machine.valid and line.machine.proto then
+        local burner = line.machine.proto.burner
         if not burner or burner.categories[self.proto.category] == nil then
             self.valid = false
         end
@@ -60,7 +59,7 @@ end
 
 -- Tries to repair this fuel, deletes it otherwise (by returning false)
 -- If this is called, the fuel is invalid and has a string saved to proto (and maybe to type)
-function Fuel.attempt_repair(self, player)
+function Fuel.attempt_repair(self, player, line)
     -- If the category is nil, this fuel is not repairable
     if self.category == nil then
         return false
@@ -85,7 +84,7 @@ function Fuel.attempt_repair(self, player)
     end
 
     -- Fix fuel category compatibility
-    local burner = self.parent.machine.proto.burner
+    local burner = line.machine.proto.burner
     if self.valid and (not burner or burner.categories[self.proto.category] == nil) then
         self.valid = false
     end

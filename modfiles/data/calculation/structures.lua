@@ -15,8 +15,7 @@ function structures.aggregate.init(player_index, floor_id)
         uncapped_production_ratio = nil,
         Product = structures.class.init(),
         Byproduct = structures.class.init(),
-        Ingredient = structures.class.init(),
-        Fuel = structures.class.init()
+        Ingredient = structures.class.init()
     }
 end
 

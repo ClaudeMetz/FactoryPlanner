@@ -14,7 +14,7 @@ function Line.init(player, recipe)
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
-        Fuel = Collection.init(),
+        fuel = nil,
         priority_product_proto = nil,  -- will be set by the user
         comment = nil,
         production_ratio = 0,
@@ -189,36 +189,32 @@ function Line.change_machine(self, player, machine, direction)
 
     -- Set machine directly
     elseif machine ~= nil and direction == nil then
-        local machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
+        local new_machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
         -- Try setting a higher tier machine until it sticks or nothing happens
         -- Returns false if no machine fits at all, so an appropriate error can be displayed
-        if not Line.is_machine_applicable(self, machine.proto) then
-            return Line.change_machine(self, player, machine, "positive")
+        if not Line.is_machine_applicable(self, new_machine.proto) then
+            return Line.change_machine(self, player, new_machine, "positive")
 
         else
-            -- Reset the fuel if machine fuel category changes (terrible way to do this)
-            local old_machine, new_machine = self.machine, machine.proto
-            if old_machine and not (new_machine.energy_type == "burner" and old_machine.proto.energy_type == "burner"
-              and new_machine.burner.categories[Line.get(self, "Fuel", 1).proto.category]) then
-                
-                -- crashes with subfloors; Just gonna change how fuel is saved on a line
-                
-                self.Fuel = Collection.init()
+            -- Check if the fuel is still compatible, remove it otherwise
+            if not (self.machine and self.fuel and new_machine.proto.energy_type == "burner"
+              and new_machine.proto.burner.categories[self.fuel.proto.category]) then
+                self.fuel = nil
             end
 
             -- Carry over the machine limit
-            if machine and self.machine then
-                machine.limit = self.machine.limit
-                machine.hard_limit = self.machine.hard_limit
+            if new_machine and self.machine then
+                new_machine.limit = self.machine.limit
+                new_machine.hard_limit = self.machine.hard_limit
             end
-            self.machine = machine
+            self.machine = new_machine
 
             -- Adjust parent line
             if self.parent then  -- if no parent exists, nothing is overwritten anyway
                 if self.subfloor then
-                    Floor.get(self.subfloor, "Line", 1).machine = machine
+                    Floor.get(self.subfloor, "Line", 1).machine = self.machine
                 elseif self.id == 1 and self.parent.origin_line then
-                    self.parent.origin_line.machine = machine
+                    self.parent.origin_line.machine = self.machine
                 end
             end
 
@@ -475,14 +471,19 @@ function Line.update_validity(self)
         self.valid = false
     end
 
-    -- Validate Items + Modules + Fuel
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module", Fuel = "Fuel"}
+    -- Validate Items + Modules
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module"}
     if not run_validation_updates(self, classes) then
         self.valid = false
     end
 
     -- Validate Machine
     if not Machine.update_validity(self.machine, self) then
+        self.valid = false
+    end
+
+    -- Validate Fuel
+    if self.valid and self.fuel and not Fuel.update_validity(self.fuel, self) then
         self.valid = false
     end
 
@@ -516,8 +517,8 @@ function Line.attempt_repair(self, player)
         self.valid = false
     end
 
-    -- Repair Items + Modules + Fuel
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module", Fuel = "Fuel"}
+    -- Repair Items + Modules
+    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module"}
     run_invalid_dataset_repair(player, self, classes)
 
     -- Repair Machine
@@ -545,6 +546,11 @@ function Line.attempt_repair(self, player)
                 self.valid = false
             end
         end
+    end
+
+    -- Repair Fuel
+    if self.valid and self.fuel and not self.fuel.valid and not Fuel.attempt_repair(self.fuel, player) then
+        self.valid = false
     end
     
     -- Repair Beacon

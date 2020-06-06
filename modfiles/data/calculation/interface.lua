@@ -83,6 +83,9 @@ function calculation.interface.set_line_result(result)
     line.production_ratio = result.production_ratio
     line.uncapped_production_ratio = result.uncapped_production_ratio
 
+    -- Update the fuel for this line
+    line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
+
     -- Reset the priority_product if there's <2 products
     if structures.class.count(result.Product) < 2 then
         Line.set_priority_product(line, nil)
@@ -91,7 +94,6 @@ function calculation.interface.set_line_result(result)
     calculation.util.update_items(line, result, "Product")
     calculation.util.update_items(line, result, "Byproduct")
     calculation.util.update_items(line, result, "Ingredient")
-    calculation.util.update_items(line, result, "Fuel")
 end
 
 
@@ -140,9 +142,9 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
 
         -- Fuel proto
         local burner = line.machine.proto.burner
-        if line.Fuel.count == 1 then  -- use the already configured Fuel, if available
-            line_data.fuel_proto = Line.get_by_gui_position(line, "Fuel", 1).proto
-        elseif burner ~= nil then  -- Use the first category of the machine's burner as the default one
+        if line.fuel then  -- use the already configured Fuel, if available
+            line_data.fuel_proto = line.fuel.proto
+        elseif burner ~= nil then  -- Use the first category of this machine's burner as the default one
             local fuel_category_name, _ = next(burner.categories, nil)
             local fuel_category_id = global.all_fuels.map[fuel_category_name]
             line_data.fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
@@ -181,8 +183,7 @@ function calculation.util.update_items(object, result, class_name)
             _G[object.class].add(object, top_level_item)
 
         else  -- object.class == "Line"
-            item = (class_name == "Fuel") and Fuel.init_by_item(item_result, item_result.amount)
-              or Item.init_by_item(item_result, class_name, item_result.amount)
+            item = Item.init_by_item(item_result, class_name, item_result.amount)
             _G[object.class].add(object, item)
         end
     end
