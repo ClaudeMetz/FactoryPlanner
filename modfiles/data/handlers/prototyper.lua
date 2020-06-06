@@ -51,22 +51,29 @@ end
 
 
 -- **** DEFAULTS ****
--- Returns the fallback default for the given type of
+-- Defines fallbacks by name which overwrites choosing the first in the proto list
+local specific_fallbacks = { ["fuels"] = { ["chemical"] = "coal" } }
+
+-- Returns the fallback default for the given type of prototype
 function prototyper.defaults.get_fallback(type)
     -- Use the lua-global new-table if it exists, use global otherwise
     local data_table = new or global
     local all_prototypes = data_table["all_" .. type]
+    local specific_fallback = specific_fallbacks[type]
     
     -- Simple prototype structures return a single prototype as a fallback
     local fallback = {structure_type = all_prototypes.structure_type}
     if all_prototypes.structure_type == "simple" then
-        fallback.prototype = all_prototypes[type][1]
+        local prototype_id = (specific_fallback) and all_prototypes.map[specific_fallback] or 1
+        fallback.prototype = all_prototypes[type][prototype_id]
 
     -- Complex prototype structures return a table containing a fallback for every category
     else  -- structure_type == "complex"
         fallback.prototypes = {}
         for category_id, category in pairs(all_prototypes.categories) do
-            fallback.prototypes[category_id] = category[type][1]
+            local category_fallback = (specific_fallback) and specific_fallback[category.name]
+            local prototype_id = (category_fallback) and category.map[category_fallback] or 1
+            fallback.prototypes[category_id] = category[type][prototype_id]
         end
     end
 
@@ -74,7 +81,7 @@ function prototyper.defaults.get_fallback(type)
 end
 
 
--- Returns the default prototype for the given type, incorporating the category if given
+-- Returns the default prototype for the given type, incorporating the category, if given
 function prototyper.defaults.get(player, type, category_id)
     local default = get_preferences(player).default_prototypes[type]
     if default.structure_type == "simple" then
@@ -84,7 +91,7 @@ function prototyper.defaults.get(player, type, category_id)
     end
 end
 
--- Sets the default prototype for the given type, incorporating the category if given
+-- Sets the default prototype for the given type, incorporating the category, if given
 function prototyper.defaults.set(player, type, prototype_id, category_id)
     local default = get_preferences(player).default_prototypes[type]
     if default.structure_type == "simple" then
