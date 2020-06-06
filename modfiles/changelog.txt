@@ -7,7 +7,7 @@ Date: 00. 00. 0000
   Changes:
     - 
   Bugfixes:
-    - 
+    - Fix a crash when attempting to repair certain subfactories
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.26
