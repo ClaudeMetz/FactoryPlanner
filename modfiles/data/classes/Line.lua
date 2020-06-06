@@ -568,6 +568,7 @@ function Line.attempt_repair(self, player)
     -- Repair subfloor (continues through recursively)
     if self.subfloor and not self.subfloor.valid and not Floor.attempt_repair(self.subfloor, player) then
         Subfactory.remove(self.subfloor.parent, self.subfloor)
+        self.subfloor = nil
     end
 
     return self.valid
