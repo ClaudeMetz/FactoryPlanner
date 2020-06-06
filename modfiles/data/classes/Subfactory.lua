@@ -109,42 +109,6 @@ function Subfactory.remove_useless_lines(self)
 end
 
 
--- Returns the combination of both item collections in GUI order, as a deepcopy
--- (More of a util function, 'self' isn't really needed here)
-function Subfactory.combine_item_collections(self, primary_items, secondary_items)
-    local combination = Collection.init()
-    local touched_datasets = {}
-
-    local function create_item_copy(dataset)
-        return {
-            id = dataset.id,
-            proto = dataset.proto,  -- reference
-            amount = dataset.amount
-        }
-    end
-    
-    -- First, go through all primary items and combine them with any identical secondary ones
-    for _, dataset in ipairs(Collection.get_in_order(primary_items)) do
-        --log(serpent.block(dataset))
-        local primary_item = Collection.add(combination, create_item_copy(dataset))
-        local secondary_item = Collection.get_by_name(secondary_items, dataset.proto.name)
-        if secondary_item ~= nil then
-            primary_item.amount = primary_item.amount + secondary_item.amount
-            touched_datasets[secondary_item.proto.name] = true
-        end
-    end
-    
-    -- Then, add all remaining secondary items on their own
-    for _, dataset in ipairs(Collection.get_in_order(secondary_items)) do
-        if touched_datasets[dataset.proto.name] == nil then
-            Collection.add(combination, create_item_copy(dataset))
-        end
-    end
-
-    return combination
-end
-
-
 -- Returns the machines and modules needed to actually build this subfactory
 function Subfactory.get_component_data(self)
     local components = {machines={}, modules={}}

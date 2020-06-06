@@ -13,10 +13,12 @@ end
 function migration_0_18_27.subfactory(player, subfactory)
     for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-            local fuel = Line.get(line, "Fuel", 1)
-            if fuel ~= nil and fuel.proto ~= nil then
-                fuel.category = fuel.proto.category
+            local fuel = Line.get_by_gui_position(line, "Fuel", 1)
+            if fuel ~= nil and fuel.valid and fuel.proto ~= nil then
+                fuel.category = fuel.proto.fuel_category
+                line.fuel = fuel
             end
+            line.Fuel = nil
         end
     end
 end

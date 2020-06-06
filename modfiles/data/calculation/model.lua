@@ -11,7 +11,6 @@ function model.update_subfactory(subfactory_data)
     model.update_floor(subfactory_data.top_floor, aggregate)  -- updates aggregate
 
     -- Fuels are combined with Ingredients for top-level purposes
-    structures.aggregate.combine_classes(aggregate, "Ingredient", "Fuel")
     calculation.interface.set_subfactory_result {
         player_index = subfactory_data.player_index,
         energy_consumption = aggregate.energy_consumption,
@@ -60,7 +59,7 @@ function model.update_floor(floor_data, aggregate)
                 for _, item in ipairs(structures.class.to_array(subfloor_aggregate[class_name])) do
                     local byproduct_amount = aggregate.Byproduct[item.type][item.name]
 
-                    if (class_name == "Ingredient" or class_name == "Fuel") and byproduct_amount ~= nil then
+                    if class_name == "Ingredient" and byproduct_amount ~= nil then
                         if byproduct_amount >= item.amount then
                             structures.aggregate.subtract(aggregate, "Byproduct", item)
                         else
@@ -79,7 +78,6 @@ function model.update_floor(floor_data, aggregate)
             update_main_aggregate("Byproduct", "Byproduct")
             update_main_aggregate("Product", "Product")
             update_main_aggregate("Ingredient", "Product")
-            update_main_aggregate("Fuel", "Product")
 
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
@@ -95,7 +93,7 @@ function model.update_floor(floor_data, aggregate)
                 Product = subfloor_aggregate.Product,
                 Byproduct = subfloor_aggregate.Byproduct,
                 Ingredient = subfloor_aggregate.Ingredient,
-                Fuel = subfloor_aggregate.Fuel
+                fuel = nil
             }
         else
             -- Update aggregate according to the current line, which also adjusts the respective line object
@@ -261,7 +259,7 @@ function model.update_line(line_data, aggregate)
     local pollution = calculation.util.determine_pollution(machine_proto, line_data.recipe_proto,
       line_data.fuel_proto, line_data.total_effects, energy_consumption)
     
-    local Fuel = structures.class.init()
+    local fuel_result = nil
     local energy_type = line_data.machine_proto.energy_type
 
     if energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
@@ -269,10 +267,11 @@ function model.update_line(line_data, aggregate)
         line_data.fuel_proto.fuel_value, line_data.timescale)
         
         local fuel = {type=line_data.fuel_proto.type, name=line_data.fuel_proto.name, amount=fuel_amount}
-        structures.class.add(Fuel, fuel)
-        structures.aggregate.add(aggregate, "Product", fuel)
+        structures.aggregate.add(aggregate, "Product", fuel)  -- add here so fuel demand can be fulfilled
 
+        fuel_result = {proto = line_data.fuel_proto, amount = fuel.amount}
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+
     elseif energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
@@ -297,6 +296,6 @@ function model.update_line(line_data, aggregate)
         Product = Product,
         Byproduct = Byproduct,
         Ingredient = Ingredient,
-        Fuel = Fuel
+        fuel = fuel_result
     }
 end
