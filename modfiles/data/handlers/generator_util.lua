@@ -53,12 +53,20 @@ end
 
 -- Applies the given sorting function to the data. Run before map generation.
 function generator_util.data_structure.sort(sorting_function)
+    local function reassign_ids(prototype_table)
+        for index, prototype in ipairs(prototype_table) do prototype.id = index end
+    end
+
     if metadata.structure_type == "simple" then
-        table.sort(data_structure[metadata.main_structure_name], sorting_function)
+        local prototype_table = data_structure[metadata.main_structure_name]
+        table.sort(prototype_table, sorting_function)
+        reassign_ids(prototype_table)
 
     else  -- structure_type == "complex"
         for _, category_table in pairs(data_structure[metadata.main_structure_name]) do
-            table.sort(category_table[metadata.sub_structure_name], sorting_function)
+            local prototype_table = category_table[metadata.sub_structure_name]
+            table.sort(prototype_table, sorting_function)
+            reassign_ids(prototype_table)
         end
     end
 end
@@ -81,9 +89,7 @@ function generator_util.data_structure.generate_map(add_identifiers)
             for _, prototype in pairs(category_table[metadata.sub_structure_name]) do
                 category_table.map[prototype.name] = prototype.id
 
-                if add_identifiers then
-                    prototype.identifier = category_table.id .. "_" .. prototype.id
-                end
+                if add_identifiers then prototype.identifier = category_table.id .. "_" .. prototype.id end
             end
         end
     end
