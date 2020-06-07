@@ -4,6 +4,11 @@ function migration_0_18_27.global()
 end
 
 function migration_0_18_27.player_table(player, player_table)
+    player_table.preferences.default_prototypes = {
+        belts = {structure_type="simple", prototype=player_table.preferences.preferred_belt},
+        beacons = {structure_type="simple", prototype=player_table.preferences.preferred_beacon},
+        machines = {structure_type="complex", prototypes=player_table.preferences.default_machines.categories}
+    }
     player_table.preferences.preferred_belt = nil
     player_table.preferences.preferred_beacon = nil
     player_table.preferences.preferred_fuel = nil
