@@ -81,7 +81,7 @@ function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
     local preferences = get_preferences(player)
     if preferences.tutorial_mode then
         local b = line_break and "\n\n" or ""
-        local alt_action = get_preferences(player).alt_action
+        local alt_action = get_settings(player).alt_action
         local f = (valid_alt_types[tut_type] and alt_action ~= "none")
           and {"fp.tut_alt_action", {"fp.alt_action_" .. alt_action}} or ""
         if button ~= nil then
@@ -336,7 +336,7 @@ end
 
 -- Executes an alt-action on the given action_type and data
 function ui_util.execute_alt_action(player, action_type, data)
-    local alt_action = get_preferences(player).alt_action
+    local alt_action = get_settings(player).alt_action
 
     local remote_action = remote_actions[alt_action]
     if remote_action ~= nil and remote_action[action_type] then

@@ -49,7 +49,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     local label_interface = table_tutorial.add{type="label", name="label_tutorial_interface", caption={"fp.interface_text"}}
     label_interface.style.single_line = false
 
-    local alt_action_string = {"fp.alt_action_" .. get_preferences(player).alt_action}
+    local alt_action_string = {"fp.alt_action_" .. get_settings(player).alt_action}
     local label_controls = table_tutorial.add{type="label", name="label_tutorial_controls",
       caption={"fp.interface_controls", alt_action_string}}
     label_controls.style.single_line = false

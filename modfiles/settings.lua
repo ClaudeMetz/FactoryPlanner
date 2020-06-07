@@ -1,3 +1,15 @@
+-- Determine the active mods compatible with the alt-action setting
+local alt_action_values = {"none"}
+local compatible_mods = {
+    [1] = {internal_name = "fnei", name = "FNEI"},
+    [2] = {internal_name = "wiiruf", name = "what-is-it-really-used-for"},
+    [3] = {internal_name = "recipebook", name = "RecipeBook"}
+}
+
+for _, mod in ipairs(compatible_mods) do
+    if mods[mod.name] then table.insert(alt_action_values, mod.internal_name) end
+end
+
 data:extend({
     {
         type = "bool-setting",
@@ -31,11 +43,19 @@ data:extend({
     },
     {
         type = "string-setting",
+        name = "fp_alt_action",
+        setting_type = "runtime-per-user",
+        default_value = "none",
+        allowed_values = alt_action_values,
+        order = "e"
+    },
+    {
+        type = "string-setting",
         name = "fp_default_timescale",
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "e"
+        order = "f"
     },
     {
         type = "string-setting",
@@ -43,7 +63,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
-        order = "f"
+        order = "g"
     },
     {
         type = "double-setting",
@@ -52,6 +72,6 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "g"
+        order = "h"
     }
 })

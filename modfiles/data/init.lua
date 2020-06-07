@@ -117,6 +117,7 @@ function reload_settings(player)
     settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
+    settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.indicate_rounding = tonumber(settings["fp_indicate_rounding"].value)
@@ -129,10 +130,6 @@ function reload_preferences(player)
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
 
-    preferences.alt_action = remote_actions.util.validate_alt_action(preferences.alt_action)
-    preferences.mb_defaults = preferences.mb_defaults or
-      {module = nil, beacon = nil, beacon_count = nil}
-
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
@@ -140,6 +137,9 @@ function reload_preferences(player)
     
     preferences.optional_production_columns = preferences.optional_production_columns or 
       {["pollution"] = false, ["line_comments"] = false}
+
+    preferences.mb_defaults = preferences.mb_defaults or
+      {module = nil, beacon = nil, beacon_count = nil}
 
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {

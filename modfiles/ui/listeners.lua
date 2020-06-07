@@ -17,7 +17,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         -- Changes the width of the main dialog
         elseif event.setting == "fp_subfactory_items_per_row" or
-          event.setting == "fp_floor_recipes_at_once" then
+          event.setting == "fp_floor_recipes_at_once" or
+          event.setting == "fp_alt_action" then
             refresh_main_dialog(player, true)
 
         -- Refreshes the view selection or recipe machine buttons appropriately
@@ -230,16 +231,6 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     end
 end)
 
--- Fires on any dropdown and listbox change
-script.on_event(defines.events.on_gui_selection_state_changed, function(event)
-    local player = game.get_player(event.player_index)
-
-    -- Changes the current alt_action
-    if event.element.name == "fp_drop_down_alt_action" then
-        local selected_index = event.element.selected_index
-        handle_alt_action_change(player, selected_index)
-    end
-end)
 
 -- Fires on any change to a choose_elem_button
 script.on_event(defines.events.on_gui_elem_changed, function(event)
