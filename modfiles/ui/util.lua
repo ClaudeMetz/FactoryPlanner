@@ -404,7 +404,8 @@ end
 
 -- Returns a tooltip containing the attributes of the given fuel prototype
 function ui_util.attributes.fuel(fuel)
-    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3)}
+    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3), "\n",
+           {"fp.emissions_multiplier"}, ": " .. fuel.emissions_multiplier}
 end
 
 -- Returns a tooltip containing the attributes of the given belt prototype

@@ -123,19 +123,12 @@ function loader.caching.sorted_items()
 
     -- Sorts the objects according to their group, subgroup and order
     local function sorting_function(a, b)
-        if a.group.order < b.group.order then
-            return true
-        elseif a.group.order > b.group.order then
-            return false
-        elseif a.subgroup.order < b.subgroup.order then
-            return true
-        elseif a.subgroup.order > b.subgroup.order then
-            return false
-        elseif a.order < b.order then
-            return true
-        elseif a.order > b.order then
-            return false
-        end
+        if a.group.order < b.group.order then return true
+        elseif a.group.order > b.group.order then return false
+        elseif a.subgroup.order < b.subgroup.order then return true
+        elseif a.subgroup.order > b.subgroup.order then return false
+        elseif a.order < b.order then return true
+        elseif a.order > b.order then return false end
     end
 
     table.sort(items, sorting_function)

@@ -3,7 +3,7 @@ generator = {}
 
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
-    local all_recipes = {recipes = {}, map = {}}
+    gen_util.data_structure.init("simple", "recipes")
     
     local function custom_recipe()
         return {
@@ -57,7 +57,7 @@ function generator.all_recipes()
             }
 
             gen_util.format_recipe_products_and_ingredients(recipe)
-            gen_util.insert_proto(all_recipes, "recipes", recipe, true)
+            gen_util.data_structure.insert(recipe)
         end
     end
 
@@ -106,7 +106,7 @@ function generator.all_recipes()
 
                 gen_util.format_recipe_products_and_ingredients(recipe)
                 gen_util.add_recipe_tooltip(recipe)
-                gen_util.insert_proto(all_recipes, "recipes", recipe, true)
+                gen_util.data_structure.insert(recipe)
 
             --else
                 -- crude-oil and angels-natural-gas go here (not interested atm)
@@ -128,7 +128,7 @@ function generator.all_recipes()
 
             gen_util.format_recipe_products_and_ingredients(recipe)
             gen_util.add_recipe_tooltip(recipe)
-            gen_util.insert_proto(all_recipes, "recipes", recipe, true)
+            gen_util.data_structure.insert(recipe)
 
         -- Detect all the implicit rocket silo recipes
         elseif proto.rocket_parts_required ~= nil then
@@ -157,35 +157,40 @@ function generator.all_recipes()
                     
                     gen_util.format_recipe_products_and_ingredients(recipe)
                     gen_util.add_recipe_tooltip(recipe)
-                    gen_util.insert_proto(all_recipes, "recipes", recipe, true)
+                    gen_util.data_structure.insert(recipe)
                 end
             end
         end
     
         -- Adds a recipe for producing steam from a boiler
+        local existing_recipe_names = {}
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
                 and fluidbox.filter.name == "steam" then
                 -- Exclude any boilers that use heat or fluid as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     local temperature = proto.target_temperature
-                    local recipe = custom_recipe()
-                    recipe.name = "impostor-steam-" .. temperature
-                    recipe.localised_name = {"", {"fluid-name.steam"}, " at ", temperature, {"fp.unit_celsius"}}
-                    recipe.sprite = "fluid/steam"
-                    recipe.category = "steam-" .. temperature
-                    recipe.order = "z-" .. temperature
-                    recipe.subgroup = {name="fluids", order="z", valid=true}
-                    recipe.energy = 1
-                    recipe.ingredients = {{type="fluid", name="water", amount=60}}
-                    recipe.products = {{type="fluid", name="steam", amount=60, temperature=temperature}}
-                    recipe.main_product = recipe.products[1]
+                    local recipe_name = "impostor-steam-" .. temperature
 
-                    gen_util.format_recipe_products_and_ingredients(recipe)
-                    gen_util.add_recipe_tooltip(recipe)
                     -- Prevent duplicate recipes, in case more than one boiler produces the same temperature of steam
-                    if all_recipes.map[recipe.name] == nil then
-                        gen_util.insert_proto(all_recipes, "recipes", recipe, true)
+                    if existing_recipe_names[recipe_name] == nil then
+                        existing_recipe_names[recipe_name] = true
+
+                        local recipe = custom_recipe()
+                        recipe.name = recipe_name
+                        recipe.localised_name = {"", {"fluid-name.steam"}, " at ", temperature, {"fp.unit_celsius"}}
+                        recipe.sprite = "fluid/steam"
+                        recipe.category = "steam-" .. temperature
+                        recipe.order = "z-" .. temperature
+                        recipe.subgroup = {name="fluids", order="z", valid=true}
+                        recipe.energy = 1
+                        recipe.ingredients = {{type="fluid", name="water", amount=60}}
+                        recipe.products = {{type="fluid", name="steam", amount=60, temperature=temperature}}
+                        recipe.main_product = recipe.products[1]
+
+                        gen_util.format_recipe_products_and_ingredients(recipe)
+                        gen_util.add_recipe_tooltip(recipe)
+                        gen_util.data_structure.insert(recipe)
                     end
                 end
             end
@@ -208,16 +213,17 @@ function generator.all_recipes()
 
         gen_util.format_recipe_products_and_ingredients(steam_recipe)
         gen_util.add_recipe_tooltip(steam_recipe)
-        gen_util.insert_proto(all_recipes, "recipes", steam_recipe, true)
+        gen_util.data_structure.insert(steam_recipe)
     end
     
-    return all_recipes
+    gen_util.data_structure.generate_map(false)
+    return gen_util.data_structure.get()
 end
 
 
 -- Returns all relevant items and fluids
 function generator.all_items()
-    local all_items = {types = {}, map = {}}
+    gen_util.data_structure.init("complex", "types", "items", "type")
 
     local function add_item(table, item)        
         local type = item.proto.type
@@ -266,17 +272,18 @@ function generator.all_items()
             }
 
             gen_util.add_item_tooltip(item)
-            gen_util.deep_insert_proto(all_items, "types", type, "items", item, true)
+            gen_util.data_structure.insert(item)
         end
     end
     
-    return all_items
+    gen_util.data_structure.generate_map(true)
+    return gen_util.data_structure.get()
 end
 
 
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
-    local all_machines = {categories = {}, map = {}, structure_type = "complex"}
+    gen_util.data_structure.init("complex", "categories", "machines", "category")
     
     local function generate_category_entry(category, proto)        
         -- First, determine if there is a valid sprite for this machine
@@ -351,7 +358,7 @@ function generator.all_machines()
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then
                     local machine = generate_category_entry(category, proto)
-                    gen_util.deep_insert_proto(all_machines, "categories", category, "machines", machine)
+                    gen_util.data_structure.insert(machine)
                 end
             end
 
@@ -362,7 +369,7 @@ function generator.all_machines()
                 if enabled and category ~= "basic-fluid" then
                     local machine = generate_category_entry(category, proto)
                     machine.mining = true
-                    gen_util.deep_insert_proto(all_machines, "categories", category, "machines", machine)
+                    gen_util.data_structure.insert(machine)
                 end
             end
         
@@ -370,7 +377,8 @@ function generator.all_machines()
         elseif proto.fluid then
             local machine = generate_category_entry(proto.name, proto)
             machine.speed = 1  -- pumping speed included in the recipe product-amount
-            gen_util.deep_insert_proto(all_machines, "categories", proto.name, "machines", machine)
+            machine.category = proto.name  -- unique category for every offshort pump
+            gen_util.data_structure.insert(machine)
         end
 
         -- Add machines that produce steam (ie. boilers)
@@ -397,50 +405,67 @@ function generator.all_machines()
                         local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy_usage / energy_per_unit
 
-                        gen_util.deep_insert_proto(all_machines, "categories", category, "machines", machine)
+                        gen_util.data_structure.insert(machine)
 
                         -- Add every boiler to the general steam category (steam without temperature)
                         local general_machine = util.table.deepcopy(machine)
                         general_machine.category = "general-steam"
-                        gen_util.deep_insert_proto(all_machines, "categories", "general-steam",
-                          "machines", general_machine)
+                        gen_util.data_structure.insert(general_machine)
                     end
                 end
             end
         end
     end
     
-    return all_machines
+    local function sorting_function(a, b)
+        if a.speed < b.speed then return true
+        elseif a.speed > b.speed then return false
+        elseif a.energy_usage < b.energy_usage then return true
+        elseif a.energy_usage > b.energy_usage then return false
+        elseif a.module_limit < b.module_limit then return true
+        elseif a.module_limit > b.module_limit then return false end
+    end
+
+    gen_util.data_structure.sort(sorting_function)
+    gen_util.data_structure.generate_map(false)
+    return gen_util.data_structure.get()
 end
 
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
-    local all_belts = {belts = {}, map = {}, structure_type = "simple"}
+    gen_util.data_structure.init("simple", "belts")
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
             local sprite = gen_util.determine_entity_sprite(proto)
             if sprite ~= nil then
-                gen_util.insert_proto(all_belts, "belts", {
+                gen_util.data_structure.insert{
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
                     rich_text = "[entity=" .. proto.name .. "]",
                     throughput = proto.belt_speed * 480
-                })
+                }
             end
         end
     end
 
-    return all_belts
+    local function sorting_function(a, b)
+        if a.throughput < b.throughput then return true
+        elseif a.throughput > b.throughput then return false end
+    end
+
+    gen_util.data_structure.sort(sorting_function)
+    gen_util.data_structure.generate_map(false)
+    return gen_util.data_structure.get()
 end
 
 
 -- Generates a table containing all fuels that can be used in a burner
 -- (only supports chemical fuels for now)
 function generator.all_fuels()
-    local all_fuels = {categories = {}, map = {}, structure_type = "complex"}
+    gen_util.data_structure.init("complex", "categories", "fuels", "category")
 
     -- Determine all the fuel categories that the machine prototypes use
     local used_fuel_categories = {}
@@ -461,7 +486,7 @@ function generator.all_fuels()
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
         if fuel_value and items.map[proto.name] and used_fuel_categories[fuel_category] ~= nil
           and fuel_value > 0 and fuel_value < 1e+21 then
-            gen_util.deep_insert_proto(all_fuels, "categories", fuel_category, "fuels", {
+            gen_util.data_structure.insert{
                 name = proto.name,
                 type = "item",
                 localised_name = proto.localised_name,
@@ -469,7 +494,7 @@ function generator.all_fuels()
                 category = fuel_category,
                 fuel_value = fuel_value,
                 emissions_multiplier = proto.fuel_emissions_multiplier
-            })
+            }
         end
     end
 
@@ -479,7 +504,7 @@ function generator.all_fuels()
         local fuel_value, fuel_category = proto.fuel_value, "fluid-fuel"
         -- Only use fuels that have actually been detected/accepted as fluids
         if fuel_value and fluids.map[proto.name] and fuel_value > 0 and fuel_value < 1e+21 then
-            gen_util.deep_insert_proto(all_fuels, "categories", fuel_category, "fuels", {
+            gen_util.data_structure.insert{
                 name = proto.name,
                 type = "fluid",
                 localised_name = proto.localised_name,
@@ -487,17 +512,26 @@ function generator.all_fuels()
                 category = fuel_category,
                 fuel_value = fuel_value,
                 emissions_multiplier = proto.emissions_multiplier
-            })
+            }
         end
     end
     
-    return all_fuels
+    local function sorting_function(a, b)
+        if a.fuel_value < b.fuel_value then return true
+        elseif a.fuel_value > b.fuel_value then return false
+        elseif a.emissions_multiplier < b.emissions_multiplier then return true
+        elseif a.emissions_multiplier > b.emissions_multiplier then return false end
+    end
+
+    gen_util.data_structure.sort(sorting_function)
+    gen_util.data_structure.generate_map(false)
+    return gen_util.data_structure.get()
 end
 
 
 -- Generates a table containing all available modules
 function generator.all_modules()
-    local all_modules = {categories = {}, map = {}}
+    gen_util.data_structure.init("complex", "categories", "modules", "category")
 
     for _, proto in pairs(game.item_prototypes) do
         if proto.type == "module" and not proto.has_flag("hidden") then
@@ -506,7 +540,7 @@ function generator.all_modules()
             
             local sprite = "item/" .. proto.name
             if game.is_valid_sprite_path(sprite) then
-                gen_util.deep_insert_proto(all_modules, "categories", proto.category, "modules", {
+                gen_util.data_structure.insert{
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
@@ -514,24 +548,25 @@ function generator.all_modules()
                     tier = proto.tier,
                     effects = proto.module_effects or {},
                     limitations = limitations
-                })
+                }
             end
         end
     end
 
-    return all_modules
+    gen_util.data_structure.generate_map(false)
+    return gen_util.data_structure.get()
 end
 
 
 -- Generates a table containing all available beacons
 function generator.all_beacons()
-    local all_beacons = {beacons = {}, map = {}, structure_type = "simple"}
+    gen_util.data_structure.init("simple", "beacons")
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then
             local sprite = gen_util.determine_entity_sprite(proto)
             if sprite ~= nil then
-                gen_util.insert_proto(all_beacons, "beacons", {
+                gen_util.data_structure.insert{
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
@@ -540,10 +575,21 @@ function generator.all_beacons()
                     module_limit = proto.module_inventory_size,
                     effectivity = proto.distribution_effectivity,
                     energy_usage = proto.energy_usage or proto.max_energy_usage or 0
-                })
+                }
             end
         end
     end
 
-    return all_beacons
+    local function sorting_function(a, b)
+        if a.module_limit < b.module_limit then return true
+        elseif a.module_limit > b.module_limit then return false
+        elseif a.effectivity < b.effectivity then return true
+        elseif a.effectivity > b.effectivity then return false
+        elseif a.energy_usage < b.energy_usage then return true
+        elseif a.energy_usage > b.energy_usage then return false end
+    end
+
+    gen_util.data_structure.sort(sorting_function)
+    gen_util.data_structure.generate_map(false)
+    return gen_util.data_structure.get()
 end
