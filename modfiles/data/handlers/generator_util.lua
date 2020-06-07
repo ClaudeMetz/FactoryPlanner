@@ -1,32 +1,99 @@
-local generator_util = {}
+local generator_util = {
+    data_structure = {}
+}
 
--- Inserts given prototype into given table t and adds it to t's map
--- Example: type_name = "recipes"
-function generator_util.insert_proto(t, type_name, proto, add_identifier)
-    if proto == nil then return end
-    table.insert(t[type_name], proto)
-    local id = #t[type_name]
-    proto.id = id
-    t.map[proto.name] = id
-    if add_identifier then proto.identifier = id end
+-- Local variables only touched during the single event where the generator runs, so desync-safe
+local data_structure, metadata = nil, nil
+
+-- Initializes the data and metadata for the given data structure
+function generator_util.data_structure.init(structure_type, main_structure_name, 
+  sub_structure_name, sub_structure_varname)
+    data_structure = {
+        [main_structure_name] = {},
+        structure_type = structure_type
+    }
+    metadata = {
+        main_structure_name = main_structure_name,
+        sub_structure_name = sub_structure_name,
+        sub_structure_varname = sub_structure_varname,
+        existing_sub_structure_names = {},
+        structure_type = structure_type
+    }
 end
 
--- Inserts given proto into a two layers deep table t
--- (category and type are generic terms here, describing the first and second level of t)
--- Example: category_name = "categories", category = "steam", type_name = "machines"
-function generator_util.deep_insert_proto(t, category_name, category, type_name, proto, add_identifier)
-    if proto == nil then return end
-
-    if t.map[category] == nil then
-        table.insert(t[category_name], {[type_name] = {}, map = {}, name = category})
-        local id = #t[category_name]
-        t[category_name][id].id = id
-        t.map[category] = id
+-- Inserts the given prototype into the correct part of the structure.
+function generator_util.data_structure.insert(prototype)
+    local function insert_prototype(prototype_table)
+        local next_id = #prototype_table + 1
+        prototype.id = next_id
+        prototype_table[next_id] = prototype
     end
 
-    local category_entry = t[category_name][t.map[category]]
-    generator_util.insert_proto(category_entry, type_name, proto)
-    if add_identifier then proto.identifier = t.map[category] .. "_" .. proto.id end
+    if metadata.structure_type == "simple" then
+        local prototype_table = data_structure[metadata.main_structure_name]
+        insert_prototype(prototype_table)
+
+    else  -- structure_type == "complex"
+        local category_table = data_structure[metadata.main_structure_name]
+        local category_name = prototype[metadata.sub_structure_varname]
+
+        -- Create sub_category, if it doesn't exist
+        local category_id = metadata.existing_sub_structure_names[category_name]
+        if not category_id then
+            category_id = #category_table + 1
+            metadata.existing_sub_structure_names[category_name] = category_id
+            local category_entry = {[metadata.sub_structure_name]={}, name=category_name, id=category_id}
+            category_table[category_id] = category_entry
+        end
+
+        local prototype_table = category_table[category_id][metadata.sub_structure_name]
+        insert_prototype(prototype_table) 
+    end
+end
+
+-- Applies the given sorting function to the data. Run before map generation.
+function generator_util.data_structure.sort(sorting_function)
+    if metadata.structure_type == "simple" then
+        table.sort(data_structure[metadata.main_structure_name], sorting_function)
+
+    else  -- structure_type == "complex"
+        for _, category_table in pairs(data_structure[metadata.main_structure_name]) do
+            table.sort(category_table[metadata.sub_structure_name], sorting_function)
+        end
+    end
+end
+
+-- Generates a '[prototype.name] -> prototype.id'-map for each part of the structure. Run after sorting.
+function generator_util.data_structure.generate_map(add_identifiers)
+    if metadata.structure_type == "simple" then
+        data_structure.map = {}
+        for _, prototype in pairs(data_structure[metadata.main_structure_name]) do
+            data_structure.map[prototype.name] = prototype.id
+            -- Identifiers only make sense for complex structures
+        end
+
+    else  -- structure_type == "complex"
+        data_structure.map = {}
+        for _, category_table in pairs(data_structure[metadata.main_structure_name]) do
+            data_structure.map[category_table.name] = category_table.id
+
+            category_table.map = {}
+            for _, prototype in pairs(category_table[metadata.sub_structure_name]) do
+                category_table.map[prototype.name] = prototype.id
+
+                if add_identifiers then
+                    prototype.identifier = category_table.id .. "_" .. prototype.id
+                end
+            end
+        end
+    end
+end
+
+-- Cleans up and returns the completed data structure
+function generator_util.data_structure.get()
+    local structure = data_structure
+    data_structure, metadata = nil, nil
+    return structure
 end
 
 
