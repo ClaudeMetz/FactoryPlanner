@@ -1,12 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    - 
-  Changes:
-    - 
   Bugfixes:
     - Fixed a bad mistake on my part that screwed up all the things
+    - Added a migration so your preferred belts, beacons and machines are not lost. Fuels will still be reset though.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.27
