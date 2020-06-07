@@ -225,15 +225,20 @@ end
 
 -- Saves changes to the module/beacon defaults
 function handle_mb_defaults_change(player, button)
+    local mb_defaults = get_preferences(player).mb_defaults
     local type = string.gsub(button.name, "fp_choose%-elem%-button_default_", "")
     local module_name = button.elem_value
 
-    -- Find the appropriate prototype from the list by its name
-    for _, category in pairs(global.all_modules.categories) do
-        for _, module_proto in pairs(category.modules) do
-            if module_proto.name == module_name then
-                get_preferences(player).mb_defaults[type] = module_proto
-                return
+    if module_name == nil then
+        mb_defaults[type] = nil
+    else
+        -- Find the appropriate prototype from the list by its name
+        for _, category in pairs(global.all_modules.categories) do
+            for _, module_proto in pairs(category.modules) do
+                if module_proto.name == module_name then
+                    mb_defaults[type] = module_proto
+                    return
+                end
             end
         end
     end

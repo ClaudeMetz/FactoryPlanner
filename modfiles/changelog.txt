@@ -7,7 +7,8 @@ Date: 00. 00. 0000
   Changes:
     - The belt/fuel/beacon/machine-choices in preferences are now sorted by their most important attributes. Also added some new attributes to the tooltips.
   Bugfixes:
-    - Fix a crash when attempting to repair certain subfactories
+    - Fixed a crash when attempting to repair certain subfactories
+    - Fixed that once set, module-preferences could not be unset anymore
     - Fixed an issue where the product picker would show two scroll bars in some cases
 
 ---------------------------------------------------------------------------------------------------
