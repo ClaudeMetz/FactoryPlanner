@@ -9,6 +9,8 @@ require("modules_dialog")
 
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function enter_modal_dialog(player, dialog_settings)
+    if player.gui.screen["fp_frame_modal_dialog"] then return end
+
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.modal_data = dialog_settings.modal_data or {}
@@ -18,7 +20,8 @@ function enter_modal_dialog(player, dialog_settings)
     
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
-    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings, ui_state.modal_data)
+    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
+      ui_state.modal_data)
     
     toggle_modal_dialog(player, flow_modal_dialog.parent)
     _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog, ui_state.modal_data)

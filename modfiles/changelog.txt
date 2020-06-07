@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Fixed a crash when attempting to repair certain subfactories
     - Fixed that once set, module-preferences could not be unset anymore
     - Fixed an issue where the product picker would show two scroll bars in some cases
+    - Potentially fixed a crash when trying to open a modal dialog while another one is open
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.26
