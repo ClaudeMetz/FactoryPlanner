@@ -15,17 +15,6 @@ function open_preferences_dialog(flow_modal_dialog)
     label_preferences_info.style.bottom_margin = 4
 
 
-    -- Alt action
-    local table_alt_actions = flow_modal_dialog.add{type="table", name="table_alt_actions", column_count=2}
-    table_alt_actions.style.horizontal_spacing = 16
-    table_alt_actions.style.margin = {8, 0}
-    table_alt_actions.add{type="label", name="label_alt_actions", caption={"", {"fp.preferences_alt_action"}, ":"}, style="fp_preferences_title_label", tooltip={"fp.preferences_alt_action_tt"}}
-
-    local items = {}
-    for action, index in pairs(global.alt_actions) do table.insert(items, {"fp.alt_action_" .. action}) end
-    table_alt_actions.add{type="drop-down", name="fp_drop_down_alt_action", items=items, selected_index=1}
-
-
     -- General+Production-preferences
     local function add_checkbox_preferences(type, preference_names)
         flow_modal_dialog.add{type="label", name="label_" .. type .. "_info", 
@@ -100,12 +89,6 @@ end
 function refresh_preferences_dialog(player)
     local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
     local preferences = get_preferences(player)
-
-
-    -- Alt action
-    local drop_down_alt_actions = flow_modal_dialog["table_alt_actions"]["fp_drop_down_alt_action"]
-    drop_down_alt_actions.selected_index = global.alt_actions[preferences.alt_action]
-
 
     -- General+Production preferences
     local function refresh_checkbox_preferences(type, preference_names, pref_table)
@@ -189,18 +172,6 @@ function create_default_prototype_category(flow, type, all_prototypes, default_p
             button.style = "fp_button_icon_medium_hidden"
         end
         button.tooltip = {"", tooltip, "\n", ui_util.attributes[type:sub(1, -2)](proto)}
-    end
-end
-
-
--- Saves the given alt_action change
-function handle_alt_action_change(player, selected_index)
-    for action, index in pairs(global.alt_actions) do
-        if selected_index == index then
-            get_preferences(player).alt_action = action
-            refresh_main_dialog(player)
-            return
-        end
     end
 end
 

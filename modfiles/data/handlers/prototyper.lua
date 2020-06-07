@@ -20,9 +20,6 @@ function prototyper.setup()
     for _, data_type in ipairs(data_types) do
         new["all_" .. data_type] = generator["all_" .. data_type]()
     end
-
-    -- Generate alt_actions table
-    global.alt_actions = remote_actions.util.determine_alt_actions()
 end
 
 -- Updates the relevant data of the given player to fit the new data

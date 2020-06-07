@@ -1,61 +1,38 @@
 remote_actions = {
-    util = {},
     fnei = {},
     wiiruf = {},
     recipebook = {}
 }
 
--- **** UTIL ****
--- Returns the alt_action if it is valid, returns the default otherwise
-function remote_actions.util.validate_alt_action(alt_action)
-    if alt_action ~= nil and global.alt_actions[alt_action] then return alt_action
-    else return "none" end
-end
-
--- Returns a table with the names of all valid alt-actions
-function remote_actions.util.determine_alt_actions()
-    local alt_actions = {["none"] = 1}
-
-    local remote_interfaces = {
-        [1] = {internal_name = "fnei", interface_name = "fnei"},
-        [2] = {internal_name = "wiiruf", interface_name = "wiiuf"},
-        [3] = {internal_name = "recipebook", interface_name = "RecipeBook"}
-    }
-
-    local action_index = table_size(alt_actions)
-    for _, remote_interface in ipairs(remote_interfaces) do
-        if remote.interfaces[remote_interface.interface_name] ~= nil
-          and remote.call(remote_interface.interface_name, "version")
-          == remote_actions[remote_interface.internal_name].version then
-
-            action_index = action_index + 1
-            alt_actions[remote_interface.internal_name] = action_index
-        end
-    end
-
-    return alt_actions
-end
+-- Maps the internal name of the mod to the interface name they use
+local name_interface_map = {fnei="fnei", wiiruf="wiiuf", recipebook="RecipeBook"}
 
 
--- The existance and API-version of these mods does not need to be checked here as
--- this function wouldn't be callable if they weren't valid
+-- The existance of these mods does not need to be checked here as
+-- this function wouldn't be callable if they didn't exist
 
 -- 'data' needs to contain 'item' (proto) and 'click'
 function remote_actions.show_item(player, remote_action, data)
-    remote_actions[remote_action].show_item(player, data.item, data.click)
+    local remote_version = remote.call(name_interface_map[remote_action], "version")
+    if remote_version == remote_actions[remote_action].version then
+        remote_actions[remote_action].show_item(player, data.item, data.click)
+    end
 end
 
 -- 'data' needs to contain 'recipe' (proto) and 'line_products'
 function remote_actions.show_recipe(player, remote_action, data)
-    -- Try to determine a main ingredient for this recipe
-    local main_product_name = nil
-    if data.recipe.main_product then
-        main_product_name = data.recipe.main_product.name
-    elseif #data.line_products == 1 then
-        main_product_name = data.line_products[1].name
-    end
+    local remote_version = remote.call(name_interface_map[remote_action], "version")
+    if remote_version == remote_actions[remote_action].version then
+        -- Try to determine a main ingredient for this recipe
+        local main_product_name = nil
+        if data.recipe.main_product then
+            main_product_name = data.recipe.main_product.name
+        elseif #data.line_products == 1 then
+            main_product_name = data.line_products[1].name
+        end
 
-    remote_actions[remote_action].show_recipe(player, data.recipe, main_product_name)
+        remote_actions[remote_action].show_recipe(player, data.recipe, main_product_name)
+    end
 end
 
 
