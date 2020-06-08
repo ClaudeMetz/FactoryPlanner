@@ -241,10 +241,13 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
                 local new_proto = tier_map[module.category.id][module.proto.tier + factor]
-                -- (TODO add error messages to this sometime)
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Line.replace(line, module, new_module)
+                else
+                    local direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
+                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, direction}
+                    ui_util.message.enqueue(player, message, "error", 1)
                 end
             end
 
@@ -252,7 +255,12 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
             if direction == "positive" then
                 if alt then
                     local new_amount = math.min(module.amount + 1, module.amount + limit)
-                    Line.change_module_amount(line, module, new_amount)
+                    if new_amount == module.amount then
+                        local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
+                        ui_util.message.enqueue(player, message, "error", 1)
+                    else
+                        Line.change_module_amount(line, module, new_amount)
+                    end
                 else
                     handle_tier_change(1)
                 end
@@ -260,7 +268,7 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
             else  -- direction == "negative"
                 if alt then
                     local new_amount = module.amount - 1
-                    if new_amount == 0 then 
+                    if new_amount == 0 then  -- no error message possible here
                         Line.remove(line, module)
                     else
                         Line.change_module_amount(line, module, new_amount)
@@ -304,10 +312,13 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
                 local new_proto = tier_map[module.category.id][module.proto.tier + factor]
-                -- (TODO add error messages to this sometime)
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Beacon.set_module(line.beacon, new_module)
+                else
+                    local direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
+                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, direction}
+                    ui_util.message.enqueue(player, message, "error", 1)
                 end
             end
 
@@ -315,8 +326,13 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
             if direction == "positive" then
                 if alt then
                     local new_amount = math.min(module.amount + 1, line.beacon.proto.module_limit)
-                    local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
-                    Beacon.set_module(line.beacon, new_module)
+                    if new_amount == module.amount then
+                        local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
+                        ui_util.message.enqueue(player, message, "error", 1)
+                    else
+                        local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
+                        Beacon.set_module(line.beacon, new_module)
+                    end
                 else
                     handle_tier_change(1)
                 end
@@ -324,7 +340,7 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
             else  -- direction == "negative"
                 if alt then
                     local new_amount = module.amount - 1
-                    if new_amount == 0 then 
+                    if new_amount == 0 then  -- no error message possible here
                         Line.remove_beacon(line)
                     else
                         local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
@@ -337,40 +353,42 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
 
         else  -- type == "beacon"
             local beacon = line.beacon
-            -- (TODO add error messages to this sometime)
+
+            local function handle_tier_change(factor)
+                local new_proto = global.all_beacons.beacons[beacon.proto.id + factor]
+                if new_proto ~= nil then
+                    local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
+                      beacon.module.amount, beacon.total_amount)
+                    Line.set_beacon(line, new_beacon)
+                else
+                    local direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
+                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.beacon"}, direction}
+                    ui_util.message.enqueue(player, message, "error", 1)
+                end
+            end
 
             -- alt modifies the beacon amount, no alt modifies the beacon tier
             if direction == "positive" then
-                if alt then
+                if alt then -- no error message possible here
                     local new_beacon = Beacon.init_by_protos(beacon.proto, beacon.amount + 1, beacon.module.proto,
                       beacon.module.amount, beacon.total_amount)
                     Line.set_beacon(line, new_beacon)
                 else
-                    local new_proto = global.all_beacons.beacons[beacon.proto.id + 1]
-                    if new_proto ~= nil then
-                        local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
-                          beacon.module.amount, beacon.total_amount)
-                        Line.set_beacon(line, new_beacon)
-                    end
+                    handle_tier_change(1)
                 end
 
             else  -- direction == "negative"
                 if alt then
                     local new_amount = beacon.amount - 1
-                    if new_amount == 0 then 
+                    if new_amount == 0 then  -- no error message possible here
                         Line.remove_beacon(line)
                     else
                         local new_beacon = Beacon.init_by_protos(beacon.proto, new_amount, beacon.module.proto,
-                      beacon.module.amount, beacon.total_amount)
-                    Line.set_beacon(line, new_beacon)
-                    end
-                else
-                    local new_proto = global.all_beacons.beacons[beacon.proto.id - 1]
-                    if new_proto ~= nil then
-                        local new_beacon = Beacon.init_by_protos(new_proto, beacon.amount, beacon.module.proto,
                           beacon.module.amount, beacon.total_amount)
                         Line.set_beacon(line, new_beacon)
                     end
+                else
+                    handle_tier_change(-1)
                 end
             end
         end
