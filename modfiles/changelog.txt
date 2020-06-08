@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
-    - Added some warnings when automatically adding your preferred machine or beacon does not work for compatibility reasons
+    - Added some warnings when automatically adding your preferred machine or beacon does not work for compatibility reasons. Also added some warning messages when up/downgrading machines and beacons.
   Bugfixes:
     - 
 
