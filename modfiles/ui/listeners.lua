@@ -447,7 +447,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
             local split_string = cutil.split(element_name, "_")
             if split_string[5] == "Fuel" then
-                handle_fuel_button_click(player, split_string[4], click, event.alt)
+                handle_fuel_button_click(player, split_string[4], click, direction, event.alt)
             else
                 handle_item_button_click(player, split_string[4], split_string[5], split_string[6],
                   click, direction, event.alt)
