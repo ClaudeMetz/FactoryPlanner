@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - 
   Changes:
+    - You can now change fuels (up/downgrade) of a recipe line by shift/ctrl-clicking them
     - Added some warnings when automatically adding your preferred machine or beacon does not work for compatibility reasons. Also added some warning messages when up/downgrading machines and beacons.
   Bugfixes:
     - 
