@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    - 
+  Changes:
+    - Added some warnings when automatically adding your preferred machine or beacon does not work for compatibility reasons
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.28
 Date: 07. 06. 2020
   Bugfixes:
