@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.29
+Date: 09. 06. 2020
   Features:
     - Added an indication to the machines/modules in the utility dialog that shows whether you have the needed machines/modules in your inventory
   Changes:
