@@ -5,17 +5,19 @@ builder = {}
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(subfactory, products, timescale)
     for _, product in ipairs(products) do
-        local prod = {name=product.name, type=product.type}
+        -- Amounts will depend on the value of the belts/lanes-setting
         local req_amount = {
             defined_by = product.defined_by,
             amount = product.amount
         }
-        if product.defined_by == "belts" then  -- Make adjustments if this is being defined by belts
+
+        if product.defined_by ~= "amount" then  -- Make adjustments if this is being defined by belts/lanes
             local belt_proto = global.all_belts.belts[global.all_belts.map[product.belt_name]]
             req_amount.timescale = timescale
             req_amount.belt_proto = belt_proto
         end
 
+        local prod = {name=product.name, type=product.type}
         local item = Item.init_by_item(prod, "Product", 0, req_amount)
         Subfactory.add(subfactory, item)
     end

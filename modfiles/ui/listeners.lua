@@ -21,10 +21,17 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
           event.setting == "fp_alt_action" then
             refresh_main_dialog(player, true)
 
-        -- Refreshes the view selection or recipe machine buttons appropriately
-        elseif event.setting == "fp_view_belts_or_lanes" or
-          event.setting == "fp_indicate_rounding" then
+        -- Refreshes the recipe machine buttons appropriately
+        elseif event.setting == "fp_indicate_rounding" then
             refresh_production_pane(player)
+
+        -- Adjusts all the products that are defined by belts/lanes
+        elseif event.setting == "fp_view_belts_or_lanes" then
+            local player_table = get_table(player)
+            local defined_by = player_table.settings.belts_or_lanes
+            Factory.update_product_definitions(player_table.factory, defined_by)
+            Factory.update_product_definitions(player_table.archive, defined_by)
+            refresh_main_dialog(player, true)
 
         end
     end
