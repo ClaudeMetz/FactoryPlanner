@@ -141,10 +141,9 @@ end
 -- Generates the module condition text for beacons, so it can be updated when the selected beacon changes
 function generate_module_condition_text(modal_data)
     if (modal_data.empty_slots == 1) then
-        return {"", {"fp.module_instruction_2_1"}, "1"}
+        return {"fp.module_instruction_2", "1", ""}
     else
-        return {"", {"fp.module_instruction_2_1"}, {"fp.module_instruction_2_2"},
-          modal_data.empty_slots}
+        return {"fp.module_instruction_2", {"fp.module_instruction_2_addendum"}, modal_data.empty_slots}
     end
 end
 

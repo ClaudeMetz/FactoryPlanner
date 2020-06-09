@@ -122,6 +122,21 @@ function Subfactory.get_component_data(self)
 end
 
 
+-- Updates every top level product of this Subfactory to the given product definition type
+function Subfactory.update_product_definitions(self, new_defined_by)
+    for _, product in pairs(Subfactory.get_in_order(self, "Product")) do
+        local req_amount = product.required_amount
+        local current_defined_by = req_amount.defined_by
+        if current_defined_by ~= "amount" and new_defined_by ~= current_defined_by then
+            req_amount.defined_by = new_defined_by
+
+            local multiplier = (new_defined_by == "belts") and 0.5 or 2
+            req_amount.amount = req_amount.amount * multiplier
+        end
+    end
+end
+
+
 -- Updates the validity of the whole subfactory
 -- Floors can be checked in any order and separately without problem
 function Subfactory.update_validity(self)

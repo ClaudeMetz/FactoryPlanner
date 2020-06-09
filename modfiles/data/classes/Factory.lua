@@ -35,6 +35,15 @@ function Factory.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
 end
 
+
+-- Updates every top level product of this Factory to the given product definition type
+function Factory.update_product_definitions(self, new_defined_by)
+    for _, subfactory in ipairs(Factory.get_in_order(self, "Subfactory")) do
+        Subfactory.update_product_definitions(subfactory, new_defined_by)
+    end
+end
+
+
 -- Updates the validity of the factory from top to bottom
 function Factory.update_validity(self)
     local classes = {Subfactory = "Subfactory"}
