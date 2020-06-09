@@ -39,7 +39,7 @@ function open_options_dialog(flow_modal_dialog, modal_data)
 
     flow_modal_dialog.parent.caption = {"", {"fp.set"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_options_text", caption=modal_data.text}
-    
+
     local flow_options = flow_modal_dialog.add{type="flow", name="flow_options", direction="vertical"}
     flow_options.style.padding = {6, 4, 10, 10}
     flow_options.style.vertical_spacing = 10
@@ -90,7 +90,7 @@ function add_numeric_option(table, field)
     textfield.style.width = 75
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then textfield.focus() end
-    
+
     local caption = (field.tooltip ~= nil) and {"", field.caption, " [img=info]"} or field.caption
     local label = table.add{type="label", name="label_option_caption", caption=caption, tooltip=field.tooltip}
     label.style.font = "fp-font-15p"

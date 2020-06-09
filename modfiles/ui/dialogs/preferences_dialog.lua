@@ -9,7 +9,7 @@ function open_preferences_dialog(flow_modal_dialog)
 
 
     -- Info
-    local label_preferences_info = flow_modal_dialog.add{type="label", name="label_preferences_info", 
+    local label_preferences_info = flow_modal_dialog.add{type="label", name="label_preferences_info",
       caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
     label_preferences_info.style.bottom_margin = 4
@@ -17,7 +17,7 @@ function open_preferences_dialog(flow_modal_dialog)
 
     -- General+Production-preferences
     local function add_checkbox_preferences(type, preference_names)
-        flow_modal_dialog.add{type="label", name="label_" .. type .. "_info", 
+        flow_modal_dialog.add{type="label", name="label_" .. type .. "_info",
           caption={"", {"fp.preferences_title_" .. type}, ":"}, style="fp_preferences_title_label",
           tooltip={"fp.preferences_title_" .. type .. "_tt"}}
         local table_prefs = flow_modal_dialog.add{type="table", name="table_" .. type .. "_preferences", column_count=1}
@@ -35,7 +35,7 @@ function open_preferences_dialog(flow_modal_dialog)
 
 
     -- Module/Beacon defaults
-    flow_modal_dialog.add{type="label", name="label_module_beacon_defaults", 
+    flow_modal_dialog.add{type="label", name="label_module_beacon_defaults",
       caption={"", {"fp.preferences_title_mb_defaults"}, ":"}, style="fp_preferences_title_label",
       tooltip={"fp.preferences_title_mb_defaults_tt"}}
     local flow_mb_defaults = flow_modal_dialog.add{type="flow", name="flow_module_beacon_defaults",
@@ -47,7 +47,7 @@ function open_preferences_dialog(flow_modal_dialog)
         flow_mb_defaults.add{type="label", caption={"", {"fp.c" .. kind}, ": "}}
         local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
           name="fp_choose-elem-button_default_" .. kind, style="fp_sprite-button_choose_elem"}
-        choose_elem_button.elem_filters = {{filter="type", type="module"}, 
+        choose_elem_button.elem_filters = {{filter="type", type="module"},
           {filter="flag", flag="hidden", mode="and", invert=true}}
         choose_elem_button.style.right_margin = 12
     end
@@ -59,7 +59,7 @@ function open_preferences_dialog(flow_modal_dialog)
     local textfield_beacon_count = flow_mb_defaults.add{type="textfield", name="fp_textfield_default_beacon_count"}
     ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
     textfield_beacon_count.style.width = 42
-    
+
 
     -- Prototype preferences
     local function add_prototype_preference(type)
@@ -136,14 +136,14 @@ function refresh_preferences_dialog(player)
                 local all_prototypes = category[type]
 
                 if table_size(all_prototypes) > 1 then
-                    table_all_categories.add{type="label", name="label_" .. category_id, 
+                    table_all_categories.add{type="label", name="label_" .. category_id,
                       caption="'" .. category.name .. "':"}
-                    
+
                     local default_prototype = default_prototypes.prototypes[category_id]
                     create_default_prototype_category(table_all_categories, type, all_prototypes,
                       default_prototype, category_id, 8)
                 end
-            end           
+            end
 
         end
     end
@@ -163,12 +163,12 @@ function create_default_prototype_category(flow, type, all_prototypes, default_p
     for proto_id, proto in ipairs(all_prototypes) do
         local button = table_prototypes.add{type="sprite-button", name="fp_sprite-button_preferences_" .. type .. "_"
           .. proto_id .. category_addendum, sprite=proto.sprite, mouse_button_filter={"left"}}
-        
+
         local tooltip = proto.localised_name
         if default_prototype.name == proto.name then
             button.style = "fp_button_icon_medium_green"
             tooltip = {"", tooltip, " (", {"fp.selected"}, ")"}
-        else 
+        else
             button.style = "fp_button_icon_medium_hidden"
         end
         button.tooltip = {"", tooltip, "\n", ui_util.attributes[type:sub(1, -2)](proto)}
@@ -179,10 +179,10 @@ end
 -- Saves the given general- or production-preference change
 function handle_checkbox_preference_change(player, type, preference, state)
     local preferences = get_preferences(player)
-    
+
     if type == "general" then
         preferences[preference] = state
-    
+
         if preference == "ingredient_satisfaction" or preference == "round_button_numbers" then
             if state == true then calculation.util.update_all_ingredient_satisfactions(player) end
             refresh_production_pane(player)

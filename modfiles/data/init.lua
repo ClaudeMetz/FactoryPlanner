@@ -21,7 +21,7 @@ require("data.calculation.interface")
 function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
-    
+
     -- Run through the prototyper without the need to apply (run) it on any player
     prototyper.setup()
     prototyper.finish()
@@ -41,7 +41,7 @@ function handle_configuration_change()
     for index, player in pairs(game.players) do
         -- Migrate player_table data
         attempt_player_table_migration(player)
-        
+
         -- Create or update player_table
         local player_table = update_player_table(player)
 
@@ -102,7 +102,7 @@ function update_player_table(player)
         local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
         if #subfactories > 0 then ui_util.context.set_subfactory(player, subfactories[1]) end
     end
-    
+
     return player_table
 end
 
@@ -112,7 +112,7 @@ function reload_settings(player)
     -- Delete the whole table first in case a setting got removed
     global.players[player.index].settings = {}
     local settings_table = global.players[player.index].settings
-    
+
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
@@ -134,8 +134,8 @@ function reload_preferences(player)
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
     preferences.round_button_numbers = preferences.round_button_numbers or false
-    
-    preferences.optional_production_columns = preferences.optional_production_columns or 
+
+    preferences.optional_production_columns = preferences.optional_production_columns or
       {["pollution"] = false, ["line_comments"] = false}
 
     preferences.mb_defaults = preferences.mb_defaults or
@@ -155,17 +155,17 @@ function reset_ui_state(player)
     -- Delete the whole table first in case ui_state parameter got removed
     global.players[player.index].ui_state = {}
     local ui_state_table = global.players[player.index].ui_state
-    
+
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.current_activity = nil  -- The current unique main dialog activity
     ui_state_table.last_action = {}  -- The last user action, used for rate limiting
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
-    
+
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
-    
+
     ui_state_table.flags = {
         floor_total = false,  -- Whether the floor or subfactory totals are displayed
         archive_open = false,  -- Wether the players subfactory archive is currently open

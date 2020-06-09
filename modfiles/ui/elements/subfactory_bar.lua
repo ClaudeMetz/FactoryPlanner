@@ -40,7 +40,7 @@ function refresh_subfactory_bar(player, full_refresh)
                 current_table.style.horizontal_spacing = 6
                 current_table_index = current_table_index + 1
                 width_remaining = max_width
-                
+
                 attempt_element_creation(player, current_table, width_remaining, subfactory, selected)
             else
                 width_remaining = width_remaining - width_used - table_spacing
@@ -63,7 +63,7 @@ function attempt_element_creation(player, table, width_remaining, subfactory, se
     local style = selected and "fp_subfactory_sprite_button_selected" or "fp_subfactory_sprite_button"
     local button = table.add{type="button", name="fp_sprite-button_subfactory_" .. subfactory.id,
       style=style, mouse_button_filter={"left-and-right"}}
-    
+
     local flow = button.add{type="flow", direction="horizontal"}
     flow.ignored_by_interaction = true
 
@@ -126,7 +126,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
-        
+
         refresh_current_activity(player)
 
     -- Change selected subfactory
@@ -145,7 +145,7 @@ function handle_subfactory_element_click(player, subfactory_id, click, direction
             elseif action == "delete" then
                 handle_subfactory_deletion(player)
             end
-        
+
         else  -- refresh if the selected subfactory is indeed changed
             ui_state.current_activity = nil
             refresh_main_dialog(player)

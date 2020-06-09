@@ -52,11 +52,11 @@ data.raw["gui-style"].default["fp_subfactory_sprite_button_selected"] = {
     parent = "fp_subfactory_sprite_button",
     default_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
+        --shadow = default_dirt
     },
     hovered_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
+        --shadow = default_dirt
     }
 }
 
@@ -65,11 +65,11 @@ data.raw["gui-style"].default["fp_button_selected"] = {
     parent = "button",
     default_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
+        --shadow = default_dirt
     },
     hovered_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
+        --shadow = default_dirt
     }
 }
 
@@ -90,7 +90,7 @@ data.raw["gui-style"].default["fp_button_timescale_selected"] = {
     disabled_font_color = {},  -- pure black
     disabled_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
+        --shadow = default_dirt
     }
 }
 
@@ -107,7 +107,7 @@ data.raw["gui-style"].default["fp_view_selection_button_selected"] = {
     disabled_font_color = {},  -- pure black
     disabled_graphical_set = {
         base = {position = {51, 17}, corner_size = 8},
-        shadow = default_dirt
+        --shadow = default_dirt
     }
 }
 
@@ -201,7 +201,7 @@ for state, y in pairs(icon_state_indexes) do
             scale = 1
         },
         -- The disabled set is the same as the default one, by default
-        disabled_graphical_set = 
+        disabled_graphical_set =
         {
             filename = "__factoryplanner__/graphics/icon_backgrounds.png",
             priority = "extra-high-no-scale",

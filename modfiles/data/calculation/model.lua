@@ -41,7 +41,7 @@ function model.update_floor(floor_data, aggregate)
                     subfloor_aggregate.Product[type][name] = aggregate.Product[type][name]
                 end
             end
-            
+
             local floor_products = structures.class.to_array(subfloor_aggregate.Product)
             model.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
@@ -50,7 +50,7 @@ function model.update_floor(floor_data, aggregate)
                 local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
                 subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
             end
-            
+
             -- Update the main aggregate with the results
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
             aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
@@ -74,7 +74,7 @@ function model.update_floor(floor_data, aggregate)
                     end
                 end
             end
-            
+
             update_main_aggregate("Byproduct", "Byproduct")
             update_main_aggregate("Product", "Product")
             update_main_aggregate("Ingredient", "Product")
@@ -163,9 +163,9 @@ function model.update_line(line_data, aggregate)
 
     -- Limit the machine_count by reducing the production_ratio, if necessary
     if line_data.machine_limit.limit ~= nil then
-        local capped_production_ratio = calculation.util.determine_production_ratio(line_data.machine_proto, 
+        local capped_production_ratio = calculation.util.determine_production_ratio(line_data.machine_proto,
           line_data.recipe_proto, line_data.total_effects, line_data.machine_limit.limit, line_data.timescale)
-        production_ratio = line_data.machine_limit.hard_limit and 
+        production_ratio = line_data.machine_limit.hard_limit and
           capped_production_ratio or math.min(production_ratio, capped_production_ratio)
     end
 
@@ -182,7 +182,7 @@ function model.update_line(line_data, aggregate)
             return (item.amount * production_ratio)
         end
     end
-    
+
     -- Determine byproducts
     local Byproduct = structures.class.init()
     for _, byproduct in pairs(byproducts) do
@@ -210,7 +210,7 @@ function model.update_line(line_data, aggregate)
                 structures.aggregate.add(aggregate, "Byproduct", product, overflow_amount)
                 product_amount = product_demand  -- desired amount
             end
-            
+
             structures.class.add(Product, product, product_amount)
             structures.aggregate.subtract(aggregate, "Product", product, product_amount)
         end
@@ -220,7 +220,7 @@ function model.update_line(line_data, aggregate)
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(line_data.recipe_proto.ingredients) do
         local ingredient_amount = determine_amount_with_productivity(ingredient)
-        
+
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
         -- Reduce the line-byproducts and -ingredients so only the net amounts remain
@@ -258,14 +258,14 @@ function model.update_line(line_data, aggregate)
       machine_count, line_data.total_effects)
     local pollution = calculation.util.determine_pollution(machine_proto, line_data.recipe_proto,
       line_data.fuel_proto, line_data.total_effects, energy_consumption)
-    
+
     local fuel_result = nil
     local energy_type = line_data.machine_proto.energy_type
 
     if energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
-        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner, 
+        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
         line_data.fuel_proto.fuel_value, line_data.timescale)
-        
+
         local fuel = {type=line_data.fuel_proto.type, name=line_data.fuel_proto.name, amount=fuel_amount}
         structures.aggregate.add(aggregate, "Product", fuel)  -- add here so fuel demand can be fulfilled
 
@@ -282,7 +282,7 @@ function model.update_line(line_data, aggregate)
     aggregate.energy_consumption = aggregate.energy_consumption + energy_consumption
     aggregate.pollution = aggregate.pollution + pollution
 
-    
+
     -- Update the actual line with the calculated results
     calculation.interface.set_line_result {
         player_index = aggregate.player_index,

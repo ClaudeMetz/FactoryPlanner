@@ -12,7 +12,7 @@ function calculation.update(player, subfactory, refresh)
         local player_table = get_table(player)
         -- Save the active subfactory in global so the model doesn't have to pass it around
         player_table.active_subfactory = subfactory
-        
+
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
         model.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
@@ -48,7 +48,7 @@ end
 function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
-    
+
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
 
@@ -58,7 +58,7 @@ function calculation.interface.set_subfactory_result(result)
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
         product.amount = Item.required_amount(product) - product_result_amount
     end
-    
+
     calculation.util.update_items(subfactory, result, "Byproduct")
     calculation.util.update_items(subfactory, result, "Ingredient")
 
@@ -76,7 +76,7 @@ function calculation.interface.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
-    
+
     line.machine.count = result.machine_count
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
@@ -151,7 +151,7 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
         end
 
         -- Subfloor
-        if line.subfloor ~= nil then line_data.subfloor = 
+        if line.subfloor ~= nil then line_data.subfloor =
           calculation.util.generate_floor_data(player, subfactory, line.subfloor) end
 
         table.insert(floor_data.lines, line_data)
@@ -167,7 +167,7 @@ function calculation.util.update_items(object, result, class_name)
 
     for _, item in pairs(_G[object.class].get_in_order(object, class_name)) do
         local item_result_amount = items[item.proto.type][item.proto.name]
-        
+
         if item_result_amount == nil then
             _G[object.class].remove(object, item)
         else
@@ -192,7 +192,7 @@ end
 -- Determines the net ingredients of this floor
 function calculation.util.determine_net_ingredients(floor, aggregate)
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-        if line.subfloor ~= nil then 
+        if line.subfloor ~= nil then
             calculation.util.determine_net_ingredients(line.subfloor, aggregate)
         else
             for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
@@ -218,7 +218,7 @@ end
 -- Goes through all ingredients (again), determining their satisfied_amounts
 function calculation.util.update_ingredient_satisfaction(floor, aggregate)
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
-        if line.subfloor ~= nil then 
+        if line.subfloor ~= nil then
             local aggregate_ingredient_copy = util.table.deepcopy(aggregate.Ingredient)
             calculation.util.update_ingredient_satisfaction(line.subfloor, aggregate)
 
@@ -264,7 +264,7 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
         local launch_sequence_time = 41.25 / timescale  -- in seconds
         launch_delay = launch_sequence_time * production_ratio
     end
-    
+
     local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
     return ((machine_prod_ratio / (machine_speed / recipe_proto.energy)) / timescale) + launch_delay
@@ -278,7 +278,7 @@ function calculation.util.determine_production_ratio(machine_proto, recipe_proto
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
     if machine_proto.category == "rocket-building" then
         -- Formula reduced by Wolfram Alpha
-        return ((4 * machine_limit * machine_speed * timescale) / 
+        return ((4 * machine_limit * machine_speed * timescale) /
           ((165 * machine_speed) + (4 * recipe_proto.energy)) * productivity_multiplier)
     else
         return (machine_limit * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier)

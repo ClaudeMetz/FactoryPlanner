@@ -13,7 +13,7 @@ function refresh_production_table(player)
     -- Production table needs to be destroyed to change it's column count
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
-    
+
     local column_count = 9
     for _, optional_column in pairs(optional_columns) do
         if optional_column == true then column_count = column_count + 1 end
@@ -48,11 +48,11 @@ function refresh_production_table(player)
                 button.style.left_padding = 1
                 button.style.right_padding = 1
             end
-            
+
             -- Table titles
             local title_strings = {
                 {name="recipe", label={"fp.recipe"}, alignment="middle-center"},
-                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}, alignment="middle-center"}, 
+                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}, alignment="middle-center"},
                 {name="machine", label={"fp.cmachine"}, alignment="middle-center"},
                 {name="modules", label={"fp.cmodules"}, alignment="middle-center"},
                 {name="beacons", label={"fp.cbeacons"}, alignment="middle-center"},
@@ -101,7 +101,7 @@ function create_line_table_row(player, line)
 
     -- Recipe button
     refresh_recipe_button(player, line, table_production)
-    
+
 
     -- Percentage textfield
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
@@ -119,7 +119,7 @@ function create_line_table_row(player, line)
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
     if line.machine.proto.module_limit > 0 then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
-            create_module_button(flow_modules, line, module, "module", "fp_sprite-button_line_module_" .. line.id 
+            create_module_button(flow_modules, line, module, "module", "fp_sprite-button_line_module_" .. line.id
               .. "_" .. module.id)
         end
 
@@ -149,7 +149,7 @@ function create_line_table_row(player, line)
             local m = (beacon.amount == 1) and {"fp.beacon"} or {"fp.beacons"}
             local b = (beacon.total_amount ~= nil) and {"", " (", {"fp.total"}, ": ", beacon.total_amount, ")"} or ""
             local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "beacon_beacon", true)
-            
+
             local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_"
               .. line.id, sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
               mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
@@ -159,19 +159,19 @@ function create_line_table_row(player, line)
             if beacon.total_amount ~= nil then ui_util.add_overlay_sprite(button_beacon, "fp_sprite_purple_circle", 32) end
         end
     end
-    
+
 
     -- Energy label (don't add pollution to the tooltip if it gets it's own column)
     local pollution_line = (optional_columns.pollution) and "" or {"", "\n", {"fp.cpollution"}, ": ",
       ui_util.format_SI_value(line.pollution, "P/s", 3)}
-    local label_energy = table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
+    table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
       ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
 
 
     -- Pollution label
     if optional_columns.pollution then
-        local label_pollution = table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
+        table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
           caption=ui_util.format_SI_value(line.pollution, "P/s", 3),
           tooltip={"", ui_util.format_SI_value(line.pollution, "P/s", 5)}}
     end
@@ -182,7 +182,7 @@ function create_line_table_row(player, line)
     create_item_button_flow(player_table, table_production, line, "Byproduct", "red")
     create_item_button_flow(player_table, table_production, line, "Ingredient", "green")
 
-    
+
     -- Comment textfield
     if optional_columns.line_comments then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
@@ -236,7 +236,7 @@ function refresh_machine_table(player, line, table_production)
     -- Create or clear the machine flow
     local table_machines = table_production["flow_line_machines_" .. line.id]
     if table_machines == nil then
-        table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id, 
+        table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,
         column_count=#line.machine.category.machines}
         table_machines.style.horizontal_spacing = 3
         table_machines.style.horizontal_align = "center"
@@ -277,9 +277,9 @@ function refresh_machine_table(player, line, table_production)
 
         local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "machine", true)
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
-          sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"}, 
-          tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text, 
-          ui_util.generate_module_effects_tooltip(total_effects, machine_proto, player, subfactory), tutorial_tooltip}}
+          sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"},
+          tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text,
+          ui_util.generate_module_effects_tooltip(total_effects, machine_proto), tutorial_tooltip}}
         button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
 
@@ -295,11 +295,11 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local line = ui_state.context.line
     local selected = (machine_proto.id == current_machine_proto_id)
 
-    local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto, 
+    local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto,
       Line.get_total_effects(line, player), line.uncapped_production_ratio, subfactory.timescale)
     machine_count = ui_util.format_number(machine_count, 4)
     button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
-    
+
     -- Table to easily determine the appropriate style dependent on button_size and select-state
     local styles = {
         [32] = {
@@ -376,7 +376,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
     local function create_item_button(item, indication)
         local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
           item.proto.type, item.amount, math.ceil(line.machine.count))
-            
+
         if raw_amount == nil or raw_amount > margin_of_error then
             -- Determine potential different button style and the potential satisfaction line
             local actual_style, satisfaction_line, indication = style, "", (indication or "")
@@ -384,8 +384,8 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
             if item.proto.type == "entity" then
                 actual_style = "fp_button_icon_medium_blank"
 
-            elseif class == "Product" and line.priority_product_proto ~= nil and 
-                line.priority_product_proto.type == item.proto.type and 
+            elseif class == "Product" and line.priority_product_proto ~= nil and
+                line.priority_product_proto.type == item.proto.type and
                 line.priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
 
@@ -424,7 +424,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
               tooltip=tooltip, mouse_button_filter={"left-and-right"}}
         end
     end
-    
+
     -- Create all the buttons of the given class
     for _, item in ipairs(Line.get_in_order(line, class)) do
         create_item_button(item)

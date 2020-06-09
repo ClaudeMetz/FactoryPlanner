@@ -1,4 +1,4 @@
--- Creates the production pane that displays 
+-- Creates the production pane that displays
 function add_production_pane_to(main_dialog)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
 
@@ -14,7 +14,7 @@ function add_production_pane_to(main_dialog)
     button_refresh.style.left_margin = 8
 
     -- Title
-    local title = table_titlebar.add{type="label", name="label_production_pane_title", 
+    local title = table_titlebar.add{type="label", name="label_production_pane_title",
       caption={"", "  ", {"fp.production"}, " "}}
     title.style.font = "fp-font-20p"
     title.style.top_padding = 2
@@ -59,7 +59,7 @@ function add_production_pane_to(main_dialog)
 
 
     -- Info label
-    local info = flow.add{type="label", name="label_production_info", 
+    local info = flow.add{type="label", name="label_production_info",
       caption={"", "   (",  {"fp.production_info"}, ")"}}
     info.visible = false
 
@@ -91,7 +91,7 @@ function refresh_production_pane(player)
     table_titlebar.visible = (subfactory ~= nil and subfactory.valid)
 
     -- Configure Floor labels and buttons
-    if subfactory ~= nil and subfactory.valid then        
+    if subfactory ~= nil and subfactory.valid then
         local floor = ui_state.context.floor
 
         -- Refresh button
@@ -110,7 +110,7 @@ function refresh_production_pane(player)
 
         -- TopLevelItem-amount toggle
         table_titlebar["fp_button_item_amount_toggle"].visible = (floor.level > 1)
-        
+
         -- Update the dynamic parts of the view state buttons
         local state_existed = (ui_state.view_state ~= nil)
         refresh_view_state(player, subfactory)
@@ -129,7 +129,7 @@ function refresh_production_pane(player)
                 button.tooltip = {"", {"fp.items_per_timescale"}, " ", timescale, ".",
                   "\n", {"fp.cycle_production_views"}}
             elseif view.name == "belts_or_lanes" then
-                local belts_lanes_label = (player_table.settings.belts_or_lanes == "belts") 
+                local belts_lanes_label = (player_table.settings.belts_or_lanes == "belts")
                   and {"fp.belts"} or {"fp.lanes"}
                 button.tooltip = {"", {"fp.belts_or_lanes", belts_lanes_label}, "\n", {"fp.cycle_production_views"}}
             end

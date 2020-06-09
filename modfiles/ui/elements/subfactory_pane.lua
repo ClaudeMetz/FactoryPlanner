@@ -8,7 +8,7 @@ function add_subfactory_pane_to(main_dialog)
     table_subfactory.style.vertically_squashable = false
     table_subfactory.style.height = 153
     table_subfactory.style.bottom_margin = 10
-    
+
     local player = game.get_player(main_dialog.player_index)
     local pane_width = (get_ui_state(player).main_dialog_dimensions.width - 2*18) / 4
     local panes = {"info", "ingredient", "product", "byproduct"}
@@ -33,7 +33,7 @@ function add_subfactory_pane_to(main_dialog)
             item_table.style.top_margin = 4
         end
     end
-    
+
     refresh_subfactory_pane(player)
 end
 
@@ -44,10 +44,10 @@ function refresh_subfactory_pane(player)
 
     local view_state = ui_state.view_state
     if view_state == nil then return end
-    
+
     local table_subfactory = player.gui.screen["fp_frame_main_dialog"]["table_subfactory_pane"]
     if table_subfactory == nil then return end
-    
+
     local subfactory = ui_state.context.subfactory
     table_subfactory.visible = (subfactory ~= nil and subfactory.valid)
 
@@ -64,16 +64,16 @@ end
 function refresh_item_table(player, class)
     local ui_state = get_ui_state(player)
     local ui_name = class:gsub("^%u", string.lower)
-    
+
     local item_table = player.gui.screen["fp_frame_main_dialog"]["table_subfactory_pane"]
       ["flow_" .. ui_name]["scroll-pane"]["item_table"]
     item_table.clear()
-    
+
     local subfactory = ui_state.context.subfactory
     local items = nil
     local display_mode = (ui_state.flags.floor_total and subfactory.selected_floor.level > 1)
       and "floor_total" or "standard"
-    
+
     -- Only show the totals for the current floor if the toggle is active
     if display_mode == "floor_total" then
         local parent_line = ui_state.context.floor.origin_line  -- must exist if selected_floor.level > 1
@@ -110,7 +110,7 @@ end
 function _refresh_item_table(player, item_table, class, items, display_mode)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
-    
+
     local ui_name = class:gsub("^%u", string.lower)
     local view_name = ui_state.view_state.selected_view.name
 
@@ -176,10 +176,10 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=ingredient.proto, click=click})
-        
-    elseif ui_util.check_archive_status(player) then 
+
+    elseif ui_util.check_archive_status(player) then
         return
-        
+
     elseif direction ~= nil then  -- Shift product in the given direction
         if Subfactory.shift(subfactory, ingredient, direction) then
             refresh_item_table(player, "Ingredient")
@@ -188,7 +188,7 @@ function handle_ingredient_element_click(player, ingredient_id, click, direction
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lingredient"}, direction_string}
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
-        
+
         refresh_current_activity(player)
     end
 end
@@ -201,7 +201,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=product.proto, click=click})
-        
+
     elseif ui_util.check_archive_status(player) then
         return
 
@@ -213,7 +213,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lproduct"}, direction_string}
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
-        
+
         refresh_current_activity(player)
 
     else
@@ -245,11 +245,11 @@ end
 function handle_byproduct_element_click(player, byproduct_id, click, direction, action, alt)
     local subfactory = get_context(player).subfactory
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
-    
+
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=byproduct.proto, click=click})
 
-    elseif ui_util.check_archive_status(player) then 
+    elseif ui_util.check_archive_status(player) then
         return
 
     elseif direction ~= nil then  -- Shift product in the given direction
@@ -260,7 +260,7 @@ function handle_byproduct_element_click(player, byproduct_id, click, direction, 
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lbyproduct"}, direction_string}
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
-        
+
         refresh_current_activity(player)
 
     --[[ elseif click == "left" then

@@ -101,7 +101,7 @@ function Collection.shift(self, main_dataset, direction)
 
     main_dataset.gui_position = secondary_gui_position
     secondary_dataset.gui_position = main_gui_position
-    
+
     return true
 end
 

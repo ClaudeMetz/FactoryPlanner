@@ -35,7 +35,7 @@ function player_gui_reset(player)
         screen["fp_frame_modal_dialog_product"],  -- TODO remove when this dialog is added back as a cached one
         unpack(cached_dialogs)
     }
-    
+
     for _, gui in pairs(guis) do
         if type(gui) == "string" then gui = screen[gui] end
         if gui ~= nil and gui.valid then gui.destroy() end
@@ -58,7 +58,7 @@ end
 
 -- Sets the game.paused-state appropriately
 function set_pause_state(player, main_dialog)
-    if get_settings(player).pause_on_interface and not game.is_multiplayer() and 
+    if get_settings(player).pause_on_interface and not game.is_multiplayer() and
       player.controller_type ~= defines.controllers.editor then
         game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
     end
@@ -99,7 +99,7 @@ function set_selection_mode(player, state)
     if ui_state.modal_dialog_type == "beacon" then
         ui_state.flags.selection_mode = state
         player.gui.screen["fp_frame_main_dialog"].visible = not state
-        
+
         local frame_modal_dialog = ui_util.find_modal_dialog(player)
         frame_modal_dialog.ignored_by_interaction = state
         if state == true then
@@ -116,11 +116,11 @@ end
 -- Creates the dialog if it doesn't exist; Recreates it if needs to
 function refresh_main_dialog(player, full_refresh)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    
+
     if (main_dialog == nil and not full_refresh) or (main_dialog ~= nil and full_refresh) then
         if main_dialog ~= nil then main_dialog.clear()
         else main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"} end
-        
+
         local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
         main_dialog.style.minimal_width = dimensions.width
@@ -148,7 +148,7 @@ function refresh_main_dialog(player, full_refresh)
         refresh_actionbar(player)
         refresh_subfactory_bar(player, true)
     end
-    
+
     ui_util.message.refresh(player)
     return main_dialog
 end
@@ -175,7 +175,7 @@ function refresh_current_activity(player)
             refresh_recipe_button(player, line, table_production)
             refresh_machine_table(player, line, table_production)
         end
-        
+
         ui_util.message.refresh(player)
     end
 end
@@ -184,7 +184,7 @@ end
 -- Creates the titlebar including name and exit-button
 function add_titlebar_to(main_dialog)
     local titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
-    
+
     -- Title
     local label_title = titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
     label_title.style.font = "fp-font-bold-26p"

@@ -23,7 +23,7 @@ function Line.init(player, recipe)
         valid = true,
         class = "Line"
     }
-    
+
     -- Return false if no fitting machine can be found (needs error handling on the other end)
     if Line.change_machine(line, player, nil, nil) == false then return false end
 
@@ -63,7 +63,7 @@ end
 -- Changes the amount of the given module on this line and optionally it's subfloor / parent line
 function Line.change_module_amount(self, module, new_amount, secondary)
     module.amount = new_amount
-    
+
     -- (This could theoretically use Line.carry_over_changes, but it's too different to be worth it)
     if self.subfloor ~= nil and not secondary then
         local sub_line = Floor.get(self.subfloor, "Line", 1)
@@ -81,7 +81,7 @@ end
 function Line.set_beacon(self, beacon, secondary)
     beacon.parent = self
     self.beacon = beacon
-    
+
     Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(cutil.deepcopy(beacon)))
     Beacon.trim_modules(self.beacon)
     Line.summarize_effects(self)
@@ -111,7 +111,7 @@ function Line.remove(self, dataset, secondary)
     if dataset.class == "Module" then
         Line.carry_over_changes(self, Line.remove, secondary, table.pack(cutil.deepcopy(dataset)))
     end
-    
+
     local removed_gui_position = Collection.remove(self[dataset.class], dataset)
     if dataset.class == "Module" then Line.normalize_modules(self) end
 
@@ -155,7 +155,7 @@ end
 function Line.carry_over_changes(self, f, secondary, arg)
     if not secondary then
         table.insert(arg, true)  -- add indication that this is a secondary call
-        
+
         if self.subfloor ~= nil then
             local sub_line = Floor.get(self.subfloor, "Line", 1)
             f(sub_line, unpack(arg))
@@ -243,7 +243,7 @@ function Line.change_machine(self, player, machine, direction)
             category = self.machine.category
             proto = self.machine.proto
         end
-        
+
         if direction == "positive" then
             if proto.id < #category.machines then
                 local new_machine = category.machines[proto.id + 1]
@@ -297,7 +297,7 @@ function Line.get_module_characteristics(self, module_proto)
     if not self.recipe.valid or not self.machine.valid then compatible = false end
 
     if compatible then
-        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
+        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and
           recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
             compatible = false
         end
@@ -340,7 +340,7 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
     if not self.recipe.valid or not self.machine.valid then compatible = false end
 
     if compatible then
-        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and 
+        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and
           recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
             compatible = false
           end
@@ -358,7 +358,7 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
             end
         end
     end
-    
+
     return { compatible = compatible }
 end
 
@@ -425,7 +425,7 @@ function Line.sort_modules(self)
             end
         end
     end
-    
+
     -- Actually set the new gui positions
     for _, new_position in pairs(new_gui_positions) do
         new_position.module.gui_position = new_position.new_pos
@@ -465,7 +465,7 @@ end
 -- Update the validity of values associated tp this line
 function Line.update_validity(self)
     self.valid = true
-    
+
     -- Validate Recipe
     if not Recipe.update_validity(self.recipe) then
         self.valid = false
@@ -496,7 +496,7 @@ function Line.update_validity(self)
     if self.beacon ~= nil and not Beacon.update_validity(self.beacon) then
         self.valid = false
     end
-    
+
     -- Update modules to eventual changes in prototypes (only makes sense if valid)
     if self.valid then
         Line.sort_modules(self)
@@ -511,7 +511,7 @@ end
 -- (In general, Line Items are not repairable and can only be deleted)
 function Line.attempt_repair(self, player)
     self.valid = true
-    
+
     -- Repair Recipe
     if not self.recipe.valid and not Recipe.attempt_repair(self.recipe) then
         self.valid = false
@@ -552,12 +552,12 @@ function Line.attempt_repair(self, player)
     if self.valid and self.fuel and not self.fuel.valid and not Fuel.attempt_repair(self.fuel, player) then
         self.valid = false
     end
-    
+
     -- Repair Beacon
     if self.valid and self.beacon ~= nil and not Beacon.attempt_repair(self.beacon) then
         self.valid = false
     end
-    
+
     -- Repair Modules
     if self.valid then
         Line.sort_modules(self)

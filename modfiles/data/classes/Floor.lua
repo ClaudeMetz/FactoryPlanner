@@ -92,7 +92,7 @@ function Floor.get_component_data(self, component_table)
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
         if component_table ~= nil and line.subfloor ~= nil then
             --[[ continue ]]
-            
+
         else
             local ceil_machine_count = math.ceil(line.machine.count)
 
@@ -119,7 +119,7 @@ function Floor.get_component_data(self, component_table)
                     proto = beacon.proto,
                     amount = ceil_total_amount
                 })
-                
+
                 add_to_count(components.modules, {
                     proto = beacon.module.proto,
                     amount = ceil_total_amount * beacon.module.amount
@@ -127,7 +127,7 @@ function Floor.get_component_data(self, component_table)
             end
         end
     end
-    
+
     return components
 end
 
@@ -143,7 +143,7 @@ end
 -- Tries to repair all associated datasets, removing the unrepairable ones
 function Floor.attempt_repair(self, player)
     self.valid = true
-    
+
     local classes = {Line = "Line"}
     run_invalid_dataset_repair(player, self, classes)
 

@@ -12,7 +12,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         reload_settings(player)
 
         -- Toggles the visibility of the toggle-main_dialog-button
-        if event.setting == "fp_display_gui_button" then 
+        if event.setting == "fp_display_gui_button" then
             toggle_button_interface(player)
 
         -- Changes the width of the main dialog
@@ -117,11 +117,11 @@ script.on_event(defines.events.on_gui_closed, function(event)
         if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
             if get_flags(player).selection_mode then leave_beacon_selection(player, nil)
             else exit_modal_dialog(player, "cancel", {}) end
-    
+
         -- Toggle the main dialog
         elseif event.element.name == "fp_frame_main_dialog" then
             toggle_main_dialog(player)
-            
+
         end
 	end
 end)
@@ -130,7 +130,7 @@ end)
 script.on_event(defines.events.on_gui_confirmed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
-    
+
     -- Re-run calculations when the mining prod changes, or cancel custom mining prod 'mode'
     if element_name == "fp_textfield_mining_prod" then
         handle_mining_prod_confirmation(player)
@@ -182,7 +182,7 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
     elseif string.find(element_name, "^fp_switch_utility_scope_[a-z]+$") then
         local scope_type = string.gsub(element_name, "fp_switch_utility_scope_", "")
         handle_utility_scope_change(player, scope_type, event.element.switch_state)
-    
+
     end
 end)
 
@@ -226,7 +226,7 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         -- Persists (assembly) line comment changes
         elseif string.find(element_name, "^fp_textfield_line_comment_%d+$") then
             handle_comment_change(player, event.element)
-            
+
         end
     end
 end)
@@ -253,7 +253,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     local player = game.get_player(event.player_index)
     local ui_state = get_ui_state(player)
     local element_name = event.element.name
-    
+
     -- Only handle my actual events
     if string.find(element_name, "^fp_.+$") then
         -- Incorporate rate limiting
@@ -266,7 +266,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif event.button == defines.mouse_button_type.right then click = "right" end
 
         if click == "left" then
-            if not event.control and event.shift then direction = "positive" 
+            if not event.control and event.shift then direction = "positive"
             elseif event.control and not event.shift then direction = "negative" end
         elseif click == "right" then
             if event.control and not event.shift and not event.alt then action = "delete"
@@ -274,7 +274,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         end
 
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
-        if element_name == "fp_button_toggle_interface" 
+        if element_name == "fp_button_toggle_interface"
           or element_name == "fp_button_titlebar_exit" then
             toggle_main_dialog(player)
 
@@ -289,7 +289,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Opens the preferences dialog
         elseif element_name == "fp_button_titlebar_preferences" then
             enter_modal_dialog(player, {type="preferences", close=true})
-        
+
         -- Opens the new-subfactory dialog
         elseif element_name == "fp_button_new_subfactory" then
             enter_modal_dialog(player, {type="subfactory", submit=true})
@@ -311,7 +311,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Toggles the archive-view-mode
         elseif element_name == "fp_button_toggle_archive" then
             toggle_archive_view(player)
-            
+
         -- Opens utilitys dialog
         elseif element_name == "fp_button_open_utility_dialog" then
             enter_modal_dialog(player, {type="utility"})
@@ -323,7 +323,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Opens the add-product dialog
         elseif element_name == "fp_sprite-button_add_product" then
             enter_modal_dialog(player, {type="product", submit=true})
-        
+
         -- Toggles the TopLevelItems-amount display state
         elseif element_name == "fp_button_item_amount_toggle" then
             toggle_floor_total_display(player, event.element)
@@ -352,17 +352,17 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
             local action = string.gsub(element_name, "fp_button_modal_dialog_", "")
             exit_modal_dialog(player, action, {})
-        
+
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(element_name, "%d+"))
             handle_subfactory_element_click(player, subfactory_id, click, direction, action)
-            
+
         -- Changes the timescale of the current subfactory
         elseif string.find(element_name, "^fp_button_timescale_%d+$") then
             local timescale = tonumber(string.match(element_name, "%d+"))
             handle_subfactory_timescale_change(player, timescale)
-            
+
         -- Reacts to any subfactory_pane item button being pressed (class name being a string is fine)
         elseif string.find(element_name, "^fp_sprite%-button_subpane_[a-zA-Z]+_%d+$") then
             local split_string = cutil.split(element_name, "_")
@@ -408,7 +408,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_sprite%-button_line_machine_%d+$") then
             local line_id = tonumber(string.match(element_name, "%d+"))
             handle_machine_change(player, line_id, nil, click, direction, event.alt)
-            
+
         -- Changes the machine of the selected (assembly) line
         elseif string.find(element_name, "^fp_sprite%-button_line_machine_%d+_%d+$") then
             local split_string = cutil.split(element_name, "_")
@@ -428,7 +428,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_sprite%-button_line_add_beacon_%d+$") then
             local line_id = tonumber(string.match(element_name, "%d+"))
             handle_line_beacon_click(player, line_id, nil, click, direction, nil)
-        
+
         -- Handles click on any beacon (module or beacon) button on an (assembly) line
         elseif string.find(element_name, "^fp_sprite%-button_line_beacon_[a-z]+_%d+$") then
             local split_string = cutil.split(element_name, "_")
@@ -452,7 +452,7 @@ script.on_event(defines.events.on_gui_click, function(event)
                 handle_item_button_click(player, split_string[4], split_string[5], split_string[6],
                   click, direction, event.alt)
             end
-        
+
         end
     end
 end)
