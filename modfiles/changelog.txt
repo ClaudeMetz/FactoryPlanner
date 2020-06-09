@@ -2,13 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added an indication to the machines/modules in the utility dialog that shows whether you have the needed machines/modules in your inventory
   Changes:
     - The product picker now reflects your preference for thinking in terms of belts or lanes
     - You can now change fuels (up/downgrade) of a recipe line by shift/ctrl-clicking them
     - Added some warnings when automatically adding your preferred machine or beacon does not work for compatibility reasons. Also added some warning messages when up/downgrading machines and beacons.
-  Bugfixes:
-    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.28
