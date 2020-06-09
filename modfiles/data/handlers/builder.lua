@@ -3,7 +3,7 @@ builder = {}
 
 -- Following are a couple helper functions for populating (sub)factories
 -- Adds all given products to the given subfactory (table definition see above)
-local function add_products(subfactory, products, timescale)
+local function add_products(player, subfactory, products, timescale)
     for _, product in ipairs(products) do
         -- Amounts will depend on the value of the belts/lanes-setting
         local req_amount = {
@@ -12,6 +12,12 @@ local function add_products(subfactory, products, timescale)
         }
 
         if product.defined_by ~= "amount" then  -- Make adjustments if this is being defined by belts/lanes
+            -- Convert definitions by belt to lanes if necessary
+            if get_settings(player).belts_or_lanes == "lanes" then
+                req_amount.defined_by = "lanes"
+                req_amount.amount = req_amount.amount * 2
+            end
+
             local belt_proto = global.all_belts.belts[global.all_belts.map[product.belt_name]]
             req_amount.timescale = timescale
             req_amount.belt_proto = belt_proto
@@ -134,7 +140,7 @@ function builder.dev_config(player)
                 amount = 1000
             }
         }
-        add_products(subfactory, products, subfactory.timescale)
+        add_products(player, subfactory, products, subfactory.timescale)
 
         -- Floors
         local recipes = {
@@ -170,7 +176,7 @@ function builder.example_subfactory(player)
             amount = 180
         }
     }
-    add_products(subfactory, products, subfactory.timescale)
+    add_products(player, subfactory, products, subfactory.timescale)
 
     -- Recipes
     -- This table describes the desired hierarchical structure of the subfactory
