@@ -6,7 +6,7 @@ local generator_util = {
 local data_structure, metadata = nil, nil
 
 -- Initializes the data and metadata for the given data structure
-function generator_util.data_structure.init(structure_type, main_structure_name, 
+function generator_util.data_structure.init(structure_type, main_structure_name,
   sub_structure_name, sub_structure_varname)
     data_structure = {
         [main_structure_name] = {},
@@ -47,7 +47,7 @@ function generator_util.data_structure.insert(prototype)
         end
 
         local prototype_table = category_table[category_id][metadata.sub_structure_name]
-        insert_prototype(prototype_table) 
+        insert_prototype(prototype_table)
     end
 end
 
@@ -192,7 +192,7 @@ local function generate_formatted_item(base_item, type)
     local actual_amount, proddable_amount = 0, 0
     if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
         actual_amount = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
-        
+
         -- I'm unsure whether this calculation is correct for this type of recipe spec
         -- A definition with max/min and catalysts might not even be possible/in use
         if type == "ingredient" then
@@ -285,7 +285,7 @@ local function determine_net_ingredient_amount(recipe_proto, item)
             break
         end
     end
-    
+
     return net_amount
 end
 
@@ -312,7 +312,7 @@ local function determine_net_product_amount(recipe_proto, item)
             break
         end
     end
-    
+
     return net_amount
 end
 
@@ -344,7 +344,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     combine_identical_items(products)
     recipe_proto.type_counts.products = determine_item_counts(products)
     recipe_proto.products = products
-    
+
 
     -- Determine the net amount after the actual amounts have been calculated
     for _, formatted_ingredient in pairs(recipe_proto.ingredients) do

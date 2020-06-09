@@ -66,7 +66,7 @@ local function construct_floor(player, floor, recipes)
 
         return line
     end
-    
+
     for _, recipe_data in ipairs(recipes) do
         if #recipe_data == 0 then  -- Meaning this isn't a whole subfloor
             add_line(recipe_data)
@@ -75,7 +75,7 @@ local function construct_floor(player, floor, recipes)
             local line = add_line(recipe_data[1])
             local subfloor = Floor.init(line)
             line.subfloor = Subfactory.add(floor.parent, subfloor)
-            
+
             -- Then, it creates a subfloor with the remaining recipes
             table.remove(recipe_data, 1)
             construct_floor(player, line.subfloor, recipe_data)
@@ -133,7 +133,7 @@ function builder.dev_config(player)
             }
         }
         add_products(subfactory, products, subfactory.timescale)
-        
+
         -- Floors
         local recipes = {
             {
@@ -151,14 +151,14 @@ function builder.example_subfactory(player)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     local factory = player_table.factory
-    
+
     -- Always add the example subfactory as a non-archived one
-    local subfactory = Factory.add(factory, Subfactory.init("Example", 
+    local subfactory = Factory.add(factory, Subfactory.init("Example",
       {type="item", name="production-science-pack"}, "one_minute"))
     factory.selected_subfactory = subfactory
     ui_util.context.set_factory(player, factory)
     ui_state.flags.archive_open = false
-    
+
     -- Products
     local products = {
         {
@@ -169,8 +169,8 @@ function builder.example_subfactory(player)
         }
     }
     add_products(subfactory, products, subfactory.timescale)
-    
-    -- Recipes    
+
+    -- Recipes
     -- This table describes the desired hierarchical structure of the subfactory
     -- (Order is important; sub-tables represent their own subfloors (recursively))
     local recipes = {
@@ -230,6 +230,6 @@ function builder.example_subfactory(player)
         }
     }
     construct_floor(player, ui_state.context.floor, recipes)
-    
+
     return subfactory
 end

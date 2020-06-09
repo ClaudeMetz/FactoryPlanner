@@ -17,7 +17,7 @@ function Recipe.update_validity(self)
     if self.proto == nil then self.valid = false; return self.valid end
     local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
     local new_recipe_id = new.all_recipes.map[proto_name]
-    
+
     if new_recipe_id ~= nil then
         self.proto = new.all_recipes.recipes[new_recipe_id]
         self.valid = true

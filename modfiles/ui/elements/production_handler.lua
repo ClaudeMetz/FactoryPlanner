@@ -6,7 +6,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
     local line = Floor.get(floor, "Line", line_id)
 
     local archive_status = ui_util.check_archive_status(player)
-    
+
     if alt then
         ui_util.execute_alt_action(player, "show_recipe",
           {recipe=line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
@@ -16,7 +16,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
 
         -- Can't shift second line into the first position on subfloors
         -- (Top line ignores interaction, so no special handling there)
-        if not(direction == "negative" and floor.level > 1 and line.gui_position == 2) 
+        if not(direction == "negative" and floor.level > 1 and line.gui_position == 2)
           and Floor.shift(floor, line, direction) then
             calculation.update(player, subfactory, true)
         else
@@ -24,7 +24,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lrecipe"}, direction_string}
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
-        
+
         refresh_current_activity(player)
 
     else
@@ -40,7 +40,7 @@ function handle_line_recipe_click(player, line_id, click, direction, action, alt
             ui_state.current_activity = nil
             ui_util.context.set_floor(player, line.subfloor)
             refresh_main_dialog(player)
-            
+
         -- Handle removal of clicked (assembly) line
         elseif click == "right" and action == "delete" then
             if archive_status then return end
@@ -73,7 +73,7 @@ function handle_percentage_change(player, element)
 
     local new_percentage = tonumber(element.text) or 0
     line.percentage = new_percentage
-    
+
     -- Update related datasets
     if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
     elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
@@ -99,7 +99,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
-    
+
     -- machine_id being nil means the user wants to change the machine of this (assembly) line
     if machine_id == nil then
         -- Change the machine to be one tier lower/higher if possible
@@ -139,12 +139,12 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
                         text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
                         object = line.machine
                     }
-                    
+
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                     enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
                 end
             end
-        
+
         -- Open the dialog to set a machine count limit
         elseif click == "right" then
             local modal_data = {
@@ -429,7 +429,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         end
 
         refresh_current_activity(player)
-        
+
     -- Pick recipe to produce said ingredient
     elseif click == "left" and item.proto.type ~= "entity" then
         if item.class == "Ingredient" then

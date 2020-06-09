@@ -4,7 +4,7 @@ generator = {}
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
     gen_util.data_structure.init("simple", "recipes")
-    
+
     local function custom_recipe()
         return {
             hidden = false,
@@ -28,7 +28,7 @@ function generator.all_recipes()
             end
         end
     end
-    
+
     -- Adding all standard recipes
     for recipe_name, proto in pairs(game.recipe_prototypes) do
         -- Avoid any recipes that have no machine to produce them or are unresearchable
@@ -154,14 +154,14 @@ function generator.all_recipes()
                     table.insert(recipe.ingredients, {type="item", name=item.name, amount=1})
                     recipe.products = item.rocket_launch_products
                     recipe.main_product = recipe.products[1]
-                    
+
                     gen_util.format_recipe_products_and_ingredients(recipe)
                     gen_util.add_recipe_tooltip(recipe)
                     gen_util.data_structure.insert(recipe)
                 end
             end
         end
-    
+
         -- Adds a recipe for producing steam from a boiler
         local existing_recipe_names = {}
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
@@ -215,7 +215,7 @@ function generator.all_recipes()
         gen_util.add_recipe_tooltip(steam_recipe)
         gen_util.data_structure.insert(steam_recipe)
     end
-    
+
     gen_util.data_structure.generate_map(false)
     return gen_util.data_structure.get()
 end
@@ -225,7 +225,7 @@ end
 function generator.all_items()
     gen_util.data_structure.init("complex", "types", "items", "type")
 
-    local function add_item(table, item)        
+    local function add_item(table, item)
         local type = item.proto.type
         local name = item.proto.name
         table[type] = table[type] or {}
@@ -245,7 +245,7 @@ function generator.all_items()
             add_item(relevant_items, {proto=ingredient, is_product=false})
         end
     end
-    
+
     -- Adding all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
@@ -257,7 +257,7 @@ function generator.all_items()
             local hidden = false  -- "entity" types are never hidden
             if type == "item" then hidden = proto.has_flag("hidden")
             elseif type == "fluid" then hidden = proto.hidden end
-            
+
             local item = {
                 name = item_name,
                 type = type,
@@ -275,7 +275,7 @@ function generator.all_items()
             gen_util.data_structure.insert(item)
         end
     end
-    
+
     gen_util.data_structure.generate_map(true)
     return gen_util.data_structure.get()
 end
@@ -284,8 +284,8 @@ end
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
     gen_util.data_structure.init("complex", "categories", "machines", "category")
-    
-    local function generate_category_entry(category, proto)        
+
+    local function generate_category_entry(category, proto)
         -- First, determine if there is a valid sprite for this machine
         local sprite = gen_util.determine_entity_sprite(proto)
         if sprite == nil then return nil end
@@ -324,7 +324,7 @@ function generator.all_machines()
         -- Determine fluid input/output channels
         local fluid_channels = {input = 0, output = 0}
         if fluid_burner_prototype then fluid_channels.input = fluid_channels.input - 1 end
-        
+
         for _, fluidbox in pairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" then
                 fluid_channels.output = fluid_channels.output + 1
@@ -332,7 +332,7 @@ function generator.all_machines()
                 fluid_channels.input = fluid_channels.input + 1
             end
         end
-        
+
         local machine = {
             name = proto.name,
             category = category,
@@ -372,7 +372,7 @@ function generator.all_machines()
                     gen_util.data_structure.insert(machine)
                 end
             end
-        
+
         -- Add offshore pumps
         elseif proto.fluid then
             local machine = generate_category_entry(proto.name, proto)
@@ -400,7 +400,7 @@ function generator.all_machines()
                     if input_fluidbox ~= nil then
                         local category = "steam-" .. proto.target_temperature
                         local machine = generate_category_entry(category, proto)
-                        
+
                         local temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
                         local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy_usage / energy_per_unit
@@ -416,7 +416,7 @@ function generator.all_machines()
             end
         end
     end
-    
+
     local function sorting_function(a, b)
         if a.speed < b.speed then return true
         elseif a.speed > b.speed then return false
@@ -471,7 +471,7 @@ function generator.all_fuels()
     local used_fuel_categories = {}
     for _, categories in pairs(new.all_machines.categories) do
         for _, machine in pairs(categories.machines) do
-            if machine.burner then 
+            if machine.burner then
                 for category_name, _ in pairs(machine.burner.categories) do
                     used_fuel_categories[category_name] = true
                 end
@@ -515,7 +515,7 @@ function generator.all_fuels()
             }
         end
     end
-    
+
     local function sorting_function(a, b)
         if a.fuel_value < b.fuel_value then return true
         elseif a.fuel_value > b.fuel_value then return false
@@ -537,7 +537,7 @@ function generator.all_modules()
         if proto.type == "module" and not proto.has_flag("hidden") then
             local limitations = {}  -- Convert limitations-table to a [recipe_name] -> true format
             for _, recipe_name in pairs(proto.limitations) do limitations[recipe_name] = true end
-            
+
             local sprite = "item/" .. proto.name
             if game.is_valid_sprite_path(sprite) then
                 gen_util.data_structure.insert{

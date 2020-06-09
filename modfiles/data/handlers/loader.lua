@@ -20,7 +20,7 @@ function loader.run()
     identifier_item_map = loader.caching.identifier_item_map()
 
     item_fuel_map = loader.caching.item_fuel_map()
-    
+
     module_tier_map = loader.caching.module_tier_map()
 
     top_crafting_machine_sprite = loader.caching.find_crafting_machine_sprite()
@@ -84,7 +84,7 @@ function loader.caching.ordered_recipe_groups()
             return false
         end
     end
-    
+
     table.sort(groups, sorting_function)
     return groups
 end
@@ -104,7 +104,7 @@ function loader.caching.recipe_map_from(item_type)
             end
         end
     end
-    
+
     return map
 end
 
@@ -179,7 +179,7 @@ function loader.caching.module_tier_map()
             map[category.id][module.tier] = module
         end
     end
-    
+
     return map
 end
 

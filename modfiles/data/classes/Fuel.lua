@@ -28,7 +28,7 @@ function Fuel.update_validity(self, line)
 
     if new_category_id ~= nil then
         self.category = new.all_fuels.categories[new_category_id]
-        
+
         if self.proto == nil then self.valid = false; return self.valid end
         local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
         local new_fuel_id = self.category.map[proto_name]

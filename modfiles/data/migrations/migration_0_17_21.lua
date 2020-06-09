@@ -29,7 +29,7 @@ function migration_0_17_21.subfactory(player, subfactory)
 
             line.recipe = {proto = line.recipe_name}
             line.recipe_name = nil
-            
+
             local category = global.all_machines.categories[line.category_id]
             local machine = category.machines[line.machine_id]
             line.machine = {
@@ -37,7 +37,7 @@ function migration_0_17_21.subfactory(player, subfactory)
                 category = category.name
             }
             line.machine_id = nil
-            
+
             line.fuel_id = nil
             line.recipe_energy = nil
             line.category_id = nil

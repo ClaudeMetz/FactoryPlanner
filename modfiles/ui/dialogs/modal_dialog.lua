@@ -17,12 +17,12 @@ function enter_modal_dialog(player, dialog_settings)
 
     ui_state.current_activity = nil
     refresh_current_activity(player)
-    
+
     local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
       ui_state.modal_data)
-    
+
     toggle_modal_dialog(player, flow_modal_dialog.parent)
     _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog, ui_state.modal_data)
 end
@@ -48,7 +48,7 @@ function exit_modal_dialog(player, button, data)
         -- If not, no modal dialog is open, so none can be closed
         else return end
     end
-    
+
     local closing_function = _G["close_" .. dialog_type .. "_dialog"]
     -- If closing_function is nil here, this dialog doesn't have a confirm-button, and if it is closed with
     -- a submit-action (by a confirmation-action), it should exectue the cancel-action instead
@@ -63,12 +63,12 @@ function exit_modal_dialog(player, button, data)
     elseif button == "delete" then
         if closing_function ~= nil then closing_function(flow_modal_dialog, button, data) end
     end  -- no action needs to be taken if this dialog is canceled
-    
+
     -- Close modal dialog
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
     ui_state.context.line = nil
-    
+
     if preserve then flow_modal_dialog.parent.visible = false
     else flow_modal_dialog.parent.destroy() end
 
@@ -132,7 +132,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
             break
         end
     end
-    
+
     local screen = player.gui.screen
     -- If this dialog should be cached and exists, make it visible
     if cached and screen[frame_name] ~= nil then
@@ -189,7 +189,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
         local flow_spacer_1 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_1", direction="horizontal"}
         flow_spacer_1.style.horizontally_stretchable = true
 
-        local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete", 
+        local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete",
           caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
         button_delete.style.font = "default-dialog-button"
         button_delete.style.height = 32
@@ -214,7 +214,7 @@ function create_base_modal_dialog(player, condition_instructions, dialog_setting
     local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
     modal_data.dialog_maximal_height = (main_dialog_dimensions.height - conditions_height - 60) * 0.95
     flow_modal_dialog.style.maximal_height = modal_data.dialog_maximal_height
-    
+
     -- Adjust visibility of the submit and delete buttons and the spacer
     local button_bar = frame_modal_dialog["flow_modal_dialog_button_bar"]
     button_bar["fp_button_modal_dialog_submit"].visible = dialog_settings.submit or false

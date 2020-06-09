@@ -3,7 +3,7 @@ migration_0_17_13 = {}
 function migration_0_17_13.global()
     global.devmode = nil
     global.margin_of_error = nil
-    
+
     global.all_belts = generator.all_belts()
     global.all_fuels = generator.all_fuels()
     global.all_machines = generator.all_machines()

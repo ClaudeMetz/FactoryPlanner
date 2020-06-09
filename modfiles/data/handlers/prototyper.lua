@@ -57,7 +57,7 @@ function prototyper.defaults.get_fallback(type)
     local data_table = new or global
     local all_prototypes = data_table["all_" .. type]
     local specific_fallback = specific_fallbacks[type]
-    
+
     -- Simple prototype structures return a single prototype as a fallback
     local fallback = {structure_type = all_prototypes.structure_type}
     if all_prototypes.structure_type == "simple" then

@@ -4,20 +4,20 @@ function add_actionbar_to(main_dialog)
     actionbar.style.bottom_margin = 4
     actionbar.style.left_margin = 6
 
-    actionbar.add{type="button", name="fp_button_new_subfactory", caption={"fp.new_subfactory"}, 
+    actionbar.add{type="button", name="fp_button_new_subfactory", caption={"fp.new_subfactory"},
       style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_new_subfactory"}}
-    actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"fp.edit"}, 
+    actionbar.add{type="button", name="fp_button_edit_subfactory", caption={"fp.edit"},
       style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_edit_subfactory"}}
-    actionbar.add{type="button", name="fp_button_archive_subfactory", caption={"fp.archive"}, 
+    actionbar.add{type="button", name="fp_button_archive_subfactory", caption={"fp.archive"},
       style="fp_button_action", mouse_button_filter={"left"}}
-    actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"fp.delete"}, 
+    actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"fp.delete"},
       style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_delete_subfactory"}}
 
     local actionbar_spacer = actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
     actionbar_spacer.style.horizontally_stretchable = true
 
     local button_toggle_archive = actionbar.add{type="button", name="fp_button_toggle_archive",
-      caption={"fp.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}  
+      caption={"fp.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}
 
     refresh_actionbar(game.get_player(main_dialog.player_index))
 end
@@ -39,15 +39,15 @@ function refresh_actionbar(player)
     delete_button.enabled = subfactory_exists
 
     archive_button.enabled = subfactory_exists
-    archive_button.tooltip = (archive_open) and 
+    archive_button.tooltip = (archive_open) and
       {"fp.action_unarchive_subfactory"} or {"fp.action_archive_subfactory"}
 
     local archived_subfactories_count = get_table(player).archive.Subfactory.count
     toggle_archive_button.enabled = (archive_open or archived_subfactories_count > 0)
     local archive_tooltip = {"fp.toggle_archive"}
-    if not toggle_archive_button.enabled then 
+    if not toggle_archive_button.enabled then
         archive_tooltip = {"", archive_tooltip, "\n", {"fp.archive_empty"}}
-    else 
+    else
         local subs = (archived_subfactories_count == 1) and {"fp.subfactory"} or {"fp.subfactories"}
         archive_tooltip = {"", archive_tooltip, "\n- ", {"fp.archive_filled"},
           " " .. archived_subfactories_count .. " ", subs, " -"}

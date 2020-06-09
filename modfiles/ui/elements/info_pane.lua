@@ -15,7 +15,7 @@ function refresh_info_pane(player)
     else
         table_info_elements.clear()
     end
-    
+
 
     -- Timescale
     local table_timescale = table_info_elements.add{type="table", name="table_timescale_buttons", column_count=2}
@@ -58,10 +58,10 @@ function refresh_info_pane(player)
 
     -- Energy consumption
     local table_energy = table_energy_pollution.add{type="table", name="table_energy", column_count=2}
-    local label_energy_title = table_energy.add{type="label", name="label_energy_title", 
+    local label_energy_title = table_energy.add{type="label", name="label_energy_title",
       caption={"", {"fp.energy"}, ":"}}
     label_energy_title.style.font = "fp-font-14p"
-    local label_energy_value = table_energy.add{type="label", name="label_energy_value", 
+    local label_energy_value = table_energy.add{type="label", name="label_energy_value",
       caption=ui_util.format_SI_value(energy_consumption, "W", 3),
       tooltip=ui_util.format_SI_value(energy_consumption, "W", 5)}
     label_energy_value.style.font = "default-bold"
@@ -71,7 +71,7 @@ function refresh_info_pane(player)
     local label_pollution_title = table_pollution.add{type="label", name="label_pollution_title",
       caption={"", {"fp.cpollution"}, ":"}}
     label_pollution_title.style.font = "fp-font-14p"
-    local label_pollution_value = table_pollution.add{type="label", name="label_pollution_value", 
+    local label_pollution_value = table_pollution.add{type="label", name="label_pollution_value",
       caption={"", ui_util.format_SI_value(pollution, "P/s", 3)},
       tooltip={"", ui_util.format_SI_value(pollution, "P/s", 5)}}
     label_pollution_value.style.font = "default-bold"
@@ -92,12 +92,12 @@ function refresh_utility_table(player, subfactory, table_info_elements)
     table_utility.clear()
 
     table_utility.add{type="label", name="label_utility", caption={"", {"fp.utility"}, ": "}}
-    
+
     local table_ut = table_utility.add{type="table", name="table_ut", column_count=2}
     table_ut.style.horizontal_spacing = 20
     table_ut.add{type="button", name="fp_button_open_utility_dialog", caption={"fp.view_utilities"}, style="fp_button_mini",
       mouse_button_filter={"left"}}
-    
+
     -- Only show the notes tooltip-label if there are any notes to show
     if subfactory.notes ~= "" then
         table_ut.draw_vertical_lines = true
@@ -112,14 +112,14 @@ end
 function refresh_mining_prod_table(player, subfactory, table_info_elements)
     local ui_state = get_ui_state(player)
 
-    local table_mining_prod = table_info_elements["table_mining_prod"] or 
+    local table_mining_prod = table_info_elements["table_mining_prod"] or
       table_info_elements.add{type="table", name="table_mining_prod", column_count=3}
     table_mining_prod.clear()
-    
+
     table_mining_prod.add{type="label", name="label_mining_prod_title",
       caption={"", {"fp.mining_prod"}, " [img=info]: "}, tooltip={"fp.mining_prod_tt"}}
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
-    
+
     if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then
         subfactory.mining_productivity = subfactory.mining_productivity or 0  -- switch from no mining prod to a custom one
         local textfield_prod_bonus = table_mining_prod.add{type="textfield", name="fp_textfield_mining_prod",
@@ -131,10 +131,10 @@ function refresh_mining_prod_table(player, subfactory, table_info_elements)
         label_percentage.style.font = "default-bold"
     else
         local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
-        local label_prod_bonus = table_mining_prod.add{type="label", name="label_mining_prod_value", 
+        local label_prod_bonus = table_mining_prod.add{type="label", name="label_mining_prod_value",
           caption={"", prod_bonus, "%"}}
         label_prod_bonus.style.font = "default-bold"
-        local button_override = table_mining_prod.add{type="button", name="fp_button_mining_prod_override", 
+        local button_override = table_mining_prod.add{type="button", name="fp_button_mining_prod_override",
           caption={"fp.override"}, style="fp_button_mini", mouse_button_filter={"left"}}
         button_override.style.left_margin = 8
     end

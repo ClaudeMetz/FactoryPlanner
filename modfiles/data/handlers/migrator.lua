@@ -35,7 +35,7 @@ migration_masterlist = {
 -- Applies any appropriate migrations to the global table
 function attempt_global_migration()
     local migrations = determine_migrations(global.mod_version)
-    
+
     apply_migrations(migrations, "global", nil, nil)
     global.mod_version = game.active_mods["factoryplanner"]
 end
@@ -45,7 +45,7 @@ function attempt_player_table_migration(player)
     local player_table = get_table(player)
     if player_table ~= nil then  -- don't apply migrations to new players
         local migrations = determine_migrations(player_table.mod_version)
-        
+
         -- General migrations
         apply_migrations(migrations, "player_table", player, player_table)
 
@@ -70,11 +70,11 @@ function attempt_subfactory_migration(player, subfactory, migrations)
     subfactory.mod_version = global.mod_version
 end
 
--- Determines whether a migration needs to take place, and if so, returns the appropriate range of the 
+-- Determines whether a migration needs to take place, and if so, returns the appropriate range of the
 -- migration_masterlist. If the version changed, but no migrations apply, it returns an empty array.
 function determine_migrations(previous_version)
     local migrations = {}
-    
+
     local found = false
     for _, migration in ipairs(migration_masterlist) do
         if compare_versions(previous_version, migration.version) then found = true end

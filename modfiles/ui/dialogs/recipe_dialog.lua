@@ -18,7 +18,7 @@ function open_recipe_dialog(flow_modal_dialog, modal_data)
         if type(result) == "number" then  -- the given number being the recipe_id
             modal_data.message = show.message
             attempt_adding_recipe_line(player, result)
-        
+
         else  -- Otherwise, show the appropriately filtered dialog
             local groups = {}  -- Sort recipes into their respective groups
             for _, recipe in pairs(result) do
@@ -48,7 +48,7 @@ function run_preliminary_checks(player, product, production_type)
         hidden = 0,
         disabled_hidden = 0
     }
-    
+
     local map = recipe_maps[production_type][product.proto.type][product.proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         local preferences = get_preferences(player)
@@ -93,7 +93,7 @@ function run_preliminary_checks(player, product, production_type)
         show.filters.disabled = true
         show.filters.hidden = true
     end
-    
+
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
@@ -124,7 +124,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
     label_filters.style.left_margin = 4
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
-    ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_disabled", modal_data.filters.disabled, 
+    ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_disabled", modal_data.filters.disabled,
       {"fp.unresearched_recipes"}, nil)
     ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_hidden", modal_data.filters.hidden,
       {"fp.hidden_recipes"}, nil)
@@ -145,7 +145,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
     local table_recipes = scroll_pane_recipes.add{type="table", name="table_recipes", column_count=2}
     table_recipes.style.horizontal_spacing = 16
     table_recipes.style.vertical_spacing = 8
-    
+
     local force_recipes = player.force.recipes
     -- Go through every group and display their relevant recipes
     for _, group in ipairs(ordered_recipe_groups) do
@@ -175,7 +175,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
 
                 -- Determine the appropriate style
                 local enabled = (recipe.custom) and true or force_recipes[recipe.name].enabled
-                if not enabled then button_recipe.style = "fp_button_icon_medium_disabled" 
+                if not enabled then button_recipe.style = "fp_button_icon_medium_disabled"
                 elseif recipe.hidden then button_recipe.style = "fp_button_icon_medium_hidden"
                 else button_recipe.style = "fp_button_icon_medium_recipe" end
             end
@@ -187,7 +187,7 @@ end
 function apply_recipe_filter(player)
     local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
     local table_recipes = flow_modal_dialog["scroll-pane_recipes"]["table_recipes"]
-    
+
     local force_recipes = player.force.recipes
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
@@ -201,15 +201,15 @@ function apply_recipe_filter(player)
         for _, recipe in pairs(recipe_list) do
             local button = table_recipes["table_recipe_group_" .. group_name]["fp_button_recipe_pick_" .. recipe.id]
             local enabled = (recipe.custom) and true or force_recipes[recipe.name].enabled
-    
+
             -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
             -- recipe.custom or (not (not disabled and not enabled) and not (not hidden and recipe.hidden))
             local visible = (recipe.custom or ((disabled or enabled) and (hidden or not recipe.hidden)))
-            
+
             button.visible = visible
             any_group_recipe_visible = visible or any_group_recipe_visible
         end
-        
+
         -- Hide the whole table row if no recipe in it is visible
         table_recipes["sprite_group_" .. group_name].visible = any_group_recipe_visible
         table_recipes["table_recipe_group_" .. group_name].visible = any_group_recipe_visible
@@ -224,7 +224,7 @@ function apply_recipe_filter(player)
 
     -- Determine the scroll-pane height to avoid double scroll-bars in the dialog
     local warning_label_height = (not any_recipe_visible) and 36 or 0
-    local scroll_pane_height = math.min(desired_scroll_pane_height, 
+    local scroll_pane_height = math.min(desired_scroll_pane_height,
       modal_data.dialog_maximal_height - 65) - warning_label_height
     flow_modal_dialog["scroll-pane_recipes"].style.height = scroll_pane_height
     flow_modal_dialog["scroll-pane_recipes"].style.width = 370
@@ -236,7 +236,7 @@ function handle_recipe_filter_switch_flick(player, type, state)
     local ui_state = get_ui_state(player)
     local boolean_state = ui_util.switch.convert_to_boolean(state)
     ui_state.modal_data.filters[type] = boolean_state
-    
+
     -- Remember the user selection for this type of filter
     get_preferences(player).recipe_filters[type] = boolean_state
 
@@ -246,13 +246,13 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 function attempt_adding_recipe_line(player, recipe_id)
     local ui_state = get_ui_state(player)
-    
+
     local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
     if line == false then
         ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 1)
     else
         Floor.add(ui_state.context.floor, line)
-        
+
         local message = ui_state.modal_data.message
         local preferences = get_preferences(player)
         local mb_defaults = preferences.mb_defaults
@@ -280,7 +280,7 @@ function attempt_adding_recipe_line(player, recipe_id)
                 message = {text={"fp.warning_module_not_compatible", {"fp.beacon"}}, type="warning"}
             end
         end
-        
+
         if message ~= nil then ui_util.message.enqueue(player, message.text, message.type, 2) end
         calculation.update(player, ui_state.context.subfactory, true)
     end

@@ -24,7 +24,7 @@ end
 function Module.update_validity(self)
     local category_name = (type(self.category) == "string") and self.category or self.category.name
     local new_category_id = new.all_modules.map[category_name]
-    
+
     if new_category_id ~= nil then
         self.category = new.all_modules.categories[new_category_id]
 
@@ -45,7 +45,7 @@ function Module.update_validity(self)
         self.valid = false
     end
 
-    -- Check whether the module is still compatible with it's machine 
+    -- Check whether the module is still compatible with it's machine
     if self.valid then  -- only makes sense if the module is still valid at this point
         local characteristics
         -- Different validation strategies depending on the use case of this module
@@ -56,7 +56,7 @@ function Module.update_validity(self)
         end
         self.valid = characteristics.compatible
     end
-    
+
     return self.valid
 end
 
@@ -72,7 +72,7 @@ function Module.attempt_repair(self, player)
             return false
         end
     end
-    
+
     -- At this point, category is always valid (and proto is always a string)
     local current_module_id = self.category.map[self.proto]
     if current_module_id ~= nil then

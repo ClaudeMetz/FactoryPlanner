@@ -93,7 +93,7 @@ function refresh_product_bar(flow_modal_dialog, product)
     local player = game.get_player(flow_modal_dialog.player_index)
     local modal_data = get_modal_data(player)
     modal_data.timescale = get_context(player).subfactory.timescale -- needed for calculations
-    
+
     local item_sprite, item_tooltip, belt_name
     local item_amount, belt_amount = "", ""
     if product ~= nil then  -- Adjustments if the product is being edited
@@ -115,14 +115,14 @@ function refresh_product_bar(flow_modal_dialog, product)
         -- Set a default defined_by for new products
         modal_data.amount_defined_by = "amount"
     end
-    
+
     local flow_product_bar = flow_modal_dialog["flow_product_bar"]
     if flow_product_bar == nil then
         flow_product_bar = flow_modal_dialog.add{type="flow", name="flow_product_bar", direction="vertical"}
         flow_product_bar.style.vertical_spacing = 8
     end
     flow_product_bar.clear()
-    
+
     -- Product choice and amount
     local flow_product_amount = flow_product_bar.add{type="flow", name="flow_product_amount", direction="horizontal"}
     flow_product_amount.style.horizontal_spacing = 8
@@ -132,7 +132,7 @@ function refresh_product_bar(flow_modal_dialog, product)
     local button = flow_product_amount.add{type="sprite-button", name="sprite-button_product", sprite=item_sprite,
       tooltip=item_tooltip, style="fp_sprite-button_choose_elem"}
     button.style.right_margin = 14
-    
+
     flow_product_amount.add{type="label", caption={"fp.amount"}}
     local textfield = flow_product_amount.add{type="textfield", name="fp_textfield_product_amount", text=item_amount}
     ui_util.setup_numeric_textfield(textfield, true, false)
@@ -169,11 +169,11 @@ end
 -- Adjusts the dialog according to the product type, disallowing fluids to be set by belt
 function adjust_for_item_type(flow_product_bar, modal_data)
     local item_proto = modal_data.selected_item
-    
+
     if item_proto ~= nil then
         local choose_elem_button = flow_product_bar["flow_product_belts"]["fp_choose-elem-button_product_belts"]
         choose_elem_button.enabled = (item_proto.type == "item")
-        
+
         if item_proto.type == "fluid" then
             choose_elem_button.elem_value = nil
             local player = game.get_player(flow_product_bar.player_index)

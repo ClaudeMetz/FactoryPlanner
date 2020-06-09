@@ -46,7 +46,7 @@ end
 function Item.update_validity(self)
     local type_name = (type(self.type) == "string") and self.type or self.type.name
     local new_type_id = new.all_items.map[type_name]
-    
+
     if new_type_id ~= nil then
         self.type = new.all_items.types[new_type_id]
 
@@ -77,7 +77,7 @@ function Item.update_validity(self)
             end
         end
     end
-    
+
     return self.valid
 end
 
@@ -93,7 +93,7 @@ function Item.attempt_repair(self, player)
             return false
         end
     end
-    
+
     -- At this point, type is always valid (and proto is always a string)
     local current_item_id = self.type.map[self.proto]
     if current_item_id ~= nil then

@@ -6,7 +6,7 @@ function open_module_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
     local line = get_context(player).line
     local module = modal_data.selected_object
-    
+
     if module == nil then  -- Meaning this is adding a module
         create_module_beacon_dialog_structure(flow_modal_dialog, {"fp.add_module"}, "module", line, nil, nil)
     else  -- meaning this is an edit
@@ -57,7 +57,7 @@ function get_module_condition_instructions(modal_data)
             },
             [2] = {
                 label = generate_module_condition_text(modal_data),
-                check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil 
+                check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil
                           or tonumber(data.module_amount) <= 0
                           or tonumber(data.module_amount) > modal_data.empty_slots)) end),
                 refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
@@ -74,7 +74,7 @@ function open_beacon_dialog(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
     local line = get_context(player).line
     local beacon = modal_data.selected_object
-    
+
     if beacon == nil then  -- Meaning this is adding a beacon
         create_module_beacon_dialog_structure(flow_modal_dialog, {"fp.add_beacon"}, "beacon", line, nil, nil)
     else  -- meaning this is an edit
@@ -87,7 +87,7 @@ function close_beacon_dialog(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
-    
+
     if action == "submit" then
         -- It makes no difference if this is an edit or not, the beacon gets replaced anyway
         local new_beacon = Beacon.init_by_protos(ui_state.modal_data.selected_beacon, tonumber(data.beacon_amount),
@@ -158,10 +158,10 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
 
     -- Beacon bar
     if type == "beacon" then create_prototype_line(flow_modal_dialog, "beacon", line, beacon) end
-    
+
     -- Module bar
     module = (type == "beacon" and beacon ~= nil) and beacon.module or module
-    create_prototype_line(flow_modal_dialog, "module", line, module)    
+    create_prototype_line(flow_modal_dialog, "module", line, module)
 
 
     -- Beacon Total
@@ -213,7 +213,7 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
             button_beacon.style.padding = 2
         end
     end
-    
+
     -- Module selection
     flow_modal_dialog.add{type="label", name="label_module_selection",
       caption={"", {"fp.select_module"}, ":"}, style="fp_preferences_title_label"}
@@ -237,7 +237,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     -- Adjustments for a beacon prototype line
     if type == "beacon" then
         decimal = true
-        
+
         if object == nil then
             local preferences = get_preferences(player)
 
@@ -266,7 +266,7 @@ function create_prototype_line(flow_modal_dialog, type, line, object)
     local textfield = flow.add{type="textfield", name="textfield_" .. type .. "_amount", text=amount}
     textfield.style.width = 40
     ui_util.setup_numeric_textfield(textfield, decimal, false)
-    
+
     local focus = true
     if type == "module" then  -- only add max button if this is a module
         local button_max = flow.add{type="button", name="fp_button_max_modules", caption={"fp.max"},
@@ -352,14 +352,14 @@ function handle_module_beacon_picker_click(player, button)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
     local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
-    
+
     local split_name = cutil.split(button.name, "_")
     if split_name[3] == "module" then
         if button.style.name ~= "fp_button_icon_medium_cyan" then  -- do nothing on existing modules
             local module_proto = global.all_modules.categories[split_name[5]].modules[split_name[6]]
             modal_data.selected_module = module_proto
             set_sprite_button(flow_modal_dialog, "module", module_proto)
-            
+
             -- Take focus away from the module amount textfield if it is locked at 1
             if modal_data.empty_slots == 1 then flow_modal_dialog.focus() end
         end
@@ -369,10 +369,10 @@ function handle_module_beacon_picker_click(player, button)
         modal_data.selected_beacon = beacon_proto
         modal_data.empty_slots = beacon_proto.module_limit
         set_sprite_button(flow_modal_dialog, "beacon", beacon_proto)
-        
+
         -- The allowed modules might be different with the newly selected beacon, so refresh and check them
         refresh_module_selection(flow_modal_dialog, modal_data, "beacon", ui_state.context.line)
-        
+
         -- The module textfield and max-button might need to be locked (limit=1)
         update_module_bar(flow_modal_dialog, ui_state)
 
@@ -421,7 +421,7 @@ function update_module_bar(flow_modal_dialog, ui_state)
 
     -- Make sure there is no module is selected that is incompatible with the selected beacon
     if ui_state.modal_dialog_type == "beacon" and modal_data.selected_module ~= nil then
-        local characteristics = Line.get_beacon_module_characteristics(ui_state.context.line, 
+        local characteristics = Line.get_beacon_module_characteristics(ui_state.context.line,
           modal_data.selected_beacon, modal_data.selected_module)
         if not characteristics.compatible then
             bar["sprite-button_module"].sprite = ""

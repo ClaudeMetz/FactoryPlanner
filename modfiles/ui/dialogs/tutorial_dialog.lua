@@ -17,7 +17,7 @@ function open_tutorial_dialog(flow_modal_dialog)
       caption={"fp.interactive"}}
     interactive_title.style.font = "fp-font-bold-20p"
     interactive_title.style.top_margin = 4
-    
+
     local interactive_table = table_tutorial.add{type="table", name="table_interactive", column_count=1}
     interactive_table.style.vertical_spacing = 14
     interactive_table.style.top_margin = 8
@@ -32,14 +32,14 @@ function open_tutorial_dialog(flow_modal_dialog)
       caption={"fp.create_example"}, tooltip={"fp.example_subfactory"}, mouse_button_filter={"left"}}
     button_example_subfactory.enabled = not other_mods_active
 
-    local label_example_subfactory = table_example_subfactory.add{type="label", name="label_example_subfactory", 
+    local label_example_subfactory = table_example_subfactory.add{type="label", name="label_example_subfactory",
       caption={"fp.example_subfactory_info"}}
     ui_util.set_label_color(label_example_subfactory, "yellow")
     label_example_subfactory.style.left_margin = 10
     label_example_subfactory.visible = other_mods_active
 
     -- Tutorial Mode
-    local switch = ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode, 
+    local switch = ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode,
       {"fp.tutorial_mode"}, {"fp.tutorial_mode_tt"})
 
 
@@ -68,10 +68,10 @@ function open_tutorial_dialog(flow_modal_dialog)
     local protips_title = table_tutorial.add{type="label", name="label_protips_title", caption={"fp.protips"}}
     protips_title.style.font = "fp-font-bold-20p"
 
-    local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings", 
+    local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
       "recursive_subfloors", "views", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
     for _, name in ipairs(protip_names) do
-        local label = table_tutorial.add{type="label", name="label_tutorial_" .. name, 
+        local label = table_tutorial.add{type="label", name="label_tutorial_" .. name,
           caption={"", "- ", {"fp.pro_" .. name}}}
         label.style.single_line = false
         label.style.top_margin = 8

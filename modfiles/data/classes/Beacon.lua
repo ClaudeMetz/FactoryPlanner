@@ -25,7 +25,7 @@ end
 function Beacon.set_module(self, module, no_recursion)
     if module ~= nil then module.parent = self end
     self.module = module
-    
+
     if self.parent.subfloor ~= nil and not no_recursion then
         local sub_line = Floor.get(self.parent.subfloor, "Line", 1)
         Beacon.set_module(sub_line.beacon, cutil.deepcopy(module), true)
@@ -58,7 +58,7 @@ end
 function Beacon.update_validity(self)
     local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
     local new_beacon_id = new.all_beacons.map[proto_name]
-    
+
     if new_beacon_id ~= nil then
         self.proto = new.all_beacons.beacons[new_beacon_id]
         self.valid = true
@@ -66,7 +66,7 @@ function Beacon.update_validity(self)
         self.proto = self.proto.name
         self.valid = false
     end
-    
+
     if not Module.update_validity(self.module) then
         self.valid = false
     end
@@ -79,7 +79,7 @@ function Beacon.update_validity(self)
     if self.valid and self.parent.machine.proto.allowed_effects == nil then
         self.valid = false
     end
-    
+
     -- Update effects if this beacon is still valid
     if self.valid then
         Beacon.summarize_effects(self)

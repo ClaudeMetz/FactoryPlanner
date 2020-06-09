@@ -2,7 +2,7 @@
 function open_utility_dialog(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"fp.utilities"}
     local context = get_context(game.get_player(flow_modal_dialog.player_index))
-    
+
     refresh_utility_components_structure(flow_modal_dialog, context)
     create_utility_notes_structure(flow_modal_dialog, context)
 end
@@ -50,7 +50,7 @@ function refresh_utility_components_structure(flow_modal_dialog, context)
     local function add_row(name, data)
         local label = table.add{type="label", caption={"", {"fp.c" .. name}, ":"}}
         label.style.font = "default-bold"
-        
+
         local table_components = table.add{type="table", column_count=10}
         for _, component in pairs(data) do
             if component.amount > 0 then
@@ -74,7 +74,7 @@ function refresh_utility_components_structure(flow_modal_dialog, context)
     local data = _G[scope].get_component_data(context[scope:lower()], nil)
 
     add_row("machines", data.machines)
-    add_row("modules", data.modules)    
+    add_row("modules", data.modules)
 end
 
 -- Creates the flow containing this subfactories notes
@@ -82,7 +82,7 @@ function create_utility_notes_structure(flow_modal_dialog, context)
     local flow = flow_modal_dialog.add{type="flow", name="flow_notes", direction="vertical"}
 
     add_utility_titlebar(flow, "notes", false, false, context)
-    
+
     local text_box = flow.add{type="text-box", name="fp_text-box_notes", text=context.subfactory.notes}
     text_box.style.width = 500
     text_box.style.height = 250

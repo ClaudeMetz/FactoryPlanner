@@ -2,7 +2,7 @@
 function open_subfactory_dialog(flow_modal_dialog, modal_data)
     local player = game.players[flow_modal_dialog.player_index]
     local subfactory = modal_data.subfactory
-    
+
     if subfactory ~= nil then  -- Meaning this is an edit
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
         local icon = subfactory.icon
@@ -10,7 +10,7 @@ function open_subfactory_dialog(flow_modal_dialog, modal_data)
             if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
             elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
         end
-        
+
         create_subfactory_dialog_structure(flow_modal_dialog, {"fp.edit_subfactory"}, subfactory.name, icon)
     else
         create_subfactory_dialog_structure(flow_modal_dialog, {"fp.new_subfactory"}, nil, nil)
@@ -48,7 +48,7 @@ function get_subfactory_condition_instructions()
             -- Trim whitespace at beginning and end of the name
             name = (function(flow_modal_dialog) return
               flow_modal_dialog["table_subfactory"]["fp_textfield_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1") end),
-            icon = (function(flow_modal_dialog) return 
+            icon = (function(flow_modal_dialog) return
               flow_modal_dialog["table_subfactory"]["choose-elem-button_subfactory_icon"].elem_value end)
         },
         conditions = {
