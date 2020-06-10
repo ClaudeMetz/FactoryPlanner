@@ -61,28 +61,8 @@ function model.update_floor(floor_data, aggregate)
                 structures.aggregate.subtract(aggregate, "Product", item)
             end
 
-            -- Puts the items into their destination, stopping for balancing at the depot
-            -- (Naming is hard, and that explanation is crap)
-            local function balance_items(class_data, depot, destination)
-                for _, item in ipairs(structures.class.to_array(class_data)) do
-                    local depot_amount = aggregate[depot][item.type][item.name]
-
-                    if depot_amount ~= nil then  -- Use up depot items, if available
-                        if depot_amount >= item.amount then
-                            structures.aggregate.subtract(aggregate, depot, item)
-                        else
-                            structures.aggregate.subtract(aggregate, depot, item, depot_amount)
-                            structures.aggregate.add(aggregate, destination, item, (item.amount - depot_amount))
-                        end
-
-                    else  -- add to destination if this item is not present in the depot
-                        structures.aggregate.add(aggregate, destination, item)
-                    end
-                end
-            end
-
-            balance_items(subfloor_aggregate.Ingredient, "Byproduct", "Product")
-            balance_items(subfloor_aggregate.Byproduct, "Product", "Byproduct")
+            structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate, "Byproduct", "Product")
+            structures.class.balance_items(subfloor_aggregate.Byproduct,aggregate,  "Product", "Byproduct")
 
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
@@ -234,20 +214,8 @@ function model.update_line(line_data, aggregate)
             structures.class.subtract(Byproduct, ingredient, ingredient_amount)
             structures.class.subtract(Ingredient, ingredient, byproduct_amount)
         end
-
-        -- Ingredients should be taken out of byproducts as much as possible for the aggregate
-        local available_byproduct = aggregate.Byproduct[ingredient.type][ingredient.name]
-        if available_byproduct ~= nil then
-            if available_byproduct >= ingredient_amount then
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, ingredient_amount)
-            else  -- available_byproduct < ingredient_amount
-                structures.aggregate.subtract(aggregate, "Byproduct", ingredient, available_byproduct)
-                structures.aggregate.add(aggregate, "Product", ingredient, (ingredient_amount - available_byproduct))
-            end
-        else
-            structures.aggregate.add(aggregate, "Product", ingredient, ingredient_amount)
-        end
     end
+    structures.class.balance_items(Ingredient, aggregate, "Byproduct", "Product")
 
 
     -- Determine machine count
