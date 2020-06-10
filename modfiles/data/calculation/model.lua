@@ -237,12 +237,16 @@ function model.update_line(line_data, aggregate)
 
     if energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
         local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
-        line_data.fuel_proto.fuel_value, line_data.timescale)
+          line_data.fuel_proto.fuel_value, line_data.timescale)
 
+        local fuel_class = structures.class.init()
         local fuel = {type=line_data.fuel_proto.type, name=line_data.fuel_proto.name, amount=fuel_amount}
-        structures.aggregate.add(aggregate, "Product", fuel)  -- add here so fuel demand can be fulfilled
+        structures.class.add(fuel_class, fuel)
 
-        fuel_result = {proto = line_data.fuel_proto, amount = fuel.amount}
+        -- Add fuel to the aggregate, consuming this line's byproducts first, if possible
+        structures.class.balance_items(fuel_class, aggregate, "Byproduct", "Product")
+
+        fuel_result = {proto=line_data.fuel_proto, amount=fuel_amount}
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
     elseif energy_type == "void" then
