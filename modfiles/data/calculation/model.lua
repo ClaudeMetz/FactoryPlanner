@@ -45,6 +45,7 @@ function model.update_floor(floor_data, aggregate)
             local floor_products = structures.class.to_array(subfloor_aggregate.Product)
             model.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
 
+
             -- Convert the internal product-format into positive products for the line and main aggregate
             for _, product in pairs(floor_products) do
                 local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
@@ -55,29 +56,33 @@ function model.update_floor(floor_data, aggregate)
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
             aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
 
-            local function update_main_aggregate(class_name, destination_class_name)
-                for _, item in ipairs(structures.class.to_array(subfloor_aggregate[class_name])) do
-                    local byproduct_amount = aggregate.Byproduct[item.type][item.name]
+            -- Subtract subfloor products as produced
+            for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do
+                structures.aggregate.subtract(aggregate, "Product", item)
+            end
 
-                    if class_name == "Ingredient" and byproduct_amount ~= nil then
-                        if byproduct_amount >= item.amount then
-                            structures.aggregate.subtract(aggregate, "Byproduct", item)
+            -- Puts the items into their destination, stopping for balancing at the depot
+            -- (Naming is hard, and that explanation is crap)
+            local function balance_items(class_data, depot, destination)
+                for _, item in ipairs(structures.class.to_array(class_data)) do
+                    local depot_amount = aggregate[depot][item.type][item.name]
+
+                    if depot_amount ~= nil then  -- Use up depot items, if available
+                        if depot_amount >= item.amount then
+                            structures.aggregate.subtract(aggregate, depot, item)
                         else
-                            structures.aggregate.subtract(aggregate, "Byproduct", item, byproduct_amount)
-                            structures.aggregate.add(aggregate, destination_class_name,
-                              item, (item.amount - byproduct_amount))
+                            structures.aggregate.subtract(aggregate, depot, item, depot_amount)
+                            structures.aggregate.add(aggregate, destination, item, (item.amount - depot_amount))
                         end
 
-                    else
-                        local amount = (class_name == "Product") and -item.amount or item.amount
-                        structures.aggregate.add(aggregate, destination_class_name, item, amount)
+                    else  -- add to destination if this item is not present in the depot
+                        structures.aggregate.add(aggregate, destination, item)
                     end
                 end
             end
 
-            update_main_aggregate("Byproduct", "Byproduct")
-            update_main_aggregate("Product", "Product")
-            update_main_aggregate("Ingredient", "Product")
+            balance_items(subfloor_aggregate.Ingredient, "Byproduct", "Product")
+            balance_items(subfloor_aggregate.Byproduct, "Product", "Byproduct")
 
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate

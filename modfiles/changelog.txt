@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    - Fixed a bug where byproducts produced on a subfloor were not incorporated correctly on their parent floor
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.29
 Date: 09. 06. 2020
   Features:
