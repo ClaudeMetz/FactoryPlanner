@@ -251,69 +251,23 @@ local function combine_identical_items(item_list)
     end
 end
 
--- Determines the type_count for the given item list
-local function determine_item_counts(item_list)
-    local type_counts = {items = 0, fluids = 0}
+-- Converts the given list to a list[type][name]-format
+local function create_type_indexed_list(item_list)
+    local indexed_list = {item = {}, fluid = {}, entity = {}}
 
-    for _, item in pairs(item_list) do
-        if item.type == "fluid" then
-            type_counts.fluids = type_counts.fluids + 1
-        else  -- "item" and "entity"
-            type_counts.items = type_counts.items + 1
-        end
+    for index, item in pairs(item_list) do
+        indexed_list[item.type][item.name] = {index = index, item = cutil.shallowcopy(item)}
     end
 
-    return type_counts
+    return indexed_list
 end
 
-
--- Determines the net amount that the given recipe consumes of the given item (might be negative)
-local function determine_net_ingredient_amount(recipe_proto, item)
-    local net_amount = 0
-    for _, ingredient in pairs(recipe_proto.ingredients) do
-        -- Find the given item in the ingredient list
-        if ingredient.type == item.type and ingredient.name == item.name then
-            net_amount = ingredient.amount  -- actual amount
-            break
-        end
-    end
-
-    for _, product in pairs(recipe_proto.products) do
-        -- Find the given item in the product list
-        if product.type == item.type and product.name == item.name then
-            net_amount = net_amount - product.amount
-            break
-        end
-    end
-
-    return net_amount
-end
-
--- Determines the net amount that the given recipe produces of the given item (might be negative)
-local function determine_net_product_amount(recipe_proto, item)
-    local net_amount = 0
-    for _, product in pairs(recipe_proto.products) do
-        -- Mining recipes' net amounts always equal their main_product's amount
-        if recipe_proto.mining and product.name == recipe_proto.main_product.name then
-            return product.amount
-        end
-
-        -- Find the given item in the product list
-        if product.type == item.type and product.name == item.name then
-            net_amount = product.amount  -- actual amount
-            break
-        end
-    end
-
-    for _, ingredient in pairs(recipe_proto.ingredients) do
-        -- Find the given item in the ingredient list
-        if ingredient.type == item.type and ingredient.name == item.name then
-            net_amount = net_amount - ingredient.amount
-            break
-        end
-    end
-
-    return net_amount
+-- Determines the type_count for the given recipe prototype
+local function determine_item_type_counts(indexed_items)
+    return {
+        items = table_size(indexed_items.item),
+        fluids = table_size(indexed_items.fluid)
+    }
 end
 
 
@@ -324,10 +278,8 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
         table.insert(ingredients, formatted_ingredient)
     end
-    --combine_identical_items(ingredients)  -- not needed here (probably)
-    recipe_proto.type_counts.ingredients = determine_item_counts(ingredients)
-    recipe_proto.ingredients = ingredients
-
+    local indexed_ingredients = create_type_indexed_list(ingredients)
+    recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 
     local products = {}
     for _, base_product in pairs(recipe_proto.products) do
@@ -341,20 +293,51 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
             recipe_proto.main_product = formatted_product
         end
     end
-    combine_identical_items(products)
-    recipe_proto.type_counts.products = determine_item_counts(products)
+    combine_identical_items(products)  -- only needed products, ingredients can't have duplicates
+    local indexed_products = create_type_indexed_list(products)
+    recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
+
+
+    -- Reduce item amounts for items that are both an ingredient and a product
+    for _, items_of_type in pairs(indexed_ingredients) do
+        for _, ingredient in pairs(items_of_type) do
+            local peer_product = indexed_products[ingredient.item.type][ingredient.item.name]
+
+            if peer_product then
+                local difference = ingredient.item.amount - peer_product.item.amount
+
+                if difference < 0 then
+                    ingredients[ingredient.index].amount = nil
+
+                    local actual_product = products[peer_product.index]
+                    actual_product.amount = -difference
+                    local net_amount = ingredient.item.amount - ingredient.item.proddable_amount
+                    actual_product.proddable_amount = peer_product.item.proddable_amount - net_amount
+                elseif difference > 0 then
+                    local actual_ingredient = ingredients[ingredient.index]
+                    actual_ingredient.amount = difference
+                    local net_amount = peer_product.item.amount - peer_product.item.proddable_amount
+                    actual_ingredient.proddable_amount = ingredient.item.proddable_amount - net_amount
+
+                    products[peer_product.index].amount = nil
+                else
+                    ingredients[ingredient.index].amount = nil
+                    products[peer_product.index].amount = nil
+                end
+            end
+        end
+    end
+
+    -- Remove any items that should be, indicated by their amount being nil
+    for _, item_table in pairs{ingredients, products} do
+        for i = #item_table, 1, -1 do
+            if item_table[i].amount == nil then item_table[i] = nil end
+        end
+    end
+
+
+    recipe_proto.ingredients = ingredients
     recipe_proto.products = products
-
-
-    -- Determine the net amount after the actual amounts have been calculated
-    for _, formatted_ingredient in pairs(recipe_proto.ingredients) do
-        formatted_ingredient.net_amount = determine_net_ingredient_amount(recipe_proto, formatted_ingredient)
-    end
-
-    -- Determine the net amount after the actual amounts have been calculated
-    for _, formatted_product in pairs(recipe_proto.products) do
-        formatted_product.net_amount = determine_net_product_amount(recipe_proto, formatted_product)
-    end
 end
 
 

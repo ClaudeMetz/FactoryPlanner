@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a bug where using productivity on certain recipes (like koravex enrichment) would not produce correct results
     - Fixed a bug where byproducts produced on a subfloor were not incorporated correctly on their parent floor
     - Fixed a bug where a recipe line's byproducts were not consumed by the fuel that that line needed
 

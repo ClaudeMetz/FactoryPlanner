@@ -118,7 +118,7 @@ function model.update_line(line_data, aggregate)
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Product[relevant_product.type][relevant_product.name]
-        return ((demand * (line_data.percentage / 100)) / relevant_product.net_amount)
+        return ((demand * (line_data.percentage / 100)) / relevant_product.amount)
     end
 
     local relevant_product_count = table_size(relevant_products)
@@ -181,24 +181,17 @@ function model.update_line(line_data, aggregate)
     local Product = structures.class.init()
     for _, product in pairs(relevant_products) do
         local product_amount = determine_amount_with_productivity(product)
+        local product_demand = aggregate.Product[product.type][product.name] or 0
 
-        -- Don't include net negative relevant products as products
-        if product.net_amount <= 0 then
-            structures.class.add(Byproduct, product, product_amount)
-            structures.aggregate.add(aggregate, "Byproduct", product, product_amount)
-
-        else
-            local product_demand = aggregate.Product[product.type][product.name] or 0
-            if product_amount > product_demand then
-                local overflow_amount = product_amount - product_demand
-                structures.class.add(Byproduct, product, overflow_amount)
-                structures.aggregate.add(aggregate, "Byproduct", product, overflow_amount)
-                product_amount = product_demand  -- desired amount
-            end
-
-            structures.class.add(Product, product, product_amount)
-            structures.aggregate.subtract(aggregate, "Product", product, product_amount)
+        if product_amount > product_demand then
+            local overflow_amount = product_amount - product_demand
+            structures.class.add(Byproduct, product, overflow_amount)
+            structures.aggregate.add(aggregate, "Byproduct", product, overflow_amount)
+            product_amount = product_demand  -- desired amount
         end
+
+        structures.class.add(Product, product, product_amount)
+        structures.aggregate.subtract(aggregate, "Product", product, product_amount)
     end
 
     -- Determine ingredients
