@@ -96,12 +96,9 @@ function loader.caching.recipe_map_from(item_type)
     if not global.all_recipes.recipes then return end
     for _, recipe in pairs(global.all_recipes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
-            -- Ignores recipes that produce/consume a net item/fluid-amount <= 0
-            if item.net_amount and item.net_amount > 0 then
-                map[item.type] = map[item.type] or {}
-                map[item.type][item.name] = map[item.type][item.name] or {}
-                map[item.type][item.name][recipe.id] = true
-            end
+            map[item.type] = map[item.type] or {}
+            map[item.type][item.name] = map[item.type][item.name] or {}
+            map[item.type][item.name][recipe.id] = true
         end
     end
 
