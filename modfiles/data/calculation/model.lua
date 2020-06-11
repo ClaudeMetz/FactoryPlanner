@@ -162,7 +162,7 @@ function model.update_line(line_data, aggregate)
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
         if (item.proddable_amount > 0) and (line_data.total_effects.productivity > 0) then
-            return (calculation.util.determine_prodded_amount(item, line_data.total_effects) * production_ratio)
+            return (calculation.util.determine_prodded_amount(item, line_data.machine_proto, line_data.recipe_proto, line_data.total_effects) * production_ratio)
         else
             return (item.amount * production_ratio)
         end
@@ -226,9 +226,7 @@ function model.update_line(line_data, aggregate)
       line_data.fuel_proto, line_data.total_effects, energy_consumption)
 
     local fuel_result = nil
-    local energy_type = line_data.machine_proto.energy_type
-
-    if energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
+    if machine_proto.energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
         local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
           line_data.fuel_proto.fuel_value, line_data.timescale)
 
@@ -242,7 +240,7 @@ function model.update_line(line_data, aggregate)
         fuel_result = {proto=line_data.fuel_proto, amount=fuel_amount}
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
-    elseif energy_type == "void" then
+    elseif machine_proto.energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
 
