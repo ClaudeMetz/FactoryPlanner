@@ -1,11 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
-  Changes:
-    -
   Bugfixes:
+    - Fixed that crafting machines producing more than 1 item/tick would show incorrect results, especially when productivity was involved. Thanks a lot to curiosity for helping me figure this one out.
     - Fixed a bug where using productivity on certain recipes (like koravex enrichment) would not produce correct results
     - Fixed a bug where byproducts produced on a subfloor were not incorporated correctly on their parent floor
     - Fixed a bug where a recipe line's byproducts were not consumed by the fuel that that line needed

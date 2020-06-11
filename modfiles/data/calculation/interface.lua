@@ -267,29 +267,37 @@ function calculation.util.determine_machine_count(machine_proto, recipe_proto, t
 
     local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-    return ((machine_prod_ratio / (machine_speed / recipe_proto.energy)) / timescale) + launch_delay
+    local crafts_per_tick = math.min((machine_speed / recipe_proto.energy), 60)
+    return ((machine_prod_ratio / crafts_per_tick) / timescale) + launch_delay
 end
 
 -- Calculates the production ratio from a given machine limit
 function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_limit, timescale)
+    local productivity = (1 + math.max(total_effects.productivity, 0))
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-    local productivity_multiplier = (1 + math.max(total_effects.productivity, 0))
+    local crafts_per_tick = math.min((machine_speed / recipe_proto.energy), 60)
 
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
-    if machine_proto.category == "rocket-building" then
-        -- Formula reduced by Wolfram Alpha
-        return ((4 * machine_limit * machine_speed * timescale) /
-          ((165 * machine_speed) + (4 * recipe_proto.energy)) * productivity_multiplier)
+    if machine_proto.category == "rocket-building" then  -- Formula reduced by Wolfram Alpha
+        return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4 * productivity)
     else
-        return (machine_limit * timescale * (machine_speed / recipe_proto.energy) * productivity_multiplier)
+        return machine_limit * timescale * crafts_per_tick * productivity
     end
 end
 
 -- Calculates the ingredient/product amount after applying productivity bonuses
 -- [Formula derived from: amount - proddable_amount + (proddable_amount / productivity)]
-function calculation.util.determine_prodded_amount(item, total_effects)
-    local productivity = (1 + math.max(total_effects.productivity, 0))
-    return item.amount + item.proddable_amount * ((1 / productivity) - 1)
+function calculation.util.determine_prodded_amount(item, machine_proto, recipe_proto, total_effects)
+    local productivity = math.max(total_effects.productivity, 0)
+
+    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
+    local crafts_per_tick = machine_speed / recipe_proto.energy
+
+    if crafts_per_tick > 60 then
+        productivity = ((1/60) * productivity) / (recipe_proto.energy / machine_speed)
+    end
+
+    return item.amount + item.proddable_amount * ((1 / (productivity + 1)) - 1)
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
