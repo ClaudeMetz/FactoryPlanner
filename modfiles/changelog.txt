@@ -3,10 +3,8 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - You can now alt-click a machine in preferences to set that exact machine in every other category that has it.
-  Changes:
-    -
   Bugfixes:
-    -
+    - Fixed a problem where productivity modules would not apply correctly to some modded ingredients
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.30
