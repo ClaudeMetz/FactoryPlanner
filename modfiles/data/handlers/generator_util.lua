@@ -190,32 +190,21 @@ end
 -- Determines the actual amount of items that a recipe product or ingredient equates to
 local function generate_formatted_item(base_item, type)
     local actual_amount, proddable_amount = 0, 0
+
     if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
         actual_amount = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
-
-        -- I'm unsure whether this calculation is correct for this type of recipe spec
-        -- A definition with max/min and catalysts might not even be possible/in use
-        if type == "ingredient" then
-            proddable_amount = actual_amount - (base_item.catalyst_amount or 0)
-        else  -- type == "product"
-            proddable_amount = (base_item.catalyst_amount or 0)
-        end
+        if type == "product" then proddable_amount = (base_item.catalyst_amount or 0) end
 
     elseif base_item.probability ~= nil then
         actual_amount = base_item.amount * base_item.probability
-        if type == "ingredient" then
-            proddable_amount = (base_item.amount - (base_item.catalyst_amount or 0)) * base_item.probability
-        else  -- type == "product"
-            proddable_amount = (base_item.catalyst_amount or 0) * base_item.probability
-        end
+        if type == "product" then proddable_amount = (base_item.catalyst_amount or 0) * base_item.probability end
+
     else
         actual_amount = base_item.amount
-        if type == "ingredient" then
-            proddable_amount = base_item.amount - (base_item.catalyst_amount or 0)
-        else  -- type == "product"
-            proddable_amount = (base_item.catalyst_amount or 0)
-        end
+        if type == "product" then proddable_amount = (base_item.catalyst_amount or 0) end
+
     end
+    if type == "ingredient" then proddable_amount = actual_amount end
 
     -- This will probably screw up the main_product detection down the line
     if base_item.temperature ~= nil then
