@@ -153,7 +153,10 @@ function handle_subfactory_timescale_change(player, timescale)
     local timescale_ratio = (timescale / old_timescale)
     for _, top_level_product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
         local required_amount = top_level_product.required_amount
-        required_amount.amount = tonumber(ui_util.format_number(required_amount.amount * timescale_ratio, 4))
+        -- No need to change amounts for belts/lanes, as timescale change does that implicitly
+        if required_amount.defined_by == "amount" then
+            required_amount.amount = required_amount.amount * timescale_ratio
+        end
     end
 
     get_ui_state(player).current_activity = nil

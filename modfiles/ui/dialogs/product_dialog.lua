@@ -36,7 +36,6 @@ function close_product_dialog(flow_modal_dialog, action, data)
         local req_amount = {
             defined_by = modal_data.amount_defined_by,
             amount = tonumber(data[modal_data.amount_defined_by .. "_amount"]),
-            timescale = subfactory.timescale,
             belt_proto = modal_data.belt_proto
         }
 
@@ -114,9 +113,9 @@ function refresh_product_bar(flow_modal_dialog, product)
         belt_name = (modal_data.belt_proto ~= nil) and modal_data.belt_proto.name or nil
 
         if modal_data.amount_defined_by == "amount" then
-            item_amount = product.required_amount.amount
+            item_amount = ui_util.format_number(product.required_amount.amount, 8)
         else  -- defined_by == "belts"/"lanes"
-            belt_amount = product.required_amount.amount
+            belt_amount = ui_util.format_number(product.required_amount.amount, 6)
         end
     else
         -- Set a default defined_by for new products
@@ -158,7 +157,7 @@ function refresh_product_bar(flow_modal_dialog, product)
     local textfield_belt = flow_product_belts.add{type="textfield", name=("fp_textfield_product_" .. lob),
       text=belt_amount, enabled=(modal_data.belt_proto~=nil)}
     ui_util.setup_numeric_textfield(textfield_belt, true, false)
-    textfield_belt.style.width = 60
+    textfield_belt.style.width = 65
 
     local label_X = flow_product_belts.add{type="label", caption="X"}
     label_X.style.margin = {0, 3}
@@ -205,9 +204,10 @@ function update_product_amounts(flow_product_bar, modal_data)
     local textfield_amount = flow_product_bar["flow_product_amount"]["fp_textfield_product_amount"]
     local textfield_belts = flow_product_bar["flow_product_" .. lob]["fp_textfield_product_" .. lob]
 
+    local defined_by = modal_data.amount_defined_by
     local belt_proto = modal_data.belt_proto
     local multiplier = (lob == "belts") and 1 or 0.5
-    local defined_by = modal_data.amount_defined_by
+
     if defined_by == "amount" and belt_proto ~= nil then
         local defining_amount = tonumber(textfield_amount.text)
         if defining_amount ~= nil then
@@ -216,11 +216,12 @@ function update_product_amounts(flow_product_bar, modal_data)
         else
             textfield_belts.text = ""
         end
+
     elseif defined_by == "belts" or defined_by == "lanes" then
         local defining_amount = tonumber(textfield_belts.text)
         if defining_amount ~= nil then
             local amount_amount = defining_amount * (belt_proto.throughput * multiplier) * modal_data.timescale
-            textfield_amount.text = amount_amount
+            textfield_amount.text = ui_util.format_number(amount_amount, 4)
         else
             textfield_amount.text = ""
         end
@@ -260,6 +261,7 @@ function handle_product_belt_change(player, belt_name)
         modal_data.amount_defined_by = "amount"
         textfield_product_belts.text = ""
     else
+        -- Products need to be updated first here so the amount stays the same
         update_product_amounts(flow_product_bar, modal_data)
         modal_data.amount_defined_by = lob
     end
