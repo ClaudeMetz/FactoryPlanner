@@ -39,7 +39,8 @@ function Item.required_amount(self)
     else  -- defined_by == "belts"/"lanes"
         -- If this is defined by lanes, only half of the throughput of a full belt needs to be considered
         local multiplier = (req_amount.defined_by == "belts") and 1 or 0.5
-        return req_amount.amount * (req_amount.belt_proto.throughput * multiplier) * req_amount.timescale
+        local timescale = self.parent.timescale
+        return req_amount.amount * (req_amount.belt_proto.throughput * multiplier) * timescale
     end
 end
 
