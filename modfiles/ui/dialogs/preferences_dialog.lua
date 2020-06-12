@@ -217,8 +217,20 @@ end
 
 
 -- Persists changes to any default prototype and refreshes appropriately
-function handle_prototype_preference_change(player, type, prototype_id, category_id)
+function handle_prototype_preference_change(player, type, prototype_id, category_id, alt)
     prototyper.defaults.set(player, type, prototype_id, category_id)
+
+    -- If this was an alt-click, set this prototype on every category that also has it
+    if alt and category_id ~= nil then
+        local prototype = prototyper.defaults.get(player, type, category_id)
+        for secondary_category_id, category in pairs(global["all_" .. type].categories) do
+            local secondary_prototype_id = category.map[prototype.name]
+            if secondary_prototype_id ~= nil then
+                prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
+            end
+        end
+    end
+
     refresh_preferences_dialog(player)
     if type == "belts" then refresh_production_pane(player) end
 end
