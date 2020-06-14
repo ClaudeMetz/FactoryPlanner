@@ -232,5 +232,5 @@ function handle_prototype_preference_change(player, type, prototype_id, category
     end
 
     refresh_preferences_dialog(player)
-    if type == "belts" then refresh_production_pane(player) end
+    if type == "belts" then refresh_main_dialog(player) end
 end
