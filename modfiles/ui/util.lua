@@ -496,7 +496,7 @@ function ui_util.message.refresh(player)
     local new_message, new_color = "", nil
     for _, type in ipairs(types) do
         -- All messages will have lifetime > 0 at this point
-        for _, message in ipairs(ui_state.message_queue) do
+        for _, message in pairs(ui_state.message_queue) do
             -- Find first message of this type, then break
             if message.type == type.name then
                 new_message = message.text
@@ -509,9 +509,9 @@ function ui_util.message.refresh(player)
     end
 
     -- Decrease the lifetime of every queued message
-    for index, message in ipairs(ui_state.message_queue) do
+    for index, message in pairs(ui_state.message_queue) do
         message.lifetime = message.lifetime - 1
-        if message.lifetime <= 0 then table.remove(ui_state.message_queue, index) end
+        if message.lifetime <= 0 then ui_state.message_queue[index] = nil end
     end
 
     local label_hint = flow_titlebar["label_titlebar_hint"]
