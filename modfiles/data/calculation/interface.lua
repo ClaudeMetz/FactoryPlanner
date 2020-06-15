@@ -257,59 +257,57 @@ end
 
 
 -- **** FORMULAE ****
+-- Determines the number of crafts per tick for the given data
+function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
+    return machine_speed / recipe_proto.energy
+end
+
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function calculation.util.determine_machine_count(machine_proto, recipe_proto, total_effects, production_ratio, timescale)
+function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, category)
     local launch_delay = 0
-    if machine_proto.category == "rocket-building" then
+    if category == "rocket-building" then
         local launch_sequence_time = 41.25 / timescale  -- in seconds
         launch_delay = launch_sequence_time * production_ratio
     end
 
-    local machine_prod_ratio = production_ratio / (1 + math.max(total_effects.productivity, 0))
-    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-    local crafts_per_tick = math.min((machine_speed / recipe_proto.energy), 60)
-    return ((machine_prod_ratio / crafts_per_tick) / timescale) + launch_delay
+    return ((production_ratio / crafts_per_tick) / timescale) + launch_delay
 end
 
 -- Calculates the production ratio from a given machine limit
-function calculation.util.determine_production_ratio(machine_proto, recipe_proto, total_effects, machine_limit, timescale)
-    local productivity = (1 + math.max(total_effects.productivity, 0))
-    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-    local crafts_per_tick = math.min((machine_speed / recipe_proto.energy), 60)
-
+function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, category)
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
-    if machine_proto.category == "rocket-building" then  -- Formula reduced by Wolfram Alpha
-        return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4 * productivity)
+    if category == "rocket-building" then  -- Formula reduced by Wolfram Alpha
+        return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)
     else
-        return machine_limit * timescale * crafts_per_tick * productivity
+        return machine_limit * timescale * crafts_per_tick
     end
 end
 
--- Calculates the ingredient/product amount after applying productivity bonuses
--- [Formula derived from: amount - proddable_amount + (proddable_amount / productivity)]
-function calculation.util.determine_prodded_amount(item, machine_proto, recipe_proto, total_effects)
+-- Calculates the product amount after applying productivity bonuses
+function calculation.util.determine_prodded_amount(item, crafts_per_tick, total_effects)
     local productivity = math.max(total_effects.productivity, 0)
+    if productivity == 0 then return item.amount end
 
-    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
-    local crafts_per_tick = machine_speed / recipe_proto.energy
+    if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
 
-    if crafts_per_tick > 60 then
-        productivity = ((1/60) * productivity) / (recipe_proto.energy / machine_speed)
-    end
-
-    return item.amount + item.proddable_amount * ((1 / (productivity + 1)) - 1)
+    -- Return formula is a simplification of the following formula:
+    -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))
+    return item.amount + item.proddable_amount * productivity
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
 function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
-    return machine_count * (machine_proto.energy_usage * 60) * (1 + math.max(total_effects.consumption, -0.8))
+    local consumption_multiplier = 1 + math.max(total_effects.consumption, -0.8)
+    return machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
 end
 
 -- Determines the amount of pollution this recipe produces
 function calculation.util.determine_pollution(machine_proto, recipe_proto, fuel_proto, total_effects, energy_consumption)
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + math.max(total_effects.pollution, -0.8)
-    return energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier * fuel_multiplier * recipe_proto.emissions_multiplier
+    return energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
+      * fuel_multiplier * recipe_proto.emissions_multiplier
 end
 
 -- Determines the amount of fuel needed in the given context

@@ -189,22 +189,17 @@ end
 
 -- Determines the actual amount of items that a recipe product or ingredient equates to
 local function generate_formatted_item(base_item, type)
-    local actual_amount, proddable_amount = 0, 0
-
+    local base_amount = 0
     if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
-        actual_amount = ((base_item.amount_max + base_item.amount_min) / 2) * base_item.probability
-        if type == "product" then proddable_amount = (base_item.catalyst_amount or 0) end
-
-    elseif base_item.probability ~= nil then
-        actual_amount = base_item.amount * base_item.probability
-        if type == "product" then proddable_amount = (base_item.catalyst_amount or 0) * base_item.probability end
-
+        base_amount = (base_item.amount_max + base_item.amount_min) / 2
     else
-        actual_amount = base_item.amount
-        if type == "product" then proddable_amount = (base_item.catalyst_amount or 0) end
-
+        base_amount = base_item.amount
     end
-    if type == "ingredient" then proddable_amount = actual_amount end
+
+    local probability, proddable_amount = (base_item.probability or 1), nil
+    if type == "product" then
+        proddable_amount = (base_amount - (base_item.catalyst_amount or 0)) * probability
+    end
 
     -- This will probably screw up the main_product detection down the line
     if base_item.temperature ~= nil then
@@ -214,17 +209,18 @@ local function generate_formatted_item(base_item, type)
     return {
         name = base_item.name,
         type = base_item.type,
-        amount = actual_amount,
+        amount = (base_amount * probability),
         proddable_amount = proddable_amount,
         temperature = base_item.temperature
     }
 end
 
 -- Combines items that occur more than once into one entry
-local function combine_identical_items(item_list)
+local function combine_identical_products(item_list)
     local touched_items = {item = {}, fluid = {}, entity = {}}
 
-    for index, item in pairs(item_list) do
+    for index=#item_list, 1, -1 do
+        local item = item_list[index]
         if item.temperature == nil then  -- don't care to deal with temperature crap
             local touched_item = touched_items[item.type][item.name]
             if touched_item ~= nil then
@@ -282,7 +278,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
             recipe_proto.main_product = formatted_product
         end
     end
-    combine_identical_items(products)  -- only needed products, ingredients can't have duplicates
+    combine_identical_products(products)  -- only needed products, ingredients can't have duplicates
     local indexed_products = create_type_indexed_list(products)
     recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
 
@@ -297,17 +293,9 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
 
                 if difference < 0 then
                     ingredients[ingredient.index].amount = nil
-
-                    local actual_product = products[peer_product.index]
-                    actual_product.amount = -difference
-                    local net_amount = ingredient.item.amount - ingredient.item.proddable_amount
-                    actual_product.proddable_amount = peer_product.item.proddable_amount - net_amount
+                    products[peer_product.index].amount = -difference
                 elseif difference > 0 then
-                    local actual_ingredient = ingredients[ingredient.index]
-                    actual_ingredient.amount = difference
-                    local net_amount = peer_product.item.amount - peer_product.item.proddable_amount
-                    actual_ingredient.proddable_amount = ingredient.item.proddable_amount - net_amount
-
+                    ingredients[ingredient.index].amount = difference
                     products[peer_product.index].amount = nil
                 else
                     ingredients[ingredient.index].amount = nil
