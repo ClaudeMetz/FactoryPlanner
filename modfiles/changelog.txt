@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.32
+Date: 15. 06. 2020
   Changes:
     - Improved some things about how product definitions by belt/lane are handled. Changing timescales now also better preserves the precision of the numbers you enter.
   Bugfixes:
