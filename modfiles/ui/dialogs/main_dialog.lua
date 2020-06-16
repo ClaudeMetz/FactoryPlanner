@@ -57,10 +57,13 @@ function is_main_dialog_in_focus(player)
 end
 
 -- Sets the game.paused-state appropriately
-function set_pause_state(player, main_dialog)
-    if get_preferences(player).pause_on_interface and not game.is_multiplayer() and
-      player.controller_type ~= defines.controllers.editor then
-        game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
+function set_pause_state(player, main_dialog, force_false)
+    if not game.is_multiplayer() and player.controller_type ~= defines.controllers.editor then
+        if get_preferences(player).pause_on_interface and not force_false then
+            game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
+        else
+            game.tick_paused = false
+        end
     end
 end
 
@@ -98,15 +101,20 @@ function set_selection_mode(player, state)
 
     if ui_state.modal_dialog_type == "beacon" then
         ui_state.flags.selection_mode = state
-        player.gui.screen["fp_frame_main_dialog"].visible = not state
+
+        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        main_dialog.visible = not state
 
         local frame_modal_dialog = ui_util.find_modal_dialog(player)
         frame_modal_dialog.ignored_by_interaction = state
+
         if state == true then
             frame_modal_dialog.location = {25, 50}
+            set_pause_state(player, main_dialog, true)
         else
             frame_modal_dialog.force_auto_center()
             player.opened = frame_modal_dialog
+            set_pause_state(player, main_dialog)
         end
     end
 end
@@ -247,6 +255,7 @@ function handle_pause_button_click(player, button)
         button.style = (preferences.pause_on_interface) and
           "fp_button_titlebar_square_selected" or "fp_button_titlebar_square"
 
-        game.tick_paused = preferences.pause_on_interface
+        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        set_pause_state(player, main_dialog)
     end
 end
