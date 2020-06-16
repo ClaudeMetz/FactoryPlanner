@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.33
+Date: 16. 06. 2020
   Features:
     - Added the ability to set recipe product/byproduct/ingredient-amounts to specific values. You can do this by right-clicking any of them on a specific recipe line and entering an amount. The percentage of that line will then automatically be adjusted to produce that amount exactly.
   Changes:
