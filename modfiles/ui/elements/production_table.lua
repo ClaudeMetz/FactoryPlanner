@@ -295,8 +295,10 @@ function setup_machine_choice_button(player, button, machine_proto, current_mach
     local line = ui_state.context.line
     local selected = (machine_proto.id == current_machine_proto_id)
 
-    local machine_count = calculation.util.determine_machine_count(machine_proto, line.recipe.proto,
-      Line.get_total_effects(line, player), line.uncapped_production_ratio, subfactory.timescale)
+    local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto, line.recipe.proto,
+      Line.get_total_effects(line, player))
+    local machine_count = calculation.util.determine_machine_count(crafts_per_tick, line.uncapped_production_ratio,
+      subfactory.timescale, machine_proto.category)
     machine_count = ui_util.format_number(machine_count, 4)
     button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
 
