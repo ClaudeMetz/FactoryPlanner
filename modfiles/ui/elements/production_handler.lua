@@ -536,7 +536,7 @@ function generate_chooser_fuel_buttons(player)
             local button = generate_blank_chooser_button(player, fuel_id_string)
             if selected_fuel then button.style = "fp_button_icon_large_green" end
             button.sprite = fuel_proto.sprite
-            button.number = fuel_amount
+            button.number = ui_util.format_number(fuel_amount, 4)
             button.tooltip = tooltip
         end
     end
