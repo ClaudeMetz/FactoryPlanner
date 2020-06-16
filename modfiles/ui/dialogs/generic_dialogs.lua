@@ -71,12 +71,12 @@ function get_options_condition_instructions(modal_data)
 
     for _, field in ipairs(modal_data.fields) do
         if field.type == "numeric" then
-            instructions.data[field.name] = (function(flow_modal_dialog) return tonumber(flow_modal_dialog["flow_options"]
-              ["table_option_" .. field.name]["textfield_option_numeric"].text) end)
+            instructions.data[field.name] = (function(flow_modal_dialog) return tonumber(flow_modal_dialog
+              ["flow_options"]["table_option_" .. field.name]["textfield_option_numeric"].text) end)
 
         elseif field.type == "on_off_switch" then
-            instructions.data[field.name] = (function(flow_modal_dialog) return ui_util.switch.get_state(flow_modal_dialog
-              ["flow_options"]["table_option_" .. field.name], field.name, true) end)
+            instructions.data[field.name] = (function(flow_modal_dialog) return ui_util.switch.get_state
+              (flow_modal_dialog["flow_options"]["table_option_" .. field.name], field.name, true) end)
         end
     end
 
