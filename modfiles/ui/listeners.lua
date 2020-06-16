@@ -53,6 +53,15 @@ script.on_event("fp_toggle_main_dialog", function(event)
     toggle_main_dialog(player)
 end)
 
+script.on_event("fp_toggle_pause", function(event)
+    local player = game.get_player(event.player_index)
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    if main_dialog and main_dialog.visible then
+        local button_pause = main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
+        handle_pause_button_click(player, button_pause)
+    end
+end)
+
 script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
@@ -284,6 +293,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         if element_name == "fp_button_toggle_interface"
           or element_name == "fp_button_titlebar_exit" then
             toggle_main_dialog(player)
+
+        -- Changes the pause_on_interface preference
+        elseif element_name == "fp_button_titlebar_pause" then
+            handle_pause_button_click(player, event.element)
 
         -- Opens the tutorial dialog
         elseif element_name == "fp_button_titlebar_tutorial" then

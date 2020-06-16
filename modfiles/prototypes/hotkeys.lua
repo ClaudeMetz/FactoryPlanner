@@ -8,24 +8,31 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "fp_toggle_pause",
+        key_sequence = "CONTROL + P",
+        consuming = "none",
+        order = "b"
+    },
+    {
+        type = "custom-input",
         name = "fp_floor_up",
         key_sequence = "SHIFT + R",
         consuming = "none",
-        order = "b"
+        order = "c"
     },
     {
         type = "custom-input",
         name = "fp_refresh_production",
         key_sequence = "R",
         consuming = "none",
-        order = "c"
+        order = "d"
     },
     {
         type = "custom-input",
         name = "fp_cycle_production_views",
         key_sequence = "TAB",
         consuming = "none",
-        order = "d"
+        order = "e"
     },
     {
         type = "custom-input",
@@ -33,13 +40,13 @@ data:extend({
         key_sequence = "ENTER",
         alternative_key_sequence = "KP_ENTER",
         consuming = "none",
-        order = "e"
+        order = "f"
     },
     {
         type = "custom-input",
         name = "fp_focus_searchfield",
         key_sequence = "CONTROL + F",
         consuming = "none",
-        order = "f"
+        order = "g"
     }
 })

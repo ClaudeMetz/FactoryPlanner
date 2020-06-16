@@ -13,6 +13,21 @@ data.raw["gui-style"].default["fp_button_titlebar"] = {
     height = 34
 }
 
+data.raw["gui-style"].default["fp_button_titlebar_square"] = {
+    type = "button_style",
+    parent = "fp_button_titlebar",
+    width = 34,
+    padding = 0
+}
+
+data.raw["gui-style"].default["fp_button_titlebar_square_selected"] = {
+    type = "button_style",
+    parent = "fp_button_selected",
+    height = 34,
+    width = 34,
+    padding = 0
+}
+
 data.raw["gui-style"].default["fp_button_action"] = {
     type = "button_style",
     font = "fp-font-semibold-16p"

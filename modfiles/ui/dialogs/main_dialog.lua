@@ -58,7 +58,7 @@ end
 
 -- Sets the game.paused-state appropriately
 function set_pause_state(player, main_dialog)
-    if get_settings(player).pause_on_interface and not game.is_multiplayer() and
+    if get_preferences(player).pause_on_interface and not game.is_multiplayer() and
       player.controller_type ~= defines.controllers.editor then
         game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
     end
@@ -145,6 +145,7 @@ function refresh_main_dialog(player, full_refresh)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
 
         -- Refresh the elements on top of the hierarchy, which refresh everything below them
+        refresh_titlebar(player)
         refresh_actionbar(player)
         refresh_subfactory_bar(player, true)
     end
@@ -215,9 +216,37 @@ function add_titlebar_to(main_dialog)
     flow_buttonbar.add{type="button", name="fp_button_titlebar_preferences", caption={"fp.preferences"},
       style="fp_button_titlebar", mouse_button_filter={"left"}}
 
-    local button_exit = flow_buttonbar.add{type="button", name="fp_button_titlebar_exit", caption="X",
-      style="fp_button_titlebar", mouse_button_filter={"left"}}
-    button_exit.style.font = "fp-font-bold-16p"
-    button_exit.style.width = 34
-    button_exit.style.left_margin = 2
+    local button_pause = flow_buttonbar.add{type="sprite-button", name="fp_button_titlebar_pause",
+      sprite="utility/pause", tooltip={"fp.pause_on_interface"}, mouse_button_filter={"left"}}
+    button_pause.style.left_margin = 4
+
+    flow_buttonbar.add{type="sprite-button", name="fp_button_titlebar_exit",
+      sprite="utility/close_fat", style="fp_button_titlebar_square", mouse_button_filter={"left"}}
+
+
+    refresh_titlebar(game.get_player(main_dialog.player_index))
+end
+
+
+-- Refreshes the pause_on_interface-button
+function refresh_titlebar(player)
+    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local button_pause = main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
+    button_pause.enabled = (not game.is_multiplayer())
+    button_pause.style = (get_preferences(player).pause_on_interface) and
+      "fp_button_titlebar_square_selected" or "fp_button_titlebar_square"
+end
+
+
+-- Handles a click on the pause_on_interface button
+function handle_pause_button_click(player, button)
+    if not game.is_multiplayer() then
+        local preferences = get_preferences(player)
+        preferences.pause_on_interface = not preferences.pause_on_interface
+
+        button.style = (preferences.pause_on_interface) and
+          "fp_button_titlebar_square_selected" or "fp_button_titlebar_square"
+
+        game.tick_paused = preferences.pause_on_interface
+    end
 end
