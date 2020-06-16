@@ -430,12 +430,11 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
         refresh_current_activity(player)
 
-    -- Pick recipe to produce said ingredient
     elseif click == "left" and item.proto.type ~= "entity" then
-        if item.class == "Ingredient" then
+        if item.class == "Ingredient" then  -- Pick recipe to produce this ingredient
             enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="produce"}})
 
-        elseif item.class == "Product" then
+        elseif item.class == "Product" then -- Set the priority product
             if line.Product.count < 2 then
                 ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
             else
@@ -444,10 +443,54 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                 calculation.update(player, context.subfactory, true)
             end
 
-        elseif item.class == "Byproduct" then
-            --enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}})
+        --[[ elseif item.class == "Byproduct" then
+            enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}}) ]]
+        end
+
+    elseif click == "right" then  -- Open the percentage dialog for this item
+        local type_localised_string = {"fp.l" .. string.lower(item.class)}
+        local produce_consume = (item.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
+
+        local modal_data = {
+            reciever_name = "item",
+            title = {"fp.option_item_title", type_localised_string},
+            text = {"fp.option_text", {"fp.option_item_text", type_localised_string}, item.proto.localised_name},
+            object = item,
+            fields = {
+                {
+                    type = "numeric",
+                    name = "item_amount",
+                    caption = {"fp.option_item_amount_label"},
+                    tooltip = {"fp.option_item_amount_label_tt", type_localised_string, produce_consume},
+                    value = "",
+                    focus = true
+                }
+            }
+        }
+
+        context.line = line  -- won't be reset after use, but that doesn't matter
+        enter_modal_dialog(player, {type="options", submit=true, modal_data=modal_data})
+    end
+end
+
+-- Recieves the result of the item options and applies it
+function apply_item_options(player, item, options)
+    local context = get_context(player)
+    local line = context.line
+    local current_amount = item.amount
+
+    -- For products and byproducts, find if the item exists in the other space
+    if item.class ~= "Ingredient" then
+        local other_class = (item.class == "Product") and "Byproduct" or "Product"
+        -- Doesn't work 100% with different types, but whatever
+        local opposing_item = Line.get_by_name(line, other_class, item.name)
+        if opposing_item ~= nil and item.type == opposing_item.type then
+            current_amount = current_amount + opposing_item.amount
         end
     end
+
+    line.percentage = (line.percentage * options.item_amount) / current_amount
+    calculation.update(player, context.subfactory, true)
 end
 
 
