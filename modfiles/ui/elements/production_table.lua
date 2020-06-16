@@ -413,8 +413,9 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
 
             local number_line, button_number = "", nil
             if raw_amount ~= nil then
-                number_line = {"", "\n" .. ui_util.format_number(raw_amount, 4) .. " ", appendage}
-                button_number = (round_belts) and math.ceil(raw_amount) or raw_amount
+                local rounded_amount = ui_util.format_number(raw_amount, 4)
+                number_line = {"", "\n" .. rounded_amount .. " ", appendage}
+                button_number = (round_belts) and math.ceil(raw_amount) or rounded_amount
             end
             local tooltip = {"", item.proto.localised_name, indication, number_line, satisfaction_line,
               tutorial_tooltip}

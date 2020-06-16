@@ -154,16 +154,16 @@ function _refresh_item_table(player, item_table, class, items, display_mode)
 
             local number_line, button_number = "", nil
             if display_amount ~= nil then  -- Don't show a number if no display_amount was determined (fluids)
-                number_line = {"", "\n" .. secondary_number .. ui_util.format_number(display_amount, 4)
-                  .. " ", appendage}
-                button_number = (round_belts) and math.ceil(display_amount) or display_amount
+                local rounded_amount = ui_util.format_number(display_amount, 4)
+                number_line = {"", "\n" .. secondary_number .. rounded_amount .. " ", appendage}
+                button_number = (round_belts) and math.ceil(display_amount) or rounded_amount
             end
             local indication = (item.proto.type == "entity") and {"fp.indication", {"fp.raw_ore"}} or ""
             local tooltip = {"", item.proto.localised_name, indication, number_line, tutorial_tooltip}
 
-            local button = item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_"
-              .. item.id, sprite=item.proto.sprite, number=button_number, tooltip=tooltip,
-              style=style, enabled=(display_mode == "standard"), mouse_button_filter={"left-and-right"}}
+            item_table.add{type="sprite-button", name="fp_sprite-button_subpane_" .. ui_name .. "_" .. item.id,
+              sprite=item.proto.sprite, number=button_number, tooltip=tooltip, style=style,
+              enabled=(display_mode == "standard"), mouse_button_filter={"left-and-right"}}
         end
     end
 end
