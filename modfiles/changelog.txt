@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - The mod-setting for pausing the game when the main interface is open is now a button in the top right of it
     - The numbers shown on item/machine/etc-buttons are now rounded somewhat correctly, instead of being truncated
   Bugfixes:
-    -
+    - Fixed that beacon selection would not work then the game was being paused on open FP-interface
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.32
