@@ -42,6 +42,12 @@ function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     textfield.allow_negative = (negative or false)
 end
 
+-- Focuses and selects all the text of the given textfield
+function ui_util.select_all(textfield)
+    textfield.focus()
+    textfield.select_all()
+end
+
 -- File-local to so this dict isn't recreated on every call of the function following it
 local font_colors = {
     red = {r = 1, g = 0.2, b = 0.2},

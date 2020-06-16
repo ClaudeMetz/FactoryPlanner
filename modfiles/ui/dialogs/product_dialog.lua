@@ -82,9 +82,10 @@ function get_product_condition_instructions()
                 check = (function(data) return (data.item_sprite == "" or (tonumber(data.amount_amount) == nil
                   and tonumber(data.belts_amount) == nil)) end),
                 refocus = (function(flow, data)
-                    if data.item_sprite == "" then flow["flow_item_picker"]["table_search_bar"]
-                      ["fp_textfield_item_picker_search_bar"].focus()
-                    else flow["flow_product_bar"]["flow_product_amount"]["fp_textfield_product_amount"].focus() end
+                    if data.item_sprite == "" then ui_util.select_all(flow["flow_item_picker"]["table_search_bar"]
+                      ["fp_textfield_item_picker_search_bar"])
+                    else ui_util.select_all(flow["flow_product_bar"]["flow_product_amount"]
+                      ["fp_textfield_product_amount"]) end
                 end),
                 show_on_edit = true
             }
@@ -195,7 +196,8 @@ end
 -- Focus the textfield that this product is currently defined_by
 function set_appropriate_amount_focus(flow_product_bar, modal_data)
     local defined_by = modal_data.amount_defined_by
-    flow_product_bar["flow_product_" .. defined_by]["fp_textfield_product_" .. defined_by].focus()
+    local textfield = flow_product_bar["flow_product_" .. defined_by]["fp_textfield_product_" .. defined_by]
+    ui_util.select_all(textfield)
 end
 
 -- Updates the product and belt amounts according to the amount_defined_by-state
