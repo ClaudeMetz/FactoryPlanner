@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - The mod-setting for pausing the game when the main interface is open is now a button in the top right of it
     - The numbers shown on item/machine/etc-buttons are now rounded somewhat correctly, instead of being truncated
   Bugfixes:
     -

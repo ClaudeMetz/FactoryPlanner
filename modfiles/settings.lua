@@ -19,19 +19,12 @@ data:extend({
         order = "a"
     },
     {
-        type = "bool-setting",
-        name = "fp_pause_on_interface",
-        setting_type = "runtime-per-user",
-        default_value = false,
-        order = "b"
-    },
-    {
         type = "int-setting",
         name = "fp_subfactory_items_per_row",
         setting_type = "runtime-per-user",
         default_value = 8,
         allowed_values = {6, 7, 8, 9, 10, 11, 12},
-        order = "c"
+        order = "b"
     },
     {
         type = "int-setting",
@@ -39,7 +32,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = 14,
         allowed_values = {8, 10, 12, 14, 16, 18, 20},
-        order = "d"
+        order = "c"
     },
     {
         type = "string-setting",
@@ -47,7 +40,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "none",
         allowed_values = alt_action_values,
-        order = "e"
+        order = "d"
     },
     {
         type = "string-setting",
@@ -55,7 +48,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "one_minute",
         allowed_values = {"one_second", "one_minute", "one_hour"},
-        order = "f"
+        order = "e"
     },
     {
         type = "string-setting",
@@ -63,7 +56,7 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
-        order = "g"
+        order = "f"
     },
     {
         type = "double-setting",
@@ -72,6 +65,6 @@ data:extend({
         default_value = 0,
         minimum_value = 0,
         maximum_value = 0.4,
-        order = "h"
+        order = "g"
     }
 })

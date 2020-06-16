@@ -114,7 +114,6 @@ function reload_settings(player)
     local settings_table = global.players[player.index].settings
 
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
-    settings_table.pause_on_interface = settings["fp_pause_on_interface"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
     settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
     settings_table.alt_action = settings["fp_alt_action"].value
@@ -127,6 +126,7 @@ end
 function reload_preferences(player)
     local preferences = global.players[player.index].preferences
 
+    preferences.pause_on_interface = preferences.pause_on_interface or false
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
 
