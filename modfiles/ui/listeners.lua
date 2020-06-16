@@ -87,8 +87,9 @@ end)
 script.on_event("fp_focus_searchfield", function(event)
     local player = game.get_player(event.player_index)
     if get_ui_state(player).modal_dialog_type == "product" then
-        ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_item_picker"]
-          ["table_search_bar"]["fp_textfield_item_picker_search_bar"].focus()
+        local textfield = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_item_picker"]
+          ["table_search_bar"]["fp_textfield_item_picker_search_bar"]
+        ui_util.select_all(textfield)
     end
 end)
 

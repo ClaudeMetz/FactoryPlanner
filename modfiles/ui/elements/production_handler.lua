@@ -462,7 +462,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                     name = "item_amount",
                     caption = {"fp.option_item_amount_label"},
                     tooltip = {"fp.option_item_amount_label_tt", type_localised_string, produce_consume},
-                    value = "",
+                    value = item.amount,
                     focus = true
                 }
             }
