@@ -257,7 +257,6 @@ function refresh_machine_table(player, line, table_production)
         local machine_proto = line.machine.proto
         local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
-        if machine_count == "0" and line.production_ratio > 0 then machine_count = "0.0001" end
         local machine_text = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
 
         local limit = line.machine.limit
@@ -276,9 +275,10 @@ function refresh_machine_table(player, line, table_production)
         end
 
         local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "machine", true)
+        local display_count = (machine_count == "0" and line.production_ratio > 0) and "<0.0001" or machine_count
         local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"},
-          tooltip={"", machine_proto.localised_name, limit_notice, "\n", machine_count, " ", machine_text,
+          tooltip={"", machine_proto.localised_name, limit_notice, "\n", display_count, " ", machine_text,
           ui_util.generate_module_effects_tooltip(total_effects, machine_proto), tutorial_tooltip}}
         button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
