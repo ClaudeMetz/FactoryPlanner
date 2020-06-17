@@ -21,6 +21,7 @@ function model.update_subfactory(subfactory_data)
     }
 end
 
+
 function model.update_floor(floor_data, aggregate)
     local desired_products = util.table.deepcopy(aggregate.Product)
 
@@ -100,6 +101,7 @@ function model.update_floor(floor_data, aggregate)
         end
     end
 end
+
 
 function model.update_line(line_data, aggregate)
     local recipe_proto, machine_proto = line_data.recipe_proto, line_data.machine_proto
