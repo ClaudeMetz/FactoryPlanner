@@ -156,11 +156,11 @@ function create_module_beacon_dialog_structure(flow_modal_dialog, title, type, l
     flow_modal_dialog.style.bottom_margin = 8
 
     -- Beacon bar
-    if type == "beacon" then create_prototype_line(flow_modal_dialog, "beacon", line, beacon) end
+    if type == "beacon" then create_prototype_line(flow_modal_dialog, "beacon", beacon) end
 
     -- Module bar
     module = (type == "beacon" and beacon ~= nil) and beacon.module or module
-    create_prototype_line(flow_modal_dialog, "module", line, module)
+    create_prototype_line(flow_modal_dialog, "module", module)
 
 
     -- Beacon Total
@@ -221,7 +221,7 @@ end
 
 
 -- Adds a prototype line to the modal dialog flow to specify either a module or beacon
-function create_prototype_line(flow_modal_dialog, type, line, object)
+function create_prototype_line(flow_modal_dialog, type, object)
     local player = game.get_player(flow_modal_dialog.player_index)
     local modal_data = get_modal_data(player)
 

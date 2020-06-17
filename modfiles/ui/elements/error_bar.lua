@@ -16,7 +16,7 @@ function refresh_error_bar(player)
 
     local subfactory = get_context(player).subfactory
     if subfactory ~= nil and not subfactory.valid then
-        create_error_bar(flow_error_bar, subfactory.id)
+        create_error_bar(flow_error_bar)
         flow_error_bar.visible = true
     else
         flow_error_bar.visible = false
@@ -24,7 +24,7 @@ function refresh_error_bar(player)
 end
 
 -- Constructs the error bar
-function create_error_bar(flow, subfactory_id)
+function create_error_bar(flow)
     local label_1 = flow.add{type="label", name="label_error_bar_1", caption={"", "   ", {"fp.error_bar_1"}}}
     label_1.style.font = "fp-font-16p"
     local table = flow.add{type="table", name="table_error_bar", column_count=2}

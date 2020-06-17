@@ -90,7 +90,7 @@ end
 
 -- Tries to repair this beacon, deletes it otherwise (by returning false)
 -- If this is called, the beacon is invalid and has a string saved to proto
-function Beacon.attempt_repair(self, player)
+function Beacon.attempt_repair(self, _)
     local current_beacon_id = global.all_beacons.map[self.proto]
     if current_beacon_id ~= nil then
         self.proto = global.all_beacons.beacons[current_beacon_id]

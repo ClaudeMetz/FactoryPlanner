@@ -31,7 +31,7 @@ local function add_utility_titlebar(flow, type, tooltip, scope, subfactory)
         spacer.style.horizontally_stretchable = true
 
         local state = Subfactory.get_scope(subfactory, type, true)
-        local switch = flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type), switch_state=state,
+        flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type), switch_state=state,
           left_label_caption={"fp.csubfactory"}, right_label_caption={"fp.floor"}}
     end
 end

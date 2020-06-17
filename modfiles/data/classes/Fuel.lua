@@ -59,7 +59,7 @@ end
 
 -- Tries to repair this fuel, deletes it otherwise (by returning false)
 -- If this is called, the fuel is invalid and has a string saved to proto (and maybe to type)
-function Fuel.attempt_repair(self, player, line)
+function Fuel.attempt_repair(self, _, line)
     -- If the category is nil, this fuel is not repairable
     if self.category == nil then
         return false

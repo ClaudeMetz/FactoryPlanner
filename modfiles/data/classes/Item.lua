@@ -86,7 +86,7 @@ end
 
 -- Tries to repair this item, deletes it otherwise (by returning false)
 -- If this is called, the item is invalid and has a string saved to proto (and maybe to type)
-function Item.attempt_repair(self, player)
+function Item.attempt_repair(self, _)
     -- First, try and repair the type if necessary
     if type(self.type) == "string" then
         local current_type_id = global.all_items.map[self.type]

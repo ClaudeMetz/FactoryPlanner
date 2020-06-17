@@ -133,7 +133,7 @@ local function handle_configuration_change()
     migrator.attempt_global_migration()  -- Migrate global
 
     -- Runs through all players, even new ones (those with no player_table)
-    for index, player in pairs(game.players) do
+    for _, player in pairs(game.players) do
         -- Migrate player_table data
         migrator.attempt_player_table_migration(player)
 

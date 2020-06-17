@@ -2,7 +2,6 @@ require("ui.elements.item_picker")
 
 -- Handles populating the item picker dialog
 function open_product_dialog(flow_modal_dialog, modal_data)
-    local player = game.get_player(flow_modal_dialog.player_index)
     local product = modal_data.product
 
     flow_modal_dialog.parent.caption = (product == nil) and {"fp.add_product"} or {"fp.edit_product"}

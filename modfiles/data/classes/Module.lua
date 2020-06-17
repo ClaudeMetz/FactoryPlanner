@@ -62,7 +62,7 @@ end
 
 -- Tries to repair this module, deletes it otherwise (by returning false)
 -- If this is called, the module is invalid and has a string saved to proto (and maybe to category)
-function Module.attempt_repair(self, player)
+function Module.attempt_repair(self, _)
     -- First, try and repair the category if necessary
     if type(self.category) == "string" then
         local current_category_id = global.all_modules.map[self.category]

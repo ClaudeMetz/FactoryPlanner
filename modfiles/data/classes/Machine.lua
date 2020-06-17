@@ -52,7 +52,7 @@ end
 
 -- Tries to repair this machine, deletes it otherwise (by returning false)
 -- If this is called, the machine is invalid and has a string saved to proto (and maybe to category)
-function Machine.attempt_repair(self, player)
+function Machine.attempt_repair(self, _)
     -- If the category is nil, this machine is not repairable
     if self.category == nil then
         return false

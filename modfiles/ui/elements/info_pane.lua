@@ -84,7 +84,7 @@ end
 
 -- Separate function so it can be refreshed independently
 function refresh_utility_table(player, subfactory, table_info_elements)
-    local table_info_elements = table_info_elements or player.gui.screen["fp_frame_main_dialog"]
+    table_info_elements = table_info_elements or player.gui.screen["fp_frame_main_dialog"]
       ["table_subfactory_pane"]["flow_info"]["scroll-pane"]["table_info_elements"]
 
     local table_utility = table_info_elements["table_utility"] or

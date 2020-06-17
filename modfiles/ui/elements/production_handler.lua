@@ -203,14 +203,14 @@ end
 -- Recieves the result of the machine choice and applies it
 function apply_machine_choice(player, machine_id)
     local context = get_context(player)
-    local category_id, machine_id = context.line.machine.category.id, tonumber(machine_id)
-    local machine = global.all_machines.categories[category_id].machines[machine_id]
+    local category_id = context.line.machine.category.id
+    local machine = global.all_machines.categories[category_id].machines[tonumber(machine_id)]
     Line.change_machine(context.line, player, machine, nil)
     calculation.update(player, context.subfactory, true)
 end
 
 -- Recieves the result of the machine limit options and applies it
-function apply_machine_options(player, machine, options)
+function apply_machine_options(player, _, options)
     local context = get_context(player)
     -- tonumber() has already converted an empty string to nil
     if options.machine_limit == nil then options.hard_limit = false end
@@ -245,8 +245,8 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Line.replace(line, module, new_module)
                 else
-                    local direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
-                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, direction}
+                    local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
+                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, change_direction}
                     ui_util.message.enqueue(player, message, "error", 1)
                 end
             end
@@ -316,8 +316,8 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Beacon.set_module(line.beacon, new_module)
                 else
-                    local direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
-                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, direction}
+                    local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
+                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, change_direction}
                     ui_util.message.enqueue(player, message, "error", 1)
                 end
             end
@@ -361,8 +361,8 @@ function handle_line_beacon_click(player, line_id, type, click, direction, actio
                       beacon.module.amount, beacon.total_amount)
                     Line.set_beacon(line, new_beacon)
                 else
-                    local direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
-                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.beacon"}, direction}
+                    local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
+                    local message = {"fp.error_object_cant_be_up_downgraded", {"fp.beacon"}, change_direction}
                     ui_util.message.enqueue(player, message, "error", 1)
                 end
             end
