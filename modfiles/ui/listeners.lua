@@ -9,7 +9,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         local player = game.get_player(event.player_index)
 
         -- Reload all user mod settings
-        reload_settings(player)
+        init.reload_settings(player)
 
         -- Toggles the visibility of the toggle-main_dialog-button
         if event.setting == "fp_display_gui_button" then
