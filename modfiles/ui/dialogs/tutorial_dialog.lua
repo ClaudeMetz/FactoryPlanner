@@ -39,7 +39,7 @@ function open_tutorial_dialog(flow_modal_dialog)
     label_example_subfactory.visible = other_mods_active
 
     -- Tutorial Mode
-    local switch = ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode,
+    ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode,
       {"fp.tutorial_mode"}, {"fp.tutorial_mode_tt"})
 
 

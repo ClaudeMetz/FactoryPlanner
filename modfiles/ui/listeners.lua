@@ -170,8 +170,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
 
-    -- Toggles the selected general or production preference
-    -- (This type/preference detection is stupid)
+    -- Toggles the selected general or production preference (This type/preference detection is stupid)
     if string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
         local type = cutil.split(element_name, "_")[3]
         local preference = string.gsub(element_name, "fp_checkbox_" .. type .. "_preferences_", "")
@@ -371,8 +370,8 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
-            local action = string.gsub(element_name, "fp_button_modal_dialog_", "")
-            exit_modal_dialog(player, action, {})
+            local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
+            exit_modal_dialog(player, dialog_action, {})
 
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then

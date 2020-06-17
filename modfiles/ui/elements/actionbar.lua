@@ -16,7 +16,7 @@ function add_actionbar_to(main_dialog)
     local actionbar_spacer = actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
     actionbar_spacer.style.horizontally_stretchable = true
 
-    local button_toggle_archive = actionbar.add{type="button", name="fp_button_toggle_archive",
+    actionbar.add{type="button", name="fp_button_toggle_archive",
       caption={"fp.open_archive"}, style="fp_button_action", mouse_button_filter={"left"}}
 
     refresh_actionbar(game.get_player(main_dialog.player_index))

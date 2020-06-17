@@ -19,8 +19,7 @@ function refresh_production_table(player)
         if optional_column == true then column_count = column_count + 1 end
     end
 
-    local table_production = scroll_pane_production.add{type="table", name="table_production_pane",
-      column_count=column_count}
+    table_production = scroll_pane_production.add{type="table", name="table_production_pane", column_count=column_count}
     table_production.style = "table_with_selection"
     table_production.style.horizontal_spacing = 16
     table_production.style.top_padding = 0
@@ -52,7 +51,8 @@ function refresh_production_table(player)
             -- Table titles
             local title_strings = {
                 {name="recipe", label={"fp.recipe"}, alignment="middle-center"},
-                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"}, alignment="middle-center"},
+                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"},
+                  alignment="middle-center"},
                 {name="machine", label={"fp.cmachine"}, alignment="middle-center"},
                 {name="modules", label={"fp.cmodules"}, alignment="middle-center"},
                 {name="beacons", label={"fp.cbeacons"}, alignment="middle-center"},
@@ -71,9 +71,9 @@ function refresh_production_table(player)
                     if title.custom_function then
                         title.custom_function()
                     else
-                        local title = table_production.add{type="label", name="label_title_" .. title.name,
+                        local label_title = table_production.add{type="label", name="label_title_" .. title.name,
                           caption=title.label, tooltip=title.tooltip}
-                        title.style.font = "fp-font-16p"
+                        label_title.style.font = "fp-font-16p"
                     end
                 end
             end
@@ -94,8 +94,6 @@ function create_line_table_row(player, line)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     local archive_open = ui_state.flags.archive_open
-    local subfactory = ui_state.context.subfactory
-    local floor = ui_state.context.floor
     local optional_columns = get_preferences(player).optional_production_columns
 
 
@@ -119,12 +117,12 @@ function create_line_table_row(player, line)
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
     if line.machine.proto.module_limit > 0 then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
-            create_module_button(flow_modules, line, module, "module", "fp_sprite-button_line_module_" .. line.id
+            create_module_button(flow_modules, module, "module", "fp_sprite-button_line_module_" .. line.id
               .. "_" .. module.id)
         end
 
         if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
-            local button_add_module = flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
+            flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_a_module"},
               mouse_button_filter={"left"}, enabled=(not archive_open)}
         end
@@ -137,12 +135,12 @@ function create_line_table_row(player, line)
     -- Beacons only work on machines that have some allowed_effects
     if line.machine.proto.allowed_effects ~= nil then
         if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
-            local button_add_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
+            flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_beacons"},
               mouse_button_filter={"left"}, enabled=(not archive_open)}
         else
             local beacon = line.beacon
-            create_module_button(flow_beacons, line, beacon.module, "beacon_module",
+            create_module_button(flow_beacons, beacon.module, "beacon_module",
               "fp_sprite-button_line_beacon_module_" .. line.id)
             flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
 
@@ -349,7 +347,7 @@ end
 
 
 -- Creates and places a single module button
-function create_module_button(flow, line, module, type, button_name)
+function create_module_button(flow, module, type, button_name)
     local m = (module.amount == 1) and {"fp.module"} or {"fp.modules"}
     local tutorial_tooltip = ui_util.tutorial_tooltip(game.get_player(flow.player_index), nil, type, true)
 
@@ -362,7 +360,7 @@ end
 
 
 -- Creates the flow containing all line items of the given type
-function create_item_button_flow(player_table, gui_table, line, class, style)
+function create_item_button_flow(player_table, gui_table, line, class, style_color)
     local player = game.get_player(gui_table.player_index)
     local preferences = player_table.preferences
 
@@ -372,7 +370,7 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
     local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id,
       direction="horizontal"}
 
-    local style = "fp_button_icon_medium_" .. style
+    local style = "fp_button_icon_medium_" .. style_color
     local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
 
     local function create_item_button(item, indication)
@@ -381,7 +379,8 @@ function create_item_button_flow(player_table, gui_table, line, class, style)
 
         if raw_amount == nil or raw_amount > margin_of_error then
             -- Determine potential different button style and the potential satisfaction line
-            local actual_style, satisfaction_line, indication = style, "", (indication or "")
+            local actual_style, satisfaction_line = style, ""
+            indication = indication or ""
 
             if item.proto.type == "entity" then
                 actual_style = "fp_button_icon_medium_blank"

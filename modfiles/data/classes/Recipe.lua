@@ -31,7 +31,7 @@ end
 
 -- Tries to repair this recipe, deletes it otherwise (by returning false)
 -- If this is called, the recipe is invalid and has a string saved to proto
-function Recipe.attempt_repair(self, player)
+function Recipe.attempt_repair(self, _)
     local current_recipe_id = global.all_recipes.map[self.proto]
     if current_recipe_id ~= nil then
         self.proto = global.all_recipes.recipes[current_recipe_id]

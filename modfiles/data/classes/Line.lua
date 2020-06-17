@@ -119,7 +119,7 @@ function Line.remove(self, dataset, secondary)
 end
 
 function Line.replace(self, dataset, object, secondary)
-    local dataset = Collection.replace(self[dataset.class], dataset, object)
+    dataset = Collection.replace(self[dataset.class], dataset, object)
 
     if dataset.class == "Module" then
         Line.carry_over_changes(self, Line.replace, secondary, table.pack(cutil.deepcopy(dataset), object))

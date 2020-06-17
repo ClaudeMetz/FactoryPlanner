@@ -441,7 +441,7 @@ function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip)
     local switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
       left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
 
-    local caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
+    caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
     local label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
     label.style.font = "fp-font-15p"
     label.style.left_margin = 8

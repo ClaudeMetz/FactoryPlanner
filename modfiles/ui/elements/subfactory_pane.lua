@@ -170,7 +170,7 @@ end
 
 
 -- Handles click on a subfactory pane ingredient button
-function handle_ingredient_element_click(player, ingredient_id, click, direction, action, alt)
+function handle_ingredient_element_click(player, ingredient_id, click, direction, _, alt)
     local subfactory = get_context(player).subfactory
     local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
 
@@ -242,7 +242,7 @@ function handle_product_element_click(player, product_id, click, direction, acti
 end
 
 -- Handles click on a subfactory pane byproduct button
-function handle_byproduct_element_click(player, byproduct_id, click, direction, action, alt)
+function handle_byproduct_element_click(player, byproduct_id, click, direction, _, alt)
     local subfactory = get_context(player).subfactory
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
 
