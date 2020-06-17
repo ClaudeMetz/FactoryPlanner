@@ -184,9 +184,15 @@ function handle_checkbox_preference_change(player, type, preference, state)
         preferences[preference] = state
 
         if preference == "ingredient_satisfaction" or preference == "round_button_numbers" then
-            if state == true then calculation.util.update_all_ingredient_satisfactions(player) end
+            if preference == "ingredient_satisfaction" and state == true then
+                local player_table = get_table(player)
+                Factory.update_ingredient_satisfactions(player_table.factory)
+                Factory.update_ingredient_satisfactions(player_table.archive)
+            end
+
             refresh_production_pane(player)
         end
+
     else  -- type == "production"
         preferences.optional_production_columns[preference] = state
         refresh_production_pane(player)

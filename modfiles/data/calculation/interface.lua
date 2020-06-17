@@ -6,100 +6,10 @@ calculation = {
     util = {}
 }
 
--- Updates the whole subfactory calculations from top to bottom
-function calculation.update(player, subfactory, refresh)
-    if subfactory ~= nil and subfactory.valid then
-        local player_table = get_table(player)
-        -- Save the active subfactory in global so the model doesn't have to pass it around
-        player_table.active_subfactory = subfactory
 
-        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        model.update_subfactory(subfactory_data)
-        player_table.active_subfactory = nil
-    end
-
-    if refresh then refresh_main_dialog(player) end
-end
-
-
--- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.get_subfactory_data(player, subfactory)
-    local subfactory_data = {
-        player_index = player.index,
-        top_level_products = {},
-        top_floor = {}
-    }
-
-    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local product_data = {
-            proto = product.proto,  -- reference
-            required_amount = Item.required_amount(product)
-        }
-        table.insert(subfactory_data.top_level_products, product_data)
-    end
-
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    subfactory_data.top_floor = calculation.util.generate_floor_data(player, subfactory, top_floor)
-
-    return subfactory_data
-end
-
--- Updates the active subfactories top-level data with the given result
-function calculation.interface.set_subfactory_result(result)
-    local player_table = global.players[result.player_index]
-    local subfactory = player_table.active_subfactory
-
-    subfactory.energy_consumption = result.energy_consumption
-    subfactory.pollution = result.pollution
-
-    -- For products, the existing top-level items just get updated individually
-    -- When the products are not present in the result, it means they have been produced
-    for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
-        product.amount = Item.required_amount(product) - product_result_amount
-    end
-
-    calculation.util.update_items(subfactory, result, "Byproduct")
-    calculation.util.update_items(subfactory, result, "Ingredient")
-
-    -- Determine satisfaction-amounts for all line ingredients
-    if player_table.preferences.ingredient_satisfaction then
-        local top_floor = Subfactory.get(subfactory, "Floor", 1)
-        local aggregate = structures.aggregate.init()  -- gets modified by the two functions
-        calculation.util.determine_net_ingredients(top_floor, aggregate)
-        calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
-    end
-end
-
--- Updates the given line of the given floor of the active subfactory
-function calculation.interface.set_line_result(result)
-    local subfactory = global.players[result.player_index].active_subfactory
-    local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
-    local line = Floor.get(floor, "Line", result.line_id)
-
-    line.machine.count = result.machine_count
-    line.energy_consumption = result.energy_consumption
-    line.pollution = result.pollution
-    line.production_ratio = result.production_ratio
-    line.uncapped_production_ratio = result.uncapped_production_ratio
-
-    -- Update the fuel for this line
-    line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
-
-    -- Reset the priority_product if there's <2 products
-    if structures.class.count(result.Product) < 2 then
-        Line.set_priority_product(line, nil)
-    end
-
-    calculation.util.update_items(line, result, "Product")
-    calculation.util.update_items(line, result, "Byproduct")
-    calculation.util.update_items(line, result, "Ingredient")
-end
-
-
--- **** LOCAL UTIL ****
+-- ** LOCAL UTIL **
 -- Generates structured data of the given floor for calculation
-function calculation.util.generate_floor_data(player, subfactory, floor)
+local function generate_floor_data(player, subfactory, floor)
     local floor_data = {
         id = floor.id,
         lines = {}
@@ -152,7 +62,7 @@ function calculation.util.generate_floor_data(player, subfactory, floor)
 
         -- Subfloor
         if line.subfloor ~= nil then line_data.subfloor =
-          calculation.util.generate_floor_data(player, subfactory, line.subfloor) end
+          generate_floor_data(player, subfactory, line.subfloor) end
 
         table.insert(floor_data.lines, line_data)
     end
@@ -162,7 +72,7 @@ end
 
 -- Updates the items of the given object (of given class) using the given result
 -- This procedure is a bit more complicated to to retain the users ordering of items
-function calculation.util.update_items(object, result, class_name)
+local function update_items(object, result, class_name)
     local items = result[class_name]
 
     for _, item in pairs(_G[object.class].get_in_order(object, class_name)) do
@@ -189,14 +99,16 @@ function calculation.util.update_items(object, result, class_name)
     end
 end
 
+
 -- Determines the net ingredients of this floor
-function calculation.util.determine_net_ingredients(floor, aggregate)
+local function determine_net_ingredients(floor, aggregate)
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         if line.subfloor ~= nil then
-            calculation.util.determine_net_ingredients(line.subfloor, aggregate)
+            determine_net_ingredients(line.subfloor, aggregate)
         else
             for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                local simple_ingredient = {type=ingredient.proto.type, name=ingredient.proto.name, amount=ingredient.amount}
+                local simple_ingredient = {type=ingredient.proto.type, name=ingredient.proto.name,
+                  amount=ingredient.amount}
                 structures.aggregate.add(aggregate, "Ingredient", simple_ingredient)
             end
 
@@ -216,47 +128,133 @@ function calculation.util.determine_net_ingredients(floor, aggregate)
 end
 
 -- Goes through all ingredients (again), determining their satisfied_amounts
-function calculation.util.update_ingredient_satisfaction(floor, aggregate)
+local function update_ingredient_satisfaction(floor, aggregate)
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
         if line.subfloor ~= nil then
             local aggregate_ingredient_copy = util.table.deepcopy(aggregate.Ingredient)
-            calculation.util.update_ingredient_satisfaction(line.subfloor, aggregate)
+            update_ingredient_satisfaction(line.subfloor, aggregate)
 
             for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
                 local type, name = ingredient.proto.type, ingredient.proto.name
-                local removed_amount = (aggregate_ingredient_copy[type][name] or 0) - (aggregate.Ingredient[type][name] or 0)
+                local removed_amount = (aggregate_ingredient_copy[type][name] or 0)
+                  - (aggregate.Ingredient[type][name] or 0)
                 ingredient.satisfied_amount = ingredient.amount - removed_amount
             end
 
         else
             for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                local aggregate_ingredient_amount = aggregate.Ingredient[ingredient.proto.type][ingredient.proto.name] or 0
+                local aggregate_ingredient_amount =
+                  aggregate.Ingredient[ingredient.proto.type][ingredient.proto.name] or 0
                 local removed_amount = math.min(ingredient.amount, aggregate_ingredient_amount)
 
                 ingredient.satisfied_amount = ingredient.amount - removed_amount
-                structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type, name=ingredient.proto.name}, removed_amount)
-            end
-        end
-    end
-end
-
--- Goes through all subfactories to update their ingredient satisfaction numbers
-function calculation.util.update_all_ingredient_satisfactions(player)
-    local factories = {"factory", "archive"}
-    for _, player_table in pairs(global.players) do
-        for _, factory_name in pairs(factories) do
-            for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                local top_floor = Subfactory.get(subfactory, "Floor", 1)
-                local aggregate = structures.aggregate.init()  -- gets modified by the two functions
-                calculation.util.determine_net_ingredients(top_floor, aggregate)
-                calculation.util.update_ingredient_satisfaction(top_floor, aggregate)
+                structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type,
+                  name=ingredient.proto.name}, removed_amount)
             end
         end
     end
 end
 
 
--- **** FORMULAE ****
+-- ** TOP LEVEL **
+-- Updates the whole subfactory calculations from top to bottom
+function calculation.update(player, subfactory, refresh)
+    if subfactory ~= nil and subfactory.valid then
+        local player_table = get_table(player)
+        -- Save the active subfactory in global so the model doesn't have to pass it around
+        player_table.active_subfactory = subfactory
+
+        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+        model.update_subfactory(subfactory_data)
+        player_table.active_subfactory = nil
+    end
+
+    if refresh then refresh_main_dialog(player) end
+end
+
+-- Updates the given subfactory's ingredient satisfactions
+function calculation.determine_ingredient_satisfaction(subfactory)
+    local top_floor = Subfactory.get(subfactory, "Floor", 1)
+    local aggregate = structures.aggregate.init()  -- gets modified by the two functions
+    determine_net_ingredients(top_floor, aggregate)
+    update_ingredient_satisfaction(top_floor, aggregate)
+end
+
+
+-- ** INTERFACE **
+-- Returns a table containing all the data needed to run the calculations for the given subfactory
+function calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_data = {
+        player_index = player.index,
+        top_level_products = {},
+        top_floor = {}
+    }
+
+    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
+        local product_data = {
+            proto = product.proto,  -- reference
+            required_amount = Item.required_amount(product)
+        }
+        table.insert(subfactory_data.top_level_products, product_data)
+    end
+
+    local top_floor = Subfactory.get(subfactory, "Floor", 1)
+    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
+
+    return subfactory_data
+end
+
+-- Updates the active subfactories top-level data with the given result
+function calculation.interface.set_subfactory_result(result)
+    local player_table = global.players[result.player_index]
+    local subfactory = player_table.active_subfactory
+
+    subfactory.energy_consumption = result.energy_consumption
+    subfactory.pollution = result.pollution
+
+    -- For products, the existing top-level items just get updated individually
+    -- When the products are not present in the result, it means they have been produced
+    for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
+        local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
+        product.amount = Item.required_amount(product) - product_result_amount
+    end
+
+    update_items(subfactory, result, "Byproduct")
+    update_items(subfactory, result, "Ingredient")
+
+    -- Determine satisfaction-amounts for all line ingredients
+    if player_table.preferences.ingredient_satisfaction then
+        calculation.determine_ingredient_satisfaction(subfactory)
+    end
+end
+
+-- Updates the given line of the given floor of the active subfactory
+function calculation.interface.set_line_result(result)
+    local subfactory = global.players[result.player_index].active_subfactory
+    local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
+    local line = Floor.get(floor, "Line", result.line_id)
+
+    line.machine.count = result.machine_count
+    line.energy_consumption = result.energy_consumption
+    line.pollution = result.pollution
+    line.production_ratio = result.production_ratio
+    line.uncapped_production_ratio = result.uncapped_production_ratio
+
+    -- Update the fuel for this line
+    line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
+
+    -- Reset the priority_product if there's <2 products
+    if structures.class.count(result.Product) < 2 then
+        Line.set_priority_product(line, nil)
+    end
+
+    update_items(line, result, "Product")
+    update_items(line, result, "Byproduct")
+    update_items(line, result, "Ingredient")
+end
+
+
+-- **** UTIL ****
 -- Determines the number of crafts per tick for the given data
 function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
     local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
@@ -303,7 +301,8 @@ function calculation.util.determine_energy_consumption(machine_proto, machine_co
 end
 
 -- Determines the amount of pollution this recipe produces
-function calculation.util.determine_pollution(machine_proto, recipe_proto, fuel_proto, total_effects, energy_consumption)
+function calculation.util.determine_pollution(machine_proto, recipe_proto, fuel_proto,
+  total_effects, energy_consumption)
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + math.max(total_effects.pollution, -0.8)
     return energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
