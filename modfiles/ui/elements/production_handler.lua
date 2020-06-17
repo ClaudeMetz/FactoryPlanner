@@ -463,6 +463,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
                     caption = {"fp.option_item_amount_label"},
                     tooltip = {"fp.option_item_amount_label_tt", type_localised_string, produce_consume},
                     value = item.amount,
+                    width = 160,
                     focus = true
                 }
             }
