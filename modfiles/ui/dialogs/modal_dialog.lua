@@ -123,7 +123,7 @@ end
 local function check_modal_dialog_data(flow_modal_dialog, dialog_type)
     local player = game.get_player(flow_modal_dialog.player_index)
     local ui_state = get_ui_state(player)
-    local conditions_function = _G["get_" .. dialog_type .. "_condition_instructions"]
+    local conditions_function = _G[dialog_type .. "_dialog"].condition_instructions
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
 
     if condition_instructions ~= nil then
@@ -187,13 +187,14 @@ function modal_dialog.enter(player, dialog_settings)
     ui_state.current_activity = nil
     main_dialog.refresh_current_activity(player)
 
-    local conditions_function = _G["get_" .. ui_state.modal_dialog_type .. "_condition_instructions"]
+    local dialog_functions = _G[ui_state.modal_dialog_type .. "_dialog"]
+    local conditions_function = dialog_functions.condition_instructions
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
       ui_state.modal_data)
 
     toggle_modal_dialog(player, flow_modal_dialog.parent)
-    _G["open_" .. ui_state.modal_dialog_type .. "_dialog"](flow_modal_dialog, ui_state.modal_data)
+    dialog_functions.open(flow_modal_dialog, ui_state.modal_data)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -218,7 +219,7 @@ function modal_dialog.exit(player, button, data)
         else return end
     end
 
-    local closing_function = _G["close_" .. dialog_type .. "_dialog"]
+    local closing_function = _G[dialog_type .. "_dialog"].close
     -- If closing_function is nil here, this dialog doesn't have a confirm-button, and if it is closed with
     -- a submit-action (by a confirmation-action), it should exectue the cancel-action instead
     if button == "submit" and closing_function ~= nil then

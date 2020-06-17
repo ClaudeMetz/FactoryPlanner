@@ -1,18 +1,6 @@
--- Handles populating the utility modal dialog
-function open_utility_dialog(flow_modal_dialog)
-    flow_modal_dialog.parent.caption = {"fp.utilities"}
+utility_dialog = {}
 
-    local player = game.get_player(flow_modal_dialog.player_index)
-    local modal_data = get_modal_data(player)
-
-    -- Add the players' relevant inventory components to modal_data
-    modal_data.inventory_contents = player.get_main_inventory().get_contents()
-
-    refresh_utility_components_structure(flow_modal_dialog)
-    create_utility_notes_structure(flow_modal_dialog)
-end
-
-
+-- ** LOCAL UTIL **
 -- Adds a titlebar for the given type of utility, optionally including a scope switch
 local function add_utility_titlebar(flow, type, tooltip, scope, subfactory)
     local flow_titlebar = flow.add{type="flow", name="flow_titlebar", direction="horizontal"}
@@ -36,9 +24,9 @@ local function add_utility_titlebar(flow, type, tooltip, scope, subfactory)
     end
 end
 
-
+local utility_structures_refresh = {}
 -- Refreshes the flow displaying the appropriate subfactory/floor components
-function refresh_utility_components_structure(flow_modal_dialog)
+function utility_structures_refresh.components(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
     local context = get_context(player)
     local inventory_contents = get_modal_data(player).inventory_contents
@@ -97,9 +85,8 @@ function refresh_utility_components_structure(flow_modal_dialog)
     add_row("modules", data.modules)
 end
 
-
 -- Creates the flow containing this subfactories notes
-function create_utility_notes_structure(flow_modal_dialog)
+local function create_utility_notes_structure(flow_modal_dialog)
     local subfactory = get_context(game.get_player(flow_modal_dialog.player_index)).subfactory
 
     local flow = flow_modal_dialog.add{type="flow", name="flow_notes", direction="vertical"}
@@ -112,17 +99,32 @@ function create_utility_notes_structure(flow_modal_dialog)
 end
 
 
+-- ** TOP LEVEL **
+-- Handles populating the utility modal dialog
+function utility_dialog.open(flow_modal_dialog)
+    flow_modal_dialog.parent.caption = {"fp.utilities"}
+
+    local player = game.get_player(flow_modal_dialog.player_index)
+    local modal_data = get_modal_data(player)
+
+    -- Add the players' relevant inventory components to modal_data
+    modal_data.inventory_contents = player.get_main_inventory().get_contents()
+
+    utility_structures_refresh.components(flow_modal_dialog)
+    create_utility_notes_structure(flow_modal_dialog)
+end
+
 -- Handles the changing of the given scope by the user
-function handle_utility_scope_change(player, type, state)
+function utility_dialog.handle_scope_change(player, type, state)
     local context = get_context(player)
     Subfactory.set_scope(context.subfactory, type, state)
 
     local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
-    _G["refresh_utility_" .. type .. "_structure"](flow_modal_dialog, context)
+    utility_structures_refresh[type](flow_modal_dialog, context)
 end
 
 -- Handles changes to the subfactory notes
-function handle_notes_change(player, textbox)
+function utility_dialog.handle_notes_change(player, textbox)
     local subfactory = get_context(player).subfactory
     subfactory.notes = textbox.text
     info_pane.refresh_utility_table(player, subfactory)

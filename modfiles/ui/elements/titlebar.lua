@@ -2,8 +2,8 @@ titlebar = {}
 
 -- ** TOP LEVEL **
 -- Creates the titlebar including name and exit-button
-function titlebar.add_to(main_dialog)
-    local flow_titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
+function titlebar.add_to(frame_main_dialog)
+    local flow_titlebar = frame_main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
 
     -- Title
     local label_title = flow_titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
@@ -24,7 +24,7 @@ function titlebar.add_to(main_dialog)
     handle.style.height = 34
     handle.style.width = 180
     handle.style.top_margin = 4
-    handle.drag_target = main_dialog
+    handle.drag_target = frame_main_dialog
 
     -- Buttonbar
     local flow_buttonbar = flow_titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}
@@ -43,13 +43,13 @@ function titlebar.add_to(main_dialog)
       tooltip={"fp.close_interface"}, style="fp_button_titlebar_square", mouse_button_filter={"left"}}
 
 
-    titlebar.refresh(game.get_player(main_dialog.player_index))
+    titlebar.refresh(game.get_player(frame_main_dialog.player_index))
 end
 
 -- Refreshes the pause_on_interface-button
 function titlebar.refresh(player)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    local button_pause = main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local button_pause = frame_main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
     button_pause.enabled = (not game.is_multiplayer())
     button_pause.style = (get_preferences(player).pause_on_interface) and
       "fp_button_titlebar_square_selected" or "fp_button_titlebar_square"
@@ -65,7 +65,7 @@ function titlebar.handle_pause_button_click(player, button)
         button.style = (preferences.pause_on_interface) and
           "fp_button_titlebar_square_selected" or "fp_button_titlebar_square"
 
-        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-        main_dialog.set_pause_state(player, main_dialog)
+        local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        main_dialog.set_pause_state(player, frame_main_dialog)
     end
 end

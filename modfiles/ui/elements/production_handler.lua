@@ -197,7 +197,7 @@ function production_handler.generate_chooser_machine_buttons(player)
 
     for machine_id, machine_proto in ipairs(line.machine.category.machines) do
         if Line.is_machine_applicable(line, machine_proto) then
-            local button = generate_blank_chooser_button(player, machine_id)
+            local button = chooser_dialog.generate_blank_button(player, machine_id)
             -- The actual button is setup by the method shared by non-chooser machine buttons
             production_table.setup_machine_choice_button(player, button, machine_proto,
               ui_state.modal_data.object.proto.id, 36)
@@ -584,7 +584,7 @@ function production_handler.generate_chooser_fuel_buttons(player)
             tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
 
             local fuel_id_string = category_id .. "_" .. fuel_id
-            local button = generate_blank_chooser_button(player, fuel_id_string)
+            local button = chooser_dialog.generate_blank_button(player, fuel_id_string)
             if selected_fuel then button.style = "fp_button_icon_large_green" end
             button.sprite = fuel_proto.sprite
             button.number = ui_util.format_number(fuel_amount, 4)

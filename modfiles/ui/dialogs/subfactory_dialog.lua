@@ -1,5 +1,30 @@
+subfactory_dialog = {}
+
+-- ** LOCAL UTIL **
+-- Fills out the modal dialog to enter/edit a subfactory
+local function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon)
+    flow_modal_dialog.parent.caption = title
+
+    local table_subfactory = flow_modal_dialog.add{type="table", name="table_subfactory", column_count=2}
+    table_subfactory.style.bottom_padding = 8
+
+    -- Name
+    table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"fp.name"}, "    "}}
+    table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
+    table_subfactory["fp_textfield_subfactory_name"].focus()
+
+    -- Icon
+    table_subfactory.add{type="label", name="label_subfactory_icon", caption={"fp.icon"}}
+    local button = table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon",
+      elem_type="signal", signal=icon, style="fp_sprite-button_choose_elem"}
+    button.style.height = 34
+    button.style.width = 34
+end
+
+
+-- ** TOP LEVEL **
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
-function open_subfactory_dialog(flow_modal_dialog, modal_data)
+function subfactory_dialog.open(flow_modal_dialog, modal_data)
     local player = game.players[flow_modal_dialog.player_index]
     local subfactory = modal_data.subfactory
 
@@ -18,7 +43,7 @@ function open_subfactory_dialog(flow_modal_dialog, modal_data)
 end
 
 -- Handles submission of the subfactory dialog
-function close_subfactory_dialog(flow_modal_dialog, action, data)
+function subfactory_dialog.close(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
     local ui_state = get_ui_state(player)
 
@@ -40,9 +65,8 @@ function close_subfactory_dialog(flow_modal_dialog, action, data)
     main_dialog.refresh(player)
 end
 
-
 -- Returns all necessary instructions to create and run conditions on the modal dialog
-function get_subfactory_condition_instructions()
+function subfactory_dialog.condition_instructions()
     return {
         data = {
             -- Trim whitespace at beginning and end of the name
@@ -72,24 +96,4 @@ function get_subfactory_condition_instructions()
             }
         }
     }
-end
-
--- Fills out the modal dialog to enter/edit a subfactory
-function create_subfactory_dialog_structure(flow_modal_dialog, title, name, icon)
-    flow_modal_dialog.parent.caption = title
-
-    local table_subfactory = flow_modal_dialog.add{type="table", name="table_subfactory", column_count=2}
-    table_subfactory.style.bottom_padding = 8
-
-    -- Name
-    table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"fp.name"}, "    "}}
-    table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
-    table_subfactory["fp_textfield_subfactory_name"].focus()
-
-    -- Icon
-    table_subfactory.add{type="label", name="label_subfactory_icon", caption={"fp.icon"}}
-    local button = table_subfactory.add{type="choose-elem-button", name="choose-elem-button_subfactory_icon",
-      elem_type="signal", signal=icon, style="fp_sprite-button_choose_elem"}
-    button.style.height = 34
-    button.style.width = 34
 end

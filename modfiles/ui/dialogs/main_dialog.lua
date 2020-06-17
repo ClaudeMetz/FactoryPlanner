@@ -56,7 +56,7 @@ function main_dialog.refresh(player, full_refresh)
         main_dialog.set_pause_state(player, frame_main_dialog)  -- Adjust the paused-state accordingly
         local ui_state = get_ui_state(player)
         if ui_state.modal_dialog_type == "beacon" and ui_state.flags.selection_mode then
-            leave_beacon_selection(player, 0)  -- Leave the beacon selection mode if it is active
+            beacon_dialog.leave_selection_mode(player, 0)  -- Leave the beacon selection mode if it is active
         end
 
         titlebar.add_to(frame_main_dialog)
