@@ -35,12 +35,12 @@ end
 -- Runs through all updates that need to be made after the config changed
 function handle_configuration_change()
     prototyper.setup()  -- Setup prototyper
-    attempt_global_migration()  -- Migrate global
+    migrator.attempt_global_migration()  -- Migrate global
 
     -- Runs through all players, even new ones (those with no player_table)
     for index, player in pairs(game.players) do
         -- Migrate player_table data
-        attempt_player_table_migration(player)
+        migrator.attempt_player_table_migration(player)
 
         -- Create or update player_table
         local player_table = update_player_table(player)

@@ -1,6 +1,7 @@
 -- Contains the methods and definitions to generate subfactories by code
 builder = {}
 
+-- ** LOCAL UTIL **
 -- Following are a couple helper functions for populating (sub)factories
 -- Adds all given products to the given subfactory (table definition see above)
 local function add_products(player, subfactory, products)
@@ -92,6 +93,7 @@ local function construct_floor(player, floor, recipes)
 end
 
 
+-- ** TOP LEVEL **
 -- Initiates the data table with some values for development purposes
 function builder.dev_config(player)
     if devmode then

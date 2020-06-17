@@ -1,9 +1,11 @@
-local gen_util = require("data.handlers.generator_util")
+require("data.handlers.generator_util")
+
 generator = {}
 
+-- ** TOP LEVEL **
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
-    gen_util.data_structure.init("simple", "recipes")
+    generator_util.data_structure.init("simple", "recipes")
 
     local function custom_recipe()
         return {
@@ -34,7 +36,7 @@ function generator.all_recipes()
         -- Avoid any recipes that have no machine to produce them or are unresearchable
         local category_id = new.all_machines.map[proto.category]
         if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name])
-          and not gen_util.is_annoying_recipe(proto) then
+          and not generator_util.is_annoying_recipe(proto) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
@@ -46,18 +48,18 @@ function generator.all_recipes()
                 products = proto.products,
                 main_product = proto.main_product,
                 type_counts = {},  -- filled out by format_* below
-                recycling = gen_util.is_recycling_recipe(proto),
-                barreling = gen_util.is_barreling_recipe(proto),
+                recycling = generator_util.is_recycling_recipe(proto),
+                barreling = generator_util.is_barreling_recipe(proto),
                 use_limitations = true,
                 custom = false,
                 hidden = proto.hidden,
                 order = proto.order,
-                group = gen_util.generate_group_table(proto.group),
-                subgroup = gen_util.generate_group_table(proto.subgroup)
+                group = generator_util.generate_group_table(proto.group),
+                subgroup = generator_util.generate_group_table(proto.subgroup)
             }
 
-            gen_util.format_recipe_products_and_ingredients(recipe)
-            gen_util.data_structure.insert(recipe)
+            generator_util.format_recipe_products_and_ingredients(recipe)
+            generator_util.data_structure.insert(recipe)
         end
     end
 
@@ -104,9 +106,9 @@ function generator.all_recipes()
                     })
                 end
 
-                gen_util.format_recipe_products_and_ingredients(recipe)
-                gen_util.add_recipe_tooltip(recipe)
-                gen_util.data_structure.insert(recipe)
+                generator_util.format_recipe_products_and_ingredients(recipe)
+                generator_util.add_recipe_tooltip(recipe)
+                generator_util.data_structure.insert(recipe)
 
             --else
                 -- crude-oil and angels-natural-gas go here (not interested atm)
@@ -126,9 +128,9 @@ function generator.all_recipes()
             recipe.products = {{type="fluid", name=proto.fluid.name, amount=(proto.pumping_speed * 60)}}
             recipe.main_product = recipe.products[1]
 
-            gen_util.format_recipe_products_and_ingredients(recipe)
-            gen_util.add_recipe_tooltip(recipe)
-            gen_util.data_structure.insert(recipe)
+            generator_util.format_recipe_products_and_ingredients(recipe)
+            generator_util.add_recipe_tooltip(recipe)
+            generator_util.data_structure.insert(recipe)
 
         -- Detect all the implicit rocket silo recipes
         elseif proto.rocket_parts_required ~= nil then
@@ -155,9 +157,9 @@ function generator.all_recipes()
                     recipe.products = item.rocket_launch_products
                     recipe.main_product = recipe.products[1]
 
-                    gen_util.format_recipe_products_and_ingredients(recipe)
-                    gen_util.add_recipe_tooltip(recipe)
-                    gen_util.data_structure.insert(recipe)
+                    generator_util.format_recipe_products_and_ingredients(recipe)
+                    generator_util.add_recipe_tooltip(recipe)
+                    generator_util.data_structure.insert(recipe)
                 end
             end
         end
@@ -188,9 +190,9 @@ function generator.all_recipes()
                         recipe.products = {{type="fluid", name="steam", amount=60, temperature=temperature}}
                         recipe.main_product = recipe.products[1]
 
-                        gen_util.format_recipe_products_and_ingredients(recipe)
-                        gen_util.add_recipe_tooltip(recipe)
-                        gen_util.data_structure.insert(recipe)
+                        generator_util.format_recipe_products_and_ingredients(recipe)
+                        generator_util.add_recipe_tooltip(recipe)
+                        generator_util.data_structure.insert(recipe)
                     end
                 end
             end
@@ -211,19 +213,19 @@ function generator.all_recipes()
         steam_recipe.products = {{type="fluid", name="steam", amount=60}}
         steam_recipe.main_product = steam_recipe.products[1]
 
-        gen_util.format_recipe_products_and_ingredients(steam_recipe)
-        gen_util.add_recipe_tooltip(steam_recipe)
-        gen_util.data_structure.insert(steam_recipe)
+        generator_util.format_recipe_products_and_ingredients(steam_recipe)
+        generator_util.add_recipe_tooltip(steam_recipe)
+        generator_util.data_structure.insert(steam_recipe)
     end
 
-    gen_util.data_structure.generate_map(false)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
 end
 
 
 -- Returns all relevant items and fluids
 function generator.all_items()
-    gen_util.data_structure.init("complex", "types", "items", "type")
+    generator_util.data_structure.init("complex", "types", "items", "type")
 
     local function add_item(table, item)
         local type = item.proto.type
@@ -249,9 +251,9 @@ function generator.all_items()
     -- Adding all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
-            local proto_name = gen_util.format_temperature_name(item_details, item_name)
+            local proto_name = generator_util.format_temperature_name(item_details, item_name)
             local proto = game[type .. "_prototypes"][proto_name]
-            local localised_name = gen_util.format_temperature_localised_name(item_details, proto)
+            local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
             local hidden = false  -- "entity" types are never hidden
@@ -267,27 +269,27 @@ function generator.all_items()
                 ingredient_only = not item_details.is_product,
                 temperature = item_details.temperature,
                 order = order,
-                group = gen_util.generate_group_table(proto.group),
-                subgroup = gen_util.generate_group_table(proto.subgroup)
+                group = generator_util.generate_group_table(proto.group),
+                subgroup = generator_util.generate_group_table(proto.subgroup)
             }
 
-            gen_util.add_item_tooltip(item)
-            gen_util.data_structure.insert(item)
+            generator_util.add_item_tooltip(item)
+            generator_util.data_structure.insert(item)
         end
     end
 
-    gen_util.data_structure.generate_map(true)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.generate_map(true)
+    return generator_util.data_structure.get()
 end
 
 
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
-    gen_util.data_structure.init("complex", "categories", "machines", "category")
+    generator_util.data_structure.init("complex", "categories", "machines", "category")
 
     local function generate_category_entry(category, proto)
         -- First, determine if there is a valid sprite for this machine
-        local sprite = gen_util.determine_entity_sprite(proto)
+        local sprite = generator_util.determine_entity_sprite(proto)
         if sprite == nil then return nil end
 
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
@@ -345,7 +347,7 @@ function generator.all_machines()
             energy_usage = energy_usage,
             emissions = emissions,
             base_productivity = (proto.base_productivity or 0),
-            allowed_effects = gen_util.format_allowed_effects(proto.allowed_effects),
+            allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
             burner = burner
         }
@@ -358,7 +360,7 @@ function generator.all_machines()
             for category, enabled in pairs(proto.crafting_categories) do
                 if enabled then
                     local machine = generate_category_entry(category, proto)
-                    gen_util.data_structure.insert(machine)
+                    generator_util.data_structure.insert(machine)
                 end
             end
 
@@ -369,7 +371,7 @@ function generator.all_machines()
                 if enabled and category ~= "basic-fluid" then
                     local machine = generate_category_entry(category, proto)
                     machine.mining = true
-                    gen_util.data_structure.insert(machine)
+                    generator_util.data_structure.insert(machine)
                 end
             end
 
@@ -378,7 +380,7 @@ function generator.all_machines()
             local machine = generate_category_entry(proto.name, proto)
             machine.speed = 1  -- pumping speed included in the recipe product-amount
             machine.category = proto.name  -- unique category for every offshort pump
-            gen_util.data_structure.insert(machine)
+            generator_util.data_structure.insert(machine)
         end
 
         -- Add machines that produce steam (ie. boilers)
@@ -405,12 +407,12 @@ function generator.all_machines()
                         local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
                         machine.speed = machine.energy_usage / energy_per_unit
 
-                        gen_util.data_structure.insert(machine)
+                        generator_util.data_structure.insert(machine)
 
                         -- Add every boiler to the general steam category (steam without temperature)
                         local general_machine = util.table.deepcopy(machine)
                         general_machine.category = "general-steam"
-                        gen_util.data_structure.insert(general_machine)
+                        generator_util.data_structure.insert(general_machine)
                     end
                 end
             end
@@ -426,21 +428,21 @@ function generator.all_machines()
         elseif a.module_limit > b.module_limit then return false end
     end
 
-    gen_util.data_structure.sort(sorting_function)
-    gen_util.data_structure.generate_map(false)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
 end
 
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
-    gen_util.data_structure.init("simple", "belts")
+    generator_util.data_structure.init("simple", "belts")
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.type == "transport-belt" then
-            local sprite = gen_util.determine_entity_sprite(proto)
+            local sprite = generator_util.determine_entity_sprite(proto)
             if sprite ~= nil then
-                gen_util.data_structure.insert{
+                generator_util.data_structure.insert{
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
@@ -456,16 +458,16 @@ function generator.all_belts()
         elseif a.throughput > b.throughput then return false end
     end
 
-    gen_util.data_structure.sort(sorting_function)
-    gen_util.data_structure.generate_map(false)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
 end
 
 
 -- Generates a table containing all fuels that can be used in a burner
 -- (only supports chemical fuels for now)
 function generator.all_fuels()
-    gen_util.data_structure.init("complex", "categories", "fuels", "category")
+    generator_util.data_structure.init("complex", "categories", "fuels", "category")
 
     -- Determine all the fuel categories that the machine prototypes use
     local used_fuel_categories = {}
@@ -486,7 +488,7 @@ function generator.all_fuels()
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
         if fuel_value and items.map[proto.name] and used_fuel_categories[fuel_category] ~= nil
           and fuel_value > 0 and fuel_value < 1e+21 then
-            gen_util.data_structure.insert{
+            generator_util.data_structure.insert{
                 name = proto.name,
                 type = "item",
                 localised_name = proto.localised_name,
@@ -504,7 +506,7 @@ function generator.all_fuels()
         local fuel_value, fuel_category = proto.fuel_value, "fluid-fuel"
         -- Only use fuels that have actually been detected/accepted as fluids
         if fuel_value and fluids.map[proto.name] and fuel_value > 0 and fuel_value < 1e+21 then
-            gen_util.data_structure.insert{
+            generator_util.data_structure.insert{
                 name = proto.name,
                 type = "fluid",
                 localised_name = proto.localised_name,
@@ -523,15 +525,15 @@ function generator.all_fuels()
         elseif a.emissions_multiplier > b.emissions_multiplier then return false end
     end
 
-    gen_util.data_structure.sort(sorting_function)
-    gen_util.data_structure.generate_map(false)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
 end
 
 
 -- Generates a table containing all available modules
 function generator.all_modules()
-    gen_util.data_structure.init("complex", "categories", "modules", "category")
+    generator_util.data_structure.init("complex", "categories", "modules", "category")
 
     for _, proto in pairs(game.item_prototypes) do
         if proto.type == "module" and not proto.has_flag("hidden") then
@@ -540,7 +542,7 @@ function generator.all_modules()
 
             local sprite = "item/" .. proto.name
             if game.is_valid_sprite_path(sprite) then
-                gen_util.data_structure.insert{
+                generator_util.data_structure.insert{
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
@@ -553,25 +555,25 @@ function generator.all_modules()
         end
     end
 
-    gen_util.data_structure.generate_map(false)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
 end
 
 
 -- Generates a table containing all available beacons
 function generator.all_beacons()
-    gen_util.data_structure.init("simple", "beacons")
+    generator_util.data_structure.init("simple", "beacons")
 
     for _, proto in pairs(game.entity_prototypes) do
         if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then
-            local sprite = gen_util.determine_entity_sprite(proto)
+            local sprite = generator_util.determine_entity_sprite(proto)
             if sprite ~= nil then
-                gen_util.data_structure.insert{
+                generator_util.data_structure.insert{
                     name = proto.name,
                     localised_name = proto.localised_name,
                     sprite = sprite,
                     category = "fp_beacon",  -- custom category to be similar to machines
-                    allowed_effects = gen_util.format_allowed_effects(proto.allowed_effects),
+                    allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
                     module_limit = proto.module_inventory_size,
                     effectivity = proto.distribution_effectivity,
                     energy_usage = proto.energy_usage or proto.max_energy_usage or 0
@@ -589,7 +591,7 @@ function generator.all_beacons()
         elseif a.energy_usage > b.energy_usage then return false end
     end
 
-    gen_util.data_structure.sort(sorting_function)
-    gen_util.data_structure.generate_map(false)
-    return gen_util.data_structure.get()
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
 end

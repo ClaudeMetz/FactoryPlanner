@@ -1,14 +1,15 @@
-local generator_util = {
+generator_util = {
     data_structure = {}
 }
 
--- Local variables only touched during the single event where the generator runs, so desync-safe
-local data_structure, metadata = nil, nil
+-- ** DATA STRUCTURE **
+-- Local variables only touched during the single event where the generator runs, which is desync-safe
+local data, metadata = nil, nil
 
 -- Initializes the data and metadata for the given data structure
 function generator_util.data_structure.init(structure_type, main_structure_name,
   sub_structure_name, sub_structure_varname)
-    data_structure = {
+    data = {
         [main_structure_name] = {},
         structure_type = structure_type
     }
@@ -30,11 +31,11 @@ function generator_util.data_structure.insert(prototype)
     end
 
     if metadata.structure_type == "simple" then
-        local prototype_table = data_structure[metadata.main_structure_name]
+        local prototype_table = data[metadata.main_structure_name]
         insert_prototype(prototype_table)
 
     else  -- structure_type == "complex"
-        local category_table = data_structure[metadata.main_structure_name]
+        local category_table = data[metadata.main_structure_name]
         local category_name = prototype[metadata.sub_structure_varname]
 
         -- Create sub_category, if it doesn't exist
@@ -58,12 +59,12 @@ function generator_util.data_structure.sort(sorting_function)
     end
 
     if metadata.structure_type == "simple" then
-        local prototype_table = data_structure[metadata.main_structure_name]
+        local prototype_table = data[metadata.main_structure_name]
         table.sort(prototype_table, sorting_function)
         reassign_ids(prototype_table)
 
     else  -- structure_type == "complex"
-        for _, category_table in pairs(data_structure[metadata.main_structure_name]) do
+        for _, category_table in pairs(data[metadata.main_structure_name]) do
             local prototype_table = category_table[metadata.sub_structure_name]
             table.sort(prototype_table, sorting_function)
             reassign_ids(prototype_table)
@@ -74,16 +75,16 @@ end
 -- Generates a '[prototype.name] -> prototype.id'-map for each part of the structure. Run after sorting.
 function generator_util.data_structure.generate_map(add_identifiers)
     if metadata.structure_type == "simple" then
-        data_structure.map = {}
-        for _, prototype in pairs(data_structure[metadata.main_structure_name]) do
-            data_structure.map[prototype.name] = prototype.id
+        data.map = {}
+        for _, prototype in pairs(data[metadata.main_structure_name]) do
+            data.map[prototype.name] = prototype.id
             -- Identifiers only make sense for complex structures
         end
 
     else  -- structure_type == "complex"
-        data_structure.map = {}
-        for _, category_table in pairs(data_structure[metadata.main_structure_name]) do
-            data_structure.map[category_table.name] = category_table.id
+        data.map = {}
+        for _, category_table in pairs(data[metadata.main_structure_name]) do
+            data.map[category_table.name] = category_table.id
 
             category_table.map = {}
             for _, prototype in pairs(category_table[metadata.sub_structure_name]) do
@@ -97,9 +98,142 @@ end
 
 -- Cleans up and returns the completed data structure
 function generator_util.data_structure.get()
-    local structure = data_structure
-    data_structure, metadata = nil, nil
+    local structure = data
+    data, metadata = nil, nil
     return structure
+end
+
+
+-- ** LOCAL UTIL **
+-- Determines the actual amount of items that a recipe product or ingredient equates to
+local function generate_formatted_item(base_item, type)
+    local base_amount = 0
+    if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
+        base_amount = (base_item.amount_max + base_item.amount_min) / 2
+    else
+        base_amount = base_item.amount
+    end
+
+    local probability, proddable_amount = (base_item.probability or 1), nil
+    if type == "product" then
+        proddable_amount = (base_amount - (base_item.catalyst_amount or 0)) * probability
+    end
+
+    -- This will probably screw up the main_product detection down the line
+    if base_item.temperature ~= nil then
+        base_item.name = base_item.name .. "-" .. base_item.temperature
+    end
+
+    return {
+        name = base_item.name,
+        type = base_item.type,
+        amount = (base_amount * probability),
+        proddable_amount = proddable_amount,
+        temperature = base_item.temperature
+    }
+end
+
+-- Combines items that occur more than once into one entry
+local function combine_identical_products(item_list)
+    local touched_items = {item = {}, fluid = {}, entity = {}}
+
+    for index=#item_list, 1, -1 do
+        local item = item_list[index]
+        if item.temperature == nil then  -- don't care to deal with temperature crap
+            local touched_item = touched_items[item.type][item.name]
+            if touched_item ~= nil then
+                touched_item.amount = touched_item.amount + item.amount
+                touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
+
+                -- Using the table.remove function to preserve array-format
+                table.remove(item_list, index)
+            else
+                touched_items[item.type][item.name] = item
+            end
+        end
+    end
+end
+
+-- Converts the given list to a list[type][name]-format
+local function create_type_indexed_list(item_list)
+    local indexed_list = {item = {}, fluid = {}, entity = {}}
+
+    for index, item in pairs(item_list) do
+        indexed_list[item.type][item.name] = {index = index, item = cutil.shallowcopy(item)}
+    end
+
+    return indexed_list
+end
+
+-- Determines the type_count for the given recipe prototype
+local function determine_item_type_counts(indexed_items)
+    return {
+        items = table_size(indexed_items.item),
+        fluids = table_size(indexed_items.fluid)
+    }
+end
+
+
+-- ** TOP LEVEL **
+-- Formats the products/ingredients of a recipe for more convenient use
+function generator_util.format_recipe_products_and_ingredients(recipe_proto)
+    local ingredients = {}
+    for _, base_ingredient in pairs(recipe_proto.ingredients) do
+        local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
+        table.insert(ingredients, formatted_ingredient)
+    end
+    local indexed_ingredients = create_type_indexed_list(ingredients)
+    recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
+
+    local products = {}
+    for _, base_product in pairs(recipe_proto.products) do
+        local formatted_product = generate_formatted_item(base_product, "product")
+        table.insert(products, formatted_product)
+
+        -- Update the main product as well, if present
+        if recipe_proto.main_product ~= nil and
+          formatted_product.type == recipe_proto.main_product.type and
+          formatted_product.name == recipe_proto.main_product.name then
+            recipe_proto.main_product = formatted_product
+        end
+    end
+    combine_identical_products(products)  -- only needed products, ingredients can't have duplicates
+    local indexed_products = create_type_indexed_list(products)
+    recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
+
+
+    -- Reduce item amounts for items that are both an ingredient and a product
+    for _, items_of_type in pairs(indexed_ingredients) do
+        for _, ingredient in pairs(items_of_type) do
+            local peer_product = indexed_products[ingredient.item.type][ingredient.item.name]
+
+            if peer_product then
+                local difference = ingredient.item.amount - peer_product.item.amount
+
+                if difference < 0 then
+                    ingredients[ingredient.index].amount = nil
+                    products[peer_product.index].amount = -difference
+                elseif difference > 0 then
+                    ingredients[ingredient.index].amount = difference
+                    products[peer_product.index].amount = nil
+                else
+                    ingredients[ingredient.index].amount = nil
+                    products[peer_product.index].amount = nil
+                end
+            end
+        end
+    end
+
+    -- Remove any items that should be, indicated by their amount being nil
+    for _, item_table in pairs{ingredients, products} do
+        for i = #item_table, 1, -1 do
+            if item_table[i].amount == nil then item_table[i] = nil end
+        end
+    end
+
+
+    recipe_proto.ingredients = ingredients
+    recipe_proto.products = products
 end
 
 
@@ -175,6 +309,7 @@ function generator_util.format_allowed_effects(allowed_effects)
     return nil  -- all effects are false
 end
 
+
 -- Returns the appropriate prototype name for the given item, incorporating temperature
 function generator_util.format_temperature_name(item, name)
     return (item.temperature) and string.gsub(name, "-[0-9]+$", "") or name
@@ -184,137 +319,6 @@ end
 function generator_util.format_temperature_localised_name(item, proto)
     return (item.temperature ~= nil) and {"", proto.localised_name, " (",
       item.temperature, {"fp.unit_celsius"}, ")"} or proto.localised_name
-end
-
-
--- Determines the actual amount of items that a recipe product or ingredient equates to
-local function generate_formatted_item(base_item, type)
-    local base_amount = 0
-    if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
-        base_amount = (base_item.amount_max + base_item.amount_min) / 2
-    else
-        base_amount = base_item.amount
-    end
-
-    local probability, proddable_amount = (base_item.probability or 1), nil
-    if type == "product" then
-        proddable_amount = (base_amount - (base_item.catalyst_amount or 0)) * probability
-    end
-
-    -- This will probably screw up the main_product detection down the line
-    if base_item.temperature ~= nil then
-        base_item.name = base_item.name .. "-" .. base_item.temperature
-    end
-
-    return {
-        name = base_item.name,
-        type = base_item.type,
-        amount = (base_amount * probability),
-        proddable_amount = proddable_amount,
-        temperature = base_item.temperature
-    }
-end
-
--- Combines items that occur more than once into one entry
-local function combine_identical_products(item_list)
-    local touched_items = {item = {}, fluid = {}, entity = {}}
-
-    for index=#item_list, 1, -1 do
-        local item = item_list[index]
-        if item.temperature == nil then  -- don't care to deal with temperature crap
-            local touched_item = touched_items[item.type][item.name]
-            if touched_item ~= nil then
-                touched_item.amount = touched_item.amount + item.amount
-                touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
-
-                -- Using the table.remove function to preserve array-format
-                table.remove(item_list, index)
-            else
-                touched_items[item.type][item.name] = item
-            end
-        end
-    end
-end
-
--- Converts the given list to a list[type][name]-format
-local function create_type_indexed_list(item_list)
-    local indexed_list = {item = {}, fluid = {}, entity = {}}
-
-    for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = cutil.shallowcopy(item)}
-    end
-
-    return indexed_list
-end
-
--- Determines the type_count for the given recipe prototype
-local function determine_item_type_counts(indexed_items)
-    return {
-        items = table_size(indexed_items.item),
-        fluids = table_size(indexed_items.fluid)
-    }
-end
-
-
--- Formats the products/ingredients of a recipe for more convenient use
-function generator_util.format_recipe_products_and_ingredients(recipe_proto)
-    local ingredients = {}
-    for _, base_ingredient in pairs(recipe_proto.ingredients) do
-        local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
-        table.insert(ingredients, formatted_ingredient)
-    end
-    local indexed_ingredients = create_type_indexed_list(ingredients)
-    recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
-
-    local products = {}
-    for _, base_product in pairs(recipe_proto.products) do
-        local formatted_product = generate_formatted_item(base_product, "product")
-        table.insert(products, formatted_product)
-
-        -- Update the main product as well, if present
-        if recipe_proto.main_product ~= nil and
-          formatted_product.type == recipe_proto.main_product.type and
-          formatted_product.name == recipe_proto.main_product.name then
-            recipe_proto.main_product = formatted_product
-        end
-    end
-    combine_identical_products(products)  -- only needed products, ingredients can't have duplicates
-    local indexed_products = create_type_indexed_list(products)
-    recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
-
-
-    -- Reduce item amounts for items that are both an ingredient and a product
-    for _, items_of_type in pairs(indexed_ingredients) do
-        for _, ingredient in pairs(items_of_type) do
-            local peer_product = indexed_products[ingredient.item.type][ingredient.item.name]
-
-            if peer_product then
-                local difference = ingredient.item.amount - peer_product.item.amount
-
-                if difference < 0 then
-                    ingredients[ingredient.index].amount = nil
-                    products[peer_product.index].amount = -difference
-                elseif difference > 0 then
-                    ingredients[ingredient.index].amount = difference
-                    products[peer_product.index].amount = nil
-                else
-                    ingredients[ingredient.index].amount = nil
-                    products[peer_product.index].amount = nil
-                end
-            end
-        end
-    end
-
-    -- Remove any items that should be, indicated by their amount being nil
-    for _, item_table in pairs{ingredients, products} do
-        for i = #item_table, 1, -1 do
-            if item_table[i].amount == nil then item_table[i] = nil end
-        end
-    end
-
-
-    recipe_proto.ingredients = ingredients
-    recipe_proto.products = products
 end
 
 
@@ -351,7 +355,8 @@ function generator_util.add_recipe_tooltip(recipe)
                 local name = generator_util.format_temperature_name(item, item.name)
                 local proto = game[item.type .. "_prototypes"][name]
                 local localised_name = generator_util.format_temperature_localised_name(item, proto)
-                multi_insert{("\n    " .. "[" .. item.type .. "=" .. name .. "] " .. item.amount .. "x "), localised_name}
+                multi_insert{("\n    " .. "[" .. item.type .. "=" .. name .. "] " .. item.amount .. "x "),
+                  localised_name}
             end
         end
     end
@@ -367,10 +372,8 @@ function generator_util.add_item_tooltip(item)
     item.tooltip = tooltip
 end
 
+
 -- Generates a table imitating LuaGroup to avoid lua-cpp bridging
 function generator_util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
-
-
-return generator_util
