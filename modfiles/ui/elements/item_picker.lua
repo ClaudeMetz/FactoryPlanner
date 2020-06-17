@@ -1,7 +1,7 @@
 -- Represents an item picker, including a search bar and a warning label
 item_picker = {groups_per_row = 6}
 
-
+-- ** TOP LEVEL **
 -- Adds an item picker panel to the given parent element
 function item_picker.create(parent)
     if parent["flow_item_picker"] ~= nil then return parent["flow_item_picker"] end
@@ -227,6 +227,7 @@ function item_picker.filter(picker_flow, searchterm, first_run)
         end
     end
 end
+
 
 -- Handles any change to the given item picker textfield
 function item_picker.handle_searchfield_change(textfield)

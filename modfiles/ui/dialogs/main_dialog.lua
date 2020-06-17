@@ -141,12 +141,12 @@ function refresh_main_dialog(player, full_refresh)
             leave_beacon_selection(player, 0)  -- Leave the beacon selection mode if it is active
         end
 
-        add_titlebar_to(main_dialog)
-        add_actionbar_to(main_dialog)
-        add_subfactory_bar_to(main_dialog)
-        add_error_bar_to(main_dialog)
-        add_subfactory_pane_to(main_dialog)
-        add_production_pane_to(main_dialog)
+        titlebar.add_to(main_dialog)
+        actionbar.add_to(main_dialog)
+        subfactory_bar.add_to(main_dialog)
+        error_bar.add_to(main_dialog)
+        subfactory_pane.add_to(main_dialog)
+        production_titlebar.add_to(main_dialog)
 
     elseif main_dialog ~= nil and main_dialog.visible then
         -- Re-center the main dialog because it get screwed up sometimes for reasons
@@ -154,9 +154,9 @@ function refresh_main_dialog(player, full_refresh)
         ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
 
         -- Refresh the elements on top of the hierarchy, which refresh everything below them
-        refresh_titlebar(player)
-        refresh_actionbar(player)
-        refresh_subfactory_bar(player, true)
+        titlebar.refresh(player)
+        actionbar.refresh(player)
+        subfactory_bar.refresh(player, true)
     end
 
     ui_util.message.refresh(player)
@@ -169,21 +169,21 @@ function refresh_current_activity(player)
     local ui_state = get_ui_state(player)
 
     if main_dialog ~= nil and main_dialog.visible then
-        refresh_actionbar(player)
+        actionbar.refresh(player)
 
         local subfactory = ui_state.context.subfactory
         if subfactory ~= nil and subfactory.valid then
             local table_info_elements = main_dialog["table_subfactory_pane"]
               ["flow_info"]["scroll-pane"]["table_info_elements"]
-            refresh_mining_prod_table(player, subfactory, table_info_elements)
+            info_pane.refresh_mining_prod_table(player, subfactory, table_info_elements)
         end
 
         local line = ui_state.context.line
         if line ~= nil and subfactory.valid then
             local table_production = main_dialog["flow_production_pane"]
               ["scroll-pane_production_pane"]["table_production_pane"]
-            refresh_recipe_button(player, line, table_production)
-            refresh_machine_table(player, line, table_production)
+            production_table.refresh_recipe_button(player, line, table_production)
+            production_table.refresh_machine_table(player, line, table_production)
         end
 
         ui_util.message.refresh(player)
