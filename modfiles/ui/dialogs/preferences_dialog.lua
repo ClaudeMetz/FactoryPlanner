@@ -190,12 +190,12 @@ function handle_checkbox_preference_change(player, type, preference, state)
                 Factory.update_ingredient_satisfactions(player_table.archive)
             end
 
-            refresh_production_pane(player)
+            production_titlebar.refresh(player)
         end
 
     else  -- type == "production"
         preferences.optional_production_columns[preference] = state
-        refresh_production_pane(player)
+        production_titlebar.refresh(player)
     end
 end
 

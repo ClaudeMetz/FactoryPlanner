@@ -1,5 +1,8 @@
+info_pane = {}
+
+-- ** TOP LEVEL **
 -- Constructs the info pane including timescale settings
-function refresh_info_pane(player)
+function info_pane.refresh(player)
     local ui_state = get_ui_state(player)
     local context = ui_state.context
     local subfactory = context.subfactory
@@ -25,9 +28,11 @@ function refresh_info_pane(player)
     table_timescale.style.bottom_margin = 4
 
     local timescales = {1, 60, 3600}
-    local table_timescales = table_timescale.add{type="table", name="table_timescales", column_count=table_size(timescales)}
+    local table_timescales = table_timescale.add{type="table", name="table_timescales",
+      column_count=table_size(timescales)}
     table_timescales.style.horizontal_spacing = 0
     table_timescales.style.left_margin = 2
+
     for _, scale in pairs(timescales) do
         local button = table_timescales.add{type="button", name=("fp_button_timescale_" .. scale),
           caption=ui_util.format_timescale(scale), mouse_button_filter={"left"}}
@@ -37,7 +42,7 @@ function refresh_info_pane(player)
 
 
     -- Utility dialog
-    refresh_utility_table(player, subfactory, table_info_elements)
+    info_pane.refresh_utility_table(player, subfactory, table_info_elements)
 
 
     -- Power Usage + Pollution
@@ -78,12 +83,12 @@ function refresh_info_pane(player)
 
 
     -- Mining Productivity
-    refresh_mining_prod_table(player, subfactory, table_info_elements)
+    info_pane.refresh_mining_prod_table(player, subfactory, table_info_elements)
 end
 
 
 -- Separate function so it can be refreshed independently
-function refresh_utility_table(player, subfactory, table_info_elements)
+function info_pane.refresh_utility_table(player, subfactory, table_info_elements)
     table_info_elements = table_info_elements or player.gui.screen["fp_frame_main_dialog"]
       ["table_subfactory_pane"]["flow_info"]["scroll-pane"]["table_info_elements"]
 
@@ -95,8 +100,8 @@ function refresh_utility_table(player, subfactory, table_info_elements)
 
     local table_ut = table_utility.add{type="table", name="table_ut", column_count=2}
     table_ut.style.horizontal_spacing = 20
-    table_ut.add{type="button", name="fp_button_open_utility_dialog", caption={"fp.view_utilities"}, style="fp_button_mini",
-      mouse_button_filter={"left"}}
+    table_ut.add{type="button", name="fp_button_open_utility_dialog", caption={"fp.view_utilities"},
+      style="fp_button_mini", mouse_button_filter={"left"}}
 
     -- Only show the notes tooltip-label if there are any notes to show
     if subfactory.notes ~= "" then
@@ -109,7 +114,7 @@ function refresh_utility_table(player, subfactory, table_info_elements)
 end
 
 -- Separate function so it can be refreshed independently
-function refresh_mining_prod_table(player, subfactory, table_info_elements)
+function info_pane.refresh_mining_prod_table(player, subfactory, table_info_elements)
     local ui_state = get_ui_state(player)
 
     local table_mining_prod = table_info_elements["table_mining_prod"] or
@@ -121,7 +126,7 @@ function refresh_mining_prod_table(player, subfactory, table_info_elements)
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
 
     if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then
-        subfactory.mining_productivity = subfactory.mining_productivity or 0  -- switch from no mining prod to a custom one
+        subfactory.mining_productivity = subfactory.mining_productivity or 0  -- switch from no mining prod to custom
         local textfield_prod_bonus = table_mining_prod.add{type="textfield", name="fp_textfield_mining_prod",
           text=(subfactory.mining_productivity or 0)}
         textfield_prod_bonus.style.width = 60
@@ -142,7 +147,7 @@ end
 
 
 -- Handles the timescale changing process
-function handle_subfactory_timescale_change(player, timescale)
+function info_pane.handle_subfactory_timescale_change(player, timescale)
     if ui_util.check_archive_status(player) then return end
 
     local subfactory = get_context(player).subfactory
@@ -164,7 +169,7 @@ function handle_subfactory_timescale_change(player, timescale)
 end
 
 -- Activates the mining prod override mode for the current subfactory
-function mining_prod_override(player)
+function info_pane.override_mining_prod(player)
     if ui_util.check_archive_status(player) then return end
 
     get_ui_state(player).current_activity = "overriding_mining_prod"
@@ -172,7 +177,7 @@ function mining_prod_override(player)
 end
 
 -- Persists changes to the overriden mining productivity
-function handle_mining_prod_change(player, element)
+function info_pane.handle_mining_prod_change(player, element)
     if ui_util.check_archive_status(player) then return end
 
     local subfactory = get_context(player).subfactory
@@ -180,7 +185,7 @@ function handle_mining_prod_change(player, element)
 end
 
 -- Handles confirmation of the mining prod textfield, possibly disabling the custom override
-function handle_mining_prod_confirmation(player)
+function info_pane.handle_mining_prod_confirmation(player)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
 

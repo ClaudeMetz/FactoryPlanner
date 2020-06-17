@@ -12,7 +12,7 @@ function open_chooser_dialog(flow_modal_dialog, modal_data)
 
     -- This is the function that will populate the chooser dialog, requesting as many blank chooser buttons as needed
     -- using the 'generate_blank_chooser_button'-function below
-    _G["generate_chooser_" .. modal_data.reciever_name .. "_buttons"](player)
+    modal_data.button_generator(player)
 end
 
 -- Generates a blank chooser button for the calling function to adjust to it's needs
@@ -25,7 +25,7 @@ end
 -- Handles click on an element presented by the chooser
 function handle_chooser_element_click(player, element_id, direction, alt)
     local modifier_keys = ui_util.format_modifier_keys(direction, alt)
-    _G["apply_" .. get_ui_state(player).modal_data.reciever_name .. "_choice"](player, element_id, modifier_keys)
+    get_ui_state(player).modal_data.click_handler(player, element_id, modifier_keys)
     exit_modal_dialog(player, "cancel", {})
     refresh_main_dialog(player)
 end
@@ -55,7 +55,7 @@ function close_options_dialog(flow_modal_dialog, action, data)
     if action == "submit" then
         local player = game.get_player(flow_modal_dialog.player_index)
         local modal_data = get_ui_state(player).modal_data
-        _G["apply_" .. modal_data.reciever_name .. "_options"](player, modal_data.object, data)
+        modal_data.submission_handler(player, modal_data.object, data)
         refresh_main_dialog(player)
     end
 end

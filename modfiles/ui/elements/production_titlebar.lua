@@ -1,5 +1,66 @@
+production_titlebar = {}
+
+-- ** LOCAL UTIL **
+-- Moves on the selection until it is on an enabled state (at least 1 view needs to be enabled)
+-- (Not useful currently as all views are enabled, but it was in the past)
+local function correct_view_state(view_state, id_to_select)
+    while true do
+        view = view_state[id_to_select]
+        if view.enabled then
+            view.selected = true
+            view_state.selected_view = view
+            break
+        else
+            id_to_select = (id_to_select % #view_state) + 1
+        end
+    end
+end
+
+-- Refreshes the current view state
+local function refresh_view_state(player, subfactory)
+    local player_table = get_table(player)
+    local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
+    local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"fp.cbelts"} or {"fp.clanes"}
+    local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
+    local view_state = {
+        [1] = {
+            name = "items_per_timescale",
+            caption = {"", {"fp.citems"}, "/", timescale},
+            enabled = true,
+            selected = true
+        },
+        [2] = {
+            name = "belts_or_lanes",
+            caption = {"", bl_sprite, " ", bl_caption},
+            enabled = true,
+            selected = false
+        },
+        [3] = {
+            name = "items_per_second_per_machine",
+            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. top_crafting_machine_sprite .. "]"},
+            enabled = true,
+            selected = false
+        }
+    }
+    view_state.selected_view = view_state[1]
+
+    -- Conserves the selection state from the previous view_state, if available
+    if player_table.ui_state.view_state ~= nil then
+        local id_to_select = nil
+        for i, view in ipairs(player_table.ui_state.view_state) do
+            if view.selected then id_to_select = i
+            else view_state[i].selected = false end
+        end
+        correct_view_state(view_state, id_to_select)
+    end
+
+    player_table.ui_state.view_state = view_state
+end
+
+
+-- ** TOP LEVEL **
 -- Creates the production pane that displays
-function add_production_pane_to(main_dialog)
+function production_titlebar.add_to(main_dialog)
     local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
 
     -- Production titlebar
@@ -72,11 +133,11 @@ function add_production_pane_to(main_dialog)
     scroll_pane.style.horizontally_stretchable = true
     scroll_pane.style.vertically_squashable = true
 
-    refresh_production_pane(game.get_player(main_dialog.player_index))
+    production_titlebar.refresh(game.get_player(main_dialog.player_index))
 end
 
 -- Refreshes the production pane (titlebar + table)
-function refresh_production_pane(player)
+function production_titlebar.refresh(player)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
     -- Cuts function short if the approriate GUI's haven't been initialized yet
     if not (main_dialog and main_dialog["flow_production_pane"]) then return end
@@ -116,7 +177,7 @@ function refresh_production_pane(player)
         refresh_view_state(player, subfactory)
 
         -- Refresh subfactory pane to update it with the selected state
-        if not state_existed then refresh_subfactory_pane(player) end
+        if not state_existed then subfactory_pane.refresh(player) end
 
         for _, view in ipairs(ui_state.view_state) do
             local button = table_view["fp_button_production_titlebar_view_" .. view.name]
@@ -140,12 +201,12 @@ function refresh_production_pane(player)
         end
     end
 
-    refresh_production_table(player)
+    production_table.refresh(player)
 end
 
 
 -- Handles a click on a button that changes the viewed floor of a subfactory
-function handle_floor_change_click(player, destination)
+function production_titlebar.handle_floor_change_click(player, destination)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
@@ -173,7 +234,7 @@ end
 
 
 -- Toggles the button-style and ui_state of floor_total
-function toggle_floor_total_display(player, button)
+function production_titlebar.toggle_floor_total_display(player, button)
     local flags = get_flags(player)
 
     if button.style.name == "button" then
@@ -189,49 +250,8 @@ function toggle_floor_total_display(player, button)
 end
 
 
--- Refreshes the current view state
-function refresh_view_state(player, subfactory)
-    local player_table = get_table(player)
-    local timescale = ui_util.format_timescale(subfactory.timescale, true, false)
-    local bl_caption = (player_table.settings.belts_or_lanes == "belts") and {"fp.cbelts"} or {"fp.clanes"}
-    local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
-    local view_state = {
-        [1] = {
-            name = "items_per_timescale",
-            caption = {"", {"fp.citems"}, "/", timescale},
-            enabled = true,
-            selected = true
-        },
-        [2] = {
-            name = "belts_or_lanes",
-            caption = {"", bl_sprite, " ", bl_caption},
-            enabled = true,
-            selected = false
-        },
-        [3] = {
-            name = "items_per_second_per_machine",
-            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. top_crafting_machine_sprite .. "]"},
-            enabled = true,
-            selected = false
-        }
-    }
-    view_state.selected_view = view_state[1]
-
-    -- Conserves the selection state from the previous view_state, if available
-    if player_table.ui_state.view_state ~= nil then
-        local id_to_select = nil
-        for i, view in ipairs(player_table.ui_state.view_state) do
-            if view.selected then id_to_select = i
-            else view_state[i].selected = false end
-        end
-        correct_view_state(view_state, id_to_select)
-    end
-
-    player_table.ui_state.view_state = view_state
-end
-
 -- Sets the current view to the given view (If no view if provided, it sets it to the next enabled one)
-function change_view_state(player, view_name)
+function production_titlebar.change_view_state(player, view_name)
     local ui_state = get_ui_state(player)
 
     -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
@@ -261,19 +281,4 @@ function change_view_state(player, view_name)
     end
 
     refresh_main_dialog(player)
-end
-
--- Moves on the selection until it is on an enabled state (at least 1 view needs to be enabled)
--- (Not useful currently as all views are enabled, but it was in the past)
-function correct_view_state(view_state, id_to_select)
-    while true do
-        view = view_state[id_to_select]
-        if view.enabled then
-            view.selected = true
-            view_state.selected_view = view
-            break
-        else
-            id_to_select = (id_to_select % #view_state) + 1
-        end
-    end
 end

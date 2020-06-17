@@ -125,5 +125,5 @@ end
 function handle_notes_change(player, textbox)
     local subfactory = get_context(player).subfactory
     subfactory.notes = textbox.text
-    refresh_utility_table(player, subfactory)
+    info_pane.refresh_utility_table(player, subfactory)
 end

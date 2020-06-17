@@ -1,5 +1,8 @@
+production_handler = {}
+
+-- ** TOP LEVEL **
 -- Handles any clicks on the recipe icon of an (assembly) line
-function handle_line_recipe_click(player, line_id, click, direction, action, alt)
+function production_handler.handle_line_recipe_click(player, line_id, click, direction, action, alt)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
@@ -66,7 +69,7 @@ end
 
 
 -- Handles the changing of the percentage textfield (doesn't refresh the production table yet)
-function handle_percentage_change(player, element)
+function production_handler.handle_percentage_change(player, element)
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
@@ -80,7 +83,7 @@ function handle_percentage_change(player, element)
 end
 
 -- Handles the player confirming the given percentage textfield by reloading and refocusing
-function handle_percentage_confirmation(player, element)
+function production_handler.handle_percentage_confirmation(player, element)
     local line_id = tonumber(string.match(element.name, "%d+"))
     local ui_state = get_ui_state(player)
     ui_state.current_activity = nil
@@ -92,7 +95,7 @@ end
 
 
 -- Handles the machine changing process
-function handle_machine_change(player, line_id, machine_id, click, direction, alt)
+function production_handler.handle_machine_change(player, line_id, machine_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
     local ui_state = get_ui_state(player)
@@ -134,7 +137,8 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
 
                 else  -- Open a chooser dialog presenting all machine choices
                     local modal_data = {
-                        reciever_name = "machine",
+                        button_generator = production_handler.generate_chooser_machine_buttons,
+                        click_handler = production_handler.apply_machine_choice,
                         title = {"fp.machine"},
                         text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
                         object = line.machine
@@ -148,7 +152,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
         -- Open the dialog to set a machine count limit
         elseif click == "right" then
             local modal_data = {
-                reciever_name = "machine",
+                submission_handler = production_handler.apply_machine_options,
                 title = {"fp.machine_limit_title"},
                 text = {"", {"fp.machine_limit_text"}, " '", line.recipe.proto.localised_name, "':"},
                 object = line.machine,
@@ -187,7 +191,7 @@ function handle_machine_change(player, line_id, machine_id, click, direction, al
 end
 
 -- Generates the buttons for the machine chooser dialog
-function generate_chooser_machine_buttons(player)
+function production_handler.generate_chooser_machine_buttons(player)
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
 
@@ -195,13 +199,14 @@ function generate_chooser_machine_buttons(player)
         if Line.is_machine_applicable(line, machine_proto) then
             local button = generate_blank_chooser_button(player, machine_id)
             -- The actual button is setup by the method shared by non-chooser machine buttons
-            setup_machine_choice_button(player, button, machine_proto, ui_state.modal_data.object.proto.id, 36)
+            production_table.setup_machine_choice_button(player, button, machine_proto,
+              ui_state.modal_data.object.proto.id, 36)
         end
     end
 end
 
 -- Recieves the result of the machine choice and applies it
-function apply_machine_choice(player, machine_id)
+function production_handler.apply_machine_choice(player, machine_id)
     local context = get_context(player)
     local category_id = context.line.machine.category.id
     local machine = global.all_machines.categories[category_id].machines[tonumber(machine_id)]
@@ -210,7 +215,7 @@ function apply_machine_choice(player, machine_id)
 end
 
 -- Recieves the result of the machine limit options and applies it
-function apply_machine_options(player, _, options)
+function production_handler.apply_machine_options(player, _, options)
     local context = get_context(player)
     -- tonumber() has already converted an empty string to nil
     if options.machine_limit == nil then options.hard_limit = false end
@@ -220,7 +225,7 @@ end
 
 
 -- Handles a click on an existing module or on the add-module-button
-function handle_line_module_click(player, line_id, module_id, click, direction, action, alt)
+function production_handler.handle_line_module_click(player, line_id, module_id, click, direction, action, alt)
     if ui_util.check_archive_status(player) then return end
 
     local ui_state = get_ui_state(player)
@@ -291,8 +296,9 @@ function handle_line_module_click(player, line_id, module_id, click, direction, 
     end
 end
 
+
 -- Handles a click on an existing beacon/beacon-module or on the add-beacon-button
-function handle_line_beacon_click(player, line_id, type, click, direction, action, alt)
+function production_handler.handle_line_beacon_click(player, line_id, type, click, direction, action, alt)
     if ui_util.check_archive_status(player) then return end
 
     local ui_state = get_ui_state(player)
@@ -408,7 +414,7 @@ end
 
 
 -- Handles a click on any of the 3 item buttons of a specific line
-function handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
+function production_handler.handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
     local context = get_context(player)
@@ -420,7 +426,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 
     elseif direction ~= nil then  -- Shift item in the given direction
         if Line.shift(line, item, direction) then
-            refresh_production_table(player)
+            production_table.refresh(player)
         else
             local lower_class = string.lower(class)
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
@@ -452,7 +458,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
         local produce_consume = (item.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
 
         local modal_data = {
-            reciever_name = "item",
+            submission_handler = production_handler.apply_item_options,
             title = {"fp.option_item_title", type_localised_string},
             text = {"fp.option_text", {"fp.option_item_text", type_localised_string}, item.proto.localised_name},
             object = item,
@@ -475,7 +481,7 @@ function handle_item_button_click(player, line_id, class, item_id, click, direct
 end
 
 -- Recieves the result of the item options and applies it
-function apply_item_options(player, item, options)
+function production_handler.apply_item_options(player, item, options)
     local context = get_context(player)
     local line = context.line
     local current_amount = item.amount
@@ -496,7 +502,7 @@ end
 
 
 -- Handles a click on an line fuel button
-function handle_fuel_button_click(player, line_id, click, direction, alt)
+function production_handler.handle_fuel_button_click(player, line_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
     local context = get_context(player)
@@ -534,7 +540,8 @@ function handle_fuel_button_click(player, line_id, click, direction, alt)
 
         elseif click == "right" then
             local modal_data = {
-                reciever_name = "fuel",
+                button_generator = production_handler.generate_chooser_fuel_buttons,
+                click_handler = production_handler.apply_fuel_choice,
                 title = {"fp.fuel"},
                 text = {"", {"fp.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"},
                 object = fuel
@@ -547,7 +554,7 @@ function handle_fuel_button_click(player, line_id, click, direction, alt)
 end
 
 -- Generates the buttons for the fuel chooser dialog
-function generate_chooser_fuel_buttons(player)
+function production_handler.generate_chooser_fuel_buttons(player)
     local player_table = get_table(player)
     local ui_state = get_ui_state(player)
     local view_name = ui_state.view_state.selected_view.name
@@ -587,7 +594,7 @@ function generate_chooser_fuel_buttons(player)
 end
 
 -- Recieves the result of a chooser user choice and applies it
-function apply_fuel_choice(player, new_fuel_id_string)
+function production_handler.apply_fuel_choice(player, new_fuel_id_string)
     local context = get_context(player)
     local split_string = cutil.split(new_fuel_id_string, "_")
     local new_fuel = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
@@ -597,16 +604,16 @@ end
 
 
 -- Handles the changing of the comment textfield
-function handle_comment_change(player, element)
+function production_handler.handle_comment_change(player, element)
     local line = Floor.get(get_context(player).floor, "Line", tonumber(string.match(element.name, "%d+")))
     line.comment = element.text
 end
 
 -- Clears all comments on the current floor
-function clear_recipe_comments(player)
+function production_handler.clear_recipe_comments(player)
     local floor = get_context(player).floor
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         line.comment = nil
     end
-    refresh_production_pane(player)
+    production_titlebar.refresh(player)
 end

@@ -1,30 +1,33 @@
+titlebar = {}
+
+-- ** TOP LEVEL **
 -- Creates the titlebar including name and exit-button
-function add_titlebar_to(main_dialog)
-    local titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
+function titlebar.add_to(main_dialog)
+    local flow_titlebar = main_dialog.add{type="flow", name="flow_titlebar", direction="horizontal"}
 
     -- Title
-    local label_title = titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
+    local label_title = flow_titlebar.add{type="label", name="label_titlebar_name", caption=" Factory Planner"}
     label_title.style.font = "fp-font-bold-26p"
 
     -- Hint
-    local label_hint = titlebar.add{type="label", name="label_titlebar_hint"}
+    local label_hint = flow_titlebar.add{type="label", name="label_titlebar_hint"}
     label_hint.style.font = "fp-font-semibold-18p"
     label_hint.style.top_margin = 6
     label_hint.style.left_margin = 14
 
     -- Spacer
-    local flow_spacer = titlebar.add{type="flow", name="flow_titlebar_spacer", direction="horizontal"}
+    local flow_spacer = flow_titlebar.add{type="flow", name="flow_titlebar_spacer", direction="horizontal"}
     flow_spacer.style.horizontally_stretchable = true
 
     -- Drag handle
-    local handle = titlebar.add{type="empty-widget", name="empty-widget_titlebar_space", style="draggable_space"}
+    local handle = flow_titlebar.add{type="empty-widget", name="empty-widget_titlebar_space", style="draggable_space"}
     handle.style.height = 34
     handle.style.width = 180
     handle.style.top_margin = 4
     handle.drag_target = main_dialog
 
     -- Buttonbar
-    local flow_buttonbar = titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}
+    local flow_buttonbar = flow_titlebar.add{type="flow", name="flow_titlebar_buttonbar", direction="horizontal"}
     flow_buttonbar.style.top_margin = 4
 
     flow_buttonbar.add{type="button", name="fp_button_titlebar_tutorial", caption={"fp.tutorial"},
@@ -40,12 +43,11 @@ function add_titlebar_to(main_dialog)
       tooltip={"fp.close_interface"}, style="fp_button_titlebar_square", mouse_button_filter={"left"}}
 
 
-    refresh_titlebar(game.get_player(main_dialog.player_index))
+    titlebar.refresh(game.get_player(main_dialog.player_index))
 end
 
-
 -- Refreshes the pause_on_interface-button
-function refresh_titlebar(player)
+function titlebar.refresh(player)
     local main_dialog = player.gui.screen["fp_frame_main_dialog"]
     local button_pause = main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
     button_pause.enabled = (not game.is_multiplayer())
@@ -55,7 +57,7 @@ end
 
 
 -- Handles a click on the pause_on_interface button
-function handle_pause_button_click(player, button)
+function titlebar.handle_pause_button_click(player, button)
     if not game.is_multiplayer() then
         local preferences = get_preferences(player)
         preferences.pause_on_interface = not preferences.pause_on_interface
