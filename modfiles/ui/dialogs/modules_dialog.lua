@@ -350,7 +350,7 @@ end
 function handle_module_beacon_picker_click(player, button)
     local ui_state = get_ui_state(player)
     local modal_data = ui_state.modal_data
-    local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
+    local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
 
     local split_name = cutil.split(button.name, "_")
     if split_name[3] == "module" then
@@ -433,25 +433,25 @@ end
 
 -- Sets the amount of modules in the dialog to exactly fill up the machine
 function max_module_amount(player)
-    local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
+    local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
     flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text = get_modal_data(player).empty_slots
-    exit_modal_dialog(player, "submit", {})
+    modal_dialog.exit(player, "submit", {})
 end
 
 
 -- Handles entering the beacon-selection mode
 function enter_beacon_selection(player)
     player.cursor_stack.set_stack("fp_beacon_selector")
-    set_selection_mode(player, true)
+    modal_dialog.set_selection_mode(player, true)
 end
 
 -- Leaves the beacon-selection mode, applying the results if available
 function leave_beacon_selection(player, beacon_amount)
-    local textfield_beacon_total = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
+    local textfield_beacon_total = modal_dialog.find(player)["flow_modal_dialog"]
       ["flow_beacon_total"]["textfield_beacon_total"]
     textfield_beacon_total.text = beacon_amount or textfield_beacon_total.text
     if beacon_amount then textfield_beacon_total.focus() end
 
     player.cursor_stack.set_stack(nil)
-    set_selection_mode(player, false)
+    modal_dialog.set_selection_mode(player, false)
 end

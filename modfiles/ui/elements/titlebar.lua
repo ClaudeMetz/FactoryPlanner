@@ -66,6 +66,6 @@ function titlebar.handle_pause_button_click(player, button)
           "fp_button_titlebar_square_selected" or "fp_button_titlebar_square"
 
         local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-        set_pause_state(player, main_dialog)
+        main_dialog.set_pause_state(player, main_dialog)
     end
 end

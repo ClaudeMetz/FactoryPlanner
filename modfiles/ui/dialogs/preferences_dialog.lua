@@ -87,7 +87,7 @@ end
 
 -- Creates the modal dialog to change your preferences
 function refresh_preferences_dialog(player)
-    local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
+    local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
     local preferences = get_preferences(player)
 
     -- General+Production preferences
@@ -238,5 +238,5 @@ function handle_prototype_preference_change(player, type, prototype_id, category
     end
 
     refresh_preferences_dialog(player)
-    if type == "belts" then refresh_main_dialog(player) end
+    if type == "belts" then main_dialog.refresh(player) end
 end

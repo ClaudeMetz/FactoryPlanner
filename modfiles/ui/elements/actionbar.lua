@@ -101,10 +101,10 @@ function actionbar.handle_subfactory_deletion(player)
         reset_subfactory_selection(player, factory, removed_gui_position)
 
         ui_state.current_activity = nil
-        refresh_main_dialog(player)
+        main_dialog.refresh(player)
     else
         ui_state.current_activity = "deleting_subfactory"
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
     end
 end
 
@@ -123,7 +123,7 @@ function actionbar.handle_subfactory_archivation(player)
     Factory.add(destination, subfactory)
 
     ui_state.current_activity = nil
-    refresh_main_dialog(player)
+    main_dialog.refresh(player)
 end
 
 -- Enters or leaves the archive-viewing mode
@@ -137,5 +137,5 @@ function actionbar.toggle_archive_view(player)
     ui_util.context.set_factory(player, factory)
 
     ui_state.current_activity = nil
-    refresh_main_dialog(player)
+    main_dialog.refresh(player)
 end

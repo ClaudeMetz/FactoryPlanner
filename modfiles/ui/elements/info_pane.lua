@@ -173,7 +173,7 @@ function info_pane.override_mining_prod(player)
     if ui_util.check_archive_status(player) then return end
 
     get_ui_state(player).current_activity = "overriding_mining_prod"
-    refresh_current_activity(player)
+    main_dialog.refresh_current_activity(player)
 end
 
 -- Persists changes to the overriden mining productivity

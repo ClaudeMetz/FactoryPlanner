@@ -1,4 +1,7 @@
+require("mod-gui")
+
 ui_util = {
+    mod_gui = {},
     context = {},
     attributes = {},
     switch = {},
@@ -7,18 +10,6 @@ ui_util = {
 
 
 -- ** GUI utilities **
--- Readjusts the size of the main dialog according to the user settings
-function ui_util.recalculate_main_dialog_dimensions(player)
-    local player_table = get_table(player)
-
-    local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
-    local height = 394 + (player_table.settings.recipes_at_once * 39)
-
-    local dimensions = {width=width, height=height}
-    player_table.ui_state.main_dialog_dimensions = dimensions
-    return dimensions
-end
-
 -- Properly centers the given frame (need width/height parameters cause no API-read exists)
 function ui_util.properly_center_frame(player, frame, width, height)
     local resolution = player.display_resolution
@@ -321,15 +312,6 @@ function ui_util.format_timescale(timescale, raw, whole_word)
     else return {"", "1", ts} end
 end
 
--- Formats the given 'modifier keys' to a clearer table
-function ui_util.format_modifier_keys(direction, alt)
-    return {
-        shift = (direction == "positive"),
-        control = (direction == "negative"),
-        alt = alt
-    }
-end
-
 -- Checks whether the archive is open; posts an error and returns true if it is
 function ui_util.check_archive_status(player)
     if get_flags(player).archive_open then
@@ -350,15 +332,23 @@ function ui_util.execute_alt_action(player, action_type, data)
     end
 end
 
--- Tries to find the currently open modal dialog and returns it
-function ui_util.find_modal_dialog(player)
-    local modal_dialog_type = get_ui_state(player).modal_dialog_type
-    if modal_dialog_type == nil then
-        return nil
-    else
-        local candidate_frame_name = "fp_frame_modal_dialog_" .. modal_dialog_type
-        return player.gui.screen[candidate_frame_name] or player.gui.screen["fp_frame_modal_dialog"]
+
+-- **** Mod-GUI ****
+-- Create the always-present GUI button to open the main dialog
+function ui_util.mod_gui.create(player)
+    local frame_flow = mod_gui.get_button_flow(player)
+    if not frame_flow["fp_button_toggle_interface"] then
+        frame_flow.add{type="button", name="fp_button_toggle_interface", caption="FP", tooltip={"fp.open_main_dialog"},
+          style=mod_gui.button_style, mouse_button_filter={"left"}}
     end
+
+    frame_flow["fp_button_toggle_interface"].visible = get_settings(player).show_gui_button
+end
+
+-- Toggles the visibility of the toggle-main-dialog-button
+function ui_util.mod_gui.toggle(player)
+    local enable = get_settings(player).show_gui_button
+    mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
 end
 
 

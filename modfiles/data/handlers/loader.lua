@@ -33,7 +33,7 @@ function events.recipebook()
     if remote.interfaces["RecipeBook"] ~= nil then
         script.on_event(remote.call("RecipeBook", "reopen_source_event"), function(event)
             if event.source_data.mod_name == "factoryplanner" then
-                toggle_main_dialog(game.get_player(event.player_index))
+                main_dialog.toggle(game.get_player(event.player_index))
             end
         end)
     end
