@@ -87,7 +87,7 @@ end
 function add_numeric_option(table, field)
     local textfield = table.add{type="textfield", name="textfield_option_numeric", text=field.value}
     textfield.style.left_margin = 1
-    textfield.style.width = 75
+    textfield.style.width = (field.width or 75)
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then ui_util.select_all(textfield) end
 
