@@ -192,7 +192,7 @@ function subfactory_pane.handle_ingredient_element_click(player, ingredient_id, 
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
 
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
     end
 end
 
@@ -217,18 +217,18 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
 
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
 
     else
         if click == "left" then
             if context.floor.level == 1 then
-                enter_modal_dialog(player, {type="recipe", modal_data={product=product, production_type="produce"}})
+                modal_dialog.enter(player, {type="recipe", modal_data={product=product, production_type="produce"}})
             else
                 ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
             end
         elseif click == "right" then
             if action == "edit" then
-                enter_modal_dialog(player, {type="product", submit=true, delete=true, modal_data={product=product}})
+                modal_dialog.enter(player, {type="product", submit=true, delete=true, modal_data={product=product}})
 
             elseif action == "delete" then
                 Subfactory.remove(subfactory, product)
@@ -264,12 +264,12 @@ function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, cl
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
 
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
 
     --[[ elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
-            enter_modal_dialog(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
+            modal_dialog.enter(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
         else
             ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
         end ]]

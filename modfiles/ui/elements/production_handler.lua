@@ -28,7 +28,7 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
 
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
 
     else
         -- Attaches a subfloor to this line
@@ -42,7 +42,7 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
             end
             ui_state.current_activity = nil
             ui_util.context.set_floor(player, line.subfloor)
-            refresh_main_dialog(player)
+            main_dialog.refresh(player)
 
         -- Handle removal of clicked (assembly) line
         elseif click == "right" and action == "delete" then
@@ -60,7 +60,7 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
                 else
                     ui_state.current_activity = "deleting_line"
                     ui_state.context.line = line
-                    refresh_current_activity(player)
+                    main_dialog.refresh_current_activity(player)
                 end
             end
         end
@@ -133,7 +133,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                 if applicable_machine_count < 5 then  -- up to 4 machines, no picker is needed
                     ui_state.current_activity = "changing_machine"
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                    refresh_current_activity(player)
+                    main_dialog.refresh_current_activity(player)
 
                 else  -- Open a chooser dialog presenting all machine choices
                     local modal_data = {
@@ -145,7 +145,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                     }
 
                     ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                    enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
+                    modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
                 end
             end
 
@@ -176,7 +176,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             }
 
             ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-            enter_modal_dialog(player, {type="options", submit=true, modal_data=modal_data})
+            modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
         end
     else
         -- Accept the user selection of new machine for this (assembly) line
@@ -235,7 +235,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
     local limit = Line.empty_slots(line)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
-        enter_modal_dialog(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
+        modal_dialog.enter(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     else  -- meaning an existing module was clicked
         local module = Line.get(line, "Module", module_id)
@@ -290,7 +290,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "edit" or click == "left" then
-            enter_modal_dialog(player, {type="module", submit=true, delete=true, modal_data={selected_object=module,
+            modal_dialog.enter(player, {type="module", submit=true, delete=true, modal_data={selected_object=module,
               empty_slots=(limit + module.amount), selected_module=module.proto}})
         end
     end
@@ -308,7 +308,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
 
     if type == nil then  -- meaning the add-beacon-button was pressed
         local limit = prototyper.defaults.get(player, "beacons").module_limit
-        enter_modal_dialog(player, {type="beacon", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
+        modal_dialog.enter(player, {type="beacon", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction
         if type == "module" then
@@ -407,7 +407,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
 
     elseif action == "edit" or click == "left" then
         local beacon = line.beacon
-        enter_modal_dialog(player, {type="beacon", submit=true, delete=true, modal_data={selected_object=beacon,
+        modal_dialog.enter(player, {type="beacon", submit=true, delete=true, modal_data={selected_object=beacon,
           empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
     end
 end
@@ -434,11 +434,11 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
 
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
 
     elseif click == "left" and item.proto.type ~= "entity" then
         if item.class == "Ingredient" then  -- Pick recipe to produce this ingredient
-            enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="produce"}})
+            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce"}})
 
         elseif item.class == "Product" then -- Set the priority product
             if line.Product.count < 2 then
@@ -450,7 +450,7 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             end
 
         --[[ elseif item.class == "Byproduct" then
-            enter_modal_dialog(player, {type="recipe", modal_data={product=item, production_type="consume"}}) ]]
+            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="consume"}}) ]]
         end
 
     elseif click == "right" then  -- Open the percentage dialog for this item
@@ -476,7 +476,7 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
         }
 
         context.line = line  -- won't be reset after use, but that doesn't matter
-        enter_modal_dialog(player, {type="options", submit=true, modal_data=modal_data})
+        modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
     end
 end
 
@@ -536,7 +536,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
 
     else
         if click == "left" then
-            enter_modal_dialog(player, {type="recipe", modal_data={product=fuel, production_type="produce"}})
+            modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce"}})
 
         elseif click == "right" then
             local modal_data = {
@@ -548,7 +548,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
             }
 
             context.line = line  -- won't be reset after use, but that doesn't matter
-            enter_modal_dialog(player, {type="chooser", modal_data=modal_data})
+            modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
         end
     end
 end

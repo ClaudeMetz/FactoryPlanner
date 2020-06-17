@@ -132,7 +132,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
             ui_util.message.enqueue(player, message, "error", 1, false)
         end
 
-        refresh_current_activity(player)
+        main_dialog.refresh_current_activity(player)
 
     -- Change selected subfactory
     else
@@ -145,7 +145,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
 
         elseif click == "right" then
             if action == "edit" then
-                enter_modal_dialog(player, {type="subfactory", submit=true,
+                modal_dialog.enter(player, {type="subfactory", submit=true,
                   delete=true, modal_data={subfactory=subfactory}})
             elseif action == "delete" then
                 actionbar.handle_subfactory_deletion(player)
@@ -153,7 +153,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
 
         else  -- refresh if the selected subfactory is indeed changed
             ui_state.current_activity = nil
-            refresh_main_dialog(player)
+            main_dialog.refresh(player)
         end
     end
 end

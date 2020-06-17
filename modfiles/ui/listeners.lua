@@ -13,13 +13,13 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         -- Toggles the visibility of the toggle-main_dialog-button
         if event.setting == "fp_display_gui_button" then
-            toggle_button_interface(player)
+            ui_util.mod_gui.toggle(player)
 
         -- Changes the width of the main dialog
         elseif event.setting == "fp_subfactory_items_per_row" or
           event.setting == "fp_floor_recipes_at_once" or
           event.setting == "fp_alt_action" then
-            refresh_main_dialog(player, true)
+            main_dialog.refresh(player, true)
 
         -- Refreshes the recipe machine buttons appropriately
         elseif event.setting == "fp_indicate_rounding" then
@@ -31,7 +31,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             local defined_by = player_table.settings.belts_or_lanes
             Factory.update_product_definitions(player_table.factory, defined_by)
             Factory.update_product_definitions(player_table.archive, defined_by)
-            refresh_main_dialog(player, true)
+            main_dialog.refresh(player, true)
 
         end
     end
@@ -39,18 +39,18 @@ end)
 
 -- Refreshes the main dialog including it's dimensions
 script.on_event(defines.events.on_player_display_resolution_changed, function(event)
-    refresh_main_dialog(game.get_player(event.player_index), true)
+    main_dialog.refresh(game.get_player(event.player_index), true)
 end)
 
 -- Refreshes the main dialog including it's dimensions
 script.on_event(defines.events.on_player_display_scale_changed, function(event)
-    refresh_main_dialog(game.get_player(event.player_index), true)
+    main_dialog.refresh(game.get_player(event.player_index), true)
 end)
 
 
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)
-    toggle_main_dialog(player)
+    main_dialog.toggle(player)
 end)
 
 script.on_event("fp_toggle_pause", function(event)
@@ -65,29 +65,29 @@ end)
 script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
-    if is_main_dialog_in_focus(player) then production_titlebar.handle_floor_change_click(player, "up") end
+    if main_dialog.is_in_focus(player) then production_titlebar.handle_floor_change_click(player, "up") end
 end)
 
 script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
-    if is_main_dialog_in_focus(player) then calculation.update(player, get_context(player).subfactory, true) end
+    if main_dialog.is_in_focus(player) then calculation.update(player, get_context(player).subfactory, true) end
 end)
 
 script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
-    if is_main_dialog_in_focus(player) then production_titlebar.change_view_state(player, nil) end
+    if main_dialog.is_in_focus(player) then production_titlebar.change_view_state(player, nil) end
 end)
 
 script.on_event("fp_confirm_dialog", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
-    exit_modal_dialog(player, "submit", {})
+    modal_dialog.exit(player, "submit", {})
 end)
 
 script.on_event("fp_focus_searchfield", function(event)
     local player = game.get_player(event.player_index)
     if get_ui_state(player).modal_dialog_type == "product" then
-        local textfield = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["flow_item_picker"]
+        local textfield = modal_dialog.find(player)["flow_modal_dialog"]["flow_item_picker"]
           ["table_search_bar"]["fp_textfield_item_picker_search_bar"]
         ui_util.select_all(textfield)
     end
@@ -99,7 +99,7 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
     local player = game.players[event.player_index]
 
     if event.prototype_name == "fp_open_interface" then
-        toggle_main_dialog(player)
+        main_dialog.toggle(player)
     end
 end)
 
@@ -133,11 +133,11 @@ script.on_event(defines.events.on_gui_closed, function(event)
         -- Close or hide any modal dialog or leave selection mode
         if string.find(event.element.name, "^fp_frame_modal_dialog[a-z_]*$") then
             if get_flags(player).selection_mode then leave_beacon_selection(player, nil)
-            else exit_modal_dialog(player, "cancel", {}) end
+            else modal_dialog.exit(player, "cancel", {}) end
 
         -- Toggle the main dialog
         elseif event.element.name == "fp_frame_main_dialog" then
-            toggle_main_dialog(player)
+            main_dialog.toggle(player)
 
         end
 	end
@@ -159,7 +159,7 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
     -- Submit any modal dialog, if it is open
     elseif get_ui_state(player).modal_dialog_type ~= nil then
         if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
-        exit_modal_dialog(player, "submit", {})
+        modal_dialog.exit(player, "submit", {})
 
     end
 end)
@@ -292,7 +292,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
         if element_name == "fp_button_toggle_interface"
           or element_name == "fp_button_titlebar_exit" then
-            toggle_main_dialog(player)
+            main_dialog.toggle(player)
 
         -- Changes the pause_on_interface preference
         elseif element_name == "fp_button_titlebar_pause" then
@@ -300,7 +300,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the tutorial dialog
         elseif element_name == "fp_button_titlebar_tutorial" then
-            enter_modal_dialog(player, {type="tutorial", close=true})
+            modal_dialog.enter(player, {type="tutorial", close=true})
 
         -- Opens the tutorial dialog
         elseif element_name == "fp_button_tutorial_add_example" then
@@ -308,16 +308,16 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the preferences dialog
         elseif element_name == "fp_button_titlebar_preferences" then
-            enter_modal_dialog(player, {type="preferences", close=true})
+            modal_dialog.enter(player, {type="preferences", close=true})
 
         -- Opens the new-subfactory dialog
         elseif element_name == "fp_button_new_subfactory" then
-            enter_modal_dialog(player, {type="subfactory", submit=true})
+            modal_dialog.enter(player, {type="subfactory", submit=true})
 
         -- Opens the edit-subfactory dialog
         elseif element_name == "fp_button_edit_subfactory" then
             local subfactory = ui_state.context.subfactory
-            enter_modal_dialog(player, {type="subfactory", submit=true,
+            modal_dialog.enter(player, {type="subfactory", submit=true,
               delete=true, modal_data={subfactory=subfactory}})
 
         -- Reacts to the archive button being pressed
@@ -334,7 +334,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens utilitys dialog
         elseif element_name == "fp_button_open_utility_dialog" then
-            enter_modal_dialog(player, {type="utility"})
+            modal_dialog.enter(player, {type="utility"})
 
         -- Changes into the manual override of the mining prod mode
         elseif element_name == "fp_button_mining_prod_override" then
@@ -342,7 +342,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif element_name == "fp_sprite-button_add_product" then
-            enter_modal_dialog(player, {type="product", submit=true})
+            modal_dialog.enter(player, {type="product", submit=true})
 
         -- Toggles the TopLevelItems-amount display state
         elseif element_name == "fp_button_item_amount_toggle" then
@@ -371,7 +371,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
             local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
-            exit_modal_dialog(player, dialog_action, {})
+            modal_dialog.exit(player, dialog_action, {})
 
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
@@ -408,7 +408,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a chooser element button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
             local element_id = string.gsub(element_name, "fp_sprite%-button_chooser_element_", "")
-            handle_chooser_element_click(player, element_id, direction, event.alt)
+            handle_chooser_element_click(player, element_id)
 
         -- Reacts to a floor-changing button being pressed (up/top)
         elseif string.find(element_name, "^fp_button_floor_[a-z]+$") then

@@ -169,7 +169,7 @@ function calculation.update(player, subfactory, refresh)
         player_table.active_subfactory = nil
     end
 
-    if refresh then refresh_main_dialog(player) end
+    if refresh then main_dialog.refresh(player) end
 end
 
 -- Updates the given subfactory's ingredient satisfactions

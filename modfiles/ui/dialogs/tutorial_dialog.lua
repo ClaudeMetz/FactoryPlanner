@@ -83,11 +83,11 @@ end
 function handle_add_example_subfactory_click(player)
     local subfactory = builder.example_subfactory(player)
     calculation.update(player, subfactory, true)
-    exit_modal_dialog(player, "cancel", {})
+    modal_dialog.exit(player, "cancel", {})
 end
 
 -- Handles a change to the tutorial mode preference
 function handle_tutorial_mode_change(player, new_state)
     get_preferences(player).tutorial_mode = new_state
-    refresh_main_dialog(player)
+    main_dialog.refresh(player)
 end

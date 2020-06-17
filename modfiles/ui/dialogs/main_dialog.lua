@@ -1,4 +1,3 @@
-require("mod-gui")
 require("ui.elements.titlebar")
 require("ui.elements.actionbar")
 require("ui.elements.subfactory_bar")
@@ -7,151 +6,70 @@ require("ui.elements.subfactory_pane")
 require("ui.elements.production_titlebar")
 require("ui.elements.production_table")
 
--- Create the always-present GUI button to open the main dialog + devmode setup
-function player_gui_init(player)
-    local frame_flow = mod_gui.get_button_flow(player)
-    if not frame_flow["fp_button_toggle_interface"] then
-        frame_flow.add
-        {
-            type = "button",
-            name = "fp_button_toggle_interface",
-            caption = "FP",
-            tooltip = {"fp.open_main_dialog"},
-            style = mod_gui.button_style,
-            mouse_button_filter = {"left"}
-        }
-    end
+main_dialog = {}
 
-    -- Incorporates the mod setting for the visibility of the toggle-main-dialog-button
-    toggle_button_interface(player)
-end
+-- ** LOCAL UTIL **
+-- Readjusts the size of the main dialog according to the user settings
+local function recalculate_main_dialog_dimensions(player)
+    local player_table = get_table(player)
 
--- Destroys all GUI's so they are loaded anew the next time they are shown
-function player_gui_reset(player)
-    local screen = player.gui.screen
-    local guis = {
-        mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
-        screen["fp_frame_main_dialog"],
-        screen["fp_frame_modal_dialog"],
-        screen["fp_frame_modal_dialog_product"],  -- TODO remove when this dialog is added back as a cached one
-        unpack(cached_dialogs)
-    }
+    local width = 880 + ((player_table.settings.items_per_row - 4) * 175)
+    local height = 394 + (player_table.settings.recipes_at_once * 39)
 
-    for _, gui in pairs(guis) do
-        if type(gui) == "string" then gui = screen[gui] end
-        if gui ~= nil and gui.valid then gui.destroy() end
-    end
+    local dimensions = {width=width, height=height}
+    player_table.ui_state.main_dialog_dimensions = dimensions
+    return dimensions
 end
 
 
--- Toggles the visibility of the toggle-main-dialog-button
-function toggle_button_interface(player)
-    local enable = get_settings(player).show_gui_button
-    mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
-end
-
--- Returns true when the main dialog is open while no modal dialogs are
-function is_main_dialog_in_focus(player)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    return (main_dialog ~= nil and main_dialog.visible
-      and get_ui_state(player).modal_dialog_type == nil)
-end
-
--- Sets the game.paused-state appropriately
-function set_pause_state(player, main_dialog, force_false)
-    if not game.is_multiplayer() and player.controller_type ~= defines.controllers.editor then
-        if get_preferences(player).pause_on_interface and not force_false then
-            game.tick_paused = main_dialog.visible  -- only pause when the main dialog is open
-        else
-            game.tick_paused = false
-        end
-    end
-end
-
-
+-- ** TOP LEVEL **
 -- Toggles the main dialog open and closed
-function toggle_main_dialog(player)
+function main_dialog.toggle(player)
     -- Won't toggle if a modal dialog is open
     if get_ui_state(player).modal_dialog_type == nil then
-        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-        if main_dialog ~= nil then main_dialog.visible = not main_dialog.visible end
-        main_dialog = refresh_main_dialog(player)
+        local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        if frame_main_dialog ~= nil then frame_main_dialog.visible = not frame_main_dialog.visible end
+        frame_main_dialog = main_dialog.refresh(player)
 
-        player.opened = main_dialog.visible and main_dialog or nil
-        set_pause_state(player, main_dialog)
-    end
-end
-
--- Changes the main dialog in reaction to a modal dialog being opened/closed
-function toggle_modal_dialog(player, frame_modal_dialog)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-
-    -- If the frame parameter is not nil, the given modal dialog has been opened
-    if frame_modal_dialog ~= nil then
-        player.opened = frame_modal_dialog
-        main_dialog.ignored_by_interaction = true
-    else
-        player.opened = main_dialog
-        main_dialog.ignored_by_interaction = false
-    end
-end
-
--- Sets selection mode and configures the related GUI's
-function set_selection_mode(player, state)
-    local ui_state = get_ui_state(player)
-
-    if ui_state.modal_dialog_type == "beacon" then
-        ui_state.flags.selection_mode = state
-
-        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-        main_dialog.visible = not state
-
-        local frame_modal_dialog = ui_util.find_modal_dialog(player)
-        frame_modal_dialog.ignored_by_interaction = state
-
-        if state == true then
-            frame_modal_dialog.location = {25, 50}
-            set_pause_state(player, main_dialog, true)
-        else
-            frame_modal_dialog.force_auto_center()
-            player.opened = frame_modal_dialog
-            set_pause_state(player, main_dialog)
-        end
+        player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil
+        main_dialog.set_pause_state(player, frame_main_dialog)
     end
 end
 
 
 -- Refreshes the entire main dialog, optionally including it's dimensions
 -- Creates the dialog if it doesn't exist; Recreates it if needs to
-function refresh_main_dialog(player, full_refresh)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+function main_dialog.refresh(player, full_refresh)
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
 
-    if (main_dialog == nil and not full_refresh) or (main_dialog ~= nil and full_refresh) then
-        if main_dialog ~= nil then main_dialog.clear()
-        else main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"} end
+    if (frame_main_dialog == nil and not full_refresh) or (frame_main_dialog ~= nil and full_refresh) then
+        if frame_main_dialog ~= nil then frame_main_dialog.clear()
+        else
+            frame_main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog", direction="vertical"}
+        end
 
-        local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
-        ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
-        main_dialog.style.minimal_width = dimensions.width
-        main_dialog.style.height = dimensions.height
+        local dimensions = recalculate_main_dialog_dimensions(player)
+        ui_util.properly_center_frame(player, frame_main_dialog, dimensions.width, dimensions.height)
+        frame_main_dialog.style.minimal_width = dimensions.width
+        frame_main_dialog.style.height = dimensions.height
 
-        set_pause_state(player, main_dialog)  -- Adjust the paused-state accordingly
+        main_dialog.set_pause_state(player, frame_main_dialog)  -- Adjust the paused-state accordingly
         local ui_state = get_ui_state(player)
         if ui_state.modal_dialog_type == "beacon" and ui_state.flags.selection_mode then
             leave_beacon_selection(player, 0)  -- Leave the beacon selection mode if it is active
         end
 
-        titlebar.add_to(main_dialog)
-        actionbar.add_to(main_dialog)
-        subfactory_bar.add_to(main_dialog)
-        error_bar.add_to(main_dialog)
-        subfactory_pane.add_to(main_dialog)
-        production_titlebar.add_to(main_dialog)
+        titlebar.add_to(frame_main_dialog)
+        actionbar.add_to(frame_main_dialog)
+        subfactory_bar.add_to(frame_main_dialog)
+        error_bar.add_to(frame_main_dialog)
+        subfactory_pane.add_to(frame_main_dialog)
+        production_titlebar.add_to(frame_main_dialog)
 
-    elseif main_dialog ~= nil and main_dialog.visible then
+    elseif frame_main_dialog ~= nil and frame_main_dialog.visible then
         -- Re-center the main dialog because it get screwed up sometimes for reasons
-        local dimensions = ui_util.recalculate_main_dialog_dimensions(player)
-        ui_util.properly_center_frame(player, main_dialog, dimensions.width, dimensions.height)
+        local dimensions = recalculate_main_dialog_dimensions(player)
+        ui_util.properly_center_frame(player, frame_main_dialog, dimensions.width, dimensions.height)
 
         -- Refresh the elements on top of the hierarchy, which refresh everything below them
         titlebar.refresh(player)
@@ -160,32 +78,51 @@ function refresh_main_dialog(player, full_refresh)
     end
 
     ui_util.message.refresh(player)
-    return main_dialog
+    return frame_main_dialog
 end
 
--- Refreshes elements using ui_state.current_activity with less performance impact than refresh_main_dialog
-function refresh_current_activity(player)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+-- Refreshes elements using ui_state.current_activity with less performance impact than main_dialog.refresh
+function main_dialog.refresh_current_activity(player)
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
     local ui_state = get_ui_state(player)
 
-    if main_dialog ~= nil and main_dialog.visible then
+    if frame_main_dialog ~= nil and frame_main_dialog.visible then
         actionbar.refresh(player)
 
         local subfactory = ui_state.context.subfactory
         if subfactory ~= nil and subfactory.valid then
-            local table_info_elements = main_dialog["table_subfactory_pane"]
+            local table_info_elements = frame_main_dialog["table_subfactory_pane"]
               ["flow_info"]["scroll-pane"]["table_info_elements"]
             info_pane.refresh_mining_prod_table(player, subfactory, table_info_elements)
         end
 
         local line = ui_state.context.line
         if line ~= nil and subfactory.valid then
-            local table_production = main_dialog["flow_production_pane"]
+            local table_production = frame_main_dialog["flow_production_pane"]
               ["scroll-pane_production_pane"]["table_production_pane"]
             production_table.refresh_recipe_button(player, line, table_production)
             production_table.refresh_machine_table(player, line, table_production)
         end
 
         ui_util.message.refresh(player)
+    end
+end
+
+
+-- Returns true when the main dialog is open while no modal dialogs are
+function main_dialog.is_in_focus(player)
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    return (frame_main_dialog ~= nil and frame_main_dialog.visible
+      and get_ui_state(player).modal_dialog_type == nil)
+end
+
+-- Sets the game.paused-state appropriately
+function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
+    if not game.is_multiplayer() and player.controller_type ~= defines.controllers.editor then
+        if get_preferences(player).pause_on_interface and not force_false then
+            game.tick_paused = frame_main_dialog.visible  -- only pause when the main dialog is open
+        else
+            game.tick_paused = false
+        end
     end
 end

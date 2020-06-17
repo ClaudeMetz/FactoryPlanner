@@ -246,7 +246,7 @@ function production_titlebar.toggle_floor_total_display(player, button)
         button.style = "button"
     end
 
-    refresh_main_dialog(player)
+    main_dialog.refresh(player)
 end
 
 
@@ -280,5 +280,5 @@ function production_titlebar.change_view_state(player, view_name)
         correct_view_state(ui_state.view_state, id_to_select)
     end
 
-    refresh_main_dialog(player)
+    main_dialog.refresh(player)
 end

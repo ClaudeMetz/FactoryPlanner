@@ -37,7 +37,7 @@ function close_subfactory_dialog(flow_modal_dialog, action, data)
         actionbar.handle_subfactory_deletion(player)
     end
 
-    refresh_main_dialog(player)
+    main_dialog.refresh(player)
 end
 
 

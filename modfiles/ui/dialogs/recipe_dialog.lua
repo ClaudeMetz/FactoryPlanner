@@ -12,7 +12,7 @@ function open_recipe_dialog(flow_modal_dialog, modal_data)
 
     if error ~= nil then
         ui_util.message.enqueue(player, error, "error", 1)
-        exit_modal_dialog(player, "cancel", {})
+        modal_dialog.exit(player, "cancel", {})
     else
         -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
         if type(result) == "number" then  -- the given number being the recipe_id
@@ -185,7 +185,7 @@ end
 
 -- Filters the current recipes according to the filters that have been set
 function apply_recipe_filter(player)
-    local flow_modal_dialog = ui_util.find_modal_dialog(player)["flow_modal_dialog"]
+    local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
     local table_recipes = flow_modal_dialog["scroll-pane_recipes"]["table_recipes"]
 
     local force_recipes = player.force.recipes
@@ -285,5 +285,5 @@ function attempt_adding_recipe_line(player, recipe_id)
         calculation.update(player, ui_state.context.subfactory, true)
     end
 
-    exit_modal_dialog(player, "cancel", {})
+    modal_dialog.exit(player, "cancel", {})
 end

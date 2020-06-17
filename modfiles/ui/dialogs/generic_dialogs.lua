@@ -17,17 +17,16 @@ end
 
 -- Generates a blank chooser button for the calling function to adjust to it's needs
 function generate_blank_chooser_button(player, name)
-    local table_chooser = ui_util.find_modal_dialog(player)["flow_modal_dialog"]["table_chooser_elements"]
+    local table_chooser = modal_dialog.find(player)["flow_modal_dialog"]["table_chooser_elements"]
     return table_chooser.add{type="sprite-button", name="fp_sprite-button_chooser_element_" .. name,
              style="fp_button_icon_large_recipe", mouse_button_filter={"left"}}
 end
 
 -- Handles click on an element presented by the chooser
-function handle_chooser_element_click(player, element_id, direction, alt)
-    local modifier_keys = ui_util.format_modifier_keys(direction, alt)
-    get_ui_state(player).modal_data.click_handler(player, element_id, modifier_keys)
-    exit_modal_dialog(player, "cancel", {})
-    refresh_main_dialog(player)
+function handle_chooser_element_click(player, element_id)
+    get_ui_state(player).modal_data.click_handler(player, element_id)
+    modal_dialog.exit(player, "cancel", {})
+    main_dialog.refresh(player)
 end
 
 
@@ -56,7 +55,7 @@ function close_options_dialog(flow_modal_dialog, action, data)
         local player = game.get_player(flow_modal_dialog.player_index)
         local modal_data = get_ui_state(player).modal_data
         modal_data.submission_handler(player, modal_data.object, data)
-        refresh_main_dialog(player)
+        main_dialog.refresh(player)
     end
 end
 

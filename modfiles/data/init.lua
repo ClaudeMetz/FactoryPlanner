@@ -111,6 +111,23 @@ local function update_player_table(player)
 end
 
 
+-- Destroys all GUI's so they are loaded anew the next time they are shown
+local function reset_player_gui(player)
+    local screen = player.gui.screen
+    local guis = {
+        mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
+        screen["fp_frame_main_dialog"],
+        screen["fp_frame_modal_dialog"],
+        screen["fp_frame_modal_dialog_product"],  -- TODO remove when this dialog is added back as a cached one
+        unpack(cached_dialogs)
+    }
+
+    for _, gui in pairs(guis) do
+        if type(gui) == "string" then gui = screen[gui] end
+        if gui ~= nil and gui.valid then gui.destroy() end
+    end
+end
+
 
 -- Initiates all factorio-global variables
 local function global_init()
@@ -143,8 +160,8 @@ local function handle_configuration_change()
         -- Run the prototyper on the player
         prototyper.run(player_table)
 
-        player_gui_reset(player)  -- Destroys all existing GUI's
-        player_gui_init(player)  -- Initializes some parts of the GUI
+        reset_player_gui(player)  -- Destroys all existing GUI's
+        ui_util.mod_gui.create(player)  -- Recreates the mod-GUI
     end
 
     -- Complete prototyper process by saving new data to global
@@ -199,8 +216,8 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the player_table for the new player
     update_player_table(player)
 
-    -- Sets up the GUI for the new player
-    player_gui_init(player)
+    -- Sets up the mod-GUI for the new player
+    ui_util.mod_gui.create(player)
 
     -- Runs setup if developer mode is active
     builder.dev_config(player)
