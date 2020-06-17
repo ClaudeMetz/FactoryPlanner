@@ -14,6 +14,7 @@ prototyper = {
 local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons"}
 
 
+-- ** TOP LEVEL **
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function prototyper.setup()
     new = {}
@@ -47,7 +48,7 @@ function prototyper.finish()
 end
 
 
--- **** DEFAULTS ****
+-- ** DEFAULTS **
 -- Defines fallbacks by name which overwrites choosing the first in the proto list
 local specific_fallbacks = { ["fuels"] = { ["chemical"] = "coal" } }
 

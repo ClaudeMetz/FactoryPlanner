@@ -1,35 +1,35 @@
 -- The loader contains the code that runs on_load, mostly registering
 -- conditional events and setting up lua-global tables as a cache
-loader = {
-    events = {},
-    caching = {}
-}
+loader = {}
+local events, caching = {}, {}
 
+
+-- ** TOP LEVEL **
 -- Runs all the on_load functions
 function loader.run()
-    loader.events.recipebook()
-    loader.events.rate_limiting()
+    events.recipebook()
+    events.rate_limiting()
 
-    ordered_recipe_groups = loader.caching.ordered_recipe_groups()
+    ordered_recipe_groups = caching.ordered_recipe_groups()
     recipe_maps = {
-        produce = loader.caching.recipe_map_from("products"),
-        consume = loader.caching.recipe_map_from("ingredients")
+        produce = caching.recipe_map_from("products"),
+        consume = caching.recipe_map_from("ingredients")
     }
 
-    sorted_items = loader.caching.sorted_items()
-    identifier_item_map = loader.caching.identifier_item_map()
+    sorted_items = caching.sorted_items()
+    identifier_item_map = caching.identifier_item_map()
 
-    item_fuel_map = loader.caching.item_fuel_map()
+    item_fuel_map = caching.item_fuel_map()
 
-    module_tier_map = loader.caching.module_tier_map()
+    module_tier_map = caching.module_tier_map()
 
-    top_crafting_machine_sprite = loader.caching.find_crafting_machine_sprite()
+    top_crafting_machine_sprite = caching.find_crafting_machine_sprite()
 end
 
 
--- **** EVENTS ****
+-- ** EVENTS **
 -- Register the RecipeBook event to re-open the main dialog after hitting its back-button
-function loader.events.recipebook()
+function events.recipebook()
     if remote.interfaces["RecipeBook"] ~= nil then
         script.on_event(remote.call("RecipeBook", "reopen_source_event"), function(event)
             if event.source_data.mod_name == "factoryplanner" then
@@ -40,7 +40,7 @@ function loader.events.recipebook()
 end
 
 -- Register events related to GUI rate limiting
-function loader.events.rate_limiting()
+function events.rate_limiting()
     for _, player_table in pairs(global.players or {}) do
         local last_action = player_table.ui_state.last_action
         if last_action and table_size(last_action) > 0 and last_action.nth_tick ~= nil then
@@ -57,9 +57,9 @@ function loader.events.rate_limiting()
 end
 
 
--- **** CACHING ****
+-- ** CACHING **
 -- Returns a list of recipe groups in their proper order
-function loader.caching.ordered_recipe_groups()
+function caching.ordered_recipe_groups()
     group_dict = {}
 
     -- Make a dict with all recipe groups
@@ -90,7 +90,7 @@ function loader.caching.ordered_recipe_groups()
 end
 
 -- Maps all items to the recipes that produce or consume them ([item_type][item_name] = {[recipe_id] = true}
-function loader.caching.recipe_map_from(item_type)
+function caching.recipe_map_from(item_type)
     local map = {}
 
     if not global.all_recipes.recipes then return end
@@ -107,7 +107,7 @@ end
 
 
 -- Generates a list of all items, sorted for display in the picker
-function loader.caching.sorted_items()
+function caching.sorted_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
     local all_items = global.all_items
@@ -133,7 +133,7 @@ function loader.caching.sorted_items()
 end
 
 -- Generates a table mapping item identifier to their prototypes
-function loader.caching.identifier_item_map()
+function caching.identifier_item_map()
     local map = {}
 
     local all_items = global.all_items
@@ -150,7 +150,7 @@ end
 
 -- Maps every fuel_proto to a (item[type][name] -> fuel_proto)-map
 -- This is possible because every fuel can only be in one category at a time
-function loader.caching.item_fuel_map()
+function caching.item_fuel_map()
     local map = {}
 
     if not global.all_fuels.categories then return end
@@ -166,7 +166,7 @@ end
 
 
 -- Generates a table containing all module per category, ordered by tier
-function loader.caching.module_tier_map()
+function caching.module_tier_map()
     local map = {}
 
     if not global.all_modules then return end
@@ -182,7 +182,7 @@ end
 
 
 -- Determines a suitable crafting machine sprite path, according to what is available
-function loader.caching.find_crafting_machine_sprite()
+function caching.find_crafting_machine_sprite()
     -- Try these categories first, one of them should exist
     local categories = {"crafting", "advanced-crafting", "basic-crafting"}
     for _, category_name in ipairs(categories) do

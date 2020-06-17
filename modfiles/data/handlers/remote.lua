@@ -7,10 +7,11 @@ remote_actions = {
 -- Maps the internal name of the mod to the interface name they use
 local name_interface_map = {fnei="fnei", wiiruf="wiiuf", recipebook="RecipeBook"}
 
-
 -- The existance of these mods does not need to be checked here as
--- this function wouldn't be callable if they didn't exist
+-- these functions wouldn't be callable if they didn't exist
 
+
+-- ** TOP LEVEL **
 -- 'data' needs to contain 'item' (proto) and 'click'
 function remote_actions.show_item(player, remote_action, data)
     local remote_version = remote.call(name_interface_map[remote_action], "version")
@@ -36,7 +37,7 @@ function remote_actions.show_recipe(player, remote_action, data)
 end
 
 
--- **** FNEI ****
+-- ** FNEI **
 -- This indicates the version of the FNEI remote interface this is compatible with
 remote_actions.fnei.version = 2
 
@@ -55,7 +56,7 @@ function remote_actions.fnei.show_recipe(_, recipe_proto, main_product_name)
 end
 
 
--- **** WIIRUF ****
+-- ** WIIRUF **
 -- This indicates the version of the WIIRUF remote interface this is compatible with
 remote_actions.wiiruf.version = 1
 
@@ -72,7 +73,7 @@ function remote_actions.wiiruf.show_recipe(player, recipe_proto, main_product_na
 end
 
 
--- **** RecipeBook ****
+-- ** RecipeBook **
 -- This indicates the version of the RecipeBook remote interface this is compatible with
 remote_actions.recipebook.version = 2
 
