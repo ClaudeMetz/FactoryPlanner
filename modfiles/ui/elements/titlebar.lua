@@ -36,8 +36,8 @@ function add_titlebar_to(main_dialog)
       sprite="utility/pause", tooltip={"fp.pause_on_interface"}, mouse_button_filter={"left"}}
     button_pause.style.left_margin = 4
 
-    flow_buttonbar.add{type="sprite-button", name="fp_button_titlebar_exit",
-      sprite="utility/close_fat", style="fp_button_titlebar_square", mouse_button_filter={"left"}}
+    flow_buttonbar.add{type="sprite-button", name="fp_button_titlebar_exit", sprite="utility/close_fat",
+      tooltip={"fp.close_interface"}, style="fp_button_titlebar_square", mouse_button_filter={"left"}}
 
 
     refresh_titlebar(game.get_player(main_dialog.player_index))
