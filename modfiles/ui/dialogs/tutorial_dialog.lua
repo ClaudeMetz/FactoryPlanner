@@ -1,5 +1,8 @@
+tutorial_dialog = {}
+
+-- ** TOP LEVEL **
 -- Handles populating the tutorial dialog
-function open_tutorial_dialog(flow_modal_dialog)
+function tutorial_dialog.open(flow_modal_dialog)
     local player = game.get_player(flow_modal_dialog.player_index)
 
     flow_modal_dialog.parent.caption = {"fp.tutorial"}
@@ -80,14 +83,14 @@ end
 
 
 -- Creates the example subfactory and shows it to the user
-function handle_add_example_subfactory_click(player)
+function tutorial_dialog.add_example_subfactory(player)
     local subfactory = builder.example_subfactory(player)
     calculation.update(player, subfactory, true)
     modal_dialog.exit(player, "cancel", {})
 end
 
 -- Handles a change to the tutorial mode preference
-function handle_tutorial_mode_change(player, new_state)
+function tutorial_dialog.set_tutorial_mode(player, new_state)
     get_preferences(player).tutorial_mode = new_state
     main_dialog.refresh(player)
 end

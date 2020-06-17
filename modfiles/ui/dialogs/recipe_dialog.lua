@@ -1,45 +1,11 @@
+recipe_dialog = {}
+
 local recipes_per_row = 8
 
--- Handles populating the recipe dialog
-function open_recipe_dialog(flow_modal_dialog, modal_data)
-    local player = game.get_player(flow_modal_dialog.player_index)
-    local product = modal_data.product
-
-    flow_modal_dialog.parent.caption = {"fp.add_recipe"}
-
-    -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
-
-    if error ~= nil then
-        ui_util.message.enqueue(player, error, "error", 1)
-        modal_dialog.exit(player, "cancel", {})
-    else
-        -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
-        if type(result) == "number" then  -- the given number being the recipe_id
-            modal_data.message = show.message
-            attempt_adding_recipe_line(player, result)
-
-        else  -- Otherwise, show the appropriately filtered dialog
-            local groups = {}  -- Sort recipes into their respective groups
-            for _, recipe in pairs(result) do
-                groups[recipe.group.name] = groups[recipe.group.name] or {}
-                table.insert(groups[recipe.group.name], recipe)
-            end
-
-            modal_data.groups = groups
-            modal_data.recipes = result
-            modal_data.filters = show.filters
-
-            create_recipe_dialog_structure(player, flow_modal_dialog)
-            apply_recipe_filter(player)
-            flow_modal_dialog.parent.force_auto_center()  -- this is needed here, not sure why
-        end
-    end
-end
-
+-- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
-function run_preliminary_checks(player, product, production_type)
+local function run_preliminary_checks(player, product, production_type)
     local force_recipes = player.force.recipes
     local relevant_recipes = {}
     local user_disabled_recipe = false
@@ -111,7 +77,7 @@ function run_preliminary_checks(player, product, production_type)
 end
 
 -- Creates the unfiltered recipe structure
-function create_recipe_dialog_structure(player, flow_modal_dialog)
+local function create_recipe_dialog_structure(player, flow_modal_dialog)
     local modal_data = get_ui_state(player).modal_data
 
     -- Filters
@@ -184,7 +150,7 @@ function create_recipe_dialog_structure(player, flow_modal_dialog)
 end
 
 -- Filters the current recipes according to the filters that have been set
-function apply_recipe_filter(player)
+local function apply_recipe_filter(player)
     local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
     local table_recipes = flow_modal_dialog["scroll-pane_recipes"]["table_recipes"]
 
@@ -231,8 +197,47 @@ function apply_recipe_filter(player)
 end
 
 
+-- ** TOP LEVEL **
+-- Handles populating the recipe dialog
+function recipe_dialog.open(flow_modal_dialog, modal_data)
+    local player = game.get_player(flow_modal_dialog.player_index)
+    local product = modal_data.product
+
+    flow_modal_dialog.parent.caption = {"fp.add_recipe"}
+
+    -- Result is either the single possible recipe_id, or a table of relevant recipes
+    local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
+
+    if error ~= nil then
+        ui_util.message.enqueue(player, error, "error", 1)
+        modal_dialog.exit(player, "cancel", {})
+    else
+        -- If 1 relevant, enabled, non-duplicate recipe is found, add it immediately and exit dialog
+        if type(result) == "number" then  -- the given number being the recipe_id
+            modal_data.message = show.message
+            recipe_dialog.attempt_adding_line(player, result)
+
+        else  -- Otherwise, show the appropriately filtered dialog
+            local groups = {}  -- Sort recipes into their respective groups
+            for _, recipe in pairs(result) do
+                groups[recipe.group.name] = groups[recipe.group.name] or {}
+                table.insert(groups[recipe.group.name], recipe)
+            end
+
+            modal_data.groups = groups
+            modal_data.recipes = result
+            modal_data.filters = show.filters
+
+            create_recipe_dialog_structure(player, flow_modal_dialog)
+            apply_recipe_filter(player)
+            flow_modal_dialog.parent.force_auto_center()  -- this is needed here, not sure why
+        end
+    end
+end
+
+
 -- Reacts to either the disabled or hidden switches being flicked
-function handle_recipe_filter_switch_flick(player, type, state)
+function recipe_dialog.handle_filter_switch_flick(player, type, state)
     local ui_state = get_ui_state(player)
     local boolean_state = ui_util.switch.convert_to_boolean(state)
     ui_state.modal_data.filters[type] = boolean_state
@@ -244,7 +249,7 @@ function handle_recipe_filter_switch_flick(player, type, state)
 end
 
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
-function attempt_adding_recipe_line(player, recipe_id)
+function recipe_dialog.attempt_adding_line(player, recipe_id)
     local ui_state = get_ui_state(player)
 
     local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))

@@ -138,15 +138,15 @@ end
 
 -- Refreshes the production pane (titlebar + table)
 function production_titlebar.refresh(player)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
     -- Cuts function short if the approriate GUI's haven't been initialized yet
-    if not (main_dialog and main_dialog["flow_production_pane"]) then return end
+    if not (frame_main_dialog and frame_main_dialog["flow_production_pane"]) then return end
 
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     local subfactory = ui_state.context.subfactory
 
-    local table_titlebar = main_dialog["flow_production_pane"]["table_production_titlebar"]
+    local table_titlebar = frame_main_dialog["flow_production_pane"]["table_production_titlebar"]
     local table_view = table_titlebar["table_production_titlebar_view_selection"]
     -- Only show the titlebar if a valid subfactory is shown
     table_titlebar.visible = (subfactory ~= nil and subfactory.valid)
@@ -255,11 +255,11 @@ function production_titlebar.change_view_state(player, view_name)
     local ui_state = get_ui_state(player)
 
     -- Return if table_view_selection does not exist yet (this is really crappy and ugly)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if not main_dialog or not main_dialog.visible then return end
-    local table_titlebar = main_dialog["flow_production_pane"]["table_production_titlebar"]
-    if not (main_dialog["flow_production_pane"] and main_dialog["flow_production_pane"]["table_production_titlebar"]
-     and table_titlebar["table_production_titlebar_view_selection"]) then return end
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    if not frame_main_dialog or not frame_main_dialog.visible then return end
+    local table_titlebar = frame_main_dialog["flow_production_pane"]["table_production_titlebar"]
+    if not (frame_main_dialog["flow_production_pane"] and frame_main_dialog["flow_production_pane"]
+      ["table_production_titlebar"] and table_titlebar["table_production_titlebar_view_selection"]) then return end
 
     -- Only change the view_state if it exists and is visible
     if ui_state.view_state ~= nil and table_titlebar.visible then

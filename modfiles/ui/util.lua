@@ -474,9 +474,9 @@ end
 -- The lifetime is decreased for every message on every refresh
 -- (The algorithm(s) could be more efficient, but it doesn't matter for the small dataset)
 function ui_util.message.refresh(player)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if main_dialog == nil then return end
-    local flow_titlebar = main_dialog["flow_titlebar"]
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    if frame_main_dialog == nil then return end
+    local flow_titlebar = frame_main_dialog["flow_titlebar"]
     if flow_titlebar == nil then return end
 
     -- The message types are ordered by priority
