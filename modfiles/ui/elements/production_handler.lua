@@ -498,6 +498,11 @@ function production_handler.apply_item_options(player, item, options)
 
     options.item_amount = options.item_amount or 0
     line.percentage = (line.percentage * options.item_amount) / current_amount
+
+    -- Update related datasets
+    if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = line.percentage
+    elseif line.id == 1 and context.floor.origin_line then context.floor.origin_line.percentage = line.percentage end
+
     calculation.update(player, context.subfactory, true)
 end
 
