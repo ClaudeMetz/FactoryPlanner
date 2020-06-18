@@ -4,6 +4,8 @@ Date: 00. 00. 0000
   Changes:
     - Made the item-percentage-utility textfield wider
     - This update includes a lot of behind-the-scenes changes, so there might be a crash or two that I haven't found yet
+  Bugfixes:
+    - Fixed a crash when trying to set an empty product/ingredient amount on a recipe
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.33
