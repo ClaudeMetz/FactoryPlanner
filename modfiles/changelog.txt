@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.35
+Date: 18. 06. 2020
   Bugfixes:
     - Fixed a bug where setting recipe percentages by defining item amounts would not apply correctly to lines with subfloors
 
