@@ -496,6 +496,7 @@ function production_handler.apply_item_options(player, item, options)
         end
     end
 
+    options.item_amount = options.item_amount or 0
     line.percentage = (line.percentage * options.item_amount) / current_amount
     calculation.update(player, context.subfactory, true)
 end
