@@ -19,6 +19,7 @@ function generator.all_recipes()
         }
     end
 
+
     -- Determine researchable recipes
     local researchable_recipes = {}
     for _, proto in pairs(game.technology_prototypes) do
@@ -62,6 +63,7 @@ function generator.all_recipes()
             generator_util.data_structure.insert(recipe)
         end
     end
+
 
     -- Determine all the items that can be inserted usefully into a rocket silo
     local rocket_silo_inputs = {}
