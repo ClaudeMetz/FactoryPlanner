@@ -23,7 +23,7 @@ function generator.all_recipes()
     -- Determine researchable recipes
     local researchable_recipes = {}
     for _, proto in pairs(game.technology_prototypes) do
-        if not proto.hidden then
+        if proto.enabled and not proto.hidden then
             for _, effect in pairs(proto.effects) do
                 if effect.type == "unlock-recipe" then
                     researchable_recipes[effect.recipe] = true
