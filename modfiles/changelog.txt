@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Fixed that negative fluid temperatures would lead to a crash when starting/loading a map
     - Fixed productivity applying to the rocket silo satellite even though it shouldn't
     - Fixed that certain modded recipes would not show up in the recipe picker
+    - Fixed that some recipes showed up even though the research for them was disabled
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.35
