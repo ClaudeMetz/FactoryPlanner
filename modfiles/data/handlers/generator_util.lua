@@ -238,7 +238,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     -- Remove items after the fact so the iteration above doesn't break
     for _, item_table in pairs{ingredients, products} do
         for i = #item_table, 1, -1 do
-            if item_table[i].amount == nil then item_table[i] = nil end
+            if item_table[i].amount == nil then table.remove(item_table, i) end
         end
     end
 
