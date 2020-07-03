@@ -312,7 +312,8 @@ end
 
 -- Returns the appropriate prototype name for the given item, incorporating temperature
 function generator_util.format_temperature_name(item, name)
-    return (item.temperature) and string.gsub(name, "-[0-9]+$", "") or name
+    -- Optionally two dashes to account for negative temperatures
+    return (item.temperature) and string.gsub(name, "%-+[0-9]+$", "") or name
 end
 
 -- Returns the appropriate localised string for the given item, incorporating temperature
