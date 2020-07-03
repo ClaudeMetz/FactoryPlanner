@@ -489,11 +489,8 @@ function production_handler.apply_item_options(player, item, options)
     -- For products and byproducts, find if the item exists in the other space
     if item.class ~= "Ingredient" then
         local other_class = (item.class == "Product") and "Byproduct" or "Product"
-        -- Doesn't work 100% with different types, but whatever
-        local opposing_item = Line.get_by_name(line, other_class, item.name)
-        if opposing_item ~= nil and item.type == opposing_item.type then
-            current_amount = current_amount + opposing_item.amount
-        end
+        local opposing_item = Line.get_by_type_and_name(line, other_class, item.proto.type, item.proto.name)
+        if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
     end
 
     options.item_amount = options.item_amount or 0

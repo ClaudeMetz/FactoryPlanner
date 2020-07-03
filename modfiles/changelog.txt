@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that setting exact item amounts on a recipe would not calculate the percentage correctly in some cases
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.35

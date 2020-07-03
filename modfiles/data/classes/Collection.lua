@@ -71,10 +71,21 @@ end
 -- Returns the dataset with the given name, nil if it doesn't exist
 function Collection.get_by_name(self, name)
     for _, dataset in pairs(self.datasets) do
-        -- Check against the prototype name, if a prototype exists
-        if dataset.proto ~= nil and dataset.proto.name == name then
+        -- Check against the prototype, if it exists
+        local check_against = dataset.proto or dataset
+        if check_against.name == name then
             return dataset
-        elseif dataset.name == name then
+        end
+    end
+    return nil
+end
+
+-- Returns the dataset with the given type and name, nil if it doesn't exist
+function Collection.get_by_type_and_name(self, type_name, name)
+    for _, dataset in pairs(self.datasets) do
+        -- Check against the prototype, if it exists
+        local check_against = dataset.proto or dataset
+        if check_against.type == type_name and check_against.name == name then
             return dataset
         end
     end

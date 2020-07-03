@@ -146,6 +146,10 @@ function Line.get_by_name(self, class, name)
     return Collection.get_by_name(self[class], name)
 end
 
+function Line.get_by_type_and_name(self, class, type, name)
+    return Collection.get_by_type_and_name(self[class], type, name)
+end
+
 function Line.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
 end
