@@ -124,9 +124,9 @@ function model.update_line(line_data, aggregate)
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Product[relevant_product.type][relevant_product.name]
-        local relevant_amount = calculation.util.determine_prodded_amount(relevant_product,
+        local prodded_amount = calculation.util.determine_prodded_amount(relevant_product,
           crafts_per_tick, total_effects)
-        return (demand * (line_data.percentage / 100)) / relevant_amount
+        return (demand * (line_data.percentage / 100)) / prodded_amount
     end
 
     local relevant_product_count = table_size(relevant_products)
@@ -201,8 +201,10 @@ function model.update_line(line_data, aggregate)
     -- Determine ingredients
     local Ingredient = structures.class.init()
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        -- Ingredients are all influenced by productivity, which is already included in the prod_ratio
-        local ingredient_amount = ingredient.amount * production_ratio
+        -- If productivity is to be ignored, un-apply it by applying the product-productivity to an ingredient,
+        -- effectively reversing the effect (this is way simpler than doing it properly)
+        local ingredient_amount = (ingredient.ignore_productivity) and determine_amount_with_productivity(ingredient)
+          or (ingredient.amount * production_ratio)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 

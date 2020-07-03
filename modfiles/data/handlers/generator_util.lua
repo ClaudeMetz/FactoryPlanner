@@ -180,10 +180,20 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     local ingredients = {}
     for _, base_ingredient in pairs(recipe_proto.ingredients) do
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
+
+        -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
+        -- Also add proddable_amount so productivity bonus can be un-applied later in the model
+        if base_ingredient.ignore_productivity then
+            formatted_ingredient.ignore_productivity = true
+            formatted_ingredient.proddable_amount = formatted_ingredient.amount
+        end
+
         table.insert(ingredients, formatted_ingredient)
     end
+
     local indexed_ingredients = create_type_indexed_list(ingredients)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
+
 
     local products = {}
     for _, base_product in pairs(recipe_proto.products) do
@@ -197,6 +207,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
             recipe_proto.main_product = formatted_product
         end
     end
+
     combine_identical_products(products)  -- only needed products, ingredients can't have duplicates
     local indexed_products = create_type_indexed_list(products)
     recipe_proto.type_counts.products = determine_item_type_counts(indexed_products)
@@ -224,7 +235,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
         end
     end
 
-    -- Remove any items that should be, indicated by their amount being nil
+    -- Remove items after the fact so the iteration above doesn't break
     for _, item_table in pairs{ingredients, products} do
         for i = #item_table, 1, -1 do
             if item_table[i].amount == nil then item_table[i] = nil end

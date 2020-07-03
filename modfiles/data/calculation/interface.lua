@@ -291,7 +291,7 @@ function calculation.util.determine_prodded_amount(item, crafts_per_tick, total_
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))
-    return item.amount + item.proddable_amount * productivity
+    return item.amount + (item.proddable_amount * productivity)
 end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context

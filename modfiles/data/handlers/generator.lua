@@ -155,7 +155,7 @@ function generator.all_recipes()
                     for _, ingredient in pairs(recipe.ingredients) do
                         ingredient.amount = ingredient.amount * proto.rocket_parts_required
                     end
-                    table.insert(recipe.ingredients, {type="item", name=item.name, amount=1})
+                    table.insert(recipe.ingredients, {type="item", name=item.name, amount=1, ignore_productivity=true})
                     recipe.products = item.rocket_launch_products
                     recipe.main_product = recipe.products[1]
 
