@@ -23,11 +23,11 @@ local function set_appropriate_focus(flow_modal_dialog, type)
         local textfield_beacon = beacon_bar["textfield_beacon_amount"]
         local textfield_module = module_bar["textfield_module_amount"]
         if textfield_beacon.text == "" or tonumber(textfield_beacon.text) == 0 then
-            textfield_beacon.focus()
+            ui_util.select_all(textfield_beacon)
         elseif textfield_module.text == "" or type == nil then
-            if module_bar["sprite-button_module"].sprite ~= "" then textfield_module.focus() end
-        else flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"].focus() end
-    else module_bar["textfield_module_amount"].focus() end
+            if module_bar["sprite-button_module"].sprite ~= "" then ui_util.select_all(textfield_module) end
+        else ui_util.select_all(flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"]) end
+    else ui_util.select_all(module_bar["textfield_module_amount"]) end
 end
 
 -- Sets the sprite-button of the given type to the given proto and it's amount
@@ -184,7 +184,7 @@ local function create_prototype_line(flow_modal_dialog, type, object)
     end
 
     -- Focus textfield on edit
-    if focus then textfield.focus() end
+    if focus then ui_util.select_all(textfield) end
 end
 
 -- Fills out the modal dialog to add/edit a module
@@ -319,7 +319,7 @@ function module_dialog.condition_instructions(modal_data)
                 check = (function(data) return (data.module_amount ~= "" and (tonumber(data.module_amount) == nil
                           or tonumber(data.module_amount) <= 0
                           or tonumber(data.module_amount) > modal_data.empty_slots)) end),
-                refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
+                refocus = (function(flow) ui_util.select_all(flow["flow_module_bar"]["textfield_module_amount"]) end),
                 show_on_edit = true
             }
         }
@@ -388,7 +388,7 @@ function beacon_dialog.condition_instructions(modal_data)
                 label = generate_module_condition_text(modal_data),
                 check = (function(data) return data.module_amount ~= "" and (tonumber(data.module_amount) <= 0
                           or tonumber(data.module_amount) > modal_data.empty_slots) end),
-                refocus = (function(flow) flow["flow_module_bar"]["textfield_module_amount"].focus() end),
+                refocus = (function(flow) ui_util.select_all(flow["flow_module_bar"]["textfield_module_amount"]) end),
                 show_on_edit = true
             }
         }
@@ -406,7 +406,7 @@ function beacon_dialog.leave_selection_mode(player, beacon_amount)
     local textfield_beacon_total = modal_dialog.find(player)["flow_modal_dialog"]
       ["flow_beacon_total"]["textfield_beacon_total"]
     textfield_beacon_total.text = beacon_amount or textfield_beacon_total.text
-    if beacon_amount then textfield_beacon_total.focus() end
+    if beacon_amount then ui_util.select_all(textfield_beacon_total) end
 
     player.cursor_stack.set_stack(nil)
     modal_dialog.set_selection_mode(player, false)
