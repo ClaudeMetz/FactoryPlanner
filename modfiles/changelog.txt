@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Made it so the content of textboxes in the module/beacon picker get selected automatically under certain circumstances
   Bugfixes:
     - Fixed that setting exact item amounts on a recipe would not calculate the percentage correctly in some cases
     - Fixed that negative fluid temperatures would lead to a crash when starting/loading a map
