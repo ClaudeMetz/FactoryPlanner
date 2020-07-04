@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.36
+Date: 04. 07. 2020
   Features:
     - Added keyboard combination for moving subfactories and recipe lines to the very start/end of their list
   Changes:
