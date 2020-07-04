@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added keyboard combination for moving subfactories and recipe lines to the very start/end of their list
   Changes:
     - Made it so the content of textboxes in the module/beacon picker get selected automatically under certain circumstances
   Bugfixes:

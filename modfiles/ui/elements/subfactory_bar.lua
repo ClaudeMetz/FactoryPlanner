@@ -118,13 +118,14 @@ end
 
 
 -- Moves selection to the clicked element, edits it, or shifts it's position left or right
-function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, click, direction, action)
+function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, click, direction, action, alt)
     local ui_state = get_ui_state(player)
     local subfactory = Factory.get(ui_state.context.factory, "Subfactory", subfactory_id)
 
     -- Shift subfactory in the given direction
     if direction ~= nil then
-        if Factory.shift(ui_state.context.factory, subfactory, direction) then
+        local shifting_function = (alt) and Factory.shift_to_end or Factory.shift
+        if shifting_function(ui_state.context.factory, subfactory, direction) then
             subfactory_bar.refresh(player, false)
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}

@@ -10,17 +10,18 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
 
     local archive_status = ui_util.check_archive_status(player)
 
-    if alt then
+    if alt and direction == nil then
         ui_util.execute_alt_action(player, "show_recipe",
           {recipe=line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
         if archive_status then return end
 
+        local shifting_function = (alt) and Floor.shift_to_end or Floor.shift
         -- Can't shift second line into the first position on subfloors
         -- (Top line ignores interaction, so no special handling there)
         if not(direction == "negative" and floor.level > 1 and line.gui_position == 2)
-          and Floor.shift(floor, line, direction) then
+          and shifting_function(floor, line, direction) then
             calculation.update(player, subfactory, true)
         else
             local direction_string = (direction == "negative") and {"fp.up"} or {"fp.down"}

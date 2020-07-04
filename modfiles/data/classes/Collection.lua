@@ -11,6 +11,7 @@ function Collection.init()
     }
 end
 
+
 function Collection.add(self, object)
     self.index = self.index + 1
     self.count = self.count + 1
@@ -43,6 +44,7 @@ function Collection.replace(self, dataset, object)
     self.datasets[dataset.id] = object
     return object  -- Returning it here feels nice
 end
+
 
 function Collection.get(self, object_id)
     return self.datasets[object_id]
@@ -92,8 +94,9 @@ function Collection.get_by_type_and_name(self, type_name, name)
     return nil
 end
 
--- Shifts given dataset in given direction
-function Collection.shift(self, main_dataset, direction)
+
+-- Does the actual hard lifting of changing the position of a collection element
+local function shift_dataset(self, main_dataset, secondary_gui_position, direction)
     local main_gui_position = main_dataset.gui_position
 
     -- Doesn't shift if outmost elements are being shifted further outward
@@ -102,19 +105,26 @@ function Collection.shift(self, main_dataset, direction)
         return false
     end
 
-    local secondary_gui_position
-    if direction == "positive" then
-        secondary_gui_position = main_gui_position + 1
-    else  -- direction == "negative"
-        secondary_gui_position = main_gui_position - 1
-    end
     local secondary_dataset = Collection.get_by_gui_position(self, secondary_gui_position)
-
     main_dataset.gui_position = secondary_gui_position
     secondary_dataset.gui_position = main_gui_position
 
     return true
 end
+
+-- Shifts given dataset in given direction
+function Collection.shift(self, main_dataset, direction)
+    local main_gui_position = main_dataset.gui_position
+    local secondary_gui_position = (direction == "positive") and (main_gui_position + 1) or (main_gui_position - 1)
+    return shift_dataset(self, main_dataset, secondary_gui_position, direction)
+end
+
+-- Shifts the given dataset to the end of the collection in the given direction
+function Collection.shift_to_end(self, main_dataset, direction)
+    local secondary_gui_position = (direction == "positive") and self.count or 1
+    return shift_dataset(self, main_dataset, secondary_gui_position, direction)
+end
+
 
 -- Updates the validity of all datasets in this Collection
 function Collection.update_validity(self, class)
