@@ -35,6 +35,10 @@ function Factory.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
 end
 
+function Factory.shift_to_end(self, dataset, direction)
+    return Collection.shift_to_end(self[dataset.class], dataset, direction)
+end
+
 
 -- Updates every top level product of this Factory to the given product definition type
 function Factory.update_product_definitions(self, new_defined_by)

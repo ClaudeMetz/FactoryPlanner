@@ -376,7 +376,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(element_name, "%d+"))
-            subfactory_bar.handle_subfactory_element_click(player, subfactory_id, click, direction, action)
+            subfactory_bar.handle_subfactory_element_click(player, subfactory_id, click, direction, action, event.alt)
 
         -- Changes the timescale of the current subfactory
         elseif string.find(element_name, "^fp_button_timescale_%d+$") then

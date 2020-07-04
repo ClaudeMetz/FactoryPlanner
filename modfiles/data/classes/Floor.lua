@@ -72,6 +72,10 @@ function Floor.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
 end
 
+function Floor.shift_to_end(self, dataset, direction)
+    return Collection.shift_to_end(self[dataset.class], dataset, direction)
+end
+
 
 -- Returns the machines and modules needed to actually build this floor
 function Floor.get_component_data(self, component_table)
