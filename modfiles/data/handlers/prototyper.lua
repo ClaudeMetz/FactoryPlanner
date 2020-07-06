@@ -1,4 +1,5 @@
 prototyper = {
+    validate = {},
     defaults = {}
 }
 
@@ -33,8 +34,8 @@ function prototyper.run(player_table)
     end
 
     -- Update the validity of all elements of the factory and archive
-    Factory.update_validity(player_table.factory)
-    Factory.update_validity(player_table.archive)
+    Collection.validate_datasets(player_table.factory.Subfactory, "Subfactory")
+    Collection.validate_datasets(player_table.archive.Subfactory, "Subfactory")
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
@@ -46,6 +47,19 @@ function prototyper.finish()
 
     loader.run()
 end
+
+
+-- ** VALIDATOR **
+-- Runs through validation of the given classes on the given object, including prototype-validation
+function prototyper.validate.collections(object, class_map)
+    local valid = true
+        for collection_name, class_name in pairs(class_map) do
+            -- Stays true until a single dataset is invalid, then stays false
+            valid = valid and Collection.validate_datasets(object[collection_name], class_name)
+        end
+    return valid
+end
+
 
 
 -- ** DEFAULTS **

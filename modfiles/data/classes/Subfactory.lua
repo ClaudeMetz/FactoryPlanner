@@ -131,15 +131,15 @@ function Subfactory.update_product_definitions(self, new_defined_by)
 end
 
 
--- Updates the validity of the whole subfactory
--- Floors can be checked in any order and separately without problem
-function Subfactory.update_validity(self)
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Floor = "Floor"}
-    self.valid = run_validation_updates(self, classes)
+function Subfactory.validate(self)
+    -- Floors can be checked in any order and separately without problem
+    local class_map = {Product = "Item", Byproduct = "Item", Ingredient = "Item"--[[ , Floor = "Floor" ]]}
+    self.vaid = prototyper.validate.collections(self, class_map)
     return self.valid
 end
 
--- Tries to repair all associated datasets, removing the unrepairable ones
+
+--[[ -- Tries to repair all associated datasets, removing the unrepairable ones
 -- (In general, Subfactory Items are not repairable and can only be deleted)
 function Subfactory.attempt_repair(self, player)
     local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
@@ -156,4 +156,4 @@ function Subfactory.attempt_repair(self, player)
     Floor.attempt_repair(top_floor, player)
 
     self.valid = true
-end
+end ]]

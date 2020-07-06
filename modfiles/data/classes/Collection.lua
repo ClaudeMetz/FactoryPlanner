@@ -127,21 +127,21 @@ end
 
 
 -- Updates the validity of all datasets in this Collection
-function Collection.update_validity(self, class)
+function Collection.validate_datasets(self, class_name)
     local valid = true
     for _, dataset in pairs(self.datasets) do
-        if not _G[class].update_validity(dataset) then
-            valid = false
-        end
+        -- Stays true until a single dataset is invalid, then stays false
+        valid = valid and _G[class_name].validate(dataset)
     end
     return valid
 end
 
--- Removes any invalid, unrepairable datasets from the Collection
+
+--[[ -- Removes any invalid, unrepairable datasets from the Collection
 function Collection.repair_invalid_datasets(self, player, class, parent)
     for _, dataset in pairs(self.datasets) do
         if not dataset.valid and not _G[class].attempt_repair(dataset, player) then
             _G[parent.class].remove(parent, dataset)
         end
     end
-end
+end ]]
