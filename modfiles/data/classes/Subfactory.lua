@@ -152,7 +152,7 @@ function Subfactory.attempt_repair(self, player)
     run_invalid_dataset_repair(player, self, classes)
 
     -- Set selected floor to the top one in case the selected one gets deleted
-    Floor.delete_empty(self.selected_floor)
+    Floor.remove_if_empty(self.selected_floor)
     local top_floor = Subfactory.get(self, "Floor", 1)
     self.selected_floor = top_floor
     ui_util.context.set_floor(player, top_floor)

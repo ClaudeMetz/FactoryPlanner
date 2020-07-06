@@ -1,7 +1,7 @@
 -- 'Class' representing an assembly line producing a single recipe
 Line = {}
 
-function Line.init(player, recipe)
+function Line.init(recipe)
     local line = {
         recipe = recipe,
         percentage = 100,
@@ -23,9 +23,6 @@ function Line.init(player, recipe)
         valid = true,
         class = "Line"
     }
-
-    -- Return false if no fitting machine can be found (needs error handling on the other end)
-    if Line.change_machine(line, player, nil, nil) == false then return false end
 
     -- Initialise total_effects
     Line.summarize_effects(line)
@@ -530,8 +527,8 @@ function Line.attempt_repair(self, player)
         if self.machine.category == nil then  -- No category means that it could not be repaired
             if self.valid then  -- If the line is still valid here, it has a valid recipe
                 -- Try if a new line with the new category would be valid, remove it otherwise
-                local new_line = Line.init(player, self.recipe)
-                if new_line ~= false then
+                local new_line = Line.init(self.recipe)
+                if Line.change_machine(new_line, player, nil, nil) == false then
                     Floor.replace(self.parent, self, new_line)
 
                     -- Try to repair the machine again with the new category

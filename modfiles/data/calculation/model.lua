@@ -71,7 +71,7 @@ function model.update_floor(floor_data, aggregate)
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
-                machine_count = subfloor_aggregate.machine_count,
+                machine_count = nil,
                 energy_consumption = subfloor_aggregate.energy_consumption,
                 pollution = subfloor_aggregate.pollution,
                 production_ratio = subfloor_aggregate.production_ratio,

@@ -49,9 +49,12 @@ local function construct_floor(player, floor, recipes)
         -- Create recipe line
         local production_type = recipe_data.production_type or "produce"
         local recipe = Recipe.init_by_id(global.all_recipes.map[recipe_data.name], production_type)
+
         local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
-        local line = Floor.add(floor, Line.init(player, recipe))
-        line.machine.proto = category.machines[category.map[recipe_data.machine]]
+        local machine_proto = category.machines[category.map[recipe_data.machine]]
+
+        local line = Floor.add(floor, Line.init(recipe))
+        Line.change_machine(line, player, machine_proto, nil)
 
         -- Optionally, add modules
         if recipe_data.modules ~= nil then
@@ -83,11 +86,11 @@ local function construct_floor(player, floor, recipes)
             -- First, it adds the top-level line to the floor
             local line = add_line(recipe_data[1])
             local subfloor = Floor.init(line)
-            line.subfloor = Subfactory.add(floor.parent, subfloor)
+            Subfactory.add(floor.parent, subfloor)
 
             -- Then, it creates a subfloor with the remaining recipes
             table.remove(recipe_data, 1)
-            construct_floor(player, line.subfloor, recipe_data)
+            construct_floor(player, subfloor, recipe_data)
         end
     end
 end

@@ -34,15 +34,17 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
     else
         -- Attaches a subfloor to this line
         if click == "left" then
+            local subfloor = line.subfloor
             if line.subfloor == nil then  -- create new subfloor
                 if archive_status then return end
 
-                local subfloor = Floor.init(line)
-                line.subfloor = Subfactory.add(subfactory, subfloor)
+                subfloor = Floor.init(line)  -- attaches itself to the given line automatically
+                Subfactory.add(subfactory, subfloor)
                 calculation.update(player, subfactory, false)
             end
+
             ui_state.current_activity = nil
-            ui_util.context.set_floor(player, line.subfloor)
+            ui_util.context.set_floor(player, subfloor)
             main_dialog.refresh(player)
 
         -- Handle removal of clicked (assembly) line
@@ -582,7 +584,7 @@ function production_handler.generate_chooser_fuel_buttons(player)
                 fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
 
                 fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-                fuel_proto.type, fuel_amount, line.machine.count)
+                  fuel_proto.type, fuel_amount, line.machine)
                 tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
             end
             tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
