@@ -1,25 +1,30 @@
 -- 'Class' representing a floor of a subfactory with individual assembly lines
 Floor = {}
 
-function Floor.init(line)
+function Floor.init(origin_line)
     local floor = {
-        level = nil,
-        origin_line = line,
+        level = 1,  -- top floor has a level of 1, it's initialized with Floor.init(nil)
+        origin_line = nil,
         Line = Collection.init(),
         valid = true,
         class = "Floor"
     }
 
-    -- Level becomes one more than the parent, or 1 if it's the top floor
-    -- The top floor is initialised with Floor.init(nil)
-    floor.level = line and (line.parent.level + 1) or 1
+    -- Move given line, if it exists, to the subfloor, and create a new parent line
+    if origin_line ~= nil then
 
-    -- If a line is given, add it as the first line of the new floor
-    -- (This means that this floor is the subfloor of the given line)
-    if line ~= nil then
-        local subline = cutil.deepcopy(line)
-        subline.comment = nil
-        Floor.add(floor, subline)
+        -- Subfloors have a level that is 1 higher than their origin_line's floor
+        floor.level = origin_line.parent.level + 1
+        floor.parent = origin_line.parent
+
+        local parent_line = Line.init(origin_line.recipe)
+        -- No need to set a machine in this case
+
+        parent_line.subfloor = floor
+        floor.origin_line = parent_line
+
+        Floor.replace(origin_line.parent, origin_line, parent_line)
+        Floor.add(floor, origin_line)
     end
 
     return floor
@@ -48,10 +53,13 @@ function Floor.remove_subfloors(self)
     end
 end
 
--- Floor deletes itself if it only has it's mandatory first line
-function Floor.delete_empty(self)
+-- Floor deletes itself if it consists of only its mandatory first line
+function Floor.remove_if_empty(self)
     if self.level > 1 and self.Line.count == 1 then
-        self.origin_line.subfloor = nil
+        local origin_line = self.origin_line
+        local first_line = self.Line.datasets[1]
+
+        Floor.replace(origin_line.parent, origin_line, first_line)
         Subfactory.remove(self.parent, self)
     end
 end

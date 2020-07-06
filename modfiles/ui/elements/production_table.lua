@@ -30,8 +30,12 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
     local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
 
     local function create_item_button(item, indication)
-        local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-          item.proto.type, item.amount, math.ceil(line.machine.count))
+        local raw_amount, appendage = nil, ""
+        -- Don't show a number for subfloors in the items/s/machine view, as it's nonsensical
+        if not (line.subfloor ~= nil and view_name == "items_per_second_per_machine") then
+            raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+              item.proto.type, item.amount, line.machine)
+        end
 
         if raw_amount == nil or raw_amount > margin_of_error then
             -- Determine potential different button style and the potential satisfaction line
@@ -128,7 +132,7 @@ local function create_line_table_row(player, line)
 
     -- Modules
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
-    if line.machine.proto.module_limit > 0 then
+    if line.subfloor == nil and line.machine.proto.module_limit > 0 then
         for _, module in ipairs(Line.get_in_order(line, "Module")) do
             create_module_button(flow_modules, module, "module", "fp_sprite-button_line_module_" .. line.id
               .. "_" .. module.id)
@@ -146,7 +150,7 @@ local function create_line_table_row(player, line)
     local flow_beacons = table_production.add{type="flow", name="flow_line_beacons_" .. line.id, direction="horizontal"}
     flow_beacons.style.vertical_align = "center"
     -- Beacons only work on machines that have some allowed_effects
-    if line.machine.proto.allowed_effects ~= nil then
+    if line.subfloor == nil and line.machine.proto.allowed_effects ~= nil then
         if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
             flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_beacons"},
@@ -359,13 +363,18 @@ function production_table.refresh_machine_table(player, line, table_production)
     -- Create or clear the machine flow
     local table_machines = table_production["flow_line_machines_" .. line.id]
     if table_machines == nil then
+        local column_count = (line.machine) and #line.machine.category.machines or 1
         table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,
-        column_count=#line.machine.category.machines}
+          column_count=column_count}
         table_machines.style.horizontal_spacing = 3
         table_machines.style.horizontal_align = "center"
     else
         table_machines.clear()
     end
+
+
+    if line.subfloor and (line.machine or line.Module or line.beacon) then game.print("STUFF DETECTED") end  -- TODO remove
+
 
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
@@ -376,7 +385,7 @@ function production_table.refresh_machine_table(player, line, table_production)
                 production_table.setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
             end
         end
-    else
+    elseif line.subfloor == nil then
         local machine_proto = line.machine.proto
         local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
