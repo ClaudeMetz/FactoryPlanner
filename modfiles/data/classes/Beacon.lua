@@ -22,17 +22,9 @@ end
 
 
 -- Exceptionally, a setter function to automatically run additional functionality
-function Beacon.set_module(self, module, no_recursion)
+function Beacon.set_module(self, module)
     if module ~= nil then module.parent = self end
     self.module = module
-
-    if self.parent.subfloor ~= nil and not no_recursion then
-        local sub_line = Floor.get(self.parent.subfloor, "Line", 1)
-        Beacon.set_module(sub_line.beacon, cutil.deepcopy(module), true)
-    elseif self.parent.id == 1 and self.parent.parent.origin_line and not no_recursion then
-        Beacon.set_module(self.parent.parent.origin_line.beacon, cutil.deepcopy(module), true)
-    end
-
     Beacon.summarize_effects(self)
 end
 

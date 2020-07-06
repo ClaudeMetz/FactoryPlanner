@@ -373,7 +373,7 @@ function production_table.refresh_machine_table(player, line, table_production)
     end
 
 
-    if line.subfloor and (line.machine or line.Module or line.beacon) then game.print("STUFF DETECTED") end  -- TODO remove
+    if line.subfloor and (line.machine or line.Module.count > 0 or line.beacon) then game.print("STUFF DETECTED") end  -- TODO remove
 
 
     local context_line = ui_state.context.line

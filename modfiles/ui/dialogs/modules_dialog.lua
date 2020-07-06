@@ -355,7 +355,7 @@ function beacon_dialog.close(flow_modal_dialog, action, data)
         Line.set_beacon(line, new_beacon)
 
     elseif action == "delete" then  -- only possible on edit
-        Line.remove_beacon(line)
+        Line.set_beacon(line, nil)
     end
 
     calculation.update(player, ui_state.context.subfactory, true)

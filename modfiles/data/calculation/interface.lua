@@ -27,7 +27,7 @@ local function generate_floor_data(player, subfactory, floor)
         if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
 
-        else  -- TODO improve this code, optimize maybe
+        else
             line_data.timescale = subfactory.timescale
             line_data.percentage = line.percentage
             line_data.production_type = line.recipe.production_type
@@ -245,9 +245,7 @@ function calculation.interface.set_line_result(result)
     line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
 
     -- Reset the priority_product if there's <2 products
-    if structures.class.count(result.Product) < 2 then
-        Line.set_priority_product(line, nil)
-    end
+    if structures.class.count(result.Product) < 2 then line.priority_product_proto = nil end
 
     update_items(line, result, "Product")
     update_items(line, result, "Byproduct")

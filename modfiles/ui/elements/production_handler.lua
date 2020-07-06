@@ -35,7 +35,7 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
         -- Attaches a subfloor to this line
         if click == "left" then
             local subfloor = line.subfloor
-            if line.subfloor == nil then  -- create new subfloor
+            if subfloor == nil then  -- create new subfloor
                 if archive_status then return end
 
                 subfloor = Floor.init(line)  -- attaches itself to the given line automatically
@@ -78,11 +78,7 @@ function production_handler.handle_percentage_change(player, element)
     local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
 
     local new_percentage = tonumber(element.text) or 0
-    line.percentage = new_percentage
-
-    -- Update related datasets
-    if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
-    elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
+    Line.set_percentage(line, new_percentage)
 end
 
 -- Handles the player confirming the given percentage textfield by reloading and refocusing
@@ -220,9 +216,11 @@ end
 -- Recieves the result of the machine limit options and applies it
 function production_handler.apply_machine_options(player, _, options)
     local context = get_context(player)
-    -- tonumber() has already converted an empty string to nil
+
+    local machine = context.line.machine
     if options.machine_limit == nil then options.hard_limit = false end
-    Line.set_machine_limit(context.line, options.machine_limit, options.hard_limit)
+    machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+
     calculation.update(player, context.subfactory, true)
 end
 
@@ -267,7 +265,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                         local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
                         ui_util.message.enqueue(player, message, "error", 1)
                     else
-                        Line.change_module_amount(line, module, new_amount)
+                        Module.change_amount(module, new_amount)
                     end
                 else
                     handle_tier_change(1)
@@ -279,7 +277,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                     if new_amount == 0 then  -- no error message possible here
                         Line.remove(line, module)
                     else
-                        Line.change_module_amount(line, module, new_amount)
+                        Module.change_amount(module, new_amount)
                     end
                 else
                     handle_tier_change(-1)
@@ -350,7 +348,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                 if alt then
                     local new_amount = module.amount - 1
                     if new_amount == 0 then  -- no error message possible here
-                        Line.remove_beacon(line)
+                        Line.set_beacon(line, nil)
                     else
                         local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
                         Beacon.set_module(line.beacon, new_module)
@@ -390,7 +388,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                 if alt then
                     local new_amount = beacon.amount - 1
                     if new_amount == 0 then  -- no error message possible here
-                        Line.remove_beacon(line)
+                        Line.set_beacon(line, nil)
                     else
                         local new_beacon = Beacon.init_by_protos(beacon.proto, new_amount, beacon.module.proto,
                           beacon.module.amount, beacon.total_amount)
@@ -405,7 +403,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
         calculation.update(player, ui_state.context.subfactory, true)
 
     elseif action == "delete" then
-        Line.remove_beacon(line)
+        Line.set_beacon(line, nil)
         calculation.update(player, ui_state.context.subfactory, true)
 
     elseif action == "edit" or click == "left" then
@@ -447,8 +445,7 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             if line.Product.count < 2 then
                 ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
             else
-                local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
-                Line.set_priority_product(line, priority_product_proto)
+                line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
                 calculation.update(player, context.subfactory, true)
             end
 
@@ -497,11 +494,8 @@ function production_handler.apply_item_options(player, item, options)
     end
 
     options.item_amount = options.item_amount or 0
-    line.percentage = (line.percentage * options.item_amount) / current_amount
-
-    -- Update related datasets
-    if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = line.percentage
-    elseif line.id == 1 and context.floor.origin_line then context.floor.origin_line.percentage = line.percentage end
+    local new_percentage = (line.percentage * options.item_amount) / current_amount
+    Line.set_percentage(line, new_percentage)
 
     calculation.update(player, context.subfactory, true)
 end
