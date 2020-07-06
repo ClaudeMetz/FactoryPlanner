@@ -45,7 +45,13 @@ function Item.required_amount(self)
 end
 
 
--- Update the validity of this item
+function Item.validate(self)
+
+end
+
+
+
+--[[ -- Update the validity of this item
 function Item.update_validity(self)
     local type_name = (type(self.type) == "string") and self.type or self.type.name
     local new_type_id = new.all_items.map[type_name]
@@ -112,11 +118,11 @@ function Item.attempt_repair(self, _)
         local belt_proto = self.required_amount.belt_proto
         if belt_proto and type(belt_proto) == "string" then
             -- valid stays true
-            self.required_amount.belt_proto = new.all_belts.belts[new.all_belts.map[belt_proto]]
+            self.required_amount.belt_proto = new.all_belts.belts[new.all_belts.map[belt_proto] ]
         else
             self.valid = false
         end
     end
 
     return self.valid
-end
+end ]]
