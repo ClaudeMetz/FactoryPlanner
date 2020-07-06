@@ -2,10 +2,12 @@
 Subfactory = {}
 
 function Subfactory.init(name, icon, timescale_setting)
+    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
+
     local subfactory = {
         name = name,
         icon = nil,
-        timescale = nil,
+        timescale = timescale_to_number[timescale_setting],
         energy_consumption = 0,
         pollution = 0,
         notes = "",
@@ -22,14 +24,6 @@ function Subfactory.init(name, icon, timescale_setting)
     }
 
     Subfactory.set_icon(subfactory, icon)
-
-    -- Converts the given timescale setting string to the appropriate number
-    local function timescale_setting_to_number(setting)
-        if setting == "one_second" then return 1
-        elseif setting == "one_minute" then return 60
-        elseif setting == "one_hour" then return 3600 end
-    end
-    subfactory.timescale = timescale_setting_to_number(timescale_setting)
 
     -- Add first floor to the subfactory
     subfactory.selected_floor = Floor.init(nil)

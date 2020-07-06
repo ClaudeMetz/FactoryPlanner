@@ -20,6 +20,12 @@ function Module.init_by_ids(category_id, id, amount)
 end
 
 
+function Module.change_amount(self, new_amount)
+    self.amount = new_amount
+    Line.summarize_effects(self.parent)
+end
+
+
 -- Update the validity of this module
 function Module.update_validity(self)
     local category_name = (type(self.category) == "string") and self.category or self.category.name

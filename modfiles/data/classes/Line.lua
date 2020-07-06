@@ -15,10 +15,10 @@ function Line.init(recipe)
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
         fuel = nil,
-        priority_product_proto = nil,  -- will be set by the user
+        priority_product_proto = nil,  -- set by the user
         comment = nil,
         production_ratio = 0,
-        uncapped_production_ratio = 0, -- used to calculate machine choice numbers
+        uncapped_production_ratio = 0, -- used to calculate machine_choice-numbers
         subfloor = nil,
         valid = true,
         class = "Line"
@@ -31,99 +31,49 @@ function Line.init(recipe)
 end
 
 
--- Sets the priority_product_proto on this line and optionally it's subfloor / parent line
-function Line.set_priority_product(self, proto)
-    self.priority_product_proto = proto
-    -- Can't use pack/unpack method as it doesn't work for proto being nil
-    if self.subfloor ~= nil then
-        local sub_line = Floor.get(self.subfloor, "Line", 1)
-        sub_line.priority_product_proto = proto
-    elseif self.id == 1 and self.parent.origin_line then
-        self.parent.origin_line.priority_product_proto = proto
-    end
-end
-
--- Sets the machine's limit on this line and optionally it's subfloor / parent line
-function Line.set_machine_limit(self, limit, hard_limit)
-    self.machine.limit, self.machine.hard_limit = limit, hard_limit
-    -- Can't use pack/unpack method as it doesn't work for proto being nil
-    if self.subfloor ~= nil then
-        local machine = Floor.get(self.subfloor, "Line", 1).machine
-        machine.limit, machine.hard_limit = limit, hard_limit
-    elseif self.id == 1 and self.parent.origin_line then
-        local machine = self.parent.origin_line.machine
-        machine.limit, machine.hard_limit = limit, hard_limit
-    end
-end
-
-
--- Changes the amount of the given module on this line and optionally it's subfloor / parent line
-function Line.change_module_amount(self, module, new_amount, secondary)
-    module.amount = new_amount
-
-    -- (This could theoretically use Line.carry_over_changes, but it's too different to be worth it)
-    if self.subfloor ~= nil and not secondary then
-        local sub_line = Floor.get(self.subfloor, "Line", 1)
-        local sub_module = Line.get_by_name(sub_line, "Module", module.proto.name)
-        Line.change_module_amount(self, sub_module, new_amount, true)
-    elseif self.id == 1 and self.parent.origin_line and not secondary then
-        local parent_module = Line.get_by_name(self.parent.origin_line, "Module", module.proto.name)
-        Line.change_module_amount(self.parent.origin_line, parent_module, new_amount, true)
-    end
-
-    Line.summarize_effects(self)
-end
-
--- Sets the given beacon on this line and optionally it's subfloor / parent line (Beacon can't be nil)
-function Line.set_beacon(self, beacon, secondary)
-    beacon.parent = self
-    self.beacon = beacon
-
-    Line.carry_over_changes(self, Line.set_beacon, secondary, table.pack(cutil.deepcopy(beacon)))
-    Beacon.trim_modules(self.beacon)
-    Line.summarize_effects(self)
-end
-
--- Use this if you want to remove the beacon from this line
-function Line.remove_beacon(self, secondary)
-    self.beacon = nil
-    Line.carry_over_changes(self, Line.remove_beacon, secondary, {})
-    Line.summarize_effects(self)
-end
-
-
-function Line.add(self, object, secondary)
+function Line.add(self, object)
     object.parent = self
-    local dataset = Collection.add(self[object.class], object)
 
-    if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.add, secondary, table.pack(cutil.deepcopy(object)))
-        Line.normalize_modules(self)
-    end
+    local dataset = Collection.add(self[object.class], object)
+    if dataset.class == "Module" then Line.normalize_modules(self) end
 
     return dataset
 end
 
-function Line.remove(self, dataset, secondary)
-    if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.remove, secondary, table.pack(cutil.deepcopy(dataset)))
-    end
-
+function Line.remove(self, dataset)
     local removed_gui_position = Collection.remove(self[dataset.class], dataset)
     if dataset.class == "Module" then Line.normalize_modules(self) end
 
     return removed_gui_position
 end
 
-function Line.replace(self, dataset, object, secondary)
+function Line.replace(self, dataset, object)
     dataset = Collection.replace(self[dataset.class], dataset, object)
-
-    if dataset.class == "Module" then
-        Line.carry_over_changes(self, Line.replace, secondary, table.pack(cutil.deepcopy(dataset), object))
-        Line.normalize_modules(self)
-    end
+    if dataset.class == "Module" then Line.normalize_modules(self) end
 
     return dataset
+end
+
+
+function Line.set_percentage(self, percentage)
+    self.percentage = percentage
+
+    if self.subfloor then
+        Floor.get(self.subfloor, "Line", 1).percentage = percentage
+    elseif self.gui_position == 1 and self.parent.origin_line then
+        self.parent.origin_line.percentage = percentage
+    end
+end
+
+function Line.set_beacon(self, beacon)
+    self.beacon = beacon  -- beacon can be nil
+
+    if beacon then
+        self.beacon.parent = self
+        Beacon.trim_modules(self.beacon)
+    end
+
+    Line.summarize_effects(self)
 end
 
 
@@ -149,21 +99,6 @@ end
 
 function Line.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
-end
-
-
--- Carries the changes to this Line over to it's origin_line and subfloor, whichever applies
-function Line.carry_over_changes(self, f, secondary, arg)
-    if not secondary then
-        table.insert(arg, true)  -- add indication that this is a secondary call
-
-        if self.subfloor ~= nil then
-            local sub_line = Floor.get(self.subfloor, "Line", 1)
-            f(sub_line, unpack(arg))
-        elseif self.id == 1 and self.parent.origin_line then
-            f(self.parent.origin_line, unpack(arg))
-        end
-    end
 end
 
 
@@ -210,44 +145,23 @@ function Line.change_machine(self, player, machine, direction)
             end
             self.machine = new_machine
 
-            -- Adjust parent line
-            if self.parent then  -- if no parent exists, nothing is overwritten anyway
-                if self.subfloor then
-                    Floor.get(self.subfloor, "Line", 1).machine = self.machine
-                elseif self.id == 1 and self.parent.origin_line then
-                    self.parent.origin_line.machine = self.machine
-                end
-            end
-
             -- Adjust modules (ie. trim them if needed)
             Line.trim_modules(self)
             Line.summarize_effects(self)
 
             -- Adjust beacon (ie. remove if machine does not allow beacons)
-            if self.machine.proto.allowed_effects == nil then Line.remove_beacon(self) end
+            if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
 
             return true
         end
 
-    -- Bump machine in the given direction (takes given machine, if available)
+    -- Bump machine in the given direction
     elseif direction ~= nil then
-        local category, proto
-        if machine ~= nil then
-            if machine.proto then
-                category = machine.category
-                proto = machine.proto
-            else
-                category = global.all_machines.categories[global.all_machines.map[machine.category]]
-                proto = machine
-            end
-        else
-            category = self.machine.category
-            proto = self.machine.proto
-        end
+        machine = machine or self.machine  -- takes given machine, if available
 
         if direction == "positive" then
-            if proto.id < #category.machines then
-                local new_machine = category.machines[proto.id + 1]
+            if machine.proto.id < #machine.category.machines then
+                local new_machine = machine.category.machines[machine.proto.id + 1]
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
@@ -255,8 +169,8 @@ function Line.change_machine(self, player, machine, direction)
                 return false
             end
         else  -- direction == "negative"
-            if proto.id > 1 then
-                local new_machine = category.machines[proto.id - 1]
+            if machine.proto.id > 1 then
+                local new_machine = machine.category.machines[machine.proto.id - 1]
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
@@ -451,7 +365,7 @@ function Line.trim_modules(self)
         -- Otherwise, diminish the amount on the module appropriately and break
         else
             local new_amount = module.amount - (module_count - module_limit)
-            Line.change_module_amount(self, module, new_amount)
+            Module.change_amount(module, new_amount)
             break
         end
     end
