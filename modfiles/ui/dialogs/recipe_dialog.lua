@@ -6,7 +6,7 @@ local recipes_per_row = 8
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
 local function run_preliminary_checks(player, product, production_type)
-    local force_recipes = player.force.recipes
+    local force_recipes, force_technologies = player.force.recipes, player.force.technologies
     local relevant_recipes = {}
     local user_disabled_recipe = false
     local counts = {
@@ -25,6 +25,8 @@ local function run_preliminary_checks(player, product, production_type)
             -- Add custom recipes by default
             if recipe.custom then
                 table.insert(relevant_recipes, recipe)
+                -- These are always enabled and non-hidden, so no need to tally them
+                -- They can also not be disabled by user preference
 
             -- Only add recipes that exist on the current force (and aren't preferenced-out)
             elseif force_recipe ~= nil then
@@ -33,12 +35,28 @@ local function run_preliminary_checks(player, product, production_type)
                 user_disabled_recipe = user_disabled_recipe or user_disabled
 
                 if not user_disabled then
-                    table.insert(relevant_recipes, recipe)
+                    -- If no enabling_technologies exist, the recipe is enabled from the start
+                    -- Otherwise, we need to check those technologies to see if at least one is currently enabled
+                    local recipe_could_be_researched = (recipe.enabling_technologies == nil) and true or false
 
-                    if not force_recipe.enabled and force_recipe.hidden then
-                        counts.disabled_hidden = counts.disabled_hidden + 1
-                    elseif not force_recipe.enabled then counts.disabled = counts.disabled + 1
-                    elseif force_recipe.hidden then counts.hidden = counts.hidden + 1 end
+                    if not recipe_could_be_researched then
+                        for _, technology_name in pairs(recipe.enabling_technologies) do
+                            local force_technology = force_technologies[technology_name]
+                            if force_technology and force_technology.enabled then
+                                recipe_could_be_researched = true
+                                break
+                            end
+                        end
+                    end
+
+                    if recipe_could_be_researched then
+                        table.insert(relevant_recipes, recipe)
+
+                        local recipe_enabled, recipe_hidden = force_recipe.enabled, force_recipe.hidden
+                        if not recipe_enabled and recipe_hidden then counts.disabled_hidden = counts.disabled_hidden + 1
+                        elseif not recipe_enabled then counts.disabled = counts.disabled + 1
+                        elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
+                    end
                 end
             end
         end

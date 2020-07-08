@@ -10,6 +10,7 @@ function loader.run()
     events.recipebook()
     events.rate_limiting()
 
+
     ordered_recipe_groups = caching.ordered_recipe_groups()
     recipe_maps = {
         produce = caching.recipe_map_from("products"),
@@ -78,14 +79,11 @@ function caching.ordered_recipe_groups()
 
     -- Sort it
     local function sorting_function(a, b)
-        if a.order < b.order then
-            return true
-        elseif a.order > b.order then
-            return false
-        end
+        if a.order < b.order then return true
+        elseif a.order > b.order then return false end
     end
-
     table.sort(groups, sorting_function)
+
     return groups
 end
 
