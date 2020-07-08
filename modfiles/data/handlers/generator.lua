@@ -10,6 +10,7 @@ function generator.all_recipes()
     local function custom_recipe()
         return {
             custom = true,
+            enabled_from_the_start = true,
             hidden = false,
             group = {name="intermediate-products", order="c", valid=true,
               localised_name={"item-group-name.intermediate-products"}},
@@ -37,9 +38,8 @@ function generator.all_recipes()
     -- Adding all standard recipes
     for recipe_name, proto in pairs(game.recipe_prototypes) do
         local category_id = new.all_machines.map[proto.category]
-        -- Avoid any recipes that have no machine to produce them or are unresearchable
-        if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name])
-          and not generator_util.is_annoying_recipe(proto) then
+        -- Avoid any recipes that have no machine to produce them, or are annoying
+        if category_id ~= nil and not generator_util.is_annoying_recipe(proto) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
@@ -53,9 +53,10 @@ function generator.all_recipes()
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_barreling_recipe(proto),
-                enabling_technologies = researchable_recipes[recipe_name] or nil,
+                enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
                 use_limitations = true,
                 custom = false,
+                enabled_from_the_start = proto.enabled,
                 hidden = proto.hidden,
                 order = proto.order,
                 group = generator_util.generate_group_table(proto.group),

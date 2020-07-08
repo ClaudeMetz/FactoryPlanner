@@ -1,14 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - Improved loading performance a bit
-    - Made sure that in certain very rare cases, the appropriate recipes would be shown
+    - Made sure that in certain very rare cases, the appropriate recipes would be shown (most notably for omnicompression)
     - Added a console command named "fp-reset-prototypes" that re-runs the prototypes generation code. This should not be needed for any situation.
-  Bugfixes:
-    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.36
