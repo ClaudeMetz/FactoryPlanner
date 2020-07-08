@@ -28,18 +28,16 @@ local function run_preliminary_checks(player, product, production_type)
                 -- These are always enabled and non-hidden, so no need to tally them
                 -- They can also not be disabled by user preference
 
-            -- Only add recipes that exist on the current force (and aren't preferenced-out)
-            elseif force_recipe ~= nil then
+            elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
                 local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
                   or (preferences.ignore_recycling_recipes and recipe.recycling)
                 user_disabled_recipe = user_disabled_recipe or user_disabled
 
-                if not user_disabled then
-                    -- If no enabling_technologies exist, the recipe is enabled from the start
-                    -- Otherwise, we need to check those technologies to see if at least one is currently enabled
-                    local recipe_could_be_researched = (recipe.enabling_technologies == nil) and true or false
-
-                    if not recipe_could_be_researched then
+                if not user_disabled then  -- only add recipes that are not disabled by the user
+                    -- When the recipe is enabled by technology, check if they are enabled on this force
+                    -- If it is not, it can't be researched, and must already be enabled to be shown at all
+                    local recipe_could_be_researched = false
+                    if recipe.enabling_technologies ~= nil then
                         for _, technology_name in pairs(recipe.enabling_technologies) do
                             local force_technology = force_technologies[technology_name]
                             if force_technology and force_technology.enabled then
@@ -49,10 +47,10 @@ local function run_preliminary_checks(player, product, production_type)
                         end
                     end
 
-                    if recipe_could_be_researched then
+                    local recipe_enabled, recipe_hidden = force_recipe.enabled, force_recipe.hidden
+                    if recipe.enabled_from_the_start or recipe_could_be_researched or recipe_enabled then
                         table.insert(relevant_recipes, recipe)
 
-                        local recipe_enabled, recipe_hidden = force_recipe.enabled, force_recipe.hidden
                         if not recipe_enabled and recipe_hidden then counts.disabled_hidden = counts.disabled_hidden + 1
                         elseif not recipe_enabled then counts.disabled = counts.disabled + 1
                         elseif recipe_hidden then counts.hidden = counts.hidden + 1 end
