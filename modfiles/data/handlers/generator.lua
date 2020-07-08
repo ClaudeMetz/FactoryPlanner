@@ -22,8 +22,9 @@ function generator.all_recipes()
 
     -- Determine researchable recipes
     local researchable_recipes = {}
-    for _, proto in pairs(game.technology_prototypes) do
-        if proto.enabled and not proto.hidden then
+    local tech_filter = {{filter="hidden", invert=true}, {filter="has-effects", mode="and"}}
+    for _, proto in pairs(game.get_filtered_technology_prototypes(tech_filter)) do
+        if proto.enabled then
             for _, effect in pairs(proto.effects) do
                 if effect.type == "unlock-recipe" then
                     researchable_recipes[effect.recipe] = true
@@ -67,7 +68,7 @@ function generator.all_recipes()
 
     -- Determine all the items that can be inserted usefully into a rocket silo
     local rocket_silo_inputs = {}
-    for _, item in pairs(game.item_prototypes) do
+    for _, item in pairs(game.item_prototypes) do  -- (no filter to detect this possible)
         if table_size(item.rocket_launch_products) > 0 then
             table.insert(rocket_silo_inputs, item)
         end
@@ -440,18 +441,17 @@ end
 function generator.all_belts()
     generator_util.data_structure.init("simple", "belts")
 
-    for _, proto in pairs(game.entity_prototypes) do
-        if proto.type == "transport-belt" then
-            local sprite = generator_util.determine_entity_sprite(proto)
-            if sprite ~= nil then
-                generator_util.data_structure.insert{
-                    name = proto.name,
-                    localised_name = proto.localised_name,
-                    sprite = sprite,
-                    rich_text = "[entity=" .. proto.name .. "]",
-                    throughput = proto.belt_speed * 480
-                }
-            end
+    local belt_filter = {{filter="type", type="transport-belt"}}
+    for _, proto in pairs(game.get_filtered_entity_prototypes(belt_filter)) do
+        local sprite = generator_util.determine_entity_sprite(proto)
+        if sprite ~= nil then
+            generator_util.data_structure.insert{
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
+                rich_text = "[entity=" .. proto.name .. "]",
+                throughput = proto.belt_speed * 480
+            }
         end
     end
 
@@ -467,7 +467,6 @@ end
 
 
 -- Generates a table containing all fuels that can be used in a burner
--- (only supports chemical fuels for now)
 function generator.all_fuels()
     generator_util.data_structure.init("complex", "categories", "fuels", "category")
 
@@ -483,38 +482,38 @@ function generator.all_fuels()
         end
     end
 
+    local fuel_filter = {{filter="fuel-value", comparison=">", value=0},
+      {filter="fuel-value", comparison="<", value=1e+21, mode="and"}}
+
     -- Add solid fuels
-    local items = new.all_items.types[new.all_items.map["item"]]
-    for _, proto in pairs(game.item_prototypes) do
-        local fuel_value, fuel_category = proto.fuel_value, proto.fuel_category
+    local item_map = new.all_items.types[new.all_items.map["item"]].map
+    for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
-        if fuel_value and items.map[proto.name] and used_fuel_categories[fuel_category] ~= nil
-          and fuel_value > 0 and fuel_value < 1e+21 then
+        if item_map[proto.name] and used_fuel_categories[proto.fuel_category] ~= nil then
             generator_util.data_structure.insert{
                 name = proto.name,
                 type = "item",
                 localised_name = proto.localised_name,
                 sprite = "item/" .. proto.name,
-                category = fuel_category,
-                fuel_value = fuel_value,
+                category = proto.fuel_category,
+                fuel_value = proto.fuel_value,
                 emissions_multiplier = proto.fuel_emissions_multiplier
             }
         end
     end
 
     -- Add liquid fuels
-    local fluids = new.all_items.types[new.all_items.map["fluid"]]
-    for _, proto in pairs(game.fluid_prototypes) do
-        local fuel_value, fuel_category = proto.fuel_value, "fluid-fuel"
+    local fluid_map = new.all_items.types[new.all_items.map["fluid"]].map
+    for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
-        if fuel_value and fluids.map[proto.name] and fuel_value > 0 and fuel_value < 1e+21 then
+        if fluid_map[proto.name] then
             generator_util.data_structure.insert{
                 name = proto.name,
                 type = "fluid",
                 localised_name = proto.localised_name,
                 sprite = "fluid/" .. proto.name,
-                category = fuel_category,
-                fuel_value = fuel_value,
+                category = "fluid-fuel",
+                fuel_value = proto.fuel_value,
                 emissions_multiplier = proto.emissions_multiplier
             }
         end
@@ -537,23 +536,22 @@ end
 function generator.all_modules()
     generator_util.data_structure.init("complex", "categories", "modules", "category")
 
-    for _, proto in pairs(game.item_prototypes) do
-        if proto.type == "module" and not proto.has_flag("hidden") then
-            local limitations = {}  -- Convert limitations-table to a [recipe_name] -> true format
-            for _, recipe_name in pairs(proto.limitations) do limitations[recipe_name] = true end
+    local module_filter = {{filter="type", type="module"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(game.get_filtered_item_prototypes(module_filter)) do
+        local limitations = {}  -- Convert limitations-table to a [recipe_name] -> true format
+        for _, recipe_name in pairs(proto.limitations) do limitations[recipe_name] = true end
 
-            local sprite = "item/" .. proto.name
-            if game.is_valid_sprite_path(sprite) then
-                generator_util.data_structure.insert{
-                    name = proto.name,
-                    localised_name = proto.localised_name,
-                    sprite = sprite,
-                    category = proto.category,
-                    tier = proto.tier,
-                    effects = proto.module_effects or {},
-                    limitations = limitations
-                }
-            end
+        local sprite = "item/" .. proto.name
+        if game.is_valid_sprite_path(sprite) then
+            generator_util.data_structure.insert{
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
+                category = proto.category,
+                tier = proto.tier,
+                effects = proto.module_effects or {},
+                limitations = limitations
+            }
         end
     end
 
@@ -566,21 +564,20 @@ end
 function generator.all_beacons()
     generator_util.data_structure.init("simple", "beacons")
 
-    for _, proto in pairs(game.entity_prototypes) do
-        if proto.distribution_effectivity ~= nil and not proto.has_flag("hidden") then
-            local sprite = generator_util.determine_entity_sprite(proto)
-            if sprite ~= nil then
-                generator_util.data_structure.insert{
-                    name = proto.name,
-                    localised_name = proto.localised_name,
-                    sprite = sprite,
-                    category = "fp_beacon",  -- custom category to be similar to machines
-                    allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
-                    module_limit = proto.module_inventory_size,
-                    effectivity = proto.distribution_effectivity,
-                    energy_usage = proto.energy_usage or proto.max_energy_usage or 0
-                }
-            end
+    local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
+    for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
+        local sprite = generator_util.determine_entity_sprite(proto)
+        if sprite ~= nil then
+            generator_util.data_structure.insert{
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = sprite,
+                category = "fp_beacon",  -- custom category to be similar to machines
+                allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
+                module_limit = proto.module_inventory_size,
+                effectivity = proto.distribution_effectivity,
+                energy_usage = proto.energy_usage or proto.max_energy_usage or 0
+            }
         end
     end
 
