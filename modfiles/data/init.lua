@@ -230,6 +230,11 @@ script.on_event(defines.events.on_player_removed, function(event)
 end)
 
 
+-- ** COMMANDS **
+-- Allows running the config_changed function manually, to reset stuff (shouldn't be needed actually)
+commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}, handle_configuration_change)
+
+
 -- ** GLOBAL UTIL **
 -- Returns the player table for the given player
 function get_table(player)
