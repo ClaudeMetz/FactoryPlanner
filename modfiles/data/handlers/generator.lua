@@ -9,13 +9,14 @@ function generator.all_recipes()
 
     local function custom_recipe()
         return {
+            custom = true,
             hidden = false,
             group = {name="intermediate-products", order="c", valid=true,
               localised_name={"item-group-name.intermediate-products"}},
             type_counts = {},
+            enabling_technologies = nil,
             use_limitations = false,
-            emissions_multiplier = 1,
-            custom = true
+            emissions_multiplier = 1
         }
     end
 
@@ -23,20 +24,20 @@ function generator.all_recipes()
     -- Determine researchable recipes
     local researchable_recipes = {}
     local tech_filter = {{filter="hidden", invert=true}, {filter="has-effects", mode="and"}}
-    for _, proto in pairs(game.get_filtered_technology_prototypes(tech_filter)) do
-        if proto.enabled then
-            for _, effect in pairs(proto.effects) do
-                if effect.type == "unlock-recipe" then
-                    researchable_recipes[effect.recipe] = true
-                end
+    for _, tech_proto in pairs(game.get_filtered_technology_prototypes(tech_filter)) do
+        for _, effect in pairs(tech_proto.effects) do
+            if effect.type == "unlock-recipe" then
+                local recipe_name = effect.recipe
+                researchable_recipes[recipe_name] = researchable_recipes[recipe_name] or {}
+                table.insert(researchable_recipes[recipe_name], tech_proto.name)
             end
         end
     end
 
     -- Adding all standard recipes
     for recipe_name, proto in pairs(game.recipe_prototypes) do
-        -- Avoid any recipes that have no machine to produce them or are unresearchable
         local category_id = new.all_machines.map[proto.category]
+        -- Avoid any recipes that have no machine to produce them or are unresearchable
         if category_id ~= nil and (proto.enabled or researchable_recipes[recipe_name])
           and not generator_util.is_annoying_recipe(proto) then
             local recipe = {
@@ -52,6 +53,7 @@ function generator.all_recipes()
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
                 barreling = generator_util.is_barreling_recipe(proto),
+                enabling_technologies = researchable_recipes[recipe_name] or nil,
                 use_limitations = true,
                 custom = false,
                 hidden = proto.hidden,
