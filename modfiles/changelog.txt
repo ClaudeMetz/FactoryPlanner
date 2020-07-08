@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Improved loading performance a bit
+    - Added a console command named "fp-reset-prototypes" that re-runs the prototypes generation code. This should not be needed for any situation.
   Bugfixes:
     -
 
