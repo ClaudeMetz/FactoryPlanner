@@ -130,11 +130,11 @@ function Subfactory.update_product_definitions(self, new_defined_by)
     end
 end
 
-
+-- Needs to validate: Product, Byproduct, Ingredient, Floor
 function Subfactory.validate(self)
     -- Floors can be checked in any order and separately without problem
     local class_map = {Product = "Item", Byproduct = "Item", Ingredient = "Item"--[[ , Floor = "Floor" ]]}
-    self.vaid = prototyper.validate.collections(self, class_map)
+    self.valid = prototyper.validate.collections(self, class_map)
     return self.valid
 end
 
