@@ -11,7 +11,8 @@ function generator_util.data_structure.init(structure_type, main_structure_name,
   sub_structure_name, sub_structure_varname)
     data = {
         [main_structure_name] = {},
-        structure_type = structure_type
+        structure_type = structure_type,
+        main_structure_name = main_structure_name
     }
     metadata = {
         main_structure_name = main_structure_name,
