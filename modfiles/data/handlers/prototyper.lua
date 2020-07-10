@@ -1,5 +1,6 @@
 prototyper = {
     validate = {},
+    repair = {},
     util = {},
     defaults = {}
 }
@@ -50,7 +51,7 @@ function prototyper.finish()
 end
 
 
--- ** VALIDATOR **
+-- ** VALIDATE **
 -- Runs through validation of the given classes on the given object, including prototype-validation
 function prototyper.validate.collections(object, class_map)
     local valid = true
@@ -74,6 +75,15 @@ function prototyper.validate.prototype_object(object, data_type, category_name)
     else  -- simplify prototype if no match can be found among the new ones
         if not proto.simplified then object.proto = prototyper.util.simplify_prototype(proto) end
         return false
+    end
+end
+
+
+-- ** REPAIR **
+-- Runs through repair of the given classes on the given object
+function prototyper.repair.collections(object, player, class_map)
+    for collection_name, class_name in pairs(class_map) do
+        Collection.repair_datasets(object[collection_name], player, class_name)
     end
 end
 

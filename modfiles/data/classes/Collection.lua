@@ -126,7 +126,7 @@ function Collection.shift_to_end(self, main_dataset, direction)
 end
 
 
--- Updates the validity of all datasets in this Collection
+-- Updates the validity of all datasets in this collection
 function Collection.validate_datasets(self, class_name)
     local valid = true
     for _, dataset in pairs(self.datasets) do
@@ -136,12 +136,11 @@ function Collection.validate_datasets(self, class_name)
     return valid
 end
 
-
---[[ -- Removes any invalid, unrepairable datasets from the Collection
-function Collection.repair_invalid_datasets(self, player, class, parent)
+-- Removes any invalid, unrepairable datasets from the collection
+function Collection.repair_datasets(self, player, class_name)
     for _, dataset in pairs(self.datasets) do
-        if not dataset.valid and not _G[class].attempt_repair(dataset, player) then
-            _G[parent.class].remove(parent, dataset)
+        if not dataset.valid and not _G[class_name].repair(dataset, player) then
+            _G[dataset.parent.class].remove(dataset.parent, dataset)
         end
     end
-end ]]
+end

@@ -144,7 +144,7 @@ function Floor.get_component_data(self, component_table)
 end
 
 
--- Update validity of this floor and its subfloors
+--[[ -- Update validity of this floor and its subfloors
 function Floor.update_validity(self)
     local classes = {Line = "Line"}
     self.valid = run_validation_updates(self, classes)
@@ -165,4 +165,4 @@ function Floor.attempt_repair(self, player)
     end
 
     return self.valid  -- Note success here so Line can remove subfloors if it was unsuccessful
-end
+end ]]
