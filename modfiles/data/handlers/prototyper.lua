@@ -1,6 +1,4 @@
 prototyper = {
-    validate = {},
-    repair = {},
     util = {},
     defaults = {}
 }
@@ -51,20 +49,10 @@ function prototyper.finish()
 end
 
 
--- ** VALIDATE **
--- Runs through validation of the given classes on the given object, including prototype-validation
-function prototyper.validate.collections(object, class_map)
-    local valid = true
-        for collection_name, class_name in pairs(class_map) do
-            -- Stays true until a single dataset is invalid, then stays false
-            valid = valid and Collection.validate_datasets(object[collection_name], class_name)
-        end
-    return valid
-end
-
+-- ** UTIL **
 -- Validates given object with prototype, which includes trying to find the correct
 -- new reference for its prototype, if able. Returns valid-status at the end.
-function prototyper.validate.prototype_object(object, data_type, category_name)
+function prototyper.util.validate_prototype_object(object, data_type, category_name)
     local proto = object.proto
     local new_proto = prototyper.util.get_new_prototype_by_name(data_type, proto.name, proto[category_name])
 
@@ -78,17 +66,6 @@ function prototyper.validate.prototype_object(object, data_type, category_name)
     end
 end
 
-
--- ** REPAIR **
--- Runs through repair of the given classes on the given object
-function prototyper.repair.collections(object, player, class_map)
-    for collection_name, class_name in pairs(class_map) do
-        Collection.repair_datasets(object[collection_name], player, class_name)
-    end
-end
-
-
--- ** UTIL **
 -- Returns the prototype defined by the given names, if it exists
 function prototyper.util.get_new_prototype_by_name(data_type, proto_name, category_name)
     local new_prototypes = new["all_" .. data_type]

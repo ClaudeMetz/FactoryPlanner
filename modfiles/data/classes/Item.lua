@@ -44,7 +44,7 @@ end
 
 -- Needs validation: proto, required_amount.belt_proto
 function Item.validate(self)
-    self.valid = prototyper.validate.prototype_object(self, "items", "type")
+    self.valid = prototyper.util.validate_prototype_object(self, "items", "type")
 
     -- TODO: should probably generalize this along the lines of a normal prototype
     -- Might also want to keep the prototype unsimplified so I can do a smarter repair
