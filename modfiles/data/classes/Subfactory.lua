@@ -130,30 +130,28 @@ function Subfactory.update_product_definitions(self, new_defined_by)
     end
 end
 
--- Needs to validate: Product, Byproduct, Ingredient, Floor
+-- Needs validation: Product, Byproduct, Ingredient, Floor
 function Subfactory.validate(self)
     -- Floors can be checked in any order and separately without problem
     local class_map = {Product = "Item", Byproduct = "Item", Ingredient = "Item"--[[ , Floor = "Floor" ]]}
     self.valid = prototyper.validate.collections(self, class_map)
-    return self.valid
+    -- return value is not needed here
 end
 
-
---[[ -- Tries to repair all associated datasets, removing the unrepairable ones
--- (In general, Subfactory Items are not repairable and can only be deleted)
-function Subfactory.attempt_repair(self, player)
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    run_invalid_dataset_repair(player, self, classes)
+-- Needs repair: Product, Byproduct, Ingredient, Floor, selected_floor
+function Subfactory.repair(self, player)
+    -- Unrepairable item-objects get removed, so the subfactory will always be valid afterwards
+    local class_map = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
+    prototyper.repair.collections(self, nil, class_map)
 
     -- Set selected floor to the top one in case the selected one gets deleted
-    Floor.remove_if_empty(self.selected_floor)
+    local selected_floor = self.selected_floor
     local top_floor = Subfactory.get(self, "Floor", 1)
-    self.selected_floor = top_floor
-    ui_util.context.set_floor(player, top_floor)
+    ui_util.context.set_floor(player, top_floor)  -- sets selected_floor on this subfactory
+    Floor.remove_if_empty(selected_floor)  -- Make sure no empty floor is left behind
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
-    -- (Return value is not caught here because the top level floor won't be removed)
-    Floor.attempt_repair(top_floor, player)
+    --Floor.repair(top_floor, player)
 
     self.valid = true
-end ]]
+end

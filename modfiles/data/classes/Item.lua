@@ -42,11 +42,14 @@ function Item.required_amount(self)
 end
 
 
--- Needs to validate: proto, required_amount.belt_proto
+-- Needs validation: proto, required_amount.belt_proto
 function Item.validate(self)
     self.valid = prototyper.validate.prototype_object(self, "items", "type")
 
     -- TODO: should probably generalize this along the lines of a normal prototype
+    -- Might also want to keep the prototype unsimplified so I can do a smarter repair
+    -- where I switch it to an amount-based item
+
     local req_amount = self.required_amount
     -- Validate the belt_proto if the item proto is still valid, ie not simplified
     if self.valid and req_amount.defined_by ~= "amount" then
@@ -63,42 +66,11 @@ function Item.validate(self)
     return self.valid
 end
 
+-- Needs repair: proto, required_amount.belt_proto
+function Item.repair(self, _)
+    -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
+    if self.proto.simplified then return false end
+    if self.required_amount.belt_proto and self.required_amount.belt_proto.simplified then return false end
 
-
---[[
--- Tries to repair this item, deletes it otherwise (by returning false)
--- If this is called, the item is invalid and has a string saved to proto (and maybe to type)
-function Item.attempt_repair(self, _)
-    -- First, try and repair the type if necessary
-    if type(self.type) == "string" then
-        local current_type_id = global.all_items.map[self.type]
-        if current_type_id ~= nil then
-            self.type = global.all_items.types[current_type_id]
-        else  -- delete immediately if no matching type can be found
-            return false
-        end
-    end
-
-    -- At this point, type is always valid (and proto is always a string)
-    local current_item_id = self.type.map[self.proto]
-    if current_item_id ~= nil then
-        self.proto = self.type.items[current_item_id]
-        self.valid = true
-    else
-        self.valid = false
-    end
-
-    -- Try and repair the belt_proto related to the required_amounts
-    -- (Doesn't seem to work, but w/e, the invalidity check works)
-    if self.valid and self.top_level then
-        local belt_proto = self.required_amount.belt_proto
-        if belt_proto and type(belt_proto) == "string" then
-            -- valid stays true
-            self.required_amount.belt_proto = new.all_belts.belts[new.all_belts.map[belt_proto] ]
-        else
-            self.valid = false
-        end
-    end
-
-    return self.valid
-end ]]
+    self.valid = true
+end

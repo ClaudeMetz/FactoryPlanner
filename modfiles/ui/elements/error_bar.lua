@@ -47,6 +47,8 @@ end
 -- Repairs the current subfactory
 function error_bar.handle_subfactory_repair(player)
     local subfactory = get_context(player).subfactory
-    Subfactory.attempt_repair(subfactory, player)
+    Subfactory.repair(subfactory, player)
+    calculation.update(player, subfactory, false)
+    Subfactory.remove_useless_lines(subfactory)
     calculation.update(player, subfactory, true)
 end
