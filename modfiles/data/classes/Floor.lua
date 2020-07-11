@@ -1,7 +1,7 @@
 -- 'Class' representing a floor of a subfactory with individual assembly lines
 Floor = {}
 
-function Floor.init(origin_line)
+function Floor.init(creating_line)
     local floor = {
         level = 1,  -- top floor has a level of 1, it's initialized with Floor.init(nil)
         origin_line = nil,
@@ -10,21 +10,20 @@ function Floor.init(origin_line)
         class = "Floor"
     }
 
-    -- Move given line, if it exists, to the subfloor, and create a new parent line
-    if origin_line ~= nil then
+    -- Move given line, if it exists, to the subfloor, and create a new origin line
+    if creating_line ~= nil then
+        -- Subfloors have a level that is 1 higher than their creating_line's floor
+        floor.level = creating_line.parent.level + 1
+        floor.parent = creating_line.parent
 
-        -- Subfloors have a level that is 1 higher than their origin_line's floor
-        floor.level = origin_line.parent.level + 1
-        floor.parent = origin_line.parent
-
-        local parent_line = Line.init(origin_line.recipe)
+        local origin_line = Line.init(creating_line.recipe)
         -- No need to set a machine in this case
 
-        parent_line.subfloor = floor
-        floor.origin_line = parent_line
+        origin_line.subfloor = floor
+        floor.origin_line = origin_line
 
-        Floor.replace(origin_line.parent, origin_line, parent_line)
-        Floor.add(floor, origin_line)
+        Floor.replace(creating_line.parent, creating_line, origin_line)
+        Floor.add(floor, creating_line)
     end
 
     return floor
