@@ -121,7 +121,8 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             -- Determine how many machines are applicable to this recipe
             -- This detection will run twice, which might be worth optimizing at some point
             local applicable_machine_count = 0
-            for _, machine_proto in pairs(line.machine.category.machines) do
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            for _, machine_proto in pairs(global.all_machines.categories[machine_category_id].machines) do
                 if Line.is_machine_applicable(line, machine_proto) then
                     applicable_machine_count = applicable_machine_count + 1
                 end
@@ -180,8 +181,8 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
     else
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
-            local category_id = line.machine.category.id
-            local new_machine = global.all_machines.categories[category_id].machines[machine_id]
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            local new_machine = global.all_machines.categories[machine_category_id].machines[machine_id]
             Line.change_machine(line, player, new_machine, nil)
             ui_state.current_activity = nil
             calculation.update(player, subfactory, true)
@@ -194,7 +195,8 @@ function production_handler.generate_chooser_machine_buttons(player)
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
 
-    for machine_id, machine_proto in ipairs(line.machine.category.machines) do
+    local machine_category_id = global.all_machines.map[line.machine.proto.category]
+    for machine_id, machine_proto in ipairs(global.all_machines.categories[machine_category_id].machines) do
         if Line.is_machine_applicable(line, machine_proto) then
             local button = chooser_dialog.generate_blank_button(player, machine_id)
             -- The actual button is setup by the method shared by non-chooser machine buttons
@@ -207,8 +209,8 @@ end
 -- Recieves the result of the machine choice and applies it
 function production_handler.apply_machine_choice(player, machine_id)
     local context = get_context(player)
-    local category_id = context.line.machine.category.id
-    local machine = global.all_machines.categories[category_id].machines[tonumber(machine_id)]
+    local machine_category_id = global.all_machines.map[context.line.machine.proto.category]
+    local machine = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
     Line.change_machine(context.line, player, machine, nil)
     calculation.update(player, context.subfactory, true)
 end

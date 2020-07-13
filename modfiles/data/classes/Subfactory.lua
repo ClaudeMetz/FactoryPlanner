@@ -151,5 +151,6 @@ function Subfactory.repair(self, player)
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     Floor.repair(top_floor, player)
 
-    self.valid = true  -- return value is not needed here
+    self.valid = true
+    -- return value is not needed here
 end
