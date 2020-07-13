@@ -377,6 +377,32 @@ function Line.trim_modules(self)
 end
 
 
+-- Needs validation: recipe, machine, Module, beacon, fuel?, priority_product_proto, subfloor
+function Line.validate(self)
+    self.valid = true
+
+
+    if self.subfloor then self.valid = (self.valid and Floor.validate(self.subfloor)) end
+
+    return self.valid
+end
+
+-- Needs repair: recipe, machine, Module, beacon, fuel?, priority_product_proto, subfloor
+function Line.repair(self, player)
+    self.valid = true
+
+
+    if self.valid and self.subfloor then
+        -- Repairing a floor always makes it valid, or removes it if left empty
+        if not self.subfloor.valid then Floor.repair(self.subfloor, player) end
+    end
+
+    return self.valid
+end
+
+
+
+
 -- Update the validity of values associated tp this line
 function Line.update_validity(self)
     self.valid = true
