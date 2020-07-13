@@ -35,21 +35,21 @@ function Line.add(self, object)
     object.parent = self
 
     local dataset = Collection.add(self[object.class], object)
-    if dataset.class == "Module" then Line.normalize_modules(self) end
+    if dataset.class == "Module" then Line.normalize_modules(self, true, false) end
 
     return dataset
 end
 
 function Line.remove(self, dataset)
     local removed_gui_position = Collection.remove(self[dataset.class], dataset)
-    if dataset.class == "Module" then Line.normalize_modules(self) end
+    if dataset.class == "Module" then Line.normalize_modules(self, true, false) end
 
     return removed_gui_position
 end
 
 function Line.replace(self, dataset, object)
     dataset = Collection.replace(self[dataset.class], dataset, object)
-    if dataset.class == "Module" then Line.normalize_modules(self) end
+    if dataset.class == "Module" then Line.normalize_modules(self, true, false) end
 
     return dataset
 end
@@ -158,8 +158,7 @@ function Line.change_machine(self, player, machine, direction)
             self.machine = new_machine
 
             -- Adjust modules (ie. trim them if needed)
-            Line.trim_modules(self)
-            Line.summarize_effects(self)
+            Line.normalize_modules(self, false, true)
 
             -- Adjust beacon (ie. remove if machine does not allow beacons)
             if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
@@ -196,26 +195,24 @@ function Line.change_machine(self, player, machine, direction)
 end
 
 
--- Normalizes the modules of this Line after they've been changed
-function Line.normalize_modules(self)
-    Line.sort_modules(self)
-    Line.summarize_effects(self)
-end
+-- Returns the total effects influencing this line, including mining productivity
+function Line.get_total_effects(self, player)
+    local effects = cutil.shallowcopy(self.total_effects)
 
--- Returns the total amount of modules associated with this line
-function Line.count_modules(self)
-    local module_count = 0
-    for _, module in ipairs(Line.get_in_order(self, "Module")) do
-        module_count = module_count + module.amount
+    -- Add mining productivity, if applicable
+    local mining_productivity = 0
+    if self.machine.proto.mining then
+        local subfactory = self.parent.parent
+        if subfactory.mining_productivity ~= nil then
+            mining_productivity = (subfactory.mining_productivity / 100)
+        else
+            mining_productivity = player.force.mining_drill_productivity_bonus
+        end
     end
-    return module_count
-end
+    effects.productivity = effects.productivity + mining_productivity
 
--- Returns the amount of empty slots this line has
-function Line.empty_slots(self)
-    return (self.machine.proto.module_limit - Line.count_modules(self))
+    return effects
 end
-
 
 -- Returns a table containing all relevant data for the given module in relation to this Line
 function Line.get_module_characteristics(self, module_proto)
@@ -292,50 +289,27 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
 end
 
 
--- Returns the total effects influencing this line, including mining productivity
-function Line.get_total_effects(self, player)
-    local effects = cutil.shallowcopy(self.total_effects)
-
-    -- Add mining productivity, if applicable
-    local mining_productivity = 0
-    if self.machine.proto.mining then
-        local subfactory = self.parent.parent
-        if subfactory.mining_productivity ~= nil then
-            mining_productivity = (subfactory.mining_productivity / 100)
-        else
-            mining_productivity = player.force.mining_drill_productivity_bonus
-        end
-    end
-    effects.productivity = effects.productivity + mining_productivity
-
-    return effects
+-- Returns the amount of empty slots this line has
+function Line.empty_slots(self)
+    return (self.machine.proto.module_limit - Line.count_modules(self))
 end
 
-
--- Updates the line attribute containing the total module effects of this line (modules+beacons)
-function Line.summarize_effects(self)
-    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
-
-    -- Machine base productivity
-    if not self.machine or not self.machine.proto then return end
-    module_effects.productivity = module_effects.productivity + self.machine.proto.base_productivity
-
-    -- Module effects
-    for _, module in pairs(Line.get_in_order(self, "Module")) do
-        for name, effect in pairs(module.proto.effects) do
-            module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
-        end
+-- Returns the total amount of modules associated with this line
+function Line.count_modules(self)
+    local module_count = 0
+    for _, module in ipairs(Line.get_in_order(self, "Module")) do
+        module_count = module_count + module.amount
     end
-
-    -- Beacon effects
-    if self.beacon ~= nil then
-        for name, effect in pairs(self.beacon.total_effects) do
-            module_effects[name] = module_effects[name] + effect
-        end
-    end
-
-    self.total_effects = module_effects
+    return module_count
 end
+
+-- Normalizes the modules of this Line after they've been changed
+function Line.normalize_modules(self, sort, trim)
+    if sort then Line.sort_modules(self) end
+    if trim then Line.trim_modules(self) end
+    Line.summarize_effects(self)
+end
+
 
 -- Sorts modules in a deterministic fashion so they are in the same order for every line
 -- Not a very efficient algorithm, but totally fine for the small (<10) amount of datasets
@@ -390,6 +364,33 @@ function Line.trim_modules(self)
     end
 end
 
+-- Updates the line attribute containing the total module effects of this line (modules+beacons)
+function Line.summarize_effects(self)
+    if self.subfloor ~= nil then return nil end
+
+    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+
+    -- Machine base productivity
+    if not self.machine or not self.machine.proto then return end
+    module_effects.productivity = module_effects.productivity + self.machine.proto.base_productivity
+
+    -- Module effects
+    for _, module in pairs(Line.get_in_order(self, "Module")) do
+        for name, effect in pairs(module.proto.effects) do
+            module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
+        end
+    end
+
+    -- Beacon effects
+    if self.beacon ~= nil then
+        for name, effect in pairs(self.beacon.total_effects) do
+            module_effects[name] = module_effects[name] + effect
+        end
+    end
+
+    self.total_effects = module_effects
+end
+
 
 -- Needs validation: recipe, machine, Module, beacon, fuel?, priority_product_proto?, subfloor
 function Line.validate(self)
@@ -397,12 +398,18 @@ function Line.validate(self)
 
     self.valid = Recipe.validate(self.recipe) and self.valid
 
-    self.valid = Machine.validate(self.machine) and self.valid
-
-
+    -- When this line has a subfloor, only the recipe and the subfloor need to be checked
     if self.subfloor then
         self.valid = Floor.validate(self.subfloor) and self.valid
+
+    else
+        self.valid = Machine.validate(self.machine) and self.valid
+
+
+
+        if self.valid then Line.normalize_modules(self, true, true) end
     end
+
 
     return self.valid
 end
@@ -411,19 +418,24 @@ end
 function Line.repair(self, player)
     self.valid = true
 
-    if not self.recipe.valid then
-        self.valid = Recipe.repair(self.recipe)
+    if not self.recipe.valid then self.valid = Recipe.repair(self.recipe) end
+
+    if self.subfloor then
+        if self.valid and self.subfloor.valid then
+            -- Repairing a floor always makes it valid, or removes it if left empty
+            Floor.repair(self.subfloor, player)
+        end
+
+    else
+        if self.valid and not self.machine.valid then
+            self.valid = Machine.repair(self.machine)
+        end
+
+
+
+        if self.valid then Line.normalize_modules(self, true, true) end
     end
 
-    if self.valid and not self.machine.valid then
-        self.valid = Machine.repair(self.machine)
-    end
-
-
-    if self.valid and self.subfloor and not self.subfloor.valid then
-        -- Repairing a floor always makes it valid, or removes it if left empty
-        Floor.repair(self.subfloor, player)
-    end
 
     return self.valid
 end
@@ -431,7 +443,7 @@ end
 
 
 
--- Update the validity of values associated tp this line
+--[[ -- Update the validity of values associated tp this line
 function Line.update_validity(self)
     self.valid = true
 
@@ -456,7 +468,7 @@ function Line.update_validity(self)
         self.valid = false
     end
 
-    -- Validate module-amount
+    -- Validate module-amount   ** UNNESSECARY? **
     if self.machine.valid and Line.count_modules(self) > (self.machine.proto.module_limit or 0) then
         self.valid = false
     end
@@ -474,7 +486,7 @@ function Line.update_validity(self)
     end
 
     return self.valid
-end
+end ]]
 
 -- Tries to repair all associated datasets, removing the unrepairable ones
 -- (In general, Line Items are not repairable and can only be deleted)
