@@ -69,8 +69,7 @@ end
 -- Needs repair: proto, required_amount.belt_proto
 function Item.repair(self, _)
     -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
-    if self.proto.simplified then return false end
-    if self.required_amount.belt_proto and self.required_amount.belt_proto.simplified then return false end
-
-    self.valid = true
+    if self.proto.simplified then return false
+    elseif self.required_amount.belt_proto and self.required_amount.belt_proto.simplified then return false
+    else self.valid = true; return true end
 end

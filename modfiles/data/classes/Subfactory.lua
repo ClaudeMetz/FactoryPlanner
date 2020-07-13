@@ -60,11 +60,6 @@ function Subfactory.add(self, object)
 end
 
 function Subfactory.remove(self, dataset)
-    -- Removes all subfloors of a Floor to avoid orphanism
-    if dataset.class == "Floor" then
-        Floor.remove_subfloors(dataset)
-    end
-
     return Collection.remove(self[dataset.class], dataset)
 end
 
@@ -130,12 +125,14 @@ function Subfactory.update_product_definitions(self, new_defined_by)
     end
 end
 
+
 -- Needs validation: Product, Floor
 function Subfactory.validate(self)
     self.valid = Collection.validate_datasets(self.Product, "Item")
 
-    -- Floors can be checked in any order and separately without problem
-    --self.valid = self.valid and Collection.validate_datasets(self.Floor, "Floor")
+    -- Floor validation is called on the top floor, which recursively goes through its subfloors
+    local top_floor = Subfactory.get(self, "Floor", 1)
+    self.valid = self.valid and Floor.validate(top_floor)
 
     -- return value is not needed here
 end
@@ -152,7 +149,7 @@ function Subfactory.repair(self, player)
     Collection.repair_datasets(self.Product, nil, "Item")
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
-    --Floor.repair(top_floor, player)
+    Floor.repair(top_floor, player)
 
-    self.valid = true
+    self.valid = true  -- return value is not needed here
 end
