@@ -410,7 +410,6 @@ function Line.validate(self)
         if self.valid then Line.normalize_modules(self, true, true) end
     end
 
-
     return self.valid
 end
 
@@ -418,138 +417,22 @@ end
 function Line.repair(self, player)
     self.valid = true
 
-    if not self.recipe.valid then self.valid = Recipe.repair(self.recipe) end
+    if not self.recipe.valid then self.valid = Recipe.repair(self.recipe, nil) end
 
     if self.subfloor then
-        if self.valid and self.subfloor.valid then
+        if self.valid and not self.subfloor.valid then
             -- Repairing a floor always makes it valid, or removes it if left empty
             Floor.repair(self.subfloor, player)
         end
 
     else
         if self.valid and not self.machine.valid then
-            self.valid = Machine.repair(self.machine)
+            self.valid = Machine.repair(self.machine, player)
         end
 
 
 
         if self.valid then Line.normalize_modules(self, true, true) end
-    end
-
-
-    return self.valid
-end
-
-
-
-
---[[ -- Update the validity of values associated tp this line
-function Line.update_validity(self)
-    self.valid = true
-
-    -- Validate Recipe
-    if not Recipe.update_validity(self.recipe) then
-        self.valid = false
-    end
-
-    -- Validate Items + Modules
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module"}
-    if not run_validation_updates(self, classes) then
-        self.valid = false
-    end
-
-    -- Validate Machine
-    if not Machine.update_validity(self.machine, self) then
-        self.valid = false
-    end
-
-    -- Validate Fuel
-    if self.valid and self.fuel and not Fuel.update_validity(self.fuel, self) then
-        self.valid = false
-    end
-
-    -- Validate module-amount   ** UNNESSECARY? **
-    if self.machine.valid and Line.count_modules(self) > (self.machine.proto.module_limit or 0) then
-        self.valid = false
-    end
-
-    -- Validate beacon
-    if self.beacon ~= nil and not Beacon.update_validity(self.beacon) then
-        self.valid = false
-    end
-
-    -- Update modules to eventual changes in prototypes (only makes sense if valid)
-    if self.valid then
-        Line.sort_modules(self)
-        Line.trim_modules(self)
-        Line.summarize_effects(self)
-    end
-
-    return self.valid
-end ]]
-
--- Tries to repair all associated datasets, removing the unrepairable ones
--- (In general, Line Items are not repairable and can only be deleted)
-function Line.attempt_repair(self, player)
-    self.valid = true
-
-    -- Repair Recipe
-    if not self.recipe.valid and not Recipe.attempt_repair(self.recipe) then
-        self.valid = false
-    end
-
-    -- Repair Items + Modules
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Module = "Module"}
-    run_invalid_dataset_repair(player, self, classes)
-
-    -- Repair Machine
-    if self.valid and not self.machine.valid and not Machine.attempt_repair(self.machine) then
-        if self.machine.category == nil then  -- No category means that it could not be repaired
-            if self.valid then  -- If the line is still valid here, it has a valid recipe
-                -- Try if a new line with the new category would be valid, remove it otherwise
-                local new_line = Line.init(self.recipe)
-                if Line.change_machine(new_line, player, nil, nil) == false then
-                    Floor.replace(self.parent, self, new_line)
-
-                    -- Try to repair the machine again with the new category
-                    self.machine.category = self.recipe.proto.category
-                    if not Machine.attempt_repair(self.machine) then
-                        self.valid = false
-                    end
-                else
-                    self.valid = false
-                end
-            end
-        else
-            -- Set the machine to the default one; remove of none is compatible anymore
-            -- (Recipe needs to be valid at this point, which it is)
-            if not Line.change_machine(self, player, nil, nil) then
-                self.valid = false
-            end
-        end
-    end
-
-    -- Repair Fuel
-    if self.valid and self.fuel and not self.fuel.valid and not Fuel.attempt_repair(self.fuel, player) then
-        self.valid = false
-    end
-
-    -- Repair Beacon
-    if self.valid and self.beacon ~= nil and not Beacon.attempt_repair(self.beacon) then
-        self.valid = false
-    end
-
-    -- Repair Modules
-    if self.valid then
-        Line.sort_modules(self)
-        Line.trim_modules(self)
-        Line.summarize_effects(self)
-    end
-
-    -- Repair subfloor (continues through recursively)
-    if self.subfloor and not self.subfloor.valid and not Floor.attempt_repair(self.subfloor, player) then
-        Subfactory.remove(self.subfloor.parent, self.subfloor)
-        self.subfloor = nil
     end
 
     return self.valid

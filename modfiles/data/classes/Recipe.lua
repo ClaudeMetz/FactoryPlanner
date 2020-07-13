@@ -19,7 +19,7 @@ function Recipe.validate(self)
 end
 
 -- Needs repair: proto
-function Recipe.repair(self, _)
+function Recipe.repair(_, _)
     -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
-    return (self.proto.simplified == nil)
+    return false
 end

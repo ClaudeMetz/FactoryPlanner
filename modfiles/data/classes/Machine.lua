@@ -27,7 +27,9 @@ function Machine.validate(self)
 end
 
 -- Needs repair: proto
-function Machine.repair(self, _)
-    -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
-    return (self.proto.simplified == nil)
+function Machine.repair(self, player)
+    -- If the prototype is still simplified, it couldn't be fixed by validate
+    -- A final possible fix is to replace this machine with the default for its category
+    self.valid = Line.change_machine(self.parent, player, nil, nil)
+    return self.valid
 end
