@@ -65,8 +65,18 @@ function Line.set_percentage(self, percentage)
     end
 end
 
+function Line.set_priority_product(self, priority_product_proto)
+    self.priority_product_proto = priority_product_proto  -- can be nil
+
+    if self.subfloor then
+        Floor.get(self.subfloor, "Line", 1).priority_product_proto = priority_product_proto
+    elseif self.gui_position == 1 and self.parent.origin_line then
+        self.parent.origin_line.priority_product_proto = priority_product_proto
+    end
+end
+
 function Line.set_beacon(self, beacon)
-    self.beacon = beacon  -- beacon can be nil
+    self.beacon = beacon  -- can be nil
 
     if beacon then
         self.beacon.parent = self
@@ -381,7 +391,7 @@ function Line.trim_modules(self)
 end
 
 
--- Needs validation: recipe, machine, Module, beacon, fuel?, priority_product_proto, subfloor
+-- Needs validation: recipe, machine, Module, beacon, fuel?, priority_product_proto?, subfloor
 function Line.validate(self)
     self.valid = true
 
@@ -397,7 +407,7 @@ function Line.validate(self)
     return self.valid
 end
 
--- Needs repair: recipe, machine, Module, beacon, fuel?, priority_product_proto, subfloor
+-- Needs repair: recipe, machine, Module, beacon, fuel?, priority_product_proto?, subfloor
 function Line.repair(self, player)
     self.valid = true
 

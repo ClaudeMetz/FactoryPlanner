@@ -363,9 +363,12 @@ function production_table.refresh_machine_table(player, line, table_production)
     -- Create or clear the machine flow
     local table_machines = table_production["flow_line_machines_" .. line.id]
     if table_machines == nil then
-        local machine_category_id = global.all_machines.map[line.machine.proto.category]
-        local machine_category_count = table_size(global.all_machines.categories[machine_category_id].machines)
-        local column_count = (line.machine) and machine_category_count or 1
+        local column_count = 1
+        if line.machine then
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            column_count = table_size(global.all_machines.categories[machine_category_id].machines)
+        end
+
         table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,
           column_count=column_count}
         table_machines.style.horizontal_spacing = 3

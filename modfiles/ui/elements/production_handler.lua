@@ -447,7 +447,8 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             if line.Product.count < 2 then
                 ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
             else
-                line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+                local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+                Line.set_priority_product(line, priority_product_proto)
                 calculation.update(player, context.subfactory, true)
             end
 

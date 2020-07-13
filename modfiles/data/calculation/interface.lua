@@ -245,7 +245,7 @@ function calculation.interface.set_line_result(result)
     line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
 
     -- Reset the priority_product if there's <2 products
-    if structures.class.count(result.Product) < 2 then line.priority_product_proto = nil end
+    if structures.class.count(result.Product) < 2 then Line.set_priority_product(line, nil) end
 
     update_items(line, result, "Product")
     update_items(line, result, "Byproduct")
