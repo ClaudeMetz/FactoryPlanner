@@ -132,7 +132,7 @@ function Subfactory.validate(self)
 
     -- Floor validation is called on the top floor, which recursively goes through its subfloors
     local top_floor = Subfactory.get(self, "Floor", 1)
-    self.valid = self.valid and Floor.validate(top_floor)
+    self.valid = Floor.validate(top_floor) and self.valid
 
     -- return value is not needed here
 end
