@@ -12,31 +12,14 @@ function Recipe.init_by_id(recipe_id, production_type)
 end
 
 
--- Update the validity of this recipe
-function Recipe.update_validity(self)
-    if self.proto == nil then self.valid = false; return self.valid end
-    local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
-    local new_recipe_id = new.all_recipes.map[proto_name]
-
-    if new_recipe_id ~= nil then
-        self.proto = new.all_recipes.recipes[new_recipe_id]
-        self.valid = true
-    else
-        self.proto = self.proto.name
-        self.valid = false
-    end
-
+-- Needs validation: proto
+function Recipe.validate(self)
+    self.valid = prototyper.util.validate_prototype_object(self, "recipes", nil)
     return self.valid
 end
 
--- Tries to repair this recipe, deletes it otherwise (by returning false)
--- If this is called, the recipe is invalid and has a string saved to proto
-function Recipe.attempt_repair(self, _)
-    local current_recipe_id = global.all_recipes.map[self.proto]
-    if current_recipe_id ~= nil then
-        self.proto = global.all_recipes.recipes[current_recipe_id]
-        self.valid = true
-    end
-
-    return self.valid
+-- Needs repair: proto
+function Recipe.repair(self, _)
+    -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
+    return (self.proto.simplified == nil)
 end

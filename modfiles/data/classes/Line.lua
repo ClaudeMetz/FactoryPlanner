@@ -158,10 +158,12 @@ function Line.change_machine(self, player, machine, direction)
     -- Bump machine in the given direction
     elseif direction ~= nil then
         machine = machine or self.machine  -- takes given machine, if available
+        local machine_category_id = global.all_machines.map[machine.proto.category]
+        local category_machines = global.all_machines.categories[machine_category_id].machines
 
         if direction == "positive" then
-            if machine.proto.id < #machine.category.machines then
-                local new_machine = machine.category.machines[machine.proto.id + 1]
+            if machine.proto.id < #category_machines then
+                local new_machine = category_machines[machine.proto.id + 1]
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
@@ -170,7 +172,7 @@ function Line.change_machine(self, player, machine, direction)
             end
         else  -- direction == "negative"
             if machine.proto.id > 1 then
-                local new_machine = machine.category.machines[machine.proto.id - 1]
+                local new_machine = category_machines[machine.proto.id - 1]
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
@@ -381,8 +383,14 @@ end
 function Line.validate(self)
     self.valid = true
 
+    self.valid = self.valid and Recipe.validate(self.recipe)
 
-    if self.subfloor then self.valid = (self.valid and Floor.validate(self.subfloor)) end
+    self.valid = self.valid and Machine.validate(self.machine)
+
+
+    if self.subfloor then
+        self.valid = self.valid and Floor.validate(self.subfloor)
+    end
 
     return self.valid
 end
@@ -391,10 +399,18 @@ end
 function Line.repair(self, player)
     self.valid = true
 
+    if not self.recipe.valid then
+        self.valid = Recipe.repair(self.recipe)
+    end
 
-    if self.valid and self.subfloor then
+    if self.valid and not self.machine.valid then
+        self.valid = Machine.repair(self.machine)
+    end
+
+
+    if self.valid and self.subfloor and not self.subfloor.valid then
         -- Repairing a floor always makes it valid, or removes it if left empty
-        if not self.subfloor.valid then Floor.repair(self.subfloor, player) end
+        Floor.repair(self.subfloor, player)
     end
 
     return self.valid

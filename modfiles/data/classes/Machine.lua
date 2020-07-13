@@ -3,10 +3,8 @@ Machine = {}
 
 -- Initialised by passing a prototype from the all_machines global table
 function Machine.init_by_proto(proto)
-    local category = global.all_machines.categories[global.all_machines.map[proto.category]]
     return {
         proto = proto,
-        category = category,
         count = 0,
         limit = nil,  -- will be set by the user
         hard_limit = false,
@@ -16,65 +14,20 @@ function Machine.init_by_proto(proto)
 end
 
 
--- Update the validity of this machine
-function Machine.update_validity(self, line)
-    if self.category == nil or self.proto == nil then return false end
-    local category_name = (type(self.category) == "string") and self.category or self.category.name
-    local new_category_id = new.all_machines.map[category_name]
+-- Needs validation: proto
+function Machine.validate(self)
+    self.valid = prototyper.util.validate_prototype_object(self, "recipes", nil)
 
-    if new_category_id ~= nil then
-        self.category = new.all_machines.categories[new_category_id]
-
-        if self.proto == nil then self.valid = false; return self.valid end
-        local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
-        local new_machine_id = self.category.map[proto_name]
-
-        if new_machine_id ~= nil then
-            self.proto = self.category.machines[new_machine_id]
-            self.valid = true
-        else
-            self.proto = self.proto.name
-            self.valid = false
-        end
-    else
-        self.category = self.category.name
-        self.proto = self.proto.name
-        self.valid = false
-    end
-
-    -- If the machine is valid, it might still not be applicable
-    if self.valid and (not line.recipe.valid or not Line.is_machine_applicable(line, self.proto)) then
-        self.valid = false
+    local parent_line = self.parent
+    if self.valid and parent_line.valid and parent_line.recipe.valid then
+        self.valid = Line.is_machine_applicable(parent_line, self.proto)
     end
 
     return self.valid
 end
 
--- Tries to repair this machine, deletes it otherwise (by returning false)
--- If this is called, the machine is invalid and has a string saved to proto (and maybe to category)
-function Machine.attempt_repair(self, _)
-    -- If the category is nil, this machine is not repairable
-    if self.category == nil then
-        return false
-    -- First, try and repair the category if necessary
-    elseif type(self.category) == "string" then
-        local current_category_id = global.all_machines.map[self.category]
-        if current_category_id ~= nil then
-            self.category = global.all_machines.categories[current_category_id]
-        else  -- delete immediately if no matching type can be found
-            self.category = nil
-            return false
-        end
-    end
-
-    -- At this point, category is always valid (and proto is always a string)
-    local current_machine_id = self.category.map[self.proto]
-    if current_machine_id ~= nil then
-        self.proto = self.category.machines[current_machine_id]
-        self.valid = true
-    else
-        self.valid = false
-    end
-
-    return self.valid
+-- Needs repair: proto
+function Machine.repair(self, _)
+    -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
+    return (self.proto.simplified == nil)
 end

@@ -363,7 +363,9 @@ function production_table.refresh_machine_table(player, line, table_production)
     -- Create or clear the machine flow
     local table_machines = table_production["flow_line_machines_" .. line.id]
     if table_machines == nil then
-        local column_count = (line.machine) and #line.machine.category.machines or 1
+        local machine_category_id = global.all_machines.map[line.machine.proto.category]
+        local machine_category_count = table_size(global.all_machines.categories[machine_category_id].machines)
+        local column_count = (line.machine) and machine_category_count or 1
         table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,
           column_count=column_count}
         table_machines.style.horizontal_spacing = 3
@@ -372,13 +374,10 @@ function production_table.refresh_machine_table(player, line, table_production)
         table_machines.clear()
     end
 
-
-    if line.subfloor and (line.machine or line.Module.count > 0 or line.beacon) then game.print("STUFF DETECTED") end  -- TODO remove
-
-
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        for _, machine_proto in ipairs(line.machine.category.machines) do
+        local machine_category_id = global.all_machines.map[line.machine.proto.category]
+        for _, machine_proto in ipairs(global.all_machines.categories[machine_category_id].machines) do
             if Line.is_machine_applicable(line, machine_proto) then
                 local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_"
                   .. line.id .. "_" .. machine_proto.id, mouse_button_filter={"left"}}
