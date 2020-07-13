@@ -143,6 +143,8 @@ function Line.change_machine(self, player, machine, direction)
                 new_machine.limit = self.machine.limit
                 new_machine.hard_limit = self.machine.hard_limit
             end
+
+            new_machine.parent = self
             self.machine = new_machine
 
             -- Adjust modules (ie. trim them if needed)
@@ -383,13 +385,13 @@ end
 function Line.validate(self)
     self.valid = true
 
-    self.valid = self.valid and Recipe.validate(self.recipe)
+    self.valid = Recipe.validate(self.recipe) and self.valid
 
-    self.valid = self.valid and Machine.validate(self.machine)
+    self.valid = Machine.validate(self.machine) and self.valid
 
 
     if self.subfloor then
-        self.valid = self.valid and Floor.validate(self.subfloor)
+        self.valid = Floor.validate(self.subfloor) and self.valid
     end
 
     return self.valid

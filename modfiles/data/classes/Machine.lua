@@ -16,7 +16,7 @@ end
 
 -- Needs validation: proto
 function Machine.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "recipes", nil)
+    self.valid = prototyper.util.validate_prototype_object(self, "machines", "category")
 
     local parent_line = self.parent
     if self.valid and parent_line.valid and parent_line.recipe.valid then

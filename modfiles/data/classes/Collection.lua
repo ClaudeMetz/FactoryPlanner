@@ -131,7 +131,7 @@ function Collection.validate_datasets(self, class_name)
     local valid = true
     for _, dataset in pairs(self.datasets) do
         -- Stays true until a single dataset is invalid, then stays false
-        valid = valid and _G[class_name].validate(dataset)
+        valid = _G[class_name].validate(dataset) and valid
     end
     return valid
 end
