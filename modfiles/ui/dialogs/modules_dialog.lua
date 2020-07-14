@@ -86,7 +86,7 @@ local function refresh_module_selection(flow_modal_dialog, modal_data, type, lin
         flow_category.style.bottom_margin = 4
 
         for _, module in pairs(category.modules) do
-            local characteristics = (type == "module") and Line.get_machine_module_characteristics(line, module)
+            local characteristics = (type == "module") and Machine.get_module_characteristics(line.machine, module)
               or Line.get_beacon_module_characteristics(line, modal_data.selected_beacon, module)
 
             if characteristics.compatible then
