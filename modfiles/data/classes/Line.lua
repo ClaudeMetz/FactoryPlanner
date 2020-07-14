@@ -2,12 +2,12 @@
 Line = {}
 
 function Line.init(recipe)
-    local line = {
+    return {
         recipe = recipe,
         percentage = 100,
         machine = nil,
         beacon = nil,
-        total_effects = nil,
+        total_effects = nil,  -- initialized after a machine is set
         energy_consumption = 0,
         pollution = 0,
         Product = Collection.init(),
@@ -22,11 +22,6 @@ function Line.init(recipe)
         valid = true,
         class = "Line"
     }
-
-    -- Initialise total_effects
-    Line.summarize_effects(line)
-
-    return line
 end
 
 
@@ -72,7 +67,7 @@ function Line.set_beacon(self, beacon)
         Beacon.trim_modules(self.beacon)
     end
 
-    Line.summarize_effects(self)
+    Line.summarize_effects(self, false, true)
 end
 
 
@@ -113,57 +108,61 @@ end
 
 -- Changes the machine either to the given machine or moves it in the given direction
 -- Returns false if no machine is applied because none can be found, true otherwise
-function Line.change_machine(self, player, machine, direction)
+function Line.change_machine(self, player, machine_proto, direction)
     -- Set the machine to the default one
-    if machine == nil and direction == nil then
+    if machine_proto == nil and direction == nil then
         local machine_category_id = global.all_machines.map[self.recipe.proto.category]
-        local default_machine = prototyper.defaults.get(player, "machines", machine_category_id)
+        local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
+
         -- If no default machine is found, this category has no machines
-        if default_machine == nil then return false end
-        return Line.change_machine(self, player, default_machine, nil)
+        if default_machine_proto == nil then return false end
+        return Line.change_machine(self, player, default_machine_proto, nil)
 
     -- Set machine directly
-    elseif machine ~= nil and direction == nil then
-        local new_machine = (machine.proto ~= nil) and machine or Machine.init_by_proto(machine)
+    elseif machine_proto ~= nil and direction == nil then
         -- Try setting a higher tier machine until it sticks or nothing happens
         -- Returns false if no machine fits at all, so an appropriate error can be displayed
-        if not Line.is_machine_applicable(self, new_machine.proto) then
-            return Line.change_machine(self, player, new_machine, "positive")
+        if not Line.is_machine_applicable(self, machine_proto) then
+            return Line.change_machine(self, player, machine_proto, "positive")
 
         else
-            -- Check if the fuel is still compatible, remove it otherwise
-            if not (self.machine and self.fuel and new_machine.proto.energy_type == "burner"
-              and new_machine.proto.burner.categories[self.fuel.proto.category]) then
-                self.fuel = nil
+            if not self.machine then
+                self.machine = Machine.init_by_proto(machine_proto)
+                self.machine.parent = self
+
+                -- Initialize total_effects, now that the line has a machine
+                Line.summarize_effects(self, false, false)
+
+            else
+                self.machine.proto = machine_proto
+
+                -- Check if the fuel is still compatible, remove it otherwise
+                if self.fuel and not (machine_proto.energy_type == "burner"
+                  and machine_proto.burner.categories[self.fuel.proto.category]) then
+                    self.fuel = nil
+                end
+
+                -- Adjust modules (ie. trim them if needed)
+                Machine.normalize_modules(self.machine, false, true)
+
+                -- Adjust beacon (ie. remove if machine does not allow beacons)
+                if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
             end
-
-            -- Carry over the machine limit
-            if new_machine and self.machine then
-                new_machine.limit = self.machine.limit
-                new_machine.hard_limit = self.machine.hard_limit
-            end
-
-            new_machine.parent = self
-            self.machine = new_machine
-
-            -- Adjust modules (ie. trim them if needed)
-            Line.normalize_modules(self, false, true)
-
-            -- Adjust beacon (ie. remove if machine does not allow beacons)
-            if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
 
             return true
         end
 
     -- Bump machine in the given direction
     elseif direction ~= nil then
-        machine = machine or self.machine  -- takes given machine, if available
-        local machine_category_id = global.all_machines.map[machine.proto.category]
+        -- Uses the given machine proto, if given, otherwise bumps the line's existing machine
+        machine_proto = machine_proto or self.machine.proto
+
+        local machine_category_id = global.all_machines.map[machine_proto.category]
         local category_machines = global.all_machines.categories[machine_category_id].machines
 
         if direction == "positive" then
-            if machine.proto.id < #category_machines then
-                local new_machine = category_machines[machine.proto.id + 1]
+            if machine_proto.id < #category_machines then
+                local new_machine = category_machines[machine_proto.id + 1]
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
@@ -171,8 +170,8 @@ function Line.change_machine(self, player, machine, direction)
                 return false
             end
         else  -- direction == "negative"
-            if machine.proto.id > 1 then
-                local new_machine = category_machines[machine.proto.id - 1]
+            if machine_proto.id > 1 then
+                local new_machine = category_machines[machine_proto.id - 1]
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
@@ -183,6 +182,27 @@ function Line.change_machine(self, player, machine, direction)
     end
 end
 
+
+-- Updates the line attribute containing the total module effects of this line (modules+beacons)
+function Line.summarize_effects(self, summarize_machine, summarize_beacon)
+    if self.subfloor ~= nil or self.machine == nil then return nil end
+
+    if summarize_machine then Machine.summarize_effects(self.machine) end
+    if summarize_beacon and self.beacon then Beacon.summarize_effects(self.beacon) end
+
+    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+
+    local effects_table = {self.machine.total_effects}
+    if self.beacon then table.insert(effects_table, self.beacon.total_effects) end
+
+    for _, effect_table in pairs(effects_table) do
+        for name, effect in pairs(effect_table) do
+            module_effects[name] = module_effects[name] + effect
+        end
+    end
+
+    self.total_effects = module_effects
+end
 
 -- Returns the total effects influencing this line, including mining productivity
 function Line.get_total_effects(self, player)
@@ -202,6 +222,7 @@ function Line.get_total_effects(self, player)
 
     return effects
 end
+
 
 -- Returns a table containing all relevant data for the given module in relation to this Line
 function Line.get_module_characteristics(self, module_proto)
@@ -278,109 +299,6 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
 end
 
 
--- Returns the amount of empty slots this line has
-function Line.empty_slots(self)
-    return (self.machine.proto.module_limit - Line.count_modules(self))
-end
-
--- Returns the total amount of modules associated with this line
-function Line.count_modules(self)
-    local module_count = 0
-    for _, module in ipairs(Machine.get_in_order(self.machine, "Module")) do
-        module_count = module_count + module.amount
-    end
-    return module_count
-end
-
--- Normalizes the modules of this Line after they've been changed
-function Line.normalize_modules(self, sort, trim)
-    if sort then Line.sort_modules(self) end
-    if trim then Line.trim_modules(self) end
-    Line.summarize_effects(self)
-end
-
-
--- Sorts modules in a deterministic fashion so they are in the same order for every line
--- Not a very efficient algorithm, but totally fine for the small (<10) amount of datasets
-function Line.sort_modules(self)
-    local next_position = 1
-    local new_gui_positions = {}
-
-    if global.all_modules == nil then return end
-    for _, category in ipairs(global.all_modules.categories) do
-        for _, module_proto in ipairs(category.modules) do
-            for _, module in ipairs(Machine.get_in_order(self.machine, "Module")) do
-                if module.category.name == category.name and module.proto.name == module_proto.name then
-                    table.insert(new_gui_positions, {module = module, new_pos = next_position})
-                    next_position = next_position + 1
-                end
-            end
-        end
-    end
-
-    -- Actually set the new gui positions
-    for _, new_position in pairs(new_gui_positions) do
-        new_position.module.gui_position = new_position.new_pos
-    end
-end
-
--- Trims superflous modules off the end (might be needed when the machine is downgraded)
-function Line.trim_modules(self)
-    local module_count = Line.count_modules(self)
-    local module_limit = self.machine.proto.module_limit or 0
-    -- Return if the module count is within limits
-    if module_count <= module_limit then return end
-
-    local modules_to_remove = {}
-    -- Traverse modules in reverse to trim them off the end
-    for _, module in ipairs(Machine.get_in_order(self.machine, "Module", true)) do
-        -- Remove a whole module if it brings the count to >= limit
-        if module_count - module.amount >= module_limit then
-            table.insert(modules_to_remove, module)
-            module_count = module_count - module.amount
-
-        -- Otherwise, diminish the amount on the module appropriately and break
-        else
-            local new_amount = module.amount - (module_count - module_limit)
-            Module.change_amount(module, new_amount)
-            break
-        end
-    end
-
-    -- Remove superfluous modules (no re-sorting necessary)
-    for _, module in pairs(modules_to_remove) do
-        Machine.remove(self.machine, module)
-    end
-end
-
--- Updates the line attribute containing the total module effects of this line (modules+beacons)
-function Line.summarize_effects(self)
-    if self.subfloor ~= nil then return nil end
-
-    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
-
-    -- Machine base productivity
-    if not self.machine or not self.machine.proto then return end
-    module_effects.productivity = module_effects.productivity + self.machine.proto.base_productivity
-
-    -- Module effects
-    for _, module in pairs(Machine.get_in_order(self.machine, "Module")) do
-        for name, effect in pairs(module.proto.effects) do
-            module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
-        end
-    end
-
-    -- Beacon effects
-    if self.beacon ~= nil then
-        for name, effect in pairs(self.beacon.total_effects) do
-            module_effects[name] = module_effects[name] + effect
-        end
-    end
-
-    self.total_effects = module_effects
-end
-
-
 -- Needs validation: recipe, machine, beacon, fuel?, priority_product_proto?, subfloor
 function Line.validate(self)
     self.valid = true
@@ -395,8 +313,6 @@ function Line.validate(self)
         self.valid = Machine.validate(self.machine) and self.valid
 
 
-
-        if self.valid then Line.normalize_modules(self, true, true) end
     end
 
     return self.valid
@@ -420,8 +336,6 @@ function Line.repair(self, player)
         end
 
 
-
-        if self.valid then Line.normalize_modules(self, true, true) end
     end
 
     return self.valid
