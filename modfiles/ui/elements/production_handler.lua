@@ -182,8 +182,8 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
             local machine_category_id = global.all_machines.map[line.machine.proto.category]
-            local new_machine = global.all_machines.categories[machine_category_id].machines[machine_id]
-            Line.change_machine(line, player, new_machine, nil)
+            local new_machine_proto = global.all_machines.categories[machine_category_id].machines[machine_id]
+            Line.change_machine(line, player, new_machine_proto, nil)
             ui_state.current_activity = nil
             calculation.update(player, subfactory, true)
         end
@@ -210,8 +210,8 @@ end
 function production_handler.apply_machine_choice(player, machine_id)
     local context = get_context(player)
     local machine_category_id = global.all_machines.map[context.line.machine.proto.category]
-    local machine = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
-    Line.change_machine(context.line, player, machine, nil)
+    local machine_proto = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
+    Line.change_machine(context.line, player, machine_proto, nil)
     calculation.update(player, context.subfactory, true)
 end
 
@@ -235,7 +235,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
     ui_state.context.line = line
-    local limit = Line.empty_slots(line)
+    local limit = Machine.empty_slot_count(line.machine)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
         modal_dialog.enter(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})

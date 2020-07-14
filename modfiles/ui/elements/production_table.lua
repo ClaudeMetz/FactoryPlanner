@@ -138,7 +138,7 @@ local function create_line_table_row(player, line)
               .. "_" .. module.id)
         end
 
-        if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
+        if Machine.empty_slot_count(line.machine) > 0 then
             flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_a_module"},
               mouse_button_filter={"left"}, enabled=(not archive_open)}

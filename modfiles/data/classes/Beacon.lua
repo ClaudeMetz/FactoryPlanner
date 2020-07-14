@@ -6,7 +6,7 @@ function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount,
-        module = module,  -- Module-object
+        module = module,
         total_amount = total_amount,
         total_effects = nil,
         valid = true,
@@ -14,7 +14,7 @@ function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module
     }
     beacon.module.parent = beacon
 
-    -- Initialise the total_effects
+    -- Initialise total_effects
     Beacon.summarize_effects(beacon)
 
     return beacon
@@ -25,18 +25,20 @@ end
 function Beacon.set_module(self, module)
     if module ~= nil then module.parent = self end
     self.module = module
-    Beacon.summarize_effects(self)
+    Line.summarize_effects(self.parent, false, true)
 end
 
 
 -- Summarizes the effects this Beacon has
 function Beacon.summarize_effects(self)
     local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+
     if self.module ~= nil then
         for name, effect in pairs(self.module.proto.effects) do
             module_effects[name] = effect.bonus * self.module.amount * self.amount * self.proto.effectivity
         end
     end
+
     self.total_effects = module_effects
 end
 
@@ -44,6 +46,8 @@ end
 function Beacon.trim_modules(self)
     self.module.amount = math.min(self.module.amount, self.proto.module_limit)
 end
+
+
 
 
 -- Update the validity of this beacon

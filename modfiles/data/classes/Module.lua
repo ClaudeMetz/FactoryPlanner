@@ -21,8 +21,11 @@ end
 
 
 function Module.change_amount(self, new_amount)
+    local amount_difference = new_amount - self.amount
     self.amount = new_amount
-    Line.summarize_effects(self.parent)
+
+    self.parent.module_count = self.parent.module_count + amount_difference
+    Line.summarize_effects(self.parent.parent, true, false)
 end
 
 
