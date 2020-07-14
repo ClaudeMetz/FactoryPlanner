@@ -248,7 +248,8 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
-                local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                local module_category_id = global.all_modules.map[module.proto.category]
+                local new_proto = tier_map[module_category_id][module.proto.tier + factor]
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Machine.replace(line.machine, module, new_module)
@@ -320,7 +321,8 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
-                local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                local module_category_id = global.all_modules.map[module.proto.category]
+                local new_proto = tier_map[module_category_id][module.proto.tier + factor]
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Beacon.set_module(line.beacon, new_module)

@@ -3,6 +3,7 @@ Beacon = {}
 
 function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module_amount, total_amount)
     local module = Module.init_by_proto(module_proto, module_amount)
+
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount,

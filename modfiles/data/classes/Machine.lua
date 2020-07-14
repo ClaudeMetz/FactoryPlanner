@@ -98,7 +98,7 @@ function Machine.sort_modules(self)
     for _, category in ipairs(global.all_modules.categories) do
         for _, module_proto in ipairs(category.modules) do
             for _, module in ipairs(Machine.get_in_order(self, "Module")) do
-                if module.category.name == category.name and module.proto.name == module_proto.name then
+                if module.proto.category == category.name and module.proto.name == module_proto.name then
                     table.insert(new_gui_positions, {module = module, new_pos = next_position})
                     next_position = next_position + 1
                 end
@@ -151,8 +151,7 @@ function Machine.validate(self)
         self.valid = Line.is_machine_applicable(parent_line, self.proto)
     end
 
-
-
+    self.valid = Collection.validate_datasets(self.Module, "Module") and self.valid
     if self.valid then Machine.normalize_modules(self, true, true) end
 
     return self.valid
@@ -162,11 +161,14 @@ end
 function Machine.repair(self, player)
     -- If the prototype is still simplified, it couldn't be fixed by validate
     -- A final possible fix is to replace this machine with the default for its category
-    self.valid = Line.change_machine(self.parent, player, nil, nil)
+    if self.proto.simplified and not Line.change_machine(self.parent, player, nil, nil) then
+        return false
+    end
 
-
-
-    if self.valid then Machine.normalize_modules(self, true, true) end
+    -- Remove invalid modules and normalize the remaining ones
+    Collection.repair_datasets(self.Module, nil, "Module")
+    Machine.normalize_modules(self, true, true)
+    self.valid = true
 
     return self.valid
 end
