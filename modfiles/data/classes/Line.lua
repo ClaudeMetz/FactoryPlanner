@@ -225,7 +225,7 @@ end
 
 
 -- Returns a table containing all relevant data for the given module in relation to this Line
-function Line.get_module_characteristics(self, module_proto)
+function Line.get_machine_module_characteristics(self, module_proto)
     local compatible, existing_amount = true, nil
     local recipe_proto = self.recipe.proto
     local machine_proto = self.machine.proto
