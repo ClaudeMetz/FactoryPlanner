@@ -26,6 +26,9 @@ function Module.change_amount(self, new_amount)
 end
 
 
+
+
+
 -- Update the validity of this module
 function Module.update_validity(self)
     local category_name = (type(self.category) == "string") and self.category or self.category.name

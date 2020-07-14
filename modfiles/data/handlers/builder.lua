@@ -59,7 +59,7 @@ local function construct_floor(player, floor, recipes)
         -- Optionally, add modules
         if recipe_data.modules ~= nil then
             for _, module in pairs(recipe_data.modules) do
-                Line.add(line, Module.init_by_proto(find_module(module.name), module.amount))
+                Machine.add(line.machine, Module.init_by_proto(find_module(module.name), module.amount))
             end
         end
 

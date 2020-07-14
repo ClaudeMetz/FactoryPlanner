@@ -6,7 +6,6 @@ function Line.init(recipe)
         recipe = recipe,
         percentage = 100,
         machine = nil,
-        Module = Collection.init(),
         beacon = nil,
         total_effects = nil,
         energy_consumption = 0,
@@ -33,25 +32,15 @@ end
 
 function Line.add(self, object)
     object.parent = self
-
-    local dataset = Collection.add(self[object.class], object)
-    if dataset.class == "Module" then Line.normalize_modules(self, true, false) end
-
-    return dataset
+    return Collection.add(self[object.class], object)
 end
 
 function Line.remove(self, dataset)
-    local removed_gui_position = Collection.remove(self[dataset.class], dataset)
-    if dataset.class == "Module" then Line.normalize_modules(self, true, false) end
-
-    return removed_gui_position
+    return Collection.remove(self[dataset.class], dataset)
 end
 
 function Line.replace(self, dataset, object)
-    dataset = Collection.replace(self[dataset.class], dataset, object)
-    if dataset.class == "Module" then Line.normalize_modules(self, true, false) end
-
-    return dataset
+    return Collection.replace(self[dataset.class], dataset, object)
 end
 
 
@@ -243,7 +232,7 @@ function Line.get_module_characteristics(self, module_proto)
     end
 
     if compatible then
-        for _, module in pairs(Line.get_in_order(self, "Module")) do
+        for _, module in pairs(Machine.get_in_order(self.machine, "Module")) do
             if module.proto == module_proto then
                 existing_amount = module.amount
                 break
@@ -297,7 +286,7 @@ end
 -- Returns the total amount of modules associated with this line
 function Line.count_modules(self)
     local module_count = 0
-    for _, module in ipairs(Line.get_in_order(self, "Module")) do
+    for _, module in ipairs(Machine.get_in_order(self.machine, "Module")) do
         module_count = module_count + module.amount
     end
     return module_count
@@ -320,7 +309,7 @@ function Line.sort_modules(self)
     if global.all_modules == nil then return end
     for _, category in ipairs(global.all_modules.categories) do
         for _, module_proto in ipairs(category.modules) do
-            for _, module in ipairs(Line.get_in_order(self, "Module")) do
+            for _, module in ipairs(Machine.get_in_order(self.machine, "Module")) do
                 if module.category.name == category.name and module.proto.name == module_proto.name then
                     table.insert(new_gui_positions, {module = module, new_pos = next_position})
                     next_position = next_position + 1
@@ -344,7 +333,7 @@ function Line.trim_modules(self)
 
     local modules_to_remove = {}
     -- Traverse modules in reverse to trim them off the end
-    for _, module in ipairs(Line.get_in_order(self, "Module", true)) do
+    for _, module in ipairs(Machine.get_in_order(self.machine, "Module", true)) do
         -- Remove a whole module if it brings the count to >= limit
         if module_count - module.amount >= module_limit then
             table.insert(modules_to_remove, module)
@@ -360,7 +349,7 @@ function Line.trim_modules(self)
 
     -- Remove superfluous modules (no re-sorting necessary)
     for _, module in pairs(modules_to_remove) do
-        Line.remove(self, module)
+        Machine.remove(self.machine, module)
     end
 end
 
@@ -375,7 +364,7 @@ function Line.summarize_effects(self)
     module_effects.productivity = module_effects.productivity + self.machine.proto.base_productivity
 
     -- Module effects
-    for _, module in pairs(Line.get_in_order(self, "Module")) do
+    for _, module in pairs(Machine.get_in_order(self.machine, "Module")) do
         for name, effect in pairs(module.proto.effects) do
             module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
         end
@@ -392,7 +381,7 @@ function Line.summarize_effects(self)
 end
 
 
--- Needs validation: recipe, machine, Module, beacon, fuel?, priority_product_proto?, subfloor
+-- Needs validation: recipe, machine, beacon, fuel?, priority_product_proto?, subfloor
 function Line.validate(self)
     self.valid = true
 
@@ -413,7 +402,7 @@ function Line.validate(self)
     return self.valid
 end
 
--- Needs repair: recipe, machine, Module, beacon, fuel?, priority_product_proto?, subfloor
+-- Needs repair: recipe, machine, beacon, fuel?, priority_product_proto?, subfloor
 function Line.repair(self, player)
     self.valid = true
 

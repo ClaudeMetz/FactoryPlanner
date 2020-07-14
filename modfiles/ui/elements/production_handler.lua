@@ -241,7 +241,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
         modal_dialog.enter(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     else  -- meaning an existing module was clicked
-        local module = Line.get(line, "Module", module_id)
+        local module = Machine.get(line.machine, "Module", module_id)
 
         if direction ~= nil then  -- change the module to a higher/lower amount/tier
             local tier_map = module_tier_map
@@ -251,7 +251,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                 local new_proto = tier_map[module.category.id][module.proto.tier + factor]
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
-                    Line.replace(line, module, new_module)
+                    Machine.replace(line.machine, module, new_module)
                 else
                     local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
                     local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, change_direction}
@@ -277,7 +277,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                 if alt then
                     local new_amount = module.amount - 1
                     if new_amount == 0 then  -- no error message possible here
-                        Line.remove(line, module)
+                        Machine.remove(line.machine, module)
                     else
                         Module.change_amount(module, new_amount)
                     end
@@ -289,7 +289,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "delete" then
-            Line.remove(line, module)
+            Machine.remove(line.machine, module)
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "edit" or click == "left" then

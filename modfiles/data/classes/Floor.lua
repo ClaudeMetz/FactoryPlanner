@@ -111,7 +111,7 @@ function Floor.get_component_data(self, component_table)
             })
 
             -- Modules
-            for _, module in pairs(Line.get_in_order(line, "Module")) do
+            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
                 add_to_count(components.modules, {
                     proto = module.proto,
                     amount = ceil_machine_count * module.amount
