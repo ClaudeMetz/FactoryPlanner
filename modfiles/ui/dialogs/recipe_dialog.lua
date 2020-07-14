@@ -268,7 +268,7 @@ function recipe_dialog.attempt_adding_line(player, recipe_id)
         if machine_module ~= nil then
             if Line.get_module_characteristics(line, machine_module).compatible then
                 local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
-                Line.add(line, new_module)
+                Machine.add(line.machine, new_module)
             elseif message == nil then  -- don't overwrite previous message, if it exists
                 message = {text={"fp.warning_module_not_compatible", {"fp.module"}}, type="warning"}
             end

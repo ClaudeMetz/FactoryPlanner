@@ -133,7 +133,7 @@ local function create_line_table_row(player, line)
     -- Modules
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
     if line.subfloor == nil and line.machine.proto.module_limit > 0 then
-        for _, module in ipairs(Line.get_in_order(line, "Module")) do
+        for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             create_module_button(flow_modules, module, "module", "fp_sprite-button_line_module_" .. line.id
               .. "_" .. module.id)
         end
