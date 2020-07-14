@@ -81,6 +81,48 @@ function Machine.empty_slot_count(self)
 end
 
 
+function Machine.get_module_characteristics(self, module_proto, include_existing_amount)
+    local compatible, existing_amount = true, nil
+    local recipe = self.parent.recipe
+
+    if not recipe.valid or not self.valid then compatible = false end
+
+    if compatible then
+        if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
+          and not module_proto.limitations[recipe.proto.name] then
+            compatible = false
+        end
+    end
+
+    if compatible then
+        local allowed_effects = self.proto.allowed_effects
+        if allowed_effects == nil then
+            compatible = false
+        else
+            for effect_name, _ in pairs(module_proto.effects) do
+                if allowed_effects[effect_name] == false then
+                    compatible = false
+                end
+            end
+        end
+    end
+
+    if compatible and include_existing_amount then
+        for _, module in pairs(Machine.get_in_order(self, "Module")) do
+            if module.proto == module_proto then
+                existing_amount = module.amount
+                break
+            end
+        end
+    end
+
+    return {
+        compatible = compatible,
+        existing_amount = existing_amount
+    }
+end
+
+
 -- Normalizes the modules of this machine after they've been changed
 function Machine.normalize_modules(self, sort, trim)
     if sort then Machine.sort_modules(self) end

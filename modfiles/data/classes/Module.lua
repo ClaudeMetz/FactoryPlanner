@@ -32,14 +32,14 @@ function Module.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "modules", "category")
 
     -- Check whether the module is still compatible with it's machine
-    if self.valid and self.parent.valid then  -- only makes sense if the module is still valid at this point
+    if self.valid and self.parent.valid then
         local parent, characteristics = self.parent, nil
 
         -- Different validation strategies depending on the use case of this module
         if parent.class == "Beacon" then
             characteristics = Line.get_beacon_module_characteristics(parent.parent, parent.proto, self.proto)
         else  -- parent.class == "Machine"
-            characteristics = Line.get_machine_module_characteristics(parent.parent, self.proto)
+            characteristics = Machine.get_module_characteristics(parent, self.proto, false)
         end
 
         self.valid = characteristics.compatible

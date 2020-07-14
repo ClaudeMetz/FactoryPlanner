@@ -224,72 +224,29 @@ function Line.get_total_effects(self, player)
 end
 
 
--- Returns a table containing all relevant data for the given module in relation to this Line
-function Line.get_machine_module_characteristics(self, module_proto)
-    local compatible, existing_amount = true, nil
-    local recipe_proto = self.recipe.proto
-    local machine_proto = self.machine.proto
-
-    if not self.recipe.valid or not self.machine.valid then compatible = false end
-
-    if compatible then
-        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and
-          recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
-            compatible = false
-        end
-    end
-
-    if compatible then
-        local allowed_effects = machine_proto.allowed_effects
-        if allowed_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if allowed_effects[effect_name] == false then
-                    compatible = false
-                end
-            end
-        end
-    end
-
-    if compatible then
-        for _, module in pairs(Machine.get_in_order(self.machine, "Module")) do
-            if module.proto == module_proto then
-                existing_amount = module.amount
-                break
-            end
-        end
-    end
-
-    return {
-        compatible = compatible,
-        existing_amount = existing_amount
-    }
-end
-
 -- Returns a table indicating the compatibility of the given module with this line and the given beacon
 function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto)
     local compatible = true
-    local recipe_proto = self.recipe.proto
-    local machine_proto = self.machine.proto
+    local recipe, machine = self.recipe, self.machine
 
-    if not self.recipe.valid or not self.machine.valid then compatible = false end
+    if not self.valid or not recipe.valid or not machine.valid then compatible = false end
 
     if compatible then
-        if recipe_proto == nil or (table_size(module_proto.limitations) ~= 0 and
-          recipe_proto.use_limitations and not module_proto.limitations[recipe_proto.name]) then
+        if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
+          and not module_proto.limitations[recipe.proto.name] then
             compatible = false
           end
     end
 
     if compatible then
-        if machine_proto.allowed_effects == nil or beacon_proto.allowed_effects == nil then
+        local machine_effects, beacon_effects = machine.proto.allowed_effects, beacon_proto.allowed_effects
+        if machine_effects == nil or beacon_effects == nil then
             compatible = false
         else
             for effect_name, _ in pairs(module_proto.effects) do
-                if machine_proto.allowed_effects[effect_name] == false or
-                  beacon_proto.allowed_effects[effect_name] == false then
+                if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
                     compatible = false
+                    break
                 end
             end
         end
