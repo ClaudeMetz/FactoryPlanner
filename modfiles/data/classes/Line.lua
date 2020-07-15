@@ -269,7 +269,10 @@ function Line.validate(self)
     else
         self.valid = Machine.validate(self.machine) and self.valid
 
+        self.valid = Beacon.validate(self.beacon) and self.valid
 
+
+        if self.valid then Line.summarize_effects(self, false, false) end
     end
 
     return self.valid
@@ -292,7 +295,13 @@ function Line.repair(self, player)
             self.valid = Machine.repair(self.machine, player)
         end
 
+        if self.valid and self.beacon and not self.beacon.valid then
+            -- Repairing an invalid beacon will remove it, leading to a valid line
+            Beacon.repair(self.beacon, nil)
+        end
 
+
+        if self.valid then Line.summarize_effects(self, false, false) end
     end
 
     return self.valid

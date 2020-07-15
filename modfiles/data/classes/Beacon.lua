@@ -30,6 +30,11 @@ function Beacon.set_module(self, module)
 end
 
 
+-- Removes modules that don't fit into the beacon anymore
+function Beacon.trim_modules(self)
+    self.module.amount = math.min(self.module.amount, self.proto.module_limit)
+end
+
 -- Summarizes the effects this Beacon has
 function Beacon.summarize_effects(self)
     local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
@@ -43,62 +48,29 @@ function Beacon.summarize_effects(self)
     self.total_effects = module_effects
 end
 
--- Removes modules that don't fit into the beacon anymore
-function Beacon.trim_modules(self)
-    self.module.amount = math.min(self.module.amount, self.proto.module_limit)
-end
 
+-- Needs validation: proto, module
+function Beacon.validate(self)
+    self.valid = prototyper.util.validate_prototype_object(self, "beacons", nil)
 
+    local machine = self.parent.machine  -- make sure the machine still can still be influenced by beacons
+    if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end
 
+    self.valid = Module.validate(self.module) and self.valid
 
--- Update the validity of this beacon
-function Beacon.update_validity(self)
-    local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
-    local new_beacon_id = new.all_beacons.map[proto_name]
-
-    if new_beacon_id ~= nil then
-        self.proto = new.all_beacons.beacons[new_beacon_id]
-        self.valid = true
-    else
-        self.proto = self.proto.name
-        self.valid = false
-    end
-
-    if not Module.update_validity(self.module) then
-        self.valid = false
-    end
-
-    -- Check excessive module amounts
-    if self.valid and self.module.amount > self.proto.module_limit then
-        self.valid = false
-    end
-
-    if self.valid and self.parent.machine.proto.allowed_effects == nil then
-        self.valid = false
-    end
-
-    -- Update effects if this beacon is still valid
     if self.valid then
+        Beacon.trim_modules(self)
         Beacon.summarize_effects(self)
     end
 
     return self.valid
 end
 
--- Tries to repair this beacon, deletes it otherwise (by returning false)
--- If this is called, the beacon is invalid and has a string saved to proto
-function Beacon.attempt_repair(self, _)
-    local current_beacon_id = global.all_beacons.map[self.proto]
-    if current_beacon_id ~= nil then
-        self.proto = global.all_beacons.beacons[current_beacon_id]
-        self.valid = true
-    end
+-- Needs repair:
+function Beacon.repair(self, _)
+    -- If the beacon is invalid at this point, meaning the prototypes are still simplified,
+    -- it couldn't be fixed by validate, so it has to be removed
+    self.parent.beacon = nil
 
-    -- Trim module amount if necessary
-    if self.valid then Beacon.trim_modules(self) end
-
-    -- Update effects if this beacon is still valid
-    if self.valid then Beacon.summarize_effects(self) end
-
-    return self.valid
+    -- no return necessary
 end
