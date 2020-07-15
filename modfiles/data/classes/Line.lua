@@ -136,9 +136,10 @@ function Line.change_machine(self, player, machine_proto, direction)
                 self.machine.proto = machine_proto
 
                 -- Check if the fuel is still compatible, remove it otherwise
-                if self.machine.fuel and not (machine_proto.energy_type == "burner"
-                  and machine_proto.burner.categories[self.fuel.proto.category]) then
-                    self.fuel = nil
+                local fuel = self.machine.fuel
+                if fuel ~= nil and (not fuel.valid or not (machine_proto.energy_type == "burner"
+                  and machine_proto.burner.categories[fuel.proto.category])) then
+                    self.machine.fuel = nil
                 end
 
                 -- Adjust modules (ie. trim them if needed)
@@ -149,16 +150,7 @@ function Line.change_machine(self, player, machine_proto, direction)
             end
 
             -- Set the machine-fuel, if appropriate
-            if self.machine.proto.energy_type == "burner" and self.machine.fuel == nil then
-                local burner = self.machine.proto.burner
-
-                -- Use the first category of this machine's burner as the default one
-                local fuel_category_name, _ = next(burner.categories, nil)
-                local fuel_category_id = global.all_fuels.map[fuel_category_name]
-
-                local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
-                self.machine.fuel = Fuel.init_by_proto(default_fuel_proto)
-            end
+            Machine.find_fuel(self.machine, player)
 
             return true
         end
@@ -280,7 +272,8 @@ function Line.validate(self)
     else
         self.valid = Machine.validate(self.machine) and self.valid
 
-        self.valid = Beacon.validate(self.beacon) and self.valid
+        if self.beacon then self.valid = Beacon.validate(self.beacon) and self.valid end
+
 
 
         if self.valid then Line.summarize_effects(self, false, false) end
@@ -310,6 +303,7 @@ function Line.repair(self, player)
             -- Repairing an invalid beacon will remove it, leading to a valid line
             Beacon.repair(self.beacon, nil)
         end
+
 
 
         if self.valid then Line.summarize_effects(self, false, false) end

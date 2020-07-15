@@ -61,6 +61,21 @@ function Machine.get_in_order(self, class, reverse)
 end
 
 
+function Machine.find_fuel(self, player)
+    if self.fuel == nil and self.proto.energy_type == "burner" then
+        local burner = self.proto.burner
+
+        -- Use the first category of this machine's burner as the default one
+        local fuel_category_name, _ = next(burner.categories, nil)
+        local fuel_category_id = global.all_fuels.map[fuel_category_name]
+
+        local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
+        self.fuel = Fuel.init_by_proto(default_fuel_proto)
+        self.fuel.parent = self
+    end
+end
+
+
 function Machine.summarize_effects(self)
     local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
 
@@ -194,7 +209,7 @@ function Machine.validate(self)
         self.valid = Line.is_machine_applicable(parent_line, self.proto)
     end
 
-    --if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
+    if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
 
     self.valid = Collection.validate_datasets(self.Module, "Module") and self.valid
     if self.valid then Machine.normalize_modules(self, true, true) end
@@ -208,16 +223,14 @@ function Machine.repair(self, player)
     -- A final possible fix is to replace this machine with the default for its category
     if self.proto.simplified and not Line.change_machine(self.parent, player, nil, nil) then
         return false
-    end  -- the machine is valid from this point on
+    end
+    self.valid = true  -- the machine is valid from this point on
 
-
-    -- Fix fuel somehow, or delete this machine
-
+    if self.fuel and not self.fuel.valid then Fuel.repair(self.fuel, player) end
 
     -- Remove invalid modules and normalize the remaining ones
     Collection.repair_datasets(self.Module, nil, "Module")
     Machine.normalize_modules(self, true, true)
-    self.valid = true
 
     return self.valid
 end
