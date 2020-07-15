@@ -2,12 +2,10 @@
 Fuel = {}
 
 -- Initialised by passing a prototype from the all_fuels global table
-function Fuel.init_by_proto(proto, amount)
-    local category = global.all_fuels.categories[global.all_fuels.map[proto.category]]
+function Fuel.init_by_proto(proto)
     return {
         proto = proto,
-        category = category,
-        amount = amount or 0,  -- produced amount
+        amount = 0,  -- produced amount
         valid = true,
         class = "Fuel"
     }

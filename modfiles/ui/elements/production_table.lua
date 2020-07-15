@@ -93,12 +93,12 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
     end
 
     -- Add the fuel button if necessary
-    if class == "Ingredient" and line.fuel then
+    if class == "Ingredient" and line.subfloor == nil and line.machine.fuel then
         local indication = {"fp.indication", {"fp.fuel"}}
         class = "Fuel"
         style = "fp_button_icon_medium_cyan"
         tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "fuel", true)
-        create_item_button(line.fuel, indication)
+        create_item_button(line.machine.fuel, indication)
     end
 end
 
