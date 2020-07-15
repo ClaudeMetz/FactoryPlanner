@@ -13,7 +13,6 @@ function Line.init(recipe)
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
-        fuel = nil,
         priority_product_proto = nil,  -- set by the user
         comment = nil,
         production_ratio = 0,
@@ -137,7 +136,7 @@ function Line.change_machine(self, player, machine_proto, direction)
                 self.machine.proto = machine_proto
 
                 -- Check if the fuel is still compatible, remove it otherwise
-                if self.fuel and not (machine_proto.energy_type == "burner"
+                if self.machine.fuel and not (machine_proto.energy_type == "burner"
                   and machine_proto.burner.categories[self.fuel.proto.category]) then
                     self.fuel = nil
                 end
@@ -147,6 +146,18 @@ function Line.change_machine(self, player, machine_proto, direction)
 
                 -- Adjust beacon (ie. remove if machine does not allow beacons)
                 if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
+            end
+
+            -- Set the machine-fuel, if appropriate
+            if self.machine.proto.energy_type == "burner" and self.machine.fuel == nil then
+                local burner = self.machine.proto.burner
+
+                -- Use the first category of this machine's burner as the default one
+                local fuel_category_name, _ = next(burner.categories, nil)
+                local fuel_category_id = global.all_fuels.map[fuel_category_name]
+
+                local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
+                self.machine.fuel = Fuel.init_by_proto(default_fuel_proto)
             end
 
             return true
@@ -256,7 +267,7 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
 end
 
 
--- Needs validation: recipe, machine, beacon, fuel?, priority_product_proto?, subfloor
+-- Needs validation: recipe, machine, beacon, priority_product_proto?, subfloor
 function Line.validate(self)
     self.valid = true
 
@@ -278,7 +289,7 @@ function Line.validate(self)
     return self.valid
 end
 
--- Needs repair: recipe, machine, beacon, fuel?, priority_product_proto?, subfloor
+-- Needs repair: recipe, machine, beacon, priority_product_proto?, subfloor
 function Line.repair(self, player)
     self.valid = true
 

@@ -512,7 +512,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
 
     local context = get_context(player)
     local line = Floor.get(context.floor, "Line", line_id)
-    local fuel = line.fuel  -- must exist to be able to get here
+    local fuel = line.machine.fuel  -- must exist to be able to get here
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
@@ -524,7 +524,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
         local function change_fuel_proto(factor)
             local new_proto = prototype_table[fuel.proto.id + factor]
             if new_proto ~= nil then
-                line.fuel = Fuel.init_by_proto(new_proto, fuel.amount)
+                fuel.proto = new_proto
                 calculation.update(player, context.subfactory, true)
             else
                 local type = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
@@ -603,7 +603,7 @@ function production_handler.apply_fuel_choice(player, new_fuel_id_string)
     local context = get_context(player)
     local split_string = cutil.split(new_fuel_id_string, "_")
     local new_fuel = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
-    context.line.fuel.proto = new_fuel
+    context.line.machine.fuel.proto = new_fuel
     calculation.update(player, context.subfactory, true)
 end
 

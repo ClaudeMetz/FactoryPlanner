@@ -79,7 +79,7 @@ function model.update_floor(floor_data, aggregate)
                 Product = subfloor_aggregate.Product,
                 Byproduct = subfloor_aggregate.Byproduct,
                 Ingredient = subfloor_aggregate.Ingredient,
-                fuel = nil
+                fuel_amount = nil
             }
         else
             -- Update aggregate according to the current line, which also adjusts the respective line object
@@ -232,9 +232,9 @@ function model.update_line(line_data, aggregate)
     local pollution = calculation.util.determine_pollution(machine_proto, recipe_proto,
       fuel_proto, total_effects, energy_consumption)
 
-    local fuel_result = nil
-    if machine_proto.energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
-        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
+    local fuel_amount = nil
+    if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
+        fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
           fuel_proto.fuel_value, timescale)
 
         local fuel_class = structures.class.init()
@@ -244,7 +244,6 @@ function model.update_line(line_data, aggregate)
         -- Add fuel to the aggregate, consuming this line's byproducts first, if possible
         structures.class.balance_items(fuel_class, aggregate, "Byproduct", "Product")
 
-        fuel_result = {proto=fuel_proto, amount=fuel_amount}
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
     elseif machine_proto.energy_type == "void" then
@@ -271,6 +270,6 @@ function model.update_line(line_data, aggregate)
         Product = Product,
         Byproduct = Byproduct,
         Ingredient = Ingredient,
-        fuel = fuel_result
+        fuel_amount = fuel_amount
     }
 end

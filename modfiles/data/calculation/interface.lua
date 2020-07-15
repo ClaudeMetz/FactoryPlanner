@@ -36,6 +36,9 @@ local function generate_floor_data(player, subfactory, floor)
             line_data.priority_product_proto = line.priority_product_proto  -- reference
             line_data.machine_proto = line.machine.proto  -- reference
 
+            -- Fuel prototype
+            if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
+
             -- Total effects
             if line.machine.proto.mining then
                 -- If there is mining prod, a copy of the table is required
@@ -50,16 +53,6 @@ local function generate_floor_data(player, subfactory, floor)
             -- Beacon total (can be calculated here, which is faster and simpler)
             if line.beacon ~= nil and line.beacon.total_amount ~= nil then
                 line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
-            end
-
-            -- Fuel proto
-            local burner = line.machine.proto.burner
-            if line.fuel then  -- use the already configured Fuel, if available
-                line_data.fuel_proto = line.fuel.proto
-            elseif burner ~= nil then  -- Use the first category of this machine's burner as the default one
-                local fuel_category_name, _ = next(burner.categories, nil)
-                local fuel_category_id = global.all_fuels.map[fuel_category_name]
-                line_data.fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
             end
         end
 
@@ -234,15 +227,15 @@ function calculation.interface.set_line_result(result)
     local line = Floor.get(floor, "Line", result.line_id)
 
     -- Only lines without subfloors have machines assigned to them
-    if line.subfloor == nil then line.machine.count = result.machine_count end
+    if line.subfloor == nil then
+        line.machine.count = result.machine_count
+        if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
+    end
 
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
     line.production_ratio = result.production_ratio
     line.uncapped_production_ratio = result.uncapped_production_ratio
-
-    -- Update the fuel for this line
-    line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
 
     -- Reset the priority_product if there's <2 products
     if structures.class.count(result.Product) < 2 then Line.set_priority_product(line, nil) end

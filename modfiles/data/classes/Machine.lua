@@ -8,6 +8,7 @@ function Machine.init_by_proto(proto)
         count = 0,
         limit = nil,  -- will be set by the user
         hard_limit = false,
+        fuel = nil,  -- updated by Line.change_machine()
         Module = Collection.init(),
         module_count = 0,  -- updated automatically
         total_effects = nil,
@@ -184,7 +185,7 @@ function Machine.trim_modules(self)
 end
 
 
--- Needs validation: proto, Module
+-- Needs validation: proto, fuel, Module
 function Machine.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "machines", "category")
 
@@ -193,19 +194,25 @@ function Machine.validate(self)
         self.valid = Line.is_machine_applicable(parent_line, self.proto)
     end
 
+    --if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
+
     self.valid = Collection.validate_datasets(self.Module, "Module") and self.valid
     if self.valid then Machine.normalize_modules(self, true, true) end
 
     return self.valid
 end
 
--- Needs repair: proto, Module
+-- Needs repair: proto, fuel, Module
 function Machine.repair(self, player)
     -- If the prototype is still simplified, it couldn't be fixed by validate
     -- A final possible fix is to replace this machine with the default for its category
     if self.proto.simplified and not Line.change_machine(self.parent, player, nil, nil) then
         return false
-    end
+    end  -- the machine is valid from this point on
+
+
+    -- Fix fuel somehow, or delete this machine
+
 
     -- Remove invalid modules and normalize the remaining ones
     Collection.repair_datasets(self.Module, nil, "Module")
