@@ -66,10 +66,9 @@ function Item.validate(self)
     return self.valid
 end
 
--- Needs repair: proto, required_amount.belt_proto
-function Item.repair(self, _)
-    -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
-    if self.proto.simplified then return false
-    elseif self.required_amount.belt_proto and self.required_amount.belt_proto.simplified then return false
-    else self.valid = true; return true end
+-- Needs repair:
+function Item.repair(_, _)
+    -- If the item is invalid at this point, meaning the prototypes are still simplified,
+    -- it couldn't be fixed by validate, so it has to be removed
+    return false
 end

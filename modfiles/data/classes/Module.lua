@@ -48,7 +48,7 @@ function Module.validate(self)
     return self.valid
 end
 
--- Needs repair: proto
+-- Needs repair:
 function Module.repair(_, _)
     -- If the prototype is still simplified, it couldn't be fixed by validate, so it has to be removed
     return false
