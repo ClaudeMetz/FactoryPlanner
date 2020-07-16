@@ -9,8 +9,8 @@ data:extend({
         type = "sprite",
         name = "fp_generic_assembler",
         filename = "__factoryplanner__/graphics/generic_assembler.png",
-        size = 62,
-        position = {1, 1}
+        size = 64, icon_mipmaps = 2,
+        flags = {"icon"}
     },
     {
         type = "sprite",
