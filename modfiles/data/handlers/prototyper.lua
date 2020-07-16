@@ -52,16 +52,16 @@ end
 -- ** UTIL **
 -- Validates given object with prototype, which includes trying to find the correct
 -- new reference for its prototype, if able. Returns valid-status at the end.
-function prototyper.util.validate_prototype_object(object, data_type, category_name)
-    local proto = object.proto
+function prototyper.util.validate_prototype_object(object, proto_name, data_type, category_name)
+    local proto = object[proto_name]
     local new_proto = prototyper.util.get_new_prototype_by_name(data_type, proto.name, proto[category_name])
 
     if new_proto ~= nil then  -- meaning a new, fitting prototype has been found
-        object.proto = new_proto
+        object[proto_name] = new_proto
         return true
 
     else  -- simplify prototype if no match can be found among the new ones
-        if not proto.simplified then object.proto = prototyper.util.simplify_prototype(proto) end
+        if not proto.simplified then object[proto_name] = prototyper.util.simplify_prototype(proto) end
         return false
     end
 end

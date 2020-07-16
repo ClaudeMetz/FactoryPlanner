@@ -14,7 +14,7 @@ end
 
 -- Needs validation: proto
 function Fuel.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "fuels", "category")
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "fuels", "category")
 
     -- Make sure the fuel categories are still compatible
     if self.valid and self.parent.valid then

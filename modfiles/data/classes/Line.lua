@@ -264,7 +264,10 @@ function Line.validate(self)
 
         if self.beacon then self.valid = Beacon.validate(self.beacon) and self.valid end
 
-        -- TODO validate priority_product_proto
+        if self.priority_product_proto then
+            self.valid = prototyper.util.validate_prototype_object(self, "priority_product_proto", "items", "type")
+              and self.valid
+        end
 
         if self.valid then Line.summarize_effects(self, false, false) end
     end
