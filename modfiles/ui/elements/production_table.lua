@@ -336,7 +336,7 @@ function production_table.refresh_recipe_button(player, line, table_production)
         enabled = false
     else
         if line.subfloor then
-            tooltip = {"", tooltip, "\n", {"fp.subfloor_attached"}}
+            tooltip = {"", tooltip, {"fp.indication", {"fp.subfloor_attached"}}}
 
             style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
               "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
@@ -368,7 +368,7 @@ function production_table.refresh_machine_table(player, line, table_production)
     local table_machines = table_production["flow_line_machines_" .. line.id]
     if table_machines == nil then
         local column_count = 1
-        if line.machine then
+        if line.subfloor == nil then
             local machine_category_id = global.all_machines.map[line.machine.proto.category]
             column_count = table_size(global.all_machines.categories[machine_category_id].machines)
         end
@@ -391,7 +391,15 @@ function production_table.refresh_machine_table(player, line, table_production)
                 production_table.setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
             end
         end
-    elseif line.subfloor == nil then
+
+    -- Show the total amount of machines that the subfloor contains if the line has a subfloor
+    elseif line.subfloor ~= nil then
+        local machine_count = line.machine.count
+        local machine_text = (machine_count == 1) and {"fp.machine"} or {"fp.machines"}
+
+        table_machines.add{type="sprite-button", name="sprite-button_subfloor_machine_total", sprite="fp_generic_assembler", style="fp_button_icon_medium_blank", enabled=false, number=machine_count, tooltip={"", machine_count, " ", machine_text, " ", {"fp.subfloor_machine_count"}}}
+
+    else  -- otherwise, show the machine button as normal
         local machine_proto = line.machine.proto
         local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
