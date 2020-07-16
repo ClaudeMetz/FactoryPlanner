@@ -48,16 +48,6 @@ function Line.set_percentage(self, percentage)
     end
 end
 
-function Line.set_priority_product(self, priority_product_proto)
-    self.priority_product_proto = priority_product_proto  -- can be nil
-
-    if self.subfloor then
-        Floor.get(self.subfloor, "Line", 1).priority_product_proto = priority_product_proto
-    elseif self.gui_position == 1 and self.parent.origin_line then
-        self.parent.origin_line.priority_product_proto = priority_product_proto
-    end
-end
-
 function Line.set_beacon(self, beacon)
     self.beacon = beacon  -- can be nil
 
@@ -259,7 +249,7 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
 end
 
 
--- Needs validation: recipe, machine, beacon, priority_product_proto?, subfloor
+-- Needs validation: recipe, machine, beacon, priority_product_proto, subfloor
 function Line.validate(self)
     self.valid = true
 
@@ -274,7 +264,7 @@ function Line.validate(self)
 
         if self.beacon then self.valid = Beacon.validate(self.beacon) and self.valid end
 
-
+        -- TODO validate priority_product_proto
 
         if self.valid then Line.summarize_effects(self, false, false) end
     end
@@ -282,7 +272,7 @@ function Line.validate(self)
     return self.valid
 end
 
--- Needs repair: recipe, machine, beacon, priority_product_proto?, subfloor
+-- Needs repair: recipe, machine, beacon, priority_product_proto, subfloor
 function Line.repair(self, player)
     self.valid = true
 
@@ -304,7 +294,9 @@ function Line.repair(self, player)
             Beacon.repair(self.beacon, nil)
         end
 
-
+        if self.valid and self.priority_product_proto and self.priority_product_proto.simplified then
+            self.priority_product_proto = nil
+        end
 
         if self.valid then Line.summarize_effects(self, false, false) end
     end

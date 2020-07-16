@@ -42,12 +42,16 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
             local actual_style, satisfaction_line = style, ""
             indication = indication or ""
 
+            -- The priority_product is always stored on the first line of the subfloor, if there is one
+            local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+            local priority_product_proto = relevant_line.priority_product_proto
+
             if item.proto.type == "entity" then
                 actual_style = "fp_button_icon_medium_blank"
 
-            elseif class == "Product" and line.priority_product_proto ~= nil and
-                line.priority_product_proto.type == item.proto.type and
-                line.priority_product_proto.name == item.proto.name then
+            elseif class == "Product" and priority_product_proto ~= nil and
+                priority_product_proto.type == item.proto.type and
+                priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
 
             elseif class == "Ingredient" and preferences.ingredient_satisfaction then
@@ -66,7 +70,7 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
             end
 
             -- Determine the correct indication
-            if class == "Product" and line.priority_product_proto == item.proto then
+            if class == "Product" and priority_product_proto == item.proto then
                 indication = {"fp.indication", {"fp.priority"}}
             elseif class == "Ingredient" and item.proto.type == "entity" then
                 indication = {"fp.indication", {"fp.raw_ore"}}
