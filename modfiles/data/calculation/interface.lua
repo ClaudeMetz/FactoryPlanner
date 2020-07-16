@@ -226,8 +226,9 @@ function calculation.interface.set_line_result(result)
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
 
-    -- Only lines without subfloors have machines assigned to them
-    if line.subfloor == nil then
+    if line.subfloor ~= nil then
+        line.machine = {count = result.machine_count}
+    else
         line.machine.count = result.machine_count
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
