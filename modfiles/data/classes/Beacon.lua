@@ -51,7 +51,7 @@ end
 
 -- Needs validation: proto, module
 function Beacon.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "beacons", nil)
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "beacons", nil)
 
     local machine = self.parent.machine  -- make sure the machine still can still be influenced by beacons
     if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end

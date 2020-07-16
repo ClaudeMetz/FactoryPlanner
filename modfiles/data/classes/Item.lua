@@ -44,23 +44,16 @@ end
 
 -- Needs validation: proto, required_amount.belt_proto
 function Item.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "items", "type")
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "items", "type")
 
     -- TODO: should probably generalize this along the lines of a normal prototype
     -- Might also want to keep the prototype unsimplified so I can do a smarter repair
     -- where I switch it to an amount-based item
 
-    local req_amount = self.required_amount
     -- Validate the belt_proto if the item proto is still valid, ie not simplified
-    if self.valid and req_amount.defined_by ~= "amount" then
-        local belt_proto = req_amount.belt_proto
-        local new_proto = prototyper.util.get_new_prototype_by_name("belts", belt_proto.name, nil)
-        if new_proto then
-            req_amount.belt_proto = new_proto
-        else
-            req_amount.belt_proto = prototyper.util.simplify_prototype(belt_proto)
-            self.valid = false
-        end
+    local req_amount = self.required_amount
+    if req_amount.defined_by ~= "amount" then
+        self.valid = prototyper.util.validate_prototype_object(req_amount, "belt_proto", "belts", nil) and self.valid
     end
 
     return self.valid

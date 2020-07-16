@@ -14,7 +14,7 @@ end
 
 -- Needs validation: proto
 function Recipe.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "recipes", nil)
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "recipes", nil)
     return self.valid
 end
 

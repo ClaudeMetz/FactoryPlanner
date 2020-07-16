@@ -202,7 +202,7 @@ end
 
 -- Needs validation: proto, fuel, Module
 function Machine.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "machines", "category")
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "machines", "category")
 
     local parent_line = self.parent
     if self.valid and parent_line.valid and parent_line.recipe.valid then

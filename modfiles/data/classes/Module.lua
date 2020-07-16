@@ -29,7 +29,7 @@ end
 
 -- Needs validation: proto
 function Module.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "modules", "category")
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "modules", "category")
 
     -- Check whether the module is still compatible with it's machine
     if self.valid and self.parent.valid then
