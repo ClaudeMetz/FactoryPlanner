@@ -42,26 +42,35 @@ function Item.required_amount(self)
 end
 
 
--- Needs validation: proto, required_amount.belt_proto
+-- Needs validation: proto, required_amount
 function Item.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "items", "type")
-
-    -- TODO: should probably generalize this along the lines of a normal prototype
-    -- Might also want to keep the prototype unsimplified so I can do a smarter repair
-    -- where I switch it to an amount-based item
 
     -- Validate the belt_proto if the item proto is still valid, ie not simplified
     local req_amount = self.required_amount
     if req_amount.defined_by ~= "amount" then
+        local belt_throughput = req_amount.belt_proto.throughput
         self.valid = prototyper.util.validate_prototype_object(req_amount, "belt_proto", "belts", nil) and self.valid
+
+        -- If the proto has to be simplified, conserve the throughput, so repair can convert it to an amount-spec
+        if req_amount.belt_proto.simplified then req_amount.belt_proto.throughput = belt_throughput end
     end
 
     return self.valid
 end
 
--- Needs repair:
-function Item.repair(_, _)
-    -- If the item is invalid at this point, meaning the prototypes are still simplified,
-    -- it couldn't be fixed by validate, so it has to be removed
-    return false
+-- Needs repair: required_amount
+function Item.repair(self, _)
+    -- If the item-proto is still simplified, validate couldn't repair it, so it has to be removed
+    if self.proto.simplified then return false end
+
+    -- If the item is fine, the belt_proto has to be simplified. Thus, we will repair this item
+    -- by converting it to be defined by amount, so the whole can be preserved
+    self.required_amount = {
+        defined_by = "amount",
+        amount = Item.required_amount(self)
+    }
+    self.valid = true
+
+    return self.valid
 end
