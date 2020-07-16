@@ -449,8 +449,12 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             if line.Product.count < 2 then
                 ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
             else
-                local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
-                Line.set_priority_product(line, priority_product_proto)
+                -- Remove the priority_product if the already selected one is clicked
+                local priority_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+                -- The priority_product is always stored on the first line of the subfloor, if there is one
+                local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+                relevant_line.priority_product_proto = priority_proto
+
                 calculation.update(player, context.subfactory, true)
             end
 

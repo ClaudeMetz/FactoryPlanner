@@ -230,15 +230,16 @@ function calculation.interface.set_line_result(result)
     if line.subfloor == nil then
         line.machine.count = result.machine_count
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
+
+        line.production_ratio = result.production_ratio
+        line.uncapped_production_ratio = result.uncapped_production_ratio
+
+        -- Reset the priority_product if there's <2 products
+        if structures.class.count(result.Product) < 2 then line.priority_product_proto = nil end
     end
 
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
-    line.production_ratio = result.production_ratio
-    line.uncapped_production_ratio = result.uncapped_production_ratio
-
-    -- Reset the priority_product if there's <2 products
-    if structures.class.count(result.Product) < 2 then Line.set_priority_product(line, nil) end
 
     update_items(line, result, "Product")
     update_items(line, result, "Byproduct")
