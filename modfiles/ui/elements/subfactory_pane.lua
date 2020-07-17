@@ -82,11 +82,11 @@ local function refresh_item_table(player, class)
     -- Only show the totals for the current floor if the toggle is active
     if display_mode == "floor_total" then
         local parent_line = ui_state.context.floor.origin_line  -- must exist if selected_floor.level > 1
-        local contains_fuel = (class == "Ingredient" and parent_line.fuel)
+        local contains_fuel = (class == "Ingredient" and parent_line.machine.fuel)
         if parent_line[class].count > 0 or contains_fuel then
             items = Line.get_in_order(parent_line, class)
             -- Combine Fuel and Ingredients into a single item list
-            if contains_fuel then table.insert(items, parent_line.fuel) end
+            if contains_fuel then table.insert(items, parent_line.machine.fuel) end
 
             -- Adjust items to the required_amount-format that top level items use
             for _, item in pairs(items) do item.required_amount = {defined_by = "amount", amount = item.amount} end

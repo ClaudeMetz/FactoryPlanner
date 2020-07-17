@@ -56,6 +56,7 @@ function model.update_floor(floor_data, aggregate)
             -- Update the main aggregate with the results
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
             aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
+            aggregate.machine_count = aggregate.machine_count + subfloor_aggregate.machine_count
 
             -- Subtract subfloor products as produced
             for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do
@@ -71,15 +72,15 @@ function model.update_floor(floor_data, aggregate)
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
-                machine_count = subfloor_aggregate.machine_count,
+                machine_count = aggregate.machine_count,
                 energy_consumption = subfloor_aggregate.energy_consumption,
                 pollution = subfloor_aggregate.pollution,
-                production_ratio = subfloor_aggregate.production_ratio,
-                uncapped_production_ratio = subfloor_aggregate.uncapped_production_ratio,
+                production_ratio = nil,
+                uncapped_production_ratio = nil,
                 Product = subfloor_aggregate.Product,
                 Byproduct = subfloor_aggregate.Byproduct,
                 Ingredient = subfloor_aggregate.Ingredient,
-                fuel = nil
+                fuel_amount = nil
             }
         else
             -- Update aggregate according to the current line, which also adjusts the respective line object
@@ -161,10 +162,6 @@ function model.update_line(line_data, aggregate)
           capped_production_ratio or math.min(production_ratio, capped_production_ratio)
     end
 
-    -- Set the production ratio of the current aggregate to the one of the first line (relevant for subfloors)
-    aggregate.production_ratio = aggregate.production_ratio or production_ratio
-    aggregate.uncapped_production_ratio = aggregate.uncapped_production_ratio or uncapped_production_ratio
-
 
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
@@ -221,8 +218,9 @@ function model.update_line(line_data, aggregate)
     -- Determine machine count
     local machine_count = calculation.util.determine_machine_count(crafts_per_tick, production_ratio,
       timescale, machine_proto.category)
-    -- Set the machine count of the current aggregate to the one of the first line (relevant for subfloors)
-    aggregate.machine_count = aggregate.machine_count or machine_count
+
+    -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
+    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count)
 
 
     -- Determine energy consumption (including potential fuel needs) and pollution
@@ -232,9 +230,9 @@ function model.update_line(line_data, aggregate)
     local pollution = calculation.util.determine_pollution(machine_proto, recipe_proto,
       fuel_proto, total_effects, energy_consumption)
 
-    local fuel_result = nil
-    if machine_proto.energy_type == "burner" then  -- Lines without subfloors will always have a fuel_proto attached
-        local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
+    local fuel_amount = nil
+    if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
+        fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
           fuel_proto.fuel_value, timescale)
 
         local fuel_class = structures.class.init()
@@ -244,7 +242,6 @@ function model.update_line(line_data, aggregate)
         -- Add fuel to the aggregate, consuming this line's byproducts first, if possible
         structures.class.balance_items(fuel_class, aggregate, "Byproduct", "Product")
 
-        fuel_result = {proto=fuel_proto, amount=fuel_amount}
         energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
 
     elseif machine_proto.energy_type == "void" then
@@ -271,6 +268,6 @@ function model.update_line(line_data, aggregate)
         Product = Product,
         Byproduct = Byproduct,
         Ingredient = Ingredient,
-        fuel = fuel_result
+        fuel_amount = fuel_amount
     }
 end

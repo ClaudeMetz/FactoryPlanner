@@ -7,7 +7,6 @@ local events, caching = {}, {}
 -- ** TOP LEVEL **
 -- Runs all the on_load functions
 function loader.run()
-    events.recipebook()
     events.rate_limiting()
 
 
@@ -23,23 +22,10 @@ function loader.run()
     item_fuel_map = caching.item_fuel_map()
 
     module_tier_map = caching.module_tier_map()
-
-    top_crafting_machine_sprite = caching.find_crafting_machine_sprite()
 end
 
 
 -- ** EVENTS **
--- Register the RecipeBook event to re-open the main dialog after hitting its back-button
-function events.recipebook()
-    if remote.interfaces["RecipeBook"] ~= nil then
-        script.on_event(remote.call("RecipeBook", "reopen_source_event"), function(event)
-            if event.source_data.mod_name == "factoryplanner" then
-                main_dialog.toggle(game.get_player(event.player_index))
-            end
-        end)
-    end
-end
-
 -- Register events related to GUI rate limiting
 function events.rate_limiting()
     for _, player_table in pairs(global.players or {}) do
@@ -176,22 +162,4 @@ function caching.module_tier_map()
     end
 
     return map
-end
-
-
--- Determines a suitable crafting machine sprite path, according to what is available
-function caching.find_crafting_machine_sprite()
-    -- Try these categories first, one of them should exist
-    local categories = {"crafting", "advanced-crafting", "basic-crafting"}
-    for _, category_name in ipairs(categories) do
-        local category_id = global.all_machines.map[category_name]
-        if category_id ~= nil then
-            local machines = global.all_machines.categories[category_id].machines
-            return machines[table_size(machines)].sprite
-        end
-    end
-
-    -- If none of the specified categories exist, just pick the top tier machine of the first one
-    local machines = global.all_machines.categories[1].machines
-    return machines[table_size(machines)].sprite
 end

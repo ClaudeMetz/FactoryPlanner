@@ -2,10 +2,12 @@
 Subfactory = {}
 
 function Subfactory.init(name, icon, timescale_setting)
+    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
+
     local subfactory = {
         name = name,
         icon = nil,
-        timescale = nil,
+        timescale = timescale_to_number[timescale_setting],
         energy_consumption = 0,
         pollution = 0,
         notes = "",
@@ -22,14 +24,6 @@ function Subfactory.init(name, icon, timescale_setting)
     }
 
     Subfactory.set_icon(subfactory, icon)
-
-    -- Converts the given timescale setting string to the appropriate number
-    local function timescale_setting_to_number(setting)
-        if setting == "one_second" then return 1
-        elseif setting == "one_minute" then return 60
-        elseif setting == "one_hour" then return 3600 end
-    end
-    subfactory.timescale = timescale_setting_to_number(timescale_setting)
 
     -- Add first floor to the subfactory
     subfactory.selected_floor = Floor.init(nil)
@@ -66,11 +60,6 @@ function Subfactory.add(self, object)
 end
 
 function Subfactory.remove(self, dataset)
-    -- Removes all subfloors of a Floor to avoid orphanism
-    if dataset.class == "Floor" then
-        Floor.remove_subfloors(dataset)
-    end
-
     return Collection.remove(self[dataset.class], dataset)
 end
 
@@ -137,29 +126,31 @@ function Subfactory.update_product_definitions(self, new_defined_by)
 end
 
 
--- Updates the validity of the whole subfactory
--- Floors can be checked in any order and separately without problem
-function Subfactory.update_validity(self)
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item", Floor = "Floor"}
-    self.valid = run_validation_updates(self, classes)
-    return self.valid
+-- Needs validation: Product, Floor
+function Subfactory.validate(self)
+    self.valid = Collection.validate_datasets(self.Product, "Item")
+
+    -- Floor validation is called on the top floor, which recursively goes through its subfloors
+    local top_floor = Subfactory.get(self, "Floor", 1)
+    self.valid = Floor.validate(top_floor) and self.valid
+
+    -- return value is not needed here
 end
 
--- Tries to repair all associated datasets, removing the unrepairable ones
--- (In general, Subfactory Items are not repairable and can only be deleted)
-function Subfactory.attempt_repair(self, player)
-    local classes = {Product = "Item", Byproduct = "Item", Ingredient = "Item"}
-    run_invalid_dataset_repair(player, self, classes)
-
+-- Needs repair: Product, Floor, selected_floor
+function Subfactory.repair(self, player)
     -- Set selected floor to the top one in case the selected one gets deleted
-    Floor.delete_empty(self.selected_floor)
+    local selected_floor = self.selected_floor
     local top_floor = Subfactory.get(self, "Floor", 1)
-    self.selected_floor = top_floor
-    ui_util.context.set_floor(player, top_floor)
+    ui_util.context.set_floor(player, top_floor)  -- sets selected_floor on this subfactory
+    Floor.remove_if_empty(selected_floor)  -- Make sure no empty floor is left behind
+
+    -- Unrepairable item-objects get removed, so the subfactory will always be valid afterwards
+    Collection.repair_datasets(self.Product, nil, "Item")
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
-    -- (Return value is not caught here because the top level floor won't be removed)
-    Floor.attempt_repair(top_floor, player)
+    Floor.repair(top_floor, player)
 
     self.valid = true
+    -- return value is not needed here
 end

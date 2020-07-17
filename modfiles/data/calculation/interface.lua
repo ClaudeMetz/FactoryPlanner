@@ -21,48 +21,40 @@ local function generate_floor_data(player, subfactory, floor)
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = {
             id = line.id,
-            timescale = subfactory.timescale,
-            percentage = line.percentage,
-            production_type = line.recipe.production_type,
-            machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit},
-            total_effects = nil,  -- reference or copy, depending on case
-            beacon_consumption = 0,
-            priority_product_proto = line.priority_product_proto,  -- reference
-            recipe_proto = line.recipe.proto,  -- reference
-            machine_proto = line.machine.proto,  -- reference
-            fuel_proto = nil,  -- will be a reference
-            subfloor = nil  -- will be a floor_data object
+            recipe_proto = line.recipe.proto  -- reference
         }
 
-        -- Total effects
-        if line.machine.proto.mining then
-            -- If there is mining prod, a copy of the table is required
-            local effects = cutil.shallowcopy(line.total_effects)
-            effects.productivity = effects.productivity + mining_productivity
-            line_data.total_effects = effects
+        if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
+            line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
+
         else
-            -- If there's no mining prod, a reference will suffice
-            line_data.total_effects = line.total_effects
-        end
+            line_data.timescale = subfactory.timescale
+            line_data.percentage = line.percentage
+            line_data.production_type = line.recipe.production_type
+            line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
+            line_data.beacon_consumption = 0
+            line_data.priority_product_proto = line.priority_product_proto  -- reference
+            line_data.machine_proto = line.machine.proto  -- reference
 
-        -- Beacon total (can be calculated here, which is faster and simpler)
-        if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-            line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
-        end
+            -- Fuel prototype
+            if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
 
-        -- Fuel proto
-        local burner = line.machine.proto.burner
-        if line.fuel then  -- use the already configured Fuel, if available
-            line_data.fuel_proto = line.fuel.proto
-        elseif burner ~= nil then  -- Use the first category of this machine's burner as the default one
-            local fuel_category_name, _ = next(burner.categories, nil)
-            local fuel_category_id = global.all_fuels.map[fuel_category_name]
-            line_data.fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
-        end
+            -- Total effects
+            if line.machine.proto.mining then
+                -- If there is mining prod, a copy of the table is required
+                local effects = cutil.shallowcopy(line.total_effects)
+                effects.productivity = effects.productivity + mining_productivity
+                line_data.total_effects = effects
+            else
+                -- If there's no mining prod, a reference will suffice
+                line_data.total_effects = line.total_effects
+            end
 
-        -- Subfloor
-        if line.subfloor ~= nil then line_data.subfloor =
-          generate_floor_data(player, subfactory, line.subfloor) end
+            -- Beacon total (can be calculated here, which is faster and simpler)
+            if line.beacon ~= nil and line.beacon.total_amount ~= nil then
+                line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
+            end
+        end
 
         table.insert(floor_data.lines, line_data)
     end
@@ -187,7 +179,7 @@ function calculation.interface.get_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = {}
+        top_floor = nil
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -234,19 +226,21 @@ function calculation.interface.set_line_result(result)
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
 
-    line.machine.count = result.machine_count
+    if line.subfloor ~= nil then
+        line.machine = {count = result.machine_count}
+    else
+        line.machine.count = result.machine_count
+        if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
+
+        line.production_ratio = result.production_ratio
+        line.uncapped_production_ratio = result.uncapped_production_ratio
+
+        -- Reset the priority_product if there's <2 products
+        if structures.class.count(result.Product) < 2 then line.priority_product_proto = nil end
+    end
+
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
-    line.production_ratio = result.production_ratio
-    line.uncapped_production_ratio = result.uncapped_production_ratio
-
-    -- Update the fuel for this line
-    line.fuel = (result.fuel ~= nil) and Fuel.init_by_proto(result.fuel.proto, result.fuel.amount) or nil
-
-    -- Reset the priority_product if there's <2 products
-    if structures.class.count(result.Product) < 2 then
-        Line.set_priority_product(line, nil)
-    end
 
     update_items(line, result, "Product")
     update_items(line, result, "Byproduct")

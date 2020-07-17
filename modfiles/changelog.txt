@@ -1,4 +1,18 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    - [Warning: Experimental! This update contains a complete rework of the data structures and migrations that this mods needs. You are somewhat likely to experience a crash or two until I can fix all of them. If you run into any of them, please let me know; I'll try to address them as quickly as possible. Including a save file with your report would help a lot, so please include one if you can.]
+    - The goal of these reworks was to get everything in shape to add new features more quickly and easily in the future. Chief among those is the import and export of subfactories into other saves.
+    - Other than those reworks, I changed how recipes with subfloors are handled. The lines that have subfloors attached to them now don't show the machine, modules and beacons from the first line of their subfloor anymore. Instead, they only show the total amount of machines needed on that subfloor, and no modules or beacons. I believe that this is more intuitive for new users especially. It also vastly simplifies the code, leading to less surface for bugs and better performance.
+  Changes:
+    - Lifted some restrictions on the name that your subfactory can have. I hope nothing breaks.
+  Bugfixes:
+    - Fixed an issue causing save-file sizes to be inflated unnecessarily
+    - Fixed a problem where fluid-powered machines would still show as consuming electrical energy in some cases
+    - Fixed a crash on startup that would happen with a forthcoming version of Recipe Book
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.37
 Date: 09. 07. 2020
   Changes:

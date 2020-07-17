@@ -1,4 +1,5 @@
 prototyper = {
+    util = {},
     defaults = {}
 }
 
@@ -33,8 +34,8 @@ function prototyper.run(player_table)
     end
 
     -- Update the validity of all elements of the factory and archive
-    Factory.update_validity(player_table.factory)
-    Factory.update_validity(player_table.archive)
+    Collection.validate_datasets(player_table.factory.Subfactory, "Subfactory")
+    Collection.validate_datasets(player_table.archive.Subfactory, "Subfactory")
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
@@ -45,6 +46,53 @@ function prototyper.finish()
     new = nil
 
     loader.run()
+end
+
+
+-- ** UTIL **
+-- Validates given object with prototype, which includes trying to find the correct
+-- new reference for its prototype, if able. Returns valid-status at the end.
+function prototyper.util.validate_prototype_object(object, proto_name, data_type, category_name)
+    local proto = object[proto_name]
+    local new_proto = prototyper.util.get_new_prototype_by_name(data_type, proto.name, proto[category_name])
+
+    if new_proto ~= nil then  -- meaning a new, fitting prototype has been found
+        object[proto_name] = new_proto
+        return true
+
+    else  -- simplify prototype if no match can be found among the new ones
+        if not proto.simplified then object[proto_name] = prototyper.util.simplify_prototype(proto) end
+        return false
+    end
+end
+
+-- Returns the prototype defined by the given names, if it exists
+function prototyper.util.get_new_prototype_by_name(data_type, proto_name, category_name)
+    local new_prototypes = new["all_" .. data_type]
+
+    if new_prototypes.structure_type == "simple" then
+        local prototype_id = new_prototypes.map[proto_name]
+        if prototype_id == nil then return nil
+        else return new_prototypes[data_type][prototype_id] end
+
+    else  -- structure_type == "complex"
+        local category_id = new_prototypes.map[category_name]
+        if category_id == nil then return nil
+        else
+            local prototypes = new_prototypes[new_prototypes.main_structure_name][category_id]
+            local prototype_id = prototypes.map[proto_name]
+            if prototype_id == nil then return nil
+            else return prototypes[data_type][prototype_id] end
+        end
+    end
+end
+
+-- Returns a new table that only contains the given prototypes' identifiers
+function prototyper.util.simplify_prototype(proto)
+    local simple_proto = { name = proto.name, simplified = true }
+    if proto.type then simple_proto.type = proto.type
+    elseif proto.category then simple_proto.category = proto.category end
+    return simple_proto
 end
 
 

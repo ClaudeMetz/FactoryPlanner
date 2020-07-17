@@ -25,9 +25,15 @@ local function set_appropriate_focus(flow_modal_dialog, type)
         if textfield_beacon.text == "" or tonumber(textfield_beacon.text) == 0 then
             ui_util.select_all(textfield_beacon)
         elseif textfield_module.text == "" or type == nil then
-            if module_bar["sprite-button_module"].sprite ~= "" then ui_util.select_all(textfield_module) end
-        else ui_util.select_all(flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"]) end
-    else ui_util.select_all(module_bar["textfield_module_amount"]) end
+            if module_bar["sprite-button_module"].sprite ~= "" then
+                ui_util.select_all(textfield_module)
+            end
+        else
+            ui_util.select_all(flow_modal_dialog["flow_" .. type .. "_bar"]["textfield_" .. type .. "_amount"])
+        end
+    elseif module_bar["textfield_module_amount"].enabled then
+        ui_util.select_all(module_bar["textfield_module_amount"])
+    end
 end
 
 -- Sets the sprite-button of the given type to the given proto and it's amount
@@ -80,7 +86,7 @@ local function refresh_module_selection(flow_modal_dialog, modal_data, type, lin
         flow_category.style.bottom_margin = 4
 
         for _, module in pairs(category.modules) do
-            local characteristics = (type == "module") and Line.get_module_characteristics(line, module)
+            local characteristics = (type == "module") and Machine.get_module_characteristics(line.machine, module)
               or Line.get_beacon_module_characteristics(line, modal_data.selected_beacon, module)
 
             if characteristics.compatible then
@@ -284,13 +290,13 @@ function module_dialog.close(flow_modal_dialog, action, data)
     if action == "submit" then
         local new_module = Module.init_by_proto(ui_state.modal_data.selected_module, tonumber(data.module_amount))
         if module == nil then  -- new module
-            Line.add(line, new_module)
+            Machine.add(line.machine, new_module)
         else  -- edit existing module (it's easier to replace in the case the selected module changed)
-            Line.replace(line, module, new_module)
+            Machine.replace(line.machine, module, new_module)
         end
 
     elseif action == "delete" then  -- only possible on edit
-        Line.remove(line, module)
+        Machine.remove(line.machine, module)
     end
 
     calculation.update(player, ui_state.context.subfactory, true)
@@ -355,7 +361,7 @@ function beacon_dialog.close(flow_modal_dialog, action, data)
         Line.set_beacon(line, new_beacon)
 
     elseif action == "delete" then  -- only possible on edit
-        Line.remove_beacon(line)
+        Line.set_beacon(line, nil)
     end
 
     calculation.update(player, ui_state.context.subfactory, true)

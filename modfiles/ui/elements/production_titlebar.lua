@@ -37,7 +37,7 @@ local function refresh_view_state(player, subfactory)
         },
         [3] = {
             name = "items_per_second_per_machine",
-            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=" .. top_crafting_machine_sprite .. "]"},
+            caption = {"", {"fp.citems"}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
             enabled = true,
             selected = false
         }
@@ -225,7 +225,7 @@ function production_titlebar.handle_floor_change_click(player, destination)
         ui_util.context.set_floor(player, selected_floor)
 
         -- Remove floor if no recipes have been added to it
-        Floor.delete_empty(floor)
+        Floor.remove_if_empty(floor)
 
         ui_state.current_activity = nil
         calculation.update(player, subfactory, true)

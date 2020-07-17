@@ -30,20 +30,28 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
     local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
 
     local function create_item_button(item, indication)
-        local raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-          item.proto.type, item.amount, math.ceil(line.machine.count))
+        local raw_amount, appendage = nil, ""
+        -- Don't show a number for subfloors in the items/s/machine view, as it's nonsensical
+        if not (line.subfloor ~= nil and view_name == "items_per_second_per_machine") then
+            raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+              item.proto.type, item.amount, line.machine)
+        end
 
         if raw_amount == nil or raw_amount > margin_of_error then
             -- Determine potential different button style and the potential satisfaction line
             local actual_style, satisfaction_line = style, ""
             indication = indication or ""
 
+            -- The priority_product is always stored on the first line of the subfloor, if there is one
+            local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+            local priority_product_proto = relevant_line.priority_product_proto
+
             if item.proto.type == "entity" then
                 actual_style = "fp_button_icon_medium_blank"
 
-            elseif class == "Product" and line.priority_product_proto ~= nil and
-                line.priority_product_proto.type == item.proto.type and
-                line.priority_product_proto.name == item.proto.name then
+            elseif class == "Product" and priority_product_proto ~= nil and
+                priority_product_proto.type == item.proto.type and
+                priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
 
             elseif class == "Ingredient" and preferences.ingredient_satisfaction then
@@ -62,7 +70,7 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
             end
 
             -- Determine the correct indication
-            if class == "Product" and line.priority_product_proto == item.proto then
+            if class == "Product" and priority_product_proto == item.proto then
                 indication = {"fp.indication", {"fp.priority"}}
             elseif class == "Ingredient" and item.proto.type == "entity" then
                 indication = {"fp.indication", {"fp.raw_ore"}}
@@ -89,12 +97,12 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
     end
 
     -- Add the fuel button if necessary
-    if class == "Ingredient" and line.fuel then
+    if class == "Ingredient" and line.subfloor == nil and line.machine.fuel then
         local indication = {"fp.indication", {"fp.fuel"}}
         class = "Fuel"
         style = "fp_button_icon_medium_cyan"
         tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "fuel", true)
-        create_item_button(line.fuel, indication)
+        create_item_button(line.machine.fuel, indication)
     end
 end
 
@@ -128,13 +136,13 @@ local function create_line_table_row(player, line)
 
     -- Modules
     local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
-    if line.machine.proto.module_limit > 0 then
-        for _, module in ipairs(Line.get_in_order(line, "Module")) do
+    if line.subfloor == nil and line.machine.proto.module_limit > 0 then
+        for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             create_module_button(flow_modules, module, "module", "fp_sprite-button_line_module_" .. line.id
               .. "_" .. module.id)
         end
 
-        if Line.empty_slots(line) > 0 then  -- only add the add-module-button if a module can be added at all
+        if Machine.empty_slot_count(line.machine) > 0 then
             flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_a_module"},
               mouse_button_filter={"left"}, enabled=(not archive_open)}
@@ -146,7 +154,7 @@ local function create_line_table_row(player, line)
     local flow_beacons = table_production.add{type="flow", name="flow_line_beacons_" .. line.id, direction="horizontal"}
     flow_beacons.style.vertical_align = "center"
     -- Beacons only work on machines that have some allowed_effects
-    if line.machine.proto.allowed_effects ~= nil then
+    if line.subfloor == nil and line.machine.proto.allowed_effects ~= nil then
         if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
             flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
               .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_beacons"},
@@ -328,7 +336,7 @@ function production_table.refresh_recipe_button(player, line, table_production)
         enabled = false
     else
         if line.subfloor then
-            tooltip = {"", tooltip, "\n", {"fp.subfloor_attached"}}
+            tooltip = {"", tooltip, {"fp.indication", {"fp.subfloor_attached"}}}
 
             style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
               "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
@@ -359,8 +367,14 @@ function production_table.refresh_machine_table(player, line, table_production)
     -- Create or clear the machine flow
     local table_machines = table_production["flow_line_machines_" .. line.id]
     if table_machines == nil then
+        local column_count = 1
+        if line.subfloor == nil then
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            column_count = table_size(global.all_machines.categories[machine_category_id].machines)
+        end
+
         table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,
-        column_count=#line.machine.category.machines}
+          column_count=column_count}
         table_machines.style.horizontal_spacing = 3
         table_machines.style.horizontal_align = "center"
     else
@@ -369,14 +383,23 @@ function production_table.refresh_machine_table(player, line, table_production)
 
     local context_line = ui_state.context.line
     if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        for _, machine_proto in ipairs(line.machine.category.machines) do
+        local machine_category_id = global.all_machines.map[line.machine.proto.category]
+        for _, machine_proto in ipairs(global.all_machines.categories[machine_category_id].machines) do
             if Line.is_machine_applicable(line, machine_proto) then
                 local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_"
                   .. line.id .. "_" .. machine_proto.id, mouse_button_filter={"left"}}
                 production_table.setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
             end
         end
-    else
+
+    -- Show the total amount of machines that the subfloor contains if the line has a subfloor
+    elseif line.subfloor ~= nil then
+        local machine_count = line.machine.count
+        local machine_text = (machine_count == 1) and {"fp.machine"} or {"fp.machines"}
+
+        table_machines.add{type="sprite-button", name="sprite-button_subfloor_machine_total", sprite="fp_generic_assembler", style="fp_button_icon_medium_blank", enabled=false, number=machine_count, tooltip={"", machine_count, " ", machine_text, " ", {"fp.subfloor_machine_count"}}}
+
+    else  -- otherwise, show the machine button as normal
         local machine_proto = line.machine.proto
         local total_effects = Line.get_total_effects(line, player)
         local machine_count = ui_util.format_number(line.machine.count, 4)
