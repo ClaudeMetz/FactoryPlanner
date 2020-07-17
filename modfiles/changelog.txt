@@ -8,7 +8,8 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    -  Fixed an issue causing save-file sizes to be inflated unnecessarily
+    - Fixed an issue causing save-file sizes to be inflated unnecessarily
+    - Fixed a problem where fluid-powered machines would still show as consuming electrical energy in some cases
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.36
