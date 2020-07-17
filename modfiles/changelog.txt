@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.38
+Date: 17. 07. 2020
   Features:
     - [Warning: Experimental! This update contains a complete rework of the data structures and migrations that this mods needs. You are somewhat likely to experience a crash or two until I can fix all of them. If you run into any of them, please let me know; I'll try to address them as quickly as possible. Including a save file with your report would help a lot, so please include one if you can.]
     - The goal of these reworks was to get everything in shape to add new features more quickly and easily in the future. Chief among those is the import and export of subfactories into other saves.
