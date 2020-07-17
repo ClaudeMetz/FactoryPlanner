@@ -34,8 +34,8 @@ function prototyper.run(player_table)
     end
 
     -- Update the validity of all elements of the factory and archive
-    Collection.validate_datasets(player_table.factory.Subfactory, "Subfactory")
-    Collection.validate_datasets(player_table.archive.Subfactory, "Subfactory")
+    Collection.validate_datasets(player_table.factory.Subfactory)
+    Collection.validate_datasets(player_table.archive.Subfactory)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global

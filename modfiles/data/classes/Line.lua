@@ -10,9 +10,9 @@ function Line.init(recipe)
         total_effects = nil,  -- initialized after a machine is set
         energy_consumption = 0,
         pollution = 0,
-        Product = Collection.init(),
-        Byproduct = Collection.init(),
-        Ingredient = Collection.init(),
+        Product = Collection.init("Item"),
+        Byproduct = Collection.init("Item"),
+        Ingredient = Collection.init("Item"),
         priority_product_proto = nil,  -- set by the user
         comment = nil,
         production_ratio = 0,

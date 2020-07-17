@@ -5,7 +5,7 @@ function Floor.init(creating_line)
     local floor = {
         level = 1,  -- top floor has a level of 1, it's initialized with Floor.init(nil)
         origin_line = nil,  -- set below
-        Line = Collection.init(),
+        Line = Collection.init("Line"),
         valid = true,
         class = "Floor"
     }
@@ -142,14 +142,14 @@ end
 
 -- Needs validation: Line
 function Floor.validate(self)
-    self.valid = Collection.validate_datasets(self.Line, "Line")
+    self.valid = Collection.validate_datasets(self.Line)
     return self.valid
 end
 
 -- Needs repair: Line
 function Floor.repair(self, player)
     -- Unrepairable lines get removed, so the subfactory will always be valid afterwards
-    Collection.repair_datasets(self.Line, player, "Line")
+    Collection.repair_datasets(self.Line, player)
     self.valid = true
 
     -- Make this floor remove itself if it's empty after repairs

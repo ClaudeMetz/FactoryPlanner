@@ -12,10 +12,10 @@ function Subfactory.init(name, icon, timescale_setting)
         pollution = 0,
         notes = "",
         mining_productivity = nil,
-        Product = Collection.init(),
-        Byproduct = Collection.init(),
-        Ingredient = Collection.init(),
-        Floor = Collection.init(),
+        Product = Collection.init("Item"),
+        Byproduct = Collection.init("Item"),
+        Ingredient = Collection.init("Item"),
+        Floor = Collection.init("Floor"),
         selected_floor = nil,
         scopes = {},
         valid = true,
@@ -128,7 +128,7 @@ end
 
 -- Needs validation: Product, Floor
 function Subfactory.validate(self)
-    self.valid = Collection.validate_datasets(self.Product, "Item")
+    self.valid = Collection.validate_datasets(self.Product)
 
     -- Floor validation is called on the top floor, which recursively goes through its subfloors
     local top_floor = Subfactory.get(self, "Floor", 1)
@@ -146,7 +146,7 @@ function Subfactory.repair(self, player)
     Floor.remove_if_empty(selected_floor)  -- Make sure no empty floor is left behind
 
     -- Unrepairable item-objects get removed, so the subfactory will always be valid afterwards
-    Collection.repair_datasets(self.Product, nil, "Item")
+    Collection.repair_datasets(self.Product, nil)
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     Floor.repair(top_floor, player)
