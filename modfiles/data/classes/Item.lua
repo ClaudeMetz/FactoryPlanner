@@ -43,6 +43,7 @@ end
 
 
 -- Needs validation: proto, required_amount
+-- This will only be called on top level items, so they can be treated as such
 function Item.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "items", "type")
 
@@ -60,6 +61,7 @@ function Item.validate(self)
 end
 
 -- Needs repair: required_amount
+-- This will only be called on top level items, so they can be treated as such
 function Item.repair(self, _)
     -- If the item-proto is still simplified, validate couldn't repair it, so it has to be removed
     if self.proto.simplified then return false end

@@ -2,12 +2,13 @@
 -- (An object only becomes a dataset once it is added to the collection)
 Collection = {}
 
-function Collection.init()
+function Collection.init(object_class)
     return {
         datasets = {},
         index = 0,
         count = 0,
-        type = "Collection"
+        object_class = object_class,  -- class of the objects in this collection
+        class = "Collection"
     }
 end
 
@@ -127,19 +128,24 @@ end
 
 
 -- Updates the validity of all datasets in this collection
-function Collection.validate_datasets(self, class_name)
+function Collection.validate_datasets(self)
     local valid = true
+    local object_class = _G[self.object_class]
+
     for _, dataset in pairs(self.datasets) do
         -- Stays true until a single dataset is invalid, then stays false
-        valid = _G[class_name].validate(dataset) and valid
+        valid = object_class.validate(dataset) and valid
     end
+
     return valid
 end
 
 -- Removes any invalid, unrepairable datasets from the collection
-function Collection.repair_datasets(self, player, class_name)
+function Collection.repair_datasets(self, player)
+    local object_class = _G[self.object_class]
+
     for _, dataset in pairs(self.datasets) do
-        if not dataset.valid and not _G[class_name].repair(dataset, player) then
+        if not dataset.valid and not object_class.repair(dataset, player) then
             _G[dataset.parent.class].remove(dataset.parent, dataset)
         end
     end

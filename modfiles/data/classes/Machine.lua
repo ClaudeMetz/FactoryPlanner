@@ -9,7 +9,7 @@ function Machine.init_by_proto(proto)
         limit = nil,  -- will be set by the user
         hard_limit = false,
         fuel = nil,  -- updated by Line.change_machine()
-        Module = Collection.init(),
+        Module = Collection.init("Module"),
         module_count = 0,  -- updated automatically
         total_effects = nil,
         valid = true,
@@ -211,7 +211,7 @@ function Machine.validate(self)
 
     if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
 
-    self.valid = Collection.validate_datasets(self.Module, "Module") and self.valid
+    self.valid = Collection.validate_datasets(self.Module) and self.valid
     if self.valid then Machine.normalize_modules(self, true, true) end
 
     return self.valid
@@ -229,7 +229,7 @@ function Machine.repair(self, player)
     if self.fuel and not self.fuel.valid then Fuel.repair(self.fuel, player) end
 
     -- Remove invalid modules and normalize the remaining ones
-    Collection.repair_datasets(self.Module, nil, "Module")
+    Collection.repair_datasets(self.Module, nil)
     Machine.normalize_modules(self, true, true)
 
     return self.valid
