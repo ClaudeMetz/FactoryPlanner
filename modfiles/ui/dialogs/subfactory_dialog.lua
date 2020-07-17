@@ -84,13 +84,7 @@ function subfactory_dialog.condition_instructions()
             },
             [2] = {
                 label = {"fp.subfactory_instruction_2"},
-                check = (function(data) return (data.name ~= "" and string.len(data.name) > 24) end),
-                refocus = (function(flow) flow["table_subfactory"]["fp_textfield_subfactory_name"].focus() end),
-                show_on_edit = true
-            },
-            [3] = {
-                label = {"", {"fp.subfactory_instruction_3"}, " !#&'()+-./?"},
-                check = (function(data) return (data.name ~= "" and data.name:match("[^%w !#&'%(%)%+%-%./%?]")) end),
+                check = (function(data) return (data.name ~= "" and string.len(data.name) > 64) end),
                 refocus = (function(flow) flow["table_subfactory"]["fp_textfield_subfactory_name"].focus() end),
                 show_on_edit = true
             }
