@@ -93,7 +93,7 @@ function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
 end
 
 -- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
-function ui_util.determine_item_amount_and_appendage(player_table, view_name, item_type, amount, machine_count)
+function ui_util.determine_item_amount_and_appendage(player_table, view_name, item_type, amount, machine)
     local timescale = player_table.ui_state.context.subfactory.timescale
     local number, appendage = nil, ""
 
@@ -116,13 +116,13 @@ function ui_util.determine_item_amount_and_appendage(player_table, view_name, it
 
     elseif view_name == "items_per_second_per_machine" then
         -- Show items/s/1 (machine) if it's a top level item
-        local number_of_machines = (machine_count ~= nil) and machine_count or 1
+        local number_of_machines = (machine ~= nil) and machine.count or 1
         number = amount / timescale / number_of_machines
 
         local type_text = (item_type == "fluid") and {"fp.fluid"} or
           ((number == 1) and {"fp.item"} or {"fp.items"})
         -- Shows items/s/machine if a machine_count is given
-        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.machine"}} or ""
+        local per_machine = (machine ~= nil) and {"", "/", {"fp.machine"}} or ""
         appendage = {"", type_text, "/", {"fp.unit_second"}, per_machine}
 
     end

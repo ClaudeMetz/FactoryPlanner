@@ -5,7 +5,7 @@ function Factory.init()
     return {
         Subfactory = Collection.init(),
         selected_subfactory = nil,
-        valid = true,
+        -- A Factory can not become invalid
         class = "Factory"
     }
 end
@@ -52,11 +52,4 @@ function Factory.update_ingredient_satisfactions(self)
     for _, subfactory in ipairs(Factory.get_in_order(self, "Subfactory")) do
         calculation.determine_ingredient_satisfaction(subfactory)
     end
-end
-
-
--- Updates the validity of the factory from top to bottom
-function Factory.update_validity(self)
-    local classes = {Subfactory = "Subfactory"}
-    self.valid = run_validation_updates(self, classes)
 end

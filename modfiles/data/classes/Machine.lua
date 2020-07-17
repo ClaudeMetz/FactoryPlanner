@@ -1,80 +1,236 @@
--- This is essentially just a wrapper-'class' for a machine prototype to add some data to it
+-- Class representing a machine with its attached modules
 Machine = {}
 
 -- Initialised by passing a prototype from the all_machines global table
 function Machine.init_by_proto(proto)
-    local category = global.all_machines.categories[global.all_machines.map[proto.category]]
-    return {
+    local machine = {
         proto = proto,
-        category = category,
         count = 0,
         limit = nil,  -- will be set by the user
         hard_limit = false,
+        fuel = nil,  -- updated by Line.change_machine()
+        Module = Collection.init(),
+        module_count = 0,  -- updated automatically
+        total_effects = nil,
         valid = true,
         class = "Machine"
+    }
+
+    -- Initialise total_effects
+    Machine.summarize_effects(machine)
+
+    return machine
+end
+
+
+function Machine.add(self, object)
+    object.parent = self
+    local dataset = Collection.add(self[object.class], object)
+
+    self.module_count = self.module_count + dataset.amount
+    Machine.normalize_modules(self, true, false)
+
+    return dataset
+end
+
+function Machine.remove(self, dataset)
+    local removed_gui_position = Collection.remove(self[dataset.class], dataset)
+
+    self.module_count = self.module_count - dataset.amount
+    Machine.normalize_modules(self, true, false)
+
+    return removed_gui_position
+end
+
+function Machine.replace(self, dataset, object)
+    local module_count_difference = object.amount - dataset.amount
+    local new_dataset = Collection.replace(self[dataset.class], dataset, object)
+
+    self.module_count = self.module_count + module_count_difference
+    Machine.normalize_modules(self, true, false)
+
+    return new_dataset
+end
+
+function Machine.get(self, class, dataset_id)
+    return Collection.get(self[class], dataset_id)
+end
+
+function Machine.get_in_order(self, class, reverse)
+    return Collection.get_in_order(self[class], reverse)
+end
+
+
+function Machine.find_fuel(self, player)
+    if self.fuel == nil and self.proto.energy_type == "burner" then
+        local burner = self.proto.burner
+
+        -- Use the first category of this machine's burner as the default one
+        local fuel_category_name, _ = next(burner.categories, nil)
+        local fuel_category_id = global.all_fuels.map[fuel_category_name]
+
+        local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
+        self.fuel = Fuel.init_by_proto(default_fuel_proto)
+        self.fuel.parent = self
+    end
+end
+
+
+function Machine.summarize_effects(self)
+    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+
+    -- Machine base productivity
+    module_effects.productivity = module_effects.productivity + self.proto.base_productivity
+
+    -- Module productivity
+    for _, module in pairs(Machine.get_in_order(self, "Module")) do
+        for name, effect in pairs(module.proto.effects) do
+            module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
+        end
+    end
+
+    self.total_effects = module_effects
+end
+
+function Machine.empty_slot_count(self)
+    return (self.proto.module_limit - self.module_count)
+end
+
+
+function Machine.get_module_characteristics(self, module_proto, include_existing_amount)
+    local compatible, existing_amount = true, nil
+    local recipe = self.parent.recipe
+
+    if not recipe.valid or not self.valid then compatible = false end
+
+    if compatible then
+        if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
+          and not module_proto.limitations[recipe.proto.name] then
+            compatible = false
+        end
+    end
+
+    if compatible then
+        local allowed_effects = self.proto.allowed_effects
+        if allowed_effects == nil then
+            compatible = false
+        else
+            for effect_name, _ in pairs(module_proto.effects) do
+                if allowed_effects[effect_name] == false then
+                    compatible = false
+                end
+            end
+        end
+    end
+
+    if compatible and include_existing_amount then
+        for _, module in pairs(Machine.get_in_order(self, "Module")) do
+            if module.proto == module_proto then
+                existing_amount = module.amount
+                break
+            end
+        end
+    end
+
+    return {
+        compatible = compatible,
+        existing_amount = existing_amount
     }
 end
 
 
--- Update the validity of this machine
-function Machine.update_validity(self, line)
-    if self.category == nil or self.proto == nil then return false end
-    local category_name = (type(self.category) == "string") and self.category or self.category.name
-    local new_category_id = new.all_machines.map[category_name]
+-- Normalizes the modules of this machine after they've been changed
+function Machine.normalize_modules(self, sort, trim)
+    if sort then Machine.sort_modules(self) end
+    if trim then Machine.trim_modules(self) end
+    Line.summarize_effects(self.parent, true, false)
+end
 
-    if new_category_id ~= nil then
-        self.category = new.all_machines.categories[new_category_id]
+-- Sorts modules in a deterministic fashion so they are in the same order for every line
+-- Not a very efficient algorithm, but totally fine for the small (<10) amount of datasets
+function Machine.sort_modules(self)
+    local next_position = 1
+    local new_gui_positions = {}
 
-        if self.proto == nil then self.valid = false; return self.valid end
-        local proto_name = (type(self.proto) == "string") and self.proto or self.proto.name
-        local new_machine_id = self.category.map[proto_name]
-
-        if new_machine_id ~= nil then
-            self.proto = self.category.machines[new_machine_id]
-            self.valid = true
-        else
-            self.proto = self.proto.name
-            self.valid = false
+    if global.all_modules == nil then return end
+    for _, category in ipairs(global.all_modules.categories) do
+        for _, module_proto in ipairs(category.modules) do
+            for _, module in ipairs(Machine.get_in_order(self, "Module")) do
+                if module.proto.category == category.name and module.proto.name == module_proto.name then
+                    table.insert(new_gui_positions, {module = module, new_pos = next_position})
+                    next_position = next_position + 1
+                end
+            end
         end
-    else
-        self.category = self.category.name
-        self.proto = self.proto.name
-        self.valid = false
     end
 
-    -- If the machine is valid, it might still not be applicable
-    if self.valid and (not line.recipe.valid or not Line.is_machine_applicable(line, self.proto)) then
-        self.valid = false
+    -- Actually set the new gui positions
+    for _, new_position in pairs(new_gui_positions) do
+        new_position.module.gui_position = new_position.new_pos
     end
+end
+
+-- Trims superflous modules off the end (might be needed when the machine is downgraded)
+function Machine.trim_modules(self)
+    local module_count = self.module_count
+    local module_limit = self.proto.module_limit or 0
+    -- Return if the module count is within limits
+    if module_count <= module_limit then return end
+
+    local modules_to_remove = {}
+    -- Traverse modules in reverse to trim them off the end
+    for _, module in ipairs(Machine.get_in_order(self, "Module", true)) do
+        -- Remove a whole module if it brings the count to >= limit
+        if (module_count - module.amount) >= module_limit then
+            table.insert(modules_to_remove, module)
+            module_count = module_count - module.amount
+
+        -- Otherwise, diminish the amount on the module appropriately and break
+        else
+            local new_amount = module.amount - (module_count - module_limit)
+            Module.change_amount(module, new_amount)
+            break
+        end
+    end
+
+    -- Remove superfluous modules (no re-sorting necessary)
+    for _, module in pairs(modules_to_remove) do
+        Machine.remove(self, module)
+    end
+end
+
+
+-- Needs validation: proto, fuel, Module
+function Machine.validate(self)
+    self.valid = prototyper.util.validate_prototype_object(self, "proto", "machines", "category")
+
+    local parent_line = self.parent
+    if self.valid and parent_line.valid and parent_line.recipe.valid then
+        self.valid = Line.is_machine_applicable(parent_line, self.proto)
+    end
+
+    if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
+
+    self.valid = Collection.validate_datasets(self.Module, "Module") and self.valid
+    if self.valid then Machine.normalize_modules(self, true, true) end
 
     return self.valid
 end
 
--- Tries to repair this machine, deletes it otherwise (by returning false)
--- If this is called, the machine is invalid and has a string saved to proto (and maybe to category)
-function Machine.attempt_repair(self, _)
-    -- If the category is nil, this machine is not repairable
-    if self.category == nil then
+-- Needs repair: proto, fuel, Module
+function Machine.repair(self, player)
+    -- If the prototype is still simplified, it couldn't be fixed by validate
+    -- A final possible fix is to replace this machine with the default for its category
+    if self.proto.simplified and not Line.change_machine(self.parent, player, nil, nil) then
         return false
-    -- First, try and repair the category if necessary
-    elseif type(self.category) == "string" then
-        local current_category_id = global.all_machines.map[self.category]
-        if current_category_id ~= nil then
-            self.category = global.all_machines.categories[current_category_id]
-        else  -- delete immediately if no matching type can be found
-            self.category = nil
-            return false
-        end
     end
+    self.valid = true  -- the machine is valid from this point on
 
-    -- At this point, category is always valid (and proto is always a string)
-    local current_machine_id = self.category.map[self.proto]
-    if current_machine_id ~= nil then
-        self.proto = self.category.machines[current_machine_id]
-        self.valid = true
-    else
-        self.valid = false
-    end
+    if self.fuel and not self.fuel.valid then Fuel.repair(self.fuel, player) end
+
+    -- Remove invalid modules and normalize the remaining ones
+    Collection.repair_datasets(self.Module, nil, "Module")
+    Machine.normalize_modules(self, true, true)
 
     return self.valid
 end

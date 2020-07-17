@@ -312,13 +312,18 @@ function generator.all_machines()
             emissions = burner_prototype.emissions
             burner = {effectivity = burner_prototype.effectivity, categories = burner_prototype.fuel_categories}
 
-        -- Only supports fluid energy that burns_fluid for no, as it works the same way as solid burners
+        -- Only supports fluid energy that burns_fluid for now, as it works the same way as solid burners
         -- Also doesn't respect scale_fluid_usage and fluid_usage_per_tick for now, let the reports come
-        elseif fluid_burner_prototype and fluid_burner_prototype.burns_fluid
-          and not fluid_burner_prototype.fluid_box.filter then
-            energy_type = "burner"
+        elseif fluid_burner_prototype then
             emissions = fluid_burner_prototype.emissions
-            burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true}}
+
+            if fluid_burner_prototype.burns_fluid and not fluid_burner_prototype.fluid_box.filter then
+                energy_type = "burner"
+                burner = {effectivity = fluid_burner_prototype.effectivity, categories = {["fluid-fuel"] = true}}
+
+            else  -- Avoid adding this type of complex fluid energy as electrical energy
+                energy_type = "void"
+            end
 
         elseif proto.electric_energy_source_prototype then
             energy_type = "electric"

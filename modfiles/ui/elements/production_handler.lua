@@ -34,15 +34,17 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
     else
         -- Attaches a subfloor to this line
         if click == "left" then
-            if line.subfloor == nil then  -- create new subfloor
+            local subfloor = line.subfloor
+            if subfloor == nil then  -- create new subfloor
                 if archive_status then return end
 
-                local subfloor = Floor.init(line)
-                line.subfloor = Subfactory.add(subfactory, subfloor)
+                subfloor = Floor.init(line)  -- attaches itself to the given line automatically
+                Subfactory.add(subfactory, subfloor)
                 calculation.update(player, subfactory, false)
             end
+
             ui_state.current_activity = nil
-            ui_util.context.set_floor(player, line.subfloor)
+            ui_util.context.set_floor(player, subfloor)
             main_dialog.refresh(player)
 
         -- Handle removal of clicked (assembly) line
@@ -76,11 +78,7 @@ function production_handler.handle_percentage_change(player, element)
     local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
 
     local new_percentage = tonumber(element.text) or 0
-    line.percentage = new_percentage
-
-    -- Update related datasets
-    if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = new_percentage
-    elseif line.id == 1 and floor.origin_line then floor.origin_line.percentage = new_percentage end
+    Line.set_percentage(line, new_percentage)
 end
 
 -- Handles the player confirming the given percentage textfield by reloading and refocusing
@@ -123,7 +121,8 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             -- Determine how many machines are applicable to this recipe
             -- This detection will run twice, which might be worth optimizing at some point
             local applicable_machine_count = 0
-            for _, machine_proto in pairs(line.machine.category.machines) do
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            for _, machine_proto in pairs(global.all_machines.categories[machine_category_id].machines) do
                 if Line.is_machine_applicable(line, machine_proto) then
                     applicable_machine_count = applicable_machine_count + 1
                 end
@@ -182,9 +181,9 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
     else
         -- Accept the user selection of new machine for this (assembly) line
         if click == "left" then
-            local category_id = line.machine.category.id
-            local new_machine = global.all_machines.categories[category_id].machines[machine_id]
-            Line.change_machine(line, player, new_machine, nil)
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            local new_machine_proto = global.all_machines.categories[machine_category_id].machines[machine_id]
+            Line.change_machine(line, player, new_machine_proto, nil)
             ui_state.current_activity = nil
             calculation.update(player, subfactory, true)
         end
@@ -196,7 +195,8 @@ function production_handler.generate_chooser_machine_buttons(player)
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
 
-    for machine_id, machine_proto in ipairs(line.machine.category.machines) do
+    local machine_category_id = global.all_machines.map[line.machine.proto.category]
+    for machine_id, machine_proto in ipairs(global.all_machines.categories[machine_category_id].machines) do
         if Line.is_machine_applicable(line, machine_proto) then
             local button = chooser_dialog.generate_blank_button(player, machine_id)
             -- The actual button is setup by the method shared by non-chooser machine buttons
@@ -209,18 +209,20 @@ end
 -- Recieves the result of the machine choice and applies it
 function production_handler.apply_machine_choice(player, machine_id)
     local context = get_context(player)
-    local category_id = context.line.machine.category.id
-    local machine = global.all_machines.categories[category_id].machines[tonumber(machine_id)]
-    Line.change_machine(context.line, player, machine, nil)
+    local machine_category_id = global.all_machines.map[context.line.machine.proto.category]
+    local machine_proto = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
+    Line.change_machine(context.line, player, machine_proto, nil)
     calculation.update(player, context.subfactory, true)
 end
 
 -- Recieves the result of the machine limit options and applies it
 function production_handler.apply_machine_options(player, _, options)
     local context = get_context(player)
-    -- tonumber() has already converted an empty string to nil
+
+    local machine = context.line.machine
     if options.machine_limit == nil then options.hard_limit = false end
-    Line.set_machine_limit(context.line, options.machine_limit, options.hard_limit)
+    machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+
     calculation.update(player, context.subfactory, true)
 end
 
@@ -233,23 +235,24 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
     ui_state.context.line = line
-    local limit = Line.empty_slots(line)
+    local limit = Machine.empty_slot_count(line.machine)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
         modal_dialog.enter(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
 
     else  -- meaning an existing module was clicked
-        local module = Line.get(line, "Module", module_id)
+        local module = Machine.get(line.machine, "Module", module_id)
 
         if direction ~= nil then  -- change the module to a higher/lower amount/tier
             local tier_map = module_tier_map
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
-                local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                local module_category_id = global.all_modules.map[module.proto.category]
+                local new_proto = tier_map[module_category_id][module.proto.tier + factor]
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
-                    Line.replace(line, module, new_module)
+                    Machine.replace(line.machine, module, new_module)
                 else
                     local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
                     local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, change_direction}
@@ -265,7 +268,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                         local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
                         ui_util.message.enqueue(player, message, "error", 1)
                     else
-                        Line.change_module_amount(line, module, new_amount)
+                        Module.change_amount(module, new_amount)
                     end
                 else
                     handle_tier_change(1)
@@ -275,9 +278,9 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                 if alt then
                     local new_amount = module.amount - 1
                     if new_amount == 0 then  -- no error message possible here
-                        Line.remove(line, module)
+                        Machine.remove(line.machine, module)
                     else
-                        Line.change_module_amount(line, module, new_amount)
+                        Module.change_amount(module, new_amount)
                     end
                 else
                     handle_tier_change(-1)
@@ -287,7 +290,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "delete" then
-            Line.remove(line, module)
+            Machine.remove(line.machine, module)
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "edit" or click == "left" then
@@ -318,7 +321,8 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
-                local new_proto = tier_map[module.category.id][module.proto.tier + factor]
+                local module_category_id = global.all_modules.map[module.proto.category]
+                local new_proto = tier_map[module_category_id][module.proto.tier + factor]
                 if new_proto ~= nil then
                     local new_module = Module.init_by_proto(new_proto, tonumber(module.amount))
                     Beacon.set_module(line.beacon, new_module)
@@ -348,7 +352,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                 if alt then
                     local new_amount = module.amount - 1
                     if new_amount == 0 then  -- no error message possible here
-                        Line.remove_beacon(line)
+                        Line.set_beacon(line, nil)
                     else
                         local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
                         Beacon.set_module(line.beacon, new_module)
@@ -388,7 +392,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                 if alt then
                     local new_amount = beacon.amount - 1
                     if new_amount == 0 then  -- no error message possible here
-                        Line.remove_beacon(line)
+                        Line.set_beacon(line, nil)
                     else
                         local new_beacon = Beacon.init_by_protos(beacon.proto, new_amount, beacon.module.proto,
                           beacon.module.amount, beacon.total_amount)
@@ -403,7 +407,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
         calculation.update(player, ui_state.context.subfactory, true)
 
     elseif action == "delete" then
-        Line.remove_beacon(line)
+        Line.set_beacon(line, nil)
         calculation.update(player, ui_state.context.subfactory, true)
 
     elseif action == "edit" or click == "left" then
@@ -445,8 +449,12 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             if line.Product.count < 2 then
                 ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
             else
-                local priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
-                Line.set_priority_product(line, priority_product_proto)
+                -- Remove the priority_product if the already selected one is clicked
+                local priority_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+                -- The priority_product is always stored on the first line of the subfloor, if there is one
+                local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+                relevant_line.priority_product_proto = priority_proto
+
                 calculation.update(player, context.subfactory, true)
             end
 
@@ -495,11 +503,8 @@ function production_handler.apply_item_options(player, item, options)
     end
 
     options.item_amount = options.item_amount or 0
-    line.percentage = (line.percentage * options.item_amount) / current_amount
-
-    -- Update related datasets
-    if line.subfloor then Floor.get(line.subfloor, "Line", 1).percentage = line.percentage
-    elseif line.id == 1 and context.floor.origin_line then context.floor.origin_line.percentage = line.percentage end
+    local new_percentage = (line.percentage * options.item_amount) / current_amount
+    Line.set_percentage(line, new_percentage)
 
     calculation.update(player, context.subfactory, true)
 end
@@ -511,7 +516,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
 
     local context = get_context(player)
     local line = Floor.get(context.floor, "Line", line_id)
-    local fuel = line.fuel  -- must exist to be able to get here
+    local fuel = line.machine.fuel  -- must exist to be able to get here
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
@@ -523,7 +528,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
         local function change_fuel_proto(factor)
             local new_proto = prototype_table[fuel.proto.id + factor]
             if new_proto ~= nil then
-                line.fuel = Fuel.init_by_proto(new_proto, fuel.amount)
+                fuel.proto = new_proto
                 calculation.update(player, context.subfactory, true)
             else
                 local type = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
@@ -582,7 +587,7 @@ function production_handler.generate_chooser_fuel_buttons(player)
                 fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
 
                 fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-                fuel_proto.type, fuel_amount, line.machine.count)
+                  fuel_proto.type, fuel_amount, line.machine)
                 tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
             end
             tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
@@ -602,7 +607,7 @@ function production_handler.apply_fuel_choice(player, new_fuel_id_string)
     local context = get_context(player)
     local split_string = cutil.split(new_fuel_id_string, "_")
     local new_fuel = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
-    context.line.fuel.proto = new_fuel
+    context.line.machine.fuel.proto = new_fuel
     calculation.update(player, context.subfactory, true)
 end
 

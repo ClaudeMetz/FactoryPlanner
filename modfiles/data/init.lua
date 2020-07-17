@@ -168,10 +168,9 @@ local function handle_configuration_change()
     prototyper.finish()
 
     -- Update factory and archive calculations in case some numbers changed
-    local factories = {"factory", "archive"}
     for index, player in pairs(game.players) do
         local player_table = global.players[index]
-        for _, factory_name in pairs(factories) do
+        for _, factory_name in pairs{"factory", "archive"} do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
                 calculation.update(player, subfactory, false)
             end
@@ -263,26 +262,4 @@ end
 
 function get_flags(player)
     return global.players[player.index].ui_state.flags
-end
-
-
-
-
--- TODO move when classes are re-done
--- Updates validity of every class specified by the classes parameter
-function run_validation_updates(parent, classes)
-    local valid = true
-    for type, class in pairs(classes) do
-        if not Collection.update_validity(parent[type], class) then
-            valid = false
-        end
-    end
-    return valid
-end
-
--- Tries to repair every specified class, deletes them if this is unsuccessfull
-function run_invalid_dataset_repair(player, parent, classes)
-    for type, class in pairs(classes) do
-        Collection.repair_invalid_datasets(parent[type], player, class, parent)
-    end
 end

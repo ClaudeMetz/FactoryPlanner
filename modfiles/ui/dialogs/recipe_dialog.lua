@@ -268,8 +268,9 @@ end
 function recipe_dialog.attempt_adding_line(player, recipe_id)
     local ui_state = get_ui_state(player)
 
-    local line = Line.init(player, Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
-    if line == false then
+    local line = Line.init(Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
+    -- If changing the machine fails, this line is invalid
+    if Line.change_machine(line, player, nil, nil) == false then
         ui_util.message.enqueue(player, {"fp.error_no_compatible_machine"}, "error", 1)
     else
         Floor.add(ui_state.context.floor, line)
@@ -281,9 +282,9 @@ function recipe_dialog.attempt_adding_line(player, recipe_id)
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.module
         if machine_module ~= nil then
-            if Line.get_module_characteristics(line, machine_module).compatible then
+            if Machine.get_module_characteristics(line.machine, machine_module, false).compatible then
                 local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
-                Line.add(line, new_module)
+                Machine.add(line.machine, new_module)
             elseif message == nil then  -- don't overwrite previous message, if it exists
                 message = {text={"fp.warning_module_not_compatible", {"fp.module"}}, type="warning"}
             end
