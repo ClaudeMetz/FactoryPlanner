@@ -38,7 +38,7 @@ end
 function Floor.remove(self, dataset)
     -- Remove the subfloor(s) associated to a line recursively, so they don't hang around
     if dataset.class == "Line" and dataset.subfloor ~= nil then
-        for _, line in pairs(Floor.get_in_order(dataset.subfloor)) do
+        for _, line in pairs(Floor.get_in_order(dataset.subfloor, "Line")) do
             if line.subfloor then Floor.remove(dataset.subfloor, line) end
         end
         Collection.remove(self.parent.Floor, dataset.subfloor)
