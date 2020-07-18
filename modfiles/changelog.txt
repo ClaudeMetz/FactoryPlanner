@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    - Fixed a crash when switching to the floor-view in the utilities dialog under certain circumstances
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.38
 Date: 17. 07. 2020
   Features:
