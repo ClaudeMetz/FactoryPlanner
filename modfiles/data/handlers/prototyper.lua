@@ -68,7 +68,8 @@ end
 
 -- Returns the prototype defined by the given names, if it exists
 function prototyper.util.get_new_prototype_by_name(data_type, proto_name, category_name)
-    local new_prototypes = new["all_" .. data_type]
+    local current_prototype_table = new or global  -- need to check which one is currently in use
+    local new_prototypes = current_prototype_table["all_" .. data_type]
 
     if new_prototypes.structure_type == "simple" then
         local prototype_id = new_prototypes.map[proto_name]
