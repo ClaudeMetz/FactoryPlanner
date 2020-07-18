@@ -113,18 +113,13 @@ end
 
 -- Destroys all GUI's so they are loaded anew the next time they are shown
 local function reset_player_gui(player)
-    local screen = player.gui.screen
-    local guis = {
-        mod_gui.get_button_flow(player)["fp_button_toggle_interface"],
-        screen["fp_frame_main_dialog"],
-        screen["fp_frame_modal_dialog"],
-        screen["fp_frame_modal_dialog_product"],  -- TODO remove when this dialog is added back as a cached one
-        unpack(cached_dialogs)
-    }
+    mod_gui.get_button_flow(player)["fp_button_toggle_interface"].destroy()
 
-    for _, gui in pairs(guis) do
-        if type(gui) == "string" then gui = screen[gui] end
-        if gui ~= nil and gui.valid then gui.destroy() end
+    -- All mod frames
+    for _, gui_element in pairs(player.gui.screen.children) do
+        if gui_element.valid and string.find(gui_element.name, "^fp_.+$") then
+            gui_element.destroy()
+        end
     end
 end
 
