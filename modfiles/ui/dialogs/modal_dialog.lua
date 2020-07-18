@@ -13,16 +13,18 @@ modal_dialog = {}
 -- Creates barebones modal dialog
 local function create_base_modal_dialog(player, condition_instructions, dialog_settings, modal_data)
     local frame_name, flow_modal_dialog, cached = "fp_frame_modal_dialog", nil, false
-    local cached_frame_name = "fp_frame_modal_dialog_" .. dialog_settings.type
 
-    -- See if the dialog to open is a cached one
+    -- ** Dialog caching is no longer in use **
+
+    --[[ -- See if the dialog to open is a cached one
+    local cached_frame_name = "fp_frame_modal_dialog_" .. dialog_settings.type
     for _, cached_dialog in pairs(cached_dialogs) do
         if cached_dialog == cached_frame_name then
             frame_name = cached_frame_name
             cached = true
             break
         end
-    end
+    end ]]
 
     local screen = player.gui.screen
     -- If this dialog should be cached and exists, make it visible
