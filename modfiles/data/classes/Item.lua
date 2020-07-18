@@ -42,6 +42,29 @@ function Item.required_amount(self)
 end
 
 
+-- This will only be called on top level items, so they can be treated as such
+function Item.pack(self)
+    local belt_proto = (self.required_amount.defined_by ~= "amount") and
+      prototyper.util.simplify_prototype(self.required_amount.belt_proto) or nil
+
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        required_amount = {
+            defined_by = self.required_amount.defined_by,
+            amount = self.required_amount.amount,
+            belt_proto = belt_proto
+        },
+        top_level = true,
+        class = self.class
+    }
+end
+
+-- This will only be called on top level items, so they can be treated as such
+function Item.unpack(packed_self)
+    return packed_self
+end
+
+
 -- Needs validation: proto, required_amount
 -- This will only be called on top level items, so they can be treated as such
 function Item.validate(self)

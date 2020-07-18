@@ -126,6 +126,33 @@ function Subfactory.update_product_definitions(self, new_defined_by)
 end
 
 
+function Subfactory.pack(self)
+    return {
+        name = self.name,
+        icon = self.icon,
+        timescale = self.timescale,
+        notes = self.notes,
+        mining_productivity = self.mining_productivity,
+        Product = Collection.pack(self.Product),
+        --Floor = Collection.pack(self.Floor),
+        class = self.class
+    }
+end
+
+function Subfactory.unpack(packed_self)
+    local self = Subfactory.init(packed_self.name, packed_self.icon, 0)
+
+    self.timescale = packed_self.timescale
+    self.notes = packed_self.notes
+    self.mining_productivity = packed_self.mining_productivity
+    self.Product = Collection.unpack(packed_self.Product, self)
+    --self.Floor = Collection.unpack(packed_self.Floor, self)
+    self.class = packed_self.class
+
+    return self
+end
+
+
 -- Needs validation: Product, Floor
 function Subfactory.validate(self)
     self.valid = Collection.validate_datasets(self.Product)

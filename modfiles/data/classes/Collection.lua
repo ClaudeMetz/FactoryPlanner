@@ -127,6 +127,37 @@ function Collection.shift_to_end(self, main_dataset, direction)
 end
 
 
+-- Packs every dataset in this collection
+function Collection.pack(self)
+    local packed_collection = {
+        objects = {},
+        object_class = self.object_class,
+        class = self.class
+    }
+
+    local object_class = _G[self.object_class]
+    for _, dataset in pairs(self.datasets) do
+        table.insert(packed_collection.objects, object_class.pack(dataset))
+    end
+
+    return packed_collection
+end
+
+-- Unpacks every dataset in this collection
+function Collection.unpack(packed_self, parent)
+    local self = Collection.init(packed_self.object_class)
+    self.class = packed_self.class
+
+    local object_class = _G[self.object_class]
+    for _, object in pairs(packed_self.objects) do
+        local dataset = Collection.add(self, object_class.unpack(object))
+        dataset.parent = parent
+    end
+
+    return self
+end
+
+
 -- Updates the validity of all datasets in this collection
 function Collection.validate_datasets(self)
     local valid = true
