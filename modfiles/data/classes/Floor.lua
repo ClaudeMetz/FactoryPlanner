@@ -98,10 +98,9 @@ function Floor.get_component_data(self, component_table)
     end
 
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
-        if component_table ~= nil and line.subfloor ~= nil then
-            --[[ continue ]]
-
-        else
+        -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
+        -- would mean the subfactory machine total is equal to the floor total of the top floor
+        if line.subfloor == nil then
             local ceil_machine_count = math.ceil(line.machine.count)
 
             -- Machines
