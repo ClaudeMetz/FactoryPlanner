@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    - Updated to the new version of the Recipe Book remote interface
+    - Updated to the new version of the Recipe Book remote interface (now requires Recipe Book v2.0.1 and up)
   Bugfixes:
     -
 
