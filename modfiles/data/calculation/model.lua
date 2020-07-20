@@ -56,7 +56,6 @@ function model.update_floor(floor_data, aggregate)
             -- Update the main aggregate with the results
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
             aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
-            aggregate.machine_count = aggregate.machine_count + subfloor_aggregate.machine_count
 
             -- Subtract subfloor products as produced
             for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do
@@ -72,7 +71,7 @@ function model.update_floor(floor_data, aggregate)
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
-                machine_count = aggregate.machine_count,
+                machine_count = subfloor_aggregate.machine_count,
                 energy_consumption = subfloor_aggregate.energy_consumption,
                 pollution = subfloor_aggregate.pollution,
                 production_ratio = nil,
