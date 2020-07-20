@@ -60,8 +60,8 @@ end
 
 -- ** TOP LEVEL **
 -- Creates the production pane that displays
-function production_titlebar.add_to(main_dialog)
-    local flow = main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
+function production_titlebar.add_to(frame_main_dialog)
+    local flow = frame_main_dialog.add{type="flow", name="flow_production_pane", direction="vertical"}
 
     -- Production titlebar
     local table_titlebar = flow.add{type="table", name="table_production_titlebar", column_count=7}
@@ -133,7 +133,7 @@ function production_titlebar.add_to(main_dialog)
     scroll_pane.style.horizontally_stretchable = true
     scroll_pane.style.vertically_squashable = true
 
-    production_titlebar.refresh(game.get_player(main_dialog.player_index))
+    production_titlebar.refresh(game.get_player(frame_main_dialog.player_index))
 end
 
 -- Refreshes the production pane (titlebar + table)
