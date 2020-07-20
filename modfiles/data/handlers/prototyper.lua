@@ -90,8 +90,13 @@ end
 -- Returns a new table that only contains the given prototypes' identifiers
 function prototyper.util.simplify_prototype(proto)
     local simple_proto = { name = proto.name, simplified = true }
-    if proto.type then simple_proto.type = proto.type
-    elseif proto.category then simple_proto.category = proto.category end
+
+    -- Doing the detection this way is a bit ugly, but makes much easier
+    -- It is actually important to check for category first, type second, as
+    -- fuels specifically have both, with category being the relevant one here
+    if proto.category then simple_proto.category = proto.category
+    elseif proto.type then simple_proto.type = proto.type end
+
     return simple_proto
 end
 
