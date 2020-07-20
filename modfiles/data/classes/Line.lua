@@ -1,10 +1,10 @@
 -- 'Class' representing an assembly line producing a single recipe
 Line = {}
 
-function Line.init(recipe)
+function Line.init(recipe, is_standalone_line)
     return {
         recipe = recipe,
-        percentage = 100,
+        percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
         total_effects = nil,  -- initialized after a machine is set
@@ -15,8 +15,8 @@ function Line.init(recipe)
         Ingredient = Collection.init("Item"),
         priority_product_proto = nil,  -- set by the user
         comment = nil,
-        production_ratio = 0,
-        uncapped_production_ratio = 0, -- used to calculate machine_choice-numbers
+        production_ratio = (is_standalone_line) and 0 or nil,
+        uncapped_production_ratio = (is_standalone_line) and 0 or nil,
         subfloor = nil,
         valid = true,
         class = "Line"
@@ -35,28 +35,6 @@ end
 
 function Line.replace(self, dataset, object)
     return Collection.replace(self[dataset.class], dataset, object)
-end
-
-
-function Line.set_percentage(self, percentage)
-    self.percentage = percentage
-
-    if self.subfloor then
-        Floor.get(self.subfloor, "Line", 1).percentage = percentage
-    elseif self.gui_position == 1 and self.parent.origin_line then
-        self.parent.origin_line.percentage = percentage
-    end
-end
-
-function Line.set_beacon(self, beacon)
-    self.beacon = beacon  -- can be nil
-
-    if beacon then
-        self.beacon.parent = self
-        Beacon.trim_modules(self.beacon)
-    end
-
-    Line.summarize_effects(self, false, true)
 end
 
 
@@ -176,6 +154,19 @@ function Line.change_machine(self, player, machine_proto, direction)
 end
 
 
+-- Sets the beacon appropriately, recalculating total_effects
+function Line.set_beacon(self, beacon)
+    self.beacon = beacon  -- can be nil
+
+    if beacon then
+        self.beacon.parent = self
+        Beacon.trim_modules(self.beacon)
+    end
+
+    Line.summarize_effects(self, false, true)
+end
+
+
 -- Updates the line attribute containing the total module effects of this line (modules+beacons)
 function Line.summarize_effects(self, summarize_machine, summarize_beacon)
     if self.subfloor ~= nil or self.machine == nil then return nil end
@@ -252,7 +243,6 @@ end
 function Line.pack(self)
     local packed_line = {
         recipe = Recipe.pack(self.recipe),
-        percentage = self.percentage,
         comment = self.comment,
         class = self.class
     }
@@ -265,6 +255,8 @@ function Line.pack(self)
 
         packed_line.machine = Machine.pack(self.machine)
         packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
+
+        packed_line.percentage = self.percentage
         packed_line.priority_product_proto = priority_product_proto
     end
 
@@ -272,20 +264,17 @@ function Line.pack(self)
 end
 
 function Line.unpack(packed_self)
-    local self = Line.init(packed_self.recipe)
-
-    self.percentage = packed_self.percentage
+    local self = Line.init(packed_self.recipe, true)
     self.comment = packed_self.comment
 
-    if packed_self.subfloor ~= nil then
-
-    else
+    if packed_self.subfloor == nil then
         self.machine = Machine.unpack(packed_self.machine)
         self.machine.parent = self
 
         self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
         if self.beacon then self.beacon.parent = self end
 
+        self.percentage = packed_self.percentage
         self.priority_product_proto = packed_self.priority_product_proto
         -- Effects are summarized by the ensuing validation
     end
