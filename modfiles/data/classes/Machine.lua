@@ -200,6 +200,30 @@ function Machine.trim_modules(self)
 end
 
 
+function Machine.pack(self)
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        limit = self.limit,
+        hard_limit = self.hard_limit,
+        fuel = (self.fuel) and Fuel.pack(self.fuel) or nil,
+        Module = Collection.pack(self.Module),
+        module_count = self.module_count,
+        class = self.class
+    }
+end
+
+function Machine.unpack(packed_self)
+    local self = packed_self
+    self.fuel = (packed_self.fuel) and Fuel.unpack(packed_self.fuel) or nil
+    if self.fuel then self.fuel.parent = self end
+
+    self.Module = Collection.unpack(packed_self.Module, self)
+    -- Effects are summarized by the ensuing validation
+
+    return self
+end
+
+
 -- Needs validation: proto, fuel, Module
 function Machine.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "machines", "category")
