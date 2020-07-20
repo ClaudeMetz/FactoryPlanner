@@ -263,7 +263,7 @@ function Line.pack(self)
         local priority_product_proto = (self.priority_product_proto ~= nil) and
           prototyper.util.simplify_prototype(self.priority_product_proto)
 
-        --packed_line.machine = Machine.pack(self.machine)
+        packed_line.machine = Machine.pack(self.machine)
         packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
         packed_line.priority_product_proto = priority_product_proto
     end
@@ -280,11 +280,14 @@ function Line.unpack(packed_self)
     if packed_self.subfloor ~= nil then
 
     else
-        --self.machine = Machine.unpack(packed_self.machine)
-        self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
-        self.priority_product_proto = packed_self.priority_product_proto
+        self.machine = Machine.unpack(packed_self.machine)
+        self.machine.parent = self
 
-        --Line.summarize_effects(self, true, true)
+        self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
+        if self.beacon then self.beacon.parent = self end
+
+        self.priority_product_proto = packed_self.priority_product_proto
+        -- Effects are summarized by the ensuing validation
     end
 
     return self

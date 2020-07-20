@@ -64,7 +64,7 @@ function Beacon.unpack(packed_self)
 
     self.module = Module.unpack(packed_self.module)
     self.module.parent = self
-    -- total_effects is recalculated from the parent line
+    -- Effects are summarized by the ensuing validation
 
     return self
 end
