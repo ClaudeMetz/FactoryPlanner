@@ -1,12 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - Updated to the new version of the Recipe Book remote interface (now requires Recipe Book v2.0.1 and up)
   Bugfixes:
-    -
+    - Fixed a crash on startup when adding Factory Planner to an existing save
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.39
