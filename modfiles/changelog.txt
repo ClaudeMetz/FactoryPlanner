@@ -1,11 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
-  Changes:
-    -
   Bugfixes:
+    - Fixed a migration issue that would cause the save to crash when loading. Sorry about that one.
     - Fixed a crash when switching to the floor-view in the utilities dialog under certain circumstances
     - Fixed an issue where the subfloor machine total was not added up correctly
     - Fixed a crash when using the beacon-selector
