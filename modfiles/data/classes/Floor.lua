@@ -140,6 +140,25 @@ function Floor.get_component_data(self, component_table)
 end
 
 
+function Floor.pack(self)
+    return {
+        Line = Collection.pack(self.Line),
+        level = self.level,
+        class = self.class
+    }
+end
+
+function Floor.unpack(packed_self, subfactory)
+    local self = Floor.init()
+    self.level = packed_self.level
+    self.Line = Collection.unpack(packed_self.Line, self)
+
+    Subfactory.add(subfactory, self)
+
+    return self
+end
+
+
 -- Needs validation: Line
 function Floor.validate(self)
     self.valid = Collection.validate_datasets(self.Line)

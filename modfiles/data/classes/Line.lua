@@ -249,6 +249,46 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
 end
 
 
+function Line.pack(self)
+    local packed_line = {
+        recipe = Recipe.pack(self.recipe),
+        percentage = self.percentage,
+        comment = self.comment,
+        class = self.class
+    }
+
+    if self.subfloor ~= nil then
+        packed_line.subfloor = Floor.pack(self.subfloor)
+    else
+        local priority_product_proto = (self.priority_product_proto ~= nil) and
+          prototyper.util.simplify_prototype(self.priority_product_proto)
+
+        --packed_line.machine = Machine.pack(self.machine)
+        --packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
+        packed_line.priority_product_proto = priority_product_proto
+    end
+
+    return packed_line
+end
+
+function Line.unpack(packed_self)
+    local self = Line.init(packed_self.recipe)
+
+    self.percentage = packed_self.percentage
+    self.comment = packed_self.comment
+
+    if packed_self.subfloor ~= nil then
+
+    else
+        --self.machine = Machine.unpack(packed_self.machine)
+        --self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
+        self.priority_product_proto = packed_self.priority_product_proto
+    end
+
+    return self
+end
+
+
 -- Needs validation: recipe, machine, beacon, priority_product_proto, subfloor
 function Line.validate(self)
     self.valid = true
