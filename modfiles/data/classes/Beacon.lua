@@ -49,6 +49,27 @@ function Beacon.summarize_effects(self)
 end
 
 
+function Beacon.pack(self)
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        amount = self.amount,
+        module = Module.pack(self.module),
+        total_amount = self.total_amount,
+        class = self.class
+    }
+end
+
+function Beacon.unpack(packed_self)
+    local self = packed_self
+
+    self.module = Module.unpack(packed_self.module)
+    self.module.parent = self
+    -- total_effects is recalculated from the parent line
+
+    return self
+end
+
+
 -- Needs validation: proto, module
 function Beacon.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "beacons", nil)
