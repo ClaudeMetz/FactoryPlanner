@@ -1,11 +1,9 @@
 porter = {}
 
--- TODO care about including mod version, running migration, validation
-
 -- ** TOP LEVEL **
 function porter.export(subfactory)
     local packed_subfactory = Subfactory.pack(subfactory)
-
+    llog(packed_subfactory)
     return game.encode_string(game.table_to_json(packed_subfactory))
 end
 

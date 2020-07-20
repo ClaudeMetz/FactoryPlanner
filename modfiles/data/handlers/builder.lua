@@ -106,10 +106,12 @@ function builder.dev_config(player)
         local factory = context.factory
 
         -- Subfactories
-        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}, "one_minute"))
+        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"},
+          "one_minute", true))
         ui_util.context.set_subfactory(player, subfactory)
-        Factory.add(factory, Subfactory.init("Beta", nil, "one_minute"))
-        Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}, "one_minute"))
+
+        Factory.add(factory, Subfactory.init("Beta", nil, "one_minute", true))
+        Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}, "one_minute", true))
 
         -- Products
         local products = {
@@ -167,7 +169,7 @@ function builder.example_subfactory(player)
 
     -- Always add the example subfactory as a non-archived one
     local subfactory = Factory.add(factory, Subfactory.init("Example",
-      {type="item", name="production-science-pack"}, "one_minute"))
+      {type="item", name="production-science-pack"}, "one_minute", true))
     factory.selected_subfactory = subfactory
     ui_util.context.set_factory(player, factory)
     ui_state.flags.archive_open = false

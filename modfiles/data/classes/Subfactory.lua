@@ -1,7 +1,7 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon, timescale_setting)
+function Subfactory.init(name, icon, timescale_setting, initialize_first_floor)
     local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
 
     local subfactory = {
@@ -25,9 +25,10 @@ function Subfactory.init(name, icon, timescale_setting)
 
     Subfactory.set_icon(subfactory, icon)
 
-    -- Add first floor to the subfactory
-    subfactory.selected_floor = Floor.init(nil)
-    Subfactory.add(subfactory, subfactory.selected_floor)
+    if initialize_first_floor then
+        subfactory.selected_floor = Floor.init(nil)
+        Subfactory.add(subfactory, subfactory.selected_floor)
+    end
 
     return subfactory
 end
@@ -134,20 +135,23 @@ function Subfactory.pack(self)
         notes = self.notes,
         mining_productivity = self.mining_productivity,
         Product = Collection.pack(self.Product),
-        --Floor = Collection.pack(self.Floor),
+        -- Floors get packed by recursive nesting, which is necessary for a json-type data
+        -- structure. It will need to be unpacked into the regular structure 'manually'.
+        top_floor = Floor.pack(Subfactory.get(self, "Floor", 1)),
         class = self.class
     }
 end
 
 function Subfactory.unpack(packed_self)
-    local self = Subfactory.init(packed_self.name, packed_self.icon, 0)
+    local self = Subfactory.init(packed_self.name, packed_self.icon, 0, false)
 
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
-    --self.Floor = Collection.unpack(packed_self.Floor, self)
-    self.class = packed_self.class
+
+    -- Unpacks the floors recursively, starting at the top
+    self.selected_floor = Floor.unpack(packed_self.top_floor, self)
 
     return self
 end
