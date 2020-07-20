@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.41
+Date: 20. 07. 2020
   Bugfixes:
     - Fixed an issue where fuels were not being migrated correctly
 
