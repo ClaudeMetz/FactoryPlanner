@@ -27,6 +27,19 @@ function Module.change_amount(self, new_amount)
 end
 
 
+function Module.pack(self)
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        amount = self.amount,
+        class = self.class
+    }
+end
+
+function Module.unpack(packed_self)
+    return packed_self
+end
+
+
 -- Needs validation: proto
 function Module.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "modules", "category")

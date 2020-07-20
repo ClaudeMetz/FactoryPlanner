@@ -264,7 +264,7 @@ function Line.pack(self)
           prototyper.util.simplify_prototype(self.priority_product_proto)
 
         --packed_line.machine = Machine.pack(self.machine)
-        --packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
+        packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
         packed_line.priority_product_proto = priority_product_proto
     end
 
@@ -281,8 +281,10 @@ function Line.unpack(packed_self)
 
     else
         --self.machine = Machine.unpack(packed_self.machine)
-        --self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
+        self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
         self.priority_product_proto = packed_self.priority_product_proto
+
+        --Line.summarize_effects(self, true, true)
     end
 
     return self
