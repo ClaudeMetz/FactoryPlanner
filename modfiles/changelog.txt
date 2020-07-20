@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.40
+Date: 20. 07. 2020
   Changes:
     - Updated to the new version of the Recipe Book remote interface (now requires Recipe Book v2.0.1 and up)
   Bugfixes:
