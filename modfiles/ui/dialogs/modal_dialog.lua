@@ -164,15 +164,15 @@ end
 
 -- Changes the main dialog in reaction to a modal dialog being opened/closed
 local function toggle_modal_dialog(player, frame_modal_dialog)
-    local main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
 
     -- If the frame parameter is not nil, the given modal dialog has been opened
     if frame_modal_dialog ~= nil then
         player.opened = frame_modal_dialog
-        main_dialog.ignored_by_interaction = true
+        frame_main_dialog.ignored_by_interaction = true
     else
-        player.opened = main_dialog
-        main_dialog.ignored_by_interaction = false
+        player.opened = frame_main_dialog
+        frame_main_dialog.ignored_by_interaction = false
     end
 end
 
@@ -267,19 +267,19 @@ function modal_dialog.set_selection_mode(player, state)
     if ui_state.modal_dialog_type == "beacon" then
         ui_state.flags.selection_mode = state
 
-        local main_dialog = player.gui.screen["fp_frame_main_dialog"]
-        main_dialog.visible = not state
+        local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        frame_main_dialog.visible = not state
 
         local frame_modal_dialog = modal_dialog.find(player)
         frame_modal_dialog.ignored_by_interaction = state
 
         if state == true then
             frame_modal_dialog.location = {25, 50}
-            main_dialog.set_pause_state(player, main_dialog, true)
+            main_dialog.set_pause_state(player, frame_main_dialog, true)
         else
             frame_modal_dialog.force_auto_center()
             player.opened = frame_modal_dialog
-            main_dialog.set_pause_state(player, main_dialog)
+            main_dialog.set_pause_state(player, frame_main_dialog)
         end
     end
 end

@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when switching to the floor-view in the utilities dialog under certain circumstances
     - Fixed an issue where the subfloor machine total was not added up correctly
+    - Fixed a crash when using the beacon-selector
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.38

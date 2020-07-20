@@ -60,8 +60,8 @@ end
 
 -- ** TOP LEVEL **
 -- Creates the subfactory bar that includes all current subfactory buttons
-function subfactory_bar.add_to(main_dialog)
-    local flow_subfactory_bar = main_dialog.add{type="scroll-pane", name="scroll-pane_subfactory_bar",
+function subfactory_bar.add_to(frame_main_dialog)
+    local flow_subfactory_bar = frame_main_dialog.add{type="scroll-pane", name="scroll-pane_subfactory_bar",
       direction="vertical"}
     flow_subfactory_bar.style.maximal_height = 88
     flow_subfactory_bar.style.margin = {0, 2, 8, 6}
@@ -72,7 +72,7 @@ function subfactory_bar.add_to(main_dialog)
     local table_subfactories = flow_subfactory_bar.add{type="table", name="table_subfactories", column_count=1}
     table_subfactories.style.vertical_spacing = 4
 
-    subfactory_bar.refresh(game.get_player(main_dialog.player_index), true)
+    subfactory_bar.refresh(game.get_player(frame_main_dialog.player_index), true)
 end
 
 -- Refreshes the subfactory bar by reloading the data

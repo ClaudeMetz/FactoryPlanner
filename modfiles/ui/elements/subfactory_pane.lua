@@ -113,15 +113,15 @@ end
 
 -- ** TOP LEVEL **
 -- Creates the subfactory pane that includes the products, byproducts and ingredients, and an info-pane
-function subfactory_pane.add_to(main_dialog)
-    local table_subfactory = main_dialog.add{type="table", name="table_subfactory_pane",
+function subfactory_pane.add_to(frame_main_dialog)
+    local table_subfactory = frame_main_dialog.add{type="table", name="table_subfactory_pane",
       column_count=4, style="table", visible=false}
     table_subfactory.draw_vertical_lines = true
     table_subfactory.style.vertically_squashable = false
     table_subfactory.style.height = 153
     table_subfactory.style.bottom_margin = 10
 
-    local player = game.get_player(main_dialog.player_index)
+    local player = game.get_player(frame_main_dialog.player_index)
     local pane_width = (get_ui_state(player).main_dialog_dimensions.width - 2*18) / 4
     local panes = {"info", "ingredient", "product", "byproduct"}
 

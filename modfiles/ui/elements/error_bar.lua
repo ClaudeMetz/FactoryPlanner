@@ -19,11 +19,11 @@ end
 
 -- ** TOP LEVEL **
 -- Creates the error bar
-function error_bar.add_to(main_dialog)
-    local flow_error_bar = main_dialog.add{type="flow", name="flow_error_bar", direction="vertical"}
+function error_bar.add_to(frame_main_dialog)
+    local flow_error_bar = frame_main_dialog.add{type="flow", name="flow_error_bar", direction="vertical"}
     flow_error_bar.style.top_margin = 6
 
-    error_bar.refresh(game.get_player(main_dialog.player_index))
+    error_bar.refresh(game.get_player(frame_main_dialog.player_index))
 end
 
 -- Refreshes the error_bar
