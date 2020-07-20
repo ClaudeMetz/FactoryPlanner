@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.39
+Date: 20. 07. 2020
   Bugfixes:
     - Fixed a migration issue that would cause the save to crash when loading. Sorry about that one.
     - Fixed a crash when switching to the floor-view in the utilities dialog under certain circumstances
