@@ -123,8 +123,9 @@ local function create_line_table_row(player, line)
 
 
     -- Percentage textfield
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
-      text=line.percentage, enabled=(not archive_open)}
+      text=relevant_line.percentage, enabled=(not archive_open)}
     textfield_percentage.style.width = 55
     textfield_percentage.style.horizontal_align = "center"
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)

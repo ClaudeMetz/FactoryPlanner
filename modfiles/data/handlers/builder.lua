@@ -53,7 +53,7 @@ local function construct_floor(player, floor, recipes)
         local category = global.all_machines.categories[global.all_machines.map[recipe.proto.category]]
         local machine_proto = category.machines[category.map[recipe_data.machine]]
 
-        local line = Floor.add(floor, Line.init(recipe))
+        local line = Floor.add(floor, Line.init(recipe, true))
         Line.change_machine(line, player, machine_proto, nil)
 
         -- Optionally, add modules
