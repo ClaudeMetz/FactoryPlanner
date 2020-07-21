@@ -18,8 +18,8 @@ function migration_0_18_38.subfactory(player, subfactory)
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Product")) do item.type = nil end
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Byproduct")) do item.type = nil end
 
-    for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
-        for _, line in pairs(Subfactory.get_in_order(floor, "Line")) do
+    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
+        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             line.machine.parent = line
 
             local module_count = 0
