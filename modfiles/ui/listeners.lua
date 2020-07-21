@@ -330,7 +330,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Reacts to the duplicate-button being pressed
         elseif element_name == "fp_button_duplicate_subfactory" then
-            actionbar.handle_subfactory_duplication(player)
+            actionbar.handle_subfactory_duplication(player, event.alt)
 
         -- Toggles the archive-view-mode
         elseif element_name == "fp_button_toggle_archive" then
