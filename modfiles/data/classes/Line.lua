@@ -1,9 +1,11 @@
--- 'Class' representing an assembly line producing a single recipe
+-- 'Class' representing an assembly line producing a recipe or representing a subfloor
 Line = {}
 
-function Line.init(recipe, is_standalone_line)
+function Line.init(recipe)
+    local is_standalone_line = (recipe ~= nil)
+
     return {
-        recipe = recipe,
+        recipe = recipe,  -- can be nil
         percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
@@ -242,19 +244,21 @@ end
 
 function Line.pack(self)
     local packed_line = {
-        recipe = Recipe.pack(self.recipe),
         comment = self.comment,
         class = self.class
     }
 
     if self.subfloor ~= nil then
         packed_line.subfloor = Floor.pack(self.subfloor)
+
     else
-        local priority_product_proto = (self.priority_product_proto ~= nil) and
-          prototyper.util.simplify_prototype(self.priority_product_proto)
+        packed_line.recipe = Recipe.pack(self.recipe)
 
         packed_line.machine = Machine.pack(self.machine)
         packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
+
+        local priority_product_proto = (self.priority_product_proto ~= nil) and
+          prototyper.util.simplify_prototype(self.priority_product_proto)
 
         packed_line.percentage = self.percentage
         packed_line.priority_product_proto = priority_product_proto
@@ -264,20 +268,19 @@ function Line.pack(self)
 end
 
 function Line.unpack(packed_self)
-    local self = Line.init(packed_self.recipe, true)
+    -- Only lines without subfloors are ever unpacked, so it can be treated as such
+    local self = Line.init(packed_self.recipe)
+
+    self.machine = Machine.unpack(packed_self.machine)
+    self.machine.parent = self
+
+    self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
+    if self.beacon then self.beacon.parent = self end
+
     self.comment = packed_self.comment
-
-    if packed_self.subfloor == nil then
-        self.machine = Machine.unpack(packed_self.machine)
-        self.machine.parent = self
-
-        self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
-        if self.beacon then self.beacon.parent = self end
-
-        self.percentage = packed_self.percentage
-        self.priority_product_proto = packed_self.priority_product_proto
-        -- Effects are summarized by the ensuing validation
-    end
+    self.percentage = packed_self.percentage
+    self.priority_product_proto = packed_self.priority_product_proto
+    -- Effects are summarized by the ensuing validation
 
     return self
 end
@@ -287,13 +290,12 @@ end
 function Line.validate(self)
     self.valid = true
 
-    self.valid = Recipe.validate(self.recipe) and self.valid
-
-    -- When this line has a subfloor, only the recipe and the subfloor need to be checked
-    if self.subfloor then
+    if self.subfloor then  -- when this line has a subfloor, only the subfloor need to be checked
         self.valid = Floor.validate(self.subfloor) and self.valid
 
     else
+        self.valid = Recipe.validate(self.recipe) and self.valid
+
         self.valid = Machine.validate(self.machine) and self.valid
 
         if self.beacon then self.valid = Beacon.validate(self.beacon) and self.valid end
@@ -313,15 +315,17 @@ end
 function Line.repair(self, player)
     self.valid = true
 
-    if not self.recipe.valid then self.valid = Recipe.repair(self.recipe, nil) end
-
     if self.subfloor then
-        if self.valid and not self.subfloor.valid then
+        if not self.subfloor.valid then
             -- Repairing a floor always makes it valid, or removes it if left empty
             Floor.repair(self.subfloor, player)
         end
 
     else
+        if not self.recipe.valid then
+            self.valid = Recipe.repair(self.recipe, nil)
+        end
+
         if self.valid and not self.machine.valid then
             self.valid = Machine.repair(self.machine, player)
         end
