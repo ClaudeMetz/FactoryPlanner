@@ -310,35 +310,13 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_titlebar_preferences" then
             modal_dialog.enter(player, {type="preferences", close=true})
 
-        -- Opens the new-subfactory dialog
-        elseif element_name == "fp_button_new_subfactory" then
-            modal_dialog.enter(player, {type="subfactory", submit=true})
-
-        -- Opens the edit-subfactory dialog
-        elseif element_name == "fp_button_edit_subfactory" then
-            local subfactory = ui_state.context.subfactory
-            modal_dialog.enter(player, {type="subfactory", submit=true,
-              delete=true, modal_data={subfactory=subfactory}})
-
-        -- Reacts to the archive-button being pressed
-        elseif element_name == "fp_button_archive_subfactory" then
-            actionbar.handle_subfactory_archivation(player)
-
-        -- Reacts to the delete-button being pressed
-        elseif element_name == "fp_button_delete_subfactory" then
-            actionbar.handle_subfactory_deletion(player)
-
-        -- Reacts to the duplicate-button being pressed
-        elseif element_name == "fp_button_duplicate_subfactory" then
-            actionbar.handle_subfactory_duplication(player, event.alt)
-
         -- Toggles the archive-view-mode
         elseif element_name == "fp_button_toggle_archive" then
             actionbar.toggle_archive_view(player)
 
         -- Opens utilitys dialog
         elseif element_name == "fp_button_open_utility_dialog" then
-            modal_dialog.enter(player, {type="utility"})
+            modal_dialog.enter(player, {type="utility", close=true})
 
         -- Changes into the manual override of the mining prod mode
         elseif element_name == "fp_button_mining_prod_override" then
@@ -376,6 +354,11 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
             local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
             modal_dialog.exit(player, dialog_action, {})
+
+            -- Reacts to a actionbar button being pressed
+        elseif string.find(element_name, "^fp_button_actionbar_[a-z]+$") then
+            local actionbar_action = string.gsub(element_name, "fp_button_actionbar_", "")
+            actionbar[actionbar_action .. "_subfactory"](player, event.alt)
 
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
