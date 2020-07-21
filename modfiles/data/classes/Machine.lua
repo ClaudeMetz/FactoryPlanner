@@ -1,4 +1,4 @@
--- Class representing a machine with its attached modules
+-- Class representing a machine with its attached modules and fuel
 Machine = {}
 
 -- Initialised by passing a prototype from the all_machines global table

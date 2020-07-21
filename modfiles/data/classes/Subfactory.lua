@@ -1,7 +1,7 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon, timescale_setting, initialize_first_floor)
+function Subfactory.init(name, icon, timescale_setting)
     local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
 
     local subfactory = {
@@ -25,10 +25,9 @@ function Subfactory.init(name, icon, timescale_setting, initialize_first_floor)
 
     Subfactory.set_icon(subfactory, icon)
 
-    if initialize_first_floor then
-        subfactory.selected_floor = Floor.init(nil)
-        Subfactory.add(subfactory, subfactory.selected_floor)
-    end
+    -- Initialize the subfactory with an empty top floor
+    subfactory.selected_floor = Floor.init(nil)
+    Subfactory.add(subfactory, subfactory.selected_floor)
 
     return subfactory
 end
@@ -143,15 +142,34 @@ function Subfactory.pack(self)
 end
 
 function Subfactory.unpack(packed_self)
-    local self = Subfactory.init(packed_self.name, packed_self.icon, 0, false)
+    local self = Subfactory.init(packed_self.name, packed_self.icon, 0)
 
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
 
-    -- Unpacks the floors recursively, starting at the top
-    self.selected_floor = Floor.unpack(packed_self.top_floor, self)
+    local function unpack_floor(packed_floor, floor)
+        for _, packed_line in pairs(packed_floor.Line.objects) do
+            if packed_line.subfloor ~= nil then
+                local line = Line.unpack(packed_line.subfloor.Line.objects[1])
+                Floor.add(floor, line)
+
+                local subfloor = Floor.init(line)
+                subfloor.origin_line.comment = packed_line.comment
+                Subfactory.add(self, subfloor)
+
+                table.remove(packed_line.subfloor.Line.objects, 1)
+                unpack_floor(packed_line.subfloor, subfloor)
+            else
+                local line = Line.unpack(packed_line)
+                Floor.add(floor, line)
+            end
+        end
+    end
+
+    local top_floor = self.selected_floor
+    unpack_floor(packed_self.top_floor, top_floor)
 
     return self
 end
