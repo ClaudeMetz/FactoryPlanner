@@ -148,14 +148,35 @@ function Floor.pack(self)
     }
 end
 
-function Floor.unpack(packed_self, subfactory)
-    local self = Floor.init()
-    self.level = packed_self.level
-    self.Line = Collection.unpack(packed_self.Line, self)
+-- This unpack-function differs in that it gets called with the floor already existing
+-- This function should thus unpack itself into that floor, instead of creating a new one
+function Floor.unpack(packed_self, self)
+    -- This can't use Collection.unpack for its lines because of its recursive nature
+    -- It might also be possible and more correct to move some of this functionality
+    -- to the Line-class, but this works and is more understandable
 
-    Subfactory.add(subfactory, self)
+    for _, packed_line in pairs(packed_self.Line.objects) do
+        if packed_line.subfloor ~= nil then
+            -- Add the first subfloor line as a line in this floor
+            local subfloor_line = Line.unpack(packed_line.subfloor.Line.objects[1])
+            Floor.add(self, subfloor_line)
 
-    return self
+            -- Use that line to create the subfloor, which moves it to the newly created floor
+            local subfloor = Floor.init(subfloor_line)
+            subfloor.origin_line.comment = packed_line.comment  -- carry over the origin_line's comment
+            Subfactory.add(self.parent, subfloor)
+
+            -- Remove the first subfloor line as it has already been created by initializing the subfloor with it
+            table.remove(packed_line.subfloor.Line.objects, 1)
+
+            Floor.unpack(packed_line.subfloor, subfloor)
+
+        else  -- a normal line just gets unpacked and added straight away
+            Floor.add(self, Line.unpack(packed_line))
+        end
+    end
+
+    -- return value is not needed here
 end
 
 
