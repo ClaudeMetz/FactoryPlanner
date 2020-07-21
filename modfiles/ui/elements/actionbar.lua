@@ -132,19 +132,24 @@ function actionbar.handle_subfactory_archivation(player)
 end
 
 -- Perfectly duplicates the current subfactory
-function actionbar.handle_subfactory_duplication(player)
+function actionbar.handle_subfactory_duplication(player, alt)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
 
-    -- This relies on the porting-functionality. It basically exports and
-    -- immediately imports the subfactory, effectively duplicating it
-    local subfactory_string = porter.export(subfactory)
-    local unpacked_subfactory = porter.import(subfactory_string)
-    local duplicated_subfactory = Factory.add(ui_state.context.factory, unpacked_subfactory)
+    -- alt-clicking in devmode prints the export-string to the log for later use
+    if alt and devmode then
+        llog(porter.export(subfactory))
+    else
+        -- This relies on the porting-functionality. It basically exports and
+        -- immediately imports the subfactory, effectively duplicating it
+        local subfactory_string = porter.export(subfactory)
+        local unpacked_subfactory = porter.import(subfactory_string)
+        local duplicated_subfactory = Factory.add(ui_state.context.factory, unpacked_subfactory)
 
-    ui_state.current_activity = nil
-    ui_util.context.set_subfactory(player, duplicated_subfactory)
-    calculation.update(player, duplicated_subfactory, true)
+        ui_state.current_activity = nil
+        ui_util.context.set_subfactory(player, duplicated_subfactory)
+        calculation.update(player, duplicated_subfactory, true)
+    end
 end
 
 
