@@ -149,27 +149,9 @@ function Subfactory.unpack(packed_self)
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
 
-    local function unpack_floor(packed_floor, floor)
-        for _, packed_line in pairs(packed_floor.Line.objects) do
-            if packed_line.subfloor ~= nil then
-                local line = Line.unpack(packed_line.subfloor.Line.objects[1])
-                Floor.add(floor, line)
-
-                local subfloor = Floor.init(line)
-                subfloor.origin_line.comment = packed_line.comment
-                Subfactory.add(self, subfloor)
-
-                table.remove(packed_line.subfloor.Line.objects, 1)
-                unpack_floor(packed_line.subfloor, subfloor)
-            else
-                local line = Line.unpack(packed_line)
-                Floor.add(floor, line)
-            end
-        end
-    end
-
+    -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
     local top_floor = self.selected_floor
-    unpack_floor(packed_self.top_floor, top_floor)
+    Floor.unpack(packed_self.top_floor, top_floor)
 
     return self
 end
