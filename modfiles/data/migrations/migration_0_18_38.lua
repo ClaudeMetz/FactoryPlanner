@@ -11,7 +11,7 @@ end
 function migration_0_18_38.subfactory(player, subfactory)
     if not subfactory.valid then
         Factory.remove(subfactory.parent, subfactory)
-        return
+        return "removed"
     end
 
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Ingredient")) do item.type = nil end

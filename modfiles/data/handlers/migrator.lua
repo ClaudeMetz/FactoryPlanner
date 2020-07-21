@@ -63,8 +63,13 @@ end
 local function apply_migrations(migrations, name, player, object)
     for _, migration in ipairs(migrations) do
         local internal_version = migration:gsub("%.", "_")
-        local f = _G["migration_" .. internal_version][name]
-        if f ~= nil then f(player, object) end
+        local migration_function = _G["migration_" .. internal_version][name]
+        if migration_function ~= nil then
+            local migration_message = migration_function(player, object)
+
+            -- If no message is returned, everything went fine
+            if migration_message == "removed" then break end
+        end
     end
 end
 
