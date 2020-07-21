@@ -36,9 +36,11 @@ function subfactory_dialog.open(flow_modal_dialog, modal_data)
             elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
         end
 
-        create_subfactory_dialog_structure(flow_modal_dialog, {"fp.edit_subfactory"}, subfactory.name, icon)
+        local caption = {"", {"fp.edit"}, " ", {"fp.subfactory"}}
+        create_subfactory_dialog_structure(flow_modal_dialog, caption, subfactory.name, icon)
     else
-        create_subfactory_dialog_structure(flow_modal_dialog, {"fp.new_subfactory"}, nil, nil)
+        local caption = {"", {"fp.new"}, " ", {"fp.subfactory"}}
+        create_subfactory_dialog_structure(flow_modal_dialog, caption, nil, nil)
     end
 end
 
