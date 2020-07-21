@@ -16,7 +16,7 @@ function Floor.init(creating_line)
         floor.level = creating_line.parent.level + 1
         floor.parent = creating_line.parent
 
-        local origin_line = Line.init(creating_line.recipe, false)
+        local origin_line = Line.init(nil)
         -- No need to set a machine in this case
 
         origin_line.subfloor = floor

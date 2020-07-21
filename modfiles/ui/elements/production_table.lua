@@ -329,7 +329,11 @@ end
 -- Separate function so it can be refreshed independently
 function production_table.refresh_recipe_button(player, line, table_production)
     local ui_state = get_ui_state(player)
-    local tooltip, style, enabled = line.recipe.proto.localised_name, "fp_button_icon_medium_blank", true
+
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local recipe_proto = relevant_line.recipe.proto
+
+    local tooltip, style, enabled = recipe_proto.localised_name, "fp_button_icon_medium_blank", true
 
     -- Make the first line of every subfloor uninteractable, it stays constant
     if ui_state.context.floor.level > 1 and line.gui_position == 1 then
@@ -352,7 +356,7 @@ function production_table.refresh_recipe_button(player, line, table_production)
 
     -- Either create or refresh the recipe button
     if button_recipe == nil then
-        table_production.add{type="sprite-button", name=button_name, style=style, sprite=line.recipe.proto.sprite,
+        table_production.add{type="sprite-button", name=button_name, style=style, sprite=recipe_proto.sprite,
           tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
     else
         button_recipe.tooltip = tooltip

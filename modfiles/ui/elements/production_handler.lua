@@ -11,8 +11,9 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
     local archive_status = ui_util.check_archive_status(player)
 
     if alt and direction == nil then
+        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
         ui_util.execute_alt_action(player, "show_recipe",
-          {recipe=line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
+          {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
         if archive_status then return end
@@ -101,6 +102,8 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local recipe_proto = relevant_line.recipe.proto
 
     -- machine_id being nil means the user wants to change the machine of this (assembly) line
     if machine_id == nil then
@@ -140,7 +143,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                         button_generator = production_handler.generate_chooser_machine_buttons,
                         click_handler = production_handler.apply_machine_choice,
                         title = {"fp.machine"},
-                        text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
+                        text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
                         object = line.machine
                     }
 
@@ -154,7 +157,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             local modal_data = {
                 submission_handler = production_handler.apply_machine_options,
                 title = {"fp.machine_limit_title"},
-                text = {"", {"fp.machine_limit_text"}, " '", line.recipe.proto.localised_name, "':"},
+                text = {"", {"fp.machine_limit_text"}, " '", recipe_proto.localised_name, "':"},
                 object = line.machine,
                 fields = {
                     {
