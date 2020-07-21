@@ -320,13 +320,17 @@ script.on_event(defines.events.on_gui_click, function(event)
             modal_dialog.enter(player, {type="subfactory", submit=true,
               delete=true, modal_data={subfactory=subfactory}})
 
-        -- Reacts to the archive button being pressed
+        -- Reacts to the archive-button being pressed
         elseif element_name == "fp_button_archive_subfactory" then
             actionbar.handle_subfactory_archivation(player)
 
-        -- Reacts to the delete button being pressed
+        -- Reacts to the delete-button being pressed
         elseif element_name == "fp_button_delete_subfactory" then
             actionbar.handle_subfactory_deletion(player)
+
+        -- Reacts to the duplicate-button being pressed
+        elseif element_name == "fp_button_duplicate_subfactory" then
+            actionbar.handle_subfactory_duplication(player, event.alt)
 
         -- Toggles the archive-view-mode
         elseif element_name == "fp_button_toggle_archive" then

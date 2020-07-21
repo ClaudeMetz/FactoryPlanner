@@ -3,7 +3,7 @@ Factory = {}
 
 function Factory.init()
     return {
-        Subfactory = Collection.init(),
+        Subfactory = Collection.init("Subfactory"),
         selected_subfactory = nil,
         -- A Factory can not become invalid
         class = "Factory"

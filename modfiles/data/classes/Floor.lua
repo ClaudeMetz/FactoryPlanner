@@ -5,7 +5,7 @@ function Floor.init(creating_line)
     local floor = {
         level = 1,  -- top floor has a level of 1, it's initialized with Floor.init(nil)
         origin_line = nil,  -- set below
-        Line = Collection.init(),
+        Line = Collection.init("Line"),
         valid = true,
         class = "Floor"
     }
@@ -16,7 +16,7 @@ function Floor.init(creating_line)
         floor.level = creating_line.parent.level + 1
         floor.parent = creating_line.parent
 
-        local origin_line = Line.init(creating_line.recipe)
+        local origin_line = Line.init(nil)
         -- No need to set a machine in this case
 
         origin_line.subfloor = floor
@@ -139,16 +139,56 @@ function Floor.get_component_data(self, component_table)
 end
 
 
+function Floor.pack(self)
+    return {
+        Line = Collection.pack(self.Line),
+        level = self.level,
+        class = self.class
+    }
+end
+
+-- This unpack-function differs in that it gets called with the floor already existing
+-- This function should thus unpack itself into that floor, instead of creating a new one
+function Floor.unpack(packed_self, self)
+    -- This can't use Collection.unpack for its lines because of its recursive nature
+    -- It might also be possible and more correct to move some of this functionality
+    -- to the Line-class, but this works and is more understandable
+
+    for _, packed_line in pairs(packed_self.Line.objects) do
+        if packed_line.subfloor ~= nil then
+            -- Add the first subfloor line as a line in this floor
+            local subfloor_line = Line.unpack(packed_line.subfloor.Line.objects[1])
+            Floor.add(self, subfloor_line)
+
+            -- Use that line to create the subfloor, which moves it to the newly created floor
+            local subfloor = Floor.init(subfloor_line)
+            subfloor.origin_line.comment = packed_line.comment  -- carry over the origin_line's comment
+            Subfactory.add(self.parent, subfloor)
+
+            -- Remove the first subfloor line as it has already been created by initializing the subfloor with it
+            table.remove(packed_line.subfloor.Line.objects, 1)
+
+            Floor.unpack(packed_line.subfloor, subfloor)
+
+        else  -- a normal line just gets unpacked and added straight away
+            Floor.add(self, Line.unpack(packed_line))
+        end
+    end
+
+    -- return value is not needed here
+end
+
+
 -- Needs validation: Line
 function Floor.validate(self)
-    self.valid = Collection.validate_datasets(self.Line, "Line")
+    self.valid = Collection.validate_datasets(self.Line)
     return self.valid
 end
 
 -- Needs repair: Line
 function Floor.repair(self, player)
     -- Unrepairable lines get removed, so the subfactory will always be valid afterwards
-    Collection.repair_datasets(self.Line, player, "Line")
+    Collection.repair_datasets(self.Line, player)
     self.valid = true
 
     -- Make this floor remove itself if it's empty after repairs

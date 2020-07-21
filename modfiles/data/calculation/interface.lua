@@ -19,15 +19,14 @@ local function generate_floor_data(player, subfactory, floor)
       (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-        local line_data = {
-            id = line.id,
-            recipe_proto = line.recipe.proto  -- reference
-        }
+        local line_data = { id = line.id }
 
         if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
+            line_data.recipe_proto = Floor.get(line.subfloor, "Line", 1).recipe.proto
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
 
         else
+            line_data.recipe_proto = line.recipe.proto  -- reference
             line_data.timescale = subfactory.timescale
             line_data.percentage = line.percentage
             line_data.production_type = line.recipe.production_type

@@ -1,22 +1,24 @@
--- 'Class' representing an assembly line producing a single recipe
+-- 'Class' representing an assembly line producing a recipe or representing a subfloor
 Line = {}
 
 function Line.init(recipe)
+    local is_standalone_line = (recipe ~= nil)
+
     return {
-        recipe = recipe,
-        percentage = 100,
+        recipe = recipe,  -- can be nil
+        percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
         total_effects = nil,  -- initialized after a machine is set
         energy_consumption = 0,
         pollution = 0,
-        Product = Collection.init(),
-        Byproduct = Collection.init(),
-        Ingredient = Collection.init(),
+        Product = Collection.init("Item"),
+        Byproduct = Collection.init("Item"),
+        Ingredient = Collection.init("Item"),
         priority_product_proto = nil,  -- set by the user
         comment = nil,
-        production_ratio = 0,
-        uncapped_production_ratio = 0, -- used to calculate machine_choice-numbers
+        production_ratio = (is_standalone_line) and 0 or nil,
+        uncapped_production_ratio = (is_standalone_line) and 0 or nil,
         subfloor = nil,
         valid = true,
         class = "Line"
@@ -35,28 +37,6 @@ end
 
 function Line.replace(self, dataset, object)
     return Collection.replace(self[dataset.class], dataset, object)
-end
-
-
-function Line.set_percentage(self, percentage)
-    self.percentage = percentage
-
-    if self.subfloor then
-        Floor.get(self.subfloor, "Line", 1).percentage = percentage
-    elseif self.gui_position == 1 and self.parent.origin_line then
-        self.parent.origin_line.percentage = percentage
-    end
-end
-
-function Line.set_beacon(self, beacon)
-    self.beacon = beacon  -- can be nil
-
-    if beacon then
-        self.beacon.parent = self
-        Beacon.trim_modules(self.beacon)
-    end
-
-    Line.summarize_effects(self, false, true)
 end
 
 
@@ -176,6 +156,19 @@ function Line.change_machine(self, player, machine_proto, direction)
 end
 
 
+-- Sets the beacon appropriately, recalculating total_effects
+function Line.set_beacon(self, beacon)
+    self.beacon = beacon  -- can be nil
+
+    if beacon then
+        self.beacon.parent = self
+        Beacon.trim_modules(self.beacon)
+    end
+
+    Line.summarize_effects(self, false, true)
+end
+
+
 -- Updates the line attribute containing the total module effects of this line (modules+beacons)
 function Line.summarize_effects(self, summarize_machine, summarize_beacon)
     if self.subfloor ~= nil or self.machine == nil then return nil end
@@ -249,17 +242,60 @@ function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto
 end
 
 
+function Line.pack(self)
+    local packed_line = {
+        comment = self.comment,
+        class = self.class
+    }
+
+    if self.subfloor ~= nil then
+        packed_line.subfloor = Floor.pack(self.subfloor)
+
+    else
+        packed_line.recipe = Recipe.pack(self.recipe)
+
+        packed_line.machine = Machine.pack(self.machine)
+        packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
+
+        local priority_product_proto = (self.priority_product_proto ~= nil) and
+          prototyper.util.simplify_prototype(self.priority_product_proto)
+
+        packed_line.percentage = self.percentage
+        packed_line.priority_product_proto = priority_product_proto
+    end
+
+    return packed_line
+end
+
+function Line.unpack(packed_self)
+    -- Only lines without subfloors are ever unpacked, so it can be treated as such
+    local self = Line.init(packed_self.recipe)
+
+    self.machine = Machine.unpack(packed_self.machine)
+    self.machine.parent = self
+
+    self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
+    if self.beacon then self.beacon.parent = self end
+
+    self.comment = packed_self.comment
+    self.percentage = packed_self.percentage
+    self.priority_product_proto = packed_self.priority_product_proto
+    -- Effects are summarized by the ensuing validation
+
+    return self
+end
+
+
 -- Needs validation: recipe, machine, beacon, priority_product_proto, subfloor
 function Line.validate(self)
     self.valid = true
 
-    self.valid = Recipe.validate(self.recipe) and self.valid
-
-    -- When this line has a subfloor, only the recipe and the subfloor need to be checked
-    if self.subfloor then
+    if self.subfloor then  -- when this line has a subfloor, only the subfloor need to be checked
         self.valid = Floor.validate(self.subfloor) and self.valid
 
     else
+        self.valid = Recipe.validate(self.recipe) and self.valid
+
         self.valid = Machine.validate(self.machine) and self.valid
 
         if self.beacon then self.valid = Beacon.validate(self.beacon) and self.valid end
@@ -279,15 +315,17 @@ end
 function Line.repair(self, player)
     self.valid = true
 
-    if not self.recipe.valid then self.valid = Recipe.repair(self.recipe, nil) end
-
     if self.subfloor then
-        if self.valid and not self.subfloor.valid then
+        if not self.subfloor.valid then
             -- Repairing a floor always makes it valid, or removes it if left empty
             Floor.repair(self.subfloor, player)
         end
 
     else
+        if not self.recipe.valid then
+            self.valid = Recipe.repair(self.recipe, nil)
+        end
+
         if self.valid and not self.machine.valid then
             self.valid = Machine.repair(self.machine, player)
         end

@@ -12,6 +12,18 @@ function Fuel.init_by_proto(proto)
 end
 
 
+function Fuel.pack(self)
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        class = self.class
+    }
+end
+
+function Fuel.unpack(packed_self)
+    return packed_self
+end
+
+
 -- Needs validation: proto
 function Fuel.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "fuels", "category")
