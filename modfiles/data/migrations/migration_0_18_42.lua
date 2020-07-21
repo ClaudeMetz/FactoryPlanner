@@ -20,10 +20,10 @@ function migration_0_18_42.subfactory(player, subfactory)
     migrate_collection(subfactory.Ingredient, "Item")
     migrate_collection(subfactory.Floor, "Floor")
 
-    for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
+    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         migrate_collection(floor.Line, "Line")
 
-        for _, line in pairs(Subfactory.get_in_order(floor, "Line")) do
+        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             if line.subfloor then
                 line.recipe = nil
                 line.percentage = nil

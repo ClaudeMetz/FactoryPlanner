@@ -71,6 +71,11 @@ function Subfactory.get_in_order(self, class, reverse)
     return Collection.get_in_order(self[class], reverse)
 end
 
+-- Floors don't have an inherent order, so this makes sense for them
+function Subfactory.get_all_floors(self)
+    return self.Floor.datasets
+end
+
 function Subfactory.get_by_name(self, class, name)
     return Collection.get_by_name(self[class], name)
 end

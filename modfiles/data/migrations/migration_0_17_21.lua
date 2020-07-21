@@ -18,7 +18,7 @@ function migration_0_17_21.subfactory(player, subfactory)
         end
     end
 
-    for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
+    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             for _, class in pairs(classes) do
                 for _, item in ipairs(Line.get_in_order(line, class)) do

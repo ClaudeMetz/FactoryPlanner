@@ -4,10 +4,8 @@ Date: 00. 00. 0000
   Features:
     - [Warning: Experimental! This update contains some more data backend changes. They should not cause any issues though, as they are pretty minimal and un-invasive]
     - Added a button to exactly duplicate existing subfactories. This comes as a nice side-benefit of implementing import/export of subfactories, and as it is ready, I decided to release it now.
-  Changes:
-    -
   Bugfixes:
-    - Fixed a problem with migration
+    - Fixed some problems with migration
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.41

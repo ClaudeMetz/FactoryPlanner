@@ -35,7 +35,7 @@ function migration_0_17_13.player_table(player, player_table)
 end
 
 function migration_0_17_13.subfactory(player, subfactory)
-    for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
+    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             local category_id = global.all_machines.map[line.recipe_category]
             line.category_id = category_id
