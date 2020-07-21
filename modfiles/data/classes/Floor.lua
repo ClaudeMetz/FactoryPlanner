@@ -44,6 +44,11 @@ function Floor.remove(self, dataset)
         Collection.remove(self.parent.Floor, dataset.subfloor)
     end
 
+    -- If the first line of a subfloor is removed, the whole subfloor needs to go
+    if dataset.class == "Line" and self.level > 1 and dataset.gui_position == 1 then
+        Floor.remove(self.origin_line.parent, self.origin_line)
+    end
+
     return Collection.remove(self[dataset.class], dataset)
 end
 
