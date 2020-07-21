@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.42
+Date: 21. 07. 2020
   Features:
     - [Warning: Experimental! This update contains some more data backend changes. They should not cause any issues though, as they are pretty minimal and un-invasive]
     - Added a button to exactly duplicate existing subfactories. This comes as a nice side-benefit of implementing import/export of subfactories, and as it is ready, I decided to release it now.
