@@ -13,6 +13,7 @@ require("data.migrations.migration_0_18_20")
 require("data.migrations.migration_0_18_27")
 require("data.migrations.migration_0_18_29")
 require("data.migrations.migration_0_18_38")
+require("data.migrations.migration_0_18_42")
 
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
@@ -36,6 +37,7 @@ local migration_masterlist = {
     [13] = {version="0.18.27"},
     [14] = {version="0.18.29"},
     [15] = {version="0.18.38"},
+    [16] = {version="0.18.42"},
 }
 
 -- ** LOCAL UTIL **

@@ -11,8 +11,9 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
     local archive_status = ui_util.check_archive_status(player)
 
     if alt and direction == nil then
+        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
         ui_util.execute_alt_action(player, "show_recipe",
-          {recipe=line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
+          {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
         if archive_status then return end
@@ -76,9 +77,9 @@ function production_handler.handle_percentage_change(player, element)
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", tonumber(string.match(element.name, "%d+")))
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
 
-    local new_percentage = tonumber(element.text) or 0
-    Line.set_percentage(line, new_percentage)
+    relevant_line.percentage = tonumber(element.text) or 0
 end
 
 -- Handles the player confirming the given percentage textfield by reloading and refocusing
@@ -101,6 +102,8 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local recipe_proto = relevant_line.recipe.proto
 
     -- machine_id being nil means the user wants to change the machine of this (assembly) line
     if machine_id == nil then
@@ -140,7 +143,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                         button_generator = production_handler.generate_chooser_machine_buttons,
                         click_handler = production_handler.apply_machine_choice,
                         title = {"fp.machine"},
-                        text = {"", {"fp.chooser_machine"}, " '", line.recipe.proto.localised_name, "':"},
+                        text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
                         object = line.machine
                     }
 
@@ -154,7 +157,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             local modal_data = {
                 submission_handler = production_handler.apply_machine_options,
                 title = {"fp.machine_limit_title"},
-                text = {"", {"fp.machine_limit_text"}, " '", line.recipe.proto.localised_name, "':"},
+                text = {"", {"fp.machine_limit_text"}, " '", recipe_proto.localised_name, "':"},
                 object = line.machine,
                 fields = {
                     {
@@ -492,19 +495,18 @@ end
 -- Recieves the result of the item options and applies it
 function production_handler.apply_item_options(player, item, options)
     local context = get_context(player)
-    local line = context.line
+    local relevant_line = (context.line.subfloor == nil) and context.line or Floor.get(context.line.subfloor, "Line", 1)
     local current_amount = item.amount
 
     -- For products and byproducts, find if the item exists in the other space
     if item.class ~= "Ingredient" then
         local other_class = (item.class == "Product") and "Byproduct" or "Product"
-        local opposing_item = Line.get_by_type_and_name(line, other_class, item.proto.type, item.proto.name)
+        local opposing_item = Line.get_by_type_and_name(relevant_line, other_class, item.proto.type, item.proto.name)
         if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
     end
 
     options.item_amount = options.item_amount or 0
-    local new_percentage = (line.percentage * options.item_amount) / current_amount
-    Line.set_percentage(line, new_percentage)
+    relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
 
     calculation.update(player, context.subfactory, true)
 end

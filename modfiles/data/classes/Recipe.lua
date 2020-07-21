@@ -2,13 +2,25 @@
 Recipe = {}
 
 function Recipe.init_by_id(recipe_id, production_type)
-    local proto = global.all_recipes.recipes[recipe_id]
     return {
-        proto = proto,
+        proto = global.all_recipes.recipes[recipe_id],
         production_type = production_type,
         valid = true,
         class = "Recipe"
     }
+end
+
+
+function Recipe.pack(self)
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        production_type = self.production_type,
+        class = self.class
+    }
+end
+
+function Recipe.unpack(packed_self)
+    return packed_self
 end
 
 

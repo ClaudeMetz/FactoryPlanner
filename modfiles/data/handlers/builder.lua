@@ -106,8 +106,10 @@ function builder.dev_config(player)
         local factory = context.factory
 
         -- Subfactories
-        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"}, "one_minute"))
+        local subfactory = Factory.add(factory, Subfactory.init("", {type="item", name="iron-plate"},
+          "one_minute"))
         ui_util.context.set_subfactory(player, subfactory)
+
         Factory.add(factory, Subfactory.init("Beta", nil, "one_minute"))
         Factory.add(factory, Subfactory.init("Gamma", {type="item", name="electronic-circuit"}, "one_minute"))
 

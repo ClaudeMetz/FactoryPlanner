@@ -10,7 +10,7 @@ end
 
 
 -- ** TOP LEVEL **
--- Creates the actionbar including the new-, edit- and delete-buttons
+-- Creates the actionbar including the new-, edit-, (un)archive-, delete- and duplicate-buttons
 function actionbar.add_to(main_dialog)
     local flow_actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
     flow_actionbar.style.bottom_margin = 4
@@ -24,6 +24,8 @@ function actionbar.add_to(main_dialog)
       style="fp_button_action", mouse_button_filter={"left"}}
     flow_actionbar.add{type="button", name="fp_button_delete_subfactory", caption={"fp.delete"},
       style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_delete_subfactory"}}
+    flow_actionbar.add{type="button", name="fp_button_duplicate_subfactory", caption={"fp.duplicate"},
+      style="fp_button_action", mouse_button_filter={"left"}, tooltip={"fp.action_duplicate_subfactory"}}
 
     local actionbar_spacer = flow_actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
     actionbar_spacer.style.horizontally_stretchable = true
@@ -37,7 +39,9 @@ end
 -- Disables edit and delete buttons if there exist no subfactories
 function actionbar.refresh(player)
     local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
     local archive_open = ui_state.flags.archive_open
+
     local flow_actionbar = player.gui.screen["fp_frame_main_dialog"]["flow_action_bar"]
     local new_button = flow_actionbar["fp_button_new_subfactory"]
     local delete_button = flow_actionbar["fp_button_delete_subfactory"]
@@ -45,9 +49,10 @@ function actionbar.refresh(player)
     local toggle_archive_button = flow_actionbar["fp_button_toggle_archive"]
     toggle_archive_button.style.width = 148  -- set here so it doesn't get lost somehow
 
-    local subfactory_exists = (ui_state.context.subfactory ~= nil)
+    local subfactory_exists, subfactory_valid = (subfactory ~= nil), (subfactory and subfactory.valid)
     flow_actionbar["fp_button_edit_subfactory"].enabled = subfactory_exists
     delete_button.enabled = subfactory_exists
+    flow_actionbar["fp_button_duplicate_subfactory"].enabled = subfactory_exists and subfactory_valid
 
     archive_button.enabled = subfactory_exists
     archive_button.tooltip = (archive_open) and
@@ -125,6 +130,28 @@ function actionbar.handle_subfactory_archivation(player)
     ui_state.current_activity = nil
     main_dialog.refresh(player)
 end
+
+-- Perfectly duplicates the current subfactory
+function actionbar.handle_subfactory_duplication(player, alt)
+    local ui_state = get_ui_state(player)
+    local subfactory = ui_state.context.subfactory
+
+    -- alt-clicking in devmode prints the export-string to the log for later use
+    if alt and devmode then
+        llog(porter.export(subfactory))
+    else
+        -- This relies on the porting-functionality. It basically exports and
+        -- immediately imports the subfactory, effectively duplicating it
+        local subfactory_string = porter.export(subfactory)
+        local unpacked_subfactory = porter.import(subfactory_string)
+        local duplicated_subfactory = Factory.add(ui_state.context.factory, unpacked_subfactory)
+
+        ui_state.current_activity = nil
+        ui_util.context.set_subfactory(player, duplicated_subfactory)
+        calculation.update(player, duplicated_subfactory, true)
+    end
+end
+
 
 -- Enters or leaves the archive-viewing mode
 function actionbar.toggle_archive_view(player)

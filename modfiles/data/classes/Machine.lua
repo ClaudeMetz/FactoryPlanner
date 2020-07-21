@@ -1,4 +1,4 @@
--- Class representing a machine with its attached modules
+-- Class representing a machine with its attached modules and fuel
 Machine = {}
 
 -- Initialised by passing a prototype from the all_machines global table
@@ -9,7 +9,7 @@ function Machine.init_by_proto(proto)
         limit = nil,  -- will be set by the user
         hard_limit = false,
         fuel = nil,  -- updated by Line.change_machine()
-        Module = Collection.init(),
+        Module = Collection.init("Module"),
         module_count = 0,  -- updated automatically
         total_effects = nil,
         valid = true,
@@ -200,6 +200,30 @@ function Machine.trim_modules(self)
 end
 
 
+function Machine.pack(self)
+    return {
+        proto = prototyper.util.simplify_prototype(self.proto),
+        limit = self.limit,
+        hard_limit = self.hard_limit,
+        fuel = (self.fuel) and Fuel.pack(self.fuel) or nil,
+        Module = Collection.pack(self.Module),
+        module_count = self.module_count,
+        class = self.class
+    }
+end
+
+function Machine.unpack(packed_self)
+    local self = packed_self
+    self.fuel = (packed_self.fuel) and Fuel.unpack(packed_self.fuel) or nil
+    if self.fuel then self.fuel.parent = self end
+
+    self.Module = Collection.unpack(packed_self.Module, self)
+    -- Effects are summarized by the ensuing validation
+
+    return self
+end
+
+
 -- Needs validation: proto, fuel, Module
 function Machine.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "machines", "category")
@@ -211,7 +235,7 @@ function Machine.validate(self)
 
     if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
 
-    self.valid = Collection.validate_datasets(self.Module, "Module") and self.valid
+    self.valid = Collection.validate_datasets(self.Module) and self.valid
     if self.valid then Machine.normalize_modules(self, true, true) end
 
     return self.valid
@@ -229,7 +253,7 @@ function Machine.repair(self, player)
     if self.fuel and not self.fuel.valid then Fuel.repair(self.fuel, player) end
 
     -- Remove invalid modules and normalize the remaining ones
-    Collection.repair_datasets(self.Module, nil, "Module")
+    Collection.repair_datasets(self.Module, nil)
     Machine.normalize_modules(self, true, true)
 
     return self.valid
