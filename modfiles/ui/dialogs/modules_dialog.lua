@@ -266,7 +266,6 @@ end
 
 
 -- ** MODULES **
--- ** TOP LEVEL **
 -- Handles populating the modules dialog for either 'add'- or 'edit'-actions
 function module_dialog.open(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
@@ -334,7 +333,6 @@ end
 
 
 -- ** BEACONS **
--- ** TOP LEVEL **
 -- Handles populating the beacons dialog for either 'add'- or 'edit'-actions
 function beacon_dialog.open(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)

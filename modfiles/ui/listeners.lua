@@ -165,13 +165,21 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
 end)
 
 
--- Fires on any radiobutton change
+-- Fires on any checkbox/radiobutton change
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
 
+    -- (Un)checks every porter-table rows' checkbox
+    if element_name == "fp_checkbox_porter_master" then
+        porter_dialog.set_all_checkboxes(player, event.element.state)
+
+    -- Adjusts the porter master checkbox according to its slaves
+    elseif string.find(element_name, "^fp_checkbox_porter_subfactory_%d+$") then
+        porter_dialog.adjust_master_checkbox(player)
+
     -- Toggles the selected general or production preference (This type/preference detection is stupid)
-    if string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
+    elseif string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
         local type = cutil.split(element_name, "_")[3]
         local preference = string.gsub(element_name, "fp_checkbox_" .. type .. "_preferences_", "")
         preferences_dialog.handle_checkbox_change(player, type, preference, event.element.state)
