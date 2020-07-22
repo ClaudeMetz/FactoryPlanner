@@ -21,7 +21,9 @@ function actionbar.add_to(main_dialog)
         {name = "edit"},
         {name = "archive"},
         {name = "delete"},
-        {name = "duplicate"}
+        {name = "duplicate"},
+        {name = "import"},
+        {name = "export"}
     }
 
     for _, ab in ipairs(action_buttons) do
@@ -59,6 +61,7 @@ function actionbar.refresh(player)
     archive_button.enabled = subfactory_exists
     delete_button.enabled = subfactory_exists
     flow_actionbar["fp_button_actionbar_duplicate"].enabled = subfactory_exists and subfactory_valid
+    flow_actionbar["fp_button_actionbar_export"].enabled = subfactory_exists
 
     local archived_subfactories_count = get_table(player).archive.Subfactory.count
     toggle_archive_button.enabled = (archive_open or archived_subfactories_count > 0)
@@ -163,6 +166,14 @@ function actionbar.duplicate_subfactory(player, alt)
         ui_util.context.set_subfactory(player, duplicated_subfactory)
         calculation.update(player, duplicated_subfactory, true)
     end
+end
+
+function actionbar.import_subfactory(player)
+    modal_dialog.enter(player, {type="import", submit=true})
+end
+
+function actionbar.export_subfactory(player)
+    modal_dialog.enter(player, {type="export"})
 end
 
 
