@@ -18,3 +18,14 @@ function porter.import(subfactory_string)
 
     return unpacked_subfactory
 end
+
+
+function porter.get_export_string(player, subfactories)
+    local export_table = {
+        mod_version = get_table(player).mod_version,
+        subfactories = {}
+    }
+
+    local export_string = game.encode_string(game.table_to_json(export_table))
+    return export_string
+end
