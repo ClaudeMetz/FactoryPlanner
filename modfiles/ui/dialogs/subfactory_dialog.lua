@@ -25,14 +25,13 @@ end
 -- ** TOP LEVEL **
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
 function subfactory_dialog.open(flow_modal_dialog, modal_data)
-    local player = game.players[flow_modal_dialog.player_index]
     local subfactory = modal_data.subfactory
 
     if subfactory ~= nil then  -- Meaning this is an edit
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
         local icon = subfactory.icon
         if icon ~= nil then
-            if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
+            if not game.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
             elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
         end
 
