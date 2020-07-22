@@ -123,6 +123,11 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
             element.state = checkbox_state
         end
     end
+
+    if get_ui_state(player).modal_dialog_type == "export" then
+        local button_export = content_frame["flow_export_subfactories"]["fp_button_export_subfactories"]
+        button_export.enabled = checkbox_state
+    end
 end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
