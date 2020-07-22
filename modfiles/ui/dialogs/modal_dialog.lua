@@ -6,6 +6,7 @@ require("utility_dialog")
 require("product_dialog")
 require("recipe_dialog")
 require("modules_dialog")
+require("porter_dialog")
 
 modal_dialog = {}
 
