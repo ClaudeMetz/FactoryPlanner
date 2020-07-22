@@ -1,12 +1,6 @@
-migration_0_17_56 = {}
+local migration = {}
 
-function migration_0_17_56.global()
-end
-
-function migration_0_17_56.player_table(player, player_table)
-end
-
-function migration_0_17_56.subfactory(player, subfactory)
+function migration.subfactory(player, subfactory)
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Ingredient")) do item.top_level=true end
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Byproduct")) do item.top_level=true end
 
@@ -16,3 +10,5 @@ function migration_0_17_56.subfactory(player, subfactory)
         end
     end
 end
+
+return migration

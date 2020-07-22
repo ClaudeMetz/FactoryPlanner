@@ -1,4 +1,4 @@
-migration_0_18_42 = {}
+local migration = {}
 
 local function migrate_collection(collection, object_class)
     collection.class = collection.type
@@ -6,15 +6,12 @@ local function migrate_collection(collection, object_class)
     collection.object_class = object_class
 end
 
-function migration_0_18_42.global()
-end
-
-function migration_0_18_42.player_table(player, player_table)
+function migration.player_table(player, player_table)
     migrate_collection(player_table.factory.Subfactory, "Subfactory")
     migrate_collection(player_table.archive.Subfactory, "Subfactory")
 end
 
-function migration_0_18_42.subfactory(player, subfactory)
+function migration.subfactory(player, subfactory)
     migrate_collection(subfactory.Product, "Item")
     migrate_collection(subfactory.Byproduct, "Item")
     migrate_collection(subfactory.Ingredient, "Item")
@@ -39,3 +36,5 @@ function migration_0_18_42.subfactory(player, subfactory)
         end
     end
 end
+
+return migration
