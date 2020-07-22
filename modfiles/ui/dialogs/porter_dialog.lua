@@ -23,9 +23,10 @@ function export_dialog.open(flow_modal_dialog)
     label_text.style.bottom_margin = 6
 
     local table_subfactories = content_frame.add{type="table", name="table_subfactories",
-      column_count=3, style="mods_table"}
+      column_count=4, style="mods_table"}
     table_subfactories.style.column_alignments[1] = "center"
     table_subfactories.style.column_alignments[3] = "center"
+    table_subfactories.style.column_alignments[4] = "center"
 
     local checkbox_master = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
 
@@ -35,13 +36,17 @@ function export_dialog.open(flow_modal_dialog)
 
     local label_subfactories_validity = table_subfactories.add{type="label", caption="Validity"}
     label_subfactories_validity.style.font = "heading-3"
-    label_subfactories_validity.style.padding = {0, 4}
+    label_subfactories_validity.style.margin = {0, 4}
+
+    local label_subfactories_location = table_subfactories.add{type="label", caption="Location"}
+    label_subfactories_location.style.font = "heading-3"
+    label_subfactories_location.style.margin = {0, 4}
 
     local valid_subfactory_found = false
     for _, factory_name in ipairs{"factory", "archive"} do
-        for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-            table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. subfactory.id),
-              state=false, enabled=subfactory.valid}
+        for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
+            table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name
+              .. "_" .. subfactory.id), state=false, enabled=subfactory.valid}
 
             local subfactory_icon = ""
             if subfactory.icon ~= nil then
@@ -55,6 +60,8 @@ function export_dialog.open(flow_modal_dialog)
 
             local validity_caption = (subfactory.valid) and "valid" or "[color=1, 0.2, 0.2]invalid[/color]"
             table_subfactories.add{type="label", caption=validity_caption}
+
+            table_subfactories.add{type="label", caption={"fp." .. factory_name}}
 
             valid_subfactory_found = valid_subfactory_found or subfactory.valid
         end
@@ -72,7 +79,7 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
       ["frame_content"]["table_subfactories"]
 
     for _, element in pairs(table_subfactories.children) do
-        if string.find(element.name, "^fp_checkbox_porter_subfactory_%d+$") and element.enabled then
+        if string.find(element.name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") and element.enabled then
             element.state = checkbox_state
         end
     end
@@ -85,7 +92,7 @@ function porter_dialog.adjust_master_checkbox(player)
 
     local unchecked_element_found = false
     for _, element in pairs(table_subfactories.children) do
-        if string.find(element.name, "^fp_checkbox_porter_subfactory_%d+$") and element.state == false then
+        if string.find(element.name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") and element.state == false then
             unchecked_element_found = true
             break
         end

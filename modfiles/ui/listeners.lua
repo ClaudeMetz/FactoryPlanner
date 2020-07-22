@@ -175,7 +175,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
         porter_dialog.set_all_checkboxes(player, event.element.state)
 
     -- Adjusts the porter master checkbox according to its slaves
-    elseif string.find(element_name, "^fp_checkbox_porter_subfactory_%d+$") then
+    elseif string.find(element_name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") then
         porter_dialog.adjust_master_checkbox(player)
 
     -- Toggles the selected general or production preference (This type/preference detection is stupid)
