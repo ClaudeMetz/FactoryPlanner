@@ -174,9 +174,9 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     if element_name == "fp_checkbox_porter_master" then
         porter_dialog.set_all_checkboxes(player, event.element.state)
 
-    -- Adjusts the porter master checkbox according to its slaves
+    -- Adjusts the porter dialog window after one of the subfactory checkboxes is clicked
     elseif string.find(element_name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") then
-        porter_dialog.adjust_master_checkbox(player)
+        porter_dialog.adjust_after_checkbox_click(player)
 
     -- Toggles the selected general or production preference (This type/preference detection is stupid)
     elseif string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
@@ -357,6 +357,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Gives the player the beacon-selector
         elseif element_name == "fp_button_beacon_selector" then
             beacon_dialog.enter_selection_mode(player)
+
+        -- Gives the player the beacon-selector
+        elseif element_name == "fp_button_export_subfactories" then
+            export_dialog.export_subfactories(player)
 
         -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
