@@ -42,8 +42,14 @@ function export_dialog.open(flow_modal_dialog)
             table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. subfactory.id),
               state=false, enabled=subfactory.valid}
 
-            local subfactory_icon = (subfactory.icon) and "[" .. subfactory.icon.type .. "="
-              .. subfactory.icon.name .. "]   " or ""
+            local subfactory_icon = ""
+            if subfactory.icon ~= nil then
+                local subfactory_sprite = subfactory.icon.type .. "/" .. subfactory.icon.name
+                if not game.is_valid_sprite_path(subfactory_sprite) then
+                    subfactory_sprite = "utility/danger_icon"
+                end
+                subfactory_icon = "[img=" .. subfactory_sprite .. "]  "
+            end
             table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
 
             local validity_caption = (subfactory.valid) and "valid" or "[color=1, 0.2, 0.2]invalid[/color]"

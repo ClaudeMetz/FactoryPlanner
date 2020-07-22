@@ -17,7 +17,7 @@ local function attempt_element_creation(player, table, width_remaining, subfacto
     if subfactory.icon ~= nil then
         -- Determine sprite path, check if it's valid
         local sprite_path = subfactory.icon.type .. "/" .. subfactory.icon.name
-        if not player.gui.is_valid_sprite_path(sprite_path) then
+        if not game.is_valid_sprite_path(sprite_path) then
             sprite_path = "utility/danger_icon"
             tooltip = {"fp.sprite_missing"}
         end
