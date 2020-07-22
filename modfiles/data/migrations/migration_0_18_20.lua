@@ -1,12 +1,6 @@
-migration_0_18_20 = {}
+local migration = {}
 
-function migration_0_18_20.global()
-end
-
-function migration_0_18_20.player_table(player, player_table)
-end
-
-function migration_0_18_20.subfactory(player, subfactory)
+function migration.subfactory(player, subfactory)
     local types = {"Ingredient", "Product", "Byproduct"}
     for _, type in pairs(types) do
         for _, item in pairs(Subfactory.get_in_order(subfactory, type)) do
@@ -18,3 +12,5 @@ function migration_0_18_20.subfactory(player, subfactory)
         end
     end
 end
+
+return migration

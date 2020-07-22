@@ -1,14 +1,11 @@
-migration_0_18_38 = {}
+local migration = {}
 
-function migration_0_18_38.global()
-end
-
-function migration_0_18_38.player_table(player, player_table)
+function migration.player_table(player, player_table)
     player_table.factory.valid = nil
     player_table.archive.valid = nil
 end
 
-function migration_0_18_38.subfactory(player, subfactory)
+function migration.subfactory(player, subfactory)
     if not subfactory.valid then
         Factory.remove(subfactory.parent, subfactory)
         return "removed"
@@ -57,3 +54,5 @@ function migration_0_18_38.subfactory(player, subfactory)
         end
     end
 end
+
+return migration

@@ -1,20 +1,3 @@
-require("data.migrations.migration_0_17_13")
-require("data.migrations.migration_0_17_21")
-require("data.migrations.migration_0_17_27")
-require("data.migrations.migration_0_17_29")
-require("data.migrations.migration_0_17_38")
-require("data.migrations.migration_0_17_51")
-require("data.migrations.migration_0_17_55")
-require("data.migrations.migration_0_17_56")
-require("data.migrations.migration_0_17_57")
-require("data.migrations.migration_0_17_61")
-require("data.migrations.migration_0_17_65")
-require("data.migrations.migration_0_18_20")
-require("data.migrations.migration_0_18_27")
-require("data.migrations.migration_0_18_29")
-require("data.migrations.migration_0_18_38")
-require("data.migrations.migration_0_18_42")
-
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
 
@@ -22,22 +5,22 @@ migrator = {}
 
 -- Returns a table containing all existing migrations in order
 local migration_masterlist = {
-    [1] = {version="0.17.13"},
-    [2] = {version="0.17.21"},
-    [3] = {version="0.17.27"},
-    [4] = {version="0.17.29"},
-    [5] = {version="0.17.38"},
-    [6] = {version="0.17.51"},
-    [7] = {version="0.17.55"},
-    [8] = {version="0.17.56"},
-    [9] = {version="0.17.57"},
-    [10] = {version="0.17.61"},
-    [11] = {version="0.17.65"},
-    [12] = {version="0.18.20"},
-    [13] = {version="0.18.27"},
-    [14] = {version="0.18.29"},
-    [15] = {version="0.18.38"},
-    [16] = {version="0.18.42"},
+    [1] = {version="0.17.13", migration=require("data.migrations.migration_0_17_13")},
+    [2] = {version="0.17.21", migration=require("data.migrations.migration_0_17_21")},
+    [3] = {version="0.17.27", migration=require("data.migrations.migration_0_17_27")},
+    [4] = {version="0.17.29", migration=require("data.migrations.migration_0_17_29")},
+    [5] = {version="0.17.38", migration=require("data.migrations.migration_0_17_38")},
+    [6] = {version="0.17.51", migration=require("data.migrations.migration_0_17_51")},
+    [7] = {version="0.17.55", migration=require("data.migrations.migration_0_17_55")},
+    [8] = {version="0.17.56", migration=require("data.migrations.migration_0_17_56")},
+    [9] = {version="0.17.57", migration=require("data.migrations.migration_0_17_57")},
+    [10] = {version="0.17.61", migration=require("data.migrations.migration_0_17_61")},
+    [11] = {version="0.17.65", migration=require("data.migrations.migration_0_17_65")},
+    [12] = {version="0.18.20", migration=require("data.migrations.migration_0_18_20")},
+    [13] = {version="0.18.27", migration=require("data.migrations.migration_0_18_27")},
+    [14] = {version="0.18.29", migration=require("data.migrations.migration_0_18_29")},
+    [15] = {version="0.18.38", migration=require("data.migrations.migration_0_18_38")},
+    [16] = {version="0.18.42", migration=require("data.migrations.migration_0_18_42")},
 }
 
 -- ** LOCAL UTIL **
@@ -60,10 +43,10 @@ local function compare_versions(v1, v2)
 end
 
 -- Applies given migrations to the object
-local function apply_migrations(migrations, name, player, object)
+local function apply_migrations(migrations, function_name, player, object)
     for _, migration in ipairs(migrations) do
-        local internal_version = migration:gsub("%.", "_")
-        local migration_function = _G["migration_" .. internal_version][name]
+        local migration_function = migration[function_name]
+
         if migration_function ~= nil then
             local migration_message = migration_function(player, object)
 
@@ -81,7 +64,7 @@ local function determine_migrations(previous_version)
     local found = false
     for _, migration in ipairs(migration_masterlist) do
         if compare_versions(previous_version, migration.version) then found = true end
-        if found then table.insert(migrations, migration.version) end
+        if found then table.insert(migrations, migration.migration) end
     end
 
     return migrations
