@@ -149,7 +149,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
                 modal_dialog.enter(player, {type="subfactory", submit=true,
                   delete=true, modal_data={subfactory=subfactory}})
             elseif action == "delete" then
-                actionbar.handle_subfactory_deletion(player)
+                actionbar.delete_subfactory(player)
             end
 
         else  -- refresh if the selected subfactory is indeed changed

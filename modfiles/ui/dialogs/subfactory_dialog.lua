@@ -60,7 +60,7 @@ function subfactory_dialog.close(flow_modal_dialog, action, data)
         end
     elseif action == "delete" then
         ui_state.current_activity = "deleting_subfactory"  -- a bit of a hack
-        actionbar.handle_subfactory_deletion(player)
+        actionbar.delete_subfactory(player)
     end
 
     main_dialog.refresh(player)
