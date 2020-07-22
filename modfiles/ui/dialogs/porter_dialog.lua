@@ -27,7 +27,7 @@ function export_dialog.open(flow_modal_dialog)
     table_subfactories.style.column_alignments[1] = "center"
     table_subfactories.style.column_alignments[3] = "center"
 
-    table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
+    local checkbox_master = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
 
     local label_subfactories_title = table_subfactories.add{type="label", caption={"fp.csubfactories"}}
     label_subfactories_title.style.font = "heading-3"
@@ -37,6 +37,7 @@ function export_dialog.open(flow_modal_dialog)
     label_subfactories_validity.style.font = "heading-3"
     label_subfactories_validity.style.padding = {0, 4}
 
+    local valid_subfactory_found = false
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
             table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. subfactory.id),
@@ -54,8 +55,12 @@ function export_dialog.open(flow_modal_dialog)
 
             local validity_caption = (subfactory.valid) and "valid" or "[color=1, 0.2, 0.2]invalid[/color]"
             table_subfactories.add{type="label", caption=validity_caption}
+
+            valid_subfactory_found = valid_subfactory_found or subfactory.valid
         end
     end
+
+    checkbox_master.enabled = valid_subfactory_found
 end
 
 
@@ -67,7 +72,7 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
       ["frame_content"]["table_subfactories"]
 
     for _, element in pairs(table_subfactories.children) do
-        if element.type == "checkbox" and string.find(element.name, "^fp_checkbox_porter_subfactory_%d+$") then
+        if string.find(element.name, "^fp_checkbox_porter_subfactory_%d+$") and element.enabled then
             element.state = checkbox_state
         end
     end
@@ -78,16 +83,13 @@ function porter_dialog.adjust_master_checkbox(player)
     local table_subfactories = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
       ["frame_content"]["table_subfactories"]
 
-      for _, element in pairs(table_subfactories.children) do
-        if element.type == "checkbox" and string.find(element.name, "^fp_checkbox_porter_subfactory_%d+$") then
-            -- If any element is not checked, the master checkbox should be unchecked
-            if element.state == false then
-                table_subfactories["fp_checkbox_porter_master"].state = false
-                return
-            end
+    local unchecked_element_found = false
+    for _, element in pairs(table_subfactories.children) do
+        if string.find(element.name, "^fp_checkbox_porter_subfactory_%d+$") and element.state == false then
+            unchecked_element_found = true
+            break
         end
     end
 
-    -- If no unchecked checkbox is found, the master one should be checked as well
-    table_subfactories["fp_checkbox_porter_master"].state = true
+    table_subfactories["fp_checkbox_porter_master"].state = not unchecked_element_found
 end
