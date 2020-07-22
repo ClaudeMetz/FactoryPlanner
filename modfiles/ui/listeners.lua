@@ -308,7 +308,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the tutorial dialog
         elseif element_name == "fp_button_titlebar_tutorial" then
-            modal_dialog.enter(player, {type="tutorial", close=true})
+            modal_dialog.enter(player, {type="tutorial"})
 
         -- Opens the tutorial dialog
         elseif element_name == "fp_button_tutorial_add_example" then
@@ -316,7 +316,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the preferences dialog
         elseif element_name == "fp_button_titlebar_preferences" then
-            modal_dialog.enter(player, {type="preferences", close=true})
+            modal_dialog.enter(player, {type="preferences"})
 
         -- Toggles the archive-view-mode
         elseif element_name == "fp_button_toggle_archive" then
@@ -324,7 +324,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens utilitys dialog
         elseif element_name == "fp_button_open_utility_dialog" then
-            modal_dialog.enter(player, {type="utility", close=true})
+            modal_dialog.enter(player, {type="utility"})
 
         -- Changes into the manual override of the mining prod mode
         elseif element_name == "fp_button_mining_prod_override" then

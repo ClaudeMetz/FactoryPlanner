@@ -23,9 +23,13 @@ function export_dialog.open(flow_modal_dialog)
     label_text.style.bottom_margin = 6
 
 
-    local table_subfactories = content_frame.add{type="table", name="table_subfactories",
+    local frame_subfactories = content_frame.add{type="frame", name="frame_subfactories",
+      style="deep_frame_in_shallow_frame"}
+    frame_subfactories.style.padding = {-2, 0, 4, 0}
+    frame_subfactories.style.bottom_margin = 12
+
+    local table_subfactories = frame_subfactories.add{type="table", name="table_subfactories",
       column_count=4, style="mods_table"}
-    table_subfactories.style.bottom_margin = 16
     table_subfactories.style.column_alignments[1] = "center"
     table_subfactories.style.column_alignments[3] = "center"
     table_subfactories.style.column_alignments[4] = "center"
@@ -86,7 +90,7 @@ end
 function export_dialog.export_subfactories(player)
     local player_table = get_table(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
-    local table_subfactories = content_frame["table_subfactories"]
+    local table_subfactories = content_frame["frame_subfactories"]["table_subfactories"]
 
     local subfactories_to_export = {}
     for _, factory_name in ipairs{"factory", "archive"} do
@@ -114,7 +118,7 @@ end
 function porter_dialog.set_all_checkboxes(player, checkbox_state)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
 
-    for _, element in pairs(content_frame["table_subfactories"].children) do
+    for _, element in pairs(content_frame["frame_subfactories"]["table_subfactories"].children) do
         if string.find(element.name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") and element.enabled then
             element.state = checkbox_state
         end
@@ -124,7 +128,7 @@ end
 -- Sets the master checkbox to the appropriate state after a slave one is changed
 function porter_dialog.adjust_after_checkbox_click(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
-    local table_subfactories = content_frame["table_subfactories"]
+    local table_subfactories = content_frame["frame_subfactories"]["table_subfactories"]
 
     local checked_element_count, unchecked_element_count = 0, 0
     for _, element in pairs(table_subfactories.children) do
