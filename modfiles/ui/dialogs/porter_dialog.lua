@@ -26,7 +26,7 @@ function export_dialog.open(flow_modal_dialog)
     local frame_subfactories = content_frame.add{type="frame", name="frame_subfactories",
       style="deep_frame_in_shallow_frame"}
     frame_subfactories.style.padding = {-2, 0, 4, 0}
-    frame_subfactories.style.bottom_margin = 12
+    frame_subfactories.style.margin = {4, 0, 12, 0}
 
     local table_subfactories = frame_subfactories.add{type="table", name="table_subfactories",
       column_count=4, style="mods_table"}
@@ -36,7 +36,7 @@ function export_dialog.open(flow_modal_dialog)
 
     local checkbox_master = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
 
-    local label_subfactories_title = table_subfactories.add{type="label", caption={"fp.csubfactories"}}
+    local label_subfactories_title = table_subfactories.add{type="label", caption={"fp.csubfactory"}}
     label_subfactories_title.style.font = "heading-3"
     label_subfactories_title.style.margin = {6, 150, 6, 4}
 
@@ -54,13 +54,13 @@ function export_dialog.open(flow_modal_dialog)
             table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name
               .. "_" .. subfactory.id), state=false, enabled=subfactory.valid}
 
-            local subfactory_icon = ""
+            local subfactory_icon = " "
             if subfactory.icon ~= nil then
                 local subfactory_sprite = subfactory.icon.type .. "/" .. subfactory.icon.name
                 if not game.is_valid_sprite_path(subfactory_sprite) then
                     subfactory_sprite = "utility/danger_icon"
                 end
-                subfactory_icon = "[img=" .. subfactory_sprite .. "]  "
+                subfactory_icon = " [img=" .. subfactory_sprite .. "]  "
             end
             table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
 
@@ -76,6 +76,7 @@ function export_dialog.open(flow_modal_dialog)
 
 
     local flow_export = content_frame.add{type="flow", name="flow_export_subfactories", direction="horizontal"}
+    flow_export.style.vertical_align = "center"
 
     flow_export.add{type="button", name="fp_button_export_subfactories", caption="Export subfactories",
       enabled=false, style="confirm_button", mouse_button_filter={"left"}}
@@ -85,7 +86,6 @@ function export_dialog.open(flow_modal_dialog)
     textfield_export_string.style.horizontally_stretchable = true
     textfield_export_string.style.left_margin = 12
 end
-
 
 function export_dialog.export_subfactories(player)
     local player_table = get_table(player)
