@@ -26,6 +26,10 @@ function porter.get_export_string(player, subfactories)
         subfactories = {}
     }
 
+    for _, subfactory in pairs(subfactories) do
+        table.insert(export_table.subfactories, Subfactory.pack(subfactory))
+    end
+
     local export_string = game.encode_string(game.table_to_json(export_table))
     return export_string
 end
