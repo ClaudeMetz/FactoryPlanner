@@ -23,14 +23,19 @@ function export_dialog.open(flow_modal_dialog)
     label_text.style.bottom_margin = 6
 
     local table_subfactories = content_frame.add{type="table", name="table_subfactories",
-      column_count=2, style="mods_table"}
+      column_count=3, style="mods_table"}
     table_subfactories.style.column_alignments[1] = "center"
+    table_subfactories.style.column_alignments[3] = "center"
 
     table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
 
     local label_subfactories_title = table_subfactories.add{type="label", caption={"fp.csubfactories"}}
     label_subfactories_title.style.font = "heading-3"
     label_subfactories_title.style.margin = {6, 150, 6, 4}
+
+    local label_subfactories_validity = table_subfactories.add{type="label", caption="Validity"}
+    label_subfactories_validity.style.font = "heading-3"
+    label_subfactories_validity.style.padding = {0, 4}
 
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
@@ -40,6 +45,9 @@ function export_dialog.open(flow_modal_dialog)
             local subfactory_icon = (subfactory.icon) and "[" .. subfactory.icon.type .. "="
               .. subfactory.icon.name .. "]   " or ""
             table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
+
+            local validity_caption = (subfactory.valid) and "valid" or "[color=1, 0.2, 0.2]invalid[/color]"
+            table_subfactories.add{type="label", caption=validity_caption}
         end
     end
 end
