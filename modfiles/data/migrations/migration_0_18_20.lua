@@ -1,6 +1,6 @@
 local migration = {}
 
-function migration.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
     local types = {"Ingredient", "Product", "Byproduct"}
     for _, type in pairs(types) do
         for _, item in pairs(Subfactory.get_in_order(subfactory, type)) do

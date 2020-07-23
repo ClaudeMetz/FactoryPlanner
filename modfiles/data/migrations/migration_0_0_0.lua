@@ -3,10 +3,10 @@ local migration = {}
 function migration.global()
 end
 
-function migration.player_table(player, player_table)
+function migration.player_table(player_table)
 end
 
-function migration.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
 end
 
 return migration

@@ -1,6 +1,6 @@
 local migration = {}
 
-function migration.subfactory(player, subfactory)
+function migration.subfactory(subfactory, player)
     if get_settings(player).belts_or_lanes == "lanes" then
         for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
             if product.required_amount.defined_by == "belts" then
