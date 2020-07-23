@@ -1,4 +1,4 @@
-data.raw["gui-style"]["default"]["fp_footer_filler"] = {
+data.raw["gui-style"].default["fp_footer_filler"] = {
     type = "empty_widget_style",
     parent = "draggable_space",
     height = 32,
