@@ -39,6 +39,17 @@ function Factory.shift_to_end(self, dataset, direction)
     return Collection.shift_to_end(self[dataset.class], dataset, direction)
 end
 
+-- Imports every subfactory in the given string to this Factory, returning a reference to the first one
+function Factory.import_by_string(self, export_string)
+    local import_factory = porter.get_subfactories(nil, export_string)  -- player not needed here
+
+    local first_subfactory = nil
+    for _, subfactory in pairs(Factory.get_in_order(import_factory, "Subfactory")) do
+        first_subfactory = first_subfactory or Factory.add(self, subfactory)
+    end
+    return first_subfactory
+end
+
 
 -- Updates every top level product of this Factory to the given product definition type
 function Factory.update_product_definitions(self, new_defined_by)
