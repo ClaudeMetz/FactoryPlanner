@@ -43,12 +43,12 @@ local function compare_versions(v1, v2)
 end
 
 -- Applies given migrations to the object
-local function apply_migrations(migrations, function_name, player, object)
+local function apply_migrations(migrations, function_name, object, player)
     for _, migration in ipairs(migrations) do
         local migration_function = migration[function_name]
 
         if migration_function ~= nil then
-            local migration_message = migration_function(player, object)
+            local migration_message = migration_function(object, player)
 
             -- If no message is returned, everything went fine
             if migration_message == "removed" then break end
@@ -73,7 +73,7 @@ end
 
 -- ** TOP LEVEL **
 -- Applies any appropriate migrations to the global table
-function migrator.attempt_global_migration()
+function migrator.migrate_global()
     local migrations = determine_migrations(global.mod_version)
 
     apply_migrations(migrations, "global", nil, nil)
@@ -81,20 +81,20 @@ function migrator.attempt_global_migration()
 end
 
 -- Applies any appropriate migrations to the given factory
-function migrator.attempt_player_table_migration(player)
+function migrator.migrate_player_table(player)
     local player_table = get_table(player)
     if player_table ~= nil then  -- don't apply migrations to new players
         local migrations = determine_migrations(player_table.mod_version)
 
         -- General migrations
-        apply_migrations(migrations, "player_table", player, player_table)
+        apply_migrations(migrations, "player_table", player_table, player)
         player_table.mod_version = global.mod_version
 
         -- Subfactory migrations
         local factories = {"factory", "archive"}
         for _, factory_name in pairs(factories) do
             for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                apply_migrations(migrations, "subfactory", player, subfactory)
+                apply_migrations(migrations, "subfactory", subfactory, player)
                 subfactory.mod_version = global.mod_version
             end
         end

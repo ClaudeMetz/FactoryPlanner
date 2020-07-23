@@ -1,6 +1,6 @@
 local migration = {}
 
-function migration.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Ingredient")) do item.top_level=true end
     for _, item in pairs(Subfactory.get_in_order(subfactory, "Byproduct")) do item.top_level=true end
 

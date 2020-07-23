@@ -1,12 +1,12 @@
 local migration = {}
 
-function migration.player_table(player, player_table)
+function migration.player_table(player_table)
     player_table.preferences.preferred_belt_id = nil
     player_table.preferences.preferred_fuel_id = nil
     player_table.preferences.default_machines = nil
 end
 
-function migration.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
     local classes = {"Ingredient", "Product", "Byproduct"}
     for _, class in pairs(classes) do
         for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do

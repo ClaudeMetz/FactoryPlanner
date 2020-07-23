@@ -1,6 +1,6 @@
 local migration = {}
 
-function migration.player_table(player, player_table)
+function migration.player_table(player_table)
     player_table.preferences.default_prototypes = {
         belts = {structure_type="simple", prototype=player_table.preferences.preferred_belt},
         beacons = {structure_type="simple", prototype=player_table.preferences.preferred_beacon},
@@ -12,7 +12,7 @@ function migration.player_table(player, player_table)
     player_table.preferences.default_machines = nil
 end
 
-function migration.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
     for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             local fuel = Line.get_by_gui_position(line, "Fuel", 1)
