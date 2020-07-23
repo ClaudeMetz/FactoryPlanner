@@ -157,13 +157,11 @@ function actionbar.duplicate_subfactory(player, alt)
     if alt and devmode then
         llog(export_string)
     else
+        ui_state.current_activity = nil
+
         -- This relies on the porting-functionality. It basically exports and
         -- immediately imports the subfactory, effectively duplicating it
-        local imported_subfactory = Factory.import_by_string(ui_state.context.factory, export_string)
-
-        ui_state.current_activity = nil
-        ui_util.context.set_subfactory(player, imported_subfactory)
-        calculation.update(player, imported_subfactory, true)
+        ui_util.add_subfactories_by_string(player, export_string, true)
     end
 end
 

@@ -332,6 +332,16 @@ function ui_util.execute_alt_action(player, action_type, data)
     end
 end
 
+-- Adds given export_string-subfactories to the current factory. This is not really
+-- UI-related code, but I've got nowhere else to put it, so here it goes
+function ui_util.add_subfactories_by_string(player, export_string, refresh_interface)
+    local context = get_context(player)
+    local first_subfactory = Factory.import_by_string(context.factory, player, export_string)
+
+    ui_util.context.set_subfactory(player, first_subfactory)
+    calculation.update(player, first_subfactory, refresh_interface)
+end
+
 
 -- **** Mod-GUI ****
 -- Create the always-present GUI button to open the main dialog

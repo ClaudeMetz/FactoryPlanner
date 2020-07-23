@@ -9,7 +9,6 @@ require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
-require("data.handlers.builder")
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.migrator")
@@ -215,13 +214,12 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the mod-GUI for the new player
     ui_util.mod_gui.create(player)
 
-    -- Runs setup if developer mode is active
-    builder.dev_config(player)
+    -- Add the subfactories that are handy for development
+    if devmode then ui_util.add_subfactories_by_string(player, dev_export_string, false) end
 end)
 
 -- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
-    -- Removes the player from the global table
     global.players[event.player_index] = nil
 end)
 
