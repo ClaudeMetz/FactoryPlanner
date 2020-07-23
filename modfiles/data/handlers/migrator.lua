@@ -70,15 +70,6 @@ local function determine_migrations(previous_version)
     return migrations
 end
 
--- Applies any appropriate migrations to the given subfactory
-local function attempt_subfactory_migration(player, subfactory, migrations)
-    -- if migrations~=nil, it forgoes re-determining them because the results would be identical
-    migrations = migrations or determine_migrations(subfactory.mod_version)
-
-    apply_migrations(migrations, "subfactory", player, subfactory)
-    subfactory.mod_version = global.mod_version
-end
-
 
 -- ** TOP LEVEL **
 -- Applies any appropriate migrations to the global table
@@ -97,15 +88,15 @@ function migrator.attempt_player_table_migration(player)
 
         -- General migrations
         apply_migrations(migrations, "player_table", player, player_table)
+        player_table.mod_version = global.mod_version
 
         -- Subfactory migrations
         local factories = {"factory", "archive"}
         for _, factory_name in pairs(factories) do
             for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                attempt_subfactory_migration(player, subfactory, migrations)
+                apply_migrations(migrations, "subfactory", player, subfactory)
+                subfactory.mod_version = global.mod_version
             end
         end
-
-        player_table.mod_version = global.mod_version
     end
 end
