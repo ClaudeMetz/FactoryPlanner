@@ -18,7 +18,7 @@ function import_dialog.open(flow_modal_dialog)
 
     local tmp_export_string = "eNrdkL0KAjEQhF9FtrA6RUVErhUEwUKwFDlycZVILhuSVZBw7+7m/KvE3nJnPoadSdDQobpiiIYclDAajufD6QQKiJf6qDRTMBih3CVwqkEhVoFcr99bkPcYhGPTYNTKijcbFeCIMw/ibAIdLpqhTED1GTWLntrieVTaqpjJFWMj9OtckLVi53eEZfLV0RKFnLI2Dn+ldcy3NItXtFCOP/6yy24/wvZV+ybqu/SaTiay0VGijc5LJeCbz5Z5vP8EOSgXPQUe1Gi5a/C/++zbO5pgwC0="
 
-    local textfield_export_string = flow_import.add{type="textfield", name="textfield_import_string",
+    local textfield_export_string = flow_import.add{type="textfield", name="fp_textfield_import_string",
       text=tmp_export_string}
     textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
     textfield_export_string.style.horizontally_stretchable = true
@@ -34,7 +34,7 @@ function import_dialog.import_subfactories(player)
     local label_text = content_frame.add{type="label", caption="Then, select the subfactories you'd like to import:"}
     label_text.style.margin = {8, 0}
 
-    local export_string = content_frame["flow_import_subfactories"]["textfield_import_string"].text
+    local export_string = content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text
     -- The imported subfactories will be temporarily contained in a factory object
     local import_factory = porter.get_subfactories(player, export_string)
     get_modal_data(player).import_factory = import_factory
