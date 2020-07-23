@@ -2,36 +2,60 @@ import_dialog = {}
 export_dialog = {}
 porter_dialog = {}  -- table containing functionality shared between both dialogs
 
--- ** IMPORT DIALOG **
-function import_dialog.open(flow_modal_dialog)
-    flow_modal_dialog.parent.caption = {"", {"fp.import"}, " ", {"fp.subfactories"}}
-    flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
+-- ** LOCAL UTIL **
+-- Adds the barebones dialog structure that both dialogs need
+local function initialize_dialog(flow_modal_dialog, dialog_type)
+    flow_modal_dialog.parent.caption = {"", {"fp." .. dialog_type}, " ", {"fp.subfactories"}}
+    flow_modal_dialog.vertical_scroll_policy = "never"
 
     local content_frame = flow_modal_dialog.add{type="frame", name="frame_content", direction="vertical",
       style="inside_shallow_frame_with_padding"}
 
-    local label_text = content_frame.add{type="label", caption="Paste the export string for the subfactories to import:"}
+    local label_text = content_frame.add{type="label", caption={"fp." .. dialog_type .. "_instruction_1"}}
     label_text.style.margin = {0, 80, 10, 0}
 
-    local flow_import = content_frame.add{type="flow", name="flow_import_subfactories", direction="horizontal"}
-    flow_import.style.vertical_align = "center"
+    return content_frame
+end
+
+-- Adds a flow containing a textfield and a button
+local function add_textfield_and_button(parent_flow, dialog_type, button_first, button_enabled)
+    local flow = parent_flow.add{type="flow", name="flow_" .. dialog_type .. "_subfactories", direction="horizontal"}
+    flow.style.vertical_align = "center"
+
+    local function add_button()
+        local button = flow.add{type="button", name="fp_button_porter_subfactory_" .. dialog_type,
+          enabled=button_enabled, caption={"fp." .. dialog_type}, style="confirm_button", mouse_button_filter={"left"}}
+        if button_first then button.style.horizontal_align = "left" end
+    end
+
+    local function add_textfield()
+        local textfield_export_string = flow.add{type="textfield", name="fp_textfield_" .. dialog_type .. "_string"}
+        textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
+        textfield_export_string.style.horizontally_stretchable = true
+        textfield_export_string.style.left_margin = 12
+    end
+
+    if button_first then add_button(); add_textfield()
+    else add_textfield(); add_button() end
+end
+
+
+-- ** IMPORT DIALOG **
+function import_dialog.open(flow_modal_dialog)
+    flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
+
+    local content_frame = initialize_dialog(flow_modal_dialog, "import")
+
+    add_textfield_and_button(content_frame, "import", false, true)
 
     local tmp_export_string = "eNrdkL0KAjEQhF9FtrA6RUVErhUEwUKwFDlycZVILhuSVZBw7+7m/KvE3nJnPoadSdDQobpiiIYclDAajufD6QQKiJf6qDRTMBih3CVwqkEhVoFcr99bkPcYhGPTYNTKijcbFeCIMw/ibAIdLpqhTED1GTWLntrieVTaqpjJFWMj9OtckLVi53eEZfLV0RKFnLI2Dn+ldcy3NItXtFCOP/6yy24/wvZV+ybqu/SaTiay0VGijc5LJeCbz5Z5vP8EOSgXPQUe1Gi5a/C/++zbO5pgwC0="
-
-    local textfield_export_string = flow_import.add{type="textfield", name="fp_textfield_import_string",
-      text=tmp_export_string}
-    textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
-    textfield_export_string.style.horizontally_stretchable = true
-    textfield_export_string.style.right_margin = 12
-
-    flow_import.add{type="button", name="fp_button_porter_subfactory_import", caption="Import",
-      style="confirm_button", mouse_button_filter={"left"}}
+    content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text = tmp_export_string
 end
 
 function import_dialog.import_subfactories(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
 
-    local label_text = content_frame.add{type="label", caption="Then, select the subfactories you'd like to import:"}
+    local label_text = content_frame.add{type="label", caption="fp.import_instruction_2"}
     label_text.style.margin = {8, 0}
 
     local export_string = content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text
@@ -47,18 +71,7 @@ end
 
 -- ** EXPORT DIALOG **
 function export_dialog.open(flow_modal_dialog)
-    flow_modal_dialog.parent.caption = {"", {"fp.export"}, " ", {"fp.subfactories"}}
-    flow_modal_dialog.vertical_scroll_policy = "never"
-
-    local player = game.get_player(flow_modal_dialog.player_index)
-    local player_table = get_table(player)
-
-    local content_frame = flow_modal_dialog.add{type="frame", name="frame_content", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
-
-    local label_text = content_frame.add{type="label", caption="Select the subfactories that you'd like to export:"}
-    label_text.style.bottom_margin = 6
-
+    local content_frame = initialize_dialog(flow_modal_dialog, "export")
 
     local scroll_pane_subfactories = content_frame.add{type="scroll-pane", name="scroll_pane_subfactories"}
     scroll_pane_subfactories.style.margin = {4, 0, 12, 0}
@@ -93,7 +106,9 @@ function export_dialog.open(flow_modal_dialog)
     label_subfactories_location.style.font = "heading-3"
     label_subfactories_location.style.margin = {0, 4}
 
+    local player_table = get_table(game.get_player(flow_modal_dialog.player_index))
     local valid_subfactory_found = false
+
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
             table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name
@@ -120,17 +135,7 @@ function export_dialog.open(flow_modal_dialog)
     checkbox_master.enabled = valid_subfactory_found
 
 
-    local flow_export = content_frame.add{type="flow", name="flow_export_subfactories", direction="horizontal"}
-    flow_export.style.vertical_align = "center"
-
-    local button_export = flow_export.add{type="button", name="fp_button_porter_subfactory_export", caption="Export",
-      enabled=false, style="confirm_button", mouse_button_filter={"left"}}
-    button_export.style.horizontal_align = "left"
-
-    local textfield_export_string = flow_export.add{type="textfield", name="textfield_export_string"}
-    textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
-    textfield_export_string.style.horizontally_stretchable = true
-    textfield_export_string.style.left_margin = 12
+    add_textfield_and_button(content_frame, "export", true, false)
 end
 
 function export_dialog.export_subfactories(player)
@@ -152,7 +157,7 @@ function export_dialog.export_subfactories(player)
 
     local export_string = porter.get_export_string(player, subfactories_to_export)
 
-    local textfield_export_string = content_frame["flow_export_subfactories"]["textfield_export_string"]
+    local textfield_export_string = content_frame["flow_export_subfactories"]["fp_textfield_export_string"]
     textfield_export_string.text = export_string
     ui_util.select_all(textfield_export_string)
 end
