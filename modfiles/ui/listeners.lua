@@ -358,19 +358,20 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_beacon_selector" then
             beacon_dialog.enter_selection_mode(player)
 
-        -- Gives the player the beacon-selector
-        elseif element_name == "fp_button_export_subfactories" then
-            export_dialog.export_subfactories(player)
-
         -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
             local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
             modal_dialog.exit(player, dialog_action, {})
 
-            -- Reacts to a actionbar button being pressed
+        -- Reacts to a actionbar button being pressed
         elseif string.find(element_name, "^fp_button_actionbar_[a-z]+$") then
             local actionbar_action = string.gsub(element_name, "fp_button_actionbar_", "")
             actionbar[actionbar_action .. "_subfactory"](player, event.alt)
+
+        -- Reacts to an import/export porter button being pressed
+        elseif string.find(element_name, "^fp_button_porter_subfactory_[a-z]+$") then
+            local porter_action = string.gsub(element_name, "fp_button_porter_subfactory_", "")
+            _G[porter_action .. "_dialog"][porter_action .. "_subfactories"](player)
 
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
