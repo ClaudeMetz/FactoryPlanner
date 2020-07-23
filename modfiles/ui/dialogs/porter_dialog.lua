@@ -2,14 +2,44 @@ import_dialog = {}
 export_dialog = {}
 porter_dialog = {}  -- table containing functionality shared between both dialogs
 
--- ** TOP LEVEL **
+-- ** IMPORT DIALOG **
 function import_dialog.open(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"", {"fp.import"}, " ", {"fp.subfactories"}}
+    flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
 
+    local content_frame = flow_modal_dialog.add{type="frame", name="frame_content", direction="vertical",
+      style="inside_shallow_frame_with_padding"}
+
+    local label_text = content_frame.add{type="label", caption="Paste the export string for the subfactories to import:"}
+    label_text.style.margin = {0, 80, 10, 0}
+
+    local flow_import = content_frame.add{type="flow", name="flow_import_subfactories", direction="horizontal"}
+    flow_import.style.vertical_align = "center"
+
+    local tmp_export_string = "eNrdkL0KAjEQhF9FtrA6RUVErhUEwUKwFDlycZVILhuSVZBw7+7m/KvE3nJnPoadSdDQobpiiIYclDAajufD6QQKiJf6qDRTMBih3CVwqkEhVoFcr99bkPcYhGPTYNTKijcbFeCIMw/ibAIdLpqhTED1GTWLntrieVTaqpjJFWMj9OtckLVi53eEZfLV0RKFnLI2Dn+ldcy3NItXtFCOP/6yy24/wvZV+ybqu/SaTiay0VGijc5LJeCbz5Z5vP8EOSgXPQUe1Gi5a/C/++zbO5pgwC0="
+
+    local textfield_export_string = flow_import.add{type="textfield", name="textfield_import_string",
+      text=tmp_export_string}
+    textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
+    textfield_export_string.style.horizontally_stretchable = true
+    textfield_export_string.style.right_margin = 12
+
+    flow_import.add{type="button", name="fp_button_porter_subfactory_import", caption="Import",
+      style="confirm_button", mouse_button_filter={"left"}}
+end
+
+function import_dialog.import_subfactories(player)
+    local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
+
+    local label_text = content_frame.add{type="label", caption="Then, select the subfactories you'd like to import:"}
+    label_text.style.margin = {8, 0}
+
+
+    content_frame.parent.parent.force_auto_center()
 end
 
 
-
+-- ** EXPORT DIALOG **
 function export_dialog.open(flow_modal_dialog)
     flow_modal_dialog.parent.caption = {"", {"fp.export"}, " ", {"fp.subfactories"}}
 
@@ -78,8 +108,9 @@ function export_dialog.open(flow_modal_dialog)
     local flow_export = content_frame.add{type="flow", name="flow_export_subfactories", direction="horizontal"}
     flow_export.style.vertical_align = "center"
 
-    flow_export.add{type="button", name="fp_button_export_subfactories", caption="Export subfactories",
+    local button_export = flow_export.add{type="button", name="fp_button_porter_subfactory_export", caption="Export",
       enabled=false, style="confirm_button", mouse_button_filter={"left"}}
+    button_export.style.horizontal_align = "left"
 
     local textfield_export_string = flow_export.add{type="textfield", name="textfield_export_string"}
     textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
@@ -125,7 +156,7 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
     end
 
     if get_ui_state(player).modal_dialog_type == "export" then
-        local button_export = content_frame["flow_export_subfactories"]["fp_button_export_subfactories"]
+        local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
         button_export.enabled = checkbox_state
     end
 end
@@ -139,14 +170,14 @@ function porter_dialog.adjust_after_checkbox_click(player)
     for _, element in pairs(table_subfactories.children) do
         if string.find(element.name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") then
             if element.state == true then checked_element_count = checked_element_count + 1
-            else unchecked_element_count = unchecked_element_count + 1 end
+            elseif element.enabled then unchecked_element_count = unchecked_element_count + 1 end
         end
     end
 
     table_subfactories["fp_checkbox_porter_master"].state = (unchecked_element_count == 0)
 
     if get_ui_state(player).modal_dialog_type == "export" then
-        local button_export = content_frame["flow_export_subfactories"]["fp_button_export_subfactories"]
+        local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
         button_export.enabled = (checked_element_count > 0)
     end
 end
