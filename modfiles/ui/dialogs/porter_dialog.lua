@@ -34,6 +34,12 @@ function import_dialog.import_subfactories(player)
     local label_text = content_frame.add{type="label", caption="Then, select the subfactories you'd like to import:"}
     label_text.style.margin = {8, 0}
 
+    local export_string = content_frame["flow_import_subfactories"]["textfield_import_string"].text
+    -- The imported subfactories will be temporarily contained in a factory object
+    local import_factory = porter.get_subfactories(player, export_string)
+    get_modal_data(player).import_factory = import_factory
+
+    -- TODO show import table
 
     content_frame.parent.parent.force_auto_center()
 end
