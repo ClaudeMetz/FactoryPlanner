@@ -100,3 +100,13 @@ function migrator.migrate_player_table(player)
         end
     end
 end
+
+-- Applies any appropriate migrations to the given export_table's subfactories
+function migrator.migrate_export_table(export_table, player)
+    local migrations = determine_migrations(export_table.mod_version)
+
+    for _, packed_subfactory in pairs(export_table.subfactories) do
+        apply_migrations(migrations, "packed_subfactory", packed_subfactory, player)
+    end
+    export_table.mod_version = global.mod_version
+end

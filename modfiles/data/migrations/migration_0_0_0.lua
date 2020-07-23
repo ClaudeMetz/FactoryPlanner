@@ -9,4 +9,7 @@ end
 function migration.subfactory(subfactory)
 end
 
+function migration.packed_subfactory(packed_subfactory)
+end
+
 return migration
