@@ -40,13 +40,15 @@ function Factory.shift_to_end(self, dataset, direction)
 end
 
 -- Imports every subfactory in the given string to this Factory, returning a reference to the first one
-function Factory.import_by_string(self, export_string)
-    local import_factory = porter.get_subfactories(nil, export_string)  -- player not needed here
+function Factory.import_by_string(self, player, export_string)
+    local import_factory = porter.get_subfactories(player, export_string)
 
     local first_subfactory = nil
     for _, subfactory in pairs(Factory.get_in_order(import_factory, "Subfactory")) do
-        first_subfactory = first_subfactory or Factory.add(self, subfactory)
+        Factory.add(self, subfactory)
+        first_subfactory = first_subfactory or subfactory
     end
+
     return first_subfactory
 end
 
