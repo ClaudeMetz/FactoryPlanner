@@ -224,6 +224,10 @@ function modal_dialog.exit(player, button, data)
         else return end
     end
 
+    -- Cancel action if it is not possible on this dialog, or the button is disabled
+    local submit_button = flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"]
+    if button == "submit" and (not submit_button.visible or not submit_button.enabled) then return end
+
     local closing_function = _G[dialog_type .. "_dialog"].close
     -- If closing_function is nil here, this dialog doesn't have a confirm-button, and if it is closed with
     -- a submit-action (by a confirmation-action), it should execute the back-action instead
