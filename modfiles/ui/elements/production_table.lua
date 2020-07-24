@@ -126,9 +126,9 @@ local function create_line_table_row(player, line)
     local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
       text=relevant_line.percentage, enabled=(not archive_open)}
-    textfield_percentage.style.width = 55
-    textfield_percentage.style.horizontal_align = "center"
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
+    textfield_percentage.style.horizontal_align = "center"
+    textfield_percentage.style.width = 55
 
 
     -- Machine button
@@ -209,8 +209,8 @@ local function create_line_table_row(player, line)
     if optional_columns.line_comments then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
           text=(line.comment or "")}
-        textfield_comment.style.width = 160
         ui_util.setup_textfield(textfield_comment)
+        textfield_comment.style.width = 160
     end
 end
 

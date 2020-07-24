@@ -18,8 +18,8 @@ function item_picker.create(parent)
 
     table_search.add{type="label", name="label_search_bar", caption={"fp.search"}}
     local textfield = table_search.add{type="textfield", name="fp_textfield_item_picker_search_bar"}
-    textfield.style.width = 140
     ui_util.setup_textfield(textfield)
+    textfield.style.width = 140
 
     -- Warning label
     local label_warning = picker_flow.add{type="label", name="label_warning_message", caption={"fp.error_no_item_found"}}
