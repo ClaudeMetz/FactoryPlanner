@@ -12,7 +12,7 @@ local function initialize_dialog(flow_modal_dialog, dialog_type)
       style="inside_shallow_frame_with_padding"}
 
     local label_text = content_frame.add{type="label", caption={"fp." .. dialog_type .. "_instruction_1"}}
-    label_text.style.margin = {0, 80, 10, 0}
+    label_text.style.margin = {0, 30, 10, 0}
 
     return content_frame
 end
@@ -33,11 +33,71 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
         ui_util.setup_textfield(textfield_export_string)
         textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
         textfield_export_string.style.horizontally_stretchable = true
-        textfield_export_string.style.left_margin = 12
+
+        if button_first then textfield_export_string.style.left_margin = 12
+        else textfield_export_string.style.right_margin = 12 end
     end
 
     if button_first then add_button(); add_textfield()
     else add_textfield(); add_button() end
+end
+
+-- Initializes the subfactories table by adding it and its header
+local function setup_subfactories_table(parent_flow, add_location)
+    local scroll_pane_subfactories = parent_flow.add{type="scroll-pane", name="scroll_pane_subfactories"}
+    scroll_pane_subfactories.style.margin = {4, 0, 12, 0}
+    scroll_pane_subfactories.style.padding = 0
+    scroll_pane_subfactories.style.extra_top_padding_when_activated = 0
+    scroll_pane_subfactories.style.extra_right_padding_when_activated = 0
+    scroll_pane_subfactories.style.extra_bottom_padding_when_activated = 0
+    scroll_pane_subfactories.style.extra_left_padding_when_activated = 0
+    scroll_pane_subfactories.style.maximal_height = 450  -- I hate that I have to set this, seemingly
+
+    local frame_subfactories = scroll_pane_subfactories.add{type="frame", name="frame_subfactories",
+      style="deep_frame_in_shallow_frame"}
+    frame_subfactories.style.padding = {-2, 2, 3, 2}
+
+    local table_columns = {
+        [2] = {caption={"fp.csubfactory"}, alignment="left", margin={6, 150, 6, 4}},
+        [3] = {caption={"fp.validity"}}
+    }
+    if add_location then table_columns[4] = {caption={"fp.location"}} end
+
+    local table_subfactories = frame_subfactories.add{type="table", name="table_subfactories",
+      column_count=(table_size(table_columns) + 1), style="mods_table"}
+
+    -- Add master checkbox in any case
+    table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
+
+    for column_nr, table_column in pairs(table_columns) do
+        table_subfactories.style.column_alignments[column_nr] = table_column.alignment or "center"
+
+        local label_column = table_subfactories.add{type="label", caption=table_column.caption}
+        label_column.style.font = "heading-3"
+        label_column.style.margin = table_column.margin or {0, 4}
+    end
+
+    return table_subfactories
+end
+
+-- Adds a row to the subfactories table
+local function add_to_subfactories_table(table_subfactories, subfactory, location_name)
+    local factory_name = location_name or "tmp"
+    table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name
+      .. "_" .. subfactory.id), state=false, enabled=subfactory.valid}
+
+    local subfactory_icon = " "
+    if subfactory.icon ~= nil then
+        local subfactory_sprite = subfactory.icon.type .. "/" .. subfactory.icon.name
+        if not game.is_valid_sprite_path(subfactory_sprite) then subfactory_sprite = "utility/danger_icon" end
+        subfactory_icon = " [img=" .. subfactory_sprite .. "]  "
+    end
+    table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
+
+    local validity_caption = (subfactory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
+    table_subfactories.add{type="label", caption=validity_caption}
+
+    if location_name then table_subfactories.add{type="label", caption={"fp." .. location_name}} end
 end
 
 
@@ -69,15 +129,21 @@ function import_dialog.import_subfactories(player)
     end
 
     if content_frame["label_import_info"] then content_frame["label_import_info"].destroy() end
+    if content_frame["scroll_pane_subfactories"] then content_frame["scroll_pane_subfactories"].destroy() end
 
     if error ~= nil then
-        add_into_label({"fp.importer_failure", {"fp.importer_" .. error}})
+        add_into_label({"fp.error_message", {"fp.importer_" .. error}})
     else
         add_into_label({"fp.import_instruction_2"})
 
         get_modal_data(player).import_factory = import_factory
 
-        -- TODO show import table
+        local table_subfactories = setup_subfactories_table(content_frame, false)
+
+        for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
+            add_to_subfactories_table(table_subfactories, subfactory, nil)
+        end
+        -- TODO Need to set the master checkbox status still, prolly with function below
     end
 
     content_frame.parent.parent.force_auto_center()
@@ -88,71 +154,20 @@ end
 function export_dialog.open(flow_modal_dialog)
     local content_frame = initialize_dialog(flow_modal_dialog, "export")
 
-    local scroll_pane_subfactories = content_frame.add{type="scroll-pane", name="scroll_pane_subfactories"}
-    scroll_pane_subfactories.style.margin = {4, 0, 12, 0}
-    scroll_pane_subfactories.style.padding = 0
-    scroll_pane_subfactories.style.extra_top_padding_when_activated = 0
-    scroll_pane_subfactories.style.extra_right_padding_when_activated = 0
-    scroll_pane_subfactories.style.extra_bottom_padding_when_activated = 0
-    scroll_pane_subfactories.style.extra_left_padding_when_activated = 0
-    scroll_pane_subfactories.style.maximal_height = 450  -- I hate that I have to set this, seemingly
-
-    local frame_subfactories = scroll_pane_subfactories.add{type="frame", name="frame_subfactories",
-      style="deep_frame_in_shallow_frame"}
-    frame_subfactories.style.padding = {-2, 2, 3, 2}
-
-    local table_subfactories = frame_subfactories.add{type="table", name="table_subfactories",
-      column_count=4, style="mods_table"}
-    table_subfactories.style.column_alignments[1] = "center"
-    table_subfactories.style.column_alignments[3] = "center"
-    table_subfactories.style.column_alignments[4] = "center"
-
-    local checkbox_master = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
-
-    local label_subfactories_title = table_subfactories.add{type="label", caption={"fp.csubfactory"}}
-    label_subfactories_title.style.font = "heading-3"
-    label_subfactories_title.style.margin = {6, 150, 6, 4}
-
-    local label_subfactories_validity = table_subfactories.add{type="label", caption="Validity"}
-    label_subfactories_validity.style.font = "heading-3"
-    label_subfactories_validity.style.margin = {0, 4}
-
-    local label_subfactories_location = table_subfactories.add{type="label", caption="Location"}
-    label_subfactories_location.style.font = "heading-3"
-    label_subfactories_location.style.margin = {0, 4}
+    local table_subfactories = setup_subfactories_table(content_frame, true)
 
     local player_table = get_table(game.get_player(flow_modal_dialog.player_index))
-    local valid_subfactory_found = false
-
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-            table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name
-              .. "_" .. subfactory.id), state=false, enabled=subfactory.valid}
-
-            local subfactory_icon = " "
-            if subfactory.icon ~= nil then
-                local subfactory_sprite = subfactory.icon.type .. "/" .. subfactory.icon.name
-                if not game.is_valid_sprite_path(subfactory_sprite) then
-                    subfactory_sprite = "utility/danger_icon"
-                end
-                subfactory_icon = " [img=" .. subfactory_sprite .. "]  "
-            end
-            table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
-
-            local validity_caption = (subfactory.valid) and "valid" or "[color=1, 0.2, 0.2]invalid[/color]"
-            table_subfactories.add{type="label", caption=validity_caption}
-
-            table_subfactories.add{type="label", caption={"fp." .. factory_name}}
-
-            valid_subfactory_found = valid_subfactory_found or subfactory.valid
+            add_to_subfactories_table(table_subfactories, subfactory, factory_name)
         end
     end
-    checkbox_master.enabled = valid_subfactory_found
-
+    -- TODO Need to set the master checkbox status still, prolly with function below
 
     add_textfield_and_button(content_frame, "export", true, false)
 end
 
+-- Exports the currently selected subfactories and puts the resulting string into the textbox
 function export_dialog.export_subfactories(player)
     local player_table = get_table(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
