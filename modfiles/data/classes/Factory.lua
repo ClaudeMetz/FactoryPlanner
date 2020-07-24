@@ -42,6 +42,7 @@ end
 -- Imports every subfactory in the given string to this Factory, returning a reference to the first one
 function Factory.import_by_string(self, player, export_string)
     local import_factory = porter.get_subfactories(player, export_string)
+    -- No error handling here, as the export_string for this will always be known to work
 
     local first_subfactory = nil
     for _, subfactory in pairs(Factory.get_in_order(import_factory, "Subfactory")) do
