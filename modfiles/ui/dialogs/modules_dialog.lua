@@ -218,7 +218,7 @@ local function create_module_beacon_dialog_structure(flow_modal_dialog, title, t
           tooltip={"fp.beacon_total_tt"}}
 
         local textfield_beacon_total = flow_beacon_total.add{type="textfield", name="textfield_beacon_total"}
-          ui_util.setup_numeric_textfield(textfield_beacon_total, true, false)
+        ui_util.setup_numeric_textfield(textfield_beacon_total, true, false)
         if line.beacon ~= nil then textfield_beacon_total.text = (line.beacon.total_amount or "") end
         textfield_beacon_total.style.width = 70
         textfield_beacon_total.style.margin = {0, 6}

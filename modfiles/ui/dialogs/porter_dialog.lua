@@ -30,6 +30,7 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
 
     local function add_textfield()
         local textfield_export_string = flow.add{type="textfield", name="fp_textfield_" .. dialog_type .. "_string"}
+        ui_util.setup_textfield(textfield_export_string)
         textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
         textfield_export_string.style.horizontally_stretchable = true
         textfield_export_string.style.left_margin = 12
