@@ -53,18 +53,32 @@ function import_dialog.open(flow_modal_dialog)
     content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text = tmp_export_string
 end
 
+-- Tries importing the given string, showing the resulting subfactories-table, if possible
 function import_dialog.import_subfactories(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
 
-    local label_text = content_frame.add{type="label", caption="fp.import_instruction_2"}
-    label_text.style.margin = {8, 0}
-
     local export_string = content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text
     -- The imported subfactories will be temporarily contained in a factory object
-    local import_factory = porter.get_subfactories(player, export_string)
-    get_modal_data(player).import_factory = import_factory
+    local import_factory, error = porter.get_subfactories(player, export_string)
 
-    -- TODO show import table
+    local function add_into_label(caption)
+        local label_info = content_frame.add{type="label", name="label_import_info", caption=caption}
+        label_info.style.single_line = false
+        label_info.style.top_margin = 8
+        label_info.style.maximal_width = 375
+    end
+
+    if content_frame["label_import_info"] then content_frame["label_import_info"].destroy() end
+
+    if error ~= nil then
+        add_into_label({"fp.importer_failure", {"fp.importer_" .. error}})
+    else
+        add_into_label({"fp.import_instruction_2"})
+
+        get_modal_data(player).import_factory = import_factory
+
+        -- TODO show import table
+    end
 
     content_frame.parent.parent.force_auto_center()
 end
