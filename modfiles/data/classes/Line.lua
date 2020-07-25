@@ -253,15 +253,13 @@ function Line.pack(self)
 
     else
         packed_line.recipe = Recipe.pack(self.recipe)
+        packed_line.percentage = self.percentage
 
         packed_line.machine = Machine.pack(self.machine)
         packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
 
-        local priority_product_proto = (self.priority_product_proto ~= nil) and
-          prototyper.util.simplify_prototype(self.priority_product_proto)
-
-        packed_line.percentage = self.percentage
-        packed_line.priority_product_proto = priority_product_proto
+        -- If this line has no priority_product, the function will return nil
+        packed_line.priority_product_proto = prototyper.util.simplify_prototype(self.priority_product_proto)
     end
 
     return packed_line
