@@ -90,6 +90,7 @@ end
 
 -- Returns a new table that only contains the given prototypes' identifiers
 function prototyper.util.simplify_prototype(proto)
+    if proto == nil then return nil end
     local simple_proto = { name = proto.name, simplified = true }
 
     -- Doing the detection this way is a bit ugly, but makes much easier
