@@ -96,8 +96,8 @@ function Collection.get_by_type_and_name(self, type_name, name)
 end
 
 
--- Does the actual hard lifting of changing the position of a collection element
-local function shift_dataset(self, main_dataset, secondary_gui_position, direction)
+-- Shifts given dataset in given direction
+function Collection.shift(self, main_dataset, direction)
     local main_gui_position = main_dataset.gui_position
 
     -- Doesn't shift if outmost elements are being shifted further outward
@@ -106,6 +106,7 @@ local function shift_dataset(self, main_dataset, secondary_gui_position, directi
         return false
     end
 
+    local secondary_gui_position = (direction == "positive") and (main_gui_position + 1) or (main_gui_position - 1)
     local secondary_dataset = Collection.get_by_gui_position(self, secondary_gui_position)
     main_dataset.gui_position = secondary_gui_position
     secondary_dataset.gui_position = main_gui_position
@@ -113,17 +114,30 @@ local function shift_dataset(self, main_dataset, secondary_gui_position, directi
     return true
 end
 
--- Shifts given dataset in given direction
-function Collection.shift(self, main_dataset, direction)
-    local main_gui_position = main_dataset.gui_position
-    local secondary_gui_position = (direction == "positive") and (main_gui_position + 1) or (main_gui_position - 1)
-    return shift_dataset(self, main_dataset, secondary_gui_position, direction)
-end
-
 -- Shifts the given dataset to the end of the collection in the given direction
 function Collection.shift_to_end(self, main_dataset, direction)
+    local main_gui_position = main_dataset.gui_position
+
+    -- Doesn't shift if outmost elements are being shifted further outward
+    if (main_gui_position == 1 and direction == "negative") or
+      (main_gui_position == self.count and direction == "positive") then
+        return false
+    end
+
+    -- Go through every dataset and adjust their positions as necessary
+    -- This algo isn't great, but it's fine for what it does
+    for _, dataset in pairs(self.datasets) do
+        if direction == "positive" and dataset.gui_position > main_gui_position then
+            dataset.gui_position = dataset.gui_position - 1
+        elseif dataset.gui_position < main_gui_position then  -- direction == "negative"
+            dataset.gui_position = dataset.gui_position + 1
+        end
+    end
+
     local secondary_gui_position = (direction == "positive") and self.count or 1
-    return shift_dataset(self, main_dataset, secondary_gui_position, direction)
+    main_dataset.gui_position = secondary_gui_position
+
+    return true
 end
 
 
