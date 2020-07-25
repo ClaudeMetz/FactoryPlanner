@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.43
+Date: 26. 07. 2020
   Bugfixes:
     - Implement potential fix for a crash when duplicating certain subfactories
     - Fixed that moving list items to the bottom/top did not work correctly
