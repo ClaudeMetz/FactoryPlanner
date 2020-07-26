@@ -175,6 +175,13 @@ data.raw["gui-style"].default["fp_sprite-button_choose_elem"] = {
     padding = 0
 }
 
+data.raw["gui-style"].default["fp_sprite-button_tool_green"] = {
+    type = "button_style",
+    parent = "item_and_count_select_confirm",
+    padding = 2,
+    left_click_sound = {{ filename = "__core__/sound/gui-click.ogg", volume = 1 }}
+}
+
 data.raw["gui-style"].default["fp_table_subgroup"] = {
     type = "table_style",
     horizontal_spacing = 2,
