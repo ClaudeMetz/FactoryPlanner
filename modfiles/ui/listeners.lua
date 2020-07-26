@@ -157,7 +157,7 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
         production_handler.handle_percentage_confirmation(player, event.element)
 
     -- Make sure submitting the export_string when importing actually imports
-    elseif element_name == "fp_textfield_import_string" then
+    elseif element_name == "fp_textfield_porter_string_import" then
         import_dialog.import_subfactories(player)
 
     -- Submit any modal dialog, if it is open
