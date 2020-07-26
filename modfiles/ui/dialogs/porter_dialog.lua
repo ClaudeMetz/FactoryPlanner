@@ -3,6 +3,11 @@ export_dialog = {}
 porter_dialog = {}  -- table containing functionality shared between both dialogs
 
 -- ** LOCAL UTIL **
+local function set_tool_button_state(button, dialog_type, enabled)
+    button.enabled = enabled
+    button.sprite = (enabled) and ("utility/" .. dialog_type) or ("fp_sprite_" .. dialog_type .. "_light")
+end
+
 -- Adds the barebones dialog structure that both dialogs need
 local function initialize_dialog(flow_modal_dialog, dialog_type)
     flow_modal_dialog.parent.caption = {"", {"fp." .. dialog_type}, " ", {"fp.subfactories"}}
@@ -23,9 +28,9 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
     flow.style.vertical_align = "center"
 
     local function add_button()
-        local button = flow.add{type="button", name="fp_button_porter_subfactory_" .. dialog_type,
-          enabled=button_enabled, caption={"fp." .. dialog_type}, style="confirm_button", mouse_button_filter={"left"}}
-        if button_first then button.style.horizontal_align = "left" end
+        local button = flow.add{type="sprite-button", name="fp_button_porter_subfactory_" .. dialog_type,
+          style="fp_sprite-button_tool_green", mouse_button_filter={"left"}}
+        set_tool_button_state(button, dialog_type, button_enabled)
     end
 
     local function add_textfield()
@@ -34,8 +39,8 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
         textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
         textfield_export_string.style.horizontally_stretchable = true
 
-        if button_first then textfield_export_string.style.left_margin = 12
-        else textfield_export_string.style.right_margin = 12 end
+        if button_first then textfield_export_string.style.left_margin = 6
+        else textfield_export_string.style.right_margin = 6 end
     end
 
     if button_first then add_button(); add_textfield()
@@ -112,14 +117,15 @@ function import_dialog.open(flow_modal_dialog)
 
     local tmp_export_string = "eNrtVU1P4zAQ/SuVD5xi1LIrhHIEtFokDkgcV6hynEk7YHuM7bCqovx3xiHZis8KiQsLt2jm5fnNe+OkE5bq5R2EiOREKeb7i6P9nweiELGtGqUTBYQoyj+dcMoCI84Cudne7IS8h8C4hBaiVoZ7h/NCOEoZL7hzEahudRJlJ6i6Bp0eeHygRLk4EhpcrZMkNPlQtN5gg1CLMoUWmH7jM6gxLdaiL0SA2xYD1EtlqXUDeQ0NOq5UGwaO5WJ6KBdzfiuRXxq4AzPRaqNiljlp7K+KUeRyap0lsGKLPCFjuJ1tGgkbQxSygHM+/tGUXf+MbcC8xjZKW2z7vwbuflu4nOLYcPWfdxdGZbsLgTrH10124YP2EYUcmfQZOkh/V2AvjPIZjDmnFcaEeqc3KSgXPYUkKzDpy/izy5ag/soG4/r9hrxww1kI2MqgW0mr9JoHkodvXfZByvddfxLZKcLstwr1rugsGkwqbGTUCE6D9ErffJnFvrTKmNkxrNA5Xrj4EX8oyMICatm0wSl29Mf39n74B4f0DSR2mOn/71296u8BelMttQ=="
     content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"].text = tmp_export_string
-    content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"].enabled = true
+    local button = content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"]
+    set_tool_button_state(button, "import", true)
 end
 
 -- En/Disables the import-button depending on the import textfield contents
 function import_dialog.handle_import_string_change(player, textfield_import)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
     local button_import = content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"]
-    button_import.enabled = (string.len(textfield_import.text) > 0)
+    set_tool_button_state(button_import, "import", (string.len(textfield_import.text) > 0))
 end
 
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
@@ -242,7 +248,8 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
 
     if get_ui_state(player).modal_dialog_type == "export" then
         local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
-        button_export.enabled = checkbox_state
+        local dialog_type = get_ui_state(player).modal_dialog_type
+        set_tool_button_state(button_export, dialog_type, checkbox_state)
     else -- modal_dialog_type == "import"
         local button_submit = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog_button_bar"]
           ["fp_button_modal_dialog_submit"]
@@ -267,7 +274,8 @@ function porter_dialog.adjust_after_checkbox_click(player)
 
     if get_ui_state(player).modal_dialog_type == "export" then
         local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
-        button_export.enabled = (checked_element_count > 0)
+        local dialog_type = get_ui_state(player).modal_dialog_type
+        set_tool_button_state(button_export, dialog_type, (checked_element_count > 0))
     else -- modal_dialog_type == "import"
         local button_submit = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog_button_bar"]
           ["fp_button_modal_dialog_submit"]
