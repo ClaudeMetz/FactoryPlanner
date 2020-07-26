@@ -155,6 +155,31 @@ function import_dialog.import_subfactories(player)
     content_frame.parent.parent.force_auto_center()
 end
 
+-- Imports the selected subfactories into the player's main factory
+function import_dialog.close(flow_modal_dialog, _, _)
+    -- The action can only be "submit" here, and at least one subfactory will be selected
+    local player = game.get_player(flow_modal_dialog.player_index)
+    local import_factory = get_modal_data(player).import_factory
+    local player_factory = get_table(player).factory
+
+    local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
+    local table_subfactories = content_frame["scroll_pane_subfactories"]["frame_subfactories"]["table_subfactories"]
+
+    local first_subfactory = nil
+    for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
+        local subfactory_checkbox = table_subfactories["fp_checkbox_porter_subfactory_tmp_" .. subfactory.id]
+
+        if subfactory_checkbox.state == true then
+            local imported_subfactory = Factory.add(player_factory, subfactory)
+            calculation.update(player, imported_subfactory, false)
+            first_subfactory = first_subfactory or imported_subfactory
+        end
+    end
+
+    ui_util.context.set_subfactory(player, first_subfactory)
+    main_dialog.refresh(player)
+end
+
 
 -- ** EXPORT DIALOG **
 function export_dialog.open(flow_modal_dialog)
