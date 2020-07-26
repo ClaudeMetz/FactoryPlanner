@@ -29,7 +29,7 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
     end
 
     local function add_textfield()
-        local textfield_export_string = flow.add{type="textfield", name="fp_textfield_" .. dialog_type .. "_string"}
+        local textfield_export_string = flow.add{type="textfield", name="fp_textfield_porter_string_" .. dialog_type}
         ui_util.setup_textfield(textfield_export_string)
         textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
         textfield_export_string.style.horizontally_stretchable = true
@@ -107,17 +107,25 @@ function import_dialog.open(flow_modal_dialog)
 
     local content_frame = initialize_dialog(flow_modal_dialog, "import")
 
-    add_textfield_and_button(content_frame, "import", false, true)
+    add_textfield_and_button(content_frame, "import", false, false)
 
     local tmp_export_string = "eNrdkL0KAjEQhF9FtrA6RUVErhUEwUKwFDlycZVILhuSVZBw7+7m/KvE3nJnPoadSdDQobpiiIYclDAajufD6QQKiJf6qDRTMBih3CVwqkEhVoFcr99bkPcYhGPTYNTKijcbFeCIMw/ibAIdLpqhTED1GTWLntrieVTaqpjJFWMj9OtckLVi53eEZfLV0RKFnLI2Dn+ldcy3NItXtFCOP/6yy24/wvZV+ybqu/SaTiay0VGijc5LJeCbz5Z5vP8EOSgXPQUe1Gi5a/C/++zbO5pgwC0="
-    content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text = tmp_export_string
+    content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"].text = tmp_export_string
+    content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"].enabled = true
+end
+
+-- En/Disables the import-button depending on the import textfield contents
+function import_dialog.handle_import_string_change(player, textfield_import)
+    local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
+    local button_import = content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"]
+    button_import.enabled = (string.len(textfield_import.text) > 0)
 end
 
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
 function import_dialog.import_subfactories(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
 
-    local export_string = content_frame["flow_import_subfactories"]["fp_textfield_import_string"].text
+    local export_string = content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"].text
     -- The imported subfactories will be temporarily contained in a factory object
     local import_factory, error = porter.get_subfactories(player, export_string)
 
@@ -135,11 +143,9 @@ function import_dialog.import_subfactories(player)
         add_into_label({"fp.error_message", {"fp.importer_" .. error}})
     else
         add_into_label({"fp.import_instruction_2"})
-
         get_modal_data(player).import_factory = import_factory
 
         local table_subfactories = setup_subfactories_table(content_frame, false)
-
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
             add_to_subfactories_table(table_subfactories, subfactory, nil)
         end
@@ -187,7 +193,7 @@ function export_dialog.export_subfactories(player)
 
     local export_string = porter.get_export_string(player, subfactories_to_export)
 
-    local textfield_export_string = content_frame["flow_export_subfactories"]["fp_textfield_export_string"]
+    local textfield_export_string = content_frame["flow_export_subfactories"]["fp_textfield_porter_string_export"]
     textfield_export_string.text = export_string
     ui_util.select_all(textfield_export_string)
 end

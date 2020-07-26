@@ -234,6 +234,10 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         elseif element_name == "fp_textfield_default_beacon_count" then
             get_preferences(player).mb_defaults.beacon_count = tonumber(event.element.text)
 
+        -- Dynamically en/disables the subfactory import button
+        elseif element_name == "fp_textfield_porter_string_import" then
+            import_dialog.handle_import_string_change(player, event.element)
+
         -- Persists notes changes
         elseif element_name == "fp_text-box_notes" then
             utility_dialog.handle_notes_change(player, event.element)
