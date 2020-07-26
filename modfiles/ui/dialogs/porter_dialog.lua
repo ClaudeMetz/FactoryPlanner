@@ -40,12 +40,13 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
 
     if button_first then add_button(); add_textfield()
     else add_textfield(); add_button() end
+
+    return flow
 end
 
 -- Initializes the subfactories table by adding it and its header
 local function setup_subfactories_table(parent_flow, add_location)
     local scroll_pane_subfactories = parent_flow.add{type="scroll-pane", name="scroll_pane_subfactories"}
-    scroll_pane_subfactories.style.margin = {4, 0, 12, 0}
     scroll_pane_subfactories.style.padding = 0
     scroll_pane_subfactories.style.extra_top_padding_when_activated = 0
     scroll_pane_subfactories.style.extra_right_padding_when_activated = 0
@@ -81,10 +82,10 @@ local function setup_subfactories_table(parent_flow, add_location)
 end
 
 -- Adds a row to the subfactories table
-local function add_to_subfactories_table(table_subfactories, subfactory, location_name)
-    local factory_name = location_name or "tmp"
-    table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name
-      .. "_" .. subfactory.id), state=false, enabled=subfactory.valid}
+local function add_to_subfactories_table(table_subfactories, subfactory, location_name, force_enable_checkbox)
+    local factory_name, checkbox_enabled = location_name or "tmp", (force_enable_checkbox or subfactory.valid)
+    table_subfactories.add{type="checkbox", name=("fp_checkbox_porter_subfactory_" .. factory_name .. "_"
+      .. subfactory.id), state=false, enabled=checkbox_enabled}
 
     local subfactory_icon = " "
     if subfactory.icon ~= nil then
@@ -109,7 +110,7 @@ function import_dialog.open(flow_modal_dialog)
 
     add_textfield_and_button(content_frame, "import", false, false)
 
-    local tmp_export_string = "eNrdkL0KAjEQhF9FtrA6RUVErhUEwUKwFDlycZVILhuSVZBw7+7m/KvE3nJnPoadSdDQobpiiIYclDAajufD6QQKiJf6qDRTMBih3CVwqkEhVoFcr99bkPcYhGPTYNTKijcbFeCIMw/ibAIdLpqhTED1GTWLntrieVTaqpjJFWMj9OtckLVi53eEZfLV0RKFnLI2Dn+ldcy3NItXtFCOP/6yy24/wvZV+ybqu/SaTiay0VGijc5LJeCbz5Z5vP8EOSgXPQUe1Gi5a/C/++zbO5pgwC0="
+    local tmp_export_string = "eNrtVU1P4zAQ/SuVD5xi1LIrhHIEtFokDkgcV6hynEk7YHuM7bCqovx3xiHZis8KiQsLt2jm5fnNe+OkE5bq5R2EiOREKeb7i6P9nweiELGtGqUTBYQoyj+dcMoCI84Cudne7IS8h8C4hBaiVoZ7h/NCOEoZL7hzEahudRJlJ6i6Bp0eeHygRLk4EhpcrZMkNPlQtN5gg1CLMoUWmH7jM6gxLdaiL0SA2xYD1EtlqXUDeQ0NOq5UGwaO5WJ6KBdzfiuRXxq4AzPRaqNiljlp7K+KUeRyap0lsGKLPCFjuJ1tGgkbQxSygHM+/tGUXf+MbcC8xjZKW2z7vwbuflu4nOLYcPWfdxdGZbsLgTrH10124YP2EYUcmfQZOkh/V2AvjPIZjDmnFcaEeqc3KSgXPYUkKzDpy/izy5ag/soG4/r9hrxww1kI2MqgW0mr9JoHkodvXfZByvddfxLZKcLstwr1rugsGkwqbGTUCE6D9ErffJnFvrTKmNkxrNA5Xrj4EX8oyMICatm0wSl29Mf39n74B4f0DSR2mOn/71296u8BelMttQ=="
     content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"].text = tmp_export_string
     content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"].enabled = true
 end
@@ -132,7 +133,7 @@ function import_dialog.import_subfactories(player)
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", name="label_import_info", caption=caption}
         label_info.style.single_line = false
-        label_info.style.top_margin = 8
+        label_info.style.margin = {8, 0}
         label_info.style.maximal_width = 375
     end
 
@@ -147,9 +148,8 @@ function import_dialog.import_subfactories(player)
 
         local table_subfactories = setup_subfactories_table(content_frame, false)
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
-            add_to_subfactories_table(table_subfactories, subfactory, nil)
+            add_to_subfactories_table(table_subfactories, subfactory, nil, true)
         end
-        -- TODO Need to set the master checkbox status still, prolly with function below
     end
 
     content_frame.parent.parent.force_auto_center()
@@ -161,16 +161,19 @@ function export_dialog.open(flow_modal_dialog)
     local content_frame = initialize_dialog(flow_modal_dialog, "export")
 
     local table_subfactories = setup_subfactories_table(content_frame, true)
+    local valid_subfactory_found = false
 
     local player_table = get_table(game.get_player(flow_modal_dialog.player_index))
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-            add_to_subfactories_table(table_subfactories, subfactory, factory_name)
+            add_to_subfactories_table(table_subfactories, subfactory, factory_name, false)
+            valid_subfactory_found = valid_subfactory_found or subfactory.valid
         end
     end
-    -- TODO Need to set the master checkbox status still, prolly with function below
+    table_subfactories["fp_checkbox_porter_master"].enabled = valid_subfactory_found
 
-    add_textfield_and_button(content_frame, "export", true, false)
+    local flow_tf_b = add_textfield_and_button(content_frame, "export", true, false)
+    flow_tf_b.style.top_margin = 10
 end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
@@ -206,7 +209,7 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
     local table_subfactories = content_frame["scroll_pane_subfactories"]["frame_subfactories"]["table_subfactories"]
 
-    for _, element in pairs(table_subfactories) do
+    for _, element in pairs(table_subfactories.children) do
         if string.find(element.name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") and element.enabled then
             element.state = checkbox_state
         end
@@ -215,6 +218,10 @@ function porter_dialog.set_all_checkboxes(player, checkbox_state)
     if get_ui_state(player).modal_dialog_type == "export" then
         local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
         button_export.enabled = checkbox_state
+    else -- modal_dialog_type == "import"
+        local button_submit = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog_button_bar"]
+          ["fp_button_modal_dialog_submit"]
+        button_submit.enabled = checkbox_state
     end
 end
 
@@ -236,5 +243,9 @@ function porter_dialog.adjust_after_checkbox_click(player)
     if get_ui_state(player).modal_dialog_type == "export" then
         local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
         button_export.enabled = (checked_element_count > 0)
+    else -- modal_dialog_type == "import"
+        local button_submit = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog_button_bar"]
+          ["fp_button_modal_dialog_submit"]
+        button_submit.enabled = (checked_element_count > 0)
     end
 end
