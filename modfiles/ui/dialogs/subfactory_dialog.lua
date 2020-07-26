@@ -10,9 +10,9 @@ local function create_subfactory_dialog_structure(flow_modal_dialog, title, name
 
     -- Name
     table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"fp.name"}, "    "}}
-    table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
-    ui_util.setup_textfield(table_subfactory)
-    table_subfactory["fp_textfield_subfactory_name"].focus()
+    local textfield = table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
+    ui_util.setup_textfield(textfield)
+    textfield.focus()
 
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"fp.icon"}}
