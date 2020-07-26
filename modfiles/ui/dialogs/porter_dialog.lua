@@ -17,7 +17,7 @@ local function initialize_dialog(flow_modal_dialog, dialog_type)
       style="inside_shallow_frame_with_padding"}
 
     local label_text = content_frame.add{type="label", caption={"fp." .. dialog_type .. "_instruction_1"}}
-    label_text.style.margin = {0, 30, 10, 0}
+    label_text.style.bottom_margin = 10
 
     return content_frame
 end
@@ -29,7 +29,8 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
 
     local function add_button()
         local button = flow.add{type="sprite-button", name="fp_button_porter_subfactory_" .. dialog_type,
-          style="fp_sprite-button_tool_green", mouse_button_filter={"left"}}
+          style="fp_sprite-button_tool_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
+          mouse_button_filter={"left"}}
         set_tool_button_state(button, dialog_type, button_enabled)
     end
 
@@ -37,6 +38,7 @@ local function add_textfield_and_button(parent_flow, dialog_type, button_first, 
         local textfield_export_string = flow.add{type="textfield", name="fp_textfield_porter_string_" .. dialog_type}
         ui_util.setup_textfield(textfield_export_string)
         textfield_export_string.style.width = 0  -- needs to be set to 0 so stretching works
+        textfield_export_string.style.minimal_width = 280
         textfield_export_string.style.horizontally_stretchable = true
 
         if button_first then textfield_export_string.style.left_margin = 6
@@ -64,7 +66,7 @@ local function setup_subfactories_table(parent_flow, add_location)
     frame_subfactories.style.padding = {-2, 2, 3, 2}
 
     local table_columns = {
-        [2] = {caption={"fp.csubfactory"}, alignment="left", margin={6, 150, 6, 4}},
+        [2] = {caption={"fp.csubfactory"}, alignment="left", margin={6, 130, 6, 4}},
         [3] = {caption={"fp.validity"}}
     }
     if add_location then table_columns[4] = {caption={"fp.location"}} end
@@ -139,8 +141,13 @@ function import_dialog.import_subfactories(player)
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", name="label_import_info", caption=caption}
         label_info.style.single_line = false
-        label_info.style.margin = {8, 0}
-        label_info.style.maximal_width = 375
+        label_info.style.bottom_margin = 8
+        label_info.style.maximal_width = 325
+    end
+
+    if not content_frame["line_porter"] then
+        local line = content_frame.add{type="line", name="line_porter", direction="horizontal"}
+        line.style.margin = {10, 0, 8, 0}
     end
 
     if content_frame["label_import_info"] then content_frame["label_import_info"].destroy() end
