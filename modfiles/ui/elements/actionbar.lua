@@ -15,24 +15,31 @@ function actionbar.add_to(main_dialog)
     local flow_actionbar = main_dialog.add{type="flow", name="flow_action_bar", direction="horizontal"}
     flow_actionbar.style.bottom_margin = 4
     flow_actionbar.style.left_margin = 6
+    flow_actionbar.style.height = 32
 
     local action_buttons = {
         {name = "new", extend_caption=true},
+        {name = "separation_line"},
         {name = "edit"},
         {name = "archive"},
         {name = "delete"},
         {name = "duplicate"},
+        {name = "separation_line"},
         {name = "import"},
         {name = "export"}
     }
 
     for _, ab in ipairs(action_buttons) do
-        local caption = {"fp." .. ab.name}
-        if ab.extend_caption then caption = {"", caption, " ", {"fp.csubfactory"}} end
+        if ab.name == "separation_line" then
+            flow_actionbar.add{type="line", direction="vertical"}
+        else
+            local caption = {"fp." .. ab.name}
+            if ab.extend_caption then caption = {"", caption, " ", {"fp.csubfactory"}} end
 
-        flow_actionbar.add{type="button", name="fp_button_actionbar_" .. ab.name,
-          caption=caption, style="fp_button_action", mouse_button_filter={"left"},
-          tooltip={"fp.action_" .. ab.name .. "_subfactory"}}
+            flow_actionbar.add{type="button", name="fp_button_actionbar_" .. ab.name,
+              caption=caption, style="fp_button_action", mouse_button_filter={"left"},
+              tooltip={"fp.action_" .. ab.name .. "_subfactory"}}
+        end
     end
 
     local actionbar_spacer = flow_actionbar.add{type="flow", name="flow_actionbar_spacer", direction="horizontal"}
