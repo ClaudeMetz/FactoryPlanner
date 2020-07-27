@@ -151,7 +151,7 @@ end
 function actionbar.duplicate_subfactory(player, alt)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
-    local export_string = porter.get_export_string(player, {subfactory})
+    local export_string = prototyper.porter.get_export_string(player, {subfactory})
 
     -- alt-clicking in devmode prints the export-string to the log for later use
     if alt and devmode then
