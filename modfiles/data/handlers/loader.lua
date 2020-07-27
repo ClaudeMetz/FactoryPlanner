@@ -8,7 +8,9 @@ local events, caching = {}, {}
 -- Runs all the on_load functions
 function loader.run()
     -- Disable freeplay popup-message
-    if devmode then remote.call("freeplay", "set_skip_intro", true) end
+    if devmode and remote.interfaces["freeplay"] then
+        remote.call("freeplay", "set_skip_intro", true)
+    end
 
     events.rate_limiting()
 
