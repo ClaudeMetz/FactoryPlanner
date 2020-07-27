@@ -70,8 +70,8 @@ local function setup_subfactories_table(parent_flow, add_location)
     local table_rows = {}
     get_modal_data(player).table_rows = table_rows
 
-    local scroll_pane_subfactories = parent_flow.add{type="scroll-pane", name="scroll_pane_subfactories"}
-    scroll_pane_subfactories.style.padding = 0
+    local scroll_pane_subfactories = parent_flow.add{type="scroll-pane", name="scroll_pane_subfactories",
+      style="scroll_pane_in_shallow_frame"}
     scroll_pane_subfactories.style.extra_top_padding_when_activated = 0
     scroll_pane_subfactories.style.extra_right_padding_when_activated = 0
     scroll_pane_subfactories.style.extra_bottom_padding_when_activated = 0
@@ -152,9 +152,9 @@ end
 function import_dialog.import_subfactories(player)
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
 
-    local export_string = content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"].text
+    local textfield_export_string = content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"]
     -- The imported subfactories will be temporarily contained in a factory object
-    local import_factory, error = prototyper.porter.get_subfactories(player, export_string)
+    local import_factory, error = prototyper.porter.get_subfactories(player, textfield_export_string.text)
 
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", name="label_import_info", caption=caption}
@@ -173,6 +173,7 @@ function import_dialog.import_subfactories(player)
 
     if error ~= nil then
         add_into_label({"fp.error_message", {"fp.importer_" .. error}})
+        ui_util.select_all(textfield_export_string)
     else
         add_into_label({"fp.import_instruction_2"})
         get_modal_data(player).import_factory = import_factory
