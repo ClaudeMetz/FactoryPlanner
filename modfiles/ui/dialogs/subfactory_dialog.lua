@@ -10,8 +10,9 @@ local function create_subfactory_dialog_structure(flow_modal_dialog, title, name
 
     -- Name
     table_subfactory.add{type="label", name="label_subfactory_name", caption={"", {"fp.name"}, "    "}}
-    table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
-    table_subfactory["fp_textfield_subfactory_name"].focus()
+    local textfield = table_subfactory.add{type="textfield", name="fp_textfield_subfactory_name", text=name}
+    ui_util.setup_textfield(textfield)
+    textfield.focus()
 
     -- Icon
     table_subfactory.add{type="label", name="label_subfactory_icon", caption={"fp.icon"}}
@@ -25,20 +26,21 @@ end
 -- ** TOP LEVEL **
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
 function subfactory_dialog.open(flow_modal_dialog, modal_data)
-    local player = game.players[flow_modal_dialog.player_index]
     local subfactory = modal_data.subfactory
 
     if subfactory ~= nil then  -- Meaning this is an edit
         -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
         local icon = subfactory.icon
         if icon ~= nil then
-            if not player.gui.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
+            if not game.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
             elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
         end
 
-        create_subfactory_dialog_structure(flow_modal_dialog, {"fp.edit_subfactory"}, subfactory.name, icon)
+        local caption = {"", {"fp.edit"}, " ", {"fp.subfactory"}}
+        create_subfactory_dialog_structure(flow_modal_dialog, caption, subfactory.name, icon)
     else
-        create_subfactory_dialog_structure(flow_modal_dialog, {"fp.new_subfactory"}, nil, nil)
+        local caption = {"", {"fp.new"}, " ", {"fp.subfactory"}}
+        create_subfactory_dialog_structure(flow_modal_dialog, caption, nil, nil)
     end
 end
 
@@ -59,7 +61,7 @@ function subfactory_dialog.close(flow_modal_dialog, action, data)
         end
     elseif action == "delete" then
         ui_state.current_activity = "deleting_subfactory"  -- a bit of a hack
-        actionbar.handle_subfactory_deletion(player)
+        actionbar.delete_subfactory(player)
     end
 
     main_dialog.refresh(player)

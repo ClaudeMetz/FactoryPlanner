@@ -1,4 +1,4 @@
-data.raw["gui-style"]["default"]["fp_footer_filler"] = {
+data.raw["gui-style"].default["fp_footer_filler"] = {
     type = "empty_widget_style",
     parent = "draggable_space",
     height = 32,
@@ -173,6 +173,13 @@ data.raw["gui-style"].default["fp_sprite-button_choose_elem"] = {
     height = 30,
     width = 30,
     padding = 0
+}
+
+data.raw["gui-style"].default["fp_sprite-button_tool_green"] = {
+    type = "button_style",
+    parent = "item_and_count_select_confirm",
+    padding = 2,
+    left_click_sound = {{ filename = "__core__/sound/gui-click.ogg", volume = 1 }}
 }
 
 data.raw["gui-style"].default["fp_table_subgroup"] = {

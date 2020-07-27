@@ -1,13 +1,10 @@
-migration_0_17_61 = {}
+local migration = {}
 
-function migration_0_17_61.global()
-end
-
-function migration_0_17_61.player_table(player, player_table)
+function migration.player_table(player_table)
     player_table.preferences.enable_recipe_comments = nil
 end
 
-function migration_0_17_61.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
     subfactory.pollution = 0
 
     for _, floor in pairs(Subfactory.get_in_order(subfactory, "Floor")) do
@@ -16,3 +13,5 @@ function migration_0_17_61.subfactory(player, subfactory)
         end
     end
 end
+
+return migration

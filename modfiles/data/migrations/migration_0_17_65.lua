@@ -1,13 +1,10 @@
-migration_0_17_65 = {}
+local migration = {}
 
-function migration_0_17_65.global()
-end
-
-function migration_0_17_65.player_table(player, player_table)
+function migration.player_table(player_table)
     player_table.preferences.enable_recipe_comments = nil
 end
 
-function migration_0_17_65.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
     for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             line.machine.limit = line.machine.count_cap
@@ -16,3 +13,5 @@ function migration_0_17_65.subfactory(player, subfactory)
         end
     end
 end
+
+return migration

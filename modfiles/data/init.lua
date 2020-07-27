@@ -9,11 +9,9 @@ require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
-require("data.handlers.builder")
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.migrator")
-require("data.handlers.porter")
 require("data.handlers.prototyper")
 require("data.handlers.remote")
 require("data.calculation.interface")
@@ -144,12 +142,12 @@ end
 -- Runs through all updates that need to be made after the config changed
 local function handle_configuration_change()
     prototyper.setup()  -- Setup prototyper
-    migrator.attempt_global_migration()  -- Migrate global
+    migrator.migrate_global()  -- Migrate global
 
     -- Runs through all players, even new ones (those with no player_table)
     for _, player in pairs(game.players) do
         -- Migrate player_table data
-        migrator.attempt_player_table_migration(player)
+        migrator.migrate_player_table(player)
 
         -- Create or update player_table
         local player_table = update_player_table(player)
@@ -215,13 +213,12 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the mod-GUI for the new player
     ui_util.mod_gui.create(player)
 
-    -- Runs setup if developer mode is active
-    builder.dev_config(player)
+    -- Add the subfactories that are handy for development
+    if devmode then ui_util.add_subfactories_by_string(player, dev_export_string, false) end
 end)
 
 -- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
-    -- Removes the player from the global table
     global.players[event.player_index] = nil
 end)
 

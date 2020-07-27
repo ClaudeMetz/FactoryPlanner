@@ -17,7 +17,7 @@ local function attempt_element_creation(player, table, width_remaining, subfacto
     if subfactory.icon ~= nil then
         -- Determine sprite path, check if it's valid
         local sprite_path = subfactory.icon.type .. "/" .. subfactory.icon.name
-        if not player.gui.is_valid_sprite_path(sprite_path) then
+        if not game.is_valid_sprite_path(sprite_path) then
             sprite_path = "utility/danger_icon"
             tooltip = {"fp.sprite_missing"}
         end
@@ -149,7 +149,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
                 modal_dialog.enter(player, {type="subfactory", submit=true,
                   delete=true, modal_data={subfactory=subfactory}})
             elseif action == "delete" then
-                actionbar.handle_subfactory_deletion(player)
+                actionbar.delete_subfactory(player)
             end
 
         else  -- refresh if the selected subfactory is indeed changed
