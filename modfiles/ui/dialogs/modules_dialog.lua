@@ -218,7 +218,7 @@ local function create_module_beacon_dialog_structure(flow_modal_dialog, title, t
           tooltip={"fp.beacon_total_tt"}}
 
         local textfield_beacon_total = flow_beacon_total.add{type="textfield", name="textfield_beacon_total"}
-          ui_util.setup_numeric_textfield(textfield_beacon_total, true, false)
+        ui_util.setup_numeric_textfield(textfield_beacon_total, true, false)
         if line.beacon ~= nil then textfield_beacon_total.text = (line.beacon.total_amount or "") end
         textfield_beacon_total.style.width = 70
         textfield_beacon_total.style.margin = {0, 6}
@@ -266,7 +266,6 @@ end
 
 
 -- ** MODULES **
--- ** TOP LEVEL **
 -- Handles populating the modules dialog for either 'add'- or 'edit'-actions
 function module_dialog.open(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)
@@ -334,7 +333,6 @@ end
 
 
 -- ** BEACONS **
--- ** TOP LEVEL **
 -- Handles populating the beacons dialog for either 'add'- or 'edit'-actions
 function beacon_dialog.open(flow_modal_dialog, modal_data)
     local player = game.get_player(flow_modal_dialog.player_index)

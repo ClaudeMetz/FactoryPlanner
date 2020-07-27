@@ -6,6 +6,7 @@ require("utility_dialog")
 require("product_dialog")
 require("recipe_dialog")
 require("modules_dialog")
+require("porter_dialog")
 
 modal_dialog = {}
 
@@ -48,9 +49,12 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         frame_modal_dialog.auto_center = true
 
         -- Conditions table
-        local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1}
+        local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions", column_count=1, visible=false}
+        table_conditions.style.bottom_margin = 6
+
         if condition_instructions ~= nil and condition_instructions.conditions ~= nil then
-            table_conditions.style.bottom_margin = 6
+            table_conditions.visible = true
+
             for n, condition in ipairs(condition_instructions.conditions) do
                 local currently_editing = (dialog_settings.object ~= nil)
                 if not (currently_editing and (not condition.show_on_edit)) then
@@ -63,9 +67,8 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         flow_modal_dialog = frame_modal_dialog.add{type="scroll-pane", name="flow_modal_dialog", direction="vertical"}
 
         -- Button bar
-        local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal"}
+        local button_bar = frame_modal_dialog.add{type="flow", name="flow_modal_dialog_button_bar", direction="horizontal", style="dialog_buttons_horizontal_flow"}
         button_bar.style.minimal_width = 220
-        button_bar.style.top_margin = 4
 
         local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel",
           style="back_button", mouse_button_filter={"left"}}
@@ -73,7 +76,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         button_cancel.style.left_padding = 12
         button_cancel.style.right_margin = 8
 
-        local action = dialog_settings.close and "close" or "cancel"
+        local action = dialog_settings.submit and "cancel" or "back"
         button_cancel.caption = {"fp." .. action}
         button_cancel.tooltip = {"fp." .. action .. "_dialog"}
 
@@ -221,9 +224,13 @@ function modal_dialog.exit(player, button, data)
         else return end
     end
 
+    -- Cancel action if it is not possible on this dialog, or the button is disabled
+    local submit_button = flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"]
+    if button == "submit" and (not submit_button.visible or not submit_button.enabled) then return end
+
     local closing_function = _G[dialog_type .. "_dialog"].close
     -- If closing_function is nil here, this dialog doesn't have a confirm-button, and if it is closed with
-    -- a submit-action (by a confirmation-action), it should exectue the cancel-action instead
+    -- a submit-action (by a confirmation-action), it should execute the back-action instead
     if button == "submit" and closing_function ~= nil then
         -- First checks if the entered form data is correct
         local form_data = check_modal_dialog_data(flow_modal_dialog, dialog_type)
@@ -234,7 +241,7 @@ function modal_dialog.exit(player, button, data)
 
     elseif button == "delete" then
         if closing_function ~= nil then closing_function(flow_modal_dialog, button, data) end
-    end  -- no action needs to be taken if this dialog is canceled
+    end  -- no action needs to be taken if this dialog is closed
 
     -- Close modal dialog
     ui_state.modal_dialog_type = nil

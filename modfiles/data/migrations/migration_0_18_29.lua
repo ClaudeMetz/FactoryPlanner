@@ -1,12 +1,6 @@
-migration_0_18_29 = {}
+local migration = {}
 
-function migration_0_18_29.global()
-end
-
-function migration_0_18_29.player_table(player, player_table)
-end
-
-function migration_0_18_29.subfactory(player, subfactory)
+function migration.subfactory(subfactory, player)
     if get_settings(player).belts_or_lanes == "lanes" then
         for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
             if product.required_amount.defined_by == "belts" then
@@ -16,3 +10,5 @@ function migration_0_18_29.subfactory(player, subfactory)
         end
     end
 end
+
+return migration

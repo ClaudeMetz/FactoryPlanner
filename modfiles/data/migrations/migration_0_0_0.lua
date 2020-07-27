@@ -1,10 +1,15 @@
-migration_0_0_0 = {}
+local migration = {}
 
-function migration_0_0_0.global()
+function migration.global()
 end
 
-function migration_0_0_0.player_table(player, player_table)
+function migration.player_table(player_table)
 end
 
-function migration_0_0_0.subfactory(player, subfactory)
+function migration.subfactory(subfactory)
 end
+
+function migration.packed_subfactory(packed_subfactory)
+end
+
+return migration
