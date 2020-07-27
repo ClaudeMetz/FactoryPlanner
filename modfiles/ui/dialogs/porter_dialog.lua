@@ -3,10 +3,23 @@ export_dialog = {}
 porter_dialog = {}  -- table containing functionality shared between both dialogs
 
 -- ** LOCAL UTIL **
+-- Updates the enabled-state and sprite of the given button
 local function set_tool_button_state(button, dialog_type, enabled)
     button.enabled = enabled
     button.sprite = (enabled) and ("utility/" .. dialog_type) or ("fp_sprite_" .. dialog_type .. "_light")
 end
+
+-- Sets the state of either the export subfactories- or submit import dialog-button
+local function set_relevant_submit_button(content_frame, dialog_type, enabled)
+    if dialog_type == "export" then
+        local button = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
+        set_tool_button_state(button, dialog_type, enabled)
+
+    else -- dialog_type == "import"
+        content_frame.parent.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = enabled
+    end
+end
+
 
 -- Adds the barebones dialog structure that both dialogs need
 local function initialize_dialog(flow_modal_dialog, dialog_type)
@@ -124,12 +137,8 @@ function import_dialog.open(flow_modal_dialog)
 
     local content_frame = initialize_dialog(flow_modal_dialog, "import")
 
-    add_textfield_and_button(content_frame, "import", false, false)
-
-    local tmp_export_string = "eNrtVU1P4zAQ/SuVD5xi1LIrhHIEtFokDkgcV6hynEk7YHuM7bCqovx3xiHZis8KiQsLt2jm5fnNe+OkE5bq5R2EiOREKeb7i6P9nweiELGtGqUTBYQoyj+dcMoCI84Cudne7IS8h8C4hBaiVoZ7h/NCOEoZL7hzEahudRJlJ6i6Bp0eeHygRLk4EhpcrZMkNPlQtN5gg1CLMoUWmH7jM6gxLdaiL0SA2xYD1EtlqXUDeQ0NOq5UGwaO5WJ6KBdzfiuRXxq4AzPRaqNiljlp7K+KUeRyap0lsGKLPCFjuJ1tGgkbQxSygHM+/tGUXf+MbcC8xjZKW2z7vwbuflu4nOLYcPWfdxdGZbsLgTrH10124YP2EYUcmfQZOkh/V2AvjPIZjDmnFcaEeqc3KSgXPYUkKzDpy/izy5ag/soG4/r9hrxww1kI2MqgW0mr9JoHkodvXfZByvddfxLZKcLstwr1rugsGkwqbGTUCE6D9ErffJnFvrTKmNkxrNA5Xrj4EX8oyMICatm0wSl29Mf39n74B4f0DSR2mOn/71296u8BelMttQ=="
-    content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"].text = tmp_export_string
-    local button = content_frame["flow_import_subfactories"]["fp_button_porter_subfactory_import"]
-    set_tool_button_state(button, "import", true)
+    local flow_tf_b = add_textfield_and_button(content_frame, "import", false, false)
+    ui_util.select_all(flow_tf_b["fp_textfield_porter_string_import"])
 end
 
 -- En/Disables the import-button depending on the import textfield contents
@@ -234,23 +243,15 @@ function export_dialog.export_subfactories(player)
 end
 
 
-
 -- ** SHARED **
 function porter_dialog.set_all_checkboxes(player, checkbox_state)
     for _, table_row in pairs(get_modal_data(player).table_rows) do
         if table_row.checkbox.enabled then table_row.checkbox.state = checkbox_state end
     end
 
+    local dialog_type = get_ui_state(player).modal_dialog_type
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
-    if get_ui_state(player).modal_dialog_type == "export" then
-        local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
-        local dialog_type = get_ui_state(player).modal_dialog_type
-        set_tool_button_state(button_export, dialog_type, checkbox_state)
-    else -- modal_dialog_type == "import"
-        local button_submit = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog_button_bar"]
-          ["fp_button_modal_dialog_submit"]
-        button_submit.enabled = checkbox_state
-    end
+    set_relevant_submit_button(content_frame, dialog_type, checkbox_state)
 end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
@@ -261,17 +262,11 @@ function porter_dialog.adjust_after_checkbox_click(player)
         elseif table_row.checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
     end
 
+    local dialog_type = get_ui_state(player).modal_dialog_type
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
+
     local table_subfactories = content_frame["scroll_pane_subfactories"]["frame_subfactories"]["table_subfactories"]
     table_subfactories["fp_checkbox_porter_master"].state = (unchecked_element_count == 0)
 
-    if get_ui_state(player).modal_dialog_type == "export" then
-        local button_export = content_frame["flow_export_subfactories"]["fp_button_porter_subfactory_export"]
-        local dialog_type = get_ui_state(player).modal_dialog_type
-        set_tool_button_state(button_export, dialog_type, (checked_element_count > 0))
-    else -- modal_dialog_type == "import"
-        local button_submit = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog_button_bar"]
-          ["fp_button_modal_dialog_submit"]
-        button_submit.enabled = (checked_element_count > 0)
-    end
+    set_relevant_submit_button(content_frame, dialog_type, (checked_element_count > 0))
 end
