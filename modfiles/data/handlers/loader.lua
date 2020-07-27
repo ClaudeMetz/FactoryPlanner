@@ -7,8 +7,10 @@ local events, caching = {}, {}
 -- ** TOP LEVEL **
 -- Runs all the on_load functions
 function loader.run()
-    events.rate_limiting()
+    -- Disable freeplay popup-message
+    if devmode then remote.call("freeplay", "set_skip_intro", true) end
 
+    events.rate_limiting()
 
     ordered_recipe_groups = caching.ordered_recipe_groups()
     recipe_maps = {
