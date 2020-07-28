@@ -57,14 +57,5 @@ data:extend({
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
         order = "f"
-    },
-    {
-        type = "double-setting",
-        name = "fp_indicate_rounding",
-        setting_type = "runtime-per-user",
-        default_value = 0,
-        minimum_value = 0,
-        maximum_value = 0.4,
-        order = "g"
     }
 })
