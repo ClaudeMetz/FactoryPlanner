@@ -123,17 +123,16 @@ end)
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.get_player(event.player_index)
-    local element_name = event.element.name
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
       and string.find(event.element.name, "^fp_.+$") then
         -- Close or hide any modal dialog or leave selection mode
-        if element_name == "fp_frame_modal_dialog" then
+        if event.element.name == "fp_frame_modal_dialog" then
             if get_flags(player).selection_mode then beacon_dialog.leave_selection_mode(player, nil)
             else modal_dialog.exit(player, "cancel", {}) end
 
         -- Toggle the main dialog
-        elseif element_name == "fp_frame_main_dialog" then
+        elseif event.element.name == "fp_frame_main_dialog" then
             main_dialog.toggle(player)
 
         end
