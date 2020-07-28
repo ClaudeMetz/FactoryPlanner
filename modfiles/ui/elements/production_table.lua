@@ -185,7 +185,7 @@ local function create_line_table_row(player, line)
 
     -- Energy label (don't add pollution to the tooltip if it gets it's own column)
     local pollution_line = (optional_columns.pollution) and "" or {"", "\n", {"fp.cpollution"}, ": ",
-      ui_util.format_SI_value(line.pollution, "P/s", 3)}
+      ui_util.format_SI_value(line.pollution, "P/m", 3)}
     table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
       ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
@@ -194,8 +194,8 @@ local function create_line_table_row(player, line)
     -- Pollution label
     if optional_columns.pollution then
         table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
-          caption=ui_util.format_SI_value(line.pollution, "P/s", 3),
-          tooltip={"", ui_util.format_SI_value(line.pollution, "P/s", 5)}}
+          caption=ui_util.format_SI_value(line.pollution, "m", 3),
+          tooltip={"", ui_util.format_SI_value(line.pollution, "P/m", 5)}}
     end
 
 

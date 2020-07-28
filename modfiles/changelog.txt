@@ -5,8 +5,10 @@ Date: 00. 00. 0000
     -
   Changes:
     - Added some warning messages when trying to open items/recipes in FNEI/WIIRUF/RB fails
+    - Changed the unit that pollution is displayed in from P/second to P/minute
   Bugfixes:
     - Fixed some minor graphical issues with the new import/export dialogs
+    - Fixed that pollution calculation was off by a factor of 60
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.44
