@@ -30,7 +30,7 @@ end
 
 -- Creates the modal dialog to change your preferences
 local function refresh_preferences_dialog(player)
-    local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     local preferences = get_preferences(player)
 
     -- General+Production preferences

@@ -6,9 +6,6 @@ require("ui.listeners")
 margin_of_error = 1e-8  -- Margin of error for floating point calculations
 devmode = true  -- Enables certain conveniences for development
 
--- This is no longer in use, as it can't be done well at the moment
---cached_dialogs = {}  -- Dialogs that should be cached when closed
-
 tutorial_export_string = "eNrtWU2P0zAQ/S8+J6u2u0JVjyCQkEBCcFytIseZdAfsODhORVX1vzNOHBraojQ0C9lVbu14Pp5nnj3jdseUTqINmAJ1xlZsdjNf3twtWMCKMk65sNogFGx1v2MZV0Aab39wlUsgDRTOZMfsNncLaEGR1KvlRielsOQ1LARCJiDMufjG9gGzqKAQnHysXs3IQFsXgZHtp9rIOdXxVxC2jky+rHbCDt8EGgkbpggJW1lTQvAbOIpt4HuJBpKIK11mVaQEUsxIEm9Jz4uD5sNqvpw5yDqPJGxANm6F5IUD3SDePwQectQsva/z0Xx9o6WECjTzDlOptXEIPlD84z03ZtVaXY0e6gYE5pXSNbkT3MJaG5cXYXhqMVs77AcXkc9uLYHWbj/XAEhbcfHoAR9jIVVQsSS3odcKb/sAeeQmiSQqpDqlXBak+ZGASLiUQBu021BVJt2R20YuesOQu8OuffQzZPArf6JDjSESpx599kgnBu4P3PF2/EoH/jSPvGIL/LKJfc5vkQMkF+en0m77Xpwm5iB5/QtKDkZAZvmaQs5nM8cvpFvHbiOf8cjjqkq8D3qQ3XCUY2H2Ynhm7/bX8Wx2lmdPWA807tqxOJ77ZqrKioGDYlCEaWkyXqV1qs1IanOmU73g8tx39KDFED3oyua8GIICpxg8E84j8KNnK/S7ahjc9+ISTzac5r0kFGhEiXaa+aaZ7+XNfHU30xn1s5HxfOpntEWdk/dQ8FhOc8aI6lJYABnmkjbdeeYVyMHL0ncGbYMYR0v4V5PG1BL+gtyajnlsLnh3PlNyP79fAlSuqSwmrGrTlZCYF5S9QktMnqYwCjPXERKDUvYEM+jtsxjw9gkGf0zNB7/ibv/fY2p+8pg6CL40/31Qjh/2PwF6R7b4"
 
 if devmode then
