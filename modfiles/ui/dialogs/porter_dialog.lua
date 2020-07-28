@@ -133,8 +133,6 @@ end
 
 -- ** IMPORT DIALOG **
 function import_dialog.open(flow_modal_dialog)
-    flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
-
     local content_frame = initialize_dialog(flow_modal_dialog, "import")
 
     local flow_tf_b = add_textfield_and_button(content_frame, "import", false, false)
@@ -182,6 +180,9 @@ function import_dialog.import_subfactories(player)
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
             add_to_subfactories_table(table_subfactories, table_rows, subfactory, nil, true)
         end
+
+        table_subfactories["fp_checkbox_porter_master"].state = true
+        porter_dialog.set_all_checkboxes(player, true)
     end
 
     content_frame.parent.parent.force_auto_center()
