@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Changed the unit that pollution is displayed in from P/second to P/minute
     - Removed the 'Indicate rounding' mod setting
   Bugfixes:
+    - Fixed an issue where exporting subfactories would not preserve line order properly
     - Fixed some minor graphical issues with the new import/export dialogs
     - Fixed that pollution calculation was off by a factor of 60
     - Fixed an issue where a recipe line wasn't properly deleted under certain circumstances

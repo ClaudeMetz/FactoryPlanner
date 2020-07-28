@@ -150,7 +150,7 @@ function Collection.pack(self)
     }
 
     local object_class = _G[self.object_class]
-    for _, dataset in pairs(self.datasets) do
+    for _, dataset in ipairs(Collection.get_in_order(self)) do
         table.insert(packed_collection.objects, object_class.pack(dataset))
     end
 
@@ -163,7 +163,7 @@ function Collection.unpack(packed_self, parent)
     self.class = packed_self.class
 
     local object_class = _G[self.object_class]
-    for _, object in pairs(packed_self.objects) do
+    for _, object in ipairs(packed_self.objects) do  -- packed objects already in array order
         local dataset = Collection.add(self, object_class.unpack(object))
         dataset.parent = parent
     end
