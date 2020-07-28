@@ -11,13 +11,30 @@ local name_interface_map = {fnei="fnei", wiiruf="wiiuf", recipebook="RecipeBook"
 -- these functions wouldn't be callable if they didn't exist
 
 
+-- ** LOCAL UTIL **
+local function incompatible_version_error(player, remote_action)
+    local message = {"fp.error_remote_version_incompatible", {"fp." .. remote_action}}
+    ui_util.message.enqueue(player, message, "error", 1, true)
+end
+
+-- Makes sure the remote call actually opened another window, show an error message otherwise
+local function check_success(player, remote_action, object_type)
+    if main_dialog.is_in_focus(player) then
+        local message = {"fp.error_remote_lookup_failed", {"fp.pl_" .. object_type, 1}, {"fp." .. remote_action}}
+        ui_util.message.enqueue(player, message, "error", 1, true)
+    end
+end
+
+
 -- ** TOP LEVEL **
 -- 'data' needs to contain 'item' (proto) and 'click'
 function remote_actions.show_item(player, remote_action, data)
     local remote_version = remote.call(name_interface_map[remote_action], "version")
     if remote_version == remote_actions[remote_action].version then
         remote_actions[remote_action].show_item(player, data.item, data.click)
-    end
+        check_success(player, remote_action, "item")
+
+    else incompatible_version_error(player, remote_action) end
 end
 
 -- 'data' needs to contain 'recipe' (proto) and 'line_products'
@@ -33,7 +50,9 @@ function remote_actions.show_recipe(player, remote_action, data)
         end
 
         remote_actions[remote_action].show_recipe(player, data.recipe, main_product_name)
-    end
+        check_success(player, remote_action, "recipe")
+
+    else incompatible_version_error(player, remote_action) end
 end
 
 

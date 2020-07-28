@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Added some warning messages when trying to open items/recipes in FNEI/WIIRUF/RB fails
   Bugfixes:
     - Fixed some minor graphical issues with the new import/export dialogs
 
