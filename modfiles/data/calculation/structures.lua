@@ -87,6 +87,18 @@ function structures.class.to_array(class)
     return array
 end
 
+-- 'Deepcopies' the given class, with better performance than the generic util.table.deepcopy
+function structures.class.copy(class)
+    local copy = structures.class.init()
+    for type_name, type in pairs(class) do
+        local copy_type = copy[type_name]
+        for name, amount in pairs(type) do
+            copy_type[name] = amount
+        end
+    end
+    return copy
+end
+
 -- Counts the elements contained in the given class
 function structures.class.count(class)
     local n = 0

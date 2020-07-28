@@ -170,7 +170,7 @@ local function aa(floor, product_class)
     -- Iterate the lines from top to bottom, setting satisfaction amounts along the way
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
         if line.subfloor ~= nil then
-            local subfloor_product_class = util.table.deepcopy(product_class)
+            local subfloor_product_class = structures.class.copy(product_class)
             aa(line.subfloor, subfloor_product_class)
 
         elseif line.machine.fuel then

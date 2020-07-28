@@ -23,7 +23,7 @@ end
 
 
 function model.update_floor(floor_data, aggregate)
-    local desired_products = util.table.deepcopy(aggregate.Product)
+    local desired_products = structures.class.copy(aggregate.Product)
 
     for _, line_data in ipairs(floor_data.lines) do
         local subfloor = line_data.subfloor
@@ -199,8 +199,8 @@ function model.update_line(line_data, aggregate)
     for _, ingredient in pairs(recipe_proto.ingredients) do
         -- If productivity is to be ignored, un-apply it by applying the product-productivity to an ingredient,
         -- effectively reversing the effect (this is way simpler than doing it properly)
-        local ingredient_amount = (ingredient.ignore_productivity) and determine_amount_with_productivity(ingredient)
-          or (ingredient.amount * production_ratio)
+        local ingredient_amount = (ingredient.ignore_productivity) and
+          determine_amount_with_productivity(ingredient) or (ingredient.amount * production_ratio)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
