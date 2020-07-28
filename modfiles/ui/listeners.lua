@@ -371,7 +371,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to a actionbar button being pressed
         elseif string.find(element_name, "^fp_button_actionbar_[a-z]+$") then
             local actionbar_action = string.gsub(element_name, "fp_button_actionbar_", "")
-            actionbar[actionbar_action .. "_subfactory"](player, event.alt)
+            actionbar[actionbar_action .. "_subfactory"](player)
 
         -- Reacts to an import/export porter button being pressed
         elseif string.find(element_name, "^fp_button_porter_subfactory_[a-z]+$") then

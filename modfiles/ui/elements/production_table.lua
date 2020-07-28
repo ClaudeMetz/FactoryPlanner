@@ -311,7 +311,6 @@ function production_table.refresh_recipe_button(player, line, table_production)
     local recipe_proto = relevant_line.recipe.proto
 
     local tooltip, style, enabled = recipe_proto.localised_name, "fp_button_icon_medium_blank", true
-
     -- Make the first line of every subfloor uninteractable, it stays constant
     if ui_state.context.floor.level > 1 and line.gui_position == 1 then
         style = "fp_button_icon_medium_hidden"
@@ -319,9 +318,7 @@ function production_table.refresh_recipe_button(player, line, table_production)
     else
         if line.subfloor then
             tooltip = {"", tooltip, {"fp.indication", {"fp.subfloor_attached"}}}
-
-            style = (ui_state.current_activity == "deleting_line" and ui_state.context.line.id == line.id) and
-              "fp_button_icon_medium_red" or "fp_button_icon_medium_green"
+            style = "fp_button_icon_medium_green"
         end
 
         -- Tutorial tooltip only needed for interactable buttons
@@ -331,8 +328,7 @@ function production_table.refresh_recipe_button(player, line, table_production)
     local button_name = "fp_sprite-button_line_recipe_" .. line.id
     local button_recipe = table_production[button_name]
 
-    -- Either create or refresh the recipe button
-    if button_recipe == nil then
+    if button_recipe == nil then  -- either create or refresh the recipe button
         table_production.add{type="sprite-button", name=button_name, style=style, sprite=recipe_proto.sprite,
           tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
     else
@@ -344,42 +340,13 @@ end
 
 -- Separate function so it can be refreshed independently
 function production_table.refresh_machine_table(player, line, table_production)
-    local ui_state = get_ui_state(player)
-
-    -- Create or clear the machine flow
-    local table_machines = table_production["flow_line_machines_" .. line.id]
-    if table_machines == nil then
-        local column_count = 1
-        if line.subfloor == nil then
-            local machine_category_id = global.all_machines.map[line.machine.proto.category]
-            column_count = #global.all_machines.categories[machine_category_id].machines
-        end
-
-        table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,
-          column_count=column_count}
-        table_machines.style.horizontal_spacing = 3
-        table_machines.style.horizontal_align = "center"
-    else
-        table_machines.clear()
-    end
-
-    local context_line = ui_state.context.line
-    if context_line ~= nil and context_line.id == line.id and ui_state.current_activity == "changing_machine" then
-        local machine_category_id = global.all_machines.map[line.machine.proto.category]
-        for _, machine_proto in ipairs(global.all_machines.categories[machine_category_id].machines) do
-            if Line.is_machine_applicable(line, machine_proto) then
-                local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_"
-                  .. line.id .. "_" .. machine_proto.id, mouse_button_filter={"left"}}
-                production_table.setup_machine_choice_button(player, button, machine_proto, line.machine.proto.id, 32)
-            end
-        end
-
-    -- Show the total amount of machines that the subfloor contains if the line has a subfloor
-    elseif line.subfloor ~= nil then
+    if line.subfloor ~= nil then
         local machine_count = line.machine.count
         local machine_text = (machine_count == 1) and {"fp.machine"} or {"fp.machines"}
 
-        table_machines.add{type="sprite-button", name="sprite-button_subfloor_machine_total", sprite="fp_generic_assembler", style="fp_button_icon_medium_blank", enabled=false, number=machine_count, tooltip={"", machine_count, " ", machine_text, " ", {"fp.subfloor_machine_count"}}}
+        table_production.add{type="sprite-button", name="sprite-button_subfloor_machine_total_" .. line.id,
+          sprite="fp_generic_assembler", style="fp_button_icon_medium_blank", enabled=false, number=machine_count,
+          tooltip={"", machine_count, " ", machine_text, " ", {"fp.subfloor_machine_count"}}}
 
     else  -- otherwise, show the machine button as normal
         local machine_proto = line.machine.proto
@@ -404,7 +371,7 @@ function production_table.refresh_machine_table(player, line, table_production)
 
         local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "machine", true)
         local display_count = (machine_count == "0" and line.production_ratio > 0) and "<0.0001" or machine_count
-        local button = table_machines.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
+        local button = table_production.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
           sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"},
           tooltip={"", machine_proto.localised_name, limit_notice, "\n", display_count, " ", machine_text,
           ui_util.generate_module_effects_tooltip(total_effects, machine_proto), tutorial_tooltip}}

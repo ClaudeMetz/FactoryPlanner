@@ -110,25 +110,17 @@ function actionbar.archive_subfactory(player)
     ui_util.reset_subfactory_selection(player, origin, removed_gui_position)
     Factory.add(destination, subfactory)
 
-    ui_state.current_activity = nil
     main_dialog.refresh(player)
 end
 
-function actionbar.duplicate_subfactory(player, alt)
+function actionbar.duplicate_subfactory(player)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
+
+    -- This relies on the porting-functionality. It basically exports and
+    -- immediately imports the subfactory, effectively duplicating it
     local export_string = prototyper.porter.get_export_string(player, {subfactory})
-
-    -- alt-clicking in devmode prints the export-string to the log for later use
-    if alt and devmode then
-        llog(export_string)
-    else
-        ui_state.current_activity = nil
-
-        -- This relies on the porting-functionality. It basically exports and
-        -- immediately imports the subfactory, effectively duplicating it
-        ui_util.add_subfactories_by_string(player, export_string, true)
-    end
+    ui_util.add_subfactories_by_string(player, export_string, true)
 end
 
 function actionbar.import_subfactory(player)
@@ -150,6 +142,5 @@ function actionbar.toggle_archive_view(player)
     local factory = archive_open and player_table.archive or player_table.factory
     ui_util.context.set_factory(player, factory)
 
-    ui_state.current_activity = nil
     main_dialog.refresh(player)
 end

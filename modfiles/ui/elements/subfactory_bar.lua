@@ -130,19 +130,20 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, false)
+            ui_util.message.enqueue(player, message, "error", 1, true)
         end
-
-        main_dialog.refresh_current_activity(player)
 
     -- Change selected subfactory
     else
         old_subfactory = ui_state.context.subfactory
         ui_util.context.set_subfactory(player, subfactory)
 
-        -- Reset Floor when clicking on selected subfactory
-        if click == "left" and old_subfactory == subfactory then
-            production_titlebar.handle_floor_change_click(player, "top")
+        if click == "left" then
+            if old_subfactory == subfactory then  -- reset Floor when clicking on selected subfactory
+                production_titlebar.handle_floor_change_click(player, "top")
+            else  -- refresh if the selected subfactory is indeed changed
+                main_dialog.refresh(player)
+            end
 
         elseif click == "right" then
             if action == "edit" then
@@ -155,10 +156,6 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
                 ui_util.reset_subfactory_selection(player, factory, removed_gui_position)
                 main_dialog.refresh(player)
             end
-
-        else  -- refresh if the selected subfactory is indeed changed
-            ui_state.current_activity = nil
-            main_dialog.refresh(player)
         end
     end
 end

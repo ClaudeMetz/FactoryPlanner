@@ -189,10 +189,8 @@ function subfactory_pane.handle_ingredient_element_click(player, ingredient_id, 
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lingredient"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, false)
+            ui_util.message.enqueue(player, message, "error", 1, true)
         end
-
-        main_dialog.refresh_current_activity(player)
     end
 end
 
@@ -214,10 +212,8 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lproduct"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, false)
+            ui_util.message.enqueue(player, message, "error", 1, true)
         end
-
-        main_dialog.refresh_current_activity(player)
 
     else
         if click == "left" then
@@ -261,10 +257,8 @@ function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, cl
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lbyproduct"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, false)
+            ui_util.message.enqueue(player, message, "error", 1, true)
         end
-
-        main_dialog.refresh_current_activity(player)
 
     --[[ elseif click == "left" then
         local floor = context.floor

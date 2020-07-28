@@ -1,13 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - Added some warning messages when trying to open items/recipes in FNEI/WIIRUF/RB fails
     - Changed the unit that pollution is displayed in from P/second to P/minute
+    - Changed how deleting subfactories and recipe lines work, removing the confirmation step
+    - Changing machines on recipes now also opens up a dialog instead of presenting the choices in-line; An alternative to this is shift/ctrl-clicking the machine to up/downgrade it
     - Removed the 'Indicate rounding' mod setting
-    - Removed the actionbar delete-button. Ctrl-right-click or the delete button when editing the subfactory still work.
+    - Removed the actionbar delete-button; ctrl-right-click or the delete button when editing the subfactory still work
   Bugfixes:
     - Fixed an issue where exporting subfactories would not preserve line order properly
     - Fixed some minor graphical issues with the new import/export dialogs

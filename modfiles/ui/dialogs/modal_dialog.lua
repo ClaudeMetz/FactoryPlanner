@@ -154,9 +154,6 @@ function modal_dialog.enter(player, dialog_settings)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.modal_data = dialog_settings.modal_data or {}
 
-    ui_state.current_activity = nil
-    main_dialog.refresh_current_activity(player)
-
     local dialog_functions = _G[ui_state.modal_dialog_type .. "_dialog"]
     local conditions_function = dialog_functions.condition_instructions
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil

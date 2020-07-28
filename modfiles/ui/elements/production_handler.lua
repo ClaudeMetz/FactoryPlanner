@@ -27,10 +27,8 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
         else
             local direction_string = (direction == "negative") and {"fp.up"} or {"fp.down"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lrecipe"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, false)
+            ui_util.message.enqueue(player, message, "error", 1, true)
         end
-
-        main_dialog.refresh_current_activity(player)
 
     else
         -- Attaches a subfloor to this line
@@ -44,7 +42,6 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
                 calculation.update(player, subfactory, false)
             end
 
-            ui_state.current_activity = nil
             ui_util.context.set_floor(player, subfloor)
             main_dialog.refresh(player)
 
@@ -52,21 +49,8 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
         elseif click == "right" and action == "delete" then
             if archive_status then return end
 
-            if line.subfloor == nil then
-                Floor.remove(floor, line)
-                calculation.update(player, subfactory, true)
-            else
-                if ui_state.current_activity == "deleting_line" then
-                    Floor.remove(floor, line)
-                    ui_state.current_activity = nil
-                    ui_state.context.line = nil
-                    calculation.update(player, subfactory, true)
-                else
-                    ui_state.current_activity = "deleting_line"
-                    ui_state.context.line = line
-                    main_dialog.refresh_current_activity(player)
-                end
-            end
+            Floor.remove(floor, line)
+            calculation.update(player, subfactory, true)
         end
     end
 end
@@ -86,7 +70,6 @@ end
 function production_handler.handle_percentage_confirmation(player, element)
     local line_id = tonumber(string.match(element.name, "%d+"))
     local ui_state = get_ui_state(player)
-    ui_state.current_activity = nil
 
     local scroll_pane = element.parent.parent
     calculation.update(player, ui_state.context.subfactory, true)
@@ -121,35 +104,29 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
 
         -- Display all the options for this machine category
         elseif click == "left" then
-            -- Determine how many machines are applicable to this recipe
-            -- This detection will run twice, which might be worth optimizing at some point
             local applicable_machine_count = 0
             local machine_category_id = global.all_machines.map[line.machine.proto.category]
+
+            -- Determine if there is more than one machine that applies to this machine
             for _, machine_proto in pairs(global.all_machines.categories[machine_category_id].machines) do
                 if Line.is_machine_applicable(line, machine_proto) then
                     applicable_machine_count = applicable_machine_count + 1
+                    if applicable_machine_count > 1 then break end
                 end
             end
 
             -- Changing machines only makes sense if there are more than one in it's category
-            if applicable_machine_count > 1 then
-                if applicable_machine_count < 5 then  -- up to 4 machines, no picker is needed
-                    ui_state.current_activity = "changing_machine"
-                    ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                    main_dialog.refresh_current_activity(player)
+            if applicable_machine_count > 1 then  -- Open a chooser dialog presenting all machine choices
+                local modal_data = {
+                    button_generator = production_handler.generate_chooser_machine_buttons,
+                    click_handler = production_handler.apply_machine_choice,
+                    title = {"fp.machine"},
+                    text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
+                    object = line.machine
+                }
 
-                else  -- Open a chooser dialog presenting all machine choices
-                    local modal_data = {
-                        button_generator = production_handler.generate_chooser_machine_buttons,
-                        click_handler = production_handler.apply_machine_choice,
-                        title = {"fp.machine"},
-                        text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
-                        object = line.machine
-                    }
-
-                    ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
-                    modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
-                end
+                ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
+                modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
             end
 
         -- Open the dialog to set a machine count limit
@@ -180,16 +157,6 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
 
             ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
             modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
-        end
-    else
-        -- Accept the user selection of new machine for this (assembly) line
-        if click == "left" then
-            local machine_category_id = global.all_machines.map[line.machine.proto.category]
-            local new_machine_proto = global.all_machines.categories[machine_category_id].machines[machine_id]
-            Line.change_machine(line, player, new_machine_proto, nil)
-            ui_state.current_activity = nil
-            ui_state.context.line = nil
-            calculation.update(player, subfactory, true)
         end
     end
 end
@@ -440,10 +407,8 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             local lower_class = string.lower(class)
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.l" .. lower_class}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, false)
+            ui_util.message.enqueue(player, message, "error", 1, true)
         end
-
-        main_dialog.refresh_current_activity(player)
 
     elseif click == "left" and item.proto.type ~= "entity" then
         if item.class == "Ingredient" then  -- Pick recipe to produce this ingredient
