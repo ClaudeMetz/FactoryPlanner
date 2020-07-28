@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.45
+Date: 29. 07. 2020
   Changes:
     - Re-implement the ingredient satisfaction algorithm, solving some weird edge cases and doubling performance
     - The importer now selects all subfactories for import by default, instead of selecting none
