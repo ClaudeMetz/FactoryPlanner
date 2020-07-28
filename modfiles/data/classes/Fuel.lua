@@ -6,6 +6,7 @@ function Fuel.init_by_proto(proto)
     return {
         proto = proto,
         amount = 0,  -- produced amount
+        satisfied_amount = 0,  -- used with ingredient satisfaction
         valid = true,
         class = "Fuel"
     }

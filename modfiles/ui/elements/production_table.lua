@@ -54,16 +54,18 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
                 priority_product_proto.name == item.proto.name then
                 actual_style = "fp_button_icon_medium_green"
 
-            elseif class == "Ingredient" and preferences.ingredient_satisfaction then
+            elseif (class == "Ingredient" or class == "Fuel") and preferences.ingredient_satisfaction then
                 local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
 
-                local satisfaction = tonumber(satisfaction_percentage)
-                if satisfaction == 0 then
-                    actual_style = "fp_button_icon_medium_red"
-                elseif satisfaction < 100 then
-                    actual_style = "fp_button_icon_medium_yellow"
-                elseif satisfaction >= 100 then
-                    actual_style = "fp_button_icon_medium_green"
+                if class == "Ingredient" then  -- colors only change for Ingredients, not Fuel
+                    local satisfaction = tonumber(satisfaction_percentage)
+                    if satisfaction == 0 then
+                        actual_style = "fp_button_icon_medium_red"
+                    elseif satisfaction < 100 then
+                        actual_style = "fp_button_icon_medium_yellow"
+                    elseif satisfaction >= 100 then
+                        actual_style = "fp_button_icon_medium_green"
+                    end
                 end
 
                 satisfaction_line = {"", "\n", satisfaction_percentage, "% ", {"fp.satisfied"}}
