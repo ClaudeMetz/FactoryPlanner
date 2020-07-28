@@ -64,7 +64,7 @@ local function run_preliminary_checks(player, product, production_type)
     -- (This logic is probably inefficient, but it's clear and way faster than the loop above anyways)
     local show = { filters={} }
     local user_prefs = get_preferences(player).recipe_filters
-    local relevant_recipes_count = table_size(relevant_recipes)
+    local relevant_recipes_count = #relevant_recipes
     if relevant_recipes_count - counts.disabled - counts.hidden - counts.disabled_hidden > 0 then
         show.filters.disabled = user_prefs.disabled or false
         show.filters.hidden = user_prefs.hidden or false

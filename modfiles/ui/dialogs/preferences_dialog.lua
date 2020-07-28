@@ -63,7 +63,7 @@ local function refresh_preferences_dialog(player)
 
         if default_prototypes.structure_type == "simple" then
             local all_prototypes = global["all_" .. type][type]
-            flow_proto_pref.parent.visible = (table_size(all_prototypes) > 1)
+            flow_proto_pref.parent.visible = (#all_prototypes > 1)
 
             local default_prototype = default_prototypes.prototype
             create_default_prototype_category(flow_proto_pref, type, all_prototypes, default_prototype, nil, 12)
@@ -78,7 +78,7 @@ local function refresh_preferences_dialog(player)
             for category_id, category in ipairs(all_categories) do
                 local all_prototypes = category[type]
 
-                if table_size(all_prototypes) > 1 then
+                if #all_prototypes > 1 then
                     table_all_categories.add{type="label", name="label_" .. category_id,
                       caption="'" .. category.name .. "':"}
 

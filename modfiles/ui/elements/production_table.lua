@@ -352,7 +352,7 @@ function production_table.refresh_machine_table(player, line, table_production)
         local column_count = 1
         if line.subfloor == nil then
             local machine_category_id = global.all_machines.map[line.machine.proto.category]
-            column_count = table_size(global.all_machines.categories[machine_category_id].machines)
+            column_count = #global.all_machines.categories[machine_category_id].machines
         end
 
         table_machines = table_production.add{type="table", name="flow_line_machines_" .. line.id,

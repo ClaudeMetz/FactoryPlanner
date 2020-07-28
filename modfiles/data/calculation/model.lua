@@ -129,7 +129,7 @@ function model.update_line(line_data, aggregate)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
 
-    local relevant_product_count = table_size(relevant_products)
+    local relevant_product_count = #relevant_products
     if relevant_product_count == 1 then
         local relevant_product = relevant_products[1]
         production_ratio = determine_production_ratio(relevant_product)
@@ -137,7 +137,7 @@ function model.update_line(line_data, aggregate)
     elseif relevant_product_count >= 2 then
         local priority_proto = line_data.priority_product_proto
 
-        for _, relevant_product in pairs(relevant_products) do
+        for _, relevant_product in ipairs(relevant_products) do
             if priority_proto ~= nil then  -- Use the priority product to determine the production ratio, if it's set
                 if relevant_product.type == priority_proto.type and relevant_product.name == priority_proto.name then
                     production_ratio = determine_production_ratio(relevant_product)
@@ -179,7 +179,7 @@ function model.update_line(line_data, aggregate)
 
     -- Determine products
     local Product = structures.class.init()
-    for _, product in pairs(relevant_products) do
+    for _, product in ipairs(relevant_products) do
         local product_amount = determine_amount_with_productivity(product)
         local product_demand = aggregate.Product[product.type][product.name] or 0
 
