@@ -87,8 +87,6 @@ function main_dialog.refresh_current_activity(player)
     local ui_state = get_ui_state(player)
 
     if frame_main_dialog ~= nil and frame_main_dialog.visible then
-        actionbar.refresh(player)
-
         local subfactory = ui_state.context.subfactory
         if subfactory ~= nil and subfactory.valid then
             local table_info_elements = frame_main_dialog["table_subfactory_pane"]

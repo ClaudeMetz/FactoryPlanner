@@ -332,6 +332,13 @@ function ui_util.execute_alt_action(player, action_type, data)
     end
 end
 
+-- Resets the selected subfactory to a valid position after one has been removed
+function ui_util.reset_subfactory_selection(player, factory, removed_gui_position)
+    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
+    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
+    ui_util.context.set_subfactory(player, subfactory)
+end
+
 -- Adds given export_string-subfactories to the current factory. This is not really
 -- UI-related code, but I've got nowhere else to put it, so here it goes
 function ui_util.add_subfactories_by_string(player, export_string, refresh_interface)

@@ -148,8 +148,12 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
             if action == "edit" then
                 modal_dialog.enter(player, {type="subfactory", submit=true,
                   delete=true, modal_data={subfactory=subfactory}})
+
             elseif action == "delete" then
-                actionbar.delete_subfactory(player)
+                local factory = ui_state.context.factory
+                local removed_gui_position = Factory.remove(factory, subfactory)
+                ui_util.reset_subfactory_selection(player, factory, removed_gui_position)
+                main_dialog.refresh(player)
             end
 
         else  -- refresh if the selected subfactory is indeed changed
