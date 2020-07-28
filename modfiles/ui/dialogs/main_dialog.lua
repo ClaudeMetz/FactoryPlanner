@@ -81,31 +81,6 @@ function main_dialog.refresh(player, full_refresh)
     return frame_main_dialog
 end
 
--- Refreshes elements using ui_state.current_activity with less performance impact than main_dialog.refresh
-function main_dialog.refresh_current_activity(player)
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    local ui_state = get_ui_state(player)
-
-    if frame_main_dialog ~= nil and frame_main_dialog.visible then
-        local subfactory = ui_state.context.subfactory
-        if subfactory ~= nil and subfactory.valid then
-            local table_info_elements = frame_main_dialog["table_subfactory_pane"]
-              ["flow_info"]["scroll-pane"]["table_info_elements"]
-            info_pane.refresh_mining_prod_table(player, subfactory, table_info_elements)
-        end
-
-        local line = ui_state.context.line
-        if line ~= nil and subfactory.valid then
-            local table_production = frame_main_dialog["flow_production_pane"]
-              ["scroll-pane_production_pane"]["table_production_pane"]
-            production_table.refresh_recipe_button(player, line, table_production)
-            production_table.refresh_machine_table(player, line, table_production)
-        end
-
-        ui_util.message.refresh(player)
-    end
-end
-
 
 -- Returns true when the main dialog is open while no modal dialogs are
 function main_dialog.is_in_focus(player)

@@ -227,7 +227,6 @@ function production_titlebar.handle_floor_change_click(player, destination)
         -- Remove floor if no recipes have been added to it
         Floor.remove_if_empty(floor)
 
-        ui_state.current_activity = nil
         calculation.update(player, subfactory, true)
     end
 end

@@ -115,8 +115,6 @@ end
 
 -- Separate function so it can be refreshed independently
 function info_pane.refresh_mining_prod_table(player, subfactory, table_info_elements)
-    local ui_state = get_ui_state(player)
-
     local table_mining_prod = table_info_elements["table_mining_prod"] or
       table_info_elements.add{type="table", name="table_mining_prod", column_count=3}
     table_mining_prod.clear()
@@ -125,10 +123,9 @@ function info_pane.refresh_mining_prod_table(player, subfactory, table_info_elem
       caption={"", {"fp.mining_prod"}, " [img=info]: "}, tooltip={"fp.mining_prod_tt"}}
     table_mining_prod["label_mining_prod_title"].style.font = "fp-font-14p"
 
-    if ui_state.current_activity == "overriding_mining_prod" or subfactory.mining_productivity ~= nil then
-        subfactory.mining_productivity = subfactory.mining_productivity or 0  -- switch from no mining prod to custom
+    if subfactory.mining_productivity ~= nil then
         local textfield_prod_bonus = table_mining_prod.add{type="textfield", name="fp_textfield_mining_prod",
-          text=(subfactory.mining_productivity or 0)}
+          text=subfactory.mining_productivity}
         textfield_prod_bonus.style.width = 60
         textfield_prod_bonus.style.height = 26
         ui_util.setup_numeric_textfield(textfield_prod_bonus, true, true)
@@ -164,7 +161,6 @@ function info_pane.handle_subfactory_timescale_change(player, timescale)
         end
     end
 
-    get_ui_state(player).current_activity = nil
     calculation.update(player, subfactory, true)
 end
 
@@ -172,8 +168,9 @@ end
 function info_pane.override_mining_prod(player)
     if ui_util.check_archive_status(player) then return end
 
-    get_ui_state(player).current_activity = "overriding_mining_prod"
-    main_dialog.refresh_current_activity(player)
+    local subfactory = get_context(player).subfactory
+    subfactory.mining_productivity = 0
+    calculation.update(player, subfactory, true)
 end
 
 -- Persists changes to the overriden mining productivity
@@ -186,9 +183,6 @@ end
 
 -- Handles confirmation of the mining prod textfield, possibly disabling the custom override
 function info_pane.handle_mining_prod_confirmation(player)
-    local ui_state = get_ui_state(player)
-    local subfactory = ui_state.context.subfactory
-
-    if subfactory.mining_productivity == nil then ui_state.current_activity = nil end
+    local subfactory = get_context(player).subfactory
     calculation.update(player, subfactory, true)
 end
