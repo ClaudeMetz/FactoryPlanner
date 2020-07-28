@@ -301,7 +301,7 @@ function generator_util.determine_entity_sprite(proto)
     end
 
     local items_to_place_this = proto.items_to_place_this
-    if items_to_place_this and table_size(items_to_place_this) > 0 then
+    if items_to_place_this and #items_to_place_this > 0 then
         local item_sprite = "item/" .. items_to_place_this[1].name
         if game.is_valid_sprite_path(item_sprite) then
             return item_sprite

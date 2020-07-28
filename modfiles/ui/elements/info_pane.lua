@@ -29,7 +29,7 @@ function info_pane.refresh(player)
 
     local timescales = {1, 60, 3600}
     local table_timescales = table_timescale.add{type="table", name="table_timescales",
-      column_count=table_size(timescales)}
+      column_count=#timescales}
     table_timescales.style.horizontal_spacing = 0
     table_timescales.style.left_margin = 2
 
