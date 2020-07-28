@@ -147,6 +147,52 @@ local function update_ingredient_satisfaction(floor, aggregate)
 end
 
 
+local function aa(floor, product_class)
+    product_class = product_class or structures.class.init()
+
+    local function deteremine_satisfaction(ingredient)
+        local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
+
+        if product_amount ~= nil then
+            if product_amount >= ingredient.amount then
+                ingredient.satisfied_amount = ingredient.amount
+                structures.class.subtract(product_class, ingredient)
+
+            else  -- product_amount < ingredient.amount
+                ingredient.satisfied_amount = product_amount
+                structures.class.subtract(product_class, ingredient, product_amount)
+            end
+        else
+            ingredient.satisfied_amount = 0
+        end
+    end
+
+    -- Iterate the lines from top to bottom, setting satisfaction amounts along the way
+    for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
+        if line.subfloor ~= nil then
+            local subfloor_product_class = util.table.deepcopy(product_class)
+            aa(line.subfloor, subfloor_product_class)
+
+        elseif line.machine.fuel then
+            deteremine_satisfaction(line.machine.fuel)
+        end
+
+        for _, ingredient in pairs(Line.get_in_order(line, "Ingredient")) do
+            if ingredient.proto.type ~= "entity" then
+                deteremine_satisfaction(ingredient)
+            end
+        end
+
+        -- Products and byproducts just get added to the list as being produced
+        for _, class_name in pairs{"Product", "Byproduct"} do
+            for _, product in pairs(Line.get_in_order(line, class_name)) do
+                structures.class.add(product_class, product)
+            end
+        end
+    end
+end
+
+
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
@@ -166,9 +212,11 @@ end
 -- Updates the given subfactory's ingredient satisfactions
 function calculation.determine_ingredient_satisfaction(subfactory)
     local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    local aggregate = structures.aggregate.init()  -- gets modified by the two functions
+    aa(top_floor, nil)
+
+    --[[ local aggregate = structures.aggregate.init()  -- gets modified by the two functions
     determine_net_ingredients(top_floor, aggregate)
-    update_ingredient_satisfaction(top_floor, aggregate)
+    update_ingredient_satisfaction(top_floor, aggregate) ]]
 end
 
 
