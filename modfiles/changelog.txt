@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Changes:
+    - The importer now selects all subfactories for import by default, instead of selecting none
     - Added some warning messages when trying to open items/recipes in FNEI/WIIRUF/RB fails
     - Changed the unit that pollution is displayed in from P/second to P/minute
     - Changed how deleting subfactories and recipe lines work, removing the confirmation step
