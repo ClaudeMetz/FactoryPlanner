@@ -188,6 +188,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             local new_machine_proto = global.all_machines.categories[machine_category_id].machines[machine_id]
             Line.change_machine(line, player, new_machine_proto, nil)
             ui_state.current_activity = nil
+            ui_state.context.line = nil
             calculation.update(player, subfactory, true)
         end
     end
