@@ -167,7 +167,7 @@ end
 
 -- Filters the current recipes according to the filters that have been set
 local function apply_recipe_filter(player)
-    local flow_modal_dialog = modal_dialog.find(player)["flow_modal_dialog"]
+    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     local table_recipes = flow_modal_dialog["scroll-pane_recipes"]["table_recipes"]
 
     local force_recipes = player.force.recipes

@@ -239,7 +239,7 @@ function product_dialog.handle_item_picker_click(player, identifier)
     local modal_data = get_modal_data(player)
     modal_data.selected_item = item_proto
 
-    local flow_product_bar = modal_dialog.find(player)["flow_modal_dialog"]["flow_product_bar"]
+    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
     local sprite_button_product = flow_product_bar["flow_product_amount"]["sprite-button_product"]
     sprite_button_product.sprite = item_proto.sprite
     sprite_button_product.tooltip = item_proto.localised_name
@@ -256,7 +256,7 @@ function product_dialog.handle_belt_change(player, belt_name)
     modal_data.belt_proto = belt_proto
 
     local lob = modal_data.lanes_or_belts
-    local flow_product_bar = modal_dialog.find(player)["flow_modal_dialog"]["flow_product_bar"]
+    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
     local textfield_product_belts = flow_product_bar["flow_product_" .. lob]["fp_textfield_product_" .. lob]
     textfield_product_belts.enabled = (belt_proto ~= nil)
 
@@ -277,6 +277,6 @@ function product_dialog.handle_product_amount_change(player, defined_by)
     local modal_data = get_modal_data(player)
     modal_data.amount_defined_by = defined_by
 
-    local flow_product_bar = modal_dialog.find(player)["flow_modal_dialog"]["flow_product_bar"]
+    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
     update_product_amounts(flow_product_bar, modal_data)
 end
