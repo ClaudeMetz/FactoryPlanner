@@ -93,6 +93,9 @@ function prototyper.porter.get_subfactories(player, export_string)
         end
     end) then return nil, "unpacking_failure" end
 
+    -- This is not strictly an decoding failure, but close enough
+    if import_factory.Subfactory.count == 0 then return nil, "decoding_failure" end
+
     return import_factory, nil
 end
 
