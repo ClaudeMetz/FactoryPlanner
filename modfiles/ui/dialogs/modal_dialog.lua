@@ -66,7 +66,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         flow_spacer_1.style.horizontally_stretchable = true
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete",
-        caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
+          caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
         button_delete.style.font = "default-dialog-button"
         button_delete.style.height = 32
         button_delete.style.maximal_width = 80

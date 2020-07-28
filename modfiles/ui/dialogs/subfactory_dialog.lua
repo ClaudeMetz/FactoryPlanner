@@ -48,20 +48,22 @@ end
 function subfactory_dialog.close(flow_modal_dialog, action, data)
     local player = game.players[flow_modal_dialog.player_index]
     local ui_state = get_ui_state(player)
+    local factory = ui_state.context.factory
+    local subfactory = ui_state.modal_data.subfactory
 
     if action == "submit" then
-        local subfactory = ui_state.modal_data.subfactory
         if subfactory ~= nil then
             subfactory.name = data.name
             Subfactory.set_icon(subfactory, data.icon)  -- Exceptional setter for edge case handling
         else
-            local new_subfactory = Factory.add(ui_state.context.factory, Subfactory.init(data.name, data.icon,
+            local new_subfactory = Factory.add(factory, Subfactory.init(data.name, data.icon,
               get_settings(player).default_timescale))
             ui_util.context.set_subfactory(player, new_subfactory)
         end
+
     elseif action == "delete" then
-        ui_state.current_activity = "deleting_subfactory"  -- a bit of a hack
-        actionbar.delete_subfactory(player)
+        local removed_gui_position = Factory.remove(factory, subfactory)
+        ui_util.reset_subfactory_selection(player, factory, removed_gui_position)
     end
 
     main_dialog.refresh(player)
