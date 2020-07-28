@@ -215,29 +215,6 @@ local function create_line_table_row(player, line)
 end
 
 
--- Function that adds the rounding indication to the given button
-local function add_rounding_overlay(player, button, data)
-    local rounding_threshold = get_settings(player).indicate_rounding
-    local count, floor, ceil = data.count, math.floor(data.count), math.ceil(data.count)
-    -- A treshold of 0 indicates the setting being disabled
-    if (rounding_threshold > 0) and (count ~= floor) then
-        local sprite = nil
-
-        if count - floor < rounding_threshold then
-            button.number = floor
-            sprite = "fp_sprite_red_arrow_down"
-        else
-            button.number = ceil
-            if ceil - count > rounding_threshold then
-                sprite = "fp_sprite_green_arrow_up"
-            end
-        end
-
-        if sprite ~= nil then ui_util.add_overlay_sprite(button, sprite, data.sprite_size) end
-    end
-end
-
-
 -- ** TOP LEVEL **
 -- Refreshes the production table by reloading the data
 function production_table.refresh(player)
@@ -433,8 +410,6 @@ function production_table.refresh_machine_table(player, line, table_production)
           ui_util.generate_module_effects_tooltip(total_effects, machine_proto), tutorial_tooltip}}
         button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
-
-        add_rounding_overlay(player, button, {count = tonumber(machine_count), sprite_size = 32})
     end
 end
 
@@ -473,6 +448,4 @@ function production_table.setup_machine_choice_button(player, button, machine_pr
     local m = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
     button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
       " ", m, "\n", ui_util.attributes.machine(machine_proto)}
-
-    add_rounding_overlay(player, button, {count=tonumber(machine_count), sprite_size=button_size})
 end

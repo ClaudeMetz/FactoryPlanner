@@ -14,18 +14,6 @@ data:extend({
     },
     {
         type = "sprite",
-        name = "fp_sprite_green_arrow_up",
-        filename = "__factoryplanner__/graphics/green_arrow_up.png",
-        size = 40
-    },
-    {
-        type = "sprite",
-        name = "fp_sprite_red_arrow_down",
-        filename = "__factoryplanner__/graphics/red_arrow_down.png",
-        size = 40
-    },
-    {
-        type = "sprite",
         name = "fp_sprite_purple_circle",
         filename = "__factoryplanner__/graphics/purple_circle.png",
         size = 40
