@@ -90,64 +90,8 @@ local function update_items(object, result, class_name)
     end
 end
 
-
--- Determines the net ingredients of this floor
-local function determine_net_ingredients(floor, aggregate)
-    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-        if line.subfloor ~= nil then
-            determine_net_ingredients(line.subfloor, aggregate)
-        else
-            for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                local simple_ingredient = {type=ingredient.proto.type, name=ingredient.proto.name,
-                  amount=ingredient.amount}
-                structures.aggregate.add(aggregate, "Ingredient", simple_ingredient)
-            end
-
-            local function subtract_product(product_type, limiter)
-                for _, product in ipairs(Line.get_in_order(line, product_type)) do
-                    local simple_product = {type=product.proto.type, name=product.proto.name, amount=product.amount}
-                    local ingredient_amount = aggregate.Ingredient[simple_product.type][simple_product.name] or 0
-                    local used_ingredient_amount = limiter(ingredient_amount, simple_product.amount)
-                    structures.aggregate.subtract(aggregate, "Ingredient", simple_product, used_ingredient_amount)
-                end
-            end
-
-            subtract_product("Product", math.min)
-            subtract_product("Byproduct", math.max)
-        end
-    end
-end
-
--- Goes through all ingredients (again), determining their satisfied_amounts
-local function update_ingredient_satisfaction(floor, aggregate)
-    for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
-        if line.subfloor ~= nil then
-            local aggregate_ingredient_copy = util.table.deepcopy(aggregate.Ingredient)
-            update_ingredient_satisfaction(line.subfloor, aggregate)
-
-            for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                local type, name = ingredient.proto.type, ingredient.proto.name
-                local removed_amount = (aggregate_ingredient_copy[type][name] or 0)
-                  - (aggregate.Ingredient[type][name] or 0)
-                ingredient.satisfied_amount = ingredient.amount - removed_amount
-            end
-
-        else
-            for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
-                local aggregate_ingredient_amount =
-                  aggregate.Ingredient[ingredient.proto.type][ingredient.proto.name] or 0
-                local removed_amount = math.min(ingredient.amount, aggregate_ingredient_amount)
-
-                ingredient.satisfied_amount = ingredient.amount - removed_amount
-                structures.aggregate.subtract(aggregate, "Ingredient", {type=ingredient.proto.type,
-                  name=ingredient.proto.name}, removed_amount)
-            end
-        end
-    end
-end
-
-
-local function aa(floor, product_class)
+-- Goes through every line and setting their satisfied_amounts appropriately
+local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
     local function deteremine_satisfaction(ingredient)
@@ -171,7 +115,7 @@ local function aa(floor, product_class)
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
         if line.subfloor ~= nil then
             local subfloor_product_class = structures.class.copy(product_class)
-            aa(line.subfloor, subfloor_product_class)
+            update_ingredient_satisfaction(line.subfloor, subfloor_product_class)
 
         elseif line.machine.fuel then
             deteremine_satisfaction(line.machine.fuel)
@@ -211,12 +155,7 @@ end
 
 -- Updates the given subfactory's ingredient satisfactions
 function calculation.determine_ingredient_satisfaction(subfactory)
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    aa(top_floor, nil)
-
-    --[[ local aggregate = structures.aggregate.init()  -- gets modified by the two functions
-    determine_net_ingredients(top_floor, aggregate)
-    update_ingredient_satisfaction(top_floor, aggregate) ]]
+    update_ingredient_satisfaction(Subfactory.get(subfactory, "Floor", 1), nil)
 end
 
 
