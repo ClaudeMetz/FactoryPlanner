@@ -23,9 +23,6 @@ end
 
 -- Adds the barebones dialog structure that both dialogs need
 local function initialize_dialog(flow_modal_dialog, dialog_type)
-    flow_modal_dialog.parent.caption = {"", {"fp." .. dialog_type}, " ", {"fp.pl_subfactory", 1}}
-    flow_modal_dialog.vertical_scroll_policy = "never"
-
     local content_frame = flow_modal_dialog.add{type="frame", name="frame_content", direction="vertical",
       style="inside_shallow_frame_with_padding"}
 
@@ -131,9 +128,15 @@ end
 
 
 -- ** IMPORT DIALOG **
-function import_dialog.open(_, flow_modal_dialog, _)
-    flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
+function import_dialog.dialog_settings()
+    return {
+        caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
+        disable_submit_button = true,
+        disable_scroll_pane = true
+    }
+end
 
+function import_dialog.open(_, flow_modal_dialog, _)
     local content_frame = initialize_dialog(flow_modal_dialog, "import")
 
     local flow_tf_b = add_textfield_and_button(content_frame, "import", false, false)
@@ -210,6 +213,13 @@ end
 
 
 -- ** EXPORT DIALOG **
+function export_dialog.dialog_settings()
+    return {
+        caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
+        disable_scroll_pane = true
+    }
+end
+
 function export_dialog.open(player, flow_modal_dialog, _)
     local content_frame = initialize_dialog(flow_modal_dialog, "export")
 

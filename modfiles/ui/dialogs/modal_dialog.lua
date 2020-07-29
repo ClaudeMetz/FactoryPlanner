@@ -14,6 +14,7 @@ modal_dialog = {}
 -- Creates barebones modal dialog
 local function create_base_modal_dialog(player, condition_instructions, dialog_settings, modal_data)
     local frame_modal_dialog = player.gui.screen.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
+    frame_modal_dialog.caption = dialog_settings.caption or nil
     frame_modal_dialog.auto_center = true
 
     -- Conditions table
@@ -38,6 +39,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
 
     -- Main flow to be filled by specific modal dialog creator
     local flow_modal_dialog = frame_modal_dialog.add{type="scroll-pane", name="flow_modal_dialog", direction="vertical"}
+    if dialog_settings.disable_scroll_pane then flow_modal_dialog.vertical_scroll_policy = "never" end
 
     local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
     modal_data.dialog_maximal_height = (main_dialog_dimensions.height - conditions_height - 60) * 0.95
@@ -82,6 +84,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
     if dialog_settings.submit then
         local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"fp.submit"},
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
+        if dialog_settings.disable_submit_button then button_submit.enabled = false end
         button_submit.style.maximal_width = 90
         button_submit.style.left_margin = 8
     end
@@ -155,8 +158,14 @@ function modal_dialog.enter(player, dialog_settings)
     ui_state.modal_data = dialog_settings.modal_data or {}
 
     local dialog_functions = _G[ui_state.modal_dialog_type .. "_dialog"]
+
     local conditions_function = dialog_functions.condition_instructions
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
+
+    local settings_function = dialog_functions.dialog_settings
+    local additional_dialog_settings = (settings_function ~= nil) and settings_function() or {}
+    dialog_settings = util.merge{dialog_settings, additional_dialog_settings}
+
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
       ui_state.modal_data)
 
