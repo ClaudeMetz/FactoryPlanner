@@ -160,8 +160,8 @@ function modal_dialog.enter(player, dialog_settings)
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
       ui_state.modal_data)
 
-    dialog_functions.open(flow_modal_dialog, ui_state.modal_data)
     toggle_modal_dialog(player, flow_modal_dialog.parent)
+    dialog_functions.open(flow_modal_dialog, ui_state.modal_data)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter

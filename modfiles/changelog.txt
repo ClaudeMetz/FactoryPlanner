@@ -1,11 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
-  Changes:
-    -
   Bugfixes:
+    - Fixed a migration crash
     - Fixed an issue when importing into your archive
     - Fixed a crash where you could submit the import dialog without having imported a string
 
