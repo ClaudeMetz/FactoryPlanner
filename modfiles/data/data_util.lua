@@ -10,6 +10,7 @@ local getter_functions = {
     ui_state = (function(index) return global.players[index].ui_state end),
     context = (function(index) return global.players[index].ui_state.context end),
     modal_data = (function(index) return global.players[index].ui_state.modal_data end),
+    ui_elements = (function(index) return global.players[index].ui_state.modal_data.ui_elements end),
     flags = (function(index) return global.players[index].ui_state.flags end)
 }
 

@@ -40,6 +40,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
     -- Main flow to be filled by specific modal dialog creator
     local flow_modal_dialog = frame_modal_dialog.add{type="scroll-pane", name="flow_modal_dialog", direction="vertical"}
     if dialog_settings.disable_scroll_pane then flow_modal_dialog.vertical_scroll_policy = "never" end
+    modal_data.ui_elements.flow_modal_dialog = flow_modal_dialog
 
     local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
     modal_data.dialog_maximal_height = (main_dialog_dimensions.height - conditions_height - 60) * 0.95
@@ -84,9 +85,11 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
     if dialog_settings.submit then
         local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"fp.submit"},
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
-        if dialog_settings.disable_submit_button then button_submit.enabled = false end
         button_submit.style.maximal_width = 90
         button_submit.style.left_margin = 8
+
+        if dialog_settings.disable_submit_button then button_submit.enabled = false end
+        modal_data.ui_elements.dialog_submit_button = button_submit
     end
 
     return flow_modal_dialog
@@ -156,6 +159,7 @@ function modal_dialog.enter(player, dialog_settings)
     local ui_state = get_ui_state(player)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.modal_data = dialog_settings.modal_data or {}
+    ui_state.modal_data.ui_elements = {}
 
     local dialog_functions = _G[ui_state.modal_dialog_type .. "_dialog"]
 
@@ -170,6 +174,7 @@ function modal_dialog.enter(player, dialog_settings)
       ui_state.modal_data)
 
     toggle_modal_dialog(player, flow_modal_dialog.parent)
+    -- TODO remove flow_modal_dialog when every dialog has been updated
     dialog_functions.open(player, flow_modal_dialog, ui_state.modal_data)
 end
 
