@@ -134,6 +134,18 @@ import_dialog.dialog_settings = {
     disable_scroll_pane = true
 }
 
+import_dialog.events = {
+    on_gui_click = {
+        {
+            name = "fp_button_porter_subfactory_import",
+            handler = (function(player)
+                import_dialog.import_subfactories(player)
+            end)
+        }
+    }
+}
+
+
 function import_dialog.open(_, _, modal_data)
     local ui_elements = modal_data.ui_elements
     initialize_dialog(ui_elements, "import")
@@ -218,6 +230,17 @@ export_dialog.dialog_settings = {
     disable_scroll_pane = true
 }
 
+export_dialog.events = {
+    on_gui_click = {
+        {
+            name = "fp_button_porter_subfactory_export",
+            handler = (function(player)
+                export_dialog.export_subfactories(player)
+            end)
+        }
+    }
+}
+
 function export_dialog.open(player, _, modal_data)
     local player_table = data_util.get("table", player)
     local ui_elements = modal_data.ui_elements
@@ -235,7 +258,7 @@ function export_dialog.open(player, _, modal_data)
     ui_elements.master_checkbox.enabled = valid_subfactory_found
 
     add_textfield_and_button(ui_elements, "export", true, false)
-    ui_elements.export_textfield.style.top_margin = 10
+    ui_elements.export_textfield.parent.style.top_margin = 10
 end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
@@ -256,6 +279,10 @@ end
 
 
 -- ** SHARED **
+porter_dialog.events = {
+
+}
+
 function porter_dialog.set_all_checkboxes(player, checkbox_state)
     local ui_state = data_util.get("ui_state", player)
     local ui_elements = ui_state.modal_data.ui_elements

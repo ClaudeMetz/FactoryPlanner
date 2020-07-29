@@ -1,6 +1,7 @@
 require("ui.dialogs.main_dialog")
 require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
+require("ui.event_handler")
 
 -- ** KEYBOARD SHORTCUTS **
 script.on_event("fp_toggle_main_dialog", function(event)
@@ -343,10 +344,10 @@ script.on_event(defines.events.on_gui_click, function(event)
             local actionbar_action = string.gsub(element_name, "fp_button_actionbar_", "")
             actionbar[actionbar_action .. "_subfactory"](player)
 
-        -- Reacts to an import/export porter button being pressed
+        --[[ -- Reacts to an import/export porter button being pressed
         elseif string.find(element_name, "^fp_button_porter_subfactory_[a-z]+$") then
             local porter_action = string.gsub(element_name, "fp_button_porter_subfactory_", "")
-            _G[porter_action .. "_dialog"][porter_action .. "_subfactories"](player)
+            _G[porter_action .. "_dialog"][porter_action .. "_subfactories"](player) ]]
 
         -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
@@ -451,6 +452,8 @@ script.on_event(defines.events.on_gui_click, function(event)
                   split_string[6], click, direction, event.alt)
             end
 
+        else
+            event_handler.handle_gui_event(event)
         end
     end
 end)
