@@ -99,7 +99,7 @@ end
 
 -- ** TOP LEVEL **
 -- Handles populating the preferences dialog
-function preferences_dialog.open(flow_modal_dialog)
+function preferences_dialog.open(player, flow_modal_dialog, _)
     flow_modal_dialog.parent.caption = {"fp.preferences"}
     flow_modal_dialog.style.padding = 6
 
@@ -172,7 +172,7 @@ function preferences_dialog.open(flow_modal_dialog)
     end
 
 
-    refresh_preferences_dialog(flow_modal_dialog.gui.player)
+    refresh_preferences_dialog(player)
 
     -- Not sure why this is necessary, but it goes wonky otherwise
     -- This is only been necessary when a choose-elem-button is present, weirdly

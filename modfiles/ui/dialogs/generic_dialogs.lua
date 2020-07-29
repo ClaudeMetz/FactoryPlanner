@@ -5,8 +5,7 @@ options_dialog = {}
 -- ** CHOOSER **
 -- ** TOP LEVEL **
 -- Handles populating the chooser dialog
-function chooser_dialog.open(flow_modal_dialog, modal_data)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function chooser_dialog.open(player, flow_modal_dialog, modal_data)
     flow_modal_dialog.parent.caption = {"", {"fp.choose"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_chooser_text", caption=modal_data.text}
 
@@ -57,7 +56,7 @@ end
 
 -- ** TOP LEVEL **
 -- Handles populating the options dialog
-function options_dialog.open(flow_modal_dialog, modal_data)
+function options_dialog.open(_, flow_modal_dialog, modal_data)
     flow_modal_dialog.parent.caption = {"", {"fp.set"}, " ", modal_data.title}
     flow_modal_dialog.add{type="label", name="label_options_text", caption=modal_data.text}
 
@@ -74,9 +73,8 @@ function options_dialog.open(flow_modal_dialog, modal_data)
 end
 
 -- Handles closing of the options dialog
-function options_dialog.close(flow_modal_dialog, action, data)
+function options_dialog.close(player, action, data)
     if action == "submit" then
-        local player = game.get_player(flow_modal_dialog.player_index)
         local modal_data = get_ui_state(player).modal_data
         modal_data.submission_handler(player, modal_data.object, data)
         main_dialog.refresh(player)

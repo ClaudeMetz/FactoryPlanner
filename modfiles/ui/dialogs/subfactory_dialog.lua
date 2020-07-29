@@ -25,7 +25,7 @@ end
 
 -- ** TOP LEVEL **
 -- Handles populating the subfactory dialog for either 'new'- or 'edit'-actions
-function subfactory_dialog.open(flow_modal_dialog, modal_data)
+function subfactory_dialog.open(_, flow_modal_dialog, modal_data)
     local subfactory = modal_data.subfactory
 
     if subfactory ~= nil then  -- Meaning this is an edit
@@ -45,8 +45,7 @@ function subfactory_dialog.open(flow_modal_dialog, modal_data)
 end
 
 -- Handles submission of the subfactory dialog
-function subfactory_dialog.close(flow_modal_dialog, action, data)
-    local player = game.players[flow_modal_dialog.player_index]
+function subfactory_dialog.close(player, action, data)
     local ui_state = get_ui_state(player)
     local factory = ui_state.context.factory
     local subfactory = ui_state.modal_data.subfactory

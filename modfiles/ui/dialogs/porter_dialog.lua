@@ -131,7 +131,7 @@ end
 
 
 -- ** IMPORT DIALOG **
-function import_dialog.open(flow_modal_dialog)
+function import_dialog.open(_, flow_modal_dialog, _)
     flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
 
     local content_frame = initialize_dialog(flow_modal_dialog, "import")
@@ -191,8 +191,7 @@ end
 
 -- Imports the selected subfactories into the player's main factory
 -- The action can only be "submit" here, and at least one subfactory will be selected
-function import_dialog.close(flow_modal_dialog, _, _)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function import_dialog.close(player, _, _)
     local ui_state = data_util.get("modal_data", player)
     local factory = ui_state.context.factory
 
@@ -211,13 +210,13 @@ end
 
 
 -- ** EXPORT DIALOG **
-function export_dialog.open(flow_modal_dialog)
+function export_dialog.open(player, flow_modal_dialog, _)
     local content_frame = initialize_dialog(flow_modal_dialog, "export")
 
     local table_subfactories, table_rows = setup_subfactories_table(content_frame, true)
     local valid_subfactory_found = false
 
-    local player_table = data_util.get("table", flow_modal_dialog.player_index)
+    local player_table = data_util.get("table", player)
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
             add_to_subfactories_table(table_subfactories, table_rows, subfactory, factory_name, false)

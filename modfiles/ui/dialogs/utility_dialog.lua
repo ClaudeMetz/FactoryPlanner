@@ -101,11 +101,8 @@ end
 
 -- ** TOP LEVEL **
 -- Handles populating the utility modal dialog
-function utility_dialog.open(flow_modal_dialog)
+function utility_dialog.open(player, flow_modal_dialog, modal_data)
     flow_modal_dialog.parent.caption = {"fp.utilities"}
-
-    local player = game.get_player(flow_modal_dialog.player_index)
-    local modal_data = get_modal_data(player)
 
     -- Add the players' relevant inventory components to modal_data
     modal_data.inventory_contents = player.get_main_inventory().get_contents()

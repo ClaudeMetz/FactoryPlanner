@@ -267,8 +267,7 @@ end
 
 -- ** MODULES **
 -- Handles populating the modules dialog for either 'add'- or 'edit'-actions
-function module_dialog.open(flow_modal_dialog, modal_data)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function module_dialog.open(player, flow_modal_dialog, modal_data)
     local line = get_context(player).line
     local module = modal_data.selected_object
 
@@ -280,8 +279,7 @@ function module_dialog.open(flow_modal_dialog, modal_data)
 end
 
 -- Handles submission of the modules dialog
-function module_dialog.close(flow_modal_dialog, action, data)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function module_dialog.close(player, action, data)
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
     local module = ui_state.modal_data.selected_object
@@ -334,8 +332,7 @@ end
 
 -- ** BEACONS **
 -- Handles populating the beacons dialog for either 'add'- or 'edit'-actions
-function beacon_dialog.open(flow_modal_dialog, modal_data)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function beacon_dialog.open(player, flow_modal_dialog, modal_data)
     local line = get_context(player).line
     local beacon = modal_data.selected_object
 
@@ -347,8 +344,7 @@ function beacon_dialog.open(flow_modal_dialog, modal_data)
 end
 
 -- Handles submission of the beacons dialog
-function beacon_dialog.close(flow_modal_dialog, action, data)
-    local player = game.players[flow_modal_dialog.player_index]
+function beacon_dialog.close(player, action, data)
     local ui_state = get_ui_state(player)
     local line = ui_state.context.line
 
