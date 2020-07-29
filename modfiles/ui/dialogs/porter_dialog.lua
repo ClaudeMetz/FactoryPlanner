@@ -60,6 +60,7 @@ local function add_textfield_and_button(ui_elements, dialog_type, button_first, 
     else add_textfield(); add_button() end
 end
 
+
 -- Initializes the subfactories table by adding it and its header
 local function setup_subfactories_table(ui_elements, add_location)
     ui_elements.table_rows = {}
@@ -127,13 +128,11 @@ end
 
 
 -- ** IMPORT DIALOG **
-function import_dialog.dialog_settings()
-    return {
-        caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
-        disable_submit_button = true,
-        disable_scroll_pane = true
-    }
-end
+import_dialog.dialog_settings = {
+    caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
+    disable_submit_button = true,
+    disable_scroll_pane = true
+}
 
 function import_dialog.open(_, _, modal_data)
     local ui_elements = modal_data.ui_elements
@@ -214,12 +213,10 @@ end
 
 
 -- ** EXPORT DIALOG **
-function export_dialog.dialog_settings()
-    return {
-        caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
-        disable_scroll_pane = true
-    }
-end
+export_dialog.dialog_settings = {
+    caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
+    disable_scroll_pane = true
+}
 
 function export_dialog.open(player, _, modal_data)
     local player_table = data_util.get("table", player)

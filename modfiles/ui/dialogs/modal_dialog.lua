@@ -161,21 +161,20 @@ function modal_dialog.enter(player, dialog_settings)
     ui_state.modal_data = dialog_settings.modal_data or {}
     ui_state.modal_data.ui_elements = {}
 
-    local dialog_functions = _G[ui_state.modal_dialog_type .. "_dialog"]
+    local dialog_object = _G[ui_state.modal_dialog_type .. "_dialog"]
 
-    local conditions_function = dialog_functions.condition_instructions
+    local conditions_function = dialog_object.condition_instructions
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
 
-    local settings_function = dialog_functions.dialog_settings
-    local additional_dialog_settings = (settings_function ~= nil) and settings_function() or {}
-    dialog_settings = util.merge{dialog_settings, additional_dialog_settings}
+    local additional_settings = dialog_object.dialog_settings
+    if additional_settings then dialog_settings = util.merge{dialog_settings, additional_settings} end
 
-    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
-      ui_state.modal_data)
+    local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions,
+      dialog_settings, ui_state.modal_data)
 
     toggle_modal_dialog(player, flow_modal_dialog.parent)
     -- TODO remove flow_modal_dialog when every dialog has been updated
-    dialog_functions.open(player, flow_modal_dialog, ui_state.modal_data)
+    dialog_object.open(player, flow_modal_dialog, ui_state.modal_data)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
