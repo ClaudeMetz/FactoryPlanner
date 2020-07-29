@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.46
+Date: 29. 07. 2020
   Bugfixes:
     - Fixed a migration crash
     - Fixed an issue when importing into your archive
