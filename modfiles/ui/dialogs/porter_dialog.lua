@@ -23,7 +23,7 @@ end
 
 -- Adds the barebones dialog structure that both dialogs need
 local function initialize_dialog(flow_modal_dialog, dialog_type)
-    flow_modal_dialog.parent.caption = {"", {"fp." .. dialog_type}, " ", {"fp.subfactories"}}
+    flow_modal_dialog.parent.caption = {"", {"fp." .. dialog_type}, " ", {"fp.pl_subfactory", 1}}
     flow_modal_dialog.vertical_scroll_policy = "never"
 
     local content_frame = flow_modal_dialog.add{type="frame", name="frame_content", direction="vertical",
@@ -83,7 +83,7 @@ local function setup_subfactories_table(parent_flow, add_location)
     frame_subfactories.style.padding = {-2, 2, 3, 2}
 
     local table_columns = {
-        [2] = {caption={"fp.csubfactory"}, alignment="left", margin={6, 130, 6, 4}},
+        [2] = {caption={"fp.pu_subfactory", 2}, alignment="left", margin={6, 130, 6, 4}},
         [3] = {caption={"fp.validity"}}
     }
     if add_location then table_columns[4] = {caption={"fp.location"}} end
