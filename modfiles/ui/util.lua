@@ -349,6 +349,16 @@ function ui_util.add_subfactories_by_string(player, export_string, refresh_inter
     calculation.update(player, first_subfactory, refresh_interface)
 end
 
+-- Goes through every subfactory's top level products and updates their defined_by
+-- (also not really a UI function)
+function ui_util.update_all_product_definitions(player)
+    local player_table = get_table(player)
+    local defined_by = player_table.settings.belts_or_lanes
+    Factory.update_product_definitions(player_table.factory, defined_by)
+    Factory.update_product_definitions(player_table.archive, defined_by)
+    main_dialog.refresh(player, true)
+end
+
 
 -- **** Mod-GUI ****
 -- Create the always-present GUI button to open the main dialog

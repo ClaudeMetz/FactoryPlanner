@@ -2,48 +2,7 @@ require("ui.dialogs.main_dialog")
 require("ui.dialogs.modal_dialog")
 require("ui.util")
 
--- Fires when mods settings change to incorporate them
-script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
-    -- This mod currently only uses runtime-per-user settings
-    if event.setting_type == "runtime-per-user" then
-        local player = game.get_player(event.player_index)
-
-        -- Reload all user mod settings
-        init.reload_settings(player)
-
-        -- Toggles the visibility of the toggle-main_dialog-button
-        if event.setting == "fp_display_gui_button" then
-            ui_util.mod_gui.toggle(player)
-
-        -- Changes the width of the main dialog
-        elseif event.setting == "fp_subfactory_items_per_row" or
-          event.setting == "fp_floor_recipes_at_once" or
-          event.setting == "fp_alt_action" then
-            main_dialog.refresh(player, true)
-
-        -- Adjusts all the products that are defined by belts/lanes
-        elseif event.setting == "fp_view_belts_or_lanes" then
-            local player_table = get_table(player)
-            local defined_by = player_table.settings.belts_or_lanes
-            Factory.update_product_definitions(player_table.factory, defined_by)
-            Factory.update_product_definitions(player_table.archive, defined_by)
-            main_dialog.refresh(player, true)
-
-        end
-    end
-end)
-
--- Refreshes the main dialog including it's dimensions
-script.on_event(defines.events.on_player_display_resolution_changed, function(event)
-    main_dialog.refresh(game.get_player(event.player_index), true)
-end)
-
--- Refreshes the main dialog including it's dimensions
-script.on_event(defines.events.on_player_display_scale_changed, function(event)
-    main_dialog.refresh(game.get_player(event.player_index), true)
-end)
-
-
+-- ** KEYBOARD SHORTCUTS **
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)
     main_dialog.toggle(player)
@@ -90,7 +49,7 @@ script.on_event("fp_focus_searchfield", function(event)
 end)
 
 
--- Fires on the activation of any quickbar lua shortcut
+-- ** LUA SHORTCUTS **
 script.on_event(defines.events.on_lua_shortcut, function(event)
     local player = game.players[event.player_index]
 
@@ -99,6 +58,15 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
     end
 end)
 
+
+-- ** PLAYER GUI EVENTS **
+script.on_event(defines.events.on_player_display_resolution_changed, function(event)
+    main_dialog.refresh(game.get_player(event.player_index), true)
+end)
+
+script.on_event(defines.events.on_player_display_scale_changed, function(event)
+    main_dialog.refresh(game.get_player(event.player_index), true)
+end)
 
 -- Fires when the user makes a selection using a selection-tool
 script.on_event(defines.events.on_player_selected_area, function(event)
@@ -120,6 +88,7 @@ script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
 end)
 
 
+-- ** GUI EVENTS **
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.get_player(event.player_index)
@@ -209,6 +178,7 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
 
     end
 end)
+
 
 -- Fires on any changes to a textbox/-field
 script.on_event(defines.events.on_gui_text_changed, function(event)
