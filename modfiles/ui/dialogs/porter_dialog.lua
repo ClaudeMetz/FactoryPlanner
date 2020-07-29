@@ -133,6 +133,8 @@ end
 
 -- ** IMPORT DIALOG **
 function import_dialog.open(flow_modal_dialog)
+    flow_modal_dialog.parent["flow_modal_dialog_button_bar"]["fp_button_modal_dialog_submit"].enabled = false
+
     local content_frame = initialize_dialog(flow_modal_dialog, "import")
 
     local flow_tf_b = add_textfield_and_button(content_frame, "import", false, false)
