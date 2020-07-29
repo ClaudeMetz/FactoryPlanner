@@ -144,19 +144,22 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
 
-    -- (Un)checks every porter-table rows' checkbox
+    --[[ -- (Un)checks every porter-table rows' checkbox
     if element_name == "fp_checkbox_porter_master" then
         porter_dialog.set_all_checkboxes(player, event.element.state)
 
     -- Adjusts the porter dialog window after one of the subfactory checkboxes is clicked
     elseif string.find(element_name, "^fp_checkbox_porter_subfactory_[a-z]+_%d+$") then
-        porter_dialog.adjust_after_checkbox_click(player)
+        porter_dialog.adjust_after_checkbox_click(player) ]]
 
     -- Toggles the selected general or production preference (This type/preference detection is stupid)
-    elseif string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
+    --[[ else ]]if string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
         local type = cutil.split(element_name, "_")[3]
         local preference = string.gsub(element_name, "fp_checkbox_" .. type .. "_preferences_", "")
         preferences_dialog.handle_checkbox_change(player, type, preference, event.element.state)
+
+    else
+        event_handler.handle_gui_event(event)
 
     end
 end)
