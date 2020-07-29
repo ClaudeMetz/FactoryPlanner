@@ -215,8 +215,7 @@ end
 
 -- ** TOP LEVEL **
 -- Handles populating the recipe dialog
-function recipe_dialog.open(flow_modal_dialog, modal_data)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function recipe_dialog.open(player, flow_modal_dialog, modal_data)
     local product = modal_data.product
 
     flow_modal_dialog.parent.caption = {"fp.add_recipe"}

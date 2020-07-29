@@ -2,9 +2,7 @@ tutorial_dialog = {}
 
 -- ** TOP LEVEL **
 -- Handles populating the tutorial dialog
-function tutorial_dialog.open(flow_modal_dialog)
-    local player = game.get_player(flow_modal_dialog.player_index)
-
+function tutorial_dialog.open(player, flow_modal_dialog, _)
     flow_modal_dialog.parent.caption = {"fp.tutorial"}
     flow_modal_dialog.style.maximal_width = 700
     flow_modal_dialog.style.left_padding = 8

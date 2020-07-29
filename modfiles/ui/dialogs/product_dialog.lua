@@ -142,7 +142,7 @@ end
 
 -- ** TOP LEVEL **
 -- Handles populating the item picker dialog
-function product_dialog.open(flow_modal_dialog, modal_data)
+function product_dialog.open(_, flow_modal_dialog, modal_data)
     local product = modal_data.product
 
     flow_modal_dialog.parent.caption = (product == nil) and {"fp.add_product"} or {"fp.edit_product"}
@@ -165,8 +165,7 @@ function product_dialog.open(flow_modal_dialog, modal_data)
 end
 
 -- Handles closing of the item picker dialog
-function product_dialog.close(flow_modal_dialog, action, data)
-    local player = game.get_player(flow_modal_dialog.player_index)
+function product_dialog.close(player, action, data)
     local ui_state = get_ui_state(player)
     local subfactory = ui_state.context.subfactory
     local product = ui_state.modal_data.product
