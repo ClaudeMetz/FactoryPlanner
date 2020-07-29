@@ -73,12 +73,14 @@ end
 -- File-local to so this dict isn't recreated on every call of the function following it
 local valid_alt_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
   product=true, byproduct=true, ingredient=true, fuel=true}
+
 -- Either adds the tutorial tooltip to the button, or returns it if none is given
 function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
-    local preferences = get_preferences(player)
-    if preferences.tutorial_mode then
+    local player_table = data_util.get("table", player)
+
+    if player_table.preferences.tutorial_mode then
         local b = line_break and "\n\n" or ""
-        local alt_action = get_settings(player).alt_action
+        local alt_action = player_table.settings.alt_action
         local f = (valid_alt_types[tut_type] and alt_action ~= "none")
           and {"fp.tut_alt_action", {"fp.alt_action_" .. alt_action}} or ""
         if button ~= nil then
@@ -86,8 +88,8 @@ function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
         else
             return {"", b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. tut_type}, f}
         end
-    -- Return empty string if there should be a return value
-    elseif button == nil then
+
+    elseif button == nil then  -- return empty string if there should be a return value
         return ""
     end
 end
@@ -258,7 +260,7 @@ ui_util.rate_limiting_events = {
 
 -- Returns whether the given event should be prevented from carrying out it's action due to rate limiting
 function ui_util.rate_limiting_active(player, event_name, object_name)
-    local last_action = get_ui_state(player).last_action
+    local last_action = data_util.get("ui_state", player).last_action
     local timeout = ui_util.rate_limiting_events[event_name].timeout
     local current_tick = game.tick
 
@@ -279,7 +281,7 @@ end
 
 -- Function to register an on_nth_tick to run the relevant handler once more after the last rate limiting occured
 function ui_util.set_nth_tick_refresh(player, element)
-    local last_action = get_ui_state(player).last_action
+    local last_action = data_util.get("ui_state", player).last_action
     local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
     local nth_tick = game.tick + rate_limiting_event.timeout
 
@@ -314,7 +316,7 @@ end
 
 -- Checks whether the archive is open; posts an error and returns true if it is
 function ui_util.check_archive_status(player)
-    if get_flags(player).archive_open then
+    if data_util.get("flags", player).archive_open then
         ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
         return true
     else
@@ -324,7 +326,7 @@ end
 
 -- Executes an alt-action on the given action_type and data
 function ui_util.execute_alt_action(player, action_type, data)
-    local alt_action = get_settings(player).alt_action
+    local alt_action = data_util.get("settings", player).alt_action
 
     local remote_action = remote_actions[alt_action]
     if remote_action ~= nil and remote_action[action_type] then
@@ -349,12 +351,12 @@ function ui_util.mod_gui.create(player)
           style=mod_gui.button_style, mouse_button_filter={"left"}}
     end
 
-    frame_flow["fp_button_toggle_interface"].visible = get_settings(player).show_gui_button
+    frame_flow["fp_button_toggle_interface"].visible = data_util.get("settings", player).show_gui_button
 end
 
 -- Toggles the visibility of the toggle-main-dialog-button
 function ui_util.mod_gui.toggle(player)
-    local enable = get_settings(player).show_gui_button
+    local enable = data_util.get("settings", player).show_gui_button
     mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
 end
 
@@ -372,7 +374,7 @@ end
 
 -- Updates the context to match the newly selected factory
 function ui_util.context.set_factory(player, factory)
-    local context = get_context(player)
+    local context = data_util.get("context", player)
     context.factory = factory
     local subfactory = factory.selected_subfactory or
       Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
@@ -381,7 +383,7 @@ end
 
 -- Updates the context to match the newly selected subfactory
 function ui_util.context.set_subfactory(player, subfactory)
-    local context = get_context(player)
+    local context = data_util.get("context", player)
     context.factory.selected_subfactory = subfactory
     context.subfactory = subfactory
     context.floor = (subfactory ~= nil) and subfactory.selected_floor or nil
@@ -390,7 +392,7 @@ end
 
 -- Updates the context to match the newly selected floor
 function ui_util.context.set_floor(player, floor)
-    local context = get_context(player)
+    local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
     context.floor = floor
     context.line = nil
@@ -493,7 +495,7 @@ function ui_util.message.refresh(player)
         [3] = {name = "hint", color = "green"}
     }
 
-    local ui_state = get_ui_state(player)
+    local ui_state = data_util.get("ui_state", player)
 
     -- Go over the all types and messages, trying to find one that should be shown
     local new_message, new_color = "", nil
