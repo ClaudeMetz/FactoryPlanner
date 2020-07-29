@@ -136,7 +136,7 @@ end
 
 -- Returns the default prototype for the given type, incorporating the category, if given
 function prototyper.defaults.get(player, type, category_id)
-    local default = get_preferences(player).default_prototypes[type]
+    local default = data_util.get("preferences", player).default_prototypes[type]
     if default.structure_type == "simple" then
         return default.prototype
     else  -- structure_type == "complex"
@@ -146,7 +146,7 @@ end
 
 -- Sets the default prototype for the given type, incorporating the category, if given
 function prototyper.defaults.set(player, type, prototype_id, category_id)
-    local default = get_preferences(player).default_prototypes[type]
+    local default = data_util.get("preferences", player).default_prototypes[type]
     if default.structure_type == "simple" then
         local new_prototype = global["all_" .. type][type][prototype_id]
         default.prototype = new_prototype

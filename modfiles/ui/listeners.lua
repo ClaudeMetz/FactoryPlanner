@@ -25,7 +25,8 @@ end)
 
 script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
-    if main_dialog.is_in_focus(player) then calculation.update(player, get_context(player).subfactory, true) end
+    local subfactory = data_util.get("context", event.player_index).subfactory
+    if main_dialog.is_in_focus(player) then calculation.update(player, subfactory, true) end
 end)
 
 script.on_event("fp_cycle_production_views", function(event)
@@ -41,7 +42,7 @@ end)
 
 script.on_event("fp_focus_searchfield", function(event)
     local player = game.get_player(event.player_index)
-    if get_ui_state(player).modal_dialog_type == "product" then
+    if data_util.get("ui_state", event.player_index).modal_dialog_type == "product" then
         local textfield = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_item_picker"]
           ["table_search_bar"]["fp_textfield_item_picker_search_bar"]
         ui_util.select_all(textfield)
@@ -72,7 +73,7 @@ end)
 script.on_event(defines.events.on_player_selected_area, function(event)
     local player = game.get_player(event.player_index)
 
-    if event.item == "fp_beacon_selector" and get_flags(player).selection_mode then
+    if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
         if ui_util.rate_limiting_active(player, event.name, event.item) then return end
         beacon_dialog.leave_selection_mode(player, table_size(event.entities))
     end
@@ -82,7 +83,7 @@ end)
 script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
     local player = game.get_player(event.player_index)
     -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-    if get_flags(player).selection_mode and not player.cursor_stack.valid_for_read then
+    if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
         beacon_dialog.leave_selection_mode(player, nil)
     end
 end)
@@ -97,7 +98,7 @@ script.on_event(defines.events.on_gui_closed, function(event)
       and string.find(event.element.name, "^fp_.+$") then
         -- Close or hide any modal dialog or leave selection mode
         if event.element.name == "fp_frame_modal_dialog" then
-            if get_flags(player).selection_mode then beacon_dialog.leave_selection_mode(player, nil)
+            if data_util.get("flags", player).selection_mode then beacon_dialog.leave_selection_mode(player, nil)
             else modal_dialog.exit(player, "cancel", {}) end
 
         -- Toggle the main dialog
@@ -126,7 +127,7 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
         import_dialog.import_subfactories(player)
 
     -- Submit any modal dialog, if it is open
-    elseif get_ui_state(player).modal_dialog_type ~= nil then
+    elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
         if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
         modal_dialog.exit(player, "submit", {})
 
@@ -198,7 +199,7 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
 
         -- Persists default beacon count changes
         elseif element_name == "fp_textfield_default_beacon_count" then
-            get_preferences(player).mb_defaults.beacon_count = tonumber(event.element.text)
+            data_util.get("preferences", player).mb_defaults.beacon_count = tonumber(event.element.text)
 
         -- Dynamically en/disables the subfactory import button
         elseif element_name == "fp_textfield_porter_string_import" then
@@ -249,7 +250,7 @@ end)
 -- Fires on any click on a GUI element
 script.on_event(defines.events.on_gui_click, function(event)
     local player = game.get_player(event.player_index)
-    local ui_state = get_ui_state(player)
+    local ui_state = data_util.get("ui_state", player)
     local element_name = event.element.name
 
     -- Only handle my actual events

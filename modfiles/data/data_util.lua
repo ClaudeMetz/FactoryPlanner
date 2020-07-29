@@ -22,7 +22,7 @@ end
 -- ** MISC **
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string, refresh_interface)
-    local context = get_context(player)
+    local context = data_util.get("context", player)
     local first_subfactory = Factory.import_by_string(context.factory, player, export_string)
 
     ui_util.context.set_subfactory(player, first_subfactory)
@@ -31,7 +31,7 @@ end
 
 -- Goes through every subfactory's top level products and updates their defined_by
 function data_util.update_all_product_definitions(player)
-    local player_table = get_table(player)
+    local player_table = data_util.get("table", player)
     local defined_by = player_table.settings.belts_or_lanes
     Factory.update_product_definitions(player_table.factory, defined_by)
     Factory.update_product_definitions(player_table.archive, defined_by)
@@ -43,7 +43,7 @@ end
 -- Converts the given subfactories into a factory exchange string
 function data_util.porter.get_export_string(player, subfactories)
     local export_table = {
-        mod_version = get_table(player).mod_version,
+        mod_version = data_util.get("table", player).mod_version,
         subfactories = {}
     }
 

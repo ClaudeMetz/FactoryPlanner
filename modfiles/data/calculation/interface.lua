@@ -141,7 +141,7 @@ end
 -- Updates the whole subfactory calculations from top to bottom
 function calculation.update(player, subfactory, refresh)
     if subfactory ~= nil and subfactory.valid then
-        local player_table = get_table(player)
+        local player_table = data_util.get("table", player)
         -- Save the active subfactory in global so the model doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
