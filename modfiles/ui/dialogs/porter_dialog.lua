@@ -66,9 +66,8 @@ end
 
 -- Initializes the subfactories table by adding it and its header
 local function setup_subfactories_table(parent_flow, add_location)
-    local player = game.get_player(parent_flow.player_index)
-    local table_rows = {}
-    get_modal_data(player).table_rows = table_rows
+    local modal_data = data_util.get("modal_data", parent_flow.player_index)
+    modal_data.table_rows = {}
 
     local scroll_pane_subfactories = parent_flow.add{type="scroll-pane", name="scroll_pane_subfactories",
       style="scroll_pane_in_shallow_frame"}
@@ -102,7 +101,7 @@ local function setup_subfactories_table(parent_flow, add_location)
         label_column.style.margin = table_column.margin or {0, 4}
     end
 
-    return table_subfactories, table_rows
+    return table_subfactories, modal_data.table_rows
 end
 
 -- Adds a row to the subfactories table
@@ -176,7 +175,7 @@ function import_dialog.import_subfactories(player)
         ui_util.select_all(textfield_export_string)
     else
         add_into_label({"fp.import_instruction_2"})
-        get_modal_data(player).import_factory = import_factory
+        data_util.get("modal_data", player).import_factory = import_factory
 
         local table_subfactories, table_rows = setup_subfactories_table(content_frame, false)
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
@@ -191,13 +190,14 @@ function import_dialog.import_subfactories(player)
 end
 
 -- Imports the selected subfactories into the player's main factory
+-- The action can only be "submit" here, and at least one subfactory will be selected
 function import_dialog.close(flow_modal_dialog, _, _)
-    -- The action can only be "submit" here, and at least one subfactory will be selected
     local player = game.get_player(flow_modal_dialog.player_index)
-    local factory = get_context(player).factory
+    local ui_state = data_util.get("modal_data", player)
+    local factory = ui_state.context.factory
 
     local first_subfactory = nil
-    for _, table_row in pairs(get_modal_data(player).table_rows) do
+    for _, table_row in pairs(ui_state.modal_data.table_rows) do
         if table_row.checkbox.state == true then
             local imported_subfactory = Factory.add(factory, table_row.subfactory)
             calculation.update(player, imported_subfactory, false)
@@ -217,7 +217,7 @@ function export_dialog.open(flow_modal_dialog)
     local table_subfactories, table_rows = setup_subfactories_table(content_frame, true)
     local valid_subfactory_found = false
 
-    local player_table = get_table(game.get_player(table_subfactories.player_index))
+    local player_table = data_util.get("table", flow_modal_dialog.player_index)
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
             add_to_subfactories_table(table_subfactories, table_rows, subfactory, factory_name, false)
@@ -232,8 +232,10 @@ end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
 function export_dialog.export_subfactories(player)
+    local table_rows = data_util.get("modal_data", player).table_rows
     local subfactories_to_export = {}
-    for _, table_row in pairs(get_modal_data(player).table_rows) do
+
+    for _, table_row in pairs(table_rows) do
         if table_row.checkbox.state == true then
             table.insert(subfactories_to_export, table_row.subfactory)
         end
@@ -249,28 +251,29 @@ end
 
 -- ** SHARED **
 function porter_dialog.set_all_checkboxes(player, checkbox_state)
-    for _, table_row in pairs(get_modal_data(player).table_rows) do
+    local ui_state = data_util.get("ui_state", player)
+
+    for _, table_row in pairs(ui_state.modal_data.table_rows) do
         if table_row.checkbox.enabled then table_row.checkbox.state = checkbox_state end
     end
 
-    local dialog_type = get_ui_state(player).modal_dialog_type
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
-    set_relevant_submit_button(content_frame, dialog_type, checkbox_state)
+    set_relevant_submit_button(content_frame, ui_state.modal_dialog_type, checkbox_state)
 end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
 function porter_dialog.adjust_after_checkbox_click(player)
+    local ui_state = data_util.get("ui_state", player)
+
     local checked_element_count, unchecked_element_count = 0, 0
-    for _, table_row in pairs(get_modal_data(player).table_rows) do
+    for _, table_row in pairs(ui_state.modal_data.table_rows) do
         if table_row.checkbox.state == true then checked_element_count = checked_element_count + 1
         elseif table_row.checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
     end
 
-    local dialog_type = get_ui_state(player).modal_dialog_type
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
-
     local table_subfactories = content_frame["scroll_pane_subfactories"]["frame_subfactories"]["table_subfactories"]
     table_subfactories["fp_checkbox_porter_master"].state = (unchecked_element_count == 0)
 
-    set_relevant_submit_button(content_frame, dialog_type, (checked_element_count > 0))
+    set_relevant_submit_button(content_frame, ui_state.modal_dialog_type, (checked_element_count > 0))
 end
