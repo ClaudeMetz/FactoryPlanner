@@ -2,6 +2,23 @@ data_util = {
     porter = {}
 }
 
+-- ** GETTER **
+local getter_functions = {
+    table = (function(index) return global.players[index] end),
+    settings = (function(index) return global.players[index].settings end),
+    preferences = (function(index) return global.players[index].preferences end),
+    ui_state = (function(index) return global.players[index].ui_state end),
+    context = (function(index) return global.players[index].ui_state.context end),
+    modal_data = (function(index) return global.players[index].ui_state.modal_data end),
+    flags = (function(index) return global.players[index].ui_state.flags end)
+}
+
+function data_util.get(name, player)  -- 'player' might be a player_index
+    local index = (type(player) == "number") and player or player.index
+    return getter_functions[name](index)
+end
+
+
 -- ** MISC **
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string, refresh_interface)

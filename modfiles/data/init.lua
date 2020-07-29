@@ -248,6 +248,7 @@ commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}
 
 
 -- ** GLOBAL UTIL **
+-- TODO remove when everything uses the new system
 -- Returns the player table for the given player
 function get_table(player)
     return global.players[player.index]
