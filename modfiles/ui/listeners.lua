@@ -1,6 +1,6 @@
 require("ui.dialogs.main_dialog")
 require("ui.dialogs.modal_dialog")
-require("ui.util")
+require("ui.ui_util")
 
 -- ** KEYBOARD SHORTCUTS **
 script.on_event("fp_toggle_main_dialog", function(event)

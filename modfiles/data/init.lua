@@ -1,4 +1,4 @@
-require("data.util")
+require("data.data_util")
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Fuel")
