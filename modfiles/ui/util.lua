@@ -339,26 +339,6 @@ function ui_util.reset_subfactory_selection(player, factory, removed_gui_positio
     ui_util.context.set_subfactory(player, subfactory)
 end
 
--- Adds given export_string-subfactories to the current factory. This is not really
--- UI-related code, but I've got nowhere else to put it, so here it goes
-function ui_util.add_subfactories_by_string(player, export_string, refresh_interface)
-    local context = get_context(player)
-    local first_subfactory = Factory.import_by_string(context.factory, player, export_string)
-
-    ui_util.context.set_subfactory(player, first_subfactory)
-    calculation.update(player, first_subfactory, refresh_interface)
-end
-
--- Goes through every subfactory's top level products and updates their defined_by
--- (also not really a UI function)
-function ui_util.update_all_product_definitions(player)
-    local player_table = get_table(player)
-    local defined_by = player_table.settings.belts_or_lanes
-    Factory.update_product_definitions(player_table.factory, defined_by)
-    Factory.update_product_definitions(player_table.archive, defined_by)
-    main_dialog.refresh(player, true)
-end
-
 
 -- **** Mod-GUI ****
 -- Create the always-present GUI button to open the main dialog

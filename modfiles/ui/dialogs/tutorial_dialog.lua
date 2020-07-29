@@ -84,7 +84,7 @@ end
 
 -- Creates the example subfactory and shows it to the user
 function tutorial_dialog.add_example_subfactory(player)
-    ui_util.add_subfactories_by_string(player, tutorial_export_string, true)
+    data_util.add_subfactories_by_string(player, tutorial_export_string, true)
     modal_dialog.exit(player, "cancel", {})
 end
 
