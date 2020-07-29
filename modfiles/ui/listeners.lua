@@ -123,14 +123,17 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
     elseif string.find(element_name, "^fp_textfield_line_percentage_%d+$") then
         production_handler.handle_percentage_confirmation(player, event.element)
 
-    -- Make sure submitting the export_string when importing actually imports
+    --[[ -- Make sure submitting the export_string when importing actually imports
     elseif element_name == "fp_textfield_porter_string_import" then
-        import_dialog.import_subfactories(player)
+        import_dialog.import_subfactories(player) ]]
 
-    -- Submit any modal dialog, if it is open
+    --[[ -- Submit any modal dialog, if it is open
     elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
         if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
-        modal_dialog.exit(player, "submit", {})
+        modal_dialog.exit(player, "submit", {}) ]]
+
+    else
+        event_handler.handle_gui_event(event)
 
     end
 end)
@@ -202,9 +205,9 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         elseif element_name == "fp_textfield_default_beacon_count" then
             data_util.get("preferences", player).mb_defaults.beacon_count = tonumber(event.element.text)
 
-        -- Dynamically en/disables the subfactory import button
+        --[[ -- Dynamically en/disables the subfactory import button
         elseif element_name == "fp_textfield_porter_string_import" then
-            import_dialog.handle_import_string_change(player, event.element)
+            import_dialog.handle_import_string_change(player, event.element) ]]
 
         -- Persists notes changes
         elseif element_name == "fp_text-box_notes" then
@@ -227,6 +230,8 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         elseif string.find(element_name, "^fp_textfield_line_comment_%d+$") then
             production_handler.handle_comment_change(player, event.element)
 
+        else
+            event_handler.handle_gui_event(event)
         end
     end
 end)

@@ -138,8 +138,24 @@ import_dialog.events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_import",
-            handler = (function(player)
+            handler = (function(player, _)
                 import_dialog.import_subfactories(player)
+            end)
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_porter_string_import",
+            handler = (function(player, element)
+                import_dialog.handle_import_string_change(player, element)
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "fp_textfield_porter_string_import",
+            handler = (function(player, element)
+                if element.text ~= "" then import_dialog.import_subfactories(player) end
             end)
         }
     }
@@ -234,7 +250,7 @@ export_dialog.events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_export",
-            handler = (function(player)
+            handler = (function(player, _)
                 export_dialog.export_subfactories(player)
             end)
         }

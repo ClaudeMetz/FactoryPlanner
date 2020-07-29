@@ -62,6 +62,7 @@ function data_util.porter.get_subfactories(player, export_string)
 
     if not pcall(function()
         export_table = game.json_to_table(game.decode_string(export_string))
+        assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
 
     if not pcall(function()
