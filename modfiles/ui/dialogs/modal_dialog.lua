@@ -74,7 +74,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         local flow_spacer_2 = button_bar.add{type="flow", name="flow_modal_dialog_spacer_2", direction="horizontal"}
         flow_spacer_2.style.horizontally_stretchable = true
     else
-        -- This filler-type widget is only needed when not delete button is shown
+        -- This filler-type widget is only needed when no delete button is shown
         button_bar.add{type="empty-widget", name="empty-widget_modal_dialog_spacer_1", style="fp_footer_filler"}
     end
 
@@ -160,8 +160,8 @@ function modal_dialog.enter(player, dialog_settings)
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions, dialog_settings,
       ui_state.modal_data)
 
-    toggle_modal_dialog(player, flow_modal_dialog.parent)
     dialog_functions.open(flow_modal_dialog, ui_state.modal_data)
+    toggle_modal_dialog(player, flow_modal_dialog.parent)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
