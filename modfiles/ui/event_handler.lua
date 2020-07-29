@@ -15,25 +15,6 @@ local event_cache = {}
 local special_handlers = {}
 
 
-for _, object in pairs(objects_that_need_handling) do
-    if object.events then
-        for event_name, elements in pairs(object.events) do
-            event_cache[event_name] = event_cache[event_name] or {
-                names = {},
-                patterns = {}
-            }
-
-            for _, element in pairs(elements) do
-                if element.name then
-                    event_cache[event_name].names[element.name] = element.handler
-                elseif element.pattern then
-                    event_cache[event_name].patterns[element.pattern] = element.handler
-                end
-            end
-        end
-    end
-end
-
 -- ** LOCAL UTIL **
 local function standard_handler(player, element, event_handlers)
     local element_name = element.name
@@ -68,6 +49,28 @@ special_handlers["on_gui_confirmed"] = (function(player, element, event_handlers
 end)
 
 
+-- Actually compile a list of handlers
+for _, object in pairs(objects_that_need_handling) do
+    if object.events then
+        for event_name, elements in pairs(object.events) do
+            event_cache[event_name] = event_cache[event_name] or {
+                names = {},
+                patterns = {},
+                special_handler = special_handlers[event_name]
+            }
+
+            for _, element in pairs(elements) do
+                if element.name then
+                    event_cache[event_name].names[element.name] = element.handler
+                elseif element.pattern then
+                    event_cache[event_name].patterns[element.pattern] = element.handler
+                end
+            end
+        end
+    end
+end
+
+
 -- ** TOP LEVEL **
 function event_handler.handle_gui_event(event)
     if event.element and string.find(event.element.name, "^fp_.+$") then
@@ -80,9 +83,8 @@ function event_handler.handle_gui_event(event)
         local event_handlers = event_cache[event_name]
 
         if event_handlers then  -- make sure the given event is even handled
-            local special_handler = special_handlers[event_name]
-            if special_handler then
-                special_handler(player, event.element, event_handlers)
+            if event_handlers.special_handler then
+                event_handlers.special_handler(player, event.element, event_handlers)
             else
                 standard_handler(player, event.element, event_handlers)
             end
