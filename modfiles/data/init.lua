@@ -19,6 +19,21 @@ require("data.calculation.interface")
 init = {}
 
 -- ** LOCAL UTIL **
+-- Writes the current user mod settings to their player_table
+local function reload_settings(player)
+    local settings = settings.get_player_settings(player)
+    -- Delete the whole table first in case a setting got removed
+    global.players[player.index].settings = {}
+    local settings_table = global.players[player.index].settings
+
+    settings_table.show_gui_button = settings["fp_display_gui_button"].value
+    settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
+    settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
+    settings_table.alt_action = settings["fp_alt_action"].value
+    settings_table.default_timescale = settings["fp_default_timescale"].value
+    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+end
+
 -- Reloads the user preferences, incorporating previous preferences if possible
 local function reload_preferences(player)
     local preferences = global.players[player.index].preferences
@@ -74,7 +89,7 @@ end
 -- The table attribute specified what table the data should be loaded from (either global or new)
 local function update_player_table(player)
     local function reload_data()
-        init.reload_settings(player)  -- reloads the settings of the player
+        reload_settings(player)  -- reloads the settings of the player
         reload_preferences(player) -- reloads and adjusts the player's preferences
         reset_ui_state(player)  -- Resets the player's UI state
     end
@@ -107,7 +122,6 @@ local function update_player_table(player)
 
     return player_table
 end
-
 
 -- Destroys all GUI's so they are loaded anew the next time they are shown
 local function reset_player_gui(player)
@@ -173,24 +187,7 @@ local function handle_configuration_change()
 end
 
 
--- ** TOP LEVEL **
--- Writes the current user mod settings to their player_table
-function init.reload_settings(player)
-    local settings = settings.get_player_settings(player)
-    -- Delete the whole table first in case a setting got removed
-    global.players[player.index].settings = {}
-    local settings_table = global.players[player.index].settings
-
-    settings_table.show_gui_button = settings["fp_display_gui_button"].value
-    settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
-    settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
-    settings_table.alt_action = settings["fp_alt_action"].value
-    settings_table.default_timescale = settings["fp_default_timescale"].value
-    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
-end
-
-
--- ** EVENTS **
+-- ** TOP LEVEL EVENTS **
 -- Sets up global data structure of the mod
 script.on_init(global_init)
 
@@ -201,6 +198,7 @@ script.on_configuration_changed(handle_configuration_change)
 script.on_load(loader.run)
 
 
+-- ** PLAYER DATA EVENTS **
 -- Fires when a player loads into a game for the first time
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
@@ -218,6 +216,28 @@ end)
 -- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
     global.players[event.player_index] = nil
+end)
+
+
+-- Fires when mods settings change to incorporate them
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+    if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
+        local player = game.get_player(event.player_index)
+        reload_settings(player)
+
+        if event.setting == "fp_display_gui_button" then
+            ui_util.mod_gui.toggle(player)
+
+        elseif event.setting == "fp_subfactory_items_per_row" or
+          event.setting == "fp_floor_recipes_at_once" or
+          event.setting == "fp_alt_action" then
+            main_dialog.refresh(player, true)
+
+        elseif event.setting == "fp_view_belts_or_lanes" then
+            ui_util.update_all_product_definitions(player)
+
+        end
+    end
 end)
 
 
