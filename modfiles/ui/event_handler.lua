@@ -3,8 +3,9 @@ event_handler = {}
 
 local event_identifier_name_map = {
     [defines.events.on_gui_click] = "on_gui_click",
+    [defines.events.on_gui_confirmed] = "on_gui_confirmed",
     [defines.events.on_gui_text_changed] = "on_gui_text_changed",
-    [defines.events.on_gui_confirmed] = "on_gui_confirmed"
+    [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed"
 }
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)

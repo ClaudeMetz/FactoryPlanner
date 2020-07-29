@@ -296,7 +296,20 @@ end
 
 -- ** SHARED **
 porter_dialog.events = {
-
+    on_gui_checked_state_changed = {
+        {
+            name = "fp_checkbox_porter_master",
+            handler = (function(player, element)
+                porter_dialog.set_all_checkboxes(player, element.state)
+            end)
+        },
+        {
+            pattern = "^fp_checkbox_porter_subfactory_[a-z]+_%d+$",
+            handler = (function(player, _)
+                porter_dialog.adjust_after_checkbox_click(player)
+            end)
+        }
+    }
 }
 
 function porter_dialog.set_all_checkboxes(player, checkbox_state)
