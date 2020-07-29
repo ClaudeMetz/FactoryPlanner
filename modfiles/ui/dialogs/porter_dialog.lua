@@ -192,12 +192,12 @@ end
 function import_dialog.close(flow_modal_dialog, _, _)
     -- The action can only be "submit" here, and at least one subfactory will be selected
     local player = game.get_player(flow_modal_dialog.player_index)
-    local player_factory = get_table(player).factory
+    local factory = get_context(player).factory
 
     local first_subfactory = nil
     for _, table_row in pairs(get_modal_data(player).table_rows) do
         if table_row.checkbox.state == true then
-            local imported_subfactory = Factory.add(player_factory, table_row.subfactory)
+            local imported_subfactory = Factory.add(factory, table_row.subfactory)
             calculation.update(player, imported_subfactory, false)
             first_subfactory = first_subfactory or imported_subfactory
         end
