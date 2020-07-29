@@ -154,7 +154,7 @@ function import_dialog.import_subfactories(player)
 
     local textfield_export_string = content_frame["flow_import_subfactories"]["fp_textfield_porter_string_import"]
     -- The imported subfactories will be temporarily contained in a factory object
-    local import_factory, error = prototyper.porter.get_subfactories(player, textfield_export_string.text)
+    local import_factory, error = data_util.porter.get_subfactories(player, textfield_export_string.text)
 
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", name="label_import_info", caption=caption}
@@ -238,7 +238,7 @@ function export_dialog.export_subfactories(player)
             table.insert(subfactories_to_export, table_row.subfactory)
         end
     end
-    local export_string = prototyper.porter.get_export_string(player, subfactories_to_export)
+    local export_string = data_util.porter.get_export_string(player, subfactories_to_export)
 
     local content_frame = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["frame_content"]
     local textfield_export_string = content_frame["flow_export_subfactories"]["fp_textfield_porter_string_export"]

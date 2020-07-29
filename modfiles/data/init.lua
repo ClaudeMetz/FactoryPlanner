@@ -1,3 +1,4 @@
+require("data.util")
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Fuel")
@@ -210,7 +211,7 @@ script.on_event(defines.events.on_player_created, function(event)
     ui_util.mod_gui.create(player)
 
     -- Add the subfactories that are handy for development
-    if devmode then ui_util.add_subfactories_by_string(player, dev_export_string, false) end
+    if devmode then data_util.add_subfactories_by_string(player, dev_export_string, false) end
 end)
 
 -- Fires when a player is irreversibly removed from a game
@@ -234,7 +235,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             main_dialog.refresh(player, true)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
-            ui_util.update_all_product_definitions(player)
+            data_util.update_all_product_definitions(player)
 
         end
     end
