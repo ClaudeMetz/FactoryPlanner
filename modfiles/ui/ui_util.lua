@@ -431,19 +431,26 @@ end
 -- **** Switch utility ****
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
-function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip)
+function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip, label_first)
     if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
 
     local flow = parent_flow.add{type="flow", name="flow_" .. name, direction="horizontal"}
     flow.style.vertical_align = "center"
+    local switch, label
 
-    local switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
-      left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
+    local function add_switch()
+        switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
+          left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
+    end
 
-    caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
-    local label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
-    label.style.font = "fp-font-15p"
-    label.style.left_margin = 8
+    local function add_label()
+        caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
+        label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
+        label.style.font = "fp-font-15p"
+    end
+
+    if label_first then add_label(); add_switch(); label.style.right_margin = 8
+    else add_switch(); add_label(); label.style.left_margin = 8 end
 
     return switch
 end

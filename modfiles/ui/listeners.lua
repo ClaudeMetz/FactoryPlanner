@@ -171,13 +171,13 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
     local player = game.get_player(event.player_index)
     local element_name = event.element.name
 
-    -- Changes the tutorial-mode preference
+    --[[ -- Changes the tutorial-mode preference
     if element_name == "fp_switch_tutorial_mode" then
         local new_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
-        tutorial_dialog.set_tutorial_mode(player, new_state)
+        tutorial_dialog.set_tutorial_mode(player, new_state) ]]
 
     -- Applies the disabled/hidden filter to the recipe dialog
-    elseif string.find(element_name, "^fp_switch_recipe_filter_[a-z]+$") then
+    --[[ else ]]if string.find(element_name, "^fp_switch_recipe_filter_[a-z]+$") then
         local filter_name = string.gsub(element_name, "fp_switch_recipe_filter_", "")
         recipe_dialog.handle_filter_switch_flick(player, filter_name, event.element.switch_state)
 
@@ -185,6 +185,9 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
     elseif string.find(element_name, "^fp_switch_utility_scope_[a-z]+$") then
         local scope_type = string.gsub(element_name, "fp_switch_utility_scope_", "")
         utility_dialog.handle_scope_change(player, scope_type, event.element.switch_state)
+
+    else
+        event_handler.handle_gui_event(event)
 
     end
 end)
@@ -296,9 +299,9 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_titlebar_tutorial" then
             modal_dialog.enter(player, {type="tutorial"})
 
-        -- Opens the tutorial dialog
+        --[[ -- Opens the tutorial dialog
         elseif element_name == "fp_button_tutorial_add_example" then
-            tutorial_dialog.add_example_subfactory(player)
+            tutorial_dialog.add_example_subfactory(player) ]]
 
         -- Opens the preferences dialog
         elseif element_name == "fp_button_titlebar_preferences" then

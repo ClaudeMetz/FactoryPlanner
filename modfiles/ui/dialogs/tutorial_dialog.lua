@@ -1,81 +1,106 @@
 tutorial_dialog = {}
 
--- ** TOP LEVEL **
--- Handles populating the tutorial dialog
-function tutorial_dialog.open(player, flow_modal_dialog, _)
-    flow_modal_dialog.parent.caption = {"fp.tutorial"}
-    flow_modal_dialog.style.maximal_width = 700
-    flow_modal_dialog.style.left_padding = 8
-    flow_modal_dialog.style.right_padding = 8
-    flow_modal_dialog.style.bottom_padding = 12
+-- ** LOCAL UTIL **
+local tab_definitions = {"interface", "usage", "pro_tips"}
 
-    local table_tutorial = flow_modal_dialog.add{type="table", name="table_tutorial", column_count=1}
-    table_tutorial.style.bottom_margin = 8
+function tab_definitions.interface(player, tab, tab_pane)
+    tab.caption = {"fp.interface"}
 
+    local function add_base_frame(name)
+        local frame = tab_pane.add{type="frame", style="bordered_frame", direction="vertical"}
+        frame.style.horizontally_stretchable = true
+        local title = frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}}
+        title.style.font = "heading-2"
+        local text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
+        text.style.single_line = false
+        return frame
+    end
 
-    -- Interactive
-    local interactive_title = table_tutorial.add{type="label", name="label_interactive_title",
-      caption={"fp.interactive"}}
-    interactive_title.style.font = "fp-font-bold-20p"
-    interactive_title.style.top_margin = 4
+    -- Interactive tutorial
+    local frame_interactive = add_base_frame("interactive")
+    local flow_interactive = frame_interactive.add{type="flow", direction="horizontal"}
+    flow_interactive.style.margin = {12, 20, 8, 20}
 
-    local interactive_table = table_tutorial.add{type="table", name="table_interactive", column_count=1}
-    interactive_table.style.vertical_spacing = 14
-    interactive_table.style.top_margin = 8
-    interactive_table.style.left_margin = 10
-    interactive_table.style.bottom_margin = 16
-
-    -- Example subfactory
-    local table_example_subfactory = interactive_table.add{type="table", name="table_example_subfactory", column_count=2}
     local other_mods_active = table_size(game.active_mods) > 2
+    local tutorial_mode = data_util.get("preferences", player).tutorial_mode
 
-    local button_example_subfactory = table_example_subfactory.add{type="button", name="fp_button_tutorial_add_example",
-      caption={"fp.create_example"}, tooltip={"fp.example_subfactory"}, mouse_button_filter={"left"}}
-    button_example_subfactory.enabled = not other_mods_active
+    flow_interactive.add{type="flow", style="fp_flow_stretchy"}
+    local button_tooltip = (other_mods_active) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
+      tooltip=button_tooltip, enabled=(not other_mods_active), mouse_button_filter={"left"}}
+    flow_interactive.add{type="flow", style="fp_flow_stretchy"}
+    ui_util.switch.add_on_off(flow_interactive, "tutorial_mode", tutorial_mode, {"fp.tutorial_mode"}, nil, true)
+    flow_interactive.add{type="flow", style="fp_flow_stretchy"}
 
-    local label_example_subfactory = table_example_subfactory.add{type="label", name="label_example_subfactory",
-      caption={"fp.example_subfactory_info"}}
-    ui_util.set_label_color(label_example_subfactory, "yellow")
-    label_example_subfactory.style.left_margin = 10
-    label_example_subfactory.visible = other_mods_active
-
-    -- Tutorial Mode
-    ui_util.switch.add_on_off(interactive_table, "tutorial_mode", get_preferences(player).tutorial_mode,
-      {"fp.tutorial_mode"}, {"fp.tutorial_mode_tt"})
-
-
-    -- Interface
-    local interface_title = table_tutorial.add{type="label", name="label_interface_title", caption={"fp.interface"}}
-    interface_title.style.font = "fp-font-bold-20p"
-    local label_interface = table_tutorial.add{type="label", name="label_tutorial_interface", caption={"fp.interface_text"}}
-    label_interface.style.single_line = false
-
-    local alt_action_string = {"fp.alt_action_" .. get_settings(player).alt_action}
-    local label_controls = table_tutorial.add{type="label", name="label_tutorial_controls",
-      caption={"fp.interface_controls", alt_action_string}}
+    -- Interface tutorial
+    local frame_interface = add_base_frame("interface")
+    local alt_action_string = {"fp.alt_action_" .. data_util.get("settings", player).alt_action}
+    local label_controls = frame_interface.add{type="label", caption={"fp.interface_controls", alt_action_string}}
     label_controls.style.single_line = false
-    label_controls.style.margin = {6, 0, 16, 6}
+    label_controls.style.margin = {6, 0, 0, 6}
+end
 
+function tab_definitions.usage(_, tab, tab_pane)
+    tab.caption = {"fp.usage"}
 
-    -- Usage
-    local usage_title = table_tutorial.add{type="label", name="label_usage_title", caption={"fp.usage"}}
-    usage_title.style.font = "fp-font-bold-20p"
-    local label_usage = table_tutorial.add{type="label", name="label_tutorial_usage", caption={"fp.usage_text"}}
+    local bordered_frame = tab_pane.add{type="frame", style="bordered_frame"}
+    local label_usage = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
     label_usage.style.single_line = false
-    label_usage.style.bottom_margin = 20
+    label_usage.style.padding = 2
+end
 
-
-    -- Pro Tips
-    local protips_title = table_tutorial.add{type="label", name="label_protips_title", caption={"fp.protips"}}
-    protips_title.style.font = "fp-font-bold-20p"
+function tab_definitions.pro_tips(_, tab, tab_pane)
+    tab.caption = {"fp.pro_tips"}
 
     local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
       "recursive_subfloors", "views", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
     for _, name in ipairs(protip_names) do
-        local label = table_tutorial.add{type="label", name="label_tutorial_" .. name,
-          caption={"", "- ", {"fp.pro_" .. name}}}
+        local bordered_frame = tab_pane.add{type="frame", style="bordered_frame"}
+        local label = bordered_frame.add{type="label", caption={"fp.pro_" .. name}}
         label.style.single_line = false
-        label.style.top_margin = 8
+    end
+end
+
+
+-- ** TOP LEVEL **
+tutorial_dialog.dialog_settings = {
+    caption = {"fp.tutorial"},
+    disable_scroll_pane = true
+}
+
+tutorial_dialog.events = {
+    on_gui_click = {
+        {
+            name = "fp_button_tutorial_add_example",
+            handler = (function(player, _)
+                tutorial_dialog.add_example_subfactory(player)
+            end)
+        }
+    },
+    on_gui_switch_state_changed = {
+        {
+            name = "fp_switch_tutorial_mode",
+            handler = (function(player, element)
+                local new_state = ui_util.switch.convert_to_boolean(element.switch_state)
+                tutorial_dialog.set_tutorial_mode(player, new_state)
+            end)
+        }
+    }
+}
+
+function tutorial_dialog.open(player, _, modal_data)
+    local frame_tabs = modal_data.ui_elements.flow_modal_dialog.add{type="frame", style="inside_deep_frame_for_tabs"}
+
+    local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
+    tabbed_pane.style.height = 700
+
+    for _, tab_name in ipairs(tab_definitions) do
+        local tab = tabbed_pane.add{type="tab"}
+        local tab_pane = tabbed_pane.add{type="scroll-pane", style="fp_scroll_pane_inside_tab"}
+        tab_pane.style.width = 550
+
+        tab_definitions[tab_name](player, tab, tab_pane)
+        tabbed_pane.add_tab(tab, tab_pane)
     end
 end
 
@@ -88,6 +113,6 @@ end
 
 -- Handles a change to the tutorial mode preference
 function tutorial_dialog.set_tutorial_mode(player, new_state)
-    get_preferences(player).tutorial_mode = new_state
+    data_util.get("preferences", player).tutorial_mode = new_state
     main_dialog.refresh(player)
 end

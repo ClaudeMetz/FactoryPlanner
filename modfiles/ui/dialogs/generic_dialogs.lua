@@ -50,7 +50,7 @@ function option_creators.numeric(table, field)
 end
 
 function option_creators.on_off_switch(table, field)
-    ui_util.switch.add_on_off(table, field.name, field.value, field.caption, field.tooltip)
+    ui_util.switch.add_on_off(table, field.name, field.value, field.caption, field.tooltip, false)
 end
 
 

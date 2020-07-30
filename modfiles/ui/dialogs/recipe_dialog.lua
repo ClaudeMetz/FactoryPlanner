@@ -107,9 +107,9 @@ local function create_recipe_dialog_structure(player, flow_modal_dialog)
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
     ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_disabled", modal_data.filters.disabled,
-      {"fp.unresearched_recipes"}, nil)
+      {"fp.unresearched_recipes"}, nil, false)
     ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_hidden", modal_data.filters.hidden,
-      {"fp.hidden_recipes"}, nil)
+      {"fp.hidden_recipes"}, nil, false)
 
     -- Warning label
     local label_warning = flow_modal_dialog.add{type="label", name="label_warning_message",
