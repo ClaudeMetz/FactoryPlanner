@@ -248,6 +248,7 @@ end
 
 
 -- **** Rate Limiting ****
+-- TODO remove when all the GUIs are moved over
 ui_util.rate_limiting_events = {
     ["fp_floor_up"] = {timeout = 10},
     ["fp_confirm_dialog"] = {timeout = 20},
