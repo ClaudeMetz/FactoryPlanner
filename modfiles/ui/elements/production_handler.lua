@@ -27,7 +27,7 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
         else
             local direction_string = (direction == "negative") and {"fp.up"} or {"fp.down"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lrecipe"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, true)
+            titlebar.enqueue_message(player, message, "error", 1, true)
         end
 
     else
@@ -227,7 +227,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                 else
                     local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
                     local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, change_direction}
-                    ui_util.message.enqueue(player, message, "error", 1)
+                    titlebar.enqueue_message(player, message, "error", 1)
                 end
             end
 
@@ -237,7 +237,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
                     local new_amount = math.min(module.amount + 1, module.amount + limit)
                     if new_amount == module.amount then
                         local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
-                        ui_util.message.enqueue(player, message, "error", 1)
+                        titlebar.enqueue_message(player, message, "error", 1)
                     else
                         Module.change_amount(module, new_amount)
                     end
@@ -300,7 +300,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                 else
                     local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
                     local message = {"fp.error_object_cant_be_up_downgraded", {"fp.module"}, change_direction}
-                    ui_util.message.enqueue(player, message, "error", 1)
+                    titlebar.enqueue_message(player, message, "error", 1)
                 end
             end
 
@@ -310,7 +310,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                     local new_amount = math.min(module.amount + 1, line.beacon.proto.module_limit)
                     if new_amount == module.amount then
                         local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
-                        ui_util.message.enqueue(player, message, "error", 1)
+                        titlebar.enqueue_message(player, message, "error", 1)
                     else
                         local new_module = Module.init_by_proto(module.proto, tonumber(new_amount))
                         Beacon.set_module(line.beacon, new_module)
@@ -345,7 +345,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
                 else
                     local change_direction = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
                     local message = {"fp.error_object_cant_be_up_downgraded", {"fp.beacon"}, change_direction}
-                    ui_util.message.enqueue(player, message, "error", 1)
+                    titlebar.enqueue_message(player, message, "error", 1)
                 end
             end
 
@@ -407,7 +407,7 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
             local lower_class = string.lower(class)
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.l" .. lower_class}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, true)
+            titlebar.enqueue_message(player, message, "error", 1, true)
         end
 
     elseif click == "left" and item.proto.type ~= "entity" then
@@ -416,7 +416,7 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
 
         elseif item.class == "Product" then -- Set the priority product
             if line.Product.count < 2 then
-                ui_util.message.enqueue(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
+                titlebar.enqueue_message(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
             else
                 -- Remove the priority_product if the already selected one is clicked
                 local priority_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
@@ -501,7 +501,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
             else
                 local type = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.lfuel"}, type}
-                ui_util.message.enqueue(player, message, "error", 1, true)
+                titlebar.enqueue_message(player, message, "error", 1, true)
             end
         end
 

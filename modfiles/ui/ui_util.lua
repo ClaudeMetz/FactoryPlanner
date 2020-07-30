@@ -4,8 +4,7 @@ ui_util = {
     mod_gui = {},
     context = {},
     attributes = {},
-    switch = {},
-    message = {}
+    switch = {}
 }
 
 
@@ -317,7 +316,7 @@ end
 -- Checks whether the archive is open; posts an error and returns true if it is
 function ui_util.check_archive_status(player)
     if data_util.get("flags", player).archive_open then
-        ui_util.message.enqueue(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
+        titlebar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
         return true
     else
         return false
@@ -467,59 +466,4 @@ end
 
 function ui_util.switch.convert_to_state(boolean)
     return boolean and "left" or "right"
-end
-
-
--- **** Messages ****
--- Enqueues the given message into the message queue
--- Possible types are error, warning, hint
-function ui_util.message.enqueue(player, message, type, lifetime, instant_refresh)
-    table.insert(get_ui_state(player).message_queue, {text=message, type=type, lifetime=lifetime})
-    if instant_refresh then ui_util.message.refresh(player) end
-end
-
--- Refreshes the current message, taking into account priotities and lifetimes
--- The messages are displayed in enqueued order, displaying higher priorities first
--- The lifetime is decreased for every message on every refresh
--- (The algorithm(s) could be more efficient, but it doesn't matter for the small dataset)
-function ui_util.message.refresh(player)
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if frame_main_dialog == nil then return end
-    local flow_titlebar = frame_main_dialog["flow_titlebar"]
-    if flow_titlebar == nil then return end
-
-    -- The message types are ordered by priority
-    local types = {
-        [1] = {name = "error", color = "red"},
-        [2] = {name = "warning", color = "yellow"},
-        [3] = {name = "hint", color = "green"}
-    }
-
-    local ui_state = data_util.get("ui_state", player)
-
-    -- Go over the all types and messages, trying to find one that should be shown
-    local new_message, new_color = "", nil
-    for _, type in ipairs(types) do
-        -- All messages will have lifetime > 0 at this point
-        for _, message in pairs(ui_state.message_queue) do
-            -- Find first message of this type, then break
-            if message.type == type.name then
-                new_message = message.text
-                new_color = type.color
-                break
-            end
-        end
-        -- If a message is found, break because no messages of lower ranked type should be considered
-        if new_message ~= "" then break end
-    end
-
-    -- Decrease the lifetime of every queued message
-    for index, message in pairs(ui_state.message_queue) do
-        message.lifetime = message.lifetime - 1
-        if message.lifetime <= 0 then ui_state.message_queue[index] = nil end
-    end
-
-    local label_hint = flow_titlebar["label_titlebar_hint"]
-    label_hint.caption = new_message
-    ui_util.set_label_color(label_hint, new_color)
 end
