@@ -3,6 +3,8 @@ require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
 
+-- TODO move the rest over to event_handler when all GUIs are redone
+
 -- ** KEYBOARD SHORTCUTS **
 script.on_event("fp_toggle_main_dialog", function(event)
     local player = game.get_player(event.player_index)

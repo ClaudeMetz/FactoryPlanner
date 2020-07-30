@@ -312,6 +312,7 @@ porter_dialog.events = {
     }
 }
 
+-- Sets the slave checkboxes after the master one has been clicked
 function porter_dialog.set_all_checkboxes(player, checkbox_state)
     local ui_state = data_util.get("ui_state", player)
     local ui_elements = ui_state.modal_data.ui_elements
