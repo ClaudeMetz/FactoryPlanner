@@ -14,14 +14,14 @@ local name_interface_map = {fnei="fnei", wiiruf="wiiuf", recipebook="RecipeBook"
 -- ** LOCAL UTIL **
 local function incompatible_version_error(player, remote_action)
     local message = {"fp.error_remote_version_incompatible", {"fp." .. remote_action}}
-    ui_util.message.enqueue(player, message, "error", 1, true)
+    titlebar.enqueue_message(player, message, "error", 1, true)
 end
 
 -- Makes sure the remote call actually opened another window, show an error message otherwise
 local function check_success(player, remote_action, object_type)
     if main_dialog.is_in_focus(player) then
         local message = {"fp.error_remote_lookup_failed", {"fp.pl_" .. object_type, 1}, {"fp." .. remote_action}}
-        ui_util.message.enqueue(player, message, "error", 1, true)
+        titlebar.enqueue_message(player, message, "error", 1, true)
     end
 end
 

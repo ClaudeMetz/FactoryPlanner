@@ -212,7 +212,7 @@ function modal_dialog.exit(player, button_action, data)
     ui_state.context.line = nil
     flow_modal_dialog.parent.destroy()
 
-    ui_util.message.refresh(player)
+    titlebar.refresh_message(player)
     toggle_modal_dialog(player, nil)
 end
 

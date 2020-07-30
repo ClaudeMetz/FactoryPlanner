@@ -130,7 +130,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, true)
+            titlebar.enqueue_message(player, message, "error", 1, true)
         end
 
     -- Change selected subfactory

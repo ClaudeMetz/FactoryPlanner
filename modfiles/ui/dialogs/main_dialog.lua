@@ -77,7 +77,7 @@ function main_dialog.refresh(player, full_refresh)
         subfactory_bar.refresh(player, true)
     end
 
-    ui_util.message.refresh(player)
+    titlebar.refresh_message(player)
     return frame_main_dialog
 end
 

@@ -139,7 +139,7 @@ function Line.change_machine(self, player, machine_proto, direction)
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
-                ui_util.message.enqueue(player, message, "error", 1, false)
+                titlebar.enqueue_message(player, message, "error", 1, false)
                 return false
             end
         else  -- direction == "negative"
@@ -148,7 +148,7 @@ function Line.change_machine(self, player, machine_proto, direction)
                 return Line.change_machine(self, player, new_machine, nil)
             else
                 local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
-                ui_util.message.enqueue(player, message, "error", 1, false)
+                titlebar.enqueue_message(player, message, "error", 1, false)
                 return false
             end
         end

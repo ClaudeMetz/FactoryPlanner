@@ -189,7 +189,7 @@ function subfactory_pane.handle_ingredient_element_click(player, ingredient_id, 
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lingredient"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, true)
+            titlebar.enqueue_message(player, message, "error", 1, true)
         end
     end
 end
@@ -212,7 +212,7 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lproduct"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, true)
+            titlebar.enqueue_message(player, message, "error", 1, true)
         end
 
     else
@@ -220,7 +220,7 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
             if context.floor.level == 1 then
                 modal_dialog.enter(player, {type="recipe", modal_data={product=product, production_type="produce"}})
             else
-                ui_util.message.enqueue(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
+                titlebar.enqueue_message(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
             end
         elseif click == "right" then
             if action == "edit" then
@@ -257,7 +257,7 @@ function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, cl
         else
             local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.lbyproduct"}, direction_string}
-            ui_util.message.enqueue(player, message, "error", 1, true)
+            titlebar.enqueue_message(player, message, "error", 1, true)
         end
 
     --[[ elseif click == "left" then
@@ -265,7 +265,7 @@ function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, cl
         if floor.level == 1 then
             modal_dialog.enter(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})
         else
-            ui_util.message.enqueue(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
+            titlebar.enqueue_message(player, {"fp.error_byproduct_wrong_floor"}, "error", 1, true)
         end ]]
     end
 end
