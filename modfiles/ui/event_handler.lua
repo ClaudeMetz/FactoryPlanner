@@ -5,7 +5,8 @@ local event_identifier_name_map = {
     [defines.events.on_gui_click] = "on_gui_click",
     [defines.events.on_gui_confirmed] = "on_gui_confirmed",
     [defines.events.on_gui_text_changed] = "on_gui_text_changed",
-    [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed"
+    [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed",
+    [defines.events.on_gui_switch_state_changed] = "on_gui_switch_state_changed"
 }
 
 local event_standard_timeouts = {
@@ -14,7 +15,7 @@ local event_standard_timeouts = {
 }
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {porter_dialog, import_dialog, export_dialog}
+local objects_that_need_handling = {porter_dialog, import_dialog, export_dialog, tutorial_dialog}
 
 local event_cache = {}
 local special_handlers = {}
