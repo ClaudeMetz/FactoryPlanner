@@ -20,6 +20,34 @@ local function set_relevant_submit_button(ui_elements, dialog_type, enabled)
 end
 
 
+-- Sets the slave checkboxes after the master one has been clicked
+local function set_all_checkboxes(player, checkbox_state)
+    local ui_state = data_util.get("ui_state", player)
+    local ui_elements = ui_state.modal_data.ui_elements
+
+    for _, table_row in pairs(ui_elements.table_rows) do
+        if table_row.checkbox.enabled then table_row.checkbox.state = checkbox_state end
+    end
+
+    set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, checkbox_state)
+end
+
+-- Sets the master checkbox to the appropriate state after a slave one is changed
+local function adjust_after_checkbox_click(player)
+    local ui_state = data_util.get("ui_state", player)
+    local ui_elements = ui_state.modal_data.ui_elements
+
+    local checked_element_count, unchecked_element_count = 0, 0
+    for _, table_row in pairs(ui_elements.table_rows) do
+        if table_row.checkbox.state == true then checked_element_count = checked_element_count + 1
+        elseif table_row.checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
+    end
+
+    ui_elements.master_checkbox.state = (unchecked_element_count == 0)
+    set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, (checked_element_count > 0))
+end
+
+
 -- Adds the barebones dialog structure that both dialogs need
 local function initialize_dialog(ui_elements, dialog_type)
     local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
@@ -127,52 +155,8 @@ local function add_to_subfactories_table(ui_elements, subfactory, location_name,
 end
 
 
--- ** IMPORT DIALOG **
-import_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
-    disable_submit_button = true,
-    disable_scroll_pane = true
-} end)
-
-import_dialog.events = {
-    on_gui_click = {
-        {
-            name = "fp_button_porter_subfactory_import",
-            handler = (function(player, _)
-                import_dialog.import_subfactories(player)
-            end)
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "fp_textfield_porter_string_import",
-            handler = (function(player, element)
-                local button_import = data_util.get("ui_elements", player).import_button
-                set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
-            end)
-        }
-    },
-    on_gui_confirmed = {
-        {
-            name = "fp_textfield_porter_string_import",
-            handler = (function(player, element)
-                if element.text ~= "" then import_dialog.import_subfactories(player) end
-            end)
-        }
-    }
-}
-
-
-function import_dialog.open(_, _, modal_data)
-    local ui_elements = modal_data.ui_elements
-    initialize_dialog(ui_elements, "import")
-
-    add_textfield_and_button(ui_elements, "import", false, false)
-    ui_util.select_all(ui_elements.import_textfield)
-end
-
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
-function import_dialog.import_subfactories(player)
+local function import_subfactories(player)
     local modal_data = data_util.get("modal_data", player)
     local ui_elements = modal_data.ui_elements
     local content_frame = ui_elements.content_frame
@@ -209,10 +193,71 @@ function import_dialog.import_subfactories(player)
         end
 
         ui_elements.master_checkbox.state = true
-        porter_dialog.set_all_checkboxes(player, true)
+        set_all_checkboxes(player, true)
     end
 
     content_frame.parent.parent.force_auto_center()
+end
+
+-- Exports the currently selected subfactories and puts the resulting string into the textbox
+local function export_subfactories(player)
+    local ui_elements = data_util.get("ui_elements", player)
+    local subfactories_to_export = {}
+
+    for _, table_row in pairs(ui_elements.table_rows) do
+        if table_row.checkbox.state == true then
+            table.insert(subfactories_to_export, table_row.subfactory)
+        end
+    end
+    local export_string = data_util.porter.get_export_string(player, subfactories_to_export)
+
+    ui_elements.export_textfield.text = export_string
+    ui_util.select_all(ui_elements.export_textfield)
+end
+
+
+-- ** IMPORT DIALOG **
+import_dialog.dialog_settings = (function(_) return {
+    caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
+    disable_submit_button = true,
+    disable_scroll_pane = true
+} end)
+
+import_dialog.events = {
+    on_gui_click = {
+        {
+            name = "fp_button_porter_subfactory_import",
+            handler = (function(player, _)
+                import_subfactories(player)
+            end)
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_porter_string_import",
+            handler = (function(player, element)
+                local button_import = data_util.get("ui_elements", player).import_button
+                set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "fp_textfield_porter_string_import",
+            handler = (function(player, element)
+                if element.text ~= "" then import_subfactories(player) end
+            end)
+        }
+    }
+}
+
+
+function import_dialog.open(_, _, modal_data)
+    local ui_elements = modal_data.ui_elements
+    initialize_dialog(ui_elements, "import")
+
+    add_textfield_and_button(ui_elements, "import", false, false)
+    ui_util.select_all(ui_elements.import_textfield)
 end
 
 -- Imports the selected subfactories into the player's main factory
@@ -246,7 +291,7 @@ export_dialog.events = {
         {
             name = "fp_button_porter_subfactory_export",
             handler = (function(player, _)
-                export_dialog.export_subfactories(player)
+                export_subfactories(player)
             end)
         }
     }
@@ -272,22 +317,6 @@ function export_dialog.open(player, _, modal_data)
     ui_elements.export_textfield.parent.style.top_margin = 10
 end
 
--- Exports the currently selected subfactories and puts the resulting string into the textbox
-function export_dialog.export_subfactories(player)
-    local ui_elements = data_util.get("ui_elements", player)
-    local subfactories_to_export = {}
-
-    for _, table_row in pairs(ui_elements.table_rows) do
-        if table_row.checkbox.state == true then
-            table.insert(subfactories_to_export, table_row.subfactory)
-        end
-    end
-    local export_string = data_util.porter.get_export_string(player, subfactories_to_export)
-
-    ui_elements.export_textfield.text = export_string
-    ui_util.select_all(ui_elements.export_textfield)
-end
-
 
 -- ** SHARED **
 porter_dialog.events = {
@@ -295,41 +324,14 @@ porter_dialog.events = {
         {
             name = "fp_checkbox_porter_master",
             handler = (function(player, element)
-                porter_dialog.set_all_checkboxes(player, element.state)
+                set_all_checkboxes(player, element.state)
             end)
         },
         {
             pattern = "^fp_checkbox_porter_subfactory_[a-z]+_%d+$",
             handler = (function(player, _)
-                porter_dialog.adjust_after_checkbox_click(player)
+                adjust_after_checkbox_click(player)
             end)
         }
     }
 }
-
--- Sets the slave checkboxes after the master one has been clicked
-function porter_dialog.set_all_checkboxes(player, checkbox_state)
-    local ui_state = data_util.get("ui_state", player)
-    local ui_elements = ui_state.modal_data.ui_elements
-
-    for _, table_row in pairs(ui_elements.table_rows) do
-        if table_row.checkbox.enabled then table_row.checkbox.state = checkbox_state end
-    end
-
-    set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, checkbox_state)
-end
-
--- Sets the master checkbox to the appropriate state after a slave one is changed
-function porter_dialog.adjust_after_checkbox_click(player)
-    local ui_state = data_util.get("ui_state", player)
-    local ui_elements = ui_state.modal_data.ui_elements
-
-    local checked_element_count, unchecked_element_count = 0, 0
-    for _, table_row in pairs(ui_elements.table_rows) do
-        if table_row.checkbox.state == true then checked_element_count = checked_element_count + 1
-        elseif table_row.checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
-    end
-
-    ui_elements.master_checkbox.state = (unchecked_element_count == 0)
-    set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, (checked_element_count > 0))
-end
