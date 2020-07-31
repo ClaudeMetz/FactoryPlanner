@@ -21,13 +21,15 @@ function tab_definitions.interface(player, tab, tab_pane)
     local flow_interactive = frame_interactive.add{type="flow", direction="horizontal"}
     flow_interactive.style.margin = {12, 20, 8, 20}
 
-    local other_mods_active = table_size(game.active_mods) > 2
+    local active_mods = game.active_mods
+    local no_other_mods_active = (table_size(active_mods) == 3 and active_mods["base"] ~= nil
+      and active_mods["factoryplanner"] ~= nil and active_mods["flib"] ~= nil)
     local tutorial_mode = data_util.get("preferences", player).tutorial_mode
 
     flow_interactive.add{type="flow", style="fp_flow_stretchy"}
-    local button_tooltip = (other_mods_active) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    local button_tooltip = (not no_other_mods_active) and {"fp.warning_message", {"fp.create_example_error"}} or nil
     flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
-      tooltip=button_tooltip, enabled=(not other_mods_active), mouse_button_filter={"left"}}
+      tooltip=button_tooltip, enabled=no_other_mods_active, mouse_button_filter={"left"}}
     flow_interactive.add{type="flow", style="fp_flow_stretchy"}
     ui_util.switch.add_on_off(flow_interactive, "tutorial_mode", tutorial_mode, {"fp.tutorial_mode"}, nil, true)
     flow_interactive.add{type="flow", style="fp_flow_stretchy"}
