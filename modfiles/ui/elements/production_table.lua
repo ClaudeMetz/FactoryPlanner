@@ -33,7 +33,7 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
         local raw_amount, appendage = nil, ""
         -- Don't show a number for subfloors in the items/s/machine view, as it's nonsensical
         if not (line.subfloor ~= nil and view_name == "items_per_second_per_machine") then
-            raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+            raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player, view_name,
               item.proto.type, item.amount, line.machine)
         end
 
@@ -380,41 +380,4 @@ function production_table.refresh_machine_table(player, line, table_production)
         button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
         button.style.padding = 1
     end
-end
-
-
--- Sets up the given button for a machine choice situation
-function production_table.setup_machine_choice_button(player, button, machine_proto,
-  current_machine_proto_id, button_size)
-    local ui_state = get_ui_state(player)
-    local subfactory = ui_state.context.subfactory
-    local line = ui_state.context.line
-    local selected = (machine_proto.id == current_machine_proto_id)
-
-    local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto, line.recipe.proto,
-      Line.get_total_effects(line, player))
-    local machine_count = calculation.util.determine_machine_count(crafts_per_tick, line.uncapped_production_ratio,
-      subfactory.timescale, machine_proto.category)
-    machine_count = ui_util.format_number(machine_count, 4)
-    button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
-
-    -- Table to easily determine the appropriate style dependent on button_size and select-state
-    local styles = {
-        [32] = {
-            [true] = "fp_button_icon_medium_green",
-            [false] = "fp_button_icon_medium_recipe"
-        },
-        [36] = {
-            [true] = "fp_button_icon_large_green",
-            [false] = "fp_button_icon_large_recipe"
-        }
-    }
-    button.style = styles[button_size][selected]
-    button.style.padding = 1
-    button.sprite = machine_proto.sprite
-
-    local s = (selected) and {"", " (", {"fp.selected"}, ")"} or ""
-    local m = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
-    button.tooltip = {"", machine_proto.localised_name, s, "\n", machine_count,
-      " ", m, "\n", ui_util.attributes.machine(machine_proto)}
 end

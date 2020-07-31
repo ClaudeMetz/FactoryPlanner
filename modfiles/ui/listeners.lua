@@ -394,10 +394,10 @@ script.on_event(defines.events.on_gui_click, function(event)
             local recipe_id = tonumber(string.match(element_name, "%d+"))
             recipe_dialog.attempt_adding_line(player, recipe_id)
 
-        -- Reacts to a chooser element button being pressed
+        --[[ -- Reacts to a chooser element button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_chooser_element_[0-9_]+$") then
             local element_id = string.gsub(element_name, "fp_sprite%-button_chooser_element_", "")
-            chooser_dialog.handle_element_click(player, element_id)
+            chooser_dialog.handle_element_click(player, element_id) ]]
 
         -- Reacts to a floor-changing button being pressed (up/top)
         elseif string.find(element_name, "^fp_button_floor_[a-z]+$") then

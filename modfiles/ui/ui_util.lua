@@ -94,8 +94,8 @@ function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
 end
 
 -- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
-function ui_util.determine_item_amount_and_appendage(player_table, view_name, item_type, amount, machine)
-    local timescale = player_table.ui_state.context.subfactory.timescale
+function ui_util.determine_item_amount_and_appendage(player, view_name, item_type, amount, machine)
+    local timescale = get_context(player).subfactory.timescale
     local number, appendage = nil, ""
 
     if view_name == "items_per_timescale" then
@@ -106,9 +106,8 @@ function ui_util.determine_item_amount_and_appendage(player_table, view_name, it
         appendage = {"", type_text, "/", ui_util.format_timescale(timescale, true, false)}
 
     elseif view_name == "belts_or_lanes" and item_type ~= "fluid" then
-        local player = game.get_player(player_table.index)
         local throughput = prototyper.defaults.get(player, "belts").throughput
-        local show_belts = (player_table.settings.belts_or_lanes == "belts")
+        local show_belts = (get_settings(player).belts_or_lanes == "belts")
         local divisor = (show_belts) and throughput or (throughput / 2)
         number = amount / divisor / timescale
 

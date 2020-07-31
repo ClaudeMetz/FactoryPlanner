@@ -18,7 +18,7 @@ local function _refresh_item_table(player, item_table, class, items, display_mod
     for _, item in ipairs(items) do
         local required_amount = Item.required_amount(item)
         local item_amount = (display_mode == "standard" and class == "Product") and required_amount or item.amount
-        local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+        local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player, view_name,
           item.proto.type, item_amount, nil)
 
         if display_amount == nil or display_amount > margin_of_error
@@ -43,7 +43,7 @@ local function _refresh_item_table(player, item_table, class, items, display_mod
                     end
 
                     -- Add the secondary amount to Products only
-                    local secondary_amount = ui_util.determine_item_amount_and_appendage(player_table, view_name,
+                    local secondary_amount = ui_util.determine_item_amount_and_appendage(player, view_name,
                       item.proto.type, item.amount, nil)  -- appendage is not needed here, thus ignored
                     secondary_number = (secondary_amount) and ui_util.format_number(secondary_amount, 4) .. " / " or ""
                 end
