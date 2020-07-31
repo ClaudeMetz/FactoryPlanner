@@ -166,8 +166,10 @@ function modal_dialog.enter(player, dialog_settings)
     local conditions_function = dialog_object.condition_instructions
     local condition_instructions = (conditions_function ~= nil) and conditions_function(ui_state.modal_data) or nil
 
-    local additional_settings = dialog_object.dialog_settings
-    if additional_settings then dialog_settings = util.merge{dialog_settings, additional_settings} end
+    if dialog_object.dialog_settings then
+        local additional_settings = dialog_object.dialog_settings(ui_state.modal_data)
+        dialog_settings = util.merge{dialog_settings, additional_settings}
+    end
 
     local flow_modal_dialog = create_base_modal_dialog(player, condition_instructions,
       dialog_settings, ui_state.modal_data)
