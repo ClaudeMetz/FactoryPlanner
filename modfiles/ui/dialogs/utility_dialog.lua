@@ -63,7 +63,7 @@ function utility_structures_refresh.components(flow_modal_dialog)
                 end
 
                 local singular_name = name:sub(1, -2)
-                local needed_amount_tt = {("fp.pl_" .. singular_name), component.amount}
+                local needed_amount_tt = {("fp.utility_pl_" .. singular_name), component.amount}
                 local tooltip_amounts = {"fp.component_amounts_tt", needed_amount_tt, amount_in_inventory}
                 local tooltip = {"", component.proto.localised_name, "\n", tooltip_amounts}
 

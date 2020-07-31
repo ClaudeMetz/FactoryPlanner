@@ -3,38 +3,60 @@ chooser_dialog = {}
 options_dialog = {}
 
 -- ** CHOOSER **
--- ** TOP LEVEL **
--- Handles populating the chooser dialog
-function chooser_dialog.open(player, flow_modal_dialog, modal_data)
-    flow_modal_dialog.parent.caption = {"", {"fp.choose"}, " ", modal_data.title}
-    flow_modal_dialog.add{type="label", name="label_chooser_text", caption=modal_data.text}
+local function add_chooser_button(ui_elements, definition)
+    local element_name = "fp_sprite-button_chooser_element_" .. definition.element_id
+    local style = (definition.selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
-    local table_chooser = flow_modal_dialog.add{type="table", name="table_chooser_elements", column_count=8}
-    table_chooser.style.padding = {6, 4, 10, 6}
+    local first_line = (definition.selected) and {"fp.annotated_title", definition.localised_name, {"fp.selected"}}
+      or definition.localised_name
+    local tooltip = {"", first_line, "\n", definition.amount_line, "\n\n", definition.tooltip_appendage}
 
-    -- This is the function that will populate the chooser dialog, requesting as many blank chooser buttons as needed
-    -- using the 'chooser_dialog.generate_blank_button'-function below
-    modal_data.button_generator(player)
+    ui_elements.choices_table.add{type="sprite-button", name=element_name, style=style, tooltip=tooltip,
+      sprite=definition.sprite, number=definition.button_number, mouse_button_filter={"left"}}
 end
 
--- Generates a blank chooser button for the calling function to adjust to it's needs
-function chooser_dialog.generate_blank_button(player, name)
-    local table_chooser = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["table_chooser_elements"]
-    return table_chooser.add{type="sprite-button", name="fp_sprite-button_chooser_element_" .. name,
-             style="fp_button_icon_large_recipe", mouse_button_filter={"left"}}
-end
-
--- Handles click on an element presented by the chooser
-function chooser_dialog.handle_element_click(player, element_id)
-    get_ui_state(player).modal_data.click_handler(player, element_id)
+local function handler_chooser_button_click(player, element)
+    local element_id = string.gsub(element.name, "fp_sprite%-button_chooser_element_", "")
+    data_util.get("modal_data", player).click_handler(player, element_id)
     modal_dialog.exit(player, "cancel", {})
     main_dialog.refresh(player)
 end
 
 
+chooser_dialog.dialog_settings = (function(modal_data) return {
+    caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title}
+} end)
+
+chooser_dialog.events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
+            handler = (function(player, element)
+                handler_chooser_button_click(player, element)
+            end)
+        }
+    }
+}
+
+-- Handles populating the chooser dialog
+function chooser_dialog.open(_, _, modal_data)
+    local ui_elements = modal_data.ui_elements
+
+    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
+      style="inside_shallow_frame_with_padding"}
+    content_frame.add{type="label", caption=modal_data.text}
+
+    local frame_choices = content_frame.add{type="frame", direction="horizontal", style="deep_frame_in_shallow_frame"}
+    frame_choices.style.margin = {8, 0, 0, 4}
+    ui_elements.choices_table = frame_choices.add{type="table", column_count=8, style="filter_slot_table"}
+
+    for _, definition in ipairs(modal_data.button_definitions) do
+        add_chooser_button(ui_elements, definition)
+    end
+end
+
 
 -- ** OPTIONS **
--- ** LOCAL UTIL **
 local option_creators = {}
 function option_creators.numeric(table, field)
     local textfield = table.add{type="textfield", name="textfield_option_numeric", text=field.value}
@@ -54,7 +76,6 @@ function option_creators.on_off_switch(table, field)
 end
 
 
--- ** TOP LEVEL **
 -- Handles populating the options dialog
 function options_dialog.open(_, flow_modal_dialog, modal_data)
     flow_modal_dialog.parent.caption = {"", {"fp.set"}, " ", modal_data.title}

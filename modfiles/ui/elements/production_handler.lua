@@ -1,5 +1,81 @@
 production_handler = {}
 
+-- ** LOCAL UTIL **
+local function compile_machine_chooser_buttons(player, line, applicable_prototypes)
+    local round_button_numbers = data_util.get("preferences", player).round_button_numbers
+    local timescale = data_util.get("context", player).subfactory.timescale
+
+    local current_proto = line.machine.proto
+    local button_definitions = {}
+
+    for machine_id, machine_proto in pairs(applicable_prototypes) do
+        local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
+          line.recipe.proto, Line.get_total_effects(line, player))
+        local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
+          line.uncapped_production_ratio, timescale, machine_proto.category)
+
+        local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
+
+        -- Have to do this stupid crap because localisation plurals only work on integers
+        local formatted_number = ui_util.format_number(machine_count, 4)
+        local plural_parameter = (formatted_number == "1") and 1 or 2
+        local amount_line = {"fp.two_word_title", formatted_number, {"fp.pl_machine", plural_parameter}}
+
+        local definition = {
+            element_id = machine_id,
+            sprite = machine_proto.sprite,
+            button_number = button_number,
+            localised_name = machine_proto.localised_name,
+            amount_line = amount_line,
+            tooltip_appendage = ui_util.attributes.machine(machine_proto),
+            selected = (current_proto.id == machine_id)
+        }
+
+        table.insert(button_definitions, definition)
+    end
+
+    return button_definitions
+end
+
+local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
+    local ui_state = data_util.get("ui_state", player)
+    local view_name = ui_state.view_state.selected_view.name
+    local timescale = ui_state.context.subfactory.timescale
+
+    local current_proto = line.machine.fuel.proto
+    local button_definitions = {}
+
+    for fuel_id, fuel_proto in pairs(applicable_prototypes) do
+        local category_id = global.all_fuels.map[fuel_proto.category]
+
+        local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
+          line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
+        local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
+          fuel_proto.fuel_value, timescale)
+
+        -- TODO this util function is so crappy
+        local fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player, view_name,
+            fuel_proto.type, raw_fuel_amount, line.machine)
+        local amount_line = {"fp.two_word_title", ui_util.format_number(fuel_amount, 4), appendage}
+
+
+        local definition = {
+            element_id = category_id .. "_" .. fuel_id,
+            sprite = fuel_proto.sprite,
+            button_number = fuel_amount,
+            localised_name = fuel_proto.localised_name,
+            amount_line = amount_line,
+            tooltip_appendage = ui_util.attributes.fuel(fuel_proto),
+            selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_id)
+        }
+
+        table.insert(button_definitions, definition)
+    end
+
+    return button_definitions
+end
+
+
 -- ** TOP LEVEL **
 -- Handles any clicks on the recipe icon of an (assembly) line
 function production_handler.handle_line_recipe_click(player, line_id, click, direction, action, alt)
@@ -104,28 +180,29 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
 
         -- Display all the options for this machine category
         elseif click == "left" then
-            local applicable_machine_count = 0
-            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            local current_machine_proto = line.machine.proto
+            local applicable_prototypes = {}
+
+            local machine_category_id = global.all_machines.map[current_machine_proto.category]
+            local category_prototypes = global.all_machines.categories[machine_category_id].machines
 
             -- Determine if there is more than one machine that applies to this machine
-            for _, machine_proto in pairs(global.all_machines.categories[machine_category_id].machines) do
+            for _, machine_proto in pairs(category_prototypes) do
                 if Line.is_machine_applicable(line, machine_proto) then
-                    applicable_machine_count = applicable_machine_count + 1
-                    if applicable_machine_count > 1 then break end
+                    table.insert(applicable_prototypes, machine_proto)
                 end
             end
 
-            -- Changing machines only makes sense if there are more than one in it's category
-            if applicable_machine_count > 1 then  -- Open a chooser dialog presenting all machine choices
+            -- Changing machines only makes sense if there are more than one in its category
+            if #applicable_prototypes > 1 then  -- Open a chooser dialog presenting all machine choices
                 local modal_data = {
-                    button_generator = production_handler.generate_chooser_machine_buttons,
+                    title = {"fp.pl_machine", 1},
+                    text = {"fp.chooser_machine", recipe_proto.localised_name},
                     click_handler = production_handler.apply_machine_choice,
-                    title = {"fp.machine"},
-                    text = {"", {"fp.chooser_machine"}, " '", recipe_proto.localised_name, "':"},
-                    object = line.machine
+                    button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
+                    object = line.machine,
                 }
 
-                ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
                 modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
             end
 
@@ -161,29 +238,17 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
     end
 end
 
--- Generates the buttons for the machine chooser dialog
-function production_handler.generate_chooser_machine_buttons(player)
-    local ui_state = get_ui_state(player)
-    local line = ui_state.context.line
-
-    local machine_category_id = global.all_machines.map[line.machine.proto.category]
-    for machine_id, machine_proto in ipairs(global.all_machines.categories[machine_category_id].machines) do
-        if Line.is_machine_applicable(line, machine_proto) then
-            local button = chooser_dialog.generate_blank_button(player, machine_id)
-            -- The actual button is setup by the method shared by non-chooser machine buttons
-            production_table.setup_machine_choice_button(player, button, machine_proto,
-              ui_state.modal_data.object.proto.id, 36)
-        end
-    end
-end
 
 -- Recieves the result of the machine choice and applies it
 function production_handler.apply_machine_choice(player, machine_id)
-    local context = get_context(player)
-    local machine_category_id = global.all_machines.map[context.line.machine.proto.category]
+    local ui_state = data_util.get("ui_state", player)
+    local machine = ui_state.modal_data.object
+
+    local machine_category_id = global.all_machines.map[machine.proto.category]
     local machine_proto = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
-    Line.change_machine(context.line, player, machine_proto, nil)
-    calculation.update(player, context.subfactory, true)
+
+    Line.change_machine(machine.parent, player, machine_proto, nil)
+    calculation.update(player, ui_state.context.subfactory, true)
 end
 
 -- Recieves the result of the machine limit options and applies it
@@ -516,67 +581,39 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
             modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce"}})
 
         elseif click == "right" then
+            local machine_proto = line.machine.proto
+            local applicable_prototypes = {}
+
+            -- Applicable fuels come from all categories that this burner supports
+            for category_name, _ in pairs(machine_proto.burner.categories) do
+                local category_id = global.all_fuels.map[category_name]
+                for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
+                    table.insert(applicable_prototypes, fuel_proto)
+                end
+            end
+
             local modal_data = {
-                button_generator = production_handler.generate_chooser_fuel_buttons,
+                title = {"fp.pl_fuel", 1},
+                text = {"fp.chooser_fuel", machine_proto.localised_name},
                 click_handler = production_handler.apply_fuel_choice,
-                title = {"fp.fuel"},
-                text = {"", {"fp.chooser_fuel_line"}, " '", line.machine.proto.localised_name, "':"},
-                object = fuel
+                button_definitions = compile_fuel_chooser_buttons(player, line, applicable_prototypes),
+                object = fuel,
             }
 
-            context.line = line  -- won't be reset after use, but that doesn't matter
             modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
-        end
-    end
-end
-
--- Generates the buttons for the fuel chooser dialog
-function production_handler.generate_chooser_fuel_buttons(player)
-    local player_table = get_table(player)
-    local ui_state = get_ui_state(player)
-    local view_name = ui_state.view_state.selected_view.name
-    local line = ui_state.context.line
-
-    local old_fuel_proto = ui_state.modal_data.object.proto
-    local machine = line.machine  -- This machine is implicitly powered by a burner if this code runs
-    for category_name, _ in pairs(machine.proto.burner.categories) do
-        local category_id = global.all_fuels.map[category_name]
-        for fuel_id, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-            local selected_fuel = (old_fuel_proto.type == fuel_proto.type and old_fuel_proto.name == fuel_proto.name)
-            local selected = (selected_fuel) and {"", " (", {"fp.selected"}, ")"} or ""
-            local tooltip = {"", fuel_proto.localised_name, selected}
-
-            local fuel_amount = nil
-            -- Only add number information if this line has no subfloor (really difficult calculations otherwise)
-            if line.subfloor == nil then
-                local energy_consumption = calculation.util.determine_energy_consumption(machine.proto, machine.count,
-                line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
-                fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine.proto.burner,
-                fuel_proto.fuel_value, ui_state.context.subfactory.timescale)
-
-                fuel_amount, appendage = ui_util.determine_item_amount_and_appendage(player_table, view_name,
-                  fuel_proto.type, fuel_amount, line.machine)
-                tooltip = {"", tooltip, "\n" .. ui_util.format_number(fuel_amount, 4) .. " ", appendage}
-            end
-            tooltip = {"", tooltip, "\n", ui_util.attributes.fuel(fuel_proto)}
-
-            local fuel_id_string = category_id .. "_" .. fuel_id
-            local button = chooser_dialog.generate_blank_button(player, fuel_id_string)
-            if selected_fuel then button.style = "fp_button_icon_large_green" end
-            button.sprite = fuel_proto.sprite
-            button.number = ui_util.format_number(fuel_amount, 4)
-            button.tooltip = tooltip
         end
     end
 end
 
 -- Recieves the result of a chooser user choice and applies it
 function production_handler.apply_fuel_choice(player, new_fuel_id_string)
-    local context = get_context(player)
+    local ui_state = data_util.get("ui_state", player)
+
     local split_string = cutil.split(new_fuel_id_string, "_")
-    local new_fuel = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
-    context.line.machine.fuel.proto = new_fuel
-    calculation.update(player, context.subfactory, true)
+    local new_fuel_proto = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
+
+    ui_state.modal_data.object.proto = new_fuel_proto
+    calculation.update(player, ui_state.context.subfactory, true)
 end
 
 
