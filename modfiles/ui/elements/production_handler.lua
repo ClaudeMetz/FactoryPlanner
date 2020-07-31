@@ -209,30 +209,29 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
         -- Open the dialog to set a machine count limit
         elseif click == "right" then
             local modal_data = {
+                title = {"fp.options_machine_title"},
+                text = {"fp.options_machine_text", line.machine.proto.localised_name},
                 submission_handler = production_handler.apply_machine_options,
-                title = {"fp.machine_limit_title"},
-                text = {"", {"fp.machine_limit_text"}, " '", recipe_proto.localised_name, "':"},
                 object = line.machine,
                 fields = {
                     {
-                        type = "numeric",
+                        type = "numeric_textfield",
                         name = "machine_limit",
-                        caption = {"fp.machine_limit_option"},
-                        tooltip = {"fp.machine_limit_option_tt"},
-                        value = line.machine.limit or "",
+                        caption = {"fp.options_machine_limit"},
+                        tooltip = {"fp.options_machine_limit_tt"},
+                        text = line.machine.limit or "",
                         focus = true
                     },
                     {
                         type = "on_off_switch",
                         name = "hard_limit",
-                        caption = {"fp.machine_hard_limit_option"},
-                        tooltip = {"fp.machine_hard_limit_option_tt"},
-                        value = line.machine.hard_limit or false
+                        caption = {"fp.options_machine_hard_limit"},
+                        tooltip = {"fp.options_machine_hard_limit_tt"},
+                        state = line.machine.hard_limit or false
                     }
                 }
             }
 
-            ui_state.context.line = line  -- won't be reset after use, but that doesn't matter
             modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
         end
     end
@@ -252,14 +251,9 @@ function production_handler.apply_machine_choice(player, machine_id)
 end
 
 -- Recieves the result of the machine limit options and applies it
-function production_handler.apply_machine_options(player, _, options)
-    local context = get_context(player)
-
-    local machine = context.line.machine
+function production_handler.apply_machine_options(machine, options)
     if options.machine_limit == nil then options.hard_limit = false end
     machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
-
-    calculation.update(player, context.subfactory, true)
 end
 
 
@@ -497,40 +491,38 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
         end
 
     elseif click == "right" then  -- Open the percentage dialog for this item
-        local type_localised_string = {"fp.l" .. string.lower(item.class)}
+        local type_localised_string = {"fp.pl_" .. string.lower(item.class), 1}
         local produce_consume = (item.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
 
         local modal_data = {
+            title = {"fp.options_item_title", type_localised_string},
+            text = {"fp.options_item_text", item.proto.localised_name},
             submission_handler = production_handler.apply_item_options,
-            title = {"fp.option_item_title", type_localised_string},
-            text = {"fp.option_text", {"fp.option_item_text", type_localised_string}, item.proto.localised_name},
             object = item,
             fields = {
                 {
-                    type = "numeric",
+                    type = "numeric_textfield",
                     name = "item_amount",
-                    caption = {"fp.option_item_amount_label"},
-                    tooltip = {"fp.option_item_amount_label_tt", type_localised_string, produce_consume},
-                    value = item.amount,
-                    width = 160,
+                    caption = {"fp.options_item_amount"},
+                    tooltip = {"fp.options_item_amount_tt", type_localised_string, produce_consume},
+                    text = item.amount,
+                    width = 140,
                     focus = true
                 }
             }
         }
 
-        context.line = line  -- won't be reset after use, but that doesn't matter
         modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
     end
 end
 
 -- Recieves the result of the item options and applies it
-function production_handler.apply_item_options(player, item, options)
-    local context = get_context(player)
-    local relevant_line = (context.line.subfloor == nil) and context.line or Floor.get(context.line.subfloor, "Line", 1)
+function production_handler.apply_item_options(item, options)
+    local line = item.parent
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     local current_amount = item.amount
 
-    -- For products and byproducts, find if the item exists in the other space
-    if item.class ~= "Ingredient" then
+    if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
         local other_class = (item.class == "Product") and "Byproduct" or "Product"
         local opposing_item = Line.get_by_type_and_name(relevant_line, other_class, item.proto.type, item.proto.name)
         if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
@@ -538,8 +530,6 @@ function production_handler.apply_item_options(player, item, options)
 
     options.item_amount = options.item_amount or 0
     relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
-
-    calculation.update(player, context.subfactory, true)
 end
 
 
