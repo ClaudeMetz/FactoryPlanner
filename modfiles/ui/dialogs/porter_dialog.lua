@@ -128,11 +128,11 @@ end
 
 
 -- ** IMPORT DIALOG **
-import_dialog.dialog_settings = {
-    caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
+import_dialog.dialog_settings = (function(_) return {
+    caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
     disable_submit_button = true,
     disable_scroll_pane = true
-}
+} end)
 
 import_dialog.events = {
     on_gui_click = {
@@ -147,7 +147,8 @@ import_dialog.events = {
         {
             name = "fp_textfield_porter_string_import",
             handler = (function(player, element)
-                import_dialog.handle_import_string_change(player, element)
+                local button_import = data_util.get("ui_elements", player).import_button
+                set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
             end)
         }
     },
@@ -168,12 +169,6 @@ function import_dialog.open(_, _, modal_data)
 
     add_textfield_and_button(ui_elements, "import", false, false)
     ui_util.select_all(ui_elements.import_textfield)
-end
-
--- En/Disables the import-button depending on the import textfield contents
-function import_dialog.handle_import_string_change(player, textfield_import)
-    local button_import = data_util.get("ui_elements", player).import_button
-    set_tool_button_state(button_import, "import", (string.len(textfield_import.text) > 0))
 end
 
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
@@ -241,10 +236,10 @@ end
 
 
 -- ** EXPORT DIALOG **
-export_dialog.dialog_settings = {
-    caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
+export_dialog.dialog_settings = (function(_) return {
+    caption = {"fp.two_word_title", {"fp.export"}, {"fp.pl_subfactory", 1}},
     disable_scroll_pane = true
-}
+} end)
 
 export_dialog.events = {
     on_gui_click = {

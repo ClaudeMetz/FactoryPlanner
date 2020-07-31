@@ -63,17 +63,18 @@ end
 
 
 -- ** TOP LEVEL **
-tutorial_dialog.dialog_settings = {
+tutorial_dialog.dialog_settings = (function(_) return {
     caption = {"fp.tutorial"},
     disable_scroll_pane = true
-}
+} end)
 
 tutorial_dialog.events = {
     on_gui_click = {
         {
             name = "fp_button_tutorial_add_example",
             handler = (function(player, _)
-                tutorial_dialog.add_example_subfactory(player)
+                data_util.add_subfactories_by_string(player, tutorial_export_string, true)
+                modal_dialog.exit(player, "cancel", {})
             end)
         }
     },
@@ -82,7 +83,8 @@ tutorial_dialog.events = {
             name = "fp_switch_tutorial_mode",
             handler = (function(player, element)
                 local new_state = ui_util.switch.convert_to_boolean(element.switch_state)
-                tutorial_dialog.set_tutorial_mode(player, new_state)
+                data_util.get("preferences", player).tutorial_mode = new_state
+                main_dialog.refresh(player)
             end)
         }
     }
@@ -102,17 +104,4 @@ function tutorial_dialog.open(player, _, modal_data)
         tab_definitions[tab_name](player, tab, tab_pane)
         tabbed_pane.add_tab(tab, tab_pane)
     end
-end
-
-
--- Creates the example subfactory and shows it to the user
-function tutorial_dialog.add_example_subfactory(player)
-    data_util.add_subfactories_by_string(player, tutorial_export_string, true)
-    modal_dialog.exit(player, "cancel", {})
-end
-
--- Handles a change to the tutorial mode preference
-function tutorial_dialog.set_tutorial_mode(player, new_state)
-    data_util.get("preferences", player).tutorial_mode = new_state
-    main_dialog.refresh(player)
 end
