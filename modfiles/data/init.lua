@@ -41,6 +41,7 @@ local function reload_preferences(player)
 
     preferences.pause_on_interface = preferences.pause_on_interface or false
     preferences.tutorial_mode = preferences.tutorial_mode or true
+    preferences.utility_scopes = preferences.utility_scopes or {components = "Subfactory"}
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
 
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false

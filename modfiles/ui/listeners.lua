@@ -181,10 +181,10 @@ script.on_event(defines.events.on_gui_switch_state_changed, function(event)
         local filter_name = string.gsub(element_name, "fp_switch_recipe_filter_", "")
         recipe_dialog.handle_filter_switch_flick(player, filter_name, event.element.switch_state)
 
-    -- Refreshes the data attached to the clicked scope-switch
+    --[[ -- Refreshes the data attached to the clicked scope-switch
     elseif string.find(element_name, "^fp_switch_utility_scope_[a-z]+$") then
         local scope_type = string.gsub(element_name, "fp_switch_utility_scope_", "")
-        utility_dialog.handle_scope_change(player, scope_type, event.element.switch_state)
+        utility_dialog.handle_scope_change(player, scope_type, event.element.switch_state) ]]
 
     else
         event_handler.handle_gui_event(event)
@@ -217,9 +217,9 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
         elseif element_name == "fp_textfield_porter_string_import" then
             import_dialog.handle_import_string_change(player, event.element) ]]
 
-        -- Persists notes changes
+        --[[ -- Persists notes changes
         elseif element_name == "fp_text-box_notes" then
-            utility_dialog.handle_notes_change(player, event.element)
+            utility_dialog.handle_notes_change(player, event.element) ]]
 
         -- Persists mining productivity changes
         elseif element_name == "fp_textfield_mining_prod" then

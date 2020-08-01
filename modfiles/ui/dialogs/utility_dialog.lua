@@ -1,128 +1,160 @@
 utility_dialog = {}
 
 -- ** LOCAL UTIL **
--- Adds a titlebar for the given type of utility, optionally including a scope switch
-local function add_utility_titlebar(flow, type, tooltip, scope, subfactory)
-    local flow_titlebar = flow.add{type="flow", name="flow_titlebar", direction="horizontal"}
+-- Adds a box with title and optional scope switch for the given type of utility
+local function add_utility_box(player, ui_elements, type, show_tooltip, show_switch)
+    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    bordered_frame.style.bottom_margin = 6
+    ui_elements[type .. "_box"] = bordered_frame
+
+    local flow_titlebar = bordered_frame.add{type="flow", direction="horizontal"}
     flow_titlebar.style.vertical_align = "center"
+    flow_titlebar.style.margin = {2, 8, 4, 0}
 
     -- Title
-    local info = (tooltip) and " [img=info]" or ""
-    local tt = (tooltip) and {"fp.type_" .. type .. "_tt"} or ""
-    local label_title = flow_titlebar.add{type="label", caption={("fp.type_" .. type), ":", info}, tooltip=tt}
-    label_title.style.font = "fp-font-semibold-16p"
-    label_title.style.left_margin = 6
+    local caption = (show_tooltip) and {"fp.info_label", {"fp.utility_title_".. type}} or {"fp.utility_title_".. type}
+    local tooltip = (show_tooltip) and {"fp.utility_title_" .. type .. "_tt"}
+    local label_title = flow_titlebar.add{type="label", caption=caption, tooltip=tooltip}
+    label_title.style.font = "heading-2"
+    label_title.style.top_margin = -2
 
     -- Scope switch
-    if scope then
-        local spacer = flow_titlebar.add{type="flow", direction="horizontal"}
-        spacer.style.horizontally_stretchable = true
+    if show_switch then
+        flow_titlebar.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-        local state = Subfactory.get_scope(subfactory, type, true)
-        flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type), switch_state=state,
-          left_label_caption={"fp.csubfactory"}, right_label_caption={"fp.floor"}}
+        local utility_scope = data_util.get("preferences", player).utility_scopes[type]
+        local switch_state = (utility_scope == "Subfactory") and "left" or "right"
+        flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type), switch_state=switch_state,
+          left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
+
+    return bordered_frame
 end
 
-local utility_structures_refresh = {}
--- Refreshes the flow displaying the appropriate subfactory/floor components
-function utility_structures_refresh.components(flow_modal_dialog)
-    local player = game.get_player(flow_modal_dialog.player_index)
-    local context = get_context(player)
-    local inventory_contents = get_modal_data(player).inventory_contents
 
-    local flow = flow_modal_dialog["flow_components"]
-    if flow == nil then
-        flow = flow_modal_dialog.add{type="flow", name="flow_components", direction="vertical"}
-        flow.style.bottom_margin = 12
-        add_utility_titlebar(flow, "components", true, true, context.subfactory)
-        flow.add{type="table", name="table_components", column_count=2}
+local utility_structures = {}
+
+function utility_structures.components(player, modal_data)
+    local scope = data_util.get("preferences", player).utility_scopes.components
+    local context = data_util.get("context", player)
+    local ui_elements = modal_data.ui_elements
+
+    if ui_elements.components_box == nil then
+        ui_elements.components_box = add_utility_box(player, modal_data.ui_elements, "components", true, true)
+
+        local table_components = ui_elements.components_box.add{type="table", column_count=2}
+        table_components.style.horizontal_spacing = 24
+        table_components.style.vertical_spacing = 8
+
+        local function add_component_row(type)
+            local label = table_components.add{type="label", caption={"fp.pu_" .. type, 2}}
+            label.style.font = "heading-3"
+
+            local flow = table_components.add{type="flow", direction="horizontal"}
+            ui_elements["components_" .. type .. "_flow"] = flow
+        end
+
+        add_component_row("machine")
+        add_component_row("module")
     end
 
-    local table = flow["table_components"]
-    table.style.margin = {6, 0, 0, 6}
-    table.style.horizontal_spacing = 12
-    table.style.vertical_spacing = 8
-    table.clear()
+    local function refresh_component_flow(type)
+        local component_row = ui_elements["components_" .. type .. "_flow"]
+        component_row.clear()
 
-    local function add_row(name, data)
-        local label = table.add{type="label", caption={"", {"fp.c" .. name}, ":"}}
-        label.style.font = "default-bold"
+        local inventory_contents = modal_data.inventory_contents
+        local component_data = _G[scope].get_component_data(context[scope:lower()], nil)
 
-        local table_components = table.add{type="table", column_count=10}
-        for _, component in pairs(data) do
+        local frame_components = component_row.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+        local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
+
+        for _, component in pairs(component_data[type .. "s"]) do
             if component.amount > 0 then
-                local button_style = nil
                 local amount_in_inventory = inventory_contents[component.proto.name] or 0
-                if amount_in_inventory == 0 then
-                    button_style = "fp_button_icon_medium_red"
-                elseif amount_in_inventory < component.amount then
-                    button_style = "fp_button_icon_medium_yellow"
-                else
-                    button_style = "fp_button_icon_medium_green"
-                end
+                local button_style = nil
 
-                local singular_name = name:sub(1, -2)
-                local needed_amount_tt = {("fp.utility_pl_" .. singular_name), component.amount}
-                local tooltip_amounts = {"fp.component_amounts_tt", needed_amount_tt, amount_in_inventory}
-                local tooltip = {"", component.proto.localised_name, "\n", tooltip_amounts}
+                if amount_in_inventory == 0 then button_style = "flib_slot_button_red"
+                elseif amount_in_inventory < component.amount then button_style = "flib_slot_button_yellow"
+                else button_style = "flib_slot_button_green" end
 
-                table_components.add{type="sprite-button", name=("sprite-button_" ..
-                  component.proto.name), sprite=component.proto.sprite, tooltip=tooltip,
-                  style=button_style, number=component.amount, enabled=false}
+                local components_needed = {"fp.bold_two_word_title", amount_in_inventory,
+                   {"fp.pl_" .. type, amount_in_inventory}}
+                local second_line = {"fp.components_needed_tt", components_needed, component.amount}
+                local tooltip = {"", component.proto.localised_name, "\n", second_line}
+
+                table_components.add{type="sprite-button", sprite=component.proto.sprite, number=component.amount,
+                  tooltip=tooltip, style=button_style, mouse_button_filter={"middle"}}
             end
         end
 
-        if table_size(table_components.children_names) == 0 then
-            table_components.add{type="label", caption={"fp.no_components", {"fp." .. name}}}
+        if #table_components.children_names == 0 then
+            frame_components.visible = false
+            local label = component_row.add{type="label", caption={"fp.no_components_needed", {"fp.pl_" .. type, 2}}}
+            label.style.margin = {10, 0}
         end
     end
 
-    local scope = Subfactory.get_scope(context.subfactory, "components", false)
-    local data = _G[scope].get_component_data(context[scope:lower()], nil)
-
-    add_row("machines", data.machines)
-    add_row("modules", data.modules)
+    refresh_component_flow("machine")
+    refresh_component_flow("module")
 end
 
--- Creates the flow containing this subfactories notes
-local function create_utility_notes_structure(flow_modal_dialog)
-    local subfactory = get_context(game.get_player(flow_modal_dialog.player_index)).subfactory
+function utility_structures.notes(player, modal_data)
+    local utility_box = add_utility_box(player, modal_data.ui_elements, "notes", false, false)
 
-    local flow = flow_modal_dialog.add{type="flow", name="flow_notes", direction="vertical"}
-    add_utility_titlebar(flow, "notes", false, false, subfactory)
-
-    local text_box = flow.add{type="text-box", name="fp_text-box_notes", text=subfactory.notes}
+    local notes = data_util.get("context", player).subfactory.notes
+    local text_box = utility_box.add{type="text-box", name="fp_text-box_subfactory_notes", text=notes}
     text_box.style.width = 500
     text_box.style.height = 250
     text_box.word_wrap = true
 end
 
 
--- ** TOP LEVEL **
--- Handles populating the utility modal dialog
-function utility_dialog.open(player, flow_modal_dialog, modal_data)
-    flow_modal_dialog.parent.caption = {"fp.utilities"}
+local function handle_scope_change(player, element)
+    local scope_type = string.gsub(element.name, "fp_switch_utility_scope_", "")
+    local utility_scope = (element.switch_state == "left") and "Subfactory" or "Floor"
+    data_util.get("preferences", player).utility_scopes[scope_type] = utility_scope
+    utility_structures.components(player, data_util.get("modal_data", player))
+end
 
+
+-- ** TOP LEVEL **
+utility_dialog.dialog_settings = (function(_) return {
+    caption = {"fp.utilities"}
+} end)
+
+utility_dialog.events = {
+    on_gui_switch_state_changed = {
+        {
+            pattern = "^fp_switch_utility_scope_[a-z]+$",
+            handler = (function(player, element)
+                handle_scope_change(player, element)
+            end)
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_text-box_subfactory_notes",
+            handler = (function(player, element)
+                data_util.get("context", player).subfactory.notes = element.text
+            end)
+        }
+    },
+}
+
+function utility_dialog.open(player, _, modal_data)
     -- Add the players' relevant inventory components to modal_data
     modal_data.inventory_contents = player.get_main_inventory().get_contents()
 
-    utility_structures_refresh.components(flow_modal_dialog)
-    create_utility_notes_structure(flow_modal_dialog)
+    local ui_elements = modal_data.ui_elements
+    ui_elements.content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
+      style="inside_shallow_frame_with_padding"}
+    ui_elements.content_frame.style.bottom_padding = 6
+
+    utility_structures.components(player, modal_data)
+    utility_structures.notes(player, modal_data)
 end
 
--- Handles the changing of the given scope by the user
-function utility_dialog.handle_scope_change(player, type, state)
-    local context = get_context(player)
-    Subfactory.set_scope(context.subfactory, type, state)
-
-    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
-    utility_structures_refresh[type](flow_modal_dialog, context)
-end
-
--- Handles changes to the subfactory notes
-function utility_dialog.handle_notes_change(player, textbox)
-    local subfactory = get_context(player).subfactory
-    subfactory.notes = textbox.text
+function utility_dialog.close(player, _, _)
+    local subfactory = data_util.get("context", player).subfactory
     info_pane.refresh_utility_table(player, subfactory)
 end
