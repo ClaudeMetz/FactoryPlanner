@@ -14,8 +14,7 @@ local function add_utility_box(player, ui_elements, type, show_tooltip, show_swi
     -- Title
     local caption = (show_tooltip) and {"fp.info_label", {"fp.utility_title_".. type}} or {"fp.utility_title_".. type}
     local tooltip = (show_tooltip) and {"fp.utility_title_" .. type .. "_tt"}
-    local label_title = flow_titlebar.add{type="label", caption=caption, tooltip=tooltip}
-    label_title.style.font = "heading-2"
+    local label_title = flow_titlebar.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
     label_title.style.top_margin = -2
 
     -- Scope switch
@@ -106,6 +105,7 @@ function utility_structures.notes(player, modal_data)
     text_box.style.width = 500
     text_box.style.height = 250
     text_box.word_wrap = true
+    text_box.style.top_margin = -2
 end
 
 
