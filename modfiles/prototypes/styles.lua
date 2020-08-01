@@ -13,11 +13,6 @@ data.raw["gui-style"].default["fp_scroll_pane_inside_tab"] = {
     }
 }
 
-data.raw["gui-style"].default["fp_flow_stretchy"] = {
-    type = "horizontal_flow_style",
-    horizontally_stretchable = "on"
-}
-
 
 -- OLD STUFF
 data.raw["gui-style"].default["fp_footer_filler"] = {

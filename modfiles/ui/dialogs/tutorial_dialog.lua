@@ -26,13 +26,13 @@ function tab_definitions.interface(player, tab, tab_pane)
       and active_mods["factoryplanner"] ~= nil and active_mods["flib"] ~= nil)
     local tutorial_mode = data_util.get("preferences", player).tutorial_mode
 
-    flow_interactive.add{type="flow", style="fp_flow_stretchy"}
+    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
     local button_tooltip = (not no_other_mods_active) and {"fp.warning_message", {"fp.create_example_error"}} or nil
     flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
       tooltip=button_tooltip, enabled=no_other_mods_active, mouse_button_filter={"left"}}
-    flow_interactive.add{type="flow", style="fp_flow_stretchy"}
+    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
     ui_util.switch.add_on_off(flow_interactive, "tutorial_mode", tutorial_mode, {"fp.tutorial_mode"}, nil, true)
-    flow_interactive.add{type="flow", style="fp_flow_stretchy"}
+    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Interface tutorial
     local frame_interface = add_base_frame("interface")
