@@ -76,9 +76,7 @@ function utility_structures.components(player, modal_data)
                 elseif amount_in_inventory < component.amount then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local components_needed = {"fp.bold_two_word_title", amount_in_inventory,
-                   {"fp.pl_" .. type, amount_in_inventory}}
-                local second_line = {"fp.components_needed_tt", components_needed, component.amount}
+                local second_line = {"fp.components_needed_tt", amount_in_inventory, component.amount}
                 local tooltip = {"", component.proto.localised_name, "\n", second_line}
 
                 table_components.add{type="sprite-button", sprite=component.proto.sprite, number=component.amount,
