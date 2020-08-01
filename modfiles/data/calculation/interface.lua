@@ -171,7 +171,7 @@ function calculation.interface.get_subfactory_data(player, subfactory)
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
         local product_data = {
             proto = product.proto,  -- reference
-            required_amount = Item.required_amount(product)
+            amount = Item.required_amount(product)
         }
         table.insert(subfactory_data.top_level_products, product_data)
     end

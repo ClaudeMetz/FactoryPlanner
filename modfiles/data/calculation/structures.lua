@@ -41,10 +41,10 @@ end
 function structures.class.add(class, item, amount)
     local type = (item.proto ~= nil) and item.proto.type or item.type
     local name = (item.proto ~= nil) and item.proto.name or item.name
-    amount = amount or (item.required_amount or item.amount)
+    local amount_to_add = amount or item.amount
 
     local type_table = class[type]
-    type_table[name] = (type_table[name] or 0) + amount
+    type_table[name] = (type_table[name] or 0) + amount_to_add
     if type_table[name] == 0 then type_table[name] = nil end
 end
 
