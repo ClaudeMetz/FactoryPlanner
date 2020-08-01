@@ -3,20 +3,22 @@ data:extend({
         type = "sprite",
         name = "fp_sprite_plus",
         filename = "__factoryplanner__/graphics/plus.png",
-        size = 128
+        size = 128,
+        flags = {"gui-icon"}
     },
     {
         type = "sprite",
         name = "fp_generic_assembler",
         filename = "__factoryplanner__/graphics/generic_assembler.png",
         size = 64, icon_mipmaps = 2,
-        flags = {"icon"}
+        flags = {"gui-icon"}
     },
     {
         type = "sprite",
-        name = "fp_sprite_purple_circle",
-        filename = "__factoryplanner__/graphics/purple_circle.png",
-        size = 40
+        name = "fp_sprite_white_square",
+        filename = "__factoryplanner__/graphics/white_square.png",
+        size = 8, icon_mipmaps = 2,
+        flags = {"gui-icon"}
     },
     {
         type = "sprite",
