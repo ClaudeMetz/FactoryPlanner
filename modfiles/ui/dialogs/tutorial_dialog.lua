@@ -9,10 +9,11 @@ function tab_definitions.interface(player, tab, tab_pane)
     local function add_base_frame(name)
         local frame = tab_pane.add{type="frame", style="bordered_frame", direction="vertical"}
         frame.style.horizontally_stretchable = true
-        local title = frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}}
-        title.style.font = "heading-2"
+
+        frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}, style="caption_label"}
         local text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
         text.style.single_line = false
+
         return frame
     end
 
