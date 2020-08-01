@@ -261,22 +261,23 @@ function import_dialog.open(_, _, modal_data)
 end
 
 -- Imports the selected subfactories into the player's main factory
--- The action can only be "submit" here, and at least one subfactory will be selected
-function import_dialog.close(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
-    local factory = ui_state.context.factory
+function import_dialog.close(player, action, _)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local factory = ui_state.context.factory
 
-    local first_subfactory = nil
-    for _, table_row in pairs(ui_state.modal_data.ui_elements.table_rows) do
-        if table_row.checkbox.state == true then
-            local imported_subfactory = Factory.add(factory, table_row.subfactory)
-            calculation.update(player, imported_subfactory, false)
-            first_subfactory = first_subfactory or imported_subfactory
+        local first_subfactory = nil
+        for _, table_row in pairs(ui_state.modal_data.ui_elements.table_rows) do
+            if table_row.checkbox.state == true then
+                local imported_subfactory = Factory.add(factory, table_row.subfactory)
+                calculation.update(player, imported_subfactory, false)
+                first_subfactory = first_subfactory or imported_subfactory
+            end
         end
-    end
 
-    ui_util.context.set_subfactory(player, first_subfactory)
-    main_dialog.refresh(player)
+        ui_util.context.set_subfactory(player, first_subfactory)
+        main_dialog.refresh(player)
+    end
 end
 
 

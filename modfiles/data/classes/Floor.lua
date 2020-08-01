@@ -106,16 +106,17 @@ function Floor.get_component_data(self, component_table)
         -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
         -- would mean the subfactory machine total is equal to the floor total of the top floor
         if line.subfloor == nil then
-            local ceil_machine_count = math.ceil(line.machine.count)
+            local machine = line.machine
+            local ceil_machine_count = math.ceil(machine.count)
 
             -- Machines
             add_to_count(components.machines, {
-                proto = line.machine.proto,
+                proto = machine.proto,
                 amount = ceil_machine_count
             })
 
             -- Modules
-            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+            for _, module in pairs(Machine.get_in_order(machine, "Module")) do
                 add_to_count(components.modules, {
                     proto = module.proto,
                     amount = ceil_machine_count * module.amount

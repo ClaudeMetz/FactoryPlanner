@@ -194,19 +194,19 @@ function modal_dialog.exit(player, button_action, data)
     if button_action == "submit" and (not submit_button or not submit_button.enabled) then return end
 
     local closing_function = _G[dialog_type .. "_dialog"].close
-    -- If closing_function is nil here, this dialog doesn't have a confirm-button, and if it is closed with
-    -- a submit-action (by a confirmation-action), it should execute the back-action instead
-    if button_action == "submit" and closing_function ~= nil then
-        -- First checks if the entered form data is correct
-        local form_data = check_modal_dialog_data(flow_modal_dialog, dialog_type)
-        if form_data ~= nil then  -- meaning correct form data has been entered
-            for name, dataset in pairs(form_data) do data[name] = dataset end
-            closing_function(player, button_action, data)  -- can't be nil in this case
-        else return end  -- so the modal dialog doesn't close
+    if closing_function ~= nil then
+        if button_action == "submit" then
+            -- First checks if the entered form data is correct
+            local form_data = check_modal_dialog_data(flow_modal_dialog, dialog_type)
+            if form_data ~= nil then  -- meaning correct form data has been entered
+                for name, dataset in pairs(form_data) do data[name] = dataset end
+                closing_function(player, button_action, data)  -- can't be nil in this case
+            else return end  -- so the modal dialog doesn't close
 
-    elseif button_action == "delete" then
-        if closing_function ~= nil then closing_function(player, button_action, data) end
-    end  -- no action needs to be taken if this dialog is closed
+        else  -- deleting and closing needs the closing function to run
+            closing_function(player, button_action, data)
+        end
+    end
 
     -- Close modal dialog
     ui_state.modal_dialog_type = nil
