@@ -16,7 +16,7 @@ local function _refresh_item_table(player, item_table, class, items, display_mod
     local style = "fp_button_icon_large_blank"  -- will remain untouched if the display mode is 'floor_total'
 
     for _, item in ipairs(items) do
-        local required_amount = Item.required_amount(item)
+        local required_amount = (item.required_amount) and Item.required_amount(item) or item.amount
         local item_amount = (display_mode == "standard" and class == "Product") and required_amount or item.amount
         local display_amount, appendage = ui_util.determine_item_amount_and_appendage(player, view_name,
           item.proto.type, item_amount, nil)
@@ -87,9 +87,6 @@ local function refresh_item_table(player, class)
             items = Line.get_in_order(parent_line, class)
             -- Combine Fuel and Ingredients into a single item list
             if contains_fuel then table.insert(items, parent_line.machine.fuel) end
-
-            -- Adjust items to the required_amount-format that top level items use
-            for _, item in pairs(items) do item.required_amount = {defined_by = "amount", amount = item.amount} end
         end
 
     -- Otherwise, show the subfactory totals, if there are any

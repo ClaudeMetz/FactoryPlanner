@@ -1,12 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - Redesigned the utility dialog
   Bugfixes:
-    -
+    - Fixed a crash on migration that happened under very specific circumstances
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.47
