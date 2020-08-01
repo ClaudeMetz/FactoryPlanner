@@ -97,7 +97,7 @@ function options_dialog.open(_, _, modal_data)
     content_frame.add{type="label", caption=modal_data.text}
 
     local table_options = content_frame.add{type="table", column_count=2}
-    table_options.style.margin = {12, 0, 4, 8}
+    table_options.style.margin = {12, 0, 4, 2}
     table_options.style.horizontal_spacing = 24
     table_options.style.vertical_spacing = 16
 
