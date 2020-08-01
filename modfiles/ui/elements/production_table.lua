@@ -179,7 +179,8 @@ local function create_line_table_row(player, line)
             button_beacon.style.padding = 2
 
             if beacon.total_amount ~= nil then
-                ui_util.add_overlay_sprite(button_beacon, "fp_sprite_purple_circle", 32)
+                local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
+                sprite_overlay.ignored_by_interaction = true
             end
         end
     end
