@@ -92,6 +92,8 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         modal_data.ui_elements.dialog_submit_button = button_submit
     end
 
+    if dialog_settings.force_auto_center then frame_modal_dialog.force_auto_center() end
+
     return flow_modal_dialog
 end
 

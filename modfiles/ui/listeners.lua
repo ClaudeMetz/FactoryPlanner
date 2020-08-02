@@ -208,9 +208,9 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
             end
             item_picker.handle_searchfield_change(event.element)
 
-        -- Persists default beacon count changes
+        --[[ -- Persists default beacon count changes
         elseif element_name == "fp_textfield_default_beacon_count" then
-            data_util.get("preferences", player).mb_defaults.beacon_count = tonumber(event.element.text)
+            data_util.get("preferences", player).mb_defaults.beacon_count = tonumber(event.element.text) ]]
 
         --[[ -- Dynamically en/disables the subfactory import button
         elseif element_name == "fp_textfield_porter_string_import" then
@@ -253,9 +253,12 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         local belt_name = event.element.elem_value
         product_dialog.handle_belt_change(player, belt_name)
 
-    -- Persists changes to the module/beacon defaults
+    --[[ -- Persists changes to the module/beacon defaults
     elseif string.find(event.element.name, "^fp_choose%-elem%-button_default_[a-z]+$") then
-        preferences_dialog.handle_mb_defaults_change(player, event.element)
+        preferences_dialog.handle_mb_defaults_change(player, event.element) ]]
+
+    else
+        event_handler.handle_gui_event(event)
     end
 end)
 

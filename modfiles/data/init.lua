@@ -53,7 +53,7 @@ local function reload_preferences(player)
     preferences.line_comment_column = preferences.line_comment_column or false
 
     preferences.mb_defaults = preferences.mb_defaults or
-      {module = nil, beacon = nil, beacon_count = nil}
+      {machine = nil, beacon = nil, beacon_count = nil}
 
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {
