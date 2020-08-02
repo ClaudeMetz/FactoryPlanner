@@ -13,13 +13,34 @@ function Collection.init(object_class)
 end
 
 
+-- Adds given object to the end of the collection
 function Collection.add(self, object)
     self.index = self.index + 1
-    self.count = self.count + 1
     object.id = self.index
-    object.gui_position = self.count
     self.datasets[self.index] = object
+
+    self.count = self.count + 1
+    object.gui_position = self.count
+
     return object  -- Returning it here feels nice
+end
+
+-- Inserts the given object at the given position, shifting other elements down
+function Collection.insert_at(self, gui_position, object)
+    self.index = self.index + 1
+    object.id = self.index
+
+    self.count = self.count + 1
+    object.gui_position = gui_position
+
+    for _, dataset in pairs(self.datasets) do
+        if dataset.gui_position >= gui_position then
+            dataset.gui_position = dataset.gui_position + 1
+        end
+    end
+
+    self.datasets[self.index] = object
+    return object
 end
 
 function Collection.remove(self, dataset)
@@ -39,7 +60,6 @@ end
 
 -- Replaces the dataset with the new object in-place
 function Collection.replace(self, dataset, object)
-    object.parent = dataset.parent
     object.id = dataset.id
     object.gui_position = dataset.gui_position
     self.datasets[dataset.id] = object

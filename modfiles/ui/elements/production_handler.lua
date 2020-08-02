@@ -449,7 +449,7 @@ end
 
 
 -- Handles a click on any of the 3 item buttons of a specific line
-function production_handler.handle_item_button_click(player, line_id, class, item_id, click, alt)
+function production_handler.handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
     if ui_util.check_archive_status(player) then return end
 
     local context = get_context(player)
@@ -461,7 +461,8 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
 
     elseif click == "left" and item.proto.type ~= "entity" then
         if item.class == "Ingredient" then  -- Pick recipe to produce this ingredient
-            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce"}})
+            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce",
+              add_after_position=((direction == "positive") and line.gui_position or nil)}})
 
         elseif item.class == "Product" then -- Set the priority product
             if line.Product.count < 2 then

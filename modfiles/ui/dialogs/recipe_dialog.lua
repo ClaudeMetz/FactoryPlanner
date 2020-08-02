@@ -272,7 +272,13 @@ function recipe_dialog.attempt_adding_line(player, recipe_id)
     if Line.change_machine(line, player, nil, nil) == false then
         titlebar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
     else
-        Floor.add(ui_state.context.floor, line)
+        local add_after_position = ui_state.modal_data.add_after_position
+        -- If add_after_position is given, insert it below that one, add it to the end otherwise
+        if add_after_position == nil then
+            Floor.add(ui_state.context.floor, line)
+        else
+            Floor.insert_at(ui_state.context.floor, (add_after_position + 1), line)
+        end
 
         local message = ui_state.modal_data.message
         local preferences = get_preferences(player)

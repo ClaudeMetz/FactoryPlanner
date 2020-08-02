@@ -43,6 +43,7 @@ function Machine.remove(self, dataset)
 end
 
 function Machine.replace(self, dataset, object)
+    object.parent = self
     local module_count_difference = object.amount - dataset.amount
     local new_dataset = Collection.replace(self[dataset.class], dataset, object)
 
