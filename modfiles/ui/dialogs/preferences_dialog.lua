@@ -16,6 +16,7 @@ local function add_preference_box(ui_elements, type)
     return bordered_frame
 end
 
+
 local preference_structures = {}
 
 function preference_structures.checkboxes(preferences, ui_elements, type, preference_names)
@@ -29,6 +30,39 @@ function preference_structures.checkboxes(preferences, ui_elements, type, prefer
         flow_checkboxes.add{type="checkbox", name=("fp_checkbox_preference_" .. identifier),
           state=preferences[pref_name], caption=caption, tooltip=tooltip}
     end
+end
+
+function preference_structures.mb_defaults(preferences, ui_elements)
+    local mb_defaults = preferences.mb_defaults
+
+    local preference_box = add_preference_box(ui_elements, "mb_defaults")
+    local flow_mb_defaults = preference_box.add{type="flow", direction="horizontal"}
+    flow_mb_defaults.style.vertical_align = "center"
+    flow_mb_defaults.style.top_margin = 4
+
+
+    local function add_mb_default(type)
+        flow_mb_defaults.add{type="label", caption={"fp.pu_" .. type, 1}}
+
+        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
+          name="fp_choose-elem-button_mb_default_" .. type, elem_filters={{filter="type", type="module"},
+          {filter="flag", flag="hidden", mode="and", invert=true}}}
+        choose_elem_button.elem_value = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
+        choose_elem_button.style.margin = {0, 12, 0, 4}
+        choose_elem_button.style.height = 32
+        choose_elem_button.style.width = 32
+    end
+
+    add_mb_default("machine")
+    add_mb_default("beacon")
+
+
+    flow_mb_defaults.add{type="label", caption={"fp.preference_mb_default_beacon_count"}}
+    local textfield_beacon_count = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_beacon_count",
+      text=mb_defaults.beacon_count}
+    ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
+    textfield_beacon_count.style.width = 40
+    textfield_beacon_count.style.margin = {0, 4}
 end
 
 
@@ -141,18 +175,56 @@ local function handle_checkbox_preference_change(player, element)
     end
 end
 
+local function handle_mb_default_change(player, element)
+    local mb_defaults = data_util.get("preferences", player).mb_defaults
+    local type = string.gsub(element.name, "fp_choose%-elem%-button_mb_default_", "")
+    local module_name = element.elem_value
+
+    if module_name == nil then
+        mb_defaults[type] = nil
+    else
+        -- Find the appropriate prototype from the list by its name
+        for _, category in pairs(global.all_modules.categories) do
+            for _, module_proto in pairs(category.modules) do
+                if module_proto.name == module_name then
+                    mb_defaults[type] = module_proto
+                    return
+                end
+            end
+        end
+    end
+end
+
 
 -- ** TOP LEVEL **
 preferences_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.preferences"}
+    caption = {"fp.preferences"},
+    force_auto_center = true
 } end)
 
 preferences_dialog.events = {
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_mb_default_beacon_count",
+            handler = (function(player, element)
+                local mb_defaults = data_util.get("preferences", player).mb_defaults
+                mb_defaults.beacon_count = tonumber(element.text)
+            end)
+        }
+    },
     on_gui_checked_state_changed = {
         {
             pattern = "^fp_checkbox_preference_[a-z]+_[a-z_]+$",
             handler = (function(player, element)
                 handle_checkbox_preference_change(player, element)
+            end)
+        }
+    },
+    on_gui_elem_changed = {
+        {
+            pattern = "^fp_choose%-elem%-button_mb_default_[a-z]+$",
+            handler = (function(player, element)
+                handle_mb_default_change(player, element)
             end)
         }
     }
@@ -167,6 +239,7 @@ function preferences_dialog.open(player, _, modal_data)
       style="inside_shallow_frame_with_padding"}
 
     local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    bordered_frame.style.horizontally_stretchable = true
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
 
@@ -177,37 +250,11 @@ function preferences_dialog.open(player, _, modal_data)
     local production_preference_names = {"pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, ui_elements, "production", production_preference_names)
 
+    preference_structures.mb_defaults(preferences, ui_elements)
 
 
 
     if true then return end
-
-
-    -- Module/Beacon defaults
-    flow_modal_dialog.add{type="label", name="label_module_beacon_defaults",
-      caption={"", {"fp.preferences_title_mb_defaults"}, ":"}, style="fp_preferences_title_label",
-      tooltip={"fp.preferences_title_mb_defaults_tt"}}
-    local flow_mb_defaults = flow_modal_dialog.add{type="flow", name="flow_module_beacon_defaults",
-      direction="horizontal"}
-    flow_mb_defaults.style.margin = {2, 6, 8, 16}
-    flow_mb_defaults.style.vertical_align = "center"
-
-    local function add_mb_default(kind)
-        flow_mb_defaults.add{type="label", caption={"", {"fp.c" .. kind}, ": "}}
-        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
-          name="fp_choose-elem-button_default_" .. kind, style="fp_sprite-button_choose_elem"}
-        choose_elem_button.elem_filters = {{filter="type", type="module"},
-          {filter="flag", flag="hidden", mode="and", invert=true}}
-        choose_elem_button.style.right_margin = 12
-    end
-
-    add_mb_default("module")
-    add_mb_default("beacon")
-
-    flow_mb_defaults.add{type="label", caption={"", {"fp.beacon_count"}, ": "}}
-    local textfield_beacon_count = flow_mb_defaults.add{type="textfield", name="fp_textfield_default_beacon_count"}
-    ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
-    textfield_beacon_count.style.width = 42
 
 
     -- Prototype preferences
@@ -225,12 +272,7 @@ function preferences_dialog.open(player, _, modal_data)
         add_prototype_preference(preference_name)
     end
 
-
     refresh_preferences_dialog(player)
-
-    -- Not sure why this is necessary, but it goes wonky otherwise
-    -- This is only been necessary when a choose-elem-button is present, weirdly
-    flow_modal_dialog.parent.force_auto_center()
 end
 
 function preferences_dialog.close(player, _, _)
@@ -246,26 +288,6 @@ function preferences_dialog.close(player, _, _)
 end
 
 
--- Saves changes to the module/beacon defaults
-function preferences_dialog.handle_mb_defaults_change(player, button)
-    local mb_defaults = get_preferences(player).mb_defaults
-    local type = string.gsub(button.name, "fp_choose%-elem%-button_default_", "")
-    local module_name = button.elem_value
-
-    if module_name == nil then
-        mb_defaults[type] = nil
-    else
-        -- Find the appropriate prototype from the list by its name
-        for _, category in pairs(global.all_modules.categories) do
-            for _, module_proto in pairs(category.modules) do
-                if module_proto.name == module_name then
-                    mb_defaults[type] = module_proto
-                    return
-                end
-            end
-        end
-    end
-end
 
 -- Persists changes to any default prototype and refreshes appropriately
 function preferences_dialog.handle_prototype_change(player, type, prototype_id, category_id, alt)

@@ -285,7 +285,7 @@ function recipe_dialog.attempt_adding_line(player, recipe_id)
         local mb_defaults = preferences.mb_defaults
 
         -- Add default machine modules, if desired by the user
-        local machine_module = mb_defaults.module
+        local machine_module = mb_defaults.machine
         if machine_module ~= nil then
             if Machine.get_module_characteristics(line.machine, machine_module, false).compatible then
                 local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
