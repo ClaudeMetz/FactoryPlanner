@@ -36,7 +36,9 @@ function generator.all_recipes()
     end
 
     -- Adding all standard recipes
-    for recipe_name, proto in pairs(game.recipe_prototypes) do
+    local recipe_filter = {{filter="energy", comparison=">", value=0},
+      {filter="energy", comparison="<", value=1e+21, mode="and"}}
+    for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
         local category_id = new.all_machines.map[proto.category]
         -- Avoid any recipes that have no machine to produce them, or are annoying
         if category_id ~= nil and not generator_util.is_annoying_recipe(proto) then
