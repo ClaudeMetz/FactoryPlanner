@@ -48,6 +48,11 @@ function Subfactory.remove(self, dataset)
     return Collection.remove(self[dataset.class], dataset)
 end
 
+function Subfactory.clear(self, class)
+    self[class] = Collection.clear(self[class])
+end
+
+
 function Subfactory.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end
@@ -64,6 +69,7 @@ end
 function Subfactory.get_by_name(self, class, name)
     return Collection.get_by_name(self[class], name)
 end
+
 
 function Subfactory.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)

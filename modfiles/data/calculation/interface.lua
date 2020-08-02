@@ -61,6 +61,18 @@ local function generate_floor_data(player, subfactory, floor)
     return floor_data
 end
 
+-- Replaces the items of the given object (of given class) using the given result
+local function update_object_items(object, item_class, item_results)
+    local object_class = _G[object.class]
+    object_class.clear(object, item_class)
+
+    for _, item_result in pairs(structures.class.to_array(item_results)) do
+        local required_amount = (object.class == "Subfactory") and 0 or nil
+        local item = Item.init_by_item(item_result, item_class, item_result.amount, required_amount)
+        object_class.add(object, item)
+    end
+end
+
 -- Updates the items of the given object (of given class) using the given result
 -- This procedure is a bit more complicated to to retain the users ordering of items
 local function update_items(object, result, class_name)
@@ -190,15 +202,14 @@ function calculation.interface.set_subfactory_result(result)
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
 
-    -- For products, the existing top-level items just get updated individually
-    -- When the products are not present in the result, it means they have been produced
+    -- If products are not present in the result, it means they have been produced
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
         product.amount = Item.required_amount(product) - product_result_amount
     end
 
-    update_items(subfactory, result, "Byproduct")
-    update_items(subfactory, result, "Ingredient")
+    update_object_items(subfactory, "Ingredient", result.Ingredient)
+    update_object_items(subfactory, "Byproduct", result.Byproduct)
 
     -- Determine satisfaction-amounts for all line ingredients
     if player_table.preferences.ingredient_satisfaction then
