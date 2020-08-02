@@ -462,7 +462,7 @@ script.on_event(defines.events.on_gui_click, function(event)
                 production_handler.handle_fuel_button_click(player, split_string[4], click, direction, event.alt)
             else
                 production_handler.handle_item_button_click(player, split_string[4], split_string[5],
-                  split_string[6], click, event.alt)
+                  split_string[6], click, direction, event.alt)
             end
 
         else

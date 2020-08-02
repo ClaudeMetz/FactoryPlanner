@@ -36,6 +36,7 @@ function Line.remove(self, dataset)
 end
 
 function Line.replace(self, dataset, object)
+    object.parent = self
     return Collection.replace(self[dataset.class], dataset, object)
 end
 

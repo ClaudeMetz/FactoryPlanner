@@ -2,9 +2,9 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added the ability to add a recipe right below the ingredient that it should produce by shift-left-clicking the ingredient
   Changes:
-    - Removed the ability to manually order top level ingredients and byproducts, the same goes for any recipe line items
+    - Removed the ability to manually order top level ingredients and byproducts, the same goes for any recipe line items. This was done for two reasons: Firstly, it was not very useful as they shifted around all the time anyways when new recipes are added or removed. Secondly, this frees up some key combinations for more useful actions, like the one above.
   Bugfixes:
     - Fixed that the mod did not pick up on modded rocket silos correctly
 
