@@ -12,7 +12,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
         local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
           line.recipe.proto, Line.get_total_effects(line, player))
         local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
-          line.uncapped_production_ratio, timescale, machine_proto.category)
+          line.uncapped_production_ratio, timescale, machine_proto.is_rocket_silo)
 
         local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
 
