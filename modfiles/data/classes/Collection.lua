@@ -148,18 +148,10 @@ function Collection.shift_to_end(self, main_dataset, direction)
         return false
     end
 
-    -- Go through every dataset and adjust their positions as necessary
-    -- This algo isn't great, but it's fine for what it does
-    for _, dataset in pairs(self.datasets) do
-        if direction == "positive" and dataset.gui_position > main_gui_position then
-            dataset.gui_position = dataset.gui_position - 1
-        elseif dataset.gui_position < main_gui_position then  -- direction == "negative"
-            dataset.gui_position = dataset.gui_position + 1
-        end
-    end
-
+    -- To simplify the code, remove the dataset and re-insert it at the right position
+    Collection.remove(self, main_dataset)
     local secondary_gui_position = (direction == "positive") and self.count or 1
-    main_dataset.gui_position = secondary_gui_position
+    Collection.insert_at(self, secondary_gui_position, main_dataset)
 
     return true
 end
