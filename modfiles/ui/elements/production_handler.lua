@@ -449,7 +449,7 @@ end
 
 
 -- Handles a click on any of the 3 item buttons of a specific line
-function production_handler.handle_item_button_click(player, line_id, class, item_id, click, direction, alt)
+function production_handler.handle_item_button_click(player, line_id, class, item_id, click, alt)
     if ui_util.check_archive_status(player) then return end
 
     local context = get_context(player)
@@ -458,16 +458,6 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=item.proto, click=click})
-
-    elseif direction ~= nil then  -- Shift item in the given direction
-        if Line.shift(line, item, direction) then
-            production_table.refresh(player)
-        else
-            local lower_class = string.lower(class)
-            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.l" .. lower_class}, direction_string}
-            titlebar.enqueue_message(player, message, "error", 1, true)
-        end
 
     elseif click == "left" and item.proto.type ~= "entity" then
         if item.class == "Ingredient" then  -- Pick recipe to produce this ingredient

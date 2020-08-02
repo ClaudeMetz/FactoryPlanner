@@ -39,6 +39,10 @@ function Line.replace(self, dataset, object)
     return Collection.replace(self[dataset.class], dataset, object)
 end
 
+function Line.clear(self, class)
+    self[class] = Collection.clear(self[class])
+end
+
 
 function Line.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
@@ -58,10 +62,6 @@ end
 
 function Line.get_by_type_and_name(self, class, type, name)
     return Collection.get_by_type_and_name(self[class], type, name)
-end
-
-function Line.shift(self, dataset, direction)
-    return Collection.shift(self[dataset.class], dataset, direction)
 end
 
 

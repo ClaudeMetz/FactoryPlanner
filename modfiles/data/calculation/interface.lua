@@ -73,35 +73,6 @@ local function update_object_items(object, item_class, item_results)
     end
 end
 
--- Updates the items of the given object (of given class) using the given result
--- This procedure is a bit more complicated to to retain the users ordering of items
-local function update_items(object, result, class_name)
-    local items = result[class_name]
-
-    for _, item in pairs(_G[object.class].get_in_order(object, class_name)) do
-        local item_result_amount = items[item.proto.type][item.proto.name]
-
-        if item_result_amount == nil then
-            _G[object.class].remove(object, item)
-        else
-            item.amount = item_result_amount
-            -- This item_result_amount has been incorporated, so it can be removed
-            items[item.proto.type][item.proto.name] = nil
-        end
-    end
-
-    for _, item_result in pairs(structures.class.to_array(items)) do
-        if object.class == "Subfactory" then
-            top_level_item = Item.init_by_item(item_result, class_name, item_result.amount, 0)
-            _G[object.class].add(object, top_level_item)
-
-        else  -- object.class == "Line"
-            item = Item.init_by_item(item_result, class_name, item_result.amount)
-            _G[object.class].add(object, item)
-        end
-    end
-end
-
 -- Goes through every line and setting their satisfied_amounts appropriately
 local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
@@ -239,9 +210,9 @@ function calculation.interface.set_line_result(result)
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
 
-    update_items(line, result, "Product")
-    update_items(line, result, "Byproduct")
-    update_items(line, result, "Ingredient")
+    update_object_items(line, "Product", result.Product)
+    update_object_items(line, "Byproduct", result.Byproduct)
+    update_object_items(line, "Ingredient", result.Ingredient)
 end
 
 
