@@ -49,8 +49,8 @@ local function reload_preferences(player)
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
     preferences.round_button_numbers = preferences.round_button_numbers or false
 
-    preferences.optional_production_columns = preferences.optional_production_columns or
-      {["pollution"] = false, ["line_comments"] = false}
+    preferences.pollution_column = preferences.pollution_column or false
+    preferences.line_comment_column = preferences.line_comment_column or false
 
     preferences.mb_defaults = preferences.mb_defaults or
       {module = nil, beacon = nil, beacon_count = nil}

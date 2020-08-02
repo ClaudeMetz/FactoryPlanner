@@ -1,11 +1,37 @@
 preferences_dialog = {}
 
-local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes", "ingredient_satisfaction", "round_button_numbers"}
-local production_preference_names = {"pollution", "line_comments"}
 local prototype_preference_names = {"belts", "beacons", "fuels", "machines"}
 
-
 -- ** LOCAL UTIL **
+local function add_preference_box(ui_elements, type)
+    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    bordered_frame.style.horizontally_stretchable = true
+    bordered_frame.style.top_margin = 4
+    ui_elements[type .. "_box"] = bordered_frame
+
+    local caption = {"fp.info_label", {"fp.preference_".. type .. "_title"}}
+    local tooltip = {"fp.preference_".. type .. "_title_tt"}
+    bordered_frame.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
+
+    return bordered_frame
+end
+
+local preference_structures = {}
+
+function preference_structures.checkboxes(preferences, ui_elements, type, preference_names)
+    local preference_box = add_preference_box(ui_elements, type)
+    local flow_checkboxes = preference_box.add{type="flow", direction="vertical"}
+
+    for _, pref_name in ipairs(preference_names) do
+        local identifier = type .. "_" .. pref_name
+        local caption = {"fp.info_label", {"fp.preference_" .. identifier}}
+        local tooltip ={"fp.preference_" .. identifier .. "_tt"}
+        flow_checkboxes.add{type="checkbox", name=("fp_checkbox_preference_" .. identifier),
+          state=preferences[pref_name], caption=caption, tooltip=tooltip}
+    end
+end
+
+
 -- Creates the flow for the given category of prototypes
 local function create_default_prototype_category(flow, type, all_prototypes, default_prototype, category_id, column_count)
     local category_addendum = (category_id ~= nil) and ("_" .. category_id) or ""
@@ -97,36 +123,64 @@ local function refresh_preferences_dialog(player)
 end
 
 
--- ** TOP LEVEL **
--- Handles populating the preferences dialog
-function preferences_dialog.open(player, flow_modal_dialog, _)
-    flow_modal_dialog.parent.caption = {"fp.preferences"}
-    flow_modal_dialog.style.padding = 6
+local function handle_checkbox_preference_change(player, element)
+    local type = cutil.split(element.name, "_")[4]
+    local preference_name = string.gsub(element.name, "fp_checkbox_preference_" .. type .. "_", "")
 
-    -- Info
-    local label_preferences_info = flow_modal_dialog.add{type="label", name="label_preferences_info",
-      caption={"fp.preferences_info"}}
-    label_preferences_info.style.single_line = false
-    label_preferences_info.style.bottom_margin = 4
+    data_util.get("preferences", player)[preference_name] = element.state
+    local refresh = data_util.get("modal_data", player).refresh
 
-
-    -- General+Production-preferences
-    local function add_checkbox_preferences(type, preference_names)
-        flow_modal_dialog.add{type="label", name="label_" .. type .. "_info",
-          caption={"", {"fp.preferences_title_" .. type}, ":"}, style="fp_preferences_title_label",
-          tooltip={"fp.preferences_title_" .. type .. "_tt"}}
-        local table_prefs = flow_modal_dialog.add{type="table", name="table_" .. type .. "_preferences", column_count=1}
-        table_prefs.style.margin = {2, 0, 8, 16}
-
-        for _, name in ipairs(preference_names) do
-            table_prefs.add{type="checkbox", name=("fp_checkbox_" .. type .. "_preferences_" .. name), state=false,
-              caption={"", " ", {"fp." .. type .. "_preferences_" .. name}, " [img=info]"},
-              tooltip={"fp." .. type .. "_preferences_" .. name .. "_tt"}}
-        end
+    if type == "production" or preference_name == "round_button_numbers" then
+        refresh.production_table = true
     end
 
-    add_checkbox_preferences("general", general_preference_names)
-    add_checkbox_preferences("production", production_preference_names)
+    if preference_name == "ingredient_satisfaction" then
+        refresh.production_table = true
+        -- Only recalculate if the satisfaction data will actually be shown now
+        refresh.ingredient_satisfaction = (element.state)
+    end
+end
+
+
+-- ** TOP LEVEL **
+preferences_dialog.dialog_settings = (function(_) return {
+    caption = {"fp.preferences"}
+} end)
+
+preferences_dialog.events = {
+    on_gui_checked_state_changed = {
+        {
+            pattern = "^fp_checkbox_preference_[a-z]+_[a-z_]+$",
+            handler = (function(player, element)
+                handle_checkbox_preference_change(player, element)
+            end)
+        }
+    }
+}
+
+function preferences_dialog.open(player, _, modal_data)
+    local preferences = data_util.get("preferences", player)
+    modal_data.refresh = {}
+
+    local ui_elements = modal_data.ui_elements
+    ui_elements.content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
+      style="inside_shallow_frame_with_padding"}
+
+    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
+    label_preferences_info.style.single_line = false
+
+    local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
+       "ingredient_satisfaction", "round_button_numbers"}
+    preference_structures.checkboxes(preferences, ui_elements, "general", general_preference_names)
+
+    local production_preference_names = {"pollution_column", "line_comment_column"}
+    preference_structures.checkboxes(preferences, ui_elements, "production", production_preference_names)
+
+
+
+
+    if true then return end
 
 
     -- Module/Beacon defaults
@@ -179,29 +233,18 @@ function preferences_dialog.open(player, flow_modal_dialog, _)
     flow_modal_dialog.parent.force_auto_center()
 end
 
+function preferences_dialog.close(player, _, _)
+    local refresh = data_util.get("modal_data", player).refresh
 
--- Saves the given general- or production-preference change
-function preferences_dialog.handle_checkbox_change(player, type, preference, state)
-    local preferences = get_preferences(player)
-
-    if type == "general" then
-        preferences[preference] = state
-
-        if preference == "ingredient_satisfaction" or preference == "round_button_numbers" then
-            if preference == "ingredient_satisfaction" and state == true then
-                local player_table = get_table(player)
-                Factory.update_ingredient_satisfactions(player_table.factory)
-                Factory.update_ingredient_satisfactions(player_table.archive)
-            end
-
-            production_titlebar.refresh(player)
-        end
-
-    else  -- type == "production"
-        preferences.optional_production_columns[preference] = state
-        production_titlebar.refresh(player)
+    if refresh.ingredient_satisfaction then
+        local player_table = get_table(player)
+        Factory.update_ingredient_satisfactions(player_table.factory)
+        Factory.update_ingredient_satisfactions(player_table.archive)
     end
+
+    if refresh.production_table then production_table.refresh(player) end
 end
+
 
 -- Saves changes to the module/beacon defaults
 function preferences_dialog.handle_mb_defaults_change(player, button)

@@ -117,7 +117,7 @@ local function create_line_table_row(player, line)
     local player_table = get_table(player)
     local ui_state = player_table.ui_state
     local archive_open = ui_state.flags.archive_open
-    local optional_columns = get_preferences(player).optional_production_columns
+    local preferences = get_preferences(player)
 
 
     -- Recipe button
@@ -187,7 +187,7 @@ local function create_line_table_row(player, line)
 
 
     -- Energy label (don't add pollution to the tooltip if it gets it's own column)
-    local pollution_line = (optional_columns.pollution) and "" or {"", "\n", {"fp.cpollution"}, ": ",
+    local pollution_line = (preferences.pollution_column) and "" or {"", "\n", {"fp.cpollution"}, ": ",
       ui_util.format_SI_value(line.pollution, "P/m", 3)}
     table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
       caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
@@ -195,9 +195,9 @@ local function create_line_table_row(player, line)
 
 
     -- Pollution label
-    if optional_columns.pollution then
+    if preferences.pollution_column then
         table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
-          caption=ui_util.format_SI_value(line.pollution, "m", 3),
+          caption=ui_util.format_SI_value(line.pollution, "P/m", 3),
           tooltip={"", ui_util.format_SI_value(line.pollution, "P/m", 5)}}
     end
 
@@ -209,7 +209,7 @@ local function create_line_table_row(player, line)
 
 
     -- Comment textfield
-    if optional_columns.line_comments then
+    if preferences.line_comment_column then
         local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
           text=(line.comment or "")}
         ui_util.setup_textfield(textfield_comment)
@@ -227,14 +227,14 @@ function production_table.refresh(player)
 
     flow_production["label_production_info"].visible = false
     local scroll_pane_production = flow_production["scroll-pane_production_pane"]
-    local optional_columns = get_preferences(player).optional_production_columns
+    local preferences = get_preferences(player)
 
     -- Production table needs to be destroyed to change it's column count
     local table_production = scroll_pane_production["table_production_pane"]
     if table_production ~= nil then table_production.destroy() end
 
     local column_count = 9
-    for _, optional_column in pairs(optional_columns) do
+    for _, optional_column in pairs{preferences.pollution_column, preferences.line_comment_column} do
         if optional_column == true then column_count = column_count + 1 end
     end
 
@@ -268,7 +268,7 @@ function production_table.refresh(player)
             end
 
             -- Table titles
-            local title_strings = {
+            local titles = {
                 {name="recipe", label={"fp.recipe"}, alignment="middle-center"},
                 {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"},
                   alignment="middle-center"},
@@ -276,15 +276,17 @@ function production_table.refresh(player)
                 {name="modules", label={"fp.cmodules"}, alignment="middle-center"},
                 {name="beacons", label={"fp.cbeacons"}, alignment="middle-center"},
                 {name="energy", label={"fp.energy"}, alignment="middle-center"},
-                {name="pollution", label={"fp.cpollution"}, alignment="middle-center"},
+                {name="pollution", show=preferences.pollution_column, label={"fp.cpollution"},
+                  alignment="middle-center"},
                 {name="products", label={"fp.products"}, alignment="middle-left"},
                 {name="byproducts", label={"fp.byproducts"}, alignment="middle-left"},
                 {name="ingredients", label={"fp.ingredients"}, alignment="middle-left"},
-                {name="line_comments", custom_function=add_line_comments_column, alignment="middle-left"}
+                {name="line_comments", show=preferences.line_comment_column,
+                  custom_function=add_line_comments_column, alignment="middle-left"}
             }
 
-            for index, title in ipairs(title_strings) do
-                if optional_columns[title.name] == nil or optional_columns[title.name] == true then
+            for index, title in ipairs(titles) do
+                if title.show == nil or title.show == true then
                     table_production.style.column_alignments[index] = title.alignment
 
                     if title.custom_function then
