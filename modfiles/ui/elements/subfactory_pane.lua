@@ -12,7 +12,8 @@ local function _refresh_item_table(player, item_table, class, items, display_mod
     local view_name = ui_state.view_state.selected_view.name
 
     local round_belts = (view_name == "belts_or_lanes" and player_table.preferences.round_button_numbers)
-    local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, ("tl_" .. ui_name), true)
+    local tutorial_tooltip = (class == "Product") and
+      ui_util.tutorial_tooltip(player, nil, ("tl_" .. ui_name), true) or ""
     local style = "fp_button_icon_large_blank"  -- will remain untouched if the display mode is 'floor_total'
 
     for _, item in ipairs(items) do
@@ -170,24 +171,12 @@ end
 
 
 -- Handles click on a subfactory pane ingredient button
-function subfactory_pane.handle_ingredient_element_click(player, ingredient_id, click, direction, _, alt)
+function subfactory_pane.handle_ingredient_element_click(player, ingredient_id, click, _, _, alt)
     local subfactory = get_context(player).subfactory
     local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=ingredient.proto, click=click})
-
-    elseif ui_util.check_archive_status(player) then
-        return
-
-    elseif direction ~= nil then  -- Shift product in the given direction
-        if Subfactory.shift(subfactory, ingredient, direction) then
-            refresh_item_table(player, "Ingredient")
-        else
-            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lingredient"}, direction_string}
-            titlebar.enqueue_message(player, message, "error", 1, true)
-        end
     end
 end
 
@@ -238,26 +227,17 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
 end
 
 -- Handles click on a subfactory pane byproduct button
-function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, click, direction, _, alt)
+function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, click, _, _, alt)
     local subfactory = get_context(player).subfactory
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
 
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=byproduct.proto, click=click})
 
-    elseif ui_util.check_archive_status(player) then
+    --[[ elseif ui_util.check_archive_status(player) then
         return
 
-    elseif direction ~= nil then  -- Shift product in the given direction
-        if Subfactory.shift(subfactory, byproduct, direction) then
-            refresh_item_table(player, "Byproduct")
-        else
-            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.lbyproduct"}, direction_string}
-            titlebar.enqueue_message(player, message, "error", 1, true)
-        end
-
-    --[[ elseif click == "left" then
+    elseif click == "left" then
         local floor = context.floor
         if floor.level == 1 then
             modal_dialog.enter(player, {type="recipe", modal_data={product=byproduct, production_type="consume"}})

@@ -63,7 +63,7 @@ function model.update_floor(floor_data, aggregate)
             end
 
             structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate, "Byproduct", "Product")
-            structures.class.balance_items(subfloor_aggregate.Byproduct,aggregate,  "Product", "Byproduct")
+            structures.class.balance_items(subfloor_aggregate.Byproduct, aggregate, "Product", "Byproduct")
 
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate

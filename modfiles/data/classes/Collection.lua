@@ -46,6 +46,10 @@ function Collection.replace(self, dataset, object)
     return object  -- Returning it here feels nice
 end
 
+function Collection.clear(self)
+    return Collection.init(self.object_class)
+end
+
 
 function Collection.get(self, object_id)
     return self.datasets[object_id]
