@@ -79,6 +79,9 @@ function generator.all_recipes()
         end
     end
 
+    -- Cache them here so they don't have to be recreated over and over
+    local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes
+
     -- Adding mining recipes
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
@@ -144,9 +147,9 @@ function generator.all_recipes()
         elseif proto.rocket_parts_required ~= nil then
             -- Add recipe for all 'launchable' items
             for _, item in pairs(rocket_silo_inputs) do
-                local fixed_recipe = game.recipe_prototypes[proto.fixed_recipe]
+                local fixed_recipe = recipe_prototypes[proto.fixed_recipe]
                 if fixed_recipe ~= nil then
-                    local silo_product = game.item_prototypes[item.rocket_launch_products[1].name]
+                    local silo_product = item_prototypes[item.rocket_launch_products[1].name]
 
                     local recipe = custom_recipe()
                     recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. item.name
