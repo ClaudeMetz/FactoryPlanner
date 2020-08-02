@@ -242,9 +242,9 @@ function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto,
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, category)
+function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, is_rocket_silo)
     local launch_delay = 0
-    if category == "rocket-building" then
+    if is_rocket_silo then  -- This calculation only works for unmodified rockets
         local launch_sequence_time = 41.25 / timescale  -- in seconds
         launch_delay = launch_sequence_time * production_ratio
     end
@@ -253,9 +253,9 @@ function calculation.util.determine_machine_count(crafts_per_tick, production_ra
 end
 
 -- Calculates the production ratio from a given machine limit
-function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, category)
+function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, is_rocket_silo)
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
-    if category == "rocket-building" then  -- Formula reduced by Wolfram Alpha
+    if is_rocket_silo then  -- Formula reduced by Wolfram Alpha
         return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)
     else
         return machine_limit * timescale * crafts_per_tick

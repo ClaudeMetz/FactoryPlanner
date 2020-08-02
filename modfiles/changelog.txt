@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the mod did not pick up on modded rocket silos correctly
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.48

@@ -216,7 +216,7 @@ function model.update_line(line_data, aggregate)
 
     -- Determine machine count
     local machine_count = calculation.util.determine_machine_count(crafts_per_tick, production_ratio,
-      timescale, machine_proto.category)
+      timescale, machine_proto.is_rocket_silo)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count)

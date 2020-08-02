@@ -152,7 +152,7 @@ function generator.all_recipes()
                     recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. item.name
                     recipe.localised_name = silo_product.localised_name
                     recipe.sprite = "item/" .. silo_product.name
-                    recipe.category = "rocket-building"
+                    recipe.category = next(proto.crafting_categories, nil)  -- hopefully this stays working
                     recipe.energy = fixed_recipe.energy * proto.rocket_parts_required
                     recipe.subgroup = {name="science-pack", order="g", valid=true}
                     recipe.order = "x-silo-" .. proto.order .. "-" .. item.order
@@ -362,6 +362,7 @@ function generator.all_machines()
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
+            is_rocket_silo = (proto.rocket_parts_required ~= nil),
             burner = burner
         }
 
@@ -370,11 +371,9 @@ function generator.all_machines()
 
     for _, proto in pairs(game.entity_prototypes) do
         if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil then
-            for category, enabled in pairs(proto.crafting_categories) do
-                if enabled then
-                    local machine = generate_category_entry(category, proto)
-                    generator_util.data_structure.insert(machine)
-                end
+            for category, _ in pairs(proto.crafting_categories) do
+                local machine = generate_category_entry(category, proto)
+                generator_util.data_structure.insert(machine)
             end
 
         -- Add mining machines
