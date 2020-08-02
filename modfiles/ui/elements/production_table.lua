@@ -37,7 +37,7 @@ local function create_item_button_flow(player_table, gui_table, line, class, sty
               item.proto.type, item.amount, line.machine)
         end
 
-        if raw_amount == nil or raw_amount > margin_of_error then
+        if raw_amount == nil or raw_amount > MARGIN_OF_ERROR then
             -- Determine potential different button style and the potential satisfaction line
             local actual_style, satisfaction_line = style, ""
             indication = indication or ""

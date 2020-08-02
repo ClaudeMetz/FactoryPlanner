@@ -212,7 +212,7 @@ script.on_event(defines.events.on_player_created, function(event)
     ui_util.mod_gui.create(player)
 
     -- Add the subfactories that are handy for development
-    if devmode then data_util.add_subfactories_by_string(player, dev_export_string, false) end
+    if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
 end)
 
 -- Fires when a player is irreversibly removed from a game

@@ -56,7 +56,7 @@ function item_picker.create(parent)
             local scroll_pane_subgroups, table_subgroups = nil, nil
 
             if button_group == nil then
-                local tooltip = (devmode) and {"", item.group.localised_name, ("\n" .. group_name)}
+                local tooltip = (DEVMODE) and {"", item.group.localised_name, ("\n" .. group_name)}
                   or item.group.localised_name
                 button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_"
                   .. group_id, sprite=("item-group/" .. group_name), style="fp_button_icon_medium_recipe",

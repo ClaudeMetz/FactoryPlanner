@@ -76,7 +76,7 @@ tutorial_dialog.events = {
         {
             name = "fp_button_tutorial_add_example",
             handler = (function(player, _)
-                data_util.add_subfactories_by_string(player, tutorial_export_string, true)
+                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
                 modal_dialog.exit(player, "cancel", {})
             end)
         }
