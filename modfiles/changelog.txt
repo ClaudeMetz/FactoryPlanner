@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    - Removed the ability to manually order top level ingredients and byproducts
+    - Removed the ability to manually order top level ingredients and byproducts, the same goes for any recipe line items
   Bugfixes:
     - Fixed that the mod did not pick up on modded rocket silos correctly
 
