@@ -3,7 +3,6 @@ module_dialog = {}
 beacon_dialog = {}
 module_beacon_dialog = {}  -- Contains functionality pertaining to both kinds of dialog
 
-
 -- ** LOCAL UTIL **
 -- Generates the module condition text for beacons, so it can be updated when the selected beacon changes
 local function generate_module_condition_text(modal_data)

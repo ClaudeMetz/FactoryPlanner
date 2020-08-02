@@ -373,7 +373,7 @@ function generator_util.add_recipe_tooltip(recipe)
             end
         end
     end
-    if devmode then multi_insert{("\n" .. recipe.name)} end
+    if DEVMODE then multi_insert{("\n" .. recipe.name)} end
 
     recipe.tooltip = tooltip
 end
@@ -381,7 +381,7 @@ end
 -- Adds the tooltip for the given item
 function generator_util.add_item_tooltip(item)
     local tooltip = item.localised_name
-    if devmode then tooltip = {"", item.localised_name, ("\n" .. item.name)} end
+    if DEVMODE then tooltip = {"", item.localised_name, ("\n" .. item.name)} end
     item.tooltip = tooltip
 end
 
