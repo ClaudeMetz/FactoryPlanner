@@ -227,7 +227,7 @@ import_dialog.events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_import",
-            handler = (function(player, _)
+            handler = (function(player, _, _)
                 import_subfactories(player)
             end)
         }
@@ -291,7 +291,7 @@ export_dialog.events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_export",
-            handler = (function(player, _)
+            handler = (function(player, _, _)
                 export_subfactories(player)
             end)
         }

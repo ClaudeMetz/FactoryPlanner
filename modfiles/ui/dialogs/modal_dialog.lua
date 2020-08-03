@@ -43,7 +43,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
     modal_data.ui_elements.flow_modal_dialog = flow_modal_dialog
 
     local main_dialog_dimensions = get_ui_state(player).main_dialog_dimensions
-    modal_data.dialog_maximal_height = (main_dialog_dimensions.height - conditions_height - 60) * 0.95
+    modal_data.dialog_maximal_height = (main_dialog_dimensions.height - conditions_height - 60) * 0.9
     flow_modal_dialog.style.maximal_height = modal_data.dialog_maximal_height
 
 
@@ -91,8 +91,6 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
         if dialog_settings.disable_submit_button then button_submit.enabled = false end
         modal_data.ui_elements.dialog_submit_button = button_submit
     end
-
-    if dialog_settings.force_auto_center then frame_modal_dialog.force_auto_center() end
 
     return flow_modal_dialog
 end
@@ -179,6 +177,8 @@ function modal_dialog.enter(player, dialog_settings)
     toggle_modal_dialog(player, flow_modal_dialog.parent)
     -- TODO remove flow_modal_dialog when every dialog has been updated
     dialog_object.open(player, flow_modal_dialog, ui_state.modal_data)
+
+    if dialog_settings.force_auto_center then player.gui.screen["fp_frame_modal_dialog"].force_auto_center() end
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter

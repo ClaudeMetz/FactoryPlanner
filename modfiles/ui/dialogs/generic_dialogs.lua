@@ -31,7 +31,7 @@ chooser_dialog.events = {
     on_gui_click = {
         {
             pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
-            handler = (function(player, element)
+            handler = (function(player, element, _)
                 handler_chooser_button_click(player, element)
             end)
         }
