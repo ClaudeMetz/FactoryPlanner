@@ -178,7 +178,10 @@ function modal_dialog.enter(player, dialog_settings)
     -- TODO remove flow_modal_dialog when every dialog has been updated
     dialog_object.open(player, flow_modal_dialog, ui_state.modal_data)
 
-    if dialog_settings.force_auto_center then player.gui.screen["fp_frame_modal_dialog"].force_auto_center() end
+    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+    if dialog_settings.force_auto_center and frame_modal_dialog then
+        frame_modal_dialog.force_auto_center()
+    end
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
