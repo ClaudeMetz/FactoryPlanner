@@ -452,10 +452,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif string.find(element_name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
             module_beacon_dialog.handle_picker_click(player, event.element)
 
-        -- Reacts to any default prototype preference button being pressed
+        --[[ -- Reacts to any default prototype preference button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_preferences_[a-z]+_%d+_?%d*$") then
             local split_string = cutil.split(element_name, "_")
-            preferences_dialog.handle_prototype_change(player, split_string[4], split_string[5], split_string[6], event.alt)
+            preferences_dialog.handle_prototype_change(player, split_string[4], split_string[5], split_string[6], event.alt) ]]
 
         -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
         elseif string.find(element_name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
