@@ -123,7 +123,7 @@ function Line.change_machine(self, player, machine_proto, direction)
             -- Set the machine-fuel, if appropriate
             Machine.find_fuel(self.machine, player)
 
-            return true
+            return machine_proto.id
         end
 
     -- Bump machine in the given direction
@@ -134,25 +134,30 @@ function Line.change_machine(self, player, machine_proto, direction)
         local machine_category_id = global.all_machines.map[machine_proto.category]
         local category_machines = global.all_machines.categories[machine_category_id].machines
 
+        local grading_direction = nil
         if direction == "positive" then
             if machine_proto.id < #category_machines then
                 local new_machine = category_machines[machine_proto.id + 1]
                 return Line.change_machine(self, player, new_machine, nil)
-            else
-                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.upgraded"}}
-                titlebar.enqueue_message(player, message, "error", 1, false)
-                return false
             end
+            grading_direction = {"fp.upgraded"}
+
         else  -- direction == "negative"
             if machine_proto.id > 1 then
                 local new_machine = category_machines[machine_proto.id - 1]
-                return Line.change_machine(self, player, new_machine, nil)
-            else
-                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, {"fp.downgraded"}}
-                titlebar.enqueue_message(player, message, "error", 1, false)
-                return false
+                local new_machine_id = Line.change_machine(self, player, new_machine, nil)
+
+                -- If the new_machine is not applicable to this line, change_machine will bump it back up,
+                -- effectively setting it to the current one, with the net result being no change in machine.
+                -- If this happens, the error should still appear, so we do this check
+                if new_machine_id == new_machine.id then return new_machine_id end
             end
+            grading_direction = {"fp.downgraded"}
         end
+
+        local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, grading_direction}
+        titlebar.enqueue_message(player, message, "error", 1, false)
+        return false
     end
 end
 
