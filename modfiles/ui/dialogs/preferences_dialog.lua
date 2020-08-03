@@ -1,8 +1,8 @@
 preferences_dialog = {}
 
 -- ** LOCAL UTIL **
-local function add_preference_box(ui_elements, type)
-    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+local function add_preference_box(content_frame, type)
+    local bordered_frame = content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
     bordered_frame.style.horizontally_stretchable = true
     bordered_frame.style.top_margin = 4
 
@@ -36,19 +36,19 @@ local function refresh_defaults_table(player, ui_elements, type, category_id)
             or prototype.localised_name
         local tooltip = {"", first_line, "\n", ui_util.attributes[type:sub(1, -2)](prototype)}
 
-        local sprite_button = table_prototypes.add{type="sprite-button", sprite=prototype.sprite,
-            name="fp_sprite-button_preference_default_" .. type .. "_" .. prototype_id .. category_addendum,
-            tooltip=tooltip, style=style, mouse_button_filter={"left"}}
-        sprite_button.style.height = 32
-        sprite_button.style.width = 32
+        local sprite_button = table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip,
+          name="fp_sprite-button_preference_default_" .. type .. "_" .. prototype_id .. category_addendum,
+          style=style, mouse_button_filter={"left"}}
+        sprite_button.style.width = 36
+        sprite_button.style.height = 36
     end
 end
 
 
 local preference_structures = {}
 
-function preference_structures.checkboxes(preferences, ui_elements, type, preference_names)
-    local preference_box = add_preference_box(ui_elements, type)
+function preference_structures.checkboxes(preferences, content_frame, type, preference_names)
+    local preference_box = add_preference_box(content_frame, type)
     local flow_checkboxes = preference_box.add{type="flow", direction="vertical"}
 
     for _, pref_name in ipairs(preference_names) do
@@ -60,10 +60,10 @@ function preference_structures.checkboxes(preferences, ui_elements, type, prefer
     end
 end
 
-function preference_structures.mb_defaults(preferences, ui_elements)
+function preference_structures.mb_defaults(preferences, content_frame)
     local mb_defaults = preferences.mb_defaults
 
-    local preference_box = add_preference_box(ui_elements, "mb_defaults")
+    local preference_box = add_preference_box(content_frame, "mb_defaults")
     local flow_mb_defaults = preference_box.add{type="flow", direction="horizontal"}
     flow_mb_defaults.style.vertical_align = "center"
     flow_mb_defaults.style.top_margin = 4
@@ -73,8 +73,8 @@ function preference_structures.mb_defaults(preferences, ui_elements)
         flow_mb_defaults.add{type="label", caption={"fp.pu_" .. type, 1}}
 
         local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
-          name="fp_choose-elem-button_mb_default_" .. type, elem_filters={{filter="type", type="module"},
-          {filter="flag", flag="hidden", mode="and", invert=true}}}
+          name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset",
+          elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
         choose_elem_button.elem_value = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
         choose_elem_button.style.margin = {0, 12, 0, 4}
         choose_elem_button.style.height = 32
@@ -93,15 +93,18 @@ function preference_structures.mb_defaults(preferences, ui_elements)
     textfield_beacon_count.style.margin = {0, 8}
 end
 
-function preference_structures.prototypes(player, ui_elements, type)
-    local preference_box = add_preference_box(ui_elements, ("default_" .. type))
-    local table_prototypes = preference_box.add{type="table", column_count=2}
+function preference_structures.prototypes(player, content_frame, ui_elements, type)
+    local preference_box = add_preference_box(content_frame, ("default_" .. type))
+    local table_prototypes = preference_box.add{type="table", column_count=3}
     table_prototypes.style.horizontal_spacing = 20
+    table_prototypes.style.vertical_spacing = 8
     table_prototypes.style.top_margin = 4
 
     local function add_defaults_table(column_count, category_id)
-        local frame = table_prototypes.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+        local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
+        frame.style.right_margin = 6
         local table = frame.add{type="table", column_count=column_count, style="filter_slot_table"}
+
         if category_id then
             ui_elements[type] = ui_elements[type] or {}
             ui_elements[type][category_id] = table
@@ -116,7 +119,7 @@ function preference_structures.prototypes(player, ui_elements, type)
         local all_prototypes = global["all_" .. type][type]
         if #all_prototypes < 2 then preference_box.visible = false; return end
 
-        add_defaults_table(10, nil)
+        add_defaults_table(8, nil)
         refresh_defaults_table(player, ui_elements, type, nil)
 
     else  -- structure_type == "complex"
@@ -131,6 +134,7 @@ function preference_structures.prototypes(player, ui_elements, type)
                 any_category_visible = true
 
                 table_prototypes.add{type="label", caption={"fp.quoted_title", category.name}}
+                table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
                 add_defaults_table(8, category_id)
                 refresh_defaults_table(player, ui_elements, type, category_id)
@@ -190,7 +194,7 @@ local function handle_default_prototype_change(player, element, metadata)
     refresh_defaults_table(player, modal_data.ui_elements, type, category_id)
 
     -- If this was an alt-click, set this prototype on every category that also has it
-    if metadata.alt and category_id ~= nil then
+    if metadata.alt and type == "machines" then
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for secondary_category_id, category in pairs(global["all_" .. type].categories) do
@@ -208,6 +212,7 @@ end
 -- ** TOP LEVEL **
 preferences_dialog.dialog_settings = (function(_) return {
     caption = {"fp.preferences"},
+    disable_scroll_pane = true,
     force_auto_center = true
 } end)
 
@@ -249,30 +254,52 @@ preferences_dialog.events = {
 
 function preferences_dialog.open(player, _, modal_data)
     local preferences = data_util.get("preferences", player)
+    local ui_elements = modal_data.ui_elements
     modal_data.refresh = {}
 
-    local ui_elements = modal_data.ui_elements
-    ui_elements.content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
+    local flow_content = ui_elements.flow_modal_dialog.add{type="flow", direction="horizontal"}
+    flow_content.style.horizontal_spacing = 12
+    local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
+    flow_content.style.maximal_height = main_dialog_dimensions.height * 0.75
 
-    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    local function add_content_frame()
+        local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
+        content_frame.style.vertically_stretchable = true
+
+        local scroll_pane = content_frame.add{type="scroll-pane", style="scroll_pane_in_shallow_frame"}
+        scroll_pane.style.extra_top_padding_when_activated = 0
+        scroll_pane.style.extra_right_padding_when_activated = 0
+        scroll_pane.style.extra_bottom_padding_when_activated = 0
+        scroll_pane.style.extra_left_padding_when_activated = 0
+        scroll_pane.style.padding = 12
+
+        return scroll_pane
+    end
+
+    local left_content_frame = add_content_frame()
+
+    local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
     bordered_frame.style.horizontally_stretchable = true
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
 
     local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
        "ingredient_satisfaction", "round_button_numbers"}
-    preference_structures.checkboxes(preferences, ui_elements, "general", general_preference_names)
+    preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
     local production_preference_names = {"pollution_column", "line_comment_column"}
-    preference_structures.checkboxes(preferences, ui_elements, "production", production_preference_names)
+    preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
-    preference_structures.mb_defaults(preferences, ui_elements)
+    preference_structures.mb_defaults(preferences, left_content_frame)
 
-    preference_structures.prototypes(player, ui_elements, "belts")
-    preference_structures.prototypes(player, ui_elements, "beacons")
-    preference_structures.prototypes(player, ui_elements, "fuels")
-    preference_structures.prototypes(player, ui_elements, "machines")
+    preference_structures.prototypes(player, left_content_frame, ui_elements, "belts")
+    preference_structures.prototypes(player, left_content_frame, ui_elements, "beacons")
+
+    local right_content_frame = add_content_frame()
+    right_content_frame.style.top_padding = 8
+
+    preference_structures.prototypes(player, right_content_frame, ui_elements, "fuels")
+    preference_structures.prototypes(player, right_content_frame, ui_elements, "machines")
 end
 
 function preferences_dialog.close(player, _, _)
