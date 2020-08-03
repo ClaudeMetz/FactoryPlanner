@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Redesigned the preferences dialog
   Bugfixes:
     - Fixed that the dialog to change machine would sometimes highlight the wrong machine as being selected
+    - Fixed that downgrading a machine wouldn't always show an error message when unsuccessful
     - Fixed that modded rocket silos were not picked up on correctly
 
 ---------------------------------------------------------------------------------------------------
