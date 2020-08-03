@@ -75,7 +75,7 @@ tutorial_dialog.events = {
     on_gui_click = {
         {
             name = "fp_button_tutorial_add_example",
-            handler = (function(player, _)
+            handler = (function(player, _, _)
                 data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
                 modal_dialog.exit(player, "cancel", {})
             end)
@@ -97,7 +97,8 @@ function tutorial_dialog.open(player, _, modal_data)
     local frame_tabs = modal_data.ui_elements.flow_modal_dialog.add{type="frame", style="inside_deep_frame_for_tabs"}
 
     local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
-    tabbed_pane.style.height = 700
+    local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
+    tabbed_pane.style.height = main_dialog_dimensions.height * 0.7
 
     for _, tab_name in ipairs(tab_definitions) do
         local tab = tabbed_pane.add{type="tab"}

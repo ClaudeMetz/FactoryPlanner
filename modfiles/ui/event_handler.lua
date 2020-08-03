@@ -12,7 +12,6 @@ local event_identifier_name_map = {
 
 local event_standard_timeouts = {
     --on_gui_click = 10,  -- TODO need to use the listener one for this for now
-    on_gui_confirmed = 30
 }
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
@@ -46,8 +45,7 @@ local function rate_limit(player, event, element_name, timeout)
 end
 
 
-
-local function standard_handler(player, event, event_handlers)
+local function standard_handler(player, event, event_handlers, metadata)
     local element_name = event.element.name
 
     -- Try finding the appropriate handler_table by name first
@@ -67,7 +65,7 @@ local function standard_handler(player, event, event_handlers)
     if handler_table ~= nil then
         local timeout = handler_table.timeout
         if (timeout == nil) or rate_limit(player, event, element_name, timeout) then
-            handler_table.handler(player, event.element)
+            handler_table.handler(player, event.element, metadata)
         end
     end
 
@@ -77,6 +75,12 @@ end
 
 
 -- ** SPECIAL HANDLERS **
+function special_handlers.on_gui_click(player, event, event_handlers)
+    local metadata = {alt=event.alt}
+
+    standard_handler(player, event, event_handlers, metadata)
+end
+
 function special_handlers.on_gui_confirmed(player, event, event_handlers)
     -- Try the normal handler, if it returns true, an event_handler was found
     if standard_handler(player, event, event_handlers) then
