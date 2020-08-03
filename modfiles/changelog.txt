@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.49
+Date: 03. 08. 2020
   Features:
     - Added the ability to add a recipe right below the ingredient that it should produce by shift-left-clicking the ingredient
   Changes:
