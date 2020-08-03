@@ -13,6 +13,42 @@ data.raw["gui-style"].default["fp_scroll_pane_inside_tab"] = {
     }
 }
 
+-- Intended for buttons of size 36
+data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
+    type = "frame_style",
+    parent = "slot_button_deep_frame",
+    background_graphical_set = {
+        position = {282, 17},
+        corner_size = 8,
+        overall_tiling_vertical_size = 28,
+        overall_tiling_vertical_spacing = 8,
+        overall_tiling_vertical_padding = 4,
+        overall_tiling_horizontal_size = 28,
+        overall_tiling_horizontal_spacing = 8,
+        overall_tiling_horizontal_padding = 4,
+    }
+}
+
+-- This style is hacked together from rounded-button and textbox
+data.raw["gui-style"].default["fp_sprite-button_inset"] = {
+    type = "button_style",
+    parent = "icon_button",
+    padding = 0,
+    default_graphical_set = {
+        base = {position = {248, 0}, corner_size = 8}
+    },
+    hovered_graphical_set = {
+        base = {position = {219, 200}, corner_size = 8}
+    },
+    clicked_graphical_set = {
+        base = {position = {265, 0}, corner_size = 8}
+    },
+    disabled_graphical_set = {
+        base = {position = {185, 200}, corner_size = 8}
+    }
+}
+
+
 
 -- OLD STUFF
 data.raw["gui-style"].default["fp_footer_filler"] = {
@@ -156,24 +192,6 @@ data.raw["gui-style"].default["fp_scroll_pane_items"] = {
 data.raw["gui-style"].default["fp_preferences_title_label"] = {
     type = "label_style",
     font = "fp-font-bold-15p"
-}
-
--- This style is hacked together from rounded-button and textbox
-data.raw["gui-style"].default["fp_sprite-button_inset"] = {
-    type = "button_style",
-    parent = "icon_button",
-    default_graphical_set = {
-        base = {position = {248, 0}, corner_size = 8}
-    },
-    hovered_graphical_set = {
-        base = {position = {219, 200}, corner_size = 8}
-    },
-    clicked_graphical_set = {
-        base = {position = {265, 0}, corner_size = 8}
-    },
-    disabled_graphical_set = {
-        base = {position = {185, 200}, corner_size = 8}
-    }
 }
 
 data.raw["gui-style"].default["fp_sprite-button_inset_line"] = {
