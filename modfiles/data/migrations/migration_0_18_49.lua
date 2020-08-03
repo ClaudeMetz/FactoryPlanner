@@ -7,13 +7,17 @@ function migration.player_table(player_table)
     local preferences = player_table.preferences
 
     local mb_defaults = preferences.mb_defaults
-    mb_defaults.machine = mb_defaults.module
-    mb_defaults.module = nil
+    if mb_defaults then
+        mb_defaults.machine = mb_defaults.module
+        mb_defaults.module = nil
+    end
 
     local optional_columns = preferences.optional_production_columns
-    preferences.pollution_column = optional_columns.pollution_column
-    preferences.line_comment_column = optional_columns.line_comments
-    preferences.optional_production_columns = nil
+    if optional_columns then
+        preferences.pollution_column = optional_columns.pollution_column
+        preferences.line_comment_column = optional_columns.line_comments
+        preferences.optional_production_columns = nil
+    end
 end
 
 function migration.subfactory(subfactory)

@@ -1,19 +1,47 @@
 preferences_dialog = {}
 
-local prototype_preference_names = {"belts", "beacons", "fuels", "machines"}
-
 -- ** LOCAL UTIL **
 local function add_preference_box(ui_elements, type)
     local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
     bordered_frame.style.horizontally_stretchable = true
     bordered_frame.style.top_margin = 4
-    ui_elements[type .. "_box"] = bordered_frame
 
     local caption = {"fp.info_label", {"fp.preference_".. type .. "_title"}}
     local tooltip = {"fp.preference_".. type .. "_title_tt"}
     bordered_frame.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
 
     return bordered_frame
+end
+
+local function refresh_defaults_table(player, ui_elements, type, category_id)
+    local table_prototypes, all_prototypes, category_addendum
+
+    if not category_id then
+        table_prototypes = ui_elements[type]
+        all_prototypes = global["all_" .. type][type]
+        category_addendum = ""
+    else
+        table_prototypes = ui_elements[type][category_id]
+        all_prototypes = global["all_" .. type].categories[category_id][type]
+        category_addendum = ("_" .. category_id)
+    end
+
+    table_prototypes.clear()
+    local default_proto = prototyper.defaults.get(player, type, category_id)
+
+    for prototype_id, prototype in ipairs(all_prototypes) do
+        local selected = (default_proto.id == prototype_id)
+        local style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
+        local first_line = (selected) and {"fp.annotated_title", prototype.localised_name, {"fp.selected"}}
+            or prototype.localised_name
+        local tooltip = {"", first_line, "\n", ui_util.attributes[type:sub(1, -2)](prototype)}
+
+        local sprite_button = table_prototypes.add{type="sprite-button", sprite=prototype.sprite,
+            name="fp_sprite-button_preference_default_" .. type .. "_" .. prototype_id .. category_addendum,
+            tooltip=tooltip, style=style, mouse_button_filter={"left"}}
+        sprite_button.style.height = 32
+        sprite_button.style.width = 32
+    end
 end
 
 
@@ -62,97 +90,53 @@ function preference_structures.mb_defaults(preferences, ui_elements)
       text=mb_defaults.beacon_count}
     ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
     textfield_beacon_count.style.width = 40
-    textfield_beacon_count.style.margin = {0, 4}
+    textfield_beacon_count.style.margin = {0, 8}
 end
 
+function preference_structures.prototypes(player, ui_elements, type)
+    local preference_box = add_preference_box(ui_elements, ("default_" .. type))
+    local table_prototypes = preference_box.add{type="table", column_count=2}
+    table_prototypes.style.horizontal_spacing = 20
+    table_prototypes.style.top_margin = 4
 
--- Creates the flow for the given category of prototypes
-local function create_default_prototype_category(flow, type, all_prototypes, default_prototype, category_id, column_count)
-    local category_addendum = (category_id ~= nil) and ("_" .. category_id) or ""
-    local table_prototypes = flow.add{type="table", name=("table_prototypes_" .. type .. category_addendum),
-      column_count=column_count}
-    table_prototypes.style.bottom_margin = 6
-
-    for proto_id, proto in ipairs(all_prototypes) do
-        local button = table_prototypes.add{type="sprite-button", name="fp_sprite-button_preferences_" .. type .. "_"
-          .. proto_id .. category_addendum, sprite=proto.sprite, mouse_button_filter={"left"}}
-
-        local tooltip = proto.localised_name
-        if default_prototype.name == proto.name then
-            button.style = "fp_button_icon_medium_green"
-            tooltip = {"", tooltip, " (", {"fp.selected"}, ")"}
+    local function add_defaults_table(column_count, category_id)
+        local frame = table_prototypes.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+        local table = frame.add{type="table", column_count=column_count, style="filter_slot_table"}
+        if category_id then
+            ui_elements[type] = ui_elements[type] or {}
+            ui_elements[type][category_id] = table
         else
-            button.style = "fp_button_icon_medium_hidden"
-        end
-        button.tooltip = {"", tooltip, "\n", ui_util.attributes[type:sub(1, -2)](proto)}
-    end
-end
-
--- Creates the modal dialog to change your preferences
-local function refresh_preferences_dialog(player)
-    local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
-    local preferences = get_preferences(player)
-
-    -- General+Production preferences
-    local function refresh_checkbox_preferences(type, preference_names, pref_table)
-        local table_prefs = flow_modal_dialog["table_" .. type .. "_preferences"]
-        for _, name in ipairs(preference_names) do
-            table_prefs["fp_checkbox_" .. type .. "_preferences_" .. name].state = pref_table[name]
+            ui_elements[type] = table
         end
     end
 
-    refresh_checkbox_preferences("general", general_preference_names, preferences)
-    refresh_checkbox_preferences("production", production_preference_names, preferences.optional_production_columns)
+    local preferences = data_util.get("preferences", player)
+    local default_prototypes = preferences.default_prototypes[type]
+    if default_prototypes.structure_type == "simple" then
+        local all_prototypes = global["all_" .. type][type]
+        if #all_prototypes < 2 then preference_box.visible = false; return end
 
+        add_defaults_table(10, nil)
+        refresh_defaults_table(player, ui_elements, type, nil)
 
-    -- Module/Beacon defaults preferences
-    local flow_mb_defaults = flow_modal_dialog["flow_module_beacon_defaults"]
-    local mb_defaults = preferences.mb_defaults
-    flow_mb_defaults["fp_choose-elem-button_default_module"].elem_value =
-      (mb_defaults.module) and mb_defaults.module.name or nil
-    flow_mb_defaults["fp_choose-elem-button_default_beacon"].elem_value =
-      (mb_defaults.beacon) and mb_defaults.beacon.name or nil
-    flow_mb_defaults["fp_textfield_default_beacon_count"].text = mb_defaults.beacon_count or ""
+    else  -- structure_type == "complex"
+        local all_categories = global["all_" .. type].categories
+        if #all_categories == 0 then preference_box.visible = false; return end
 
+        local any_category_visible = false
+        for category_id, category in ipairs(all_categories) do
+            local all_prototypes = category[type]
 
-    -- Prototype preferences
-    local function refresh_prototype_preference(type)
-        local default_prototypes = preferences.default_prototypes[type]
-        local flow_proto_pref = flow_modal_dialog["flow_prototype_preference_" .. type]["flow_prototype_preferences"]
-        flow_proto_pref.clear()
+            if #all_prototypes > 1 then
+                any_category_visible = true
 
-        if default_prototypes.structure_type == "simple" then
-            local all_prototypes = global["all_" .. type][type]
-            flow_proto_pref.parent.visible = (#all_prototypes > 1)
+                table_prototypes.add{type="label", caption={"fp.quoted_title", category.name}}
 
-            local default_prototype = default_prototypes.prototype
-            create_default_prototype_category(flow_proto_pref, type, all_prototypes, default_prototype, nil, 12)
-
-        else  -- structure_type == "complex"
-            local all_categories = global["all_" .. type].categories
-
-            local table_all_categories = flow_proto_pref.add{type="table", name="table_all_" .. type .. "_categories",
-              column_count=2}
-            table_all_categories.style.horizontal_spacing = 16
-
-            for category_id, category in ipairs(all_categories) do
-                local all_prototypes = category[type]
-
-                if #all_prototypes > 1 then
-                    table_all_categories.add{type="label", name="label_" .. category_id,
-                      caption="'" .. category.name .. "':"}
-
-                    local default_prototype = default_prototypes.prototypes[category_id]
-                    create_default_prototype_category(table_all_categories, type, all_prototypes,
-                      default_prototype, category_id, 8)
-                end
+                add_defaults_table(8, category_id)
+                refresh_defaults_table(player, ui_elements, type, category_id)
             end
-
         end
-    end
-
-    for _, preference_name in ipairs(prototype_preference_names) do
-        refresh_prototype_preference(preference_name)
+        if not any_category_visible then preference_box.visible = false end
     end
 end
 
@@ -195,6 +179,31 @@ local function handle_mb_default_change(player, element)
     end
 end
 
+local function handle_default_prototype_change(player, element, metadata)
+    local split_name = cutil.split(element.name, "_")
+    local type, prototype_id, category_id = split_name[5], split_name[6], split_name[7]
+
+    local modal_data = data_util.get("modal_data", player)
+    if type == "belts" then modal_data.refresh.main_dialog = true end
+
+    prototyper.defaults.set(player, type, prototype_id, category_id)
+    refresh_defaults_table(player, modal_data.ui_elements, type, category_id)
+
+    -- If this was an alt-click, set this prototype on every category that also has it
+    if metadata.alt and category_id ~= nil then
+        local new_default_prototype = prototyper.defaults.get(player, type, category_id)
+
+        for secondary_category_id, category in pairs(global["all_" .. type].categories) do
+            local secondary_prototype_id = category.map[new_default_prototype.name]
+
+            if secondary_prototype_id ~= nil then
+                prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
+                refresh_defaults_table(player, modal_data.ui_elements, type, secondary_category_id)
+            end
+        end
+    end
+end
+
 
 -- ** TOP LEVEL **
 preferences_dialog.dialog_settings = (function(_) return {
@@ -203,6 +212,14 @@ preferences_dialog.dialog_settings = (function(_) return {
 } end)
 
 preferences_dialog.events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_sprite%-button_preference_default_[a-z]+_%d+_?%d*$",
+            handler = (function(player, element, metadata)
+                handle_default_prototype_change(player, element, metadata)
+            end)
+        }
+    },
     on_gui_text_changed = {
         {
             name = "fp_textfield_mb_default_beacon_count",
@@ -252,27 +269,10 @@ function preferences_dialog.open(player, _, modal_data)
 
     preference_structures.mb_defaults(preferences, ui_elements)
 
-
-
-    if true then return end
-
-
-    -- Prototype preferences
-    local function add_prototype_preference(type)
-        local flow_proto_pref = flow_modal_dialog.add{type="flow", name="flow_prototype_preference_" .. type,
-          direction="vertical"}
-        flow_proto_pref.add{type="label", name=("label_" .. type .. "_info"),
-          caption={"", {"fp.preferences_title_" .. type}, ":"}, style="fp_preferences_title_label",
-          tooltip={"fp.preferences_title_" .. type .. "_tt"}}
-        local flow_proto = flow_proto_pref.add{type="flow", name="flow_prototype_preferences", direction="vertical"}
-        flow_proto.style.margin = {4, 8, 8, 16}
-    end
-
-    for _, preference_name in ipairs(prototype_preference_names) do
-        add_prototype_preference(preference_name)
-    end
-
-    refresh_preferences_dialog(player)
+    preference_structures.prototypes(player, ui_elements, "belts")
+    preference_structures.prototypes(player, ui_elements, "beacons")
+    preference_structures.prototypes(player, ui_elements, "fuels")
+    preference_structures.prototypes(player, ui_elements, "machines")
 end
 
 function preferences_dialog.close(player, _, _)
@@ -284,26 +284,6 @@ function preferences_dialog.close(player, _, _)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
 
-    if refresh.production_table then production_table.refresh(player) end
-end
-
-
-
--- Persists changes to any default prototype and refreshes appropriately
-function preferences_dialog.handle_prototype_change(player, type, prototype_id, category_id, alt)
-    prototyper.defaults.set(player, type, prototype_id, category_id)
-
-    -- If this was an alt-click, set this prototype on every category that also has it
-    if alt and category_id ~= nil then
-        local prototype = prototyper.defaults.get(player, type, category_id)
-        for secondary_category_id, category in pairs(global["all_" .. type].categories) do
-            local secondary_prototype_id = category.map[prototype.name]
-            if secondary_prototype_id ~= nil then
-                prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
-            end
-        end
-    end
-
-    refresh_preferences_dialog(player)
-    if type == "belts" then main_dialog.refresh(player) end
+    if refresh.main_dialog then main_dialog.refresh(player)
+    elseif refresh.production_table then production_table.refresh(player) end
 end
