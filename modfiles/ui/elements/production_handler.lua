@@ -8,7 +8,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
     local current_proto = line.machine.proto
     local button_definitions = {}
 
-    for machine_id, machine_proto in pairs(applicable_prototypes) do
+    for _, machine_proto in ipairs(applicable_prototypes) do
         local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
           line.recipe.proto, Line.get_total_effects(line, player))
         local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
@@ -22,13 +22,13 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
         local amount_line = {"fp.two_word_title", formatted_number, {"fp.pl_machine", plural_parameter}}
 
         local definition = {
-            element_id = machine_id,
+            element_id = machine_proto.id,
             sprite = machine_proto.sprite,
             button_number = button_number,
             localised_name = machine_proto.localised_name,
             amount_line = amount_line,
             tooltip_appendage = ui_util.attributes.machine(machine_proto),
-            selected = (current_proto.id == machine_id)
+            selected = (current_proto.id == machine_proto.id)
         }
 
         table.insert(button_definitions, definition)
@@ -187,7 +187,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
             local category_prototypes = global.all_machines.categories[machine_category_id].machines
 
             -- Determine if there is more than one machine that applies to this machine
-            for _, machine_proto in pairs(category_prototypes) do
+            for _, machine_proto in ipairs(category_prototypes) do
                 if Line.is_machine_applicable(line, machine_proto) then
                     table.insert(applicable_prototypes, machine_proto)
                 end
