@@ -93,15 +93,15 @@ end
 local function setup_subfactories_table(ui_elements, add_location)
     ui_elements.table_rows = {}
 
-    local scroll_pane_subfactories = ui_elements.content_frame.add{type="scroll-pane", name="scroll-pane_subfactories",
-      style="scroll_pane_in_shallow_frame"}
-    scroll_pane_subfactories.style.extra_top_padding_when_activated = 0
-    scroll_pane_subfactories.style.extra_right_padding_when_activated = 0
-    scroll_pane_subfactories.style.extra_bottom_padding_when_activated = 0
-    scroll_pane_subfactories.style.extra_left_padding_when_activated = 0
-    scroll_pane_subfactories.style.maximal_height = 450  -- I hate that I have to set this, seemingly
+    local scroll_pane = ui_elements.content_frame.add{type="scroll-pane",style="scroll_pane_in_shallow_frame"}
+    scroll_pane.style.extra_top_padding_when_activated = 0
+    scroll_pane.style.extra_right_padding_when_activated = 0
+    scroll_pane.style.extra_bottom_padding_when_activated = 0
+    scroll_pane.style.extra_left_padding_when_activated = 0
+    scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
+    ui_elements.subfactories_scroll_pane = scroll_pane
 
-    local frame_subfactories = scroll_pane_subfactories.add{type="frame", style="deep_frame_in_shallow_frame"}
+    local frame_subfactories = scroll_pane.add{type="frame", style="deep_frame_in_shallow_frame"}
     frame_subfactories.style.padding = {-2, 2, 3, 2}
 
     local table_columns = {
@@ -166,19 +166,21 @@ local function import_subfactories(player)
     local import_factory, error = data_util.porter.get_subfactories(player, textfield_export_string.text)
 
     local function add_into_label(caption)
-        local label_info = content_frame.add{type="label", name="label_import_info", caption=caption}
+        local label_info = content_frame.add{type="label", caption=caption}
         label_info.style.single_line = false
         label_info.style.bottom_margin = 8
-        label_info.style.maximal_width = 325
+        label_info.style.width = 330
+        ui_elements.info_label = label_info
     end
 
-    if not content_frame["line_porter"] then
-        local line = content_frame.add{type="line", name="line_porter", direction="horizontal"}
+    if not ui_elements.porter_line then
+        local line = content_frame.add{type="line", direction="horizontal"}
         line.style.margin = {10, 0, 8, 0}
+        ui_elements.porter_line = line
     end
 
-    if content_frame["label_import_info"] then content_frame["label_import_info"].destroy() end
-    if content_frame["scroll-pane_subfactories"] then content_frame["scroll-pane_subfactories"].destroy() end
+    if ui_elements.info_label then ui_elements.info_label.destroy() end
+    if ui_elements.subfactories_scroll_pane then ui_elements.subfactories_scroll_pane.destroy() end
 
     if error ~= nil then
         add_into_label({"fp.error_message", {"fp.importer_" .. error}})
