@@ -16,6 +16,7 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
     local frame_modal_dialog = player.gui.screen.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
     frame_modal_dialog.caption = dialog_settings.caption or nil
     frame_modal_dialog.auto_center = true
+    modal_data.ui_elements.frame = frame_modal_dialog
 
     -- Conditions table
     local table_conditions = frame_modal_dialog.add{type="table", name="table_modal_dialog_conditions",
@@ -85,8 +86,9 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
     if dialog_settings.submit then
         local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"fp.submit"},
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
-        button_submit.style.maximal_width = 90
+        button_submit.style.minimal_width = 0
         button_submit.style.left_margin = 8
+        button_submit.style.padding = {1, 8, 0, 12}
         modal_data.ui_elements.dialog_submit_button = button_submit
     end
 
@@ -247,9 +249,12 @@ function modal_dialog.set_selection_mode(player, state)
 end
 
 function modal_dialog.set_submit_button_state(ui_elements, enabled, message)
-    local button = ui_elements.dialog_submit_button
-    local tooltip = (enabled) and {"fp.confirm_dialog"} or message
+    local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
+    local tooltip = (enabled) and {"fp.confirm_dialog"} or {"fp.warning_with_icon", message}
 
+    local button = ui_elements.dialog_submit_button
+    button.style.left_padding = (enabled) and 12 or 6
     button.enabled = enabled
+    button.caption = caption
     button.tooltip = tooltip
 end

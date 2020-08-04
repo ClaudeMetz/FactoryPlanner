@@ -3,20 +3,23 @@ export_dialog = {}
 porter_dialog = {}  -- table containing functionality shared between both dialogs
 
 -- ** LOCAL UTIL **
--- Updates the enabled-state and sprite of the given button
 local function set_tool_button_state(button, dialog_type, enabled)
     button.enabled = enabled
     button.sprite = (enabled) and ("utility/" .. dialog_type) or ("fp_sprite_" .. dialog_type .. "_light")
 end
 
--- Sets the state of either the export subfactories- or submit import dialog-button
+local function set_dialog_submit_button(ui_elements, enabled, action_to_take)
+    local message = (not enabled) and {"fp.importer_issue_" .. action_to_take} or nil
+    modal_dialog.set_submit_button_state(ui_elements, enabled, message)
+end
+
+-- Sets the state of either the export_subfactories- or dialog_submit-button
 local function set_relevant_submit_button(ui_elements, dialog_type, enabled)
     if dialog_type == "export" then
         set_tool_button_state(ui_elements.export_button, dialog_type, enabled)
 
     else -- dialog_type == "import"
-        local message = {"fp.importer_submit_disabled"}
-        modal_dialog.set_submit_button_state(ui_elements, enabled, message)
+        set_dialog_submit_button(ui_elements, enabled, "select_subfactory")
     end
 end
 
@@ -199,7 +202,8 @@ local function import_subfactories(player)
         set_all_checkboxes(player, true)
     end
 
-    content_frame.parent.parent.force_auto_center()
+    set_dialog_submit_button(ui_elements, (error == nil), "import_string")
+    ui_elements.frame.force_auto_center()
 end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
@@ -256,7 +260,7 @@ import_dialog.events = {
 
 function import_dialog.open(_, _, modal_data)
     local ui_elements = modal_data.ui_elements
-    set_relevant_submit_button(ui_elements, "import", false)
+    set_dialog_submit_button(ui_elements, false, "import_string")
 
     initialize_dialog(ui_elements, "import")
     add_textfield_and_button(ui_elements, "import", false, false)
