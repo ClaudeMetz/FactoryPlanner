@@ -1,5 +1,53 @@
 actionbar = {}
 
+-- ** LOCAL UTIL **
+local function handle_subfactory_submission(player, options, action)
+    local ui_state = get_ui_state(player)
+    local factory = ui_state.context.factory
+    local subfactory = ui_state.modal_data.object
+
+    if action == "submit" then
+        local name = options.subfactory_name
+        local icon = options.subfactory_icon
+
+        if subfactory ~= nil then
+            -- Don't save over the unknown signal to preserve what's saved behind it
+            if icon.name ~= "signal-unknown" then
+                subfactory.name, subfactory.icon = name, icon
+            end
+        else
+            local new_subfactory = Subfactory.init(name, icon, get_settings(player).default_timescale)
+            Factory.add(factory, new_subfactory)
+            ui_util.context.set_subfactory(player, new_subfactory)
+        end
+
+    elseif action == "delete" then
+        local removed_gui_position = Factory.remove(factory, subfactory)
+        ui_util.reset_subfactory_selection(player, factory, removed_gui_position)
+    end
+
+    main_dialog.refresh(player)
+end
+
+-- Sets the dialog_submit-button appropriately after any data was changed
+local function handle_subfactory_data_change(modal_data, _)
+    local ui_elements = modal_data.ui_elements
+
+    -- Remove whitespace from the subfactory name. No cheating!
+    local name_text = ui_elements["fp_textfield_options_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1")
+    local icon_spec = ui_elements["fp_choose_elem_button_options_subfactory_icon"].elem_value
+
+    local issue_message = nil
+    if name_text == "" and icon_spec == nil then
+        issue_message = {"fp.options_subfactory_issue_choose_either"}
+    elseif string.len(name_text) > 64 then
+        issue_message = {"fp.options_subfactory_issue_max_characters"}
+    end
+
+    modal_dialog.set_submit_button_state(ui_elements, (issue_message == nil), issue_message)
+end
+
+
 -- ** TOP LEVEL **
 -- Creates the actionbar including the new-, edit-, (un)archive- and duplicate-buttons
 function actionbar.add_to(main_dialog)
@@ -87,14 +135,51 @@ function actionbar.refresh(player)
     end
 end
 
+local function generate_subfactory_dialog_modal_data(action, subfactory)
+    local icon = nil
+    if subfactory and subfactory.icon then
+        local sprite_missing = ui_util.verify_subfactory_icon(subfactory)
+        icon = (sprite_missing) and {type="virtual", name="signal-unknown"} or subfactory.icon
+    end
+
+    local modal_data = {
+        title = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_subfactory", 1}},
+        text = {"fp.options_subfactory_text"},
+        minimal_width = 325,
+        submission_handler = handle_subfactory_submission,
+        object = subfactory,
+        fields = {
+            {
+                type = "textfield",
+                name = "subfactory_name",
+                change_handler = handle_subfactory_data_change,
+                caption = {"fp.options_subfactory_name"},
+                text = (subfactory) and subfactory.name or "",
+                focus = true
+            },
+            {
+                type = "choose_elem_button",
+                name = "subfactory_icon",
+                change_handler = handle_subfactory_data_change,
+                caption = {"fp.options_subfactory_icon"},
+                elem_type = "signal",
+                elem_value = icon
+            }
+        }
+    }
+    return modal_data
+end
+
 
 function actionbar.new_subfactory(player)
-    modal_dialog.enter(player, {type="subfactory", submit=true})
+    local modal_data = generate_subfactory_dialog_modal_data("new", nil)
+    modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
 end
 
 function actionbar.edit_subfactory(player)
-    modal_dialog.enter(player, {type="subfactory", submit=true, delete=true,
-      modal_data={subfactory = get_context(player).subfactory}})
+    local subfactory = data_util.get("context", player).subfactory
+    local modal_data = generate_subfactory_dialog_modal_data("edit", subfactory)
+    modal_dialog.enter(player, {type="options", submit=true, delete=true, modal_data=modal_data})
 end
 
 function actionbar.archive_subfactory(player)

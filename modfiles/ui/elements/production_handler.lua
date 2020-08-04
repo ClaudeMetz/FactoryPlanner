@@ -260,9 +260,16 @@ function production_handler.machine_limit_change(modal_data, textfield)
 end
 
 -- Recieves the result of the machine limit options and applies it
-function production_handler.apply_machine_options(machine, options)
-    if options.machine_limit == nil then options.hard_limit = false end
-    machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+function production_handler.apply_machine_options(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local machine = ui_state.modal_data.object
+
+        if options.machine_limit == nil then options.hard_limit = false end
+        machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+
+        calculation.update(player, ui_state.context.subfactory, true)
+    end
 end
 
 
@@ -517,19 +524,27 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
 end
 
 -- Recieves the result of the item options and applies it
-function production_handler.apply_item_options(item, options)
-    local line = item.parent
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-    local current_amount = item.amount
+function production_handler.apply_item_options(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local item = ui_state.modal_data.object
+        local current_amount = item.amount
 
-    if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
-        local other_class = (item.class == "Product") and "Byproduct" or "Product"
-        local opposing_item = Line.get_by_type_and_name(relevant_line, other_class, item.proto.type, item.proto.name)
-        if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
+        local line = item.parent
+        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+
+        if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
+            local other_class = (item.class == "Product") and "Byproduct" or "Product"
+            local opposing_item = Line.get_by_type_and_name(relevant_line, other_class,
+              item.proto.type, item.proto.name)
+            if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
+        end
+
+        options.item_amount = options.item_amount or 0
+        relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
+
+        calculation.update(player, ui_state.context.subfactory, true)
     end
-
-    options.item_amount = options.item_amount or 0
-    relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
 end
 
 

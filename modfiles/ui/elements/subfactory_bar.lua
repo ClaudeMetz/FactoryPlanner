@@ -141,8 +141,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
 
         elseif click == "right" then
             if action == "edit" then
-                modal_dialog.enter(player, {type="subfactory", submit=true,
-                  delete=true, modal_data={subfactory=subfactory}})
+                actionbar.edit_subfactory(player)
 
             elseif action == "delete" then
                 local factory = ui_state.context.factory

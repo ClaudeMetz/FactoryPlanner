@@ -285,7 +285,7 @@ end
 
 -- ** TOP LEVEL **
 recipe_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.add_recipe"},
+    caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
     force_auto_center = true
 } end)
 

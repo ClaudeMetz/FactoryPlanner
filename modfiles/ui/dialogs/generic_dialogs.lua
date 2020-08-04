@@ -69,15 +69,25 @@ end
 options_dialog.events = {}
 local elements = {}
 
+-- ** TEXTFIELD **
+elements.textfield = {prefix = "fp_textfield_options_"}
+
+function elements.textfield.create(table, field, ui_elements)
+    local element_name = elements.textfield.prefix .. field.name
+    local textfield = table.add{type="textfield", name=element_name, text=field.text}
+    textfield.style.width = (field.width or 180)
+    if field.focus then ui_util.select_all(textfield) end
+
+    ui_elements[element_name] = textfield
+    return element_name
+end
+
+function elements.textfield.read(textfield)
+    return textfield.text
+end
+
 -- ** NUMERIC TEXTFIELD **
 elements.numeric_textfield = {prefix = "fp_textfield_options_numberic_"}
-
-options_dialog.events.on_gui_text_changed = {
-    {
-        pattern = "^" .. elements.numeric_textfield.prefix .. "[a-z_]+$",
-        handler = call_change_handler
-    }
-}
 
 function elements.numeric_textfield.create(table, field, ui_elements)
     local element_name = elements.numeric_textfield.prefix .. field.name
@@ -93,6 +103,14 @@ end
 function elements.numeric_textfield.read(textfield)
     return tonumber(textfield.text)
 end
+
+-- ** TEXTFIELD EVENT **
+options_dialog.events.on_gui_text_changed = {
+    {
+        pattern = "^fp_textfield_options_[a-z_]+$",
+        handler = call_change_handler
+    }
+}
 
 -- ** ON OFF SWITCH **
 elements.on_off_switch = {prefix = "fp_switch_on_off_options_"}
@@ -118,9 +136,33 @@ function elements.on_off_switch.read(switch)
     return ui_util.switch.convert_to_boolean(switch.switch_state)
 end
 
+-- ** CHOOSE ELEM BUTTON **
+elements.choose_elem_button = {prefix = "fp_choose_elem_button_options_"}
+
+options_dialog.events.on_gui_elem_changed = {
+    {
+        pattern = "^" .. elements.choose_elem_button.prefix .. "[a-z_]+$",
+        handler = call_change_handler
+    }
+}
+
+function elements.choose_elem_button.create(table, field, ui_elements)
+    local element_name = elements.choose_elem_button.prefix .. field.name
+    local choose_elem_button = table.add{type="choose-elem-button", name=element_name,
+      elem_type=field.elem_type, style="fp_sprite-button_inset"}
+    choose_elem_button.elem_value = field.elem_value
+
+    ui_elements[element_name] = choose_elem_button
+    return element_name
+end
+
+function elements.choose_elem_button.read(choose_elem_button)
+    return choose_elem_button.elem_value
+end
+
 
 options_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", {"fp.set"}, modal_data.title}
+    caption = modal_data.title
 } end)
 
 function options_dialog.open(_, _, modal_data)
@@ -128,6 +170,7 @@ function options_dialog.open(_, _, modal_data)
 
     local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
       style="inside_shallow_frame_with_padding"}
+    content_frame.style.minimal_width = modal_data.minimal_width or 0
     content_frame.add{type="label", caption=modal_data.text}
 
     local table_options = content_frame.add{type="table", column_count=2}
@@ -152,17 +195,14 @@ function options_dialog.open(_, _, modal_data)
 end
 
 function options_dialog.close(player, action, _)
-    if action == "submit" then
-        local modal_data = data_util.get("modal_data", player)
-        local ui_elements = modal_data.ui_elements
+    local modal_data = data_util.get("modal_data", player)
+    local ui_elements = modal_data.ui_elements
 
-        local options_data = {}
-        for _, field in pairs(modal_data.fields) do
-            local element = ui_elements[elements[field.type].prefix .. field.name]
-            options_data[field.name] = elements[field.type].read(element)
-        end
-
-        modal_data.submission_handler(modal_data.object, options_data)
-        calculation.update(player, data_util.get("context", player).subfactory, true)
+    local options_data = {}
+    for _, field in pairs(modal_data.fields) do
+        local element = ui_elements[elements[field.type].prefix .. field.name]
+        options_data[field.name] = elements[field.type].read(element)
     end
+
+    modal_data.submission_handler(player, options_data, action)
 end
