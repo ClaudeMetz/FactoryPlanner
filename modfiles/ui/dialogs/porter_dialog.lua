@@ -15,7 +15,8 @@ local function set_relevant_submit_button(ui_elements, dialog_type, enabled)
         set_tool_button_state(ui_elements.export_button, dialog_type, enabled)
 
     else -- dialog_type == "import"
-        ui_elements.dialog_submit_button.enabled = enabled
+        local message = {"fp.importer_submit_disabled"}
+        modal_dialog.set_submit_button_state(ui_elements, enabled, message)
     end
 end
 
@@ -221,7 +222,6 @@ end
 -- ** IMPORT DIALOG **
 import_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
-    disable_submit_button = true,
     disable_scroll_pane = true
 } end)
 
@@ -256,8 +256,9 @@ import_dialog.events = {
 
 function import_dialog.open(_, _, modal_data)
     local ui_elements = modal_data.ui_elements
-    initialize_dialog(ui_elements, "import")
+    set_relevant_submit_button(ui_elements, "import", false)
 
+    initialize_dialog(ui_elements, "import")
     add_textfield_and_button(ui_elements, "import", false, false)
     ui_util.select_all(ui_elements.import_textfield)
 end
