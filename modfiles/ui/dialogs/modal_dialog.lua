@@ -87,8 +87,6 @@ local function create_base_modal_dialog(player, condition_instructions, dialog_s
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.maximal_width = 90
         button_submit.style.left_margin = 8
-
-        if dialog_settings.disable_submit_button then button_submit.enabled = false end
         modal_data.ui_elements.dialog_submit_button = button_submit
     end
 
@@ -246,4 +244,12 @@ function modal_dialog.set_selection_mode(player, state)
             main_dialog.set_pause_state(player, frame_main_dialog)
         end
     end
+end
+
+function modal_dialog.set_submit_button_state(ui_elements, enabled, message)
+    local button = ui_elements.dialog_submit_button
+    local tooltip = (enabled) and {"fp.confirm_dialog"} or message
+
+    button.enabled = enabled
+    button.tooltip = tooltip
 end
