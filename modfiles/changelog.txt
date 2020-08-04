@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Redesigned the subfactory dialog
     - Added some info about why a dialog can not be submitted
   Bugfixes:
     -

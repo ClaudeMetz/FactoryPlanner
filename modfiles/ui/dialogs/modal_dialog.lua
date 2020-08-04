@@ -1,7 +1,6 @@
 require("generic_dialogs")
 require("tutorial_dialog")
 require("preferences_dialog")
-require("subfactory_dialog")
 require("utility_dialog")
 require("product_dialog")
 require("recipe_dialog")
