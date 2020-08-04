@@ -155,7 +155,7 @@ function Line.change_machine(self, player, machine_proto, direction)
             grading_direction = {"fp.downgraded"}
         end
 
-        local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, grading_direction}
+        local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, grading_direction}
         titlebar.enqueue_message(player, message, "error", 1, false)
         return false
     end

@@ -191,7 +191,8 @@ function generator.all_recipes()
 
                         local recipe = custom_recipe()
                         recipe.name = recipe_name
-                        recipe.localised_name = {"", {"fluid-name.steam"}, " at ", temperature, {"fp.unit_celsius"}}
+                        recipe.localised_name = {"fp.fluid_at_temperature", {"fluid-name.steam"},
+                          temperature, {"fp.unit_celsius"}}
                         recipe.sprite = "fluid/steam"
                         recipe.category = "steam-" .. temperature
                         recipe.order = "z-" .. temperature
