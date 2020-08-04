@@ -330,8 +330,9 @@ end
 
 -- Returns the appropriate localised string for the given item, incorporating temperature
 function generator_util.format_temperature_localised_name(item, proto)
-    return (item.temperature ~= nil) and {"", proto.localised_name, " (",
-      item.temperature, {"fp.unit_celsius"}, ")"} or proto.localised_name
+    local temperature_tt = {"fp.two_word_title", item.temperature, {"fp.unit_celsius"}}
+    return (item.temperature ~= nil) and {"fp.annotated_title", proto.localised_name,
+      temperature_tt} or proto.localised_name
 end
 
 
@@ -358,9 +359,10 @@ function generator_util.add_recipe_tooltip(recipe)
         end
     end
 
-    if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.crafting_time"}, (":  " .. recipe.energy)} end
+    if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}} end
     for _, item_type in ipairs({"ingredients", "products"}) do
-        multi_insert{"\n  ", {"fp." .. item_type}, ":"}
+        local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
+        multi_insert{"\n  ", {"fp.name_value", {locale_key, 2}, ""}}
         if #recipe[item_type] == 0 then
             multi_insert{"\n    ", {"fp.none"}}
         else
@@ -373,16 +375,13 @@ function generator_util.add_recipe_tooltip(recipe)
             end
         end
     end
-    if DEVMODE then multi_insert{("\n" .. recipe.name)} end
 
     recipe.tooltip = tooltip
 end
 
 -- Adds the tooltip for the given item
 function generator_util.add_item_tooltip(item)
-    local tooltip = item.localised_name
-    if DEVMODE then tooltip = {"", item.localised_name, ("\n" .. item.name)} end
-    item.tooltip = tooltip
+    item.tooltip = item.localised_name
 end
 
 

@@ -81,7 +81,7 @@ local function run_preliminary_checks(player, product, production_type)
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
         return nil, error, show
 
-    elseif relevant_recipes_count == 1 then
+    elseif relevant_recipes_count == 1 and false then
         local chosen_recipe = relevant_recipes[1]
         if not chosen_recipe.enabled then  -- Show warning if adding unresearched recipe
             show.message={text={"fp.warning_disabled_recipe"}, type="warning"}
