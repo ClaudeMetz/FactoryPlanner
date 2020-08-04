@@ -45,7 +45,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
     local current_proto = line.machine.fuel.proto
     local button_definitions = {}
 
-    for fuel_id, fuel_proto in pairs(applicable_prototypes) do
+    for _, fuel_proto in pairs(applicable_prototypes) do
         local category_id = global.all_fuels.map[fuel_proto.category]
 
         local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
@@ -60,13 +60,13 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
 
 
         local definition = {
-            element_id = category_id .. "_" .. fuel_id,
+            element_id = category_id .. "_" .. fuel_proto.id,
             sprite = fuel_proto.sprite,
             button_number = fuel_amount,
             localised_name = fuel_proto.localised_name,
             amount_line = amount_line,
             tooltip_appendage = ui_util.attributes.fuel(fuel_proto),
-            selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_id)
+            selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
         }
 
         table.insert(button_definitions, definition)
