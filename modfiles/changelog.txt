@@ -1,12 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - Redesign the recipe picker dialog
   Bugfixes:
     - Fixed that setting a limit on a machine would not work properly
+    - Fixed a crash when selecting certain fuels
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.49
