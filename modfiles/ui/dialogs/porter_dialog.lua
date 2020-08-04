@@ -139,13 +139,13 @@ local function add_to_subfactories_table(ui_elements, subfactory, location_name,
     local checkbox = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_subfactory_" .. identifier,
       state=false, enabled=(enable_checkbox or subfactory.valid)}
 
-    local subfactory_icon = " "
+    local subfactory_icon = ""
     if subfactory.icon ~= nil then
-        local subfactory_sprite = subfactory.icon.type .. "/" .. subfactory.icon.name
-        if not game.is_valid_sprite_path(subfactory_sprite) then subfactory_sprite = "utility/danger_icon" end
-        subfactory_icon = " [img=" .. subfactory_sprite .. "]  "
+        local _, sprite_rich_text = ui_util.verify_subfactory_icon(subfactory)
+        subfactory_icon = sprite_rich_text .. "  "
     end
-    table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
+    local label = table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
+    label.style.right_margin = 4
 
     local validity_caption = (subfactory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
     table_subfactories.add{type="label", caption=validity_caption}
