@@ -156,7 +156,7 @@ function model.update_line(line_data, aggregate)
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
         local capped_production_ratio = calculation.util.determine_production_ratio(crafts_per_tick,
-          machine_limit.limit, timescale, machine_proto.category)
+          machine_limit.limit, timescale, machine_proto.is_rocket_silo)
         production_ratio = machine_limit.hard_limit and
           capped_production_ratio or math.min(production_ratio, capped_production_ratio)
     end
