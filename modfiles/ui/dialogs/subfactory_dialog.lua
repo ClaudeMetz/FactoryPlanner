@@ -29,11 +29,11 @@ function subfactory_dialog.open(_, flow_modal_dialog, modal_data)
     local subfactory = modal_data.subfactory
 
     if subfactory ~= nil then  -- Meaning this is an edit
-        -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
         local icon = subfactory.icon
         if icon ~= nil then
-            if not game.is_valid_sprite_path(icon.type .. "/" .. icon.name) then icon = nil
-            elseif icon.type == "virtual-signal" then icon = {name=icon.name, type="virtual"} end
+            -- Checks for invalid (= origin mod removed) icons and makes them blank in the modal dialog
+            local sprite_missing = ui_util.verify_subfactory_icon(subfactory)
+            if sprite_missing then icon = nil end
         end
 
         local caption = {"", {"fp.edit"}, " ", {"fp.subfactory"}}
@@ -53,7 +53,7 @@ function subfactory_dialog.close(player, action, data)
     if action == "submit" then
         if subfactory ~= nil then
             subfactory.name = data.name
-            Subfactory.set_icon(subfactory, data.icon)  -- Exceptional setter for edge case handling
+            subfactory.icon = data.icon
         else
             local new_subfactory = Factory.add(factory, Subfactory.init(data.name, data.icon,
               get_settings(player).default_timescale))

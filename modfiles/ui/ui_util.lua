@@ -311,6 +311,19 @@ function ui_util.check_archive_status(player)
     end
 end
 
+-- Returns first whether the icon is missing, then the rich text for it
+function ui_util.verify_subfactory_icon(subfactory)
+    local icon = subfactory.icon
+    local type = (icon.type == "virtual") and "virtual-signal" or icon.type
+    local subfactory_sprite = type .. "/" .. icon.name
+
+    if not game.is_valid_sprite_path(subfactory_sprite) then
+        return true, ("[img=utility/missing_icon]")
+    else
+        return false, ("[img=" .. subfactory_sprite .. "]")
+    end
+end
+
 -- Executes an alt-action on the given action_type and data
 function ui_util.execute_alt_action(player, action_type, data)
     local alt_action = data_util.get("settings", player).alt_action

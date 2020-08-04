@@ -6,7 +6,7 @@ function Subfactory.init(name, icon, timescale_setting)
 
     local subfactory = {
         name = name,
-        icon = nil,
+        icon = icon,
         timescale = timescale_to_number[timescale_setting],
         energy_consumption = 0,
         pollution = 0,
@@ -22,20 +22,11 @@ function Subfactory.init(name, icon, timescale_setting)
         class = "Subfactory"
     }
 
-    Subfactory.set_icon(subfactory, icon)
-
     -- Initialize the subfactory with an empty top floor
     subfactory.selected_floor = Floor.init(nil)
     Subfactory.add(subfactory, subfactory.selected_floor)
 
     return subfactory
-end
-
-
--- Exceptionally, a setter method to centralize edge-case handling
-function Subfactory.set_icon(subfactory, icon)
-    if icon ~= nil and icon.type == "virtual" then icon.type = "virtual-signal" end
-    subfactory.icon = icon
 end
 
 
