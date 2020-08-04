@@ -217,6 +217,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                     {
                         type = "numeric_textfield",
                         name = "machine_limit",
+                        change_handler = production_handler.machine_limit_change,
                         caption = {"fp.options_machine_limit"},
                         tooltip = {"fp.options_machine_limit_tt"},
                         text = line.machine.limit or "",
@@ -248,6 +249,14 @@ function production_handler.apply_machine_choice(player, machine_id)
 
     Line.change_machine(machine.parent, player, machine_proto, nil)
     calculation.update(player, ui_state.context.subfactory, true)
+end
+
+-- Sets the state of the hard limit switch according to what the entered limit is
+function production_handler.machine_limit_change(modal_data, textfield)
+    local switch = modal_data.ui_elements["fp_switch_on_off_options_hard_limit"]
+    local machine_limit = tonumber(textfield.text)
+    if machine_limit == nil then switch.switch_state = "right" end
+    switch.enabled = (machine_limit ~= nil)
 end
 
 -- Recieves the result of the machine limit options and applies it
