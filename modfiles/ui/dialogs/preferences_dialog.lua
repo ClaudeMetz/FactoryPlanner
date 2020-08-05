@@ -4,7 +4,6 @@ preferences_dialog = {}
 local function add_preference_box(content_frame, type)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
     bordered_frame.style.horizontally_stretchable = true
-    bordered_frame.style.top_margin = 4
 
     local caption = {"fp.info_label", {"fp.preference_".. type .. "_title"}}
     local tooltip = {"fp.preference_".. type .. "_title_tt"}
@@ -66,7 +65,6 @@ function preference_structures.mb_defaults(preferences, content_frame)
     local preference_box = add_preference_box(content_frame, "mb_defaults")
     local flow_mb_defaults = preference_box.add{type="flow", direction="horizontal"}
     flow_mb_defaults.style.vertical_align = "center"
-    flow_mb_defaults.style.top_margin = 4
 
 
     local function add_mb_default(type)
@@ -212,7 +210,7 @@ end
 -- ** TOP LEVEL **
 preferences_dialog.dialog_settings = (function(_) return {
     caption = {"fp.preferences"},
-    disable_scroll_pane = true,
+    create_content_frame = false,
     force_auto_center = true
 } end)
 
@@ -252,12 +250,12 @@ preferences_dialog.events = {
     }
 }
 
-function preferences_dialog.open(player, _, modal_data)
+function preferences_dialog.open(player, modal_data)
     local preferences = data_util.get("preferences", player)
     local ui_elements = modal_data.ui_elements
     modal_data.refresh = {}
 
-    local flow_content = ui_elements.flow_modal_dialog.add{type="flow", direction="horizontal"}
+    local flow_content = ui_elements.dialog_flow.add{type="flow", direction="horizontal"}
     flow_content.style.horizontal_spacing = 12
     local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
     flow_content.style.maximal_height = main_dialog_dimensions.height * 0.75
@@ -266,13 +264,7 @@ function preferences_dialog.open(player, _, modal_data)
         local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
         content_frame.style.vertically_stretchable = true
 
-        local scroll_pane = content_frame.add{type="scroll-pane", style="scroll_pane_in_shallow_frame"}
-        scroll_pane.style.extra_top_padding_when_activated = 0
-        scroll_pane.style.extra_right_padding_when_activated = 0
-        scroll_pane.style.extra_bottom_padding_when_activated = 0
-        scroll_pane.style.extra_left_padding_when_activated = 0
-        scroll_pane.style.padding = 12
-
+        local scroll_pane = content_frame.add{type="scroll-pane", style="fp_scroll_pane_inside_content_frame"}
         return scroll_pane
     end
 
@@ -296,13 +288,12 @@ function preferences_dialog.open(player, _, modal_data)
     preference_structures.prototypes(player, left_content_frame, ui_elements, "beacons")
 
     local right_content_frame = add_content_frame()
-    right_content_frame.style.top_padding = 8
 
     preference_structures.prototypes(player, right_content_frame, ui_elements, "fuels")
     preference_structures.prototypes(player, right_content_frame, ui_elements, "machines")
 end
 
-function preferences_dialog.close(player, _, _)
+function preferences_dialog.close(player, _)
     local refresh = data_util.get("modal_data", player).refresh
 
     if refresh.ingredient_satisfaction then

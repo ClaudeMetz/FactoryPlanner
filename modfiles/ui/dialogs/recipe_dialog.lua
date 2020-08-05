@@ -142,7 +142,7 @@ local function attempt_adding_line(player, recipe_id)
         calculation.update(player, ui_state.context.subfactory, true)
     end
 
-    modal_dialog.exit(player, "cancel", {})
+    modal_dialog.exit(player, "cancel")
 end
 
 
@@ -169,7 +169,6 @@ local function create_recipe_group_box(modal_data, relevant_group)
     local bordered_frame = ui_elements.content_frame.add{type="frame", style="bordered_frame"}
     bordered_frame.style.horizontally_stretchable = true
     bordered_frame.style.padding = 8
-    bordered_frame.style.top_margin = 6
 
     local next_index = #ui_elements.groups + 1
     ui_elements.groups[next_index] = {name=relevant_group.proto.name, frame=bordered_frame, recipe_buttons={}}
@@ -215,10 +214,8 @@ end
 -- Creates the unfiltered recipe structure
 local function create_dialog_structure(modal_data)
     local ui_elements = modal_data.ui_elements
-    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
+    local content_frame = ui_elements.content_frame
     content_frame.style.width = 380
-    ui_elements.content_frame = content_frame
 
     create_filter_box(modal_data)
 
@@ -261,7 +258,7 @@ local function apply_recipe_filter(player)
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
 
         local button_table_height = math.ceil(#group.recipe_buttons / recipes_per_row) * 36
-        local additional_height = math.max(88, button_table_height + 24) + 6
+        local additional_height = math.max(88, button_table_height + 24) + 4
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
 
@@ -286,6 +283,7 @@ end
 -- ** TOP LEVEL **
 recipe_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
+    create_content_frame = true,
     force_auto_center = true
 } end)
 
@@ -311,7 +309,7 @@ recipe_dialog.events = {
 
 
 -- Handles populating the recipe dialog
-function recipe_dialog.open(player, _, modal_data)
+function recipe_dialog.open(player, modal_data)
     local product = modal_data.product
 
     -- Result is either the single possible recipe_id, or a table of relevant recipes
@@ -319,12 +317,15 @@ function recipe_dialog.open(player, _, modal_data)
 
     if error ~= nil then
         titlebar.enqueue_message(player, error, "error", 1)
-        modal_dialog.exit(player, "cancel", {})
+        modal_dialog.exit(player, "cancel")
+        return true  -- let the modal dialog know that it was closed immediately
+
     else
         -- If 1 relevant recipe is found, add it immediately and exit dialog
         if type(result) == "number" then  -- the given number being the recipe_id
             modal_data.message = show.message
             attempt_adding_line(player, result)
+            return true  -- idem above
 
         else  -- Otherwise, show the appropriately filtered dialog
             local recipe_groups = {}

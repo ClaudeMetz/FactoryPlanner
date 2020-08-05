@@ -18,13 +18,14 @@ end
 local function handler_chooser_button_click(player, element)
     local element_id = string.gsub(element.name, "fp_sprite%-button_chooser_element_", "")
     data_util.get("modal_data", player).click_handler(player, element_id)
-    modal_dialog.exit(player, "cancel", {})
+    modal_dialog.exit(player, "cancel")
     main_dialog.refresh(player)
 end
 
 
 chooser_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title}
+    caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title},
+    create_content_frame = true
 } end)
 
 chooser_dialog.events = {
@@ -39,11 +40,10 @@ chooser_dialog.events = {
 }
 
 -- Handles populating the chooser dialog
-function chooser_dialog.open(_, _, modal_data)
+function chooser_dialog.open(_, modal_data)
     local ui_elements = modal_data.ui_elements
 
-    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
+    local content_frame = ui_elements.content_frame
     content_frame.add{type="label", caption=modal_data.text}
 
     local frame_choices = content_frame.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
@@ -162,14 +162,14 @@ end
 
 
 options_dialog.dialog_settings = (function(modal_data) return {
-    caption = modal_data.title
+    caption = modal_data.title,
+    create_content_frame = true
 } end)
 
-function options_dialog.open(_, _, modal_data)
+function options_dialog.open(_, modal_data)
     local ui_elements = modal_data.ui_elements
 
-    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
+    local content_frame = ui_elements.content_frame
     content_frame.style.minimal_width = modal_data.minimal_width or 0
     content_frame.add{type="label", caption=modal_data.text}
 
@@ -194,7 +194,7 @@ function options_dialog.open(_, _, modal_data)
     end
 end
 
-function options_dialog.close(player, action, _)
+function options_dialog.close(player, action)
     local modal_data = data_util.get("modal_data", player)
     local ui_elements = modal_data.ui_elements
 

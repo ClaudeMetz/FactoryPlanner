@@ -68,7 +68,7 @@ end
 -- ** TOP LEVEL **
 tutorial_dialog.dialog_settings = (function(_) return {
     caption = {"fp.tutorial"},
-    disable_scroll_pane = true
+    create_content_frame = false
 } end)
 
 tutorial_dialog.events = {
@@ -77,7 +77,7 @@ tutorial_dialog.events = {
             name = "fp_button_tutorial_add_example",
             handler = (function(player, _, _)
                 data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
-                modal_dialog.exit(player, "cancel", {})
+                modal_dialog.exit(player, "cancel")
             end)
         }
     },
@@ -93,16 +93,16 @@ tutorial_dialog.events = {
     }
 }
 
-function tutorial_dialog.open(player, _, modal_data)
-    local frame_tabs = modal_data.ui_elements.flow_modal_dialog.add{type="frame", style="inside_deep_frame_for_tabs"}
+function tutorial_dialog.open(player, modal_data)
+    local frame_tabs = modal_data.ui_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
 
     local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
     local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
-    tabbed_pane.style.height = main_dialog_dimensions.height * 0.7
+    tabbed_pane.style.height = main_dialog_dimensions.height * 0.6
 
     for _, tab_name in ipairs(tab_definitions) do
         local tab = tabbed_pane.add{type="tab"}
-        local tab_pane = tabbed_pane.add{type="scroll-pane", style="fp_scroll_pane_inside_tab"}
+        local tab_pane = tabbed_pane.add{type="scroll-pane", style="fp_scroll_pane_inside_content_frame"}
         tab_pane.style.width = 550
 
         tab_definitions[tab_name](player, tab, tab_pane)

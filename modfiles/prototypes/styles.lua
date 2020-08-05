@@ -1,15 +1,23 @@
 -- NEW STUFF
-data.raw["gui-style"].default["fp_scroll_pane_inside_tab"] = {
+data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame"] = {
     type = "scroll_pane_style",
     extra_padding_when_activated = 0,
     padding = 0,
-    vertically_stretchable = "on",
     graphical_set = {
       shadow = default_inner_shadow
     },
     vertical_flow_style = {
       type = "vertical_flow_style",
       padding = 12
+    }
+}
+
+data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame_bare"] = {
+    type = "scroll_pane_style",
+    parent = "fp_scroll_pane_inside_content_frame",
+    vertical_flow_style = {
+        type = "vertical_flow_style",
+        padding = 0
     }
 }
 
