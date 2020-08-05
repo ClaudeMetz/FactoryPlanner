@@ -89,7 +89,7 @@ special_handlers.on_gui_opened = {
     raw_event = true,
     special_handler = (function(player, event, event_handlers)
         -- Closes the main dialog when the player opens another UI while in a modal dialog
-        if event.gui_type ~= defines.gui_type.custom or not string.find(event.element.name, "^fp_.+$") then
+        if event.gui_type ~= defines.gui_type.custom or not event.element.get_mod() == "factoryplanner" then
             event_handlers.names["fp_frame_main_dialog"].handler(player)
         end
     end)
@@ -161,7 +161,7 @@ function event_handler.handle_gui_event(event)
     if event_handlers.raw_event then
         event_handlers.special_handler(player, event, event_handlers)
 
-    elseif event.element and string.find(event.element.name, "^fp_.+$") then
+    elseif event.element and event.element.get_mod() == "factoryplanner" then
         if event_handlers then  -- make sure the given event is even handled
             if event_handlers.special_handler then
                 event_handlers.special_handler(player, event, event_handlers)
