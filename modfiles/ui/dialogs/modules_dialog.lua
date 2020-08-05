@@ -453,5 +453,5 @@ end
 function module_beacon_dialog.set_max_module_amount(player)
     local flow_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]
     flow_modal_dialog["flow_module_bar"]["textfield_module_amount"].text = get_modal_data(player).empty_slots
-    modal_dialog.exit(player, "submit", {})
+    modal_dialog.exit(player, "submit")
 end

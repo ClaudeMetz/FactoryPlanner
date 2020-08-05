@@ -52,16 +52,6 @@ local function adjust_after_checkbox_click(player)
 end
 
 
--- Adds the barebones dialog structure that both dialogs need
-local function initialize_dialog(ui_elements, dialog_type)
-    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
-    ui_elements.content_frame = content_frame
-
-    local label_text = content_frame.add{type="label", caption={"fp." .. dialog_type .. "_instruction_1"}}
-    label_text.style.bottom_margin = 10
-end
-
 -- Adds a flow containing a textfield and a button
 local function add_textfield_and_button(ui_elements, dialog_type, button_first, button_enabled)
     local flow = ui_elements.content_frame.add{type="flow", direction="horizontal"}
@@ -97,11 +87,10 @@ end
 local function setup_subfactories_table(ui_elements, add_location)
     ui_elements.table_rows = {}
 
-    local scroll_pane = ui_elements.content_frame.add{type="scroll-pane",style="scroll_pane_in_shallow_frame"}
-    scroll_pane.style.extra_top_padding_when_activated = 0
-    scroll_pane.style.extra_right_padding_when_activated = 0
-    scroll_pane.style.extra_bottom_padding_when_activated = 0
-    scroll_pane.style.extra_left_padding_when_activated = 0
+    local scroll_pane = ui_elements.content_frame.add{type="scroll-pane",
+      style="fp_scroll_pane_inside_content_frame_bare"}
+    scroll_pane.style.margin = 0
+    scroll_pane.style.padding = 0
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
     ui_elements.subfactories_scroll_pane = scroll_pane
 
@@ -172,14 +161,14 @@ local function import_subfactories(player)
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
         label_info.style.single_line = false
-        label_info.style.bottom_margin = 8
+        label_info.style.bottom_margin = 4
         label_info.style.width = 330
         ui_elements.info_label = label_info
     end
 
     if not ui_elements.porter_line then
         local line = content_frame.add{type="line", direction="horizontal"}
-        line.style.margin = {10, 0, 8, 0}
+        line.style.margin = {6, 0, 6, 0}
         ui_elements.porter_line = line
     end
 
@@ -226,6 +215,7 @@ end
 -- ** IMPORT DIALOG **
 import_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
+    create_content_frame = true,
     disable_scroll_pane = true
 } end)
 
@@ -258,17 +248,19 @@ import_dialog.events = {
 }
 
 
-function import_dialog.open(_, _, modal_data)
+function import_dialog.open(_, modal_data)
     local ui_elements = modal_data.ui_elements
     set_dialog_submit_button(ui_elements, false, "import_string")
 
-    initialize_dialog(ui_elements, "import")
+    local label_text = ui_elements.content_frame.add{type="label", caption={"fp.import_instruction_1"}}
+    label_text.style.bottom_margin = 4
+
     add_textfield_and_button(ui_elements, "import", false, false)
     ui_util.select_all(ui_elements.import_textfield)
 end
 
 -- Imports the selected subfactories into the player's main factory
-function import_dialog.close(player, action, _)
+function import_dialog.close(player, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local factory = ui_state.context.factory
@@ -291,6 +283,7 @@ end
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.export"}, {"fp.pl_subfactory", 1}},
+    create_content_frame = true,
     disable_scroll_pane = true
 } end)
 
@@ -305,11 +298,13 @@ export_dialog.events = {
     }
 }
 
-function export_dialog.open(player, _, modal_data)
+function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
     local ui_elements = modal_data.ui_elements
 
-    initialize_dialog(ui_elements, "export")
+    local label_text = ui_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"}}
+    label_text.style.bottom_margin = 4
+
     setup_subfactories_table(ui_elements, true)
 
     local valid_subfactory_found = false
@@ -322,7 +317,7 @@ function export_dialog.open(player, _, modal_data)
     ui_elements.master_checkbox.enabled = valid_subfactory_found
 
     add_textfield_and_button(ui_elements, "export", true, false)
-    ui_elements.export_textfield.parent.style.top_margin = 10
+    ui_elements.export_textfield.parent.style.top_margin = 6
 end
 
 

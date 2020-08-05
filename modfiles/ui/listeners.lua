@@ -40,7 +40,7 @@ end)
 script.on_event("fp_confirm_dialog", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
-    modal_dialog.exit(player, "submit", {})
+    modal_dialog.exit(player, "submit")
 end)
 
 script.on_event("fp_focus_searchfield", function(event)
@@ -95,22 +95,25 @@ end)
 -- ** GUI EVENTS **
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
-    local player = game.get_player(event.player_index)
+    --[[ local player = game.get_player(event.player_index)
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
       and string.find(event.element.name, "^fp_.+$") then
         -- Close or hide any modal dialog or leave selection mode
         if event.element.name == "fp_frame_modal_dialog" then
             if data_util.get("flags", player).selection_mode then beacon_dialog.leave_selection_mode(player, nil)
-            else modal_dialog.exit(player, "cancel", {}) end
+            else modal_dialog.exit(player, "cancel") end
 
         -- Toggle the main dialog
         elseif event.element.name == "fp_frame_main_dialog" then
             main_dialog.toggle(player)
 
         end
-	end
+    end ]]
+
+    event_handler.handle_gui_event(event)
 end)
+
 
 -- Fires on any confirmation of a textfield
 script.on_event(defines.events.on_gui_confirmed, function(event)
@@ -132,7 +135,7 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
     --[[ -- Submit any modal dialog, if it is open
     elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
         if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
-        modal_dialog.exit(player, "submit", {}) ]]
+        modal_dialog.exit(player, "submit") ]]
 
     else
         event_handler.handle_gui_event(event)
@@ -346,10 +349,10 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_beacon_selector" then
             beacon_dialog.enter_selection_mode(player)
 
-        -- Reacts to a modal dialog button being pressed
+        --[[ -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
             local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
-            modal_dialog.exit(player, dialog_action, {})
+            modal_dialog.exit(player, dialog_action) ]]
 
         -- Reacts to a actionbar button being pressed
         elseif string.find(element_name, "^fp_button_actionbar_[a-z]+$") then

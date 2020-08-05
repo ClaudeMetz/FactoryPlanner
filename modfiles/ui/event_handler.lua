@@ -3,6 +3,7 @@ event_handler = {}
 
 local event_identifier_name_map = {
     [defines.events.on_gui_click] = "on_gui_click",
+    [defines.events.on_gui_closed] = "on_gui_closed",
     [defines.events.on_gui_confirmed] = "on_gui_confirmed",
     [defines.events.on_gui_text_changed] = "on_gui_text_changed",
     [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed",
@@ -15,9 +16,9 @@ local event_standard_timeouts = {
 }
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {porter_dialog, import_dialog, export_dialog, tutorial_dialog, chooser_dialog,
-  options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog, subfactory_dialog, product_dialog,
-  recipe_dialog}
+local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, import_dialog, export_dialog,
+  tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
+  product_dialog, recipe_dialog}
 
 local event_cache = {}
 local special_handlers = {}
@@ -81,6 +82,13 @@ function special_handlers.on_gui_click(player, event, event_handlers)
     standard_handler(player, event, event_handlers, metadata)
 end
 
+function special_handlers.on_gui_closed(player, event, event_handlers)
+    -- Make sure this event only fires when appropriate
+    if event.gui_type == defines.gui_type.custom and event.element.visible then
+        standard_handler(player, event, event_handlers)
+    end
+end
+
 function special_handlers.on_gui_confirmed(player, event, event_handlers)
     -- Try the normal handler, if it returns true, an event_handler was found
     if standard_handler(player, event, event_handlers) then
@@ -89,7 +97,7 @@ function special_handlers.on_gui_confirmed(player, event, event_handlers)
     -- Otherwise, close the currently open modal dialog, if possible
     elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
         -- Doesn't need rate limiting because of the check above (I think)
-        modal_dialog.exit(player, "submit", {})
+        modal_dialog.exit(player, "submit")
     end
 end
 

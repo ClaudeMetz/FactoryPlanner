@@ -23,6 +23,17 @@ end
 
 
 -- ** TOP LEVEL **
+main_dialog.events = {
+    on_gui_closed = {
+        {
+            name = "fp_frame_main_dialog",
+            handler = (function(player, _)
+                main_dialog.toggle(player)
+            end)
+        }
+    }
+}
+
 -- Toggles the main dialog open and closed
 function main_dialog.toggle(player)
     -- Won't toggle if a modal dialog is open
