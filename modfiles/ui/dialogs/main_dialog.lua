@@ -31,6 +31,18 @@ main_dialog.events = {
                 main_dialog.toggle(player)
             end)
         }
+    },
+    on_gui_opened = {
+        {
+            name = "fp_frame_main_dialog",
+            handler = (function(player)
+                local frame_main_dialog = player.gui.screen.fp_frame_main_dialog
+                if frame_main_dialog and frame_main_dialog.visible then
+                    frame_main_dialog.visible = false
+                    main_dialog.set_pause_state(player, frame_main_dialog)
+                end
+            end)
+        }
     }
 }
 

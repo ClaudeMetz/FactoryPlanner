@@ -6,9 +6,9 @@ Date: 00. 00. 0000
   Changes:
     - Redesigned the subfactory dialog
     - Added some info about why a dialog can not be submitted
-    - Adjust styling in numerous ways
+    - Adjusted styling in numerous ways
   Bugfixes:
-    -
+    - Fixed the issue that opening a vanilla interface while a Factory Planner modal dialog is open would not close the main FP interface window
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.50

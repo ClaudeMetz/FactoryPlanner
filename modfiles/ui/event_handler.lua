@@ -3,6 +3,7 @@ event_handler = {}
 
 local event_identifier_name_map = {
     [defines.events.on_gui_click] = "on_gui_click",
+    [defines.events.on_gui_opened] = "on_gui_opened",
     [defines.events.on_gui_closed] = "on_gui_closed",
     [defines.events.on_gui_confirmed] = "on_gui_confirmed",
     [defines.events.on_gui_text_changed] = "on_gui_text_changed",
@@ -76,40 +77,58 @@ end
 
 
 -- ** SPECIAL HANDLERS **
-function special_handlers.on_gui_click(player, event, event_handlers)
-    local metadata = {alt=event.alt}
+special_handlers.on_gui_click = {
+    special_handler = (function(player, event, event_handlers)
+        local metadata = {alt=event.alt}
 
-    standard_handler(player, event, event_handlers, metadata)
-end
+        standard_handler(player, event, event_handlers, metadata)
+    end)
+}
 
-function special_handlers.on_gui_closed(player, event, event_handlers)
-    -- Make sure this event only fires when appropriate
-    if event.gui_type == defines.gui_type.custom and event.element.visible then
-        standard_handler(player, event, event_handlers)
-    end
-end
+special_handlers.on_gui_opened = {
+    raw_event = true,
+    special_handler = (function(player, event, event_handlers)
+        -- Closes the main dialog when the player opens another UI while in a modal dialog
+        if event.gui_type ~= defines.gui_type.custom or not string.find(event.element.name, "^fp_.+$") then
+            event_handlers.names["fp_frame_main_dialog"].handler(player)
+        end
+    end)
+}
 
-function special_handlers.on_gui_confirmed(player, event, event_handlers)
-    -- Try the normal handler, if it returns true, an event_handler was found
-    if standard_handler(player, event, event_handlers) then
-        return
+special_handlers.on_gui_closed = {
+    special_handler = (function(player, event, event_handlers)
+        if event.gui_type == defines.gui_type.custom and event.element.visible then
+            standard_handler(player, event, event_handlers)
+        end
+    end)
+}
 
-    -- Otherwise, close the currently open modal dialog, if possible
-    elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
-        -- Doesn't need rate limiting because of the check above (I think)
-        modal_dialog.exit(player, "submit")
-    end
-end
+special_handlers.on_gui_confirmed = {
+    special_handler = (function(player, event, event_handlers)
+        -- Try the normal handler, if it returns true, an event_handler was found
+        if standard_handler(player, event, event_handlers) then
+            return
+
+        -- Otherwise, close the currently open modal dialog, if possible
+        elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
+            -- Doesn't need rate limiting because of the check above (I think)
+            modal_dialog.exit(player, "submit")
+        end
+    end)
+}
 
 
 -- Actually compile a list of handlers
 for _, object in pairs(objects_that_need_handling) do
     if object.events then
         for event_name, elements in pairs(object.events) do
+            local special_handler = special_handlers[event_name] or {}
+
             event_cache[event_name] = event_cache[event_name] or {
                 names = {},
                 patterns = {},
-                special_handler = special_handlers[event_name]
+                raw_event = special_handler.raw_event,
+                special_handler = special_handler.special_handler
             }
 
             for _, element in pairs(elements) do
@@ -132,13 +151,17 @@ end
 
 -- ** TOP LEVEL **
 function event_handler.handle_gui_event(event)
-    if event.element and string.find(event.element.name, "^fp_.+$") then
-        local player = game.get_player(event.player_index)
+    local player = game.get_player(event.player_index)
 
-        -- The event table actually contains its identifier, not its name
-        local event_name = event_identifier_name_map[event.name]
-        local event_handlers = event_cache[event_name]
+    -- The event table actually contains its identifier, not its name
+    local event_name = event_identifier_name_map[event.name]
+    local event_handlers = event_cache[event_name]
 
+    -- Raw events get called directly, without checking the GUI element first
+    if event_handlers.raw_event then
+        event_handlers.special_handler(player, event, event_handlers)
+
+    elseif event.element and string.find(event.element.name, "^fp_.+$") then
         if event_handlers then  -- make sure the given event is even handled
             if event_handlers.special_handler then
                 event_handlers.special_handler(player, event, event_handlers)

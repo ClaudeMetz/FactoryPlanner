@@ -114,6 +114,10 @@ script.on_event(defines.events.on_gui_closed, function(event)
     event_handler.handle_gui_event(event)
 end)
 
+script.on_event(defines.events.on_gui_opened, function(event)
+    event_handler.handle_gui_event(event)
+end)
+
 
 -- Fires on any confirmation of a textfield
 script.on_event(defines.events.on_gui_confirmed, function(event)
