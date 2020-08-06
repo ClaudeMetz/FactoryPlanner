@@ -118,6 +118,10 @@ script.on_event(defines.events.on_gui_opened, function(event)
     event_handler.handle_gui_event(event)
 end)
 
+script.on_event(defines.events.on_gui_value_changed, function(event)
+    event_handler.handle_gui_event(event)
+end)
+
 
 -- Fires on any confirmation of a textfield
 script.on_event(defines.events.on_gui_confirmed, function(event)
@@ -345,13 +349,13 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_error_bar_repair" then
             error_bar.handle_subfactory_repair(player)
 
-        -- Maxes the amount of modules on a modules-dialog
+        --[[ -- Maxes the amount of modules on a modules-dialog
         elseif element_name == "fp_button_max_modules" then
-            module_beacon_dialog.set_max_module_amount(player)
+            module_beacon_dialog.set_max_module_amount(player) ]]
 
-        -- Gives the player the beacon-selector
+        --[[ -- Gives the player the beacon-selector
         elseif element_name == "fp_button_beacon_selector" then
-            beacon_dialog.enter_selection_mode(player)
+            beacon_dialog.enter_selection_mode(player) ]]
 
         --[[ -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
@@ -452,9 +456,9 @@ script.on_event(defines.events.on_gui_click, function(event)
             production_handler.handle_line_beacon_click(player, split_string[6], split_string[5], click,
               direction, action, event.alt)
 
-        -- Handles click on any module/beacon button on a modules/beacons modal dialog
+        --[[ -- Handles click on any module/beacon button on a modules/beacons modal dialog
         elseif string.find(element_name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
-            module_beacon_dialog.handle_picker_click(player, event.element)
+            module_beacon_dialog.handle_picker_click(player, event.element) ]]
 
         --[[ -- Reacts to any default prototype preference button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_preferences_[a-z]+_%d+_?%d*$") then

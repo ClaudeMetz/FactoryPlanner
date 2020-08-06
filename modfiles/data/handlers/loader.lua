@@ -23,9 +23,8 @@ function loader.run()
     sorted_items = caching.sorted_items()
     identifier_item_map = caching.identifier_item_map()
 
-    item_fuel_map = caching.item_fuel_map()
-
     module_tier_map = caching.module_tier_map()
+    module_name_map = caching.module_name_map()
 end
 
 
@@ -136,24 +135,7 @@ function caching.identifier_item_map()
 end
 
 
--- Maps every fuel_proto to a (item[type][name] -> fuel_proto)-map
--- This is possible because every fuel can only be in one category at a time
-function caching.item_fuel_map()
-    local map = {}
-
-    if not global.all_fuels.categories then return end
-    for _, category in pairs(global.all_fuels.categories) do
-        for _, fuel_proto in pairs(category.fuels) do
-            map[fuel_proto.type] = map[fuel_proto.type] or {}
-            map[fuel_proto.type][fuel_proto.name] = fuel_proto
-        end
-    end
-
-    return map
-end
-
-
--- Generates a table containing all module per category, ordered by tier
+-- Generates a table containing all modules per category, ordered by tier
 function caching.module_tier_map()
     local map = {}
 
@@ -162,6 +144,20 @@ function caching.module_tier_map()
         map[category.id] = {}
         for _, module in pairs(category.modules) do
             map[category.id][module.tier] = module
+        end
+    end
+
+    return map
+end
+
+-- Generates a table mapping modules to their prototype by name
+function caching.module_name_map()
+    local map = {}
+
+    if not global.all_modules then return end
+    for _, category in pairs(global.all_modules.categories) do
+        for _, module in pairs(category.modules) do
+            map[module.name] = module
         end
     end
 
