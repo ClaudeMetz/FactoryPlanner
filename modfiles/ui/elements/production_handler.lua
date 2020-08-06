@@ -559,31 +559,10 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
 
-    elseif direction ~= nil then  -- change to the previous/next fuel in the list
-        local category_id = global.all_fuels.map[fuel.proto.category]
-        local prototype_table = global.all_fuels.categories[category_id].fuels
-
-        local function change_fuel_proto(factor)
-            local new_proto = prototype_table[fuel.proto.id + factor]
-            if new_proto ~= nil then
-                fuel.proto = new_proto
-                calculation.update(player, context.subfactory, true)
-            else
-                local type = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
-                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.lfuel"}, type}
-                titlebar.enqueue_message(player, message, "error", 1, true)
-            end
-        end
-
-        if direction == "positive" then
-            change_fuel_proto(1)
-        else  -- direction == "negative"
-            change_fuel_proto(-1)
-        end
-
     else
         if click == "left" then
-            modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce"}})
+            modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce",
+              add_after_position=((direction == "positive") and line.gui_position or nil)}})
 
         elseif click == "right" then
             local machine_proto = line.machine.proto
