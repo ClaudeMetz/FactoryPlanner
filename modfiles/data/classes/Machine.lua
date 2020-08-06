@@ -98,6 +98,14 @@ function Machine.empty_slot_count(self)
     return (self.proto.module_limit - self.module_count)
 end
 
+function Machine.existing_module_names(self)
+    local existing_names = {}
+    for _, module in ipairs(Machine.get_in_order(self, "Module")) do
+        existing_names[module.proto.name] = true
+    end
+    return existing_names
+end
+
 function Machine.check_module_compatibility(self, module_proto)
     local compatible = true
     local recipe = self.parent.recipe

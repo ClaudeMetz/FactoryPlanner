@@ -281,10 +281,9 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
     ui_state.context.line = line
-    local limit = Machine.empty_slot_count(line.machine)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
-        modal_dialog.enter(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
+        modal_dialog.enter(player, {type="module", submit=true, modal_data={object=nil, machine=line.machine}})
 
     else  -- meaning an existing module was clicked
         local module = Machine.get(line.machine, "Module", module_id)
@@ -309,6 +308,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             -- alt modifies the module amount, no alt modifies the module tier
             if direction == "positive" then
                 if alt then
+                    local limit = Machine.empty_slot_count(line.machine)
                     local new_amount = math.min(module.amount + 1, module.amount + limit)
                     if new_amount == module.amount then
                         local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
@@ -340,8 +340,8 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "edit" or click == "left" then
-            modal_dialog.enter(player, {type="module", submit=true, delete=true, modal_data={selected_object=module,
-              empty_slots=(limit + module.amount), selected_module=module.proto}})
+            modal_dialog.enter(player, {type="module", submit=true, delete=true,
+              modal_data={object=module, machine=line.machine}})
         end
     end
 end

@@ -43,6 +43,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     -- Button bar
     local button_bar = frame_modal_dialog.add{type="flow", direction="horizontal",
       style="dialog_buttons_horizontal_flow"}
+    button_bar.style.horizontal_spacing = 0
 
     -- Cancel/Back button
     local action = dialog_settings.submit and "cancel" or "back"

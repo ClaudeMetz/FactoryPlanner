@@ -67,6 +67,10 @@ function Beacon.summarize_effects(self)
 end
 
 
+function Beacon.existing_module_names(self)
+    return {[self.module.proto.name] = true}
+end
+
 function Beacon.check_module_compatibility(self, module_proto)
     local compatible = true
     local recipe_proto, machine_proto = self.parent.recipe.proto, self.parent.machine.proto
