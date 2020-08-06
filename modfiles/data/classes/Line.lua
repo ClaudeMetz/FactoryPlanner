@@ -216,38 +216,6 @@ function Line.get_total_effects(self, player)
 end
 
 
--- Returns a table indicating the compatibility of the given module with this line and the given beacon
-function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto)
-    local compatible = true
-    local recipe, machine = self.recipe, self.machine
-
-    if not self.valid or not recipe.valid or not machine.valid then compatible = false end
-
-    if compatible then
-        if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
-          and not module_proto.limitations[recipe.proto.name] then
-            compatible = false
-          end
-    end
-
-    if compatible then
-        local machine_effects, beacon_effects = machine.proto.allowed_effects, beacon_proto.allowed_effects
-        if machine_effects == nil or beacon_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
-                    compatible = false
-                    break
-                end
-            end
-        end
-    end
-
-    return { compatible = compatible }
-end
-
-
 function Line.pack(self)
     local packed_line = {
         comment = self.comment,
