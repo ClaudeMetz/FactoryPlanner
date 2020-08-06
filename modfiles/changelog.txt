@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Redesigned the subfactory and module dialogs
+    - Made it so recipes for fuels can also be inserted directly below by shift-left-clicking them
     - Added some info about why a dialog can not be submitted
     - Adjusted styling in numerous ways
   Bugfixes:
