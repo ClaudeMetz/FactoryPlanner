@@ -11,12 +11,6 @@ function Module.init_by_proto(proto, amount)
     }
 end
 
--- Initialised by passing a category- and module prototype-id
-function Module.init_by_ids(category_id, id, amount)
-    local proto = global.all_modules.categories[category_id].modules[id]
-    Module.init_by_proto(proto, amount)
-end
-
 
 function Module.change_amount(self, new_amount)
     local amount_difference = new_amount - self.amount
@@ -44,18 +38,9 @@ end
 function Module.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "modules", "category")
 
-    -- Check whether the module is still compatible with it's machine
+    -- Check whether the module is still compatible with it's machine or beacon
     if self.valid and self.parent.valid then
-        local parent, characteristics = self.parent, nil
-
-        -- Different validation strategies depending on the use case of this module
-        if parent.class == "Beacon" then
-            characteristics = Line.get_beacon_module_characteristics(parent.parent, parent.proto, self.proto)
-        else  -- parent.class == "Machine"
-            characteristics = Machine.get_module_characteristics(parent, self.proto, false)
-        end
-
-        self.valid = characteristics.compatible
+        _G[self.parent.class].check_module_compatibility(self.parent, self.proto)
     end
 
     return self.valid

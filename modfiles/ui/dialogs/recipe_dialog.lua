@@ -101,6 +101,7 @@ local function attempt_adding_line(player, recipe_id)
     -- If changing the machine fails, this line is invalid
     if Line.change_machine(line, player, nil, nil) == false then
         titlebar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
+
     else
         local add_after_position = ui_state.modal_data.add_after_position
         -- If add_after_position is given, insert it below that one, add it to the end otherwise
@@ -117,22 +118,28 @@ local function attempt_adding_line(player, recipe_id)
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.machine
         if machine_module ~= nil then
-            if Machine.get_module_characteristics(line.machine, machine_module, false).compatible then
+            if Machine.check_module_compatibility(line.machine, machine_module) then
                 local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
                 Machine.add(line.machine, new_module)
+
             elseif message == nil then  -- don't overwrite previous message, if it exists
                 message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
             end
         end
 
         -- Add default beacon modules, if desired by the user
-        local beacon_module, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
+        local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
         local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
-        if beacon_module ~= nil and beacon_count ~= nil then
-            if Line.get_beacon_module_characteristics(line, beacon_proto, beacon_module).compatible then
-                local new_beacon = Beacon.init_by_protos(beacon_proto, beacon_count, beacon_module,
-                  beacon_proto.module_limit, nil)
-                Line.set_beacon(line, new_beacon)
+
+        if beacon_module_proto ~= nil and beacon_count ~= nil then
+            local blank_beacon = Beacon.blank_init(beacon_proto, beacon_count, line)
+
+            if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
+                local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
+                Beacon.set_module(blank_beacon, module)
+
+                Line.set_beacon(line, blank_beacon)
+
             elseif message == nil then  -- don't overwrite previous message, if it exists
                 message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, type="warning"}
             end
