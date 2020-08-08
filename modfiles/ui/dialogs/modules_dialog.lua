@@ -31,8 +31,11 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, pa
 
     local slider_value = (module) and module.amount or empty_slots
     local maximum_value = (module) and (module.amount + empty_slots) or empty_slots
-    -- TODO this is broken for maximum_value=2 ...
-    -- I don't want the slider to go to 0, but that's what it'll have to be for now
+
+    -- Sliders with max_value-min_value == 1 don't work correctly. This is the workaround:
+    --if maximum_value == 2 then maximum_value = 2.0000001 end
+    -- I'm not sure if I want sliders to start at 1 though, starting at 0 might be fine
+
     local slider = parent_flow.add{type="slider", name="fp_slider_module_amount", minimum_value=0,
       maximum_value=maximum_value, value=slider_value, value_step=1, style="notched_slider"}
     slider.style.width = 130
