@@ -154,8 +154,7 @@ end
 
 
 local function create_filter_box(modal_data)
-    local bordered_frame = modal_data.ui_elements.content_frame.add{type="frame", style="bordered_frame"}
-    bordered_frame.style.horizontally_stretchable = true
+    local bordered_frame = modal_data.ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16
@@ -173,8 +172,7 @@ end
 
 local function create_recipe_group_box(modal_data, relevant_group)
     local ui_elements = modal_data.ui_elements
-    local bordered_frame = ui_elements.content_frame.add{type="frame", style="bordered_frame"}
-    bordered_frame.style.horizontally_stretchable = true
+    local bordered_frame = ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
     bordered_frame.style.padding = 8
 
     local next_index = #ui_elements.groups + 1

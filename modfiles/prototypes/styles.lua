@@ -21,6 +21,7 @@ data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame_bare"] = {
     }
 }
 
+
 -- Intended for buttons of size 36
 data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
     type = "frame_style",
@@ -36,6 +37,13 @@ data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
         overall_tiling_horizontal_padding = 4,
     }
 }
+
+data.raw["gui-style"].default["fp_frame_bordered_stretch"] = {
+    type = "frame_style",
+    parent = "bordered_frame",
+    horizontally_stretchable = "on"
+}
+
 
 -- This style is hacked together from rounded-button and textbox
 data.raw["gui-style"].default["fp_sprite-button_inset"] = {
@@ -55,6 +63,13 @@ data.raw["gui-style"].default["fp_sprite-button_inset"] = {
         base = {position = {185, 200}, corner_size = 8}
     }
 }
+
+data.raw["gui-style"].default["fp_sprite-button_inset_tiny"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_inset",
+    size = 32
+}
+
 
 
 

@@ -2,8 +2,7 @@ preferences_dialog = {}
 
 -- ** LOCAL UTIL **
 local function add_preference_box(content_frame, type)
-    local bordered_frame = content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
-    bordered_frame.style.horizontally_stretchable = true
+    local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
 
     local caption = {"fp.info_label", {"fp.preference_".. type .. "_title"}}
     local tooltip = {"fp.preference_".. type .. "_title_tt"}
@@ -71,12 +70,10 @@ function preference_structures.mb_defaults(preferences, content_frame)
         flow_mb_defaults.add{type="label", caption={"fp.pu_" .. type, 1}}
 
         local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
-          name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset",
+          name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset_tiny",
           elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
         choose_elem_button.elem_value = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
         choose_elem_button.style.margin = {0, 12, 0, 4}
-        choose_elem_button.style.height = 32
-        choose_elem_button.style.width = 32
     end
 
     add_mb_default("machine")
@@ -270,8 +267,7 @@ function preferences_dialog.open(player, modal_data)
 
     local left_content_frame = add_content_frame()
 
-    local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
-    bordered_frame.style.horizontally_stretchable = true
+    local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
 
