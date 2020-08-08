@@ -367,8 +367,7 @@ function ui_util.context.create(player)
     return {
         factory = global.players[player.index].factory,
         subfactory = nil,
-        floor = nil,
-        line = nil
+        floor = nil
     }
 end
 
@@ -387,7 +386,6 @@ function ui_util.context.set_subfactory(player, subfactory)
     context.factory.selected_subfactory = subfactory
     context.subfactory = subfactory
     context.floor = (subfactory ~= nil) and subfactory.selected_floor or nil
-    context.line = nil
 end
 
 -- Updates the context to match the newly selected floor
@@ -395,7 +393,6 @@ function ui_util.context.set_floor(player, floor)
     local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
     context.floor = floor
-    context.line = nil
 end
 
 

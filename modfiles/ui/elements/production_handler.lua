@@ -280,7 +280,6 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
-    ui_state.context.line = line
 
     if module_id == nil then  -- meaning the add-module-button was pressed
         modal_dialog.enter(player, {type="module", submit=true, modal_data={object=nil, machine=line.machine}})
@@ -354,11 +353,9 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
-    ui_state.context.line = line
 
     if type == nil then  -- meaning the add-beacon-button was pressed
-        local limit = prototyper.defaults.get(player, "beacons").module_limit
-        modal_dialog.enter(player, {type="beacon", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
+        modal_dialog.enter(player, {type="beacon", submit=true, modal_data={object=nil, line=line}})
 
     elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction
         if type == "module" then
@@ -457,9 +454,8 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
         calculation.update(player, ui_state.context.subfactory, true)
 
     elseif action == "edit" or click == "left" then
-        local beacon = line.beacon
-        modal_dialog.enter(player, {type="beacon", submit=true, delete=true, modal_data={selected_object=beacon,
-          empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+        modal_dialog.enter(player, {type="beacon", submit=true, delete=true,
+          modal_data={object=line.beacon, line=line}})
     end
 end
 

@@ -68,7 +68,8 @@ end
 
 
 function Beacon.existing_module_names(self)
-    return {[self.module.proto.name] = true}
+    if not self.module then return {}
+    else return {[self.module.proto.name] = true} end
 end
 
 function Beacon.check_module_compatibility(self, module_proto)

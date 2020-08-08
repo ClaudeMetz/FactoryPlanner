@@ -22,10 +22,8 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, pa
     local module_name = (module) and module.proto.name or nil
     local module_filter = compile_module_filter(parent)
     local button_module = parent_flow.add{type="choose-elem-button", name="fp_choose-elem-button_module_choice",
-      elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset",
+      elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
-    button_module.style.height = 32
-    button_module.style.width = 32
     button_module.style.right_margin = 18
     ui_elements["module_choice_button"] = button_module
 
@@ -55,13 +53,45 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, pa
 end
 
 
+local function add_beacon_line(parent_flow, ui_elements, beacon)
+    local flow_beacon = parent_flow.add{type="flow", direction="horizontal"}
+    flow_beacon.style.vertical_align = "center"
+    flow_beacon.style.horizontal_spacing = 8
+
+    flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}}
+
+    local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
+    local button_beacon = flow_beacon.add{type="choose-elem-button", name="fp_choose-elem-button_beacon_choice",
+      elem_type="entity", entity=beacon.proto.name, elem_filters=beacon_filter, style="fp_sprite-button_inset_tiny",
+      mouse_button_filter={"left"}}
+    button_beacon.style.right_margin = 12
+    ui_elements["beacon_choice_button"] = button_beacon
+
+    flow_beacon.add{type="label", caption={"fp.beacon_amount"}, tooltip={"fp.beacon_amount_tt"}}
+
+    local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon.amount}
+    ui_util.setup_numeric_textfield(textfield_amount, true, false)
+    ui_util.select_all(textfield_amount)
+    textfield_amount.style.width = 40
+    ui_elements["beacon_textfield"] = textfield_amount
+end
+
+
 local function update_dialog_submit_button(ui_elements)
+    local beacon_choice, beacon_amount = ui_elements.beacon_choice_button, ui_elements.beacon_textfield
+    local module_choice, module_amount = nil, nil
+
     local message = nil
-    if ui_elements.module_choice_button.elem_value == nil then
-        message = {"fp.module_issue_select_module"}
-    elseif tonumber(ui_elements.module_textfield.text) == 0 then
-        message = {"fp.module_issue_select_amount"}
+    if beacon_choice and beacon_choice.elem_value == nil then
+        message = {"fp.beacon_issue_select_beacon"}
+    elseif beacon_amount and (tonumber(beacon_amount.text) or 0) == 0 then
+        message = {"fp.beacon_issue_set_amount"}
     end
+    --[[ if module_choice.elem_value == nil then
+        message = {"fp.module_issue_select_module"}
+    elseif tonumber(module_amount.text) == 0 then
+        message = {"fp.module_issue_select_amount"}
+    end ]]
 
     modal_dialog.set_submit_button_state(ui_elements, (message == nil), message)
 end
@@ -154,5 +184,60 @@ function module_dialog.close(player, action)
     elseif action == "delete" then
         Machine.remove(modal_data.machine, current_module)
         calculation.update(player, subfactory, true)
+    end
+end
+
+
+-- ** BEACON **
+beacon_dialog.dialog_settings = (function(modal_data) return {
+    caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_beacon", 1}},
+    create_content_frame = true
+} end)
+
+beacon_dialog.events = {
+    on_gui_elem_changed = {
+        {
+            name = "fp_choose-elem-button_beacon_choice",
+            handler = (function(player, _)
+                local ui_elements = data_util.get("ui_elements", player)
+                update_dialog_submit_button(ui_elements)
+            end)
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_beacon_amount",
+            handler = (function(player, _)
+                local ui_elements = data_util.get("ui_elements", player)
+                update_dialog_submit_button(ui_elements)
+            end)
+        }
+    }
+}
+
+function beacon_dialog.open(player, modal_data)
+    local beacon, line = modal_data.object, modal_data.line
+
+    if beacon == nil then
+        -- Create blank beacon as a stand-in
+        local beacon_proto = prototyper.defaults.get(player, "beacons")
+        local mb_defaults = data_util.get("preferences", player).mb_defaults
+        beacon = Beacon.blank_init(beacon_proto, mb_defaults.beacon_count, line)
+        modal_data.object = beacon
+    end
+
+    local ui_elements = modal_data.ui_elements
+    local bordered_frame = ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
+    bordered_frame.style.padding = 8
+    add_beacon_line(bordered_frame, ui_elements, beacon)
+
+    update_dialog_submit_button(ui_elements)
+end
+
+function beacon_dialog.close(player, action)
+    if action == submit then
+
+    elseif action == "delete" then
+
     end
 end
