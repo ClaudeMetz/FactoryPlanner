@@ -20,7 +20,7 @@ local event_standard_timeouts = {
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
 local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
-  product_dialog, recipe_dialog}
+  modules_dialog, product_dialog, recipe_dialog}
 
 local event_cache = {}
 local special_handlers = {}

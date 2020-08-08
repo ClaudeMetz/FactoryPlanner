@@ -80,7 +80,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
     add_mb_default("beacon")
 
 
-    flow_mb_defaults.add{type="label", caption={"fp.preference_mb_default_beacon_count"}}
+    flow_mb_defaults.add{type="label", caption={"fp.preference_mb_default_beacon_amount"}}
     local textfield_beacon_count = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_beacon_count",
       text=mb_defaults.beacon_count}
     ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
