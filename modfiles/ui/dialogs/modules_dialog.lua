@@ -3,6 +3,18 @@ beacon_dialog = {}
 modules_dialog = {}  -- table containing functionality shared between both dialogs
 
 -- ** LOCAL UTIL **
+local function generate_module_object(ui_elements)
+    local module_choice = ui_elements.module_choice_button.elem_value
+    if module_choice then
+        local module_amount = tonumber(ui_elements.module_textfield.text)
+        local module_proto = module_name_map[module_choice]
+        return Module.init_by_proto(module_proto, module_amount)
+    else
+        return nil
+    end
+end
+
+
 local function add_module_line(parent_flow, ui_elements, module, empty_slots, module_filter)
     local flow_module = parent_flow.add{type="flow", direction="horizontal"}
     flow_module.style.vertical_align = "center"
@@ -12,7 +24,7 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, mo
 
     if module_filter and #module_filter[1].name == 0 then
         ui_elements.no_modules_label = flow_module.add{type="label", caption={"fp.error_message",
-        {"fp.module_issue_none_compatible"}}}
+          {"fp.module_issue_none_compatible"}}}
         ui_elements.no_modules_label.style.font = "heading-2"
         return
     else
@@ -127,13 +139,37 @@ local function handle_module_textfield_change(player, element)
     update_dialog_submit_button(ui_elements)
 end
 
+local function handle_beacon_change(player, element)
+    local modal_data = data_util.get("modal_data", player)
 
-local function generate_module_object(ui_elements)
-    local module_amount = tonumber(ui_elements.module_textfield.text)
-    local module_choice = ui_elements.module_choice_button.elem_value
-    local module_proto = module_name_map[module_choice]
+    -- The beacon can't be set to nil, se re-set the current one if necessary
+    if element.elem_value == nil then
+        element.elem_value = modal_data.blank_beacon.proto.name
+        return  -- nothing changed in this case
+    end
 
-    return Module.init_by_proto(module_proto, module_amount)
+    -- Update the blank beacon with the new beacon proto
+    local blank_beacon = modal_data.blank_beacon
+    local beacon_id = global.all_beacons.map[element.elem_value]
+    blank_beacon.proto = global.all_beacons.beacons[beacon_id]
+
+    -- Recreate the module flow, retaining as much info as possible
+    local ui_elements = modal_data.ui_elements
+
+    local module = generate_module_object(ui_elements)
+    if module and not Beacon.check_module_compatibility(blank_beacon, module.proto) then module = nil end
+    if module then module.amount = math.min(module.amount, blank_beacon.proto.module_limit) end
+
+    local module_amount = (module) and module.amount or 0
+    local empty_slots = blank_beacon.proto.module_limit - module_amount
+
+    local module_frame = ui_elements.module_frame
+    module_frame.clear()
+
+    local module_filter = Beacon.compile_module_filter(blank_beacon)
+    add_module_line(module_frame, ui_elements, module, empty_slots, module_filter)
+
+    update_dialog_submit_button(ui_elements)
 end
 
 
@@ -189,9 +225,8 @@ beacon_dialog.events = {
     on_gui_elem_changed = {
         {
             name = "fp_choose-elem-button_beacon_choice",
-            handler = (function(player, _)
-                local ui_elements = data_util.get("ui_elements", player)
-                update_dialog_submit_button(ui_elements)
+            handler = (function(player, element)
+                handle_beacon_change(player, element)
             end)
         }
     },
@@ -218,13 +253,12 @@ function beacon_dialog.open(player, modal_data)
     local beacon, line = modal_data.object, modal_data.line
     local ui_elements = modal_data.ui_elements
 
-    if beacon == nil then
-        -- Create blank beacon as a stand-in
-        local beacon_proto = prototyper.defaults.get(player, "beacons")
-        local mb_defaults = data_util.get("preferences", player).mb_defaults
-        beacon = Beacon.blank_init(beacon_proto, mb_defaults.beacon_count, line)
-        modal_data.object = beacon
-    end
+    -- Create blank beacon as a stand-in
+    local beacon_proto = (beacon) and beacon.proto or prototyper.defaults.get(player, "beacons")
+    local beacon_count = (beacon) and beacon.amount or data_util.get("preferences", player).mb_defaults.beacon_count
+    local blank_beacon = Beacon.blank_init(beacon_proto, beacon_count, line)
+    modal_data.blank_beacon = blank_beacon
+    local module = (beacon) and beacon.module or nil
 
     local function add_bordered_frame()
         local frame = ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
@@ -233,13 +267,15 @@ function beacon_dialog.open(player, modal_data)
     end
 
     local beacon_frame = add_bordered_frame()
-    add_beacon_line(beacon_frame, ui_elements, beacon)
+    add_beacon_line(beacon_frame, ui_elements, blank_beacon)
 
     local module_frame = add_bordered_frame()
-    local module_amount = (beacon.module) and beacon.module.amount or 0
-    local empty_slots = beacon.proto.module_limit - module_amount
-    local module_filter = Beacon.compile_module_filter(beacon)
-    add_module_line(module_frame, ui_elements, beacon.module, empty_slots, module_filter)
+    ui_elements.module_frame = module_frame
+
+    local module_amount = (module) and module.amount or 0
+    local empty_slots = blank_beacon.proto.module_limit - module_amount
+    local module_filter = Beacon.compile_module_filter(blank_beacon)
+    add_module_line(module_frame, ui_elements, module, empty_slots, module_filter)
 
     update_dialog_submit_button(ui_elements)
 end
@@ -250,11 +286,8 @@ function beacon_dialog.close(player, action)
 
     if action == "submit" then
         local ui_elements = modal_data.ui_elements
-        local beacon = modal_data.object
-
-        local beacon_choice = ui_elements.beacon_choice_button.elem_value
-        local beacon_id = global.all_beacons.map[beacon_choice]
-        beacon.proto = global.all_beacons.beacons[beacon_id]
+        local beacon = modal_data.blank_beacon
+        -- The prototype is already updated on elem_changed
 
         beacon.amount = tonumber(ui_elements.beacon_textfield.text)
         beacon.total_amount = tonumber(ui_elements.beacon_total_textfield.text)
