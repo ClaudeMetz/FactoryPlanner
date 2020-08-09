@@ -21,7 +21,7 @@ local function recalculate_main_dialog_dimensions(player)
     return dimensions
 end
 
-local function handle_other_gui_opening(player)
+--[[ local function handle_other_gui_opening(player)
     -- Close the modal dialog so it closes even if selection mode was active
     modal_dialog.exit(player, "cancel")
 
@@ -30,7 +30,7 @@ local function handle_other_gui_opening(player)
         frame_main_dialog.visible = false
         main_dialog.set_pause_state(player, frame_main_dialog)
     end
-end
+end ]]
 
 
 -- ** TOP LEVEL **
@@ -42,7 +42,7 @@ main_dialog.events = {
                 main_dialog.toggle(player)
             end)
         }
-    },
+    }--[[ ,
     on_gui_opened = {
         {
             name = "fp_frame_main_dialog",
@@ -50,7 +50,7 @@ main_dialog.events = {
                 handle_other_gui_opening(player)
             end)
         }
-    }
+    } ]]
 }
 
 -- Toggles the main dialog open and closed
