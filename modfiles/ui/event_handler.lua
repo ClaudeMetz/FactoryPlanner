@@ -166,7 +166,14 @@ end ]]
 -- is that multiple handlers can be registered to the same event, and there is no standard handler
 
 local misc_identifier_map = {
-    [defines.events.on_gui_opened] = "on_gui_opened"
+    [defines.events.on_gui_opened] = "on_gui_opened",
+    [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
+    [defines.events.on_player_selected_area] = "on_player_selected_area",
+    [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
+    [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
+    [defines.events.on_lua_shortcut] = "on_lua_shortcut",
+    -- Keyboard shortcuts
+    ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog"
 }
 
 --[[ local misc_timeouts = {
@@ -202,8 +209,8 @@ end
 
 
 function event_handler.handle_misc_event(event)
-    local event_name = misc_identifier_map[event.name]
-    local event_handlers = misc_event_cache[event_name]
+    local event_name = event.input_name or event.name -- also handles keyboard shortcuts
+    local event_handlers = misc_event_cache[misc_identifier_map[event_name]]
 
     if event_handlers then  -- make sure the given event is even handled
         -- I will assume every one of the events has a player attached

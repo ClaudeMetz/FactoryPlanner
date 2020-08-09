@@ -22,7 +22,7 @@ local function recalculate_main_dialog_dimensions(player)
 end
 
 -- No idea how to write this so it works when in selection mode
-local function handle_other_gui_opening(player, _)
+local function handle_other_gui_opening(player)
     local frame_main_dialog = player.gui.screen.fp_frame_main_dialog
     if frame_main_dialog and frame_main_dialog.visible then
         frame_main_dialog.visible = false
@@ -44,7 +44,27 @@ main_dialog.gui_events = {
 }
 
 main_dialog.misc_events = {
-    on_gui_opened = handle_other_gui_opening
+    on_gui_opened = (function(player, _)
+        handle_other_gui_opening(player)
+    end),
+
+    on_player_display_resolution_changed = (function(player, _)
+        main_dialog.refresh(player, true)
+    end),
+
+    on_player_display_scale_changed = (function(player, _)
+        main_dialog.refresh(player, true)
+    end),
+
+    on_lua_shortcut = (function(player, event)
+        if event.prototype_name == "fp_open_interface" then
+            main_dialog.toggle(player)
+        end
+    end),
+
+    fp_toggle_main_dialog = (function(player, _)
+        main_dialog.toggle(player)
+    end)
 }
 
 -- Toggles the main dialog open and closed

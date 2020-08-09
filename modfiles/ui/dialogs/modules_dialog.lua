@@ -173,6 +173,14 @@ local function handle_beacon_change(player, element)
     update_dialog_submit_button(ui_elements)
 end
 
+local function handle_beacon_selection(player, entities)
+    local ui_elements = data_util.get("ui_elements", player)
+    ui_elements.beacon_total_textfield.text = table_size(entities)
+    ui_elements.beacon_total_textfield.focus()
+
+    modal_dialog.leave_selection_mode(player)
+end
+
 
 -- ** MODULE **
 module_dialog.dialog_settings = (function(modal_data) return {
@@ -250,6 +258,21 @@ beacon_dialog.gui_events = {
     }
 }
 
+beacon_dialog.misc_events = {
+    on_player_cursor_stack_changed = (function(player, _)
+        -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
+        if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
+            modal_dialog.leave_selection_mode(player)
+        end
+    end),
+    on_player_selected_area = (function(player, event)
+        if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
+            handle_beacon_selection(player, event.entities)
+        end
+    end)
+}
+
+
 function beacon_dialog.open(player, modal_data)
     local beacon, line = modal_data.object, modal_data.line
     local ui_elements = modal_data.ui_elements
@@ -303,14 +326,6 @@ function beacon_dialog.close(player, action)
         Line.set_beacon(modal_data.line, nil)
         calculation.update(player, subfactory, true)
     end
-end
-
-function beacon_dialog.handle_beacon_selection(player, entities)
-    local ui_elements = data_util.get("ui_elements", player)
-    ui_elements.beacon_total_textfield.text = table_size(entities)
-    ui_elements.beacon_total_textfield.focus()
-
-    modal_dialog.leave_selection_mode(player)
 end
 
 
