@@ -3,14 +3,7 @@ require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
 
--- TODO move the rest over to event_handler when all GUIs are redone
-
 -- ** KEYBOARD SHORTCUTS **
-script.on_event("fp_toggle_main_dialog", function(event)
-    local player = game.get_player(event.player_index)
-    main_dialog.toggle(player)
-end)
-
 script.on_event("fp_toggle_pause", function(event)
     local player = game.get_player(event.player_index)
     local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
@@ -50,45 +43,6 @@ script.on_event("fp_focus_searchfield", function(event)
         local textfield = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_item_picker"]
           ["table_search_bar"]["fp_textfield_item_picker_search_bar"]
         ui_util.select_all(textfield)
-    end
-end)
-
-
--- ** LUA SHORTCUTS **
-script.on_event(defines.events.on_lua_shortcut, function(event)
-    local player = game.players[event.player_index]
-
-    if event.prototype_name == "fp_open_interface" then
-        main_dialog.toggle(player)
-    end
-end)
-
-
--- ** PLAYER GUI EVENTS **
-script.on_event(defines.events.on_player_display_resolution_changed, function(event)
-    main_dialog.refresh(game.get_player(event.player_index), true)
-end)
-
-script.on_event(defines.events.on_player_display_scale_changed, function(event)
-    main_dialog.refresh(game.get_player(event.player_index), true)
-end)
-
--- Fires when the user makes a selection using a selection-tool
-script.on_event(defines.events.on_player_selected_area, function(event)
-    local player = game.get_player(event.player_index)
-
-    if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
-        -- TODO Rate limiting
-        beacon_dialog.handle_beacon_selection(player, event.entities)
-    end
-end)
-
--- Fires when the item that the player is holding changes
-script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
-    local player = game.get_player(event.player_index)
-    -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-    if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
-        modal_dialog.leave_selection_mode(player)
     end
 end)
 
