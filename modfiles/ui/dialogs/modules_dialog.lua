@@ -2,40 +2,24 @@ module_dialog = {}
 beacon_dialog = {}
 modules_dialog = {}  -- table containing functionality shared between both dialogs
 
-local function compile_module_filter(parent)
-    local parent_class_object = _G[parent.class]
-    local compatible_modules, existing_modules = {}, parent_class_object.existing_module_names(parent)
-
-    for module_name, module_proto in pairs(module_name_map) do
-        if parent_class_object.check_module_compatibility(parent, module_proto)
-          and not existing_modules[module_name] then
-            table.insert(compatible_modules, module_name)
-        end
-    end
-
-    local filter = {{filter="name", name=compatible_modules}}  -- hidden modules are already filtered out
-    return filter, #compatible_modules
-end
-
-local function add_module_line(parent_flow, ui_elements, module, empty_slots, parent)
+-- ** LOCAL UTIL **
+local function add_module_line(parent_flow, ui_elements, module, empty_slots, module_filter)
     local flow_module = parent_flow.add{type="flow", direction="horizontal"}
     flow_module.style.vertical_align = "center"
     flow_module.style.horizontal_spacing = 8
 
     flow_module.add{type="label", caption={"fp.pu_module", 1}}
 
-    local module_name = (module) and module.proto.name or nil
-    local module_filter, compatible_module_count = compile_module_filter(parent)
-
-    if compatible_module_count == 0 then
+    if module_filter and #module_filter[1].name == 0 then
         ui_elements.no_modules_label = flow_module.add{type="label", caption={"fp.error_message",
-          {"fp.module_issue_none_compatible"}}}
+        {"fp.module_issue_none_compatible"}}}
         ui_elements.no_modules_label.style.font = "heading-2"
         return
     else
         ui_elements.no_modules_label = nil
     end
 
+    local module_name = (module) and module.proto.name or nil
     local button_module = flow_module.add{type="choose-elem-button", name="fp_choose-elem-button_module_choice",
       elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
@@ -165,7 +149,8 @@ function module_dialog.open(_, modal_data)
 
     local ui_elements = modal_data.ui_elements
     local empty_slots = Machine.empty_slot_count(machine)
-    add_module_line(ui_elements.content_frame, ui_elements, module, empty_slots, machine)
+    local module_filter = Machine.compile_module_filter(machine)
+    add_module_line(ui_elements.content_frame, ui_elements, module, empty_slots, module_filter)
 
     update_dialog_submit_button(ui_elements)
 end
@@ -253,7 +238,8 @@ function beacon_dialog.open(player, modal_data)
     local module_frame = add_bordered_frame()
     local module_amount = (beacon.module) and beacon.module.amount or 0
     local empty_slots = beacon.proto.module_limit - module_amount
-    add_module_line(module_frame, ui_elements, beacon.module, empty_slots, beacon)
+    local module_filter = Beacon.compile_module_filter(beacon)
+    add_module_line(module_frame, ui_elements, beacon.module, empty_slots, module_filter)
 
     update_dialog_submit_button(ui_elements)
 end
