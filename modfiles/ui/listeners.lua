@@ -115,10 +115,6 @@ script.on_event(defines.events.on_gui_closed, function(event)
     event_handler.handle_gui_event(event)
 end)
 
-script.on_event(defines.events.on_gui_opened, function(event)
-    event_handler.handle_gui_event(event)
-end)
-
 script.on_event(defines.events.on_gui_value_changed, function(event)
     event_handler.handle_gui_event(event)
 end)

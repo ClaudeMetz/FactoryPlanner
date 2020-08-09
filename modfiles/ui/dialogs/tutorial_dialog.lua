@@ -71,7 +71,7 @@ tutorial_dialog.dialog_settings = (function(_) return {
     create_content_frame = false
 } end)
 
-tutorial_dialog.events = {
+tutorial_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_tutorial_add_example",

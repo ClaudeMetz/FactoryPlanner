@@ -219,7 +219,7 @@ import_dialog.dialog_settings = (function(_) return {
     disable_scroll_pane = true
 } end)
 
-import_dialog.events = {
+import_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_import",
@@ -287,7 +287,7 @@ export_dialog.dialog_settings = (function(_) return {
     disable_scroll_pane = true
 } end)
 
-export_dialog.events = {
+export_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_export",
@@ -322,7 +322,7 @@ end
 
 
 -- ** SHARED **
-porter_dialog.events = {
+porter_dialog.gui_events = {
     on_gui_checked_state_changed = {
         {
             name = "fp_checkbox_porter_master",

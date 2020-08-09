@@ -21,20 +21,18 @@ local function recalculate_main_dialog_dimensions(player)
     return dimensions
 end
 
---[[ local function handle_other_gui_opening(player)
-    -- Close the modal dialog so it closes even if selection mode was active
-    modal_dialog.exit(player, "cancel")
-
+-- No idea how to write this so it works when in selection mode
+local function handle_other_gui_opening(player, _)
     local frame_main_dialog = player.gui.screen.fp_frame_main_dialog
     if frame_main_dialog and frame_main_dialog.visible then
         frame_main_dialog.visible = false
         main_dialog.set_pause_state(player, frame_main_dialog)
     end
-end ]]
+end
 
 
 -- ** TOP LEVEL **
-main_dialog.events = {
+main_dialog.gui_events = {
     on_gui_closed = {
         {
             name = "fp_frame_main_dialog",
@@ -42,15 +40,11 @@ main_dialog.events = {
                 main_dialog.toggle(player)
             end)
         }
-    }--[[ ,
-    on_gui_opened = {
-        {
-            name = "fp_frame_main_dialog",
-            handler = (function(player)
-                handle_other_gui_opening(player)
-            end)
-        }
-    } ]]
+    }
+}
+
+main_dialog.misc_events = {
+    on_gui_opened = handle_other_gui_opening
 }
 
 -- Toggles the main dialog open and closed

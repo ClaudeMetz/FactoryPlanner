@@ -28,7 +28,7 @@ chooser_dialog.dialog_settings = (function(modal_data) return {
     create_content_frame = true
 } end)
 
-chooser_dialog.events = {
+chooser_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
@@ -66,7 +66,7 @@ local function call_change_handler(player, element)
 end
 
 -- ** ELEMENTS **
-options_dialog.events = {}
+options_dialog.gui_events = {}
 local elements = {}
 
 -- ** TEXTFIELD **
@@ -105,7 +105,7 @@ function elements.numeric_textfield.read(textfield)
 end
 
 -- ** TEXTFIELD EVENT **
-options_dialog.events.on_gui_text_changed = {
+options_dialog.gui_events.on_gui_text_changed = {
     {
         pattern = "^fp_textfield_options_[a-z_]+$",
         handler = call_change_handler
@@ -115,7 +115,7 @@ options_dialog.events.on_gui_text_changed = {
 -- ** ON OFF SWITCH **
 elements.on_off_switch = {prefix = "fp_switch_on_off_options_"}
 
-options_dialog.events.on_gui_switch_state_changed = {
+options_dialog.gui_events.on_gui_switch_state_changed = {
     {
         pattern = "^" .. elements.on_off_switch.prefix .. "[a-z_]+$",
         handler = call_change_handler
@@ -139,7 +139,7 @@ end
 -- ** CHOOSE ELEM BUTTON **
 elements.choose_elem_button = {prefix = "fp_choose_elem_button_options_"}
 
-options_dialog.events.on_gui_elem_changed = {
+options_dialog.gui_events.on_gui_elem_changed = {
     {
         pattern = "^" .. elements.choose_elem_button.prefix .. "[a-z_]+$",
         handler = call_change_handler
