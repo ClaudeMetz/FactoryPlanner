@@ -21,6 +21,17 @@ local function recalculate_main_dialog_dimensions(player)
     return dimensions
 end
 
+local function handle_other_gui_opening(player)
+    -- Close the modal dialog so it closes even if selection mode was active
+    modal_dialog.exit(player, "cancel")
+
+    local frame_main_dialog = player.gui.screen.fp_frame_main_dialog
+    if frame_main_dialog and frame_main_dialog.visible then
+        frame_main_dialog.visible = false
+        main_dialog.set_pause_state(player, frame_main_dialog)
+    end
+end
+
 
 -- ** TOP LEVEL **
 main_dialog.events = {
@@ -36,11 +47,7 @@ main_dialog.events = {
         {
             name = "fp_frame_main_dialog",
             handler = (function(player)
-                local frame_main_dialog = player.gui.screen.fp_frame_main_dialog
-                if frame_main_dialog and frame_main_dialog.visible then
-                    frame_main_dialog.visible = false
-                    main_dialog.set_pause_state(player, frame_main_dialog)
-                end
+                handle_other_gui_opening(player)
             end)
         }
     }
@@ -77,10 +84,9 @@ function main_dialog.refresh(player, full_refresh)
         frame_main_dialog.style.height = dimensions.height
 
         main_dialog.set_pause_state(player, frame_main_dialog)  -- Adjust the paused-state accordingly
-        local ui_state = get_ui_state(player)
-        if ui_state.modal_dialog_type == "beacon" and ui_state.flags.selection_mode then
-            beacon_dialog.leave_selection_mode(player, 0)  -- Leave the beacon selection mode if it is active
-        end
+
+        -- No 100% sure why the following is necessary
+        if data_util.get("flags", player).selection_mode then modal_dialog.leave_selection_mode(player) end
 
         titlebar.add_to(frame_main_dialog)
         actionbar.add_to(frame_main_dialog)

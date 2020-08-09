@@ -37,11 +37,12 @@ script.on_event("fp_cycle_production_views", function(event)
     if main_dialog.is_in_focus(player) then production_titlebar.change_view_state(player, nil) end
 end)
 
-script.on_event("fp_confirm_dialog", function(event)
+-- Breaks stuff when in selection mode
+--[[ script.on_event("fp_confirm_dialog", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
     modal_dialog.exit(player, "submit")
-end)
+end) ]]
 
 script.on_event("fp_focus_searchfield", function(event)
     local player = game.get_player(event.player_index)
@@ -77,8 +78,8 @@ script.on_event(defines.events.on_player_selected_area, function(event)
     local player = game.get_player(event.player_index)
 
     if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
-        if ui_util.rate_limiting_active(player, event.name, event.item) then return end
-        beacon_dialog.leave_selection_mode(player, table_size(event.entities))
+        -- TODO Rate limiting
+        beacon_dialog.handle_beacon_selection(player, event.entities)
     end
 end)
 
@@ -87,7 +88,7 @@ script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
     local player = game.get_player(event.player_index)
     -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
     if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
-        beacon_dialog.leave_selection_mode(player, nil)
+        modal_dialog.leave_selection_mode(player)
     end
 end)
 

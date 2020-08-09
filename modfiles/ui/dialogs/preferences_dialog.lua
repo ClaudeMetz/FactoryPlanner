@@ -80,12 +80,13 @@ function preference_structures.mb_defaults(preferences, content_frame)
     add_mb_default("beacon")
 
 
-    flow_mb_defaults.add{type="label", caption={"fp.preference_mb_default_beacon_amount"}}
-    local textfield_beacon_count = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_beacon_count",
+    flow_mb_defaults.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_amount"}},
+      tooltip={"fp.preference_mb_default_amount_tt"}}
+    local textfield_amount = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_ampimt",
       text=mb_defaults.beacon_count}
-    ui_util.setup_numeric_textfield(textfield_beacon_count, true, false)
-    textfield_beacon_count.style.width = 40
-    textfield_beacon_count.style.margin = {0, 8}
+    ui_util.setup_numeric_textfield(textfield_amount, true, false)
+    textfield_amount.style.width = 40
+    textfield_amount.style.margin = {0, 8}
 end
 
 function preference_structures.prototypes(player, content_frame, ui_elements, type)
@@ -222,7 +223,7 @@ preferences_dialog.events = {
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_mb_default_beacon_count",
+            name = "fp_textfield_mb_default_amount",
             handler = (function(player, element)
                 local mb_defaults = data_util.get("preferences", player).mb_defaults
                 mb_defaults.beacon_count = tonumber(element.text)
