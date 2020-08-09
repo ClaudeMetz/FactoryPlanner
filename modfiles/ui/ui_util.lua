@@ -38,23 +38,6 @@ function ui_util.select_all(textfield)
     textfield.select_all()
 end
 
--- File-local to so this dict isn't recreated on every call of the function following it
-local font_colors = {
-    red = {r = 1, g = 0.2, b = 0.2},
-    dark_red = {r = 0.8, g = 0, b = 0},
-    yellow = {r = 0.8, g = 0.8, b = 0},
-    green = {r = 0.2, g = 0.8, b = 0.2},
-    white = {r = 1, g = 1, b = 1},
-    default_label = {r = 1, g = 1, b = 1},
-    black = {r = 0, g = 0, b = 0},
-    default_button = {r = 0, g = 0, b = 0}
-}
--- Sets the font color of the given label / button-label
-function ui_util.set_label_color(ui_element, color)
-    if color == nil then return
-    else ui_element.style.font_color = font_colors[color] end
-end
-
 
 -- ** Tooltips **
 -- File-local to so this dict isn't recreated on every call of the function following it

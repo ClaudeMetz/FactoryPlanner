@@ -22,8 +22,8 @@ function item_picker.create(parent)
     textfield.style.width = 140
 
     -- Warning label
-    local label_warning = picker_flow.add{type="label", name="label_warning_message", caption={"fp.error_no_item_found"}}
-    ui_util.set_label_color(label_warning, "red")
+    local label_warning = picker_flow.add{type="label", name="label_warning_message",
+      caption={"fp.error_message", {"fp.error_no_item_found"}}}
     label_warning.style.top_margin = 8
     label_warning.style.font = "fp-font-bold-16p"
     label_warning.visible = false  -- There can't be a warning upon first opening of the dialog
