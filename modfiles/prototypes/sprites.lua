@@ -8,6 +8,13 @@ data:extend({
     },
     {
         type = "sprite",
+        name = "fp_zone_selection",
+        filename = "__factoryplanner__/graphics/zone_selection.png",
+        size = 32,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
         name = "fp_generic_assembler",
         filename = "__factoryplanner__/graphics/generic_assembler.png",
         size = 64, icon_mipmaps = 2,

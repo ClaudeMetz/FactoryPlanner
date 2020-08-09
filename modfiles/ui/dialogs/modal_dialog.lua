@@ -94,8 +94,11 @@ modal_dialog.events = {
         {
             name = "fp_frame_modal_dialog",
             handler = (function(player, _)
-                -- TODO selection mode crap
-                modal_dialog.exit(player, "cancel")
+                if data_util.get("flags", player).selection_mode then
+                    modal_dialog.leave_selection_mode(player)
+                else
+                    modal_dialog.exit(player, "cancel")
+                end
             end)
         }
     }
@@ -133,12 +136,9 @@ end
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function modal_dialog.exit(player, button_action)
     local ui_state = data_util.get("ui_state", player)
+    if ui_state.modal_dialog_type == nil then return end
+
     local ui_elements = ui_state.modal_data.ui_elements
-
-    -- If no modal dialog is open, none can be closed
-    local frame_modal_dialog = ui_elements.frame
-    if frame_modal_dialog == nil or not frame_modal_dialog.valid then return end
-
     -- Cancel action if it is not possible on this dialog, or the button is disabled
     local submit_button = ui_elements.dialog_submit_button
     if button_action == "submit" and (not submit_button or not submit_button.enabled) then return end
@@ -150,7 +150,7 @@ function modal_dialog.exit(player, button_action)
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
 
-    frame_modal_dialog.destroy()
+    ui_elements.frame.destroy()
 
     local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
     frame_main_dialog.ignored_by_interaction = false
@@ -158,25 +158,6 @@ function modal_dialog.exit(player, button_action)
     titlebar.refresh_message(player)
 end
 
-
-function modal_dialog.set_selection_mode(player, state)
-    data_util.get("flags", player).selection_mode = state
-
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    frame_main_dialog.visible = not state
-
-    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
-    frame_modal_dialog.ignored_by_interaction = state
-
-    if state == true then
-        frame_modal_dialog.location = {25, 50}
-        main_dialog.set_pause_state(player, frame_main_dialog, true)
-    else
-        frame_modal_dialog.force_auto_center()
-        player.opened = frame_modal_dialog
-        main_dialog.set_pause_state(player, frame_main_dialog)
-    end
-end
 
 function modal_dialog.set_submit_button_state(ui_elements, enabled, message)
     local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
@@ -187,4 +168,34 @@ function modal_dialog.set_submit_button_state(ui_elements, enabled, message)
     button.enabled = enabled
     button.caption = caption
     button.tooltip = tooltip
+end
+
+
+function modal_dialog.enter_selection_mode(player, selector_name)
+    data_util.get("flags", player).selection_mode = true
+    player.cursor_stack.set_stack(selector_name)
+
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+
+    frame_main_dialog.visible = false
+    main_dialog.set_pause_state(player, frame_main_dialog, true)
+
+    frame_modal_dialog.ignored_by_interaction = true
+    frame_modal_dialog.location = {25, 50}
+end
+
+function modal_dialog.leave_selection_mode(player)
+    data_util.get("flags", player).selection_mode = false
+    player.cursor_stack.set_stack(nil)
+
+    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+
+    frame_main_dialog.visible = true
+    main_dialog.set_pause_state(player, frame_main_dialog, false)
+
+    player.opened = frame_modal_dialog  -- needs to be set because on_gui_closed sets it to nil
+    frame_modal_dialog.ignored_by_interaction = false
+    frame_modal_dialog.force_auto_center()
 end

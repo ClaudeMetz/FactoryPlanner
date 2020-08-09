@@ -28,8 +28,10 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, pa
     local button_module = flow_module.add{type="choose-elem-button", name="fp_choose-elem-button_module_choice",
       elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
-    button_module.style.right_margin = 18
+    button_module.style.right_margin = 12
     ui_elements["module_choice_button"] = button_module
+
+    flow_module.add{type="label", caption={"fp.beacon_amount"}}
 
     local slider_value = (module) and module.amount or empty_slots
     local maximum_value = (module) and (module.amount + empty_slots) or empty_slots
@@ -41,12 +43,12 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, pa
     local slider = flow_module.add{type="slider", name="fp_slider_module_amount", minimum_value=0,
       maximum_value=maximum_value, value=slider_value, value_step=1, style="notched_slider"}
     slider.style.width = 130
+    slider.style.margin = {0, 6}
     ui_elements["module_slider"] = slider
 
     local textfield_slider = flow_module.add{type="textfield", name="fp_textfield_module_amount", text=slider_value}
     ui_util.setup_numeric_textfield(textfield_slider, false, false)
     textfield_slider.style.width = 40
-    textfield_slider.style.left_margin = 4
     ui_elements["module_textfield"] = textfield_slider
 
     if maximum_value == 1 then
@@ -77,7 +79,22 @@ local function add_beacon_line(parent_flow, ui_elements, beacon)
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     ui_util.select_all(textfield_amount)
     textfield_amount.style.width = 40
+    textfield_amount.style.right_margin = 12
     ui_elements["beacon_textfield"] = textfield_amount
+
+    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"}}
+
+    local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
+      text=beacon.total_amount}
+    ui_util.setup_numeric_textfield(textfield_total, true, false)
+    textfield_total.style.width = 40
+    ui_elements["beacon_total_textfield"] = textfield_total
+
+    local button_total = flow_beacon.add{type="sprite-button", name="fp_sprite-button_beacon_total_amount",
+      tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
+    button_total.style.padding = 2
+    button_total.style.width = 26
+    button_total.style.height = 26
 end
 
 
@@ -125,7 +142,8 @@ end
 -- ** MODULE **
 module_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_module", 1}},
-    create_content_frame = true
+    create_content_frame = true,
+    force_auto_center = true
 } end)
 
 function module_dialog.open(_, modal_data)
@@ -164,7 +182,8 @@ end
 -- ** BEACON **
 beacon_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_beacon", 1}},
-    create_content_frame = true
+    create_content_frame = true,
+    force_auto_center = true
 } end)
 
 beacon_dialog.events = {
@@ -183,6 +202,14 @@ beacon_dialog.events = {
             handler = (function(player, _)
                 local ui_elements = data_util.get("ui_elements", player)
                 update_dialog_submit_button(ui_elements)
+            end)
+        }
+    },
+    on_gui_click = {
+        {
+            name = "fp_sprite-button_beacon_total_amount",
+            handler = (function(player, _, _)
+                modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
             end)
         }
     }
@@ -228,7 +255,9 @@ function beacon_dialog.close(player, action)
         local beacon_choice = ui_elements.beacon_choice_button.elem_value
         local beacon_id = global.all_beacons.map[beacon_choice]
         beacon.proto = global.all_beacons.beacons[beacon_id]
+
         beacon.amount = tonumber(ui_elements.beacon_textfield.text)
+        beacon.total_amount = tonumber(ui_elements.beacon_total_textfield.text)
 
         local module = generate_module_object(ui_elements)
         Beacon.set_module(beacon, module)
@@ -240,6 +269,13 @@ function beacon_dialog.close(player, action)
         Line.set_beacon(modal_data.line, nil)
         calculation.update(player, subfactory, true)
     end
+end
+
+function beacon_dialog.handle_beacon_selection(player, entities)
+    local ui_elements = data_util.get("ui_elements", player)
+    ui_elements.beacon_total_textfield.text = table_size(entities)
+
+    modal_dialog.leave_selection_mode(player)
 end
 
 
