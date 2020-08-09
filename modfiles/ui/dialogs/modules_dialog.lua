@@ -13,7 +13,8 @@ local function compile_module_filter(parent)
         end
     end
 
-    return {{filter="name", name=compatible_modules}}  -- hidden modules are already filtered out
+    local filter = {{filter="name", name=compatible_modules}}  -- hidden modules are already filtered out
+    return filter, #compatible_modules
 end
 
 local function add_module_line(parent_flow, ui_elements, module, empty_slots, parent)
@@ -24,7 +25,17 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, pa
     flow_module.add{type="label", caption={"fp.pu_module", 1}}
 
     local module_name = (module) and module.proto.name or nil
-    local module_filter = compile_module_filter(parent)
+    local module_filter, compatible_module_count = compile_module_filter(parent)
+
+    if compatible_module_count == 0 then
+        ui_elements.no_modules_label = flow_module.add{type="label", caption={"fp.error_message",
+          {"fp.module_issue_none_compatible"}}}
+        ui_elements.no_modules_label.style.font = "heading-2"
+        return
+    else
+        ui_elements.no_modules_label = nil
+    end
+
     local button_module = flow_module.add{type="choose-elem-button", name="fp_choose-elem-button_module_choice",
       elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
@@ -99,11 +110,14 @@ end
 
 
 local function update_dialog_submit_button(ui_elements)
+    local module_none_compatible = ui_elements.no_modules_label
     local beacon_choice, beacon_amount = ui_elements.beacon_choice_button, ui_elements.beacon_textfield
     local module_choice, module_amount = ui_elements.module_choice_button, ui_elements.module_textfield
 
     local message = nil
-    if beacon_choice and beacon_choice.elem_value == nil then
+    if module_none_compatible ~= nil then
+        message = {"fp.module_issue_none_compatible"}
+    elseif beacon_choice and beacon_choice.elem_value == nil then
         message = {"fp.beacon_issue_select_beacon"}
     elseif beacon_amount and (tonumber(beacon_amount.text) or 0) == 0 then
         message = {"fp.beacon_issue_set_amount"}
@@ -274,6 +288,7 @@ end
 function beacon_dialog.handle_beacon_selection(player, entities)
     local ui_elements = data_util.get("ui_elements", player)
     ui_elements.beacon_total_textfield.text = table_size(entities)
+    ui_elements.beacon_total_textfield.focus()
 
     modal_dialog.leave_selection_mode(player)
 end
