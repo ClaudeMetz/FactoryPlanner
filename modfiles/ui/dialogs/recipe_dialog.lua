@@ -292,7 +292,7 @@ recipe_dialog.dialog_settings = (function(_) return {
     force_auto_center = true
 } end)
 
-recipe_dialog.events = {
+recipe_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_button_recipe_pick_%d+$",

@@ -80,7 +80,7 @@ end
 
 
 -- ** TOP LEVEL **
-modal_dialog.events = {
+modal_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_button_modal_dialog_[a-z]+$",

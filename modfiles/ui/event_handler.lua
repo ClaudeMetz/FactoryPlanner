@@ -30,7 +30,7 @@ local function rate_limit(player, event, element_name, timeout)
 end
 
 
--- ** GUI HANDLERS **
+-- ** GUI EVENTS **
 -- These handlers go out to the first thing that it finds that registered for it
 -- They can register either by element name or by a pattern matching element names
 local gui_identifier_map = {
@@ -107,10 +107,10 @@ end)
 
 
 local gui_event_cache = {}
--- Actually compile a list of GUI handlers
+-- Actually compile the list of GUI handlers
 for _, object in pairs(objects_that_need_handling) do
-    if object.events then
-        for event_name, elements in pairs(object.events) do
+    if object.gui_events then
+        for event_name, elements in pairs(object.gui_events) do
             gui_event_cache[event_name] = gui_event_cache[event_name] or {
                 names = {},
                 patterns = {},
@@ -154,20 +154,75 @@ function event_handler.handle_gui_event(event)
 end
 
 -- Register all the GUI events from the identifier map
-for event_id, _ in pairs(gui_identifier_map) do
-    -- TODO not in use yet as to not overwrite the listeners registrations
-    --script.on_event(event_id, event_handler.handle_gui_event)
+-- TODO not in use yet as to not overwrite the listeners registrations
+--[[ for event_id, _ in pairs(gui_identifier_map) do
+    script.on_event(event_id, event_handler.handle_gui_event)
+end ]]
+
+
+
+-- ** MISC EVENTS **
+-- These events call every handler that has subscribed to it by id or name. The difference to GUI events
+-- is that multiple handlers can be registered to the same event, and there is no standard handler
+
+local misc_identifier_map = {
+    [defines.events.on_gui_opened] = "on_gui_opened"
+}
+
+--[[ local misc_timeouts = {
+} ]]
+
+-- ** SPECIAL HANDLERS **
+local special_misc_handlers = {}
+
+special_misc_handlers.on_gui_opened = (function(_, event)
+    -- This should only fire when a UI not associated with FP is opened, to properly close FP's stuff
+    if event.gui_type ~= defines.gui_type.custom or not event.element.get_mod() == "factoryplanner" then
+        return true
+    end
+end)
+
+
+local misc_event_cache = {}
+-- Actually compile the list of misc handlers
+for _, object in pairs(objects_that_need_handling) do
+    if object.misc_events then
+        for event_name, handler in pairs(object.misc_events) do
+            misc_event_cache[event_name] = misc_event_cache[event_name] or {
+                registered_handlers = {},
+                special_handler = special_misc_handlers[event_name]
+            }
+
+            -- TODO missing rate limiting stuff
+
+            table.insert(misc_event_cache[event_name].registered_handlers, handler)
+        end
+    end
 end
 
 
+function event_handler.handle_misc_event(event)
+    local event_name = misc_identifier_map[event.name]
+    local event_handlers = misc_event_cache[event_name]
 
+    if event_handlers then  -- make sure the given event is even handled
+        -- I will assume every one of the events has a player attached
+        local player = game.get_player(event.player_index)
 
---[[ special_handlers.on_gui_opened = {
-    raw_event = true,
-    special_handler = (function(player, event, event_handlers)
-        -- Closes the main dialog when the player opens another UI while in a modal dialog
-        if event.gui_type ~= defines.gui_type.custom or not event.element.get_mod() == "factoryplanner" then
-            event_handlers.names["fp_frame_main_dialog"].handler(player)
+        -- If a special handler is set, it needs to return true
+        -- before we can proceed with calling all the registered handlers
+        local special_handler = event_handlers.special_handler
+        if special_handler and not event_handlers.special_handler(player, event) then
+            return
         end
-    end)
-} ]]
+
+        for _, registered_handler in pairs(event_handlers.registered_handlers) do
+            registered_handler(player, event)
+        end
+    end
+end
+
+-- Register all the misc events from the identifier map
+for event_id, _ in pairs(misc_identifier_map) do
+    script.on_event(event_id, event_handler.handle_misc_event)
+end

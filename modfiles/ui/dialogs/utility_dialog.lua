@@ -120,7 +120,7 @@ utility_dialog.dialog_settings = (function(_) return {
     create_content_frame = true
 } end)
 
-utility_dialog.events = {
+utility_dialog.gui_events = {
     on_gui_switch_state_changed = {
         {
             pattern = "^fp_switch_utility_scope_[a-z]+$",

@@ -212,7 +212,7 @@ preferences_dialog.dialog_settings = (function(_) return {
     force_auto_center = true
 } end)
 
-preferences_dialog.events = {
+preferences_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_sprite%-button_preference_default_[a-z]+_%d+_?%d*$",

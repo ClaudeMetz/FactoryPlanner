@@ -102,6 +102,7 @@ local function add_beacon_line(parent_flow, ui_elements, beacon)
     button_total.style.padding = 2
     button_total.style.width = 26
     button_total.style.height = 26
+    button_total.style.top_margin = 1
 end
 
 
@@ -221,7 +222,7 @@ beacon_dialog.dialog_settings = (function(modal_data) return {
     force_auto_center = true
 } end)
 
-beacon_dialog.events = {
+beacon_dialog.gui_events = {
     on_gui_elem_changed = {
         {
             name = "fp_choose-elem-button_beacon_choice",
@@ -314,7 +315,7 @@ end
 
 
 -- ** SHARED **
-modules_dialog.events = {
+modules_dialog.gui_events = {
     on_gui_elem_changed = {
         {
             name = "fp_choose-elem-button_module_choice",
