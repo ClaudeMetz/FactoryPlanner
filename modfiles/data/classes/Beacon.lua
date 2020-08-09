@@ -67,11 +67,6 @@ function Beacon.summarize_effects(self)
 end
 
 
-function Beacon.existing_module_names(self)
-    if not self.module then return {}
-    else return {[self.module.proto.name] = true} end
-end
-
 function Beacon.check_module_compatibility(self, module_proto)
     local compatible = true
     local recipe_proto, machine_proto = self.parent.recipe.proto, self.parent.machine.proto
@@ -96,6 +91,17 @@ function Beacon.check_module_compatibility(self, module_proto)
     end
 
     return compatible
+end
+
+function Beacon.compile_module_filter(self)
+    local compatible_modules = {}
+    for module_name, module_proto in pairs(module_name_map) do
+        if Machine.check_module_compatibility(self, module_proto) then
+            table.insert(compatible_modules, module_name)
+        end
+    end
+
+    return {{filter="name", name=compatible_modules}}
 end
 
 
