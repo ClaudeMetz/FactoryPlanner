@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 0.18.51
+Date: 10. 08. 2020
   Bugfixes:
     - Fixed that the recipe picker did not have a scroll pane when necessary. Its height is still screwy, it'll be fixed with the next big update.
 
