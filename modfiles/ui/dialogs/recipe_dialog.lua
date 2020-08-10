@@ -218,11 +218,15 @@ local function create_dialog_structure(modal_data)
     local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
       style="inside_shallow_frame_with_padding"}
     content_frame.style.width = 380
-    ui_elements.content_frame = content_frame
+    content_frame.style.padding = 0
+
+    -- Temporary fix for this dialog not scrolling
+    local scroll_pane = content_frame.add{type="scroll-pane", style="fp_scroll_pane_inside_tab", direction="vertical"}
+    ui_elements.content_frame = scroll_pane
 
     create_filter_box(modal_data)
 
-    local label_warning = content_frame.add{type="label",
+    local label_warning = scroll_pane.add{type="label",
       caption={"fp.error_message", {"fp.error_no_recipe_found"}}}
     label_warning.style.font = "heading-3"
     label_warning.style.margin = {8, 0, 0, 8}
