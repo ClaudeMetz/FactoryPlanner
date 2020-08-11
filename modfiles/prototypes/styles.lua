@@ -34,7 +34,23 @@ data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
         overall_tiling_vertical_padding = 4,
         overall_tiling_horizontal_size = 28,
         overall_tiling_horizontal_spacing = 8,
-        overall_tiling_horizontal_padding = 4,
+        overall_tiling_horizontal_padding = 4
+    }
+}
+
+-- Intended for buttons of size 64hx73w
+data.raw["gui-style"].default["fp_frame_deep_slots_crafting_groups"] = {
+    type = "frame_style",
+    parent = "slot_button_deep_frame", -- "crafting_frame"
+    background_graphical_set = {
+        position = {282, 17},
+        corner_size = 8,
+        overall_tiling_vertical_size = 46,
+        overall_tiling_vertical_spacing = 18,
+        overall_tiling_vertical_padding = 9,
+        overall_tiling_horizontal_size = 53,
+        overall_tiling_horizontal_spacing = 20,
+        overall_tiling_horizontal_padding = 10
     }
 }
 
@@ -70,6 +86,17 @@ data.raw["gui-style"].default["fp_sprite-button_inset_tiny"] = {
     size = 32
 }
 
+-- Cribs from 'dark_rounded_button', but without the stupid shadows
+data.raw["gui-style"].default["fp_sprite-button_rounded_dark"] = {
+    type = "button_style",
+    default_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}},
+    hovered_graphical_set =
+    {
+        base = {border = 4, position = {82, 738}, size = 76},
+        glow = offset_by_2_rounded_corners_glow(default_glow_color)
+    },
+    clicked_graphical_set = {base = {border = 4, position = {162, 738}, size = 76}}
+}
 
 
 
