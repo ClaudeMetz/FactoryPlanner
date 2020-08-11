@@ -58,6 +58,55 @@ local function update_product_amounts(flow_product_bar, modal_data)
 end
 
 
+-- Reacts to a picker item button being pressed
+function product_dialog.handle_item_picker_click(player, identifier)
+    local item_proto = identifier_item_map[identifier]
+    local modal_data = get_modal_data(player)
+    modal_data.selected_item = item_proto
+
+    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
+    local sprite_button_product = flow_product_bar["flow_product_amount"]["sprite-button_product"]
+    sprite_button_product.sprite = item_proto.sprite
+    sprite_button_product.tooltip = item_proto.localised_name
+
+    adjust_for_item_type(flow_product_bar, modal_data)
+    set_appropriate_amount_focus(flow_product_bar, modal_data)
+end
+
+-- Updates the product bar with the new selection of belt
+function product_dialog.handle_belt_change(player, belt_name)
+    local belt_proto = global.all_belts.belts[global.all_belts.map[belt_name]]
+
+    local modal_data = get_modal_data(player)
+    modal_data.belt_proto = belt_proto
+
+    local lob = modal_data.lanes_or_belts
+    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
+    local textfield_product_belts = flow_product_bar["flow_product_" .. lob]["fp_textfield_product_" .. lob]
+    textfield_product_belts.enabled = (belt_proto ~= nil)
+
+    if belt_proto == nil then
+        modal_data.amount_defined_by = "amount"
+        textfield_product_belts.text = ""
+    else
+        -- Products need to be updated first here so the amount stays the same
+        update_product_amounts(flow_product_bar, modal_data)
+        modal_data.amount_defined_by = lob
+    end
+
+    set_appropriate_amount_focus(flow_product_bar, modal_data)
+end
+
+-- Updates the product bar amounts according to the amount_defined_by-state
+function product_dialog.handle_product_amount_change(player, defined_by)
+    local modal_data = get_modal_data(player)
+    modal_data.amount_defined_by = defined_by
+
+    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
+    update_product_amounts(flow_product_bar, modal_data)
+end
+
+
 -- Adds a row containing the picked item and it's required_amount
 local function refresh_product_bar(flow_modal_dialog, product)
     local player = game.get_player(flow_modal_dialog.player_index)
@@ -230,52 +279,4 @@ function product_dialog.condition_instructions()
             }
         }
     }
-end
-
--- Reacts to a picker item button being pressed
-function product_dialog.handle_item_picker_click(player, identifier)
-    local item_proto = identifier_item_map[identifier]
-    local modal_data = get_modal_data(player)
-    modal_data.selected_item = item_proto
-
-    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
-    local sprite_button_product = flow_product_bar["flow_product_amount"]["sprite-button_product"]
-    sprite_button_product.sprite = item_proto.sprite
-    sprite_button_product.tooltip = item_proto.localised_name
-
-    adjust_for_item_type(flow_product_bar, modal_data)
-    set_appropriate_amount_focus(flow_product_bar, modal_data)
-end
-
--- Updates the product bar with the new selection of belt
-function product_dialog.handle_belt_change(player, belt_name)
-    local belt_proto = global.all_belts.belts[global.all_belts.map[belt_name]]
-
-    local modal_data = get_modal_data(player)
-    modal_data.belt_proto = belt_proto
-
-    local lob = modal_data.lanes_or_belts
-    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
-    local textfield_product_belts = flow_product_bar["flow_product_" .. lob]["fp_textfield_product_" .. lob]
-    textfield_product_belts.enabled = (belt_proto ~= nil)
-
-    if belt_proto == nil then
-        modal_data.amount_defined_by = "amount"
-        textfield_product_belts.text = ""
-    else
-        -- Products need to be updated first here so the amount stays the same
-        update_product_amounts(flow_product_bar, modal_data)
-        modal_data.amount_defined_by = lob
-    end
-
-    set_appropriate_amount_focus(flow_product_bar, modal_data)
-end
-
--- Updates the product bar amounts according to the amount_defined_by-state
-function product_dialog.handle_product_amount_change(player, defined_by)
-    local modal_data = get_modal_data(player)
-    modal_data.amount_defined_by = defined_by
-
-    local flow_product_bar = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_product_bar"]
-    update_product_amounts(flow_product_bar, modal_data)
 end

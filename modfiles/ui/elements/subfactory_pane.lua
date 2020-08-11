@@ -210,7 +210,8 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
             end
         elseif click == "right" then
             if action == "edit" then
-                modal_dialog.enter(player, {type="product", submit=true, delete=true, modal_data={product=product}})
+                modal_dialog.enter(player, {type="picker", submit=true, delete=true,
+                  modal_data={object=product, item_type="product"}})
 
             elseif action == "delete" then
                 Subfactory.remove(subfactory, product)

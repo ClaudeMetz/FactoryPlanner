@@ -223,7 +223,7 @@ ui_util.rate_limiting_events = {
     ["fp_floor_up"] = {timeout = 10},
     ["fp_confirm_dialog"] = {timeout = 20},
     [defines.events.on_player_selected_area] = {timeout = 20},
-    ["filter_item_picker"] = {timeout = 6, handler = item_picker.handle_searchfield_change},
+    ["filter_item_picker"] = {timeout = 6, handler = nil--[[ item_picker.handle_searchfield_change ]]},
     ["submit_modal_dialog"] = {timeout = 20},
     [defines.events.on_gui_click] = {timeout = 10}
 }
