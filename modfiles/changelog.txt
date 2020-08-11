@@ -4,12 +4,13 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    - Redesigned the subfactory, module and beacon dialogs
+    - Redesigned the subfactory, module, beacon and product picker dialogs
     - Made it so recipes for fuels can also be inserted directly below by shift-left-clicking them
     - Added some info about why a dialog can not be submitted
     - Adjusted styling in numerous ways
   Bugfixes:
     - Fixed the issue that opening a vanilla interface while a Factory Planner modal dialog is open would not close the main FP interface window
+    - Properly fixed scrolling in the recipe picker
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.18.50

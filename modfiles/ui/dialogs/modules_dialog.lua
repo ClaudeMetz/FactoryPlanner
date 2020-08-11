@@ -38,7 +38,7 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, mo
     button_module.style.right_margin = 12
     ui_elements["module_choice_button"] = button_module
 
-    flow_module.add{type="label", caption={"fp.beacon_amount"}}
+    flow_module.add{type="label", caption={"fp.amount"}}
 
     local slider_value = (module) and module.amount or empty_slots
     local maximum_value = (module) and (module.amount + empty_slots) or empty_slots
@@ -80,7 +80,7 @@ local function add_beacon_line(parent_flow, ui_elements, beacon)
     button_beacon.style.right_margin = 12
     ui_elements["beacon_choice_button"] = button_beacon
 
-    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_amount"}}, tooltip={"fp.beacon_amount_tt"}}
+    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
 
     local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon.amount}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
