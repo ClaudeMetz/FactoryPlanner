@@ -282,7 +282,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif element_name == "fp_sprite-button_add_product" then
-            modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_type="product"}})
+            modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category="product"}})
 
         -- Toggles the TopLevelItems-amount display state
         elseif element_name == "fp_button_item_amount_toggle" then
