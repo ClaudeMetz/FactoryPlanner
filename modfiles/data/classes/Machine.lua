@@ -130,7 +130,7 @@ function Machine.compile_module_filter(self)
     end
 
     local compatible_modules = {}
-    for module_name, module_proto in pairs(module_name_map) do
+    for module_name, module_proto in pairs(MODULE_NAME_MAP) do
         if Machine.check_module_compatibility(self, module_proto) and not existing_names[module_name] then
             table.insert(compatible_modules, module_name)
         end

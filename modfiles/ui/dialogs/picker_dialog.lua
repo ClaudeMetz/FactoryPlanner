@@ -13,7 +13,7 @@ end
 
 local function handle_item_pick(player, element)
     local item_identifier = string.gsub(element.name, "fp_button_item_pick_", "")
-    local item_proto = identifier_item_map[item_identifier]
+    local item_proto = IDENTIFIER_ITEM_MAP[item_identifier]
 
     local modal_data = data_util.get("modal_data", player)
     modal_data.item_proto = item_proto
@@ -51,7 +51,7 @@ local function add_item_picker(parent_flow, player)
     local items_per_column = 10
     local current_item_rows, max_item_rows = 0, 0
     local current_items_in_table_count = 0
-    for _, item_proto in ipairs(sorted_items) do  -- global variable
+    for _, item_proto in ipairs(SORTED_ITEMS) do
         -- TODO this ingredient_only business only works on product pickers
         if not item_proto.hidden and not item_proto.ingredient_only then
             local group_name = item_proto.group.name

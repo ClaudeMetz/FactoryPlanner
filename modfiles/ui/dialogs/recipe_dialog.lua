@@ -13,7 +13,7 @@ local function run_preliminary_checks(player, product, production_type)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = recipe_maps[production_type][product.proto.type][product.proto.name]
+    local map = RECIPE_MAPS[production_type][product.proto.type][product.proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = global.all_recipes.recipes[recipe_id]
@@ -230,7 +230,7 @@ local function create_dialog_structure(modal_data)
     ui_elements.warning_label = label_warning
 
     ui_elements.groups = {}
-    for _, group in ipairs(ordered_recipe_groups) do
+    for _, group in ipairs(ORDERED_RECIPE_GROUPS) do
         local relevant_group = modal_data.recipe_groups[group.name]
 
         -- Only actually create this group if it contains any relevant recipes

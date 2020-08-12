@@ -7,7 +7,7 @@ local function generate_module_object(ui_elements)
     local module_choice = ui_elements.module_choice_button.elem_value
     if module_choice then
         local module_amount = tonumber(ui_elements.module_textfield.text)
-        local module_proto = module_name_map[module_choice]
+        local module_proto = MODULE_NAME_MAP[module_choice]
         return Module.init_by_proto(module_proto, module_amount)
     else
         return nil
