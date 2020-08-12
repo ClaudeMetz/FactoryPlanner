@@ -95,7 +95,8 @@ data.raw["gui-style"].default["fp_sprite-button_rounded_dark"] = {
         base = {border = 4, position = {82, 738}, size = 76},
         glow = offset_by_2_rounded_corners_glow(default_glow_color)
     },
-    clicked_graphical_set = {base = {border = 4, position = {162, 738}, size = 76}}
+    clicked_graphical_set = {base = {border = 4, position = {162, 738}, size = 76}},
+    disabled_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}}
 }
 
 
