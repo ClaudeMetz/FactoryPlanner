@@ -182,8 +182,8 @@ local function create_recipe_group_box(modal_data, relevant_group)
     local flow_group = bordered_frame.add{type="flow", direction="horizontal"}
     flow_group.style.vertical_align = "center"
 
-    local group_sprite = flow_group.add{type="sprite", sprite=("item-group/" .. relevant_group.proto.name),
-      tooltip=relevant_group.proto.localised_name}
+    local group_sprite = flow_group.add{type="sprite-button", sprite=("item-group/" .. relevant_group.proto.name),
+      tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
     group_sprite.style.height = 64
     group_sprite.style.width = 64
     group_sprite.style.right_margin = 12
