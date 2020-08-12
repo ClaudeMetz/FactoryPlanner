@@ -95,7 +95,7 @@ end
 
 function Beacon.compile_module_filter(self)
     local compatible_modules = {}
-    for module_name, module_proto in pairs(module_name_map) do
+    for module_name, module_proto in pairs(MODULE_NAME_MAP) do
         if Machine.check_module_compatibility(self, module_proto) then
             table.insert(compatible_modules, module_name)
         end

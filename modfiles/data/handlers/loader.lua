@@ -14,17 +14,17 @@ function loader.run()
 
     events.rate_limiting()
 
-    ordered_recipe_groups = caching.ordered_recipe_groups()
-    recipe_maps = {
+    ORDERED_RECIPE_GROUPS = caching.ordered_recipe_groups()
+    RECIPE_MAPS = {
         produce = caching.recipe_map_from("products"),
         consume = caching.recipe_map_from("ingredients")
     }
 
-    sorted_items = caching.sorted_items()
-    identifier_item_map = caching.identifier_item_map()
+    SORTED_ITEMS = caching.sorted_items()
+    IDENTIFIER_ITEM_MAP = caching.identifier_item_map()
 
-    module_tier_map = caching.module_tier_map()
-    module_name_map = caching.module_name_map()
+    MODULE_TIER_MAP = caching.module_tier_map()
+    MODULE_NAME_MAP = caching.module_name_map()
 end
 
 

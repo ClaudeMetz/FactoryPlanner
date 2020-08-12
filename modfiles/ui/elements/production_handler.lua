@@ -288,7 +288,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
         local module = Machine.get(line.machine, "Module", module_id)
 
         if direction ~= nil then  -- change the module to a higher/lower amount/tier
-            local tier_map = module_tier_map
+            local tier_map = MODULE_TIER_MAP
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
@@ -360,7 +360,7 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
     elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction
         if type == "module" then
             local module = line.beacon.module
-            local tier_map = module_tier_map
+            local tier_map = MODULE_TIER_MAP
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)

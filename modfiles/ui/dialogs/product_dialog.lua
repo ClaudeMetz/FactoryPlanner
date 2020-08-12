@@ -60,7 +60,7 @@ end
 
 -- Reacts to a picker item button being pressed
 function product_dialog.handle_item_picker_click(player, identifier)
-    local item_proto = identifier_item_map[identifier]
+    local item_proto = IDENTIFIER_ITEM_MAP[identifier]
     local modal_data = get_modal_data(player)
     modal_data.selected_item = item_proto
 
