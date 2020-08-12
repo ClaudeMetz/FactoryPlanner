@@ -173,7 +173,8 @@ local misc_identifier_map = {
     [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
     [defines.events.on_lua_shortcut] = "on_lua_shortcut",
     -- Keyboard shortcuts
-    ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog"
+    ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
+    ["fp_focus_searchfield"] = "fp_focus_searchfield"
 }
 
 --[[ local misc_timeouts = {

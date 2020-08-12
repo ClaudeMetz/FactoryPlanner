@@ -12,9 +12,15 @@ modal_dialog = {}
 -- ** LOCAL UTIL **
 local function create_base_modal_dialog(player, dialog_settings, modal_data)
     local frame_modal_dialog = player.gui.screen.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
-    frame_modal_dialog.caption = dialog_settings.caption or nil
     frame_modal_dialog.auto_center = true
     modal_data.ui_elements.frame = frame_modal_dialog
+
+    -- Titlebar
+    if dialog_settings.caption ~= nil then
+        frame_modal_dialog.caption = dialog_settings.caption or nil
+    else  -- add a flow so the dialog can add its own, custom titelbar
+        modal_data.ui_elements.titlebar_flow = frame_modal_dialog.add{type="flow", direction="horizontal"}
+    end
 
     -- Content frame
     local main_content_element = nil

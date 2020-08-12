@@ -225,7 +225,7 @@ local function create_dialog_structure(modal_data)
     create_filter_box(modal_data)
 
     local label_warning = content_frame.add{type="label", caption={"fp.error_message", {"fp.no_recipe_found"}}}
-    label_warning.style.font = "heading-3"
+    label_warning.style.font = "heading-2"
     label_warning.style.margin = {8, 0, 0, 8}
     ui_elements.warning_label = label_warning
 

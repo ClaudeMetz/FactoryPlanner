@@ -2,11 +2,13 @@
 picker_dialog = {}
 
 -- ** ITEM PICKER **
-local function select_item_group(ui_elements, new_group_id)
-    for group_id, group_elements in pairs(ui_elements.groups) do
+local function select_item_group(modal_data, new_group_id)
+    modal_data.selected_group_id = new_group_id
+
+    for group_id, group_elements in pairs(modal_data.ui_elements.groups) do
         local selected_group = (group_id == new_group_id)
         group_elements.button.style = (selected_group) and "fp_sprite-button_rounded_dark" or "rounded_button"
-        group_elements.enabled = selected_group
+        group_elements.button.enabled = not selected_group
         group_elements.scroll_pane.visible = selected_group
     end
 end
@@ -23,27 +25,95 @@ local function handle_item_pick(player, element)
     item_choice_button.tooltip = item_proto.tooltip
 end
 
+local function focus_searchfield(player)
+    local ui_state = data_util.get("ui_state", player)
+    if ui_state.modal_dialog_type == "picker" and ui_state.modal_data.object == nil then
+        ui_util.select_all(ui_state.modal_data.ui_elements.search_textfield)
+    end
+end
+
+local function search_items(player, searchfield)
+    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+    local modal_data = data_util.get("modal_data", player)
+    local ui_elements = modal_data.ui_elements
+
+    -- Groups are indexed continuously, so using ipairs here is fine
+    local first_visible_group_id = nil
+    for group_id, group in ipairs(ui_elements.groups) do
+        local any_item_visible = false
+
+        for _, subgroup_table in pairs(group.subgroup_tables) do
+            for item_name, element in pairs(subgroup_table) do
+                local visible = string.find(item_name, search_term, 1, true)
+                element.visible = visible
+                any_item_visible = any_item_visible or visible
+            end
+        end
+
+        group.button.visible = any_item_visible
+        first_visible_group_id = first_visible_group_id or ((any_item_visible) and group_id or nil)
+    end
+
+    local any_result_found = (first_visible_group_id ~= nil)
+    ui_elements.warning_label.visible = not any_result_found
+    ui_elements.filter_frame.visible = any_result_found
+
+    if first_visible_group_id ~= nil then
+        local selected_group_id = modal_data.selected_group_id
+        local is_selected_group_visible = ui_elements.groups[selected_group_id].button.visible
+        local group_id_to_select = is_selected_group_visible and selected_group_id or first_visible_group_id
+        select_item_group(modal_data, group_id_to_select)
+    end
+end
+
+-- Custom titlebar construction to be able to integrate a search field into it
+local function fill_titlebar(modal_data)
+    local flow_titlebar = modal_data.ui_elements.titlebar_flow
+
+    flow_titlebar.add{type="label", caption={"fp.two_word_title", {"fp.add"},
+      {"fp.pl_" .. modal_data.item_category, 1}}, style="frame_title"}
+
+    local drag_handle = flow_titlebar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
+    drag_handle.drag_target = modal_data.ui_elements.frame
+
+    local searchfield = flow_titlebar.add{type="textfield", name="fp_textfield_picker_search",
+      style="search_popup_textfield"}
+    ui_util.setup_textfield(searchfield)
+    searchfield.style.width = 180
+    searchfield.style.margin = {-3, 4, 0, 0}
+    searchfield.focus()
+    modal_data.ui_elements["search_textfield"] = searchfield
+
+    flow_titlebar.add{type="sprite-button", name="fp_sprite-button_picker_search", sprite="utility/search_white",
+      tooltip={"fp.search_button_tt"}, style="frame_action_button", mouse_button_filter={"left"}}
+end
+
 local function add_item_picker(parent_flow, player)
+    local ui_state = data_util.get("ui_state", player)
+    local ui_elements = ui_state.modal_data.ui_elements
+
     local label_warning = parent_flow.add{type="label", caption={"fp.error_message", {"fp.no_item_found"}}}
-    label_warning.style.font = "fp-font-bold-16p"
+    label_warning.style.font = "heading-2"
+    label_warning.style.margin = 12
     label_warning.visible = false  -- There can't be a warning upon first opening of the dialog
+    ui_elements["warning_label"] = label_warning
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
     local frame_item_groups = parent_flow.add{type="frame", direction="vertical",
       style="fp_frame_deep_slots_crafting_groups"}
     local table_item_groups = frame_item_groups.add{type="table", column_count=6}
+    table_item_groups.style.width = 442
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
     local frame_filters = parent_flow.add{type="frame", style="slot_button_deep_frame"}
-    frame_filters.style.width = 442
     frame_filters.style.top_margin = 8
+    ui_elements["filter_frame"] = frame_filters
 
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
-    local ui_elements = data_util.get("ui_elements", player)
     ui_elements.groups = {}
 
-    local existing_products, ui_state = {}, data_util.get("ui_state", player)
+    local existing_products = {}
     for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
         existing_products[product.proto.name] = true
     end
@@ -56,7 +126,7 @@ local function add_item_picker(parent_flow, player)
         if not item_proto.hidden and not item_proto.ingredient_only then
             local group_name = item_proto.group.name
             local group_id = group_id_cache[group_name]
-            local flow_subgroups = nil
+            local flow_subgroups, subgroup_tables = nil, nil
 
             if group_id == nil then
                 local cache_count = table_size(group_id_cache) + 1
@@ -76,10 +146,16 @@ local function add_item_picker(parent_flow, player)
                   style="fp_scroll_pane_inside_content_frame_bare"}
 
                 -- This flow is only really needed to set the correct vertical spacing
-                flow_subgroups = scroll_pane_subgroups.add{type="flow", direction="vertical"}
+                flow_subgroups = scroll_pane_subgroups.add{type="flow", name="flow_group", direction="vertical"}
                 flow_subgroups.style.vertical_spacing = 0
                 group_flow_cache[group_id] = flow_subgroups
-                ui_elements.groups[group_id] = {button=button_group, scroll_pane=scroll_pane_subgroups}
+
+                ui_elements.groups[group_id] = {
+                    button = button_group,
+                    scroll_pane = scroll_pane_subgroups,
+                    subgroup_tables = {}
+                }
+                subgroup_tables = ui_elements.groups[group_id].subgroup_tables
 
                 -- Catch up on adding the last item flow's row count
                 current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
@@ -89,10 +165,12 @@ local function add_item_picker(parent_flow, player)
                 current_item_rows = 0
             else
                 flow_subgroups = group_flow_cache[group_id]
+                subgroup_tables = ui_elements.groups[group_id].subgroup_tables
             end
 
             local subgroup_name = item_proto.subgroup.name
             local table_subgroup = subgroup_table_cache[subgroup_name]
+            local subgroup_table = nil
 
             if table_subgroup == nil then
                 table_subgroup = flow_subgroups.add{type="table", column_count=items_per_column,
@@ -100,8 +178,13 @@ local function add_item_picker(parent_flow, player)
                 table_subgroup.style.horizontally_stretchable = true
                 subgroup_table_cache[subgroup_name] = table_subgroup
 
+                subgroup_tables[subgroup_name] = {}
+                subgroup_table = subgroup_tables[subgroup_name]
+
                 current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
                 current_items_in_table_count = 0
+            else
+                subgroup_table = subgroup_tables[subgroup_name]
             end
 
             current_items_in_table_count = current_items_in_table_count + 1
@@ -109,9 +192,13 @@ local function add_item_picker(parent_flow, player)
             local existing_product = existing_products[item_proto.name]
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
 
-            table_subgroup.add{type="sprite-button", name="fp_button_item_pick_"
+            local button_item = table_subgroup.add{type="sprite-button", name="fp_button_item_pick_"
               .. item_proto.identifier, sprite=item_proto.sprite, enabled=(existing_product == nil),
               tooltip=item_proto.localised_name, style=button_style, mouse_button_filter={"left"}}
+
+            -- Ignores item types, so if one subgroup has both a fluid and an item of the same name,
+            -- it'll only catch one. Let's see how long it takes until someone runs into this.
+            subgroup_table[item_proto.name] = button_item
         end
     end
 
@@ -126,7 +213,7 @@ local function add_item_picker(parent_flow, player)
         flow_group.style.height = picker_flow_height
     end
 
-    select_item_group(ui_elements, 1)
+    select_item_group(ui_state.modal_data, 1)
 end
 
 
@@ -186,8 +273,8 @@ end
 
 -- ** TOP LEVEL **
 picker_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}),
-      {"fp.pl_" .. modal_data.item_category, 1}},
+    caption = (modal_data.object) and {"fp.two_word_title", {"fp.edit"},
+      {"fp.pl_" .. modal_data.item_category, 1}} or nil,
     force_auto_center = true
 } end)
 
@@ -196,9 +283,9 @@ picker_dialog.gui_events = {
         {
             pattern = "^fp_sprite%-button_item_group_%d+$",
             handler = (function(player, element, _)
-                local ui_elements = data_util.get("ui_elements", player)
+                local modal_data = data_util.get("modal_data", player)
                 local group_id = tonumber(string.match(element.name, "%d+"))
-                select_item_group(ui_elements, group_id)
+                select_item_group(modal_data, group_id)
             end)
         },
         {
@@ -206,8 +293,28 @@ picker_dialog.gui_events = {
             handler = (function(player, element, _)
                 handle_item_pick(player, element)
             end)
+        },
+        {
+            name = "fp_sprite-button_picker_search",
+            handler = (function(player, _, _)
+                focus_searchfield(player)
+            end)
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_picker_search",
+            handler = (function(player, element)
+                search_items(player, element)
+            end)
         }
     }
+}
+
+picker_dialog.misc_events = {
+    fp_focus_searchfield = (function(player, _)
+        focus_searchfield(player)
+    end)
 }
 
 function picker_dialog.open(player, modal_data)
@@ -229,6 +336,7 @@ function picker_dialog.open(player, modal_data)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.object == nil then
+        fill_titlebar(modal_data)
         add_item_picker(add_content_frame(), player)
     end
 end

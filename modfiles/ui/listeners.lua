@@ -30,20 +30,11 @@ script.on_event("fp_cycle_production_views", function(event)
     if main_dialog.is_in_focus(player) then production_titlebar.change_view_state(player, nil) end
 end)
 
--- Breaks stuff when in selection mode
+-- Breaks stuff when in selection mode TODO fix
 --[[ script.on_event("fp_confirm_dialog", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
     modal_dialog.exit(player, "submit")
-end) ]]
-
---[[ script.on_event("fp_focus_searchfield", function(event)
-    local player = game.get_player(event.player_index)
-    if data_util.get("ui_state", event.player_index).modal_dialog_type == "product" then
-        local textfield = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_item_picker"]
-          ["table_search_bar"]["fp_textfield_item_picker_search_bar"]
-        ui_util.select_all(textfield)
-    end
 end) ]]
 
 
