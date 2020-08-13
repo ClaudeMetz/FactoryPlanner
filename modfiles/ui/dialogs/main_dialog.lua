@@ -21,8 +21,52 @@ local function recalculate_main_dialog_dimensions(player)
     return dimensions
 end
 
+-- No idea how to write this so it works when in selection mode
+local function handle_other_gui_opening(player)
+    local frame_main_dialog = player.gui.screen.fp_frame_main_dialog
+    if frame_main_dialog and frame_main_dialog.visible then
+        frame_main_dialog.visible = false
+        main_dialog.set_pause_state(player, frame_main_dialog)
+    end
+end
+
 
 -- ** TOP LEVEL **
+main_dialog.gui_events = {
+    on_gui_closed = {
+        {
+            name = "fp_frame_main_dialog",
+            handler = (function(player, _)
+                main_dialog.toggle(player)
+            end)
+        }
+    }
+}
+
+main_dialog.misc_events = {
+    on_gui_opened = (function(player, _)
+        handle_other_gui_opening(player)
+    end),
+
+    on_player_display_resolution_changed = (function(player, _)
+        main_dialog.refresh(player, true)
+    end),
+
+    on_player_display_scale_changed = (function(player, _)
+        main_dialog.refresh(player, true)
+    end),
+
+    on_lua_shortcut = (function(player, event)
+        if event.prototype_name == "fp_open_interface" then
+            main_dialog.toggle(player)
+        end
+    end),
+
+    fp_toggle_main_dialog = (function(player, _)
+        main_dialog.toggle(player)
+    end)
+}
+
 -- Toggles the main dialog open and closed
 function main_dialog.toggle(player)
     -- Won't toggle if a modal dialog is open
@@ -54,10 +98,9 @@ function main_dialog.refresh(player, full_refresh)
         frame_main_dialog.style.height = dimensions.height
 
         main_dialog.set_pause_state(player, frame_main_dialog)  -- Adjust the paused-state accordingly
-        local ui_state = get_ui_state(player)
-        if ui_state.modal_dialog_type == "beacon" and ui_state.flags.selection_mode then
-            beacon_dialog.leave_selection_mode(player, 0)  -- Leave the beacon selection mode if it is active
-        end
+
+        -- No 100% sure why the following is necessary
+        if data_util.get("flags", player).selection_mode then modal_dialog.leave_selection_mode(player) end
 
         titlebar.add_to(frame_main_dialog)
         actionbar.add_to(frame_main_dialog)

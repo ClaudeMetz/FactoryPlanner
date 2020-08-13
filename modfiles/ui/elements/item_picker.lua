@@ -22,8 +22,8 @@ function item_picker.create(parent)
     textfield.style.width = 140
 
     -- Warning label
-    local label_warning = picker_flow.add{type="label", name="label_warning_message", caption={"fp.error_no_item_found"}}
-    ui_util.set_label_color(label_warning, "red")
+    local label_warning = picker_flow.add{type="label", name="label_warning_message",
+      caption={"fp.error_message", {"fp.error_no_item_found"}}}
     label_warning.style.top_margin = 8
     label_warning.style.font = "fp-font-bold-16p"
     label_warning.visible = false  -- There can't be a warning upon first opening of the dialog
@@ -42,7 +42,7 @@ function item_picker.create(parent)
     local undesirable_item_groups = {["creative-mod_creative-tools"]=false, ["im-tools"]=false}
     local group_id_cache, group_button_cache, subgroup_flow_cache, subgroup_table_cache = {}, {}, {}, {}
 
-    for _, item in ipairs(sorted_items) do  -- global variable
+    for _, item in ipairs(SORTED_ITEMS) do
         local group_name = item.group.name
         local group_id = group_id_cache[group_name]
         if group_id == nil then
@@ -164,7 +164,7 @@ function item_picker.filter(picker_flow, searchterm, first_run)
             local subgroup_visible = false
 
             for _, item_element in pairs(subgroup_element.children) do
-                local item = identifier_item_map[string.gsub(item_element.name, "fp_button_item_pick_", "")]
+                local item = IDENTIFIER_ITEM_MAP[string.gsub(item_element.name, "fp_button_item_pick_", "")]
 
                 local visible = false
                 -- Set visibility of items (and item-groups) appropriately

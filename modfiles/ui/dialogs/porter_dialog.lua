@@ -3,19 +3,23 @@ export_dialog = {}
 porter_dialog = {}  -- table containing functionality shared between both dialogs
 
 -- ** LOCAL UTIL **
--- Updates the enabled-state and sprite of the given button
 local function set_tool_button_state(button, dialog_type, enabled)
     button.enabled = enabled
     button.sprite = (enabled) and ("utility/" .. dialog_type) or ("fp_sprite_" .. dialog_type .. "_light")
 end
 
--- Sets the state of either the export subfactories- or submit import dialog-button
+local function set_dialog_submit_button(ui_elements, enabled, action_to_take)
+    local message = (not enabled) and {"fp.importer_issue_" .. action_to_take} or nil
+    modal_dialog.set_submit_button_state(ui_elements, enabled, message)
+end
+
+-- Sets the state of either the export_subfactories- or dialog_submit-button
 local function set_relevant_submit_button(ui_elements, dialog_type, enabled)
     if dialog_type == "export" then
         set_tool_button_state(ui_elements.export_button, dialog_type, enabled)
 
     else -- dialog_type == "import"
-        ui_elements.dialog_submit_button.enabled = enabled
+        set_dialog_submit_button(ui_elements, enabled, "select_subfactory")
     end
 end
 
@@ -47,16 +51,6 @@ local function adjust_after_checkbox_click(player)
     set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, (checked_element_count > 0))
 end
 
-
--- Adds the barebones dialog structure that both dialogs need
-local function initialize_dialog(ui_elements, dialog_type)
-    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
-    ui_elements.content_frame = content_frame
-
-    local label_text = content_frame.add{type="label", caption={"fp." .. dialog_type .. "_instruction_1"}}
-    label_text.style.bottom_margin = 10
-end
 
 -- Adds a flow containing a textfield and a button
 local function add_textfield_and_button(ui_elements, dialog_type, button_first, button_enabled)
@@ -93,11 +87,10 @@ end
 local function setup_subfactories_table(ui_elements, add_location)
     ui_elements.table_rows = {}
 
-    local scroll_pane = ui_elements.content_frame.add{type="scroll-pane",style="scroll_pane_in_shallow_frame"}
-    scroll_pane.style.extra_top_padding_when_activated = 0
-    scroll_pane.style.extra_right_padding_when_activated = 0
-    scroll_pane.style.extra_bottom_padding_when_activated = 0
-    scroll_pane.style.extra_left_padding_when_activated = 0
+    local scroll_pane = ui_elements.content_frame.add{type="scroll-pane",
+      style="fp_scroll_pane_inside_content_frame_bare"}
+    scroll_pane.style.margin = 0
+    scroll_pane.style.padding = 0
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
     ui_elements.subfactories_scroll_pane = scroll_pane
 
@@ -135,13 +128,13 @@ local function add_to_subfactories_table(ui_elements, subfactory, location_name,
     local checkbox = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_subfactory_" .. identifier,
       state=false, enabled=(enable_checkbox or subfactory.valid)}
 
-    local subfactory_icon = " "
+    local subfactory_icon = ""
     if subfactory.icon ~= nil then
-        local subfactory_sprite = subfactory.icon.type .. "/" .. subfactory.icon.name
-        if not game.is_valid_sprite_path(subfactory_sprite) then subfactory_sprite = "utility/danger_icon" end
-        subfactory_icon = " [img=" .. subfactory_sprite .. "]  "
+        local _, sprite_rich_text = ui_util.verify_subfactory_icon(subfactory)
+        subfactory_icon = sprite_rich_text .. "  "
     end
-    table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
+    local label = table_subfactories.add{type="label", caption=subfactory_icon .. subfactory.name}
+    label.style.right_margin = 4
 
     local validity_caption = (subfactory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
     table_subfactories.add{type="label", caption=validity_caption}
@@ -168,14 +161,14 @@ local function import_subfactories(player)
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
         label_info.style.single_line = false
-        label_info.style.bottom_margin = 8
+        label_info.style.bottom_margin = 4
         label_info.style.width = 330
         ui_elements.info_label = label_info
     end
 
     if not ui_elements.porter_line then
         local line = content_frame.add{type="line", direction="horizontal"}
-        line.style.margin = {10, 0, 8, 0}
+        line.style.margin = {6, 0, 6, 0}
         ui_elements.porter_line = line
     end
 
@@ -198,7 +191,8 @@ local function import_subfactories(player)
         set_all_checkboxes(player, true)
     end
 
-    content_frame.parent.parent.force_auto_center()
+    set_dialog_submit_button(ui_elements, (error == nil), "import_string")
+    ui_elements.frame.force_auto_center()
 end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
@@ -221,11 +215,11 @@ end
 -- ** IMPORT DIALOG **
 import_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
-    disable_submit_button = true,
+    create_content_frame = true,
     disable_scroll_pane = true
 } end)
 
-import_dialog.events = {
+import_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_import",
@@ -254,16 +248,19 @@ import_dialog.events = {
 }
 
 
-function import_dialog.open(_, _, modal_data)
+function import_dialog.open(_, modal_data)
     local ui_elements = modal_data.ui_elements
-    initialize_dialog(ui_elements, "import")
+    set_dialog_submit_button(ui_elements, false, "import_string")
+
+    local label_text = ui_elements.content_frame.add{type="label", caption={"fp.import_instruction_1"}}
+    label_text.style.bottom_margin = 4
 
     add_textfield_and_button(ui_elements, "import", false, false)
     ui_util.select_all(ui_elements.import_textfield)
 end
 
 -- Imports the selected subfactories into the player's main factory
-function import_dialog.close(player, action, _)
+function import_dialog.close(player, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local factory = ui_state.context.factory
@@ -286,10 +283,11 @@ end
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.export"}, {"fp.pl_subfactory", 1}},
+    create_content_frame = true,
     disable_scroll_pane = true
 } end)
 
-export_dialog.events = {
+export_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_export",
@@ -300,11 +298,13 @@ export_dialog.events = {
     }
 }
 
-function export_dialog.open(player, _, modal_data)
+function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
     local ui_elements = modal_data.ui_elements
 
-    initialize_dialog(ui_elements, "export")
+    local label_text = ui_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"}}
+    label_text.style.bottom_margin = 4
+
     setup_subfactories_table(ui_elements, true)
 
     local valid_subfactory_found = false
@@ -317,12 +317,12 @@ function export_dialog.open(player, _, modal_data)
     ui_elements.master_checkbox.enabled = valid_subfactory_found
 
     add_textfield_and_button(ui_elements, "export", true, false)
-    ui_elements.export_textfield.parent.style.top_margin = 10
+    ui_elements.export_textfield.parent.style.top_margin = 6
 end
 
 
 -- ** SHARED **
-porter_dialog.events = {
+porter_dialog.gui_events = {
     on_gui_checked_state_changed = {
         {
             name = "fp_checkbox_porter_master",

@@ -4,7 +4,7 @@ subfactory_bar = {}
 -- Attempts to create and insert a new element into the table
 local function attempt_element_creation(player, table, width_remaining, subfactory, selected)
     if table == nil then return 0 end
-    local width_used, tooltip = 0, ""
+    local width_used = 0
 
     local style = selected and "fp_subfactory_sprite_button_selected" or "fp_subfactory_sprite_button"
     local button = table.add{type="button", name="fp_sprite-button_subfactory_" .. subfactory.id,
@@ -15,14 +15,8 @@ local function attempt_element_creation(player, table, width_remaining, subfacto
 
     -- Icon sprite
     if subfactory.icon ~= nil then
-        -- Determine sprite path, check if it's valid
-        local sprite_path = subfactory.icon.type .. "/" .. subfactory.icon.name
-        if not game.is_valid_sprite_path(sprite_path) then
-            sprite_path = "utility/danger_icon"
-            tooltip = {"fp.sprite_missing"}
-        end
-
-        local sprite = flow.add{type="label", caption="[font=fp-font-bold-20p][img=" .. sprite_path .. "][/font]"}
+        local _, rich_text = ui_util.verify_subfactory_icon(subfactory)
+        local sprite = flow.add{type="label", caption="[font=fp-font-bold-20p]" .. rich_text .. "[/font]"}
         sprite.style.height = 34
         sprite.style.left_padding = 1
         sprite.style.top_padding = 1
@@ -52,7 +46,7 @@ local function attempt_element_creation(player, table, width_remaining, subfacto
         return 0
     else
         button.style.width = width_used
-        button.tooltip = {"", tooltip, ui_util.tutorial_tooltip(player, nil, "subfactory", (tooltip ~= ""))}
+        button.tooltip = ui_util.tutorial_tooltip(player, nil, "subfactory", false)
         return width_used
     end
 end
@@ -147,8 +141,7 @@ function subfactory_bar.handle_subfactory_element_click(player, subfactory_id, c
 
         elseif click == "right" then
             if action == "edit" then
-                modal_dialog.enter(player, {type="subfactory", submit=true,
-                  delete=true, modal_data={subfactory=subfactory}})
+                actionbar.edit_subfactory(player)
 
             elseif action == "delete" then
                 local factory = ui_state.context.factory

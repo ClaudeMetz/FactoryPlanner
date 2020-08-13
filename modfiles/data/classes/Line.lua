@@ -155,7 +155,7 @@ function Line.change_machine(self, player, machine_proto, direction)
             grading_direction = {"fp.downgraded"}
         end
 
-        local message = {"fp.error_object_cant_be_up_downgraded", {"fp.machine"}, grading_direction}
+        local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, grading_direction}
         titlebar.enqueue_message(player, message, "error", 1, false)
         return false
     end
@@ -213,38 +213,6 @@ function Line.get_total_effects(self, player)
     effects.productivity = effects.productivity + mining_productivity
 
     return effects
-end
-
-
--- Returns a table indicating the compatibility of the given module with this line and the given beacon
-function Line.get_beacon_module_characteristics(self, beacon_proto, module_proto)
-    local compatible = true
-    local recipe, machine = self.recipe, self.machine
-
-    if not self.valid or not recipe.valid or not machine.valid then compatible = false end
-
-    if compatible then
-        if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
-          and not module_proto.limitations[recipe.proto.name] then
-            compatible = false
-          end
-    end
-
-    if compatible then
-        local machine_effects, beacon_effects = machine.proto.allowed_effects, beacon_proto.allowed_effects
-        if machine_effects == nil or beacon_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
-                    compatible = false
-                    break
-                end
-            end
-        end
-    end
-
-    return { compatible = compatible }
 end
 
 

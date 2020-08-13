@@ -13,7 +13,7 @@ local function run_preliminary_checks(player, product, production_type)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = recipe_maps[production_type][product.proto.type][product.proto.name]
+    local map = RECIPE_MAPS[production_type][product.proto.type][product.proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = global.all_recipes.recipes[recipe_id]
@@ -101,6 +101,7 @@ local function attempt_adding_line(player, recipe_id)
     -- If changing the machine fails, this line is invalid
     if Line.change_machine(line, player, nil, nil) == false then
         titlebar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
+
     else
         local add_after_position = ui_state.modal_data.add_after_position
         -- If add_after_position is given, insert it below that one, add it to the end otherwise
@@ -117,22 +118,28 @@ local function attempt_adding_line(player, recipe_id)
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.machine
         if machine_module ~= nil then
-            if Machine.get_module_characteristics(line.machine, machine_module, false).compatible then
+            if Machine.check_module_compatibility(line.machine, machine_module) then
                 local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
                 Machine.add(line.machine, new_module)
+
             elseif message == nil then  -- don't overwrite previous message, if it exists
                 message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
             end
         end
 
         -- Add default beacon modules, if desired by the user
-        local beacon_module, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
+        local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
         local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
-        if beacon_module ~= nil and beacon_count ~= nil then
-            if Line.get_beacon_module_characteristics(line, beacon_proto, beacon_module).compatible then
-                local new_beacon = Beacon.init_by_protos(beacon_proto, beacon_count, beacon_module,
-                  beacon_proto.module_limit, nil)
-                Line.set_beacon(line, new_beacon)
+
+        if beacon_module_proto ~= nil and beacon_count ~= nil then
+            local blank_beacon = Beacon.blank_init(beacon_proto, beacon_count, line)
+
+            if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
+                local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
+                Beacon.set_module(blank_beacon, module)
+
+                Line.set_beacon(line, blank_beacon)
+
             elseif message == nil then  -- don't overwrite previous message, if it exists
                 message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, type="warning"}
             end
@@ -142,13 +149,12 @@ local function attempt_adding_line(player, recipe_id)
         calculation.update(player, ui_state.context.subfactory, true)
     end
 
-    modal_dialog.exit(player, "cancel", {})
+    modal_dialog.exit(player, "cancel")
 end
 
 
 local function create_filter_box(modal_data)
-    local bordered_frame = modal_data.ui_elements.content_frame.add{type="frame", style="bordered_frame"}
-    bordered_frame.style.horizontally_stretchable = true
+    local bordered_frame = modal_data.ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16
@@ -166,10 +172,8 @@ end
 
 local function create_recipe_group_box(modal_data, relevant_group)
     local ui_elements = modal_data.ui_elements
-    local bordered_frame = ui_elements.content_frame.add{type="frame", style="bordered_frame"}
-    bordered_frame.style.horizontally_stretchable = true
+    local bordered_frame = ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
     bordered_frame.style.padding = 8
-    bordered_frame.style.top_margin = 6
 
     local next_index = #ui_elements.groups + 1
     ui_elements.groups[next_index] = {name=relevant_group.proto.name, frame=bordered_frame, recipe_buttons={}}
@@ -178,8 +182,8 @@ local function create_recipe_group_box(modal_data, relevant_group)
     local flow_group = bordered_frame.add{type="flow", direction="horizontal"}
     flow_group.style.vertical_align = "center"
 
-    local group_sprite = flow_group.add{type="sprite", sprite=("item-group/" .. relevant_group.proto.name),
-      tooltip=relevant_group.proto.localised_name}
+    local group_sprite = flow_group.add{type="sprite-button", sprite=("item-group/" .. relevant_group.proto.name),
+      tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
     group_sprite.style.height = 64
     group_sprite.style.width = 64
     group_sprite.style.right_margin = 12
@@ -215,25 +219,18 @@ end
 -- Creates the unfiltered recipe structure
 local function create_dialog_structure(modal_data)
     local ui_elements = modal_data.ui_elements
-    local content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
+    local content_frame = ui_elements.content_frame
     content_frame.style.width = 380
-    content_frame.style.padding = 0
-
-    -- Temporary fix for this dialog not scrolling
-    local scroll_pane = content_frame.add{type="scroll-pane", style="fp_scroll_pane_inside_tab", direction="vertical"}
-    ui_elements.content_frame = scroll_pane
 
     create_filter_box(modal_data)
 
-    local label_warning = scroll_pane.add{type="label",
-      caption={"fp.error_message", {"fp.error_no_recipe_found"}}}
-    label_warning.style.font = "heading-3"
+    local label_warning = content_frame.add{type="label", caption={"fp.error_message", {"fp.no_recipe_found"}}}
+    label_warning.style.font = "heading-2"
     label_warning.style.margin = {8, 0, 0, 8}
     ui_elements.warning_label = label_warning
 
     ui_elements.groups = {}
-    for _, group in ipairs(ordered_recipe_groups) do
+    for _, group in ipairs(ORDERED_RECIPE_GROUPS) do
         local relevant_group = modal_data.recipe_groups[group.name]
 
         -- Only actually create this group if it contains any relevant recipes
@@ -265,7 +262,7 @@ local function apply_recipe_filter(player)
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
 
         local button_table_height = math.ceil(#group.recipe_buttons / recipes_per_row) * 36
-        local additional_height = math.max(88, button_table_height + 24) + 6
+        local additional_height = math.max(88, button_table_height + 24) + 4
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
 
@@ -289,11 +286,12 @@ end
 
 -- ** TOP LEVEL **
 recipe_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.add_recipe"},
+    caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
+    create_content_frame = true,
     force_auto_center = true
 } end)
 
-recipe_dialog.events = {
+recipe_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_button_recipe_pick_%d+$",
@@ -315,7 +313,7 @@ recipe_dialog.events = {
 
 
 -- Handles populating the recipe dialog
-function recipe_dialog.open(player, _, modal_data)
+function recipe_dialog.open(player, modal_data)
     local product = modal_data.product
 
     -- Result is either the single possible recipe_id, or a table of relevant recipes
@@ -323,12 +321,15 @@ function recipe_dialog.open(player, _, modal_data)
 
     if error ~= nil then
         titlebar.enqueue_message(player, error, "error", 1)
-        modal_dialog.exit(player, "cancel", {})
+        modal_dialog.exit(player, "cancel")
+        return true  -- let the modal dialog know that it was closed immediately
+
     else
         -- If 1 relevant recipe is found, add it immediately and exit dialog
         if type(result) == "number" then  -- the given number being the recipe_id
             modal_data.message = show.message
             attempt_adding_line(player, result)
+            return true  -- idem above
 
         else  -- Otherwise, show the appropriately filtered dialog
             local recipe_groups = {}

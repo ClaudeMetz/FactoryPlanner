@@ -87,38 +87,31 @@ function titlebar.refresh_message(player)
     local flow_titlebar = frame_main_dialog["flow_titlebar"]
     if flow_titlebar == nil then return end
 
-    -- The message types are ordered by priority
-    local types = {
-        [1] = {name = "error", color = "red"},
-        [2] = {name = "warning", color = "yellow"},
-        [3] = {name = "hint", color = "green"}
-    }
-
     local ui_state = data_util.get("ui_state", player)
+    -- The message types are ordered by priority
+    local types = {"error", "warning", "hint"}
 
+    local new_message = nil
     -- Go over the all types and messages, trying to find one that should be shown
-    local new_message, new_color = "", nil
     for _, type in ipairs(types) do
         -- All messages will have lifetime > 0 at this point
         for _, message in pairs(ui_state.message_queue) do
             -- Find first message of this type, then break
-            if message.type == type.name then
-                new_message = message.text
-                new_color = type.color
+            if message.type == type then
+                new_message = message
                 break
             end
         end
         -- If a message is found, break because no messages of lower ranked type should be considered
-        if new_message ~= "" then break end
+        if new_message ~= nil then break end
     end
+
+    local label_hint = flow_titlebar["label_titlebar_hint"]
+    label_hint.caption = (new_message) and {"fp." .. new_message.type .. "_message", new_message.text} or ""
 
     -- Decrease the lifetime of every queued message
     for index, message in pairs(ui_state.message_queue) do
         message.lifetime = message.lifetime - 1
         if message.lifetime <= 0 then ui_state.message_queue[index] = nil end
     end
-
-    local label_hint = flow_titlebar["label_titlebar_hint"]
-    label_hint.caption = new_message
-    ui_util.set_label_color(label_hint, new_color)
 end
