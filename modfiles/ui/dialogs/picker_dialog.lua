@@ -13,18 +13,6 @@ local function select_item_group(modal_data, new_group_id)
     end
 end
 
-local function handle_item_pick(player, element)
-    local item_identifier = string.gsub(element.name, "fp_button_item_pick_", "")
-    local item_proto = IDENTIFIER_ITEM_MAP[item_identifier]
-
-    local modal_data = data_util.get("modal_data", player)
-    modal_data.item_proto = item_proto
-
-    local item_choice_button = modal_data.ui_elements.item_choice_button
-    item_choice_button.sprite = item_proto.sprite
-    item_choice_button.tooltip = item_proto.tooltip
-end
-
 local function focus_searchfield(player)
     local ui_state = data_util.get("ui_state", player)
     if ui_state.modal_dialog_type == "picker" and ui_state.modal_data.object == nil then
@@ -218,6 +206,87 @@ end
 
 
 -- ** PICKER DIALOG **
+local function set_appropriate_focus(modal_data)
+    if modal_data.amount_defined_by == "amount" then
+        ui_util.select_all(modal_data.ui_elements["item_amount_textfield"])
+    else  -- "belts"/"lanes"
+        ui_util.select_all(modal_data.ui_elements["belt_amount_textfield"])
+    end
+end
+
+-- Is only called when defined_by ~= "amount"
+local function sync_amounts(modal_data)
+    local ui_elements = modal_data.ui_elements
+
+    local belt_amount = tonumber(ui_elements.belt_amount_textfield.text)
+    if belt_amount == nil then
+        ui_elements.item_amount_textfield.text = ""
+    else
+        local belt_proto = modal_data.belt_proto
+        local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
+        local item_amount = belt_amount * throughput * modal_data.timescale
+        ui_elements.item_amount_textfield.text = ui_util.format_number(item_amount, 6)
+    end
+end
+
+local function set_belt_proto(modal_data, belt_proto)
+    modal_data.belt_proto = belt_proto
+
+    local ui_elements = modal_data.ui_elements
+    ui_elements.item_amount_textfield.enabled = (belt_proto == nil)
+    ui_elements.belt_amount_textfield.enabled = (belt_proto ~= nil)
+
+    if belt_proto == nil then
+        ui_elements.belt_choice_button.elem_value = nil
+        ui_elements.belt_amount_textfield.text = ""
+        modal_data.amount_defined_by = "amount"
+    else
+        -- Might double set the choice button, but it doesn't matter
+        ui_elements.belt_choice_button.elem_value = belt_proto.name
+        modal_data.amount_defined_by = modal_data.lob
+
+        local item_amount = tonumber(ui_elements.item_amount_textfield.text)
+        if item_amount ~= nil then
+            local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
+            local belt_amount = item_amount / throughput / modal_data.timescale
+            ui_elements.belt_amount_textfield.text = ui_util.format_number(belt_amount, 6)
+        end
+        sync_amounts(modal_data)
+    end
+end
+
+local function set_item_proto(modal_data, item_proto)
+    local ui_elements = modal_data.ui_elements
+    modal_data.item_proto = item_proto
+
+    local item_choice_button = ui_elements.item_choice_button
+    item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
+    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or nil
+
+    -- Disable definition by belt for fluids
+    local is_fluid = item_proto and item_proto.type == "fluid"
+    ui_elements.belt_choice_button.enabled = (not is_fluid)
+
+    -- Clear the belt-related fields if needed
+    if is_fluid then set_belt_proto(modal_data, nil) end
+end
+
+local function update_dialog_submit_button(ui_elements)
+    local item_choice_button = ui_elements.item_choice_button
+    local item_amount_textfield = ui_elements.item_amount_textfield
+
+    local message = nil
+    if item_choice_button.sprite == "" then
+        message = {"fp.picker_issue_select_item"}
+    -- The item amount will be filled even if the item is defined_by ~= "amount"
+    elseif tonumber(item_amount_textfield.text) == nil then
+        message = {"fp.picker_issue_enter_amount"}
+    end
+
+    modal_dialog.set_submit_button_state(ui_elements, (message == nil), message)
+end
+
+
 local function add_item_pane(parent_flow, modal_data, item_category, item)
     local function create_flow()
         local flow = parent_flow.add{type="flow", direction="horizontal"}
@@ -231,15 +300,12 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local defined_by = (item) and item.required_amount.defined_by or "amount"
     modal_data.amount_defined_by = defined_by
 
+
     local flow_amount = create_flow()
     flow_amount.add{type="label", caption={"fp.pu_" .. item_category, 1}}
 
-    local sprite = (item) and item.proto.sprite or nil
-    local tooltip = (item) and item.proto.localised_name or ""
-    local item_choice_button = flow_amount.add{type="sprite-button", sprite=sprite, tooltip=tooltip,
-      style="fp_sprite-button_inset_tiny"}
+    local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset_tiny"}
     item_choice_button.style.right_margin = 12
-    modal_data.item_proto = (item) and item.proto or nil
     ui_elements["item_choice_button"] = item_choice_button
 
     flow_amount.add{type="label", caption={"fp.amount"}}
@@ -254,8 +320,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local flow_belts = create_flow()
     flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
 
-    local belt_amount = (defined_by ~= "amount") and item.required_amount.amount or ""
-    local textfield_belts = flow_belts.add{type="textfield", name="fp_textfield_picker_lob_amount", text=belt_amount}
+    local belt_amount = (item and defined_by ~= "amount") and item.required_amount.amount or ""
+    local textfield_belts = flow_belts.add{type="textfield", name="fp_textfield_picker_belt_amount", text=belt_amount}
     ui_util.setup_numeric_textfield(textfield_belts, true, false)
     textfield_belts.style.width = 85
     textfield_belts.style.left_margin = 4
@@ -263,13 +329,44 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local elem_filters = {{filter="type", type="transport-belt"}}
-    local belt_name = (defined_by ~= "amount") and item.required_amount.belt_proto.name or nil
     local choose_belt_button = flow_belts.add{type="choose-elem-button", name="fp_choose-elem-button_picker_belt",
-      elem_type="entity", entity=belt_name, elem_filters=elem_filters, style="fp_sprite-button_inset_tiny"}
+      elem_type="entity", elem_filters={{filter="type", type="transport-belt"}}, style="fp_sprite-button_inset_tiny"}
     ui_elements["belt_choice_button"] = choose_belt_button
-    modal_data.belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
+
+
+    local item_proto = (item) and item.proto or nil
+    set_item_proto(modal_data, item_proto)
+
+    local belt_proto = (defined_by ~= "amount") and item.required_amount.belt_proto or nil
+    set_belt_proto(modal_data, belt_proto)
+
+    set_appropriate_focus(modal_data)
+    update_dialog_submit_button(ui_elements)
 end
+
+
+local function handle_item_pick(player, element)
+    local item_identifier = string.gsub(element.name, "fp_button_item_pick_", "")
+    local item_proto = IDENTIFIER_ITEM_MAP[item_identifier]
+
+    local modal_data = data_util.get("modal_data", player)
+    set_item_proto(modal_data, item_proto)  -- no need for sync in this case
+
+    set_appropriate_focus(modal_data)
+    update_dialog_submit_button(modal_data.ui_elements)
+end
+
+local function handle_belt_pick(player, element)
+    local belt_name = element.elem_value
+    local belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
+
+    local modal_data = data_util.get("modal_data", player)
+    set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself
+
+    set_appropriate_focus(modal_data)
+    update_dialog_submit_button(modal_data.ui_elements)
+end
+
 
 -- ** TOP LEVEL **
 picker_dialog.dialog_settings = (function(modal_data) return {
@@ -301,11 +398,34 @@ picker_dialog.gui_events = {
             end)
         }
     },
+    on_gui_elem_changed = {
+        {
+            name = "fp_choose-elem-button_picker_belt",
+            handler = (function(player, element)
+                handle_belt_pick(player, element)
+            end)
+        }
+    },
     on_gui_text_changed = {
         {
             name = "fp_textfield_picker_search",
             handler = (function(player, element)
                 search_items(player, element)
+            end)
+        },
+        {
+            name = "fp_textfield_picker_item_amount",
+            handler = (function(player, _)
+                local modal_data = data_util.get("modal_data", player)
+                update_dialog_submit_button(modal_data.ui_elements)
+            end)
+        },
+        {
+            name = "fp_textfield_picker_belt_amount",
+            handler = (function(player, _)
+                local modal_data = data_util.get("modal_data", player)
+                sync_amounts(modal_data)  -- defined_by ~= "amount"
+                update_dialog_submit_button(modal_data.ui_elements)
             end)
         }
     }
@@ -331,6 +451,7 @@ function picker_dialog.open(player, modal_data)
     end
 
     local item_content_frame = add_content_frame()
+    item_content_frame.style.minimal_width = 325
     item_content_frame.style.padding = {12, 12, 6, 12}
     add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.object)
 
