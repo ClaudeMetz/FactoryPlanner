@@ -1,9 +1,8 @@
 -- NEW STUFF
-data.raw["gui-style"].default["fp_scroll_pane_inside_tab"] = {
+data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame"] = {
     type = "scroll_pane_style",
     extra_padding_when_activated = 0,
     padding = 0,
-    vertically_stretchable = "on",
     graphical_set = {
       shadow = default_inner_shadow
     },
@@ -12,6 +11,16 @@ data.raw["gui-style"].default["fp_scroll_pane_inside_tab"] = {
       padding = 12
     }
 }
+
+data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame_bare"] = {
+    type = "scroll_pane_style",
+    parent = "fp_scroll_pane_inside_content_frame",
+    vertical_flow_style = {
+        type = "vertical_flow_style",
+        padding = 0
+    }
+}
+
 
 -- Intended for buttons of size 36
 data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
@@ -25,9 +34,32 @@ data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
         overall_tiling_vertical_padding = 4,
         overall_tiling_horizontal_size = 28,
         overall_tiling_horizontal_spacing = 8,
-        overall_tiling_horizontal_padding = 4,
+        overall_tiling_horizontal_padding = 4
     }
 }
+
+-- Intended for buttons of size 64hx73w
+data.raw["gui-style"].default["fp_frame_deep_slots_crafting_groups"] = {
+    type = "frame_style",
+    parent = "slot_button_deep_frame", -- "crafting_frame"
+    background_graphical_set = {
+        position = {282, 17},
+        corner_size = 8,
+        overall_tiling_vertical_size = 46,
+        overall_tiling_vertical_spacing = 18,
+        overall_tiling_vertical_padding = 9,
+        overall_tiling_horizontal_size = 53,
+        overall_tiling_horizontal_spacing = 20,
+        overall_tiling_horizontal_padding = 10
+    }
+}
+
+data.raw["gui-style"].default["fp_frame_bordered_stretch"] = {
+    type = "frame_style",
+    parent = "bordered_frame",
+    horizontally_stretchable = "on"
+}
+
 
 -- This style is hacked together from rounded-button and textbox
 data.raw["gui-style"].default["fp_sprite-button_inset"] = {
@@ -46,6 +78,25 @@ data.raw["gui-style"].default["fp_sprite-button_inset"] = {
     disabled_graphical_set = {
         base = {position = {185, 200}, corner_size = 8}
     }
+}
+
+data.raw["gui-style"].default["fp_sprite-button_inset_tiny"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_inset",
+    size = 32
+}
+
+-- Cribs from 'dark_rounded_button', but without the stupid shadows
+data.raw["gui-style"].default["fp_sprite-button_rounded_dark"] = {
+    type = "button_style",
+    default_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}},
+    hovered_graphical_set =
+    {
+        base = {border = 4, position = {82, 738}, size = 76},
+        glow = offset_by_2_rounded_corners_glow(default_glow_color)
+    },
+    clicked_graphical_set = {base = {border = 4, position = {162, 738}, size = 76}},
+    disabled_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}}
 }
 
 

@@ -38,23 +38,6 @@ function ui_util.select_all(textfield)
     textfield.select_all()
 end
 
--- File-local to so this dict isn't recreated on every call of the function following it
-local font_colors = {
-    red = {r = 1, g = 0.2, b = 0.2},
-    dark_red = {r = 0.8, g = 0, b = 0},
-    yellow = {r = 0.8, g = 0.8, b = 0},
-    green = {r = 0.2, g = 0.8, b = 0.2},
-    white = {r = 1, g = 1, b = 1},
-    default_label = {r = 1, g = 1, b = 1},
-    black = {r = 0, g = 0, b = 0},
-    default_button = {r = 0, g = 0, b = 0}
-}
--- Sets the font color of the given label / button-label
-function ui_util.set_label_color(ui_element, color)
-    if color == nil then return
-    else ui_element.style.font_color = font_colors[color] end
-end
-
 
 -- ** Tooltips **
 -- File-local to so this dict isn't recreated on every call of the function following it
@@ -240,7 +223,7 @@ ui_util.rate_limiting_events = {
     ["fp_floor_up"] = {timeout = 10},
     ["fp_confirm_dialog"] = {timeout = 20},
     [defines.events.on_player_selected_area] = {timeout = 20},
-    ["filter_item_picker"] = {timeout = 6, handler = item_picker.handle_searchfield_change},
+    ["filter_item_picker"] = {timeout = 6, handler = nil--[[ item_picker.handle_searchfield_change ]]},
     ["submit_modal_dialog"] = {timeout = 20},
     [defines.events.on_gui_click] = {timeout = 10}
 }
@@ -311,6 +294,19 @@ function ui_util.check_archive_status(player)
     end
 end
 
+-- Returns first whether the icon is missing, then the rich text for it
+function ui_util.verify_subfactory_icon(subfactory)
+    local icon = subfactory.icon
+    local type = (icon.type == "virtual") and "virtual-signal" or icon.type
+    local subfactory_sprite = type .. "/" .. icon.name
+
+    if not game.is_valid_sprite_path(subfactory_sprite) then
+        return true, ("[img=utility/missing_icon]")
+    else
+        return false, ("[img=" .. subfactory_sprite .. "]")
+    end
+end
+
 -- Executes an alt-action on the given action_type and data
 function ui_util.execute_alt_action(player, action_type, data)
     local alt_action = data_util.get("settings", player).alt_action
@@ -354,8 +350,7 @@ function ui_util.context.create(player)
     return {
         factory = global.players[player.index].factory,
         subfactory = nil,
-        floor = nil,
-        line = nil
+        floor = nil
     }
 end
 
@@ -374,7 +369,6 @@ function ui_util.context.set_subfactory(player, subfactory)
     context.factory.selected_subfactory = subfactory
     context.subfactory = subfactory
     context.floor = (subfactory ~= nil) and subfactory.selected_floor or nil
-    context.line = nil
 end
 
 -- Updates the context to match the newly selected floor
@@ -382,7 +376,6 @@ function ui_util.context.set_floor(player, floor)
     local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
     context.floor = floor
-    context.line = nil
 end
 
 

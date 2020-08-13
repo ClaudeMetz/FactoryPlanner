@@ -3,14 +3,7 @@ require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
 
--- TODO move the rest over to event_handler when all GUIs are redone
-
 -- ** KEYBOARD SHORTCUTS **
-script.on_event("fp_toggle_main_dialog", function(event)
-    local player = game.get_player(event.player_index)
-    main_dialog.toggle(player)
-end)
-
 script.on_event("fp_toggle_pause", function(event)
     local player = game.get_player(event.player_index)
     local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
@@ -37,80 +30,40 @@ script.on_event("fp_cycle_production_views", function(event)
     if main_dialog.is_in_focus(player) then production_titlebar.change_view_state(player, nil) end
 end)
 
-script.on_event("fp_confirm_dialog", function(event)
+-- Breaks stuff when in selection mode TODO fix
+--[[ script.on_event("fp_confirm_dialog", function(event)
     local player = game.get_player(event.player_index)
     if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
-    modal_dialog.exit(player, "submit", {})
-end)
-
-script.on_event("fp_focus_searchfield", function(event)
-    local player = game.get_player(event.player_index)
-    if data_util.get("ui_state", event.player_index).modal_dialog_type == "product" then
-        local textfield = player.gui.screen["fp_frame_modal_dialog"]["flow_modal_dialog"]["flow_item_picker"]
-          ["table_search_bar"]["fp_textfield_item_picker_search_bar"]
-        ui_util.select_all(textfield)
-    end
-end)
-
-
--- ** LUA SHORTCUTS **
-script.on_event(defines.events.on_lua_shortcut, function(event)
-    local player = game.players[event.player_index]
-
-    if event.prototype_name == "fp_open_interface" then
-        main_dialog.toggle(player)
-    end
-end)
-
-
--- ** PLAYER GUI EVENTS **
-script.on_event(defines.events.on_player_display_resolution_changed, function(event)
-    main_dialog.refresh(game.get_player(event.player_index), true)
-end)
-
-script.on_event(defines.events.on_player_display_scale_changed, function(event)
-    main_dialog.refresh(game.get_player(event.player_index), true)
-end)
-
--- Fires when the user makes a selection using a selection-tool
-script.on_event(defines.events.on_player_selected_area, function(event)
-    local player = game.get_player(event.player_index)
-
-    if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
-        if ui_util.rate_limiting_active(player, event.name, event.item) then return end
-        beacon_dialog.leave_selection_mode(player, table_size(event.entities))
-    end
-end)
-
--- Fires when the item that the player is holding changes
-script.on_event(defines.events.on_player_cursor_stack_changed, function(event)
-    local player = game.get_player(event.player_index)
-    -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-    if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
-        beacon_dialog.leave_selection_mode(player, nil)
-    end
-end)
+    modal_dialog.exit(player, "submit")
+end) ]]
 
 
 -- ** GUI EVENTS **
 -- Fires the user action of closing a dialog
 script.on_event(defines.events.on_gui_closed, function(event)
-    local player = game.get_player(event.player_index)
+    --[[ local player = game.get_player(event.player_index)
 
 	if event.gui_type == defines.gui_type.custom and event.element and event.element.visible
       and string.find(event.element.name, "^fp_.+$") then
         -- Close or hide any modal dialog or leave selection mode
         if event.element.name == "fp_frame_modal_dialog" then
             if data_util.get("flags", player).selection_mode then beacon_dialog.leave_selection_mode(player, nil)
-            else modal_dialog.exit(player, "cancel", {}) end
+            else modal_dialog.exit(player, "cancel") end
 
         -- Toggle the main dialog
         elseif event.element.name == "fp_frame_main_dialog" then
             main_dialog.toggle(player)
 
         end
-	end
+    end ]]
+
+    event_handler.handle_gui_event(event)
 end)
+
+script.on_event(defines.events.on_gui_value_changed, function(event)
+    event_handler.handle_gui_event(event)
+end)
+
 
 -- Fires on any confirmation of a textfield
 script.on_event(defines.events.on_gui_confirmed, function(event)
@@ -132,7 +85,7 @@ script.on_event(defines.events.on_gui_confirmed, function(event)
     --[[ -- Submit any modal dialog, if it is open
     elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
         if ui_util.rate_limiting_active(player, "submit_modal_dialog", element_name) then return end
-        modal_dialog.exit(player, "submit", {}) ]]
+        modal_dialog.exit(player, "submit") ]]
 
     else
         event_handler.handle_gui_event(event)
@@ -197,13 +150,13 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
     -- Only handle my actual events
     if string.find(element_name, "^fp_.+$") then
         -- Activates the instant filter based on user search-string entry
-        if element_name == "fp_textfield_item_picker_search_bar" then
+        --[[ if element_name == "fp_textfield_item_picker_search_bar" then
             if ui_util.rate_limiting_active(player, "filter_item_picker", element_name) then
                 -- Create/update the nth_tick handler only when rate limiting is active
                 ui_util.set_nth_tick_refresh(player, event.element)
                 return
             end
-            item_picker.handle_searchfield_change(event.element)
+            item_picker.handle_searchfield_change(event.element) ]]
 
         --[[ -- Persists default beacon count changes
         elseif element_name == "fp_textfield_default_beacon_count" then
@@ -218,13 +171,13 @@ script.on_event(defines.events.on_gui_text_changed, function(event)
             utility_dialog.handle_notes_change(player, event.element) ]]
 
         -- Persists mining productivity changes
-        elseif element_name == "fp_textfield_mining_prod" then
+        --[[ else ]]if element_name == "fp_textfield_mining_prod" then
             info_pane.handle_mining_prod_change(player, event.element)
 
-        -- Updates the product dialog amounts
+        --[[ -- Updates the product dialog amounts
         elseif string.find(element_name, "^fp_textfield_product_[a-z]+$") then
             local defined_by = string.gsub(element_name, "fp_textfield_product_", "")
-            product_dialog.handle_product_amount_change(player, defined_by)
+            product_dialog.handle_product_amount_change(player, defined_by) ]]
 
         -- Persists (assembly) line percentage changes
         elseif string.find(element_name, "^fp_textfield_line_percentage_%d+$") then
@@ -243,20 +196,20 @@ end)
 
 -- Fires on any change to a choose_elem_button
 script.on_event(defines.events.on_gui_elem_changed, function(event)
-    local player = game.get_player(event.player_index)
+    --[[ local player = game.get_player(event.player_index)
 
     -- Changes the reference belt for the currently open product
     if event.element.name == "fp_choose-elem-button_product_belts" then
         local belt_name = event.element.elem_value
         product_dialog.handle_belt_change(player, belt_name)
 
-    --[[ -- Persists changes to the module/beacon defaults
+    -- Persists changes to the module/beacon defaults
     elseif string.find(event.element.name, "^fp_choose%-elem%-button_default_[a-z]+$") then
-        preferences_dialog.handle_mb_defaults_change(player, event.element) ]]
+        preferences_dialog.handle_mb_defaults_change(player, event.element)
 
-    else
-        event_handler.handle_gui_event(event)
-    end
+    end ]]
+
+    event_handler.handle_gui_event(event)
 end)
 
 
@@ -320,7 +273,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the add-product dialog
         elseif element_name == "fp_sprite-button_add_product" then
-            modal_dialog.enter(player, {type="product", submit=true})
+            modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category="product"}})
 
         -- Toggles the TopLevelItems-amount display state
         elseif element_name == "fp_button_item_amount_toggle" then
@@ -338,18 +291,18 @@ script.on_event(defines.events.on_gui_click, function(event)
         elseif element_name == "fp_button_error_bar_repair" then
             error_bar.handle_subfactory_repair(player)
 
-        -- Maxes the amount of modules on a modules-dialog
+        --[[ -- Maxes the amount of modules on a modules-dialog
         elseif element_name == "fp_button_max_modules" then
-            module_beacon_dialog.set_max_module_amount(player)
+            module_beacon_dialog.set_max_module_amount(player) ]]
 
-        -- Gives the player the beacon-selector
+        --[[ -- Gives the player the beacon-selector
         elseif element_name == "fp_button_beacon_selector" then
-            beacon_dialog.enter_selection_mode(player)
+            beacon_dialog.enter_selection_mode(player) ]]
 
-        -- Reacts to a modal dialog button being pressed
+        --[[ -- Reacts to a modal dialog button being pressed
         elseif string.find(element_name, "^fp_button_modal_dialog_[a-z]+$") then
             local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
-            modal_dialog.exit(player, dialog_action, {})
+            modal_dialog.exit(player, dialog_action) ]]
 
         -- Reacts to a actionbar button being pressed
         elseif string.find(element_name, "^fp_button_actionbar_[a-z]+$") then
@@ -377,7 +330,7 @@ script.on_event(defines.events.on_gui_click, function(event)
             subfactory_pane["handle_" .. split_string[4] .. "_element_click"](player, split_string[5],
               click, direction, action, event.alt)
 
-        -- Reacts to an item group button being pressed
+       --[[  -- Reacts to an item group button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_item_group_%d+$") then
             local picker_flow = event.element.parent.parent.parent
             local group_id = string.match(element_name, "%d+")
@@ -386,7 +339,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         -- Reacts to an item picker button being pressed
         elseif string.find(element_name, "^fp_button_item_pick_%d+_%d+$") then
             local item_identifier = string.gsub(element_name, "fp_button_item_pick_", "")
-            _G[ui_state.modal_dialog_type .. "_dialog"].handle_item_picker_click(player, item_identifier)
+            _G[ui_state.modal_dialog_type .. "_dialog"].handle_item_picker_click(player, item_identifier) ]]
 
         --[[ -- Reacts to a recipe picker button being pressed
         elseif string.find(element_name, "^fp_button_recipe_pick_%d+$") then
@@ -445,9 +398,9 @@ script.on_event(defines.events.on_gui_click, function(event)
             production_handler.handle_line_beacon_click(player, split_string[6], split_string[5], click,
               direction, action, event.alt)
 
-        -- Handles click on any module/beacon button on a modules/beacons modal dialog
+        --[[ -- Handles click on any module/beacon button on a modules/beacons modal dialog
         elseif string.find(element_name, "^fp_sprite%-button_[a-z]+_selection_%d+_?%d*$") then
-            module_beacon_dialog.handle_picker_click(player, event.element)
+            module_beacon_dialog.handle_picker_click(player, event.element) ]]
 
         --[[ -- Reacts to any default prototype preference button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_preferences_[a-z]+_%d+_?%d*$") then

@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Changes:
+    - Redesigned the subfactory, module, beacon and product picker dialogs
+    - Made it so recipes for fuels can also be inserted directly below by shift-left-clicking them
+    - Added some info about why a dialog can not be submitted
+    - Adjusted styling in numerous ways
+  Bugfixes:
+    - Fixed the issue that opening a vanilla interface while a Factory Planner modal dialog is open would not close the main FP interface window
+    - Properly fixed scrolling in the recipe picker
+    - Fixed recipe picker category icons leaving their designated spot sometimes
+
+---------------------------------------------------------------------------------------------------
 Version: 0.18.51
 Date: 10. 08. 2020
   Bugfixes:
@@ -8,7 +21,7 @@ Date: 10. 08. 2020
 Version: 0.18.50
 Date: 04. 08. 2020
   Changes:
-    - Redesign the recipe picker dialog
+    - Redesigned the recipe picker dialog
   Bugfixes:
     - Fixed that setting a limit on a machine would not work properly
     - Fixed a crash when selecting certain fuels

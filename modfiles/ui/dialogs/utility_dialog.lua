@@ -4,7 +4,6 @@ utility_dialog = {}
 -- Adds a box with title and optional scope switch for the given type of utility
 local function add_utility_box(player, ui_elements, type, show_tooltip, show_switch)
     local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
-    bordered_frame.style.bottom_margin = 6
     ui_elements[type .. "_box"] = bordered_frame
 
     local flow_titlebar = bordered_frame.add{type="flow", direction="horizontal"}
@@ -117,10 +116,11 @@ end
 
 -- ** TOP LEVEL **
 utility_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.utilities"}
+    caption = {"fp.utilities"},
+    create_content_frame = true
 } end)
 
-utility_dialog.events = {
+utility_dialog.gui_events = {
     on_gui_switch_state_changed = {
         {
             pattern = "^fp_switch_utility_scope_[a-z]+$",
@@ -139,20 +139,15 @@ utility_dialog.events = {
     },
 }
 
-function utility_dialog.open(player, _, modal_data)
+function utility_dialog.open(player, modal_data)
     -- Add the players' relevant inventory components to modal_data
     modal_data.inventory_contents = player.get_main_inventory().get_contents()
-
-    local ui_elements = modal_data.ui_elements
-    ui_elements.content_frame = ui_elements.flow_modal_dialog.add{type="frame", direction="vertical",
-      style="inside_shallow_frame_with_padding"}
-    ui_elements.content_frame.style.bottom_padding = 6
 
     utility_structures.components(player, modal_data)
     utility_structures.notes(player, modal_data)
 end
 
-function utility_dialog.close(player, _, _)
+function utility_dialog.close(player, _)
     local subfactory = data_util.get("context", player).subfactory
     info_pane.refresh_utility_table(player, subfactory)
 end

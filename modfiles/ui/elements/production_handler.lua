@@ -217,6 +217,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                     {
                         type = "numeric_textfield",
                         name = "machine_limit",
+                        change_handler = production_handler.machine_limit_change,
                         caption = {"fp.options_machine_limit"},
                         tooltip = {"fp.options_machine_limit_tt"},
                         text = line.machine.limit or "",
@@ -250,10 +251,25 @@ function production_handler.apply_machine_choice(player, machine_id)
     calculation.update(player, ui_state.context.subfactory, true)
 end
 
+-- Sets the state of the hard limit switch according to what the entered limit is
+function production_handler.machine_limit_change(modal_data, textfield)
+    local switch = modal_data.ui_elements["fp_switch_on_off_options_hard_limit"]
+    local machine_limit = tonumber(textfield.text)
+    if machine_limit == nil then switch.switch_state = "right" end
+    switch.enabled = (machine_limit ~= nil)
+end
+
 -- Recieves the result of the machine limit options and applies it
-function production_handler.apply_machine_options(machine, options)
-    if options.machine_limit == nil then options.hard_limit = false end
-    machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+function production_handler.apply_machine_options(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local machine = ui_state.modal_data.object
+
+        if options.machine_limit == nil then options.hard_limit = false end
+        machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+
+        calculation.update(player, ui_state.context.subfactory, true)
+    end
 end
 
 
@@ -264,17 +280,15 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
-    ui_state.context.line = line
-    local limit = Machine.empty_slot_count(line.machine)
 
     if module_id == nil then  -- meaning the add-module-button was pressed
-        modal_dialog.enter(player, {type="module", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
+        modal_dialog.enter(player, {type="module", submit=true, modal_data={object=nil, machine=line.machine}})
 
     else  -- meaning an existing module was clicked
         local module = Machine.get(line.machine, "Module", module_id)
 
         if direction ~= nil then  -- change the module to a higher/lower amount/tier
-            local tier_map = module_tier_map
+            local tier_map = MODULE_TIER_MAP
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
@@ -293,6 +307,7 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             -- alt modifies the module amount, no alt modifies the module tier
             if direction == "positive" then
                 if alt then
+                    local limit = Machine.empty_slot_count(line.machine)
                     local new_amount = math.min(module.amount + 1, module.amount + limit)
                     if new_amount == module.amount then
                         local message = {"fp.error_object_amount_cant_be_in_decreased", {"fp.module"}, {"fp.increased"}}
@@ -324,8 +339,8 @@ function production_handler.handle_line_module_click(player, line_id, module_id,
             calculation.update(player, ui_state.context.subfactory, true)
 
         elseif action == "edit" or click == "left" then
-            modal_dialog.enter(player, {type="module", submit=true, delete=true, modal_data={selected_object=module,
-              empty_slots=(limit + module.amount), selected_module=module.proto}})
+            modal_dialog.enter(player, {type="module", submit=true, delete=true,
+              modal_data={object=module, machine=line.machine}})
         end
     end
 end
@@ -338,16 +353,14 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
     local ui_state = get_ui_state(player)
     local floor = ui_state.context.floor
     local line = Floor.get(floor, "Line", line_id)
-    ui_state.context.line = line
 
     if type == nil then  -- meaning the add-beacon-button was pressed
-        local limit = prototyper.defaults.get(player, "beacons").module_limit
-        modal_dialog.enter(player, {type="beacon", submit=true, modal_data={selected_object=nil, empty_slots=limit}})
+        modal_dialog.enter(player, {type="beacon", submit=true, modal_data={object=nil, line=line}})
 
     elseif direction ~= nil then  -- check direction here, because click doesn't matter if there is no direction
         if type == "module" then
             local module = line.beacon.module
-            local tier_map = module_tier_map
+            local tier_map = MODULE_TIER_MAP
 
             -- Changes the current module tier by the given factor (+1 or -1 in this case)
             local function handle_tier_change(factor)
@@ -441,9 +454,8 @@ function production_handler.handle_line_beacon_click(player, line_id, type, clic
         calculation.update(player, ui_state.context.subfactory, true)
 
     elseif action == "edit" or click == "left" then
-        local beacon = line.beacon
-        modal_dialog.enter(player, {type="beacon", submit=true, delete=true, modal_data={selected_object=beacon,
-          empty_slots=beacon.proto.module_limit, selected_beacon=beacon.proto, selected_module=beacon.module.proto}})
+        modal_dialog.enter(player, {type="beacon", submit=true, delete=true,
+          modal_data={object=line.beacon, line=line}})
     end
 end
 
@@ -508,19 +520,27 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
 end
 
 -- Recieves the result of the item options and applies it
-function production_handler.apply_item_options(item, options)
-    local line = item.parent
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-    local current_amount = item.amount
+function production_handler.apply_item_options(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local item = ui_state.modal_data.object
+        local current_amount = item.amount
 
-    if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
-        local other_class = (item.class == "Product") and "Byproduct" or "Product"
-        local opposing_item = Line.get_by_type_and_name(relevant_line, other_class, item.proto.type, item.proto.name)
-        if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
+        local line = item.parent
+        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+
+        if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
+            local other_class = (item.class == "Product") and "Byproduct" or "Product"
+            local opposing_item = Line.get_by_type_and_name(relevant_line, other_class,
+              item.proto.type, item.proto.name)
+            if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
+        end
+
+        options.item_amount = options.item_amount or 0
+        relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
+
+        calculation.update(player, ui_state.context.subfactory, true)
     end
-
-    options.item_amount = options.item_amount or 0
-    relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
 end
 
 
@@ -535,31 +555,10 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
     if alt then
         ui_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
 
-    elseif direction ~= nil then  -- change to the previous/next fuel in the list
-        local category_id = global.all_fuels.map[fuel.proto.category]
-        local prototype_table = global.all_fuels.categories[category_id].fuels
-
-        local function change_fuel_proto(factor)
-            local new_proto = prototype_table[fuel.proto.id + factor]
-            if new_proto ~= nil then
-                fuel.proto = new_proto
-                calculation.update(player, context.subfactory, true)
-            else
-                local type = (factor == 1) and {"fp.upgraded"} or {"fp.downgraded"}
-                local message = {"fp.error_object_cant_be_up_downgraded", {"fp.lfuel"}, type}
-                titlebar.enqueue_message(player, message, "error", 1, true)
-            end
-        end
-
-        if direction == "positive" then
-            change_fuel_proto(1)
-        else  -- direction == "negative"
-            change_fuel_proto(-1)
-        end
-
     else
         if click == "left" then
-            modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce"}})
+            modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce",
+              add_after_position=((direction == "positive") and line.gui_position or nil)}})
 
         elseif click == "right" then
             local machine_proto = line.machine.proto

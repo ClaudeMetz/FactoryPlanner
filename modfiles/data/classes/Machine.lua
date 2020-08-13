@@ -93,22 +93,18 @@ function Machine.summarize_effects(self)
     self.total_effects = module_effects
 end
 
+
 function Machine.empty_slot_count(self)
     return (self.proto.module_limit - self.module_count)
 end
 
-
-function Machine.get_module_characteristics(self, module_proto, include_existing_amount)
-    local compatible, existing_amount = true, nil
+function Machine.check_module_compatibility(self, module_proto)
+    local compatible = true
     local recipe = self.parent.recipe
 
-    if not recipe.valid or not self.valid then compatible = false end
-
-    if compatible then
-        if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
-          and not module_proto.limitations[recipe.proto.name] then
-            compatible = false
-        end
+    if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
+      and not module_proto.limitations[recipe.proto.name] then
+        compatible = false
     end
 
     if compatible then
@@ -124,19 +120,23 @@ function Machine.get_module_characteristics(self, module_proto, include_existing
         end
     end
 
-    if compatible and include_existing_amount then
-        for _, module in pairs(Machine.get_in_order(self, "Module")) do
-            if module.proto == module_proto then
-                existing_amount = module.amount
-                break
-            end
+    return compatible
+end
+
+function Machine.compile_module_filter(self)
+    local existing_names = {}
+    for _, module in ipairs(Machine.get_in_order(self, "Module")) do
+        existing_names[module.proto.name] = true
+    end
+
+    local compatible_modules = {}
+    for module_name, module_proto in pairs(MODULE_NAME_MAP) do
+        if Machine.check_module_compatibility(self, module_proto) and not existing_names[module_name] then
+            table.insert(compatible_modules, module_name)
         end
     end
 
-    return {
-        compatible = compatible,
-        existing_amount = existing_amount
-    }
+    return {{filter="name", name=compatible_modules}}
 end
 
 
