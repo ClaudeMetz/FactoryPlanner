@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Adjusted styling in some places
+    - Updated the screenshots to reflect the recent redesigns
   Bugfixes:
     -
 
