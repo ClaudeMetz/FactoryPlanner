@@ -1,13 +1,13 @@
 {
     "name": "factoryplanner",
-    "version": "0.18.52",
+    "version": "1.0.0",
     "title": "Factory Planner",
     "author": "Therenas",
     "description": "This mod allows you to plan your production in advance, specifying the recipes and machines that make up each assembly line. It provides powerful features that are fast and intuitive to use, so you can focus on actually building your factory.",
-    "factorio_version": "0.18",
+    "factorio_version": "1.0",
     "dependencies": [
-        "base >= 0.18.27",
-        "flib >= 0.2.0",
+        "base >= 1.0.0",
+        "flib >= 0.3.0",
         "? FNEI",
         "? what-is-it-really-used-for",
         "? RecipeBook"
