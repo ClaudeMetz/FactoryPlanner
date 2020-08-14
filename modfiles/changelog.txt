@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.0.1
+Date: 14. 08. 2020
   Changes:
     - Updated for Factorio 1.0; Happy release day everyone!🥳 It's been a great time working on this mod and interacting with all of you. There's a write-up about these past many months in the mod portal discussions and on Discord, if you're interested in reading about some numbers and feelings.
 
