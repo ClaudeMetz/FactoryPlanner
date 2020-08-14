@@ -1,13 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - Adjusted styling in some places
     - Updated the screenshots to reflect the recent redesigns
   Bugfixes:
-    -
+    - Fixed a crash when trying to edit a subfactory without an icon
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
