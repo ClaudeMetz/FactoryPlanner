@@ -10,6 +10,7 @@ function loader.run()
     -- Disable freeplay popup-message
     if DEVMODE and remote.interfaces["freeplay"] then
         remote.call("freeplay", "set_skip_intro", true)
+        remote.call("freeplay", "set_disable_crashsite", true)
     end
 
     events.rate_limiting()
