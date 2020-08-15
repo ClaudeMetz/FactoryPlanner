@@ -30,13 +30,6 @@ script.on_event("fp_cycle_production_views", function(event)
     if main_dialog.is_in_focus(player) then production_titlebar.change_view_state(player, nil) end
 end)
 
--- Breaks stuff when in selection mode TODO fix
---[[ script.on_event("fp_confirm_dialog", function(event)
-    local player = game.get_player(event.player_index)
-    if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
-    modal_dialog.exit(player, "submit")
-end) ]]
-
 
 -- ** GUI EVENTS **
 -- Fires the user action of closing a dialog
