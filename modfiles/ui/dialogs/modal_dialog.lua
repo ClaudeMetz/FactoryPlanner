@@ -110,6 +110,14 @@ modal_dialog.gui_events = {
     }
 }
 
+modal_dialog.misc_events = {
+    fp_confirm_dialog = (function(player, _)
+        if not data_util.get("flags", player).selection_mode then
+            modal_dialog.exit(player, "submit")
+        end
+    end)
+}
+
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, dialog_settings)
     if player.gui.screen["fp_frame_modal_dialog"] then return end
