@@ -89,3 +89,15 @@ function data_util.porter.get_subfactories(player, export_string)
 
     return import_factory, nil
 end
+
+
+-- TODO remove when flib adds this
+function data_util.split(s, separator)
+    local r = {}
+    for token in string.gmatch(s, "[^" .. separator .. "]+") do
+        local number_token = tonumber(token)
+        token = number_token or token
+        table.insert(r, token)
+    end
+    return r
+end

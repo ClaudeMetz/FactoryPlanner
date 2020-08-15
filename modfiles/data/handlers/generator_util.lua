@@ -160,7 +160,7 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = cutil.shallowcopy(item)}
+        indexed_list[item.type][item.name] = {index = index, item = table.shallow_copy(item)}
     end
 
     return indexed_list
