@@ -1,6 +1,3 @@
-[submodule "modfiles/lualib"]
-	path = modfiles/lualib
-	url = https://github.com/ClaudeMetz/FactorioUtilLib
 [submodule "scripts"]
 	path = scripts
 	url = https://github.com/ClaudeMetz/FactorioScripts

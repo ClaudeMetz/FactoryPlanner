@@ -589,7 +589,7 @@ end
 function production_handler.apply_fuel_choice(player, new_fuel_id_string)
     local ui_state = data_util.get("ui_state", player)
 
-    local split_string = cutil.split(new_fuel_id_string, "_")
+    local split_string = data_util.split(new_fuel_id_string, "_")
     local new_fuel_proto = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
 
     ui_state.modal_data.object.proto = new_fuel_proto
