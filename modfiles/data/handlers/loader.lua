@@ -1,57 +1,9 @@
--- The loader contains the code that runs on_load, mostly registering
--- conditional events and setting up lua-global tables as a cache
+-- The loader contains the code that runs on_load, pre-caching some data structures that are needed later
 loader = {}
-local events, caching = {}, {}
 
-
--- ** TOP LEVEL **
--- Runs all the on_load functions
-function loader.run()
-    -- Disable freeplay popup-message
-    local freeplay = remote.interfaces["freeplay"]
-    if DEVMODE and freeplay then
-        if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
-        if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
-    end
-
-    events.rate_limiting()
-
-    ORDERED_RECIPE_GROUPS = caching.ordered_recipe_groups()
-    RECIPE_MAPS = {
-        produce = caching.recipe_map_from("products"),
-        consume = caching.recipe_map_from("ingredients")
-    }
-
-    SORTED_ITEMS = caching.sorted_items()
-    IDENTIFIER_ITEM_MAP = caching.identifier_item_map()
-
-    MODULE_TIER_MAP = caching.module_tier_map()
-    MODULE_NAME_MAP = caching.module_name_map()
-end
-
-
--- ** EVENTS **
--- Register events related to GUI rate limiting
-function events.rate_limiting()
-    for _, player_table in pairs(global.players or {}) do
-        local last_action = player_table.ui_state.last_action
-        if last_action and table_size(last_action) > 0 and last_action.nth_tick ~= nil then
-            local rate_limiting_event = ui_util.rate_limiting_events[last_action.event_name]
-
-            script.on_nth_tick(last_action.nth_tick, function(event)
-                rate_limiting_event.handler(last_action.element)
-                last_action.nth_tick = nil
-                last_action.element = nil
-                script.on_nth_tick(event.nth_tick, nil)
-            end)
-        end
-    end
-end
-
-
--- ** CACHING **
+-- ** LOCAL UTIL **
 -- Returns a list of recipe groups in their proper order
-function caching.ordered_recipe_groups()
+local function ordered_recipe_groups()
     group_dict = {}
 
     -- Make a dict with all recipe groups
@@ -79,7 +31,7 @@ function caching.ordered_recipe_groups()
 end
 
 -- Maps all items to the recipes that produce or consume them ([item_type][item_name] = {[recipe_id] = true}
-function caching.recipe_map_from(item_type)
+local function recipe_map_from(item_type)
     local map = {}
 
     if not global.all_recipes.recipes then return end
@@ -96,7 +48,7 @@ end
 
 
 -- Generates a list of all items, sorted for display in the picker
-function caching.sorted_items()
+local function sorted_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
     local all_items = global.all_items
@@ -122,7 +74,7 @@ function caching.sorted_items()
 end
 
 -- Generates a table mapping item identifier to their prototypes
-function caching.identifier_item_map()
+local function identifier_item_map()
     local map = {}
 
     local all_items = global.all_items
@@ -138,7 +90,7 @@ end
 
 
 -- Generates a table containing all modules per category, ordered by tier
-function caching.module_tier_map()
+local function module_tier_map()
     local map = {}
 
     if not global.all_modules then return end
@@ -153,7 +105,7 @@ function caching.module_tier_map()
 end
 
 -- Generates a table mapping modules to their prototype by name
-function caching.module_name_map()
+local function module_name_map()
     local map = {}
 
     if not global.all_modules then return end
@@ -164,4 +116,29 @@ function caching.module_name_map()
     end
 
     return map
+end
+
+
+-- ** TOP LEVEL **
+-- Runs all the on_load functions
+function loader.run()
+    -- Disable freeplay popup-message
+    local freeplay = remote.interfaces["freeplay"]
+    if DEVMODE and freeplay then
+        if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
+        if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
+    end
+
+
+    ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
+    RECIPE_MAPS = {
+        produce = recipe_map_from("products"),
+        consume = recipe_map_from("ingredients")
+    }
+
+    SORTED_ITEMS = sorted_items()
+    IDENTIFIER_ITEM_MAP = identifier_item_map()
+
+    MODULE_TIER_MAP = module_tier_map()
+    MODULE_NAME_MAP = module_name_map()
 end
