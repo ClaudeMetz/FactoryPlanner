@@ -8,9 +8,8 @@ local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, im
 
 -- ** RATE LIMITING **
 -- Returns whether the given event is allowed to take place
--- TODO clean up when other rate limiting is gone; rename object_name to element_name
 -- This is also not made to work with non-GUI events, which I'll have to fix
--- NOT IN USE CURRENTLY
+-- TODO NOT IN USE CURRENTLY
 local function rate_limit(player, event, element_name, timeout)
     local last_action = data_util.get("ui_state", player).last_action
 

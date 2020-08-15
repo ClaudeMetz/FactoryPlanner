@@ -15,7 +15,7 @@ end)
 
 script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
-    if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
+    --if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
     if main_dialog.is_in_focus(player) then production_titlebar.handle_floor_change_click(player, "up") end
 end)
 
@@ -215,7 +215,7 @@ script.on_event(defines.events.on_gui_click, function(event)
     -- Only handle my actual events
     if string.find(element_name, "^fp_.+$") then
         -- Incorporate rate limiting
-        if ui_util.rate_limiting_active(player, event.name, element_name) then return end
+        --if ui_util.rate_limiting_active(player, event.name, element_name) then return end
 
         -- Determine click type and direction
         local click, direction, action
