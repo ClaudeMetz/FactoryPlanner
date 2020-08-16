@@ -142,7 +142,7 @@ end
 
 
 local function handle_checkbox_preference_change(player, element)
-    local type = data_util.split(element.name, "_")[4]
+    local type = split_string(element.name, "_")[4]
     local preference_name = string.gsub(element.name, "fp_checkbox_preference_" .. type .. "_", "")
 
     data_util.get("preferences", player)[preference_name] = element.state
@@ -180,7 +180,7 @@ local function handle_mb_default_change(player, element)
 end
 
 local function handle_default_prototype_change(player, element, metadata)
-    local split_name = data_util.split(element.name, "_")
+    local split_name = split_string(element.name, "_")
     local type, prototype_id, category_id = split_name[5], split_name[6], split_name[7]
 
     local modal_data = data_util.get("modal_data", player)
