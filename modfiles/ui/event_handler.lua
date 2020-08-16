@@ -6,26 +6,32 @@ local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, im
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog}
 
+
 -- ** RATE LIMITING **
 -- Returns whether the given event is allowed to take place
--- This is also not made to work with non-GUI events, which I'll have to fix
--- TODO NOT IN USE CURRENTLY
-local function rate_limit(player, event, element_name, timeout)
-    local last_action = data_util.get("ui_state", player).last_action
+local function rate_limit_action(player, event_name, tick, element_name, timeout)
+    local ui_state = data_util.get("ui_state", player)
+    local last_action = ui_state.last_action
 
-    -- Always allow action if there is no last_action or the ticks are paused
-    local limiting_active = (table_size(last_action) > 0 and not game.tick_paused
-      and event.name == last_action.event_name and element_name == last_action.object_name
-      and (event.tick - last_action.tick) < timeout)
-
-    -- Only update the last action if an action will indeed be carried out
-    if not limiting_active then
-        last_action.tick = event.tick
-        last_action.event_name = event.name
-        last_action.object_name = element_name
+    -- If this action has no timeout, reset the last action and allow it
+    if timeout == nil or game.tick_paused then
+        ui_state.last_action = nil
+        return true
     end
 
-    return (not limiting_active)
+    -- Only disallow action under these specific circumstances
+    if last_action ~= nil and last_action.event_name == event_name and (not element_name
+      or last_action.element_name == element_name) and (tick - last_action.tick) < timeout then
+        return false
+
+    else  -- set the last action if this action will actually be carried out
+        ui_state.last_action = {
+            tick = tick,
+            event_name = event_name,
+            element_name = element_name
+        }
+        return true
+    end
 end
 
 
@@ -44,7 +50,8 @@ local gui_identifier_map = {
 }
 
 local gui_timeouts = {
-    --on_gui_click = 10,  -- TODO need to use the listener one for this for now
+    on_gui_click = 4,
+    on_gui_confirmed = 20
 }
 
 
@@ -66,8 +73,7 @@ local function standard_gui_handler(player, event, event_handlers, metadata)
 
     -- If a handler_table has been found, run its handler, if it's not rate limited
     if handler_table ~= nil then
-        local timeout = handler_table.timeout
-        if (timeout == nil) or rate_limit(player, event, element_name, timeout) then
+        if rate_limit_action(player, event.name, event.tick, element_name, handler_table.timeout) then
             handler_table.handler(player, event.element, metadata)
         end
     end
@@ -165,12 +171,14 @@ end ]]
 -- is that multiple handlers can be registered to the same event, and there is no standard handler
 
 local misc_identifier_map = {
+    -- Standard events
     [defines.events.on_gui_opened] = "on_gui_opened",
     [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
     [defines.events.on_player_selected_area] = "on_player_selected_area",
     [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
     [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
     [defines.events.on_lua_shortcut] = "on_lua_shortcut",
+
     -- Keyboard shortcuts
     ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",

@@ -223,6 +223,7 @@ import_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_import",
+            timeout = 20,
             handler = (function(player, _, _)
                 import_subfactories(player)
             end)
@@ -291,6 +292,7 @@ export_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_porter_subfactory_export",
+            timeout = 20,
             handler = (function(player, _, _)
                 export_subfactories(player)
             end)

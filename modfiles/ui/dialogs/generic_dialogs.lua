@@ -32,6 +32,7 @@ chooser_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
+            timeout = 20,
             handler = (function(player, element, _)
                 handler_chooser_button_click(player, element)
             end)

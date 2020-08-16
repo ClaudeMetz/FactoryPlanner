@@ -251,6 +251,7 @@ beacon_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_sprite-button_beacon_total_amount",
+            timeout = 20,
             handler = (function(player, _, _)
                 modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
             end)
