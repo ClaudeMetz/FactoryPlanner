@@ -174,10 +174,11 @@ end ]]
 local misc_identifier_map = {
     -- Standard events
     [defines.events.on_gui_opened] = "on_gui_opened",
-    [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
-    [defines.events.on_player_selected_area] = "on_player_selected_area",
     [defines.events.on_player_display_resolution_changed] = "on_player_display_resolution_changed",
     [defines.events.on_player_display_scale_changed] = "on_player_display_scale_changed",
+    [defines.events.on_player_selected_area] = "on_player_selected_area",
+    [defines.events.on_player_cursor_stack_changed] = "on_player_cursor_stack_changed",
+    [defines.events.on_player_main_inventory_changed] = "on_player_main_inventory_changed",
     [defines.events.on_lua_shortcut] = "on_lua_shortcut",
 
     -- Keyboard shortcuts

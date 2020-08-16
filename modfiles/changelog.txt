@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added a 'request items'-button to the utility dialog that requests all the items needed to build the current subfactory/floor
+    - Added a 'request items'-button to the utility dialog that requests all the items needed to build the current subfactory/floor. The buttons indicating what is in your inventory are now also updated dynamically when your inventory content changes.
   Changes:
     - Re-added the keyboard shortcut to confirm modal dialogs by pressing 'Enter'
     - Properly enabled rate limiting again to avoid duplicate GUI actions

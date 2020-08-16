@@ -102,7 +102,7 @@ function utility_structures.components(player, modal_data)
         end
     end
 
-    modal_data.missing_items = {}  -- one flat structure works because there is no overlap between machines and modules
+    modal_data.missing_items = {}  -- a flat structure works because there is no overlap between machines and modules
     refresh_component_flow("machine")
     refresh_component_flow("module")
 
@@ -183,7 +183,18 @@ utility_dialog.gui_events = {
                 data_util.get("context", player).subfactory.notes = element.text
             end)
         }
-    },
+    }
+}
+
+utility_dialog.misc_events = {
+    on_player_main_inventory_changed = (function(player, _)
+        local ui_state = data_util.get("ui_state", player)
+
+        if ui_state.modal_dialog_type == "utility" then
+            ui_state.modal_data.inventory_contents = player.get_main_inventory().get_contents()
+            utility_structures.components(player, ui_state.modal_data)
+        end
+    end)
 }
 
 function utility_dialog.open(player, modal_data)
