@@ -102,7 +102,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
 
     -- Toggles the selected general or production preference (This type/preference detection is stupid)
     elseif string.find(element_name, "^fp_checkbox_[a-z]+_preferences_[a-z_]+$") then
-        local type = data_util.split(element_name, "_")[3]
+        local type = split_string(element_name, "_")[3]
         local preference = string.gsub(element_name, "fp_checkbox_" .. type .. "_preferences_", "")
         preferences_dialog.handle_checkbox_change(player, type, preference, event.element.state)
 
@@ -319,7 +319,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Reacts to any subfactory_pane item button being pressed (class name being a string is fine)
         elseif string.find(element_name, "^fp_sprite%-button_subpane_[a-zA-Z]+_%d+$") then
-            local split_string = data_util.split(element_name, "_")
+            local split_string = split_string(element_name, "_")
             subfactory_pane["handle_" .. split_string[4] .. "_element_click"](player, split_string[5],
               click, direction, action, event.alt)
 
@@ -366,7 +366,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Changes the machine of the selected (assembly) line
         elseif string.find(element_name, "^fp_sprite%-button_line_machine_%d+_%d+$") then
-            local split_string = data_util.split(element_name, "_")
+            local split_string = split_string(element_name, "_")
             production_handler.handle_machine_change(player, split_string[5], split_string[6], click, direction)
 
         -- Handles click on the add-module-button on an (assembly) line
@@ -376,7 +376,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Handles click on any module button on an (assembly) line
         elseif string.find(element_name, "^fp_sprite%-button_line_module_%d+_%d+$") then
-            local split_string = data_util.split(element_name, "_")
+            local split_string = split_string(element_name, "_")
             production_handler.handle_line_module_click(player, split_string[5], split_string[6], click,
               direction, action, event.alt)
 
@@ -387,7 +387,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Handles click on any beacon (module or beacon) button on an (assembly) line
         elseif string.find(element_name, "^fp_sprite%-button_line_beacon_[a-z]+_%d+$") then
-            local split_string = data_util.split(element_name, "_")
+            local split_string = split_string(element_name, "_")
             production_handler.handle_line_beacon_click(player, split_string[6], split_string[5], click,
               direction, action, event.alt)
 
@@ -397,12 +397,12 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         --[[ -- Reacts to any default prototype preference button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_preferences_[a-z]+_%d+_?%d*$") then
-            local split_string = data_util.split(element_name, "_")
+            local split_string = split_string(element_name, "_")
             preferences_dialog.handle_prototype_change(player, split_string[4], split_string[5], split_string[6], event.alt) ]]
 
         -- Reacts to any (assembly) line item button being pressed (strings for class names are fine)
         elseif string.find(element_name, "^fp_sprite%-button_line_%d+_[a-zA-Z]+_%d+$") then
-            local split_string = data_util.split(element_name, "_")
+            local split_string = split_string(element_name, "_")
             if split_string[5] == "Fuel" then
                 production_handler.handle_fuel_button_click(player, split_string[4], click, direction, event.alt)
             else

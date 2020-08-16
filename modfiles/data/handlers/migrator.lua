@@ -31,8 +31,8 @@ local migration_masterlist = {
 -- Compares two mod versions, returns true if v1 is an earlier version than v2 (v1 < v2)
 -- Version numbers have to be of the same structure: same amount of numbers, separated by a '.'
 local function compare_versions(v1, v2)
-    local split_v1 = data_util.split(v1, ".")
-    local split_v2 = data_util.split(v2, ".")
+    local split_v1 = split_string(v1, ".")
+    local split_v2 = split_string(v2, ".")
 
     for i = 1, #split_v1 do
         if split_v1[i] == split_v2[i] then
