@@ -71,7 +71,7 @@ local function reset_ui_state(player)
     local ui_state_table = global.players[player.index].ui_state
 
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
-    ui_state_table.last_action = {}  -- The last user action, used for rate limiting
+    ui_state_table.last_action = nil  -- The last user action, used for rate limiting
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data

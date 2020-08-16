@@ -295,6 +295,7 @@ recipe_dialog.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_button_recipe_pick_%d+$",
+            timeout = 20,
             handler = (function(player, element, _)
                 local recipe_id = tonumber(string.match(element.name, "%d+"))
                 attempt_adding_line(player, recipe_id)

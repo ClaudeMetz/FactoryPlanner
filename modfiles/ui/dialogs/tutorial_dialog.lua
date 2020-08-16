@@ -75,6 +75,7 @@ tutorial_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_tutorial_add_example",
+            timeout = 20,
             handler = (function(player, _, _)
                 data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
                 modal_dialog.exit(player, "cancel")
