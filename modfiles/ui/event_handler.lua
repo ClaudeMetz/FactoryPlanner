@@ -185,17 +185,16 @@ local misc_identifier_map = {
     ["fp_focus_searchfield"] = "fp_focus_searchfield"
 }
 
---[[ local misc_timeouts = {
-} ]]
+local misc_timeouts = {
+    fp_confirm_dialog = 20
+}
 
 -- ** SPECIAL HANDLERS **
 local special_misc_handlers = {}
 
 special_misc_handlers.on_gui_opened = (function(_, event)
     -- This should only fire when a UI not associated with FP is opened, to properly close FP's stuff
-    if event.gui_type ~= defines.gui_type.custom or not event.element.get_mod() == "factoryplanner" then
-        return true
-    end
+    return (event.gui_type ~= defines.gui_type.custom or not event.element.get_mod() == "factoryplanner")
 end)
 
 
@@ -206,10 +205,9 @@ for _, object in pairs(objects_that_need_handling) do
         for event_name, handler in pairs(object.misc_events) do
             misc_event_cache[event_name] = misc_event_cache[event_name] or {
                 registered_handlers = {},
-                special_handler = special_misc_handlers[event_name]
+                special_handler = special_misc_handlers[event_name],
+                timeout = misc_timeouts[event_name]
             }
-
-            -- TODO missing rate limiting stuff
 
             table.insert(misc_event_cache[event_name].registered_handlers, handler)
         end
@@ -217,7 +215,7 @@ for _, object in pairs(objects_that_need_handling) do
 end
 
 
-function event_handler.handle_misc_event(event)
+local function handle_misc_event(event)
     local event_name = event.input_name or event.name -- also handles keyboard shortcuts
     local event_handlers = misc_event_cache[misc_identifier_map[event_name]]
 
@@ -225,8 +223,12 @@ function event_handler.handle_misc_event(event)
         -- I will assume every one of the events has a player attached
         local player = game.get_player(event.player_index)
 
-        -- If a special handler is set, it needs to return true
-        -- before we can proceed with calling all the registered handlers
+        -- Check if the action is allowed to be carried out by rate limiting
+        if not rate_limit_action(player, event_name, event.tick, nil, event_handlers.timeout) then
+            return
+        end
+
+        -- If a special handler is set, it needs to return true before proceeding with the registered handlers
         local special_handler = event_handlers.special_handler
         if special_handler and not event_handlers.special_handler(player, event) then
             return
@@ -240,5 +242,5 @@ end
 
 -- Register all the misc events from the identifier map
 for event_id, _ in pairs(misc_identifier_map) do
-    script.on_event(event_id, event_handler.handle_misc_event)
+    script.on_event(event_id, handle_misc_event)
 end
