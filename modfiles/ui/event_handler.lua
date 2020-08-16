@@ -9,6 +9,7 @@ local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, im
 
 -- ** RATE LIMITING **
 -- Returns whether the given event is allowed to take place
+-- This is essentially to prevent duplicate commands in quick succession, enabled by lag
 local function rate_limit_action(player, event_name, tick, element_name, timeout)
     local ui_state = data_util.get("ui_state", player)
     local last_action = ui_state.last_action
