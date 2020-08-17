@@ -151,7 +151,7 @@ local function prototype_attributes()
 
     for _, type in pairs(relevant_prototypes) do
         local all_prototypes = global["all_" .. type]
-        if not all_prototypes then return end
+        if not all_prototypes or not all_prototypes.structure_type then return end
 
         local generator_function = attribute_generators[type]
 
