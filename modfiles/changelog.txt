@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.0.4
+Date: 17. 08. 2020
   Features:
     - Added a 'request items'-button to the utility dialog that requests all the items needed to build the current subfactory/floor. The buttons indicating what is in your inventory are now also updated dynamically when your inventory content changes.
   Changes:
