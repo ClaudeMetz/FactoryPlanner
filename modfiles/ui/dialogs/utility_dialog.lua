@@ -22,18 +22,53 @@ local function add_utility_box(player, ui_elements, type, show_tooltip, show_swi
     flow_custom.style.right_margin = 12
 
     -- Scope switch
+    local scope_switch = nil
     if show_switch then
         local utility_scope = data_util.get("preferences", player).utility_scopes[type]
         local switch_state = (utility_scope == "Subfactory") and "left" or "right"
-        flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type), switch_state=switch_state,
-          left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
+        scope_switch = flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type),
+          switch_state=switch_state, left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
 
-    return bordered_frame, flow_custom
+    return bordered_frame, flow_custom, scope_switch
 end
 
 
 local utility_structures = {}
+
+local function update_request_button(player, modal_data, subfactory)
+    local ui_elements = modal_data.ui_elements
+
+    local button_enabled, switch_enabled = true, true
+    local caption, tooltip, font_color = "", "", {}
+
+    if subfactory.item_request_proxy ~= nil then
+        caption = {"fp.cancel_request"}
+        font_color = {0.8, 0, 0}
+        switch_enabled = false
+
+    else
+        local scope = data_util.get("preferences", player).utility_scopes.components
+        local scope_string = {"fp.pl_" .. scope:lower(), 1}
+
+        caption, tooltip = {"fp.request_items"}, {"fp.request_items_tt", scope_string}
+        local logistics_research = player.force.technologies["logistic-robotics"]
+
+        if not logistics_research.researched then
+            tooltip = {"fp.request_logistics_not_researched", logistics_research.localised_name}
+            button_enabled = false
+        elseif table_size(modal_data.missing_items) == 0 then
+            tooltip = {"fp.request_no_items_necessary", scope_string}
+            button_enabled = false
+        end
+    end
+
+    ui_elements.request_button.caption = caption
+    ui_elements.request_button.tooltip = tooltip
+    ui_elements.request_button.style.font_color = font_color
+    ui_elements.request_button.enabled = button_enabled
+    ui_elements.scope_switch.enabled = switch_enabled
+end
 
 function utility_structures.components(player, modal_data)
     local scope = data_util.get("preferences", player).utility_scopes.components
@@ -42,11 +77,14 @@ function utility_structures.components(player, modal_data)
     local ui_elements = modal_data.ui_elements
 
     if ui_elements.components_box == nil then
-        local components_box, custom_flow = add_utility_box(player, modal_data.ui_elements, "components", true, true)
+        local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.ui_elements,
+          "components", true, true)
         ui_elements.components_box = components_box
+        ui_elements.scope_switch = scope_switch
 
         ui_elements.request_button = custom_flow.add{type="button", name="fp_button_utility_request_items",
-          caption={"fp.request_items"}, style="rounded_button", mouse_button_filter={"left"}}
+          style="rounded_button", mouse_button_filter={"left"}}
+        ui_elements.request_button.style.width = 115
 
         local table_components = components_box.add{type="table", column_count=2}
         table_components.style.horizontal_spacing = 24
@@ -107,19 +145,10 @@ function utility_structures.components(player, modal_data)
     refresh_component_flow("module")
 
 
-    local logistics_research = player.force.technologies["logistic-robotics"]
-    local tooltip, enabled = {"fp.request_items_tt", {"fp.pl_" .. lower_scope, 1}}, true
+    local subfactory = data_util.get("context", player).subfactory
+    Subfactory.validate_item_request_proxy(subfactory)
 
-    if not logistics_research.researched then
-        tooltip = {"fp.request_logistics_not_researched", logistics_research.localised_name}
-        enabled = false
-    elseif table_size(modal_data.missing_items) == 0 then
-        tooltip = {"fp.request_no_items_necessary"}
-        enabled = false
-    end
-
-    ui_elements.request_button.tooltip = tooltip
-    ui_elements.request_button.enabled = enabled
+    update_request_button(player, modal_data, subfactory)
 end
 
 function utility_structures.notes(player, modal_data)
@@ -134,21 +163,38 @@ function utility_structures.notes(player, modal_data)
 end
 
 
-local function request_items(player)
-    local items_to_request = data_util.get("modal_data", player).missing_items
-
-    -- This crazy way to request items actually works, and is way easier than setting logistic requests
-    -- The advantage that is has is that the delivery is one-time, not a constant request
-    -- The disadvantage is that it's weird to have construction bots bring you stuff
-    player.surface.create_entity{name="item-request-proxy", position=player.position, force=player.force,
-      target=player.character, modules=items_to_request}
-end
-
 local function handle_scope_change(player, element)
     local scope_type = string.gsub(element.name, "fp_switch_utility_scope_", "")
     local utility_scope = (element.switch_state == "left") and "Subfactory" or "Floor"
     data_util.get("preferences", player).utility_scopes[scope_type] = utility_scope
     utility_structures.components(player, data_util.get("modal_data", player))
+end
+
+local function handle_item_request(player)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+
+    if subfactory.item_request_proxy then  -- if an item_proxy is set, cancel it
+        Subfactory.destroy_item_request_proxy(subfactory)
+    else
+        -- This crazy way to request items actually works, and is way easier than setting logistic requests
+        -- The advantage that is has is that the delivery is one-time, not a constant request
+        -- The disadvantage is that it's weird to have construction bots bring you stuff
+        subfactory.item_request_proxy = player.surface.create_entity{name="item-request-proxy",
+          position=player.position, force=player.force, target=player.character,
+          modules=ui_state.modal_data.missing_items}
+    end
+
+    update_request_button(player, ui_state.modal_data, subfactory)
+end
+
+local function handle_inventory_change(player)
+    local ui_state = data_util.get("ui_state", player)
+
+    if ui_state.modal_dialog_type == "utility" then
+        ui_state.modal_data.inventory_contents = player.get_main_inventory().get_contents()
+        utility_structures.components(player, ui_state.modal_data)
+    end
 end
 
 
@@ -164,7 +210,7 @@ utility_dialog.gui_events = {
             name = "fp_button_utility_request_items",
             timeout = 20,
             handler = (function(player, _, _)
-                request_items(player)
+                handle_item_request(player)
             end)
         }
     },
@@ -188,12 +234,7 @@ utility_dialog.gui_events = {
 
 utility_dialog.misc_events = {
     on_player_main_inventory_changed = (function(player, _)
-        local ui_state = data_util.get("ui_state", player)
-
-        if ui_state.modal_dialog_type == "utility" then
-            ui_state.modal_data.inventory_contents = player.get_main_inventory().get_contents()
-            utility_structures.components(player, ui_state.modal_data)
-        end
+        handle_inventory_change(player)
     end)
 }
 
