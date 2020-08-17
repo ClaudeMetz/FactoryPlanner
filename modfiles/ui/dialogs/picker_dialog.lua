@@ -193,13 +193,7 @@ local function add_item_picker(parent_flow, player)
     -- Catch up on addding the last item flow and groups row counts
     current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
     max_item_rows = math.max(current_item_rows, max_item_rows)
-
-    -- Determine the highest item group panel and set them all to that height
-    local picker_flow_height = max_item_rows * 40
-    for _, flow_group in pairs(group_flow_cache) do
-        -- TODO this should really set the scroll pane height, but that glitches out for some reason
-        flow_group.style.height = picker_flow_height
-    end
+    frame_filters.style.natural_height = max_item_rows * 40
 
     select_item_group(ui_state.modal_data, 1)
 end

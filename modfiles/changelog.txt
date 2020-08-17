@@ -8,7 +8,7 @@ Date: 00. 00. 0000
     - Properly enabled rate limiting again to avoid duplicate GUI actions
     - Improved performance when opening the preferences dialog
   Bugfixes:
-    -
+    - Fixed that the product picker would sometimes show a scrollbar unnecessarily
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
