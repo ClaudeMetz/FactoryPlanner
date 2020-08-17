@@ -17,6 +17,7 @@ function Subfactory.init(name, icon, timescale_setting)
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
         selected_floor = nil,
+        item_request_proxy = nil,
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory"
@@ -113,6 +114,21 @@ function Subfactory.update_product_definitions(self, new_defined_by)
 end
 
 
+function Subfactory.validate_item_request_proxy(self)
+    local item_request_proxy = self.item_request_proxy
+    if item_request_proxy then
+        if not item_request_proxy.valid or table_size(item_request_proxy.item_requests) == 0 then
+            Subfactory.destroy_item_request_proxy(self)
+        end
+    end
+end
+
+function Subfactory.destroy_item_request_proxy(self)
+    self.item_request_proxy.destroy{raise_destroy=false}
+    self.item_request_proxy = nil
+end
+
+
 function Subfactory.pack(self)
     return {
         name = self.name,
@@ -151,6 +167,8 @@ function Subfactory.validate(self)
     -- Floor validation is called on the top floor, which recursively goes through its subfloors
     local top_floor = Subfactory.get(self, "Floor", 1)
     self.valid = Floor.validate(top_floor) and self.valid
+
+    Subfactory.validate_item_request_proxy(self)
 
     -- return value is not needed here
 end
