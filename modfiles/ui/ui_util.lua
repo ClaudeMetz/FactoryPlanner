@@ -3,7 +3,6 @@ require("mod-gui")
 ui_util = {
     mod_gui = {},
     context = {},
-    attributes = {},
     switch = {}
 }
 
@@ -254,6 +253,19 @@ function ui_util.verify_subfactory_icon(subfactory)
     end
 end
 
+-- Returns the attribute string for the given prototype
+-- Could figure out structure type itself, but that's slower
+function ui_util.get_attributes(type, prototype)
+    local all_prototypes = global["all_" .. type]
+
+    if all_prototypes.structure_type == "simple" then
+        return PROTOTYPE_ATTRIBUTES[type][prototype.id]
+    else  -- structure_type == "complex"
+        local category_id = all_prototypes.map[prototype.category]
+        return PROTOTYPE_ATTRIBUTES[type][category_id][prototype.id]
+    end
+end
+
 -- Executes an alt-action on the given action_type and data
 function ui_util.execute_alt_action(player, action_type, data)
     local alt_action = data_util.get("settings", player).alt_action
@@ -323,35 +335,6 @@ function ui_util.context.set_floor(player, floor)
     local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
     context.floor = floor
-end
-
-
--- **** Attributes ****
--- Returns a tooltip containing the attributes of the given beacon prototype
-function ui_util.attributes.beacon(beacon)
-    return {"", {"fp.module_slots"}, ": " .. beacon.module_limit .. "\n",
-           {"fp.effectivity"}, ": " .. (beacon.effectivity * 100) .. "%\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
-end
-
--- Returns a tooltip containing the attributes of the given fuel prototype
-function ui_util.attributes.fuel(fuel)
-    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3), "\n",
-           {"fp.emissions_multiplier"}, ": " .. fuel.emissions_multiplier}
-end
-
--- Returns a tooltip containing the attributes of the given belt prototype
-function ui_util.attributes.belt(belt)
-    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.items"}, "/", {"fp.unit_second"}}
-end
-
--- Returns a tooltip containing the attributes of the given machine prototype
-function ui_util.attributes.machine(machine)
-    local energy_usage = machine.energy_usage * 60
-    return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
-           {"fp.cpollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
-           {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
 
