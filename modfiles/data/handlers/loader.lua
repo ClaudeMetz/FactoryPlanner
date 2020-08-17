@@ -119,16 +119,74 @@ local function module_name_map()
 end
 
 
+local attribute_generators = {}
+
+function attribute_generators.beacons(beacon)
+    return {"", {"fp.module_slots"}, ": " .. beacon.module_limit .. "\n",
+           {"fp.effectivity"}, ": " .. (beacon.effectivity * 100) .. "%\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+end
+
+function attribute_generators.fuels(fuel)
+    return {"", {"fp.fuel_value"}, ": ", ui_util.format_SI_value(fuel.fuel_value, "J", 3), "\n",
+           {"fp.emissions_multiplier"}, ": " .. fuel.emissions_multiplier}
+end
+
+function attribute_generators.belts(belt)
+    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.items"}, "/", {"fp.unit_second"}}
+end
+
+function attribute_generators.machines(machine)
+    local energy_usage = machine.energy_usage * 60
+    return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
+           {"fp.cpollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
+           {"fp.module_slots"}, ": " .. machine.module_limit}
+end
+
+-- Generates the attribute strings for some types of prototypes
+local function prototype_attributes()
+    local relevant_prototypes = {"belts", "beacons", "fuels", "machines"}
+    local attributes = {}
+
+    for _, type in pairs(relevant_prototypes) do
+        local all_prototypes = global["all_" .. type]
+        if not all_prototypes then return end
+
+        local generator_function = attribute_generators[type]
+
+        attributes[type] = {}
+        local attribute_type = attributes[type]
+
+        if all_prototypes.structure_type == "simple" then
+            for proto_id, prototype in pairs(all_prototypes[type]) do
+                attribute_type[proto_id] = generator_function(prototype)
+            end
+
+        else  -- structure_type == "complex"
+            for category_id, category in pairs(all_prototypes.categories) do
+                attribute_type[category_id] = {}
+                local attribute_category = attribute_type[category_id]
+
+                for proto_id, prototype in pairs(category[type]) do
+                    attribute_category[proto_id] = generator_function(prototype)
+                end
+            end
+        end
+    end
+
+    return attributes
+end
+
+
 -- ** TOP LEVEL **
 -- Runs all the on_load functions
 function loader.run()
-    -- Disable freeplay popup-message
     local freeplay = remote.interfaces["freeplay"]
-    if DEVMODE and freeplay then
+    if DEVMODE and freeplay then  -- Disable freeplay popup-message
         if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
-
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {
@@ -141,4 +199,6 @@ function loader.run()
 
     MODULE_TIER_MAP = module_tier_map()
     MODULE_NAME_MAP = module_name_map()
+
+    PROTOTYPE_ATTRIBUTES = prototype_attributes()
 end

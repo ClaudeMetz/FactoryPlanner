@@ -27,7 +27,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
             button_number = button_number,
             localised_name = machine_proto.localised_name,
             amount_line = amount_line,
-            tooltip_appendage = ui_util.attributes.machine(machine_proto),
+            tooltip_appendage = ui_util.get_attributes("machines", machine_proto),
             selected = (current_proto.id == machine_proto.id)
         }
 
@@ -65,7 +65,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
             button_number = fuel_amount,
             localised_name = fuel_proto.localised_name,
             amount_line = amount_line,
-            tooltip_appendage = ui_util.attributes.fuel(fuel_proto),
+            tooltip_appendage = ui_util.get_attributes("fuels", fuel_proto),
             selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
         }
 
