@@ -82,9 +82,11 @@ function utility_structures.components(player, modal_data)
         ui_elements.components_box = components_box
         ui_elements.scope_switch = scope_switch
 
-        ui_elements.request_button = custom_flow.add{type="button", name="fp_button_utility_request_items",
+        local button_request = custom_flow.add{type="button", name="fp_button_utility_request_items",
           style="rounded_button", mouse_button_filter={"left"}}
-        ui_elements.request_button.style.width = 115
+        button_request.style.width = 115
+        button_request.style.height = 26
+        ui_elements.request_button = button_request
 
         local table_components = components_box.add{type="table", column_count=2}
         table_components.style.horizontal_spacing = 24
