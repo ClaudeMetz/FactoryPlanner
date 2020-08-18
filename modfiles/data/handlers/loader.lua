@@ -180,7 +180,7 @@ end
 
 
 -- ** TOP LEVEL **
--- Runs all the on_load functions
+-- Creates some lua-global tables for convenience and performance
 function loader.run()
     local freeplay = remote.interfaces["freeplay"]
     if DEVMODE and freeplay then  -- Disable freeplay popup-message
