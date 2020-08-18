@@ -20,12 +20,10 @@ require("data.calculation.interface")
 init = {}
 
 -- ** LOCAL UTIL **
--- Writes the current user mod settings to their player_table
 local function reload_settings(player)
+    -- Writes the current user mod settings to their player_table, for read-performance
     local settings = settings.get_player_settings(player)
-    -- Delete the whole table first in case a setting got removed
-    global.players[player.index].settings = {}
-    local settings_table = global.players[player.index].settings
+    local settings_table = {}
 
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
@@ -33,10 +31,12 @@ local function reload_settings(player)
     settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+
+    global.players[player.index].settings = settings_table
 end
 
--- Reloads the user preferences, incorporating previous preferences if possible
 local function reload_preferences(player)
+    -- Reloads the user preferences, incorporating previous preferences if possible
     local preferences = global.players[player.index].preferences
 
     preferences.pause_on_interface = preferences.pause_on_interface or false
@@ -64,11 +64,8 @@ local function reload_preferences(player)
     }
 end
 
--- (Re)sets the UI state of the given player
 local function reset_ui_state(player)
-    -- Delete the whole table first in case ui_state parameter got removed
-    global.players[player.index].ui_state = {}
-    local ui_state_table = global.players[player.index].ui_state
+    local ui_state_table = {}
 
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.last_action = nil  -- The last user action, used for rate limiting
@@ -84,6 +81,9 @@ local function reset_ui_state(player)
         archive_open = false,  -- Wether the players subfactory archive is currently open
         selection_mode = false  -- Whether the player is currently using a selector
     }
+
+    -- The UI table gets replaced because the whole interface is reset
+    global.players[player.index].ui_state = ui_state_table
 end
 
 
@@ -125,7 +125,7 @@ local function update_player_table(player)
     return player_table
 end
 
--- Destroys all GUI's so they are loaded anew the next time they are shown
+-- Destroys all GUIs so they are loaded anew the next time they are shown
 local function reset_player_gui(player)
     local mod_gui_button = mod_gui.get_button_flow(player)["fp_button_toggle_interface"]
     if mod_gui_button then mod_gui_button.destroy() end
@@ -139,8 +139,8 @@ local function reset_player_gui(player)
 end
 
 
--- Initiates all factorio-global variables
 local function global_init()
+    -- Initiates all factorio-global variables
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
 
@@ -154,7 +154,7 @@ local function global_init()
     end
 end
 
--- Runs through all updates that need to be made after the config changed
+-- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
 local function handle_configuration_change()
     prototyper.setup()  -- Setup prototyper
     migrator.migrate_global()  -- Migrate global
@@ -190,18 +190,14 @@ end
 
 
 -- ** TOP LEVEL EVENTS **
--- Sets up global data structure of the mod
 script.on_init(global_init)
 
--- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
 script.on_configuration_changed(handle_configuration_change)
 
--- Creates some lua-global tables for convenience and performance
 script.on_load(loader.run)
 
 
 -- ** PLAYER DATA EVENTS **
--- Fires when a player loads into a game for the first time
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
@@ -215,7 +211,6 @@ script.on_event(defines.events.on_player_created, function(event)
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
 end)
 
--- Fires when a player is irreversibly removed from a game
 script.on_event(defines.events.on_player_removed, function(event)
     global.players[event.player_index] = nil
 end)
