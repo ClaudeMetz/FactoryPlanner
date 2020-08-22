@@ -122,7 +122,7 @@ end
 
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
-function calculation.update(player, subfactory, refresh)
+function calculation.update(player, subfactory)
     if subfactory ~= nil and subfactory.valid then
         local player_table = data_util.get("table", player)
         -- Save the active subfactory in global so the model doesn't have to pass it around
@@ -132,8 +132,6 @@ function calculation.update(player, subfactory, refresh)
         model.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
     end
-
-    if refresh then main_dialog.refresh(player) end
 end
 
 -- Updates the given subfactory's ingredient satisfactions

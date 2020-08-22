@@ -270,13 +270,13 @@ function import_dialog.close(player, action)
         for _, table_row in pairs(ui_state.modal_data.ui_elements.table_rows) do
             if table_row.checkbox.state == true then
                 local imported_subfactory = Factory.add(factory, table_row.subfactory)
-                calculation.update(player, imported_subfactory, false)
+                calculation.update(player, imported_subfactory)
                 first_subfactory = first_subfactory or imported_subfactory
             end
         end
 
         ui_util.context.set_subfactory(player, first_subfactory)
-        main_dialog.refresh(player)
+        main_dialog.refresh(player, nil)
     end
 end
 

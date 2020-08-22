@@ -71,9 +71,10 @@ local function reset_ui_state(player)
     local ui_state_table = {}
 
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
-    ui_state_table.last_action = nil  -- The last user action, used for rate limiting
+    ui_state_table.last_action = nil  -- The last user action (used for rate limiting)
     ui_state_table.view_state = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
+    ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
@@ -185,7 +186,7 @@ local function handle_configuration_change()
         local player_table = global.players[index]
         for _, factory_name in pairs{"factory", "archive"} do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                calculation.update(player, subfactory, false)
+                calculation.update(player, subfactory)
             end
         end
     end
@@ -231,7 +232,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         elseif event.setting == "fp_subfactory_items_per_row" or
           event.setting == "fp_floor_recipes_at_once" or
           event.setting == "fp_alt_action" then
-            main_dialog.refresh(player, true)
+            main_dialog.rebuild(player)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
             data_util.update_all_product_definitions(player)

@@ -19,7 +19,6 @@ local function handler_chooser_button_click(player, element)
     local element_id = string.gsub(element.name, "fp_sprite%-button_chooser_element_", "")
     data_util.get("modal_data", player).click_handler(player, element_id)
     modal_dialog.exit(player, "cancel")
-    main_dialog.refresh(player)
 end
 
 

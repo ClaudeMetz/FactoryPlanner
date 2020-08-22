@@ -8,6 +8,7 @@ local getter_functions = {
     settings = (function(index) return global.players[index].settings end),
     preferences = (function(index) return global.players[index].preferences end),
     ui_state = (function(index) return global.players[index].ui_state end),
+    main_elements = (function(index) return global.players[index].ui_state.main_elements end),
     context = (function(index) return global.players[index].ui_state.context end),
     modal_data = (function(index) return global.players[index].ui_state.modal_data end),
     ui_elements = (function(index) return global.players[index].ui_state.modal_data.ui_elements end),
@@ -27,16 +28,21 @@ function data_util.add_subfactories_by_string(player, export_string, refresh_int
     local first_subfactory = Factory.import_by_string(context.factory, player, export_string)
 
     ui_util.context.set_subfactory(player, first_subfactory)
-    calculation.update(player, first_subfactory, refresh_interface)
+    calculation.update(player, first_subfactory)
+    if refresh_interface then main_dialog.refresh(player, nil) end
 end
 
 -- Goes through every subfactory's top level products and updates their defined_by
 function data_util.update_all_product_definitions(player)
     local player_table = data_util.get("table", player)
+
     local defined_by = player_table.settings.belts_or_lanes
     Factory.update_product_definitions(player_table.factory, defined_by)
     Factory.update_product_definitions(player_table.archive, defined_by)
-    main_dialog.refresh(player, true)
+
+    local subfactory = player_table.ui_state.context.subfactory
+    calculation.update(player, subfactory)
+    main_dialog.refresh(player, "subfactory")
 end
 
 
