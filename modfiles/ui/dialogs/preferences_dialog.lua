@@ -299,6 +299,6 @@ function preferences_dialog.close(player, _)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
 
-    if refresh.main_dialog then main_dialog.refresh(player)
-    elseif refresh.production_table then production_table.refresh(player) end
+    if refresh.main_dialog then main_dialog.refresh(player, "subfactory")
+    elseif refresh.production_table then main_dialog.refresh(player, {"production_table"}) end
 end

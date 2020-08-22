@@ -88,7 +88,7 @@ tutorial_dialog.gui_events = {
             handler = (function(player, element)
                 local new_state = ui_util.switch.convert_to_boolean(element.switch_state)
                 data_util.get("preferences", player).tutorial_mode = new_state
-                main_dialog.refresh(player)
+                main_dialog.refresh(player, nil)
             end)
         }
     }

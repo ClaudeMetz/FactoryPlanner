@@ -186,10 +186,11 @@ end
 
 
 function modal_dialog.enter_selection_mode(player, selector_name)
-    data_util.get("flags", player).selection_mode = true
+    local ui_state = data_util.get("ui_state", player)
+    ui_state.flags.selection_mode = true
     player.cursor_stack.set_stack(selector_name)
 
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_main_dialog = ui_state.main_elements.main_frame
     local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
 
     frame_main_dialog.visible = false
@@ -200,10 +201,11 @@ function modal_dialog.enter_selection_mode(player, selector_name)
 end
 
 function modal_dialog.leave_selection_mode(player)
-    data_util.get("flags", player).selection_mode = false
+    local ui_state = data_util.get("ui_state", player)
+    ui_state.flags.selection_mode = false
     player.cursor_stack.set_stack(nil)
 
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_main_dialog = ui_state.main_elements.main_frame
     local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
 
     frame_main_dialog.visible = true

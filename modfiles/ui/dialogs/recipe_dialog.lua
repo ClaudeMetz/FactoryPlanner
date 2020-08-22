@@ -146,7 +146,8 @@ local function attempt_adding_line(player, recipe_id)
         end
 
         if message ~= nil then titlebar.enqueue_message(player, message.text, message.type, 2) end
-        calculation.update(player, ui_state.context.subfactory, true)
+        calculation.update(player, ui_state.context.subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 
     modal_dialog.exit(player, "cancel")

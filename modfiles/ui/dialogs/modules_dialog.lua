@@ -214,11 +214,13 @@ function module_dialog.close(player, action)
             Machine.add(modal_data.machine, new_module)
         end
 
-        calculation.update(player, subfactory, true)
-
     elseif action == "delete" then
         Machine.remove(modal_data.machine, current_module)
-        calculation.update(player, subfactory, true)
+    end
+
+    if action ~= "cancel" then
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
@@ -321,11 +323,14 @@ function beacon_dialog.close(player, action)
         Beacon.set_module(beacon, module)
 
         Line.set_beacon(modal_data.line, beacon)
-        calculation.update(player, subfactory, true)
 
     elseif action == "delete" then
         Line.set_beacon(modal_data.line, nil)
-        calculation.update(player, subfactory, true)
+    end
+
+    if action ~= "cancel" then
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
