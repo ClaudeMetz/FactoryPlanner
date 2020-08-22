@@ -3,7 +3,7 @@ chooser_dialog = {}
 options_dialog = {}
 
 -- ** CHOOSER **
-local function add_chooser_button(ui_elements, definition)
+local function add_chooser_button(modal_elements, definition)
     local element_name = "fp_sprite-button_chooser_element_" .. definition.element_id
     local style = (definition.selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
@@ -11,7 +11,7 @@ local function add_chooser_button(ui_elements, definition)
       or definition.localised_name
     local tooltip = {"", first_line, "\n", definition.amount_line, "\n\n", definition.tooltip_appendage}
 
-    ui_elements.choices_table.add{type="sprite-button", name=element_name, style=style, tooltip=tooltip,
+    modal_elements.choices_table.add{type="sprite-button", name=element_name, style=style, tooltip=tooltip,
       sprite=definition.sprite, number=definition.button_number, mouse_button_filter={"left"}}
 end
 
@@ -41,17 +41,17 @@ chooser_dialog.gui_events = {
 
 -- Handles populating the chooser dialog
 function chooser_dialog.open(_, modal_data)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
-    local content_frame = ui_elements.content_frame
+    local content_frame = modal_elements.content_frame
     content_frame.add{type="label", caption=modal_data.text}
 
     local frame_choices = content_frame.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
     frame_choices.style.margin = {10, 0, 4, 0}
-    ui_elements.choices_table = frame_choices.add{type="table", column_count=8, style="filter_slot_table"}
+    modal_elements.choices_table = frame_choices.add{type="table", column_count=8, style="filter_slot_table"}
 
     for _, definition in ipairs(modal_data.button_definitions) do
-        add_chooser_button(ui_elements, definition)
+        add_chooser_button(modal_elements, definition)
     end
 end
 
@@ -72,13 +72,13 @@ local elements = {}
 -- ** TEXTFIELD **
 elements.textfield = {prefix = "fp_textfield_options_"}
 
-function elements.textfield.create(table, field, ui_elements)
+function elements.textfield.create(table, field, modal_elements)
     local element_name = elements.textfield.prefix .. field.name
     local textfield = table.add{type="textfield", name=element_name, text=field.text}
     textfield.style.width = (field.width or 180)
     if field.focus then ui_util.select_all(textfield) end
 
-    ui_elements[element_name] = textfield
+    modal_elements[element_name] = textfield
     return element_name
 end
 
@@ -89,14 +89,14 @@ end
 -- ** NUMERIC TEXTFIELD **
 elements.numeric_textfield = {prefix = "fp_textfield_options_numberic_"}
 
-function elements.numeric_textfield.create(table, field, ui_elements)
+function elements.numeric_textfield.create(table, field, modal_elements)
     local element_name = elements.numeric_textfield.prefix .. field.name
     local textfield = table.add{type="textfield", name=element_name, text=field.text}
     textfield.style.width = (field.width or 75)
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then ui_util.select_all(textfield) end
 
-    ui_elements[element_name] = textfield
+    modal_elements[element_name] = textfield
     return element_name
 end
 
@@ -122,13 +122,13 @@ options_dialog.gui_events.on_gui_switch_state_changed = {
     }
 }
 
-function elements.on_off_switch.create(table, field, ui_elements)
+function elements.on_off_switch.create(table, field, modal_elements)
     local element_name = elements.on_off_switch.prefix .. field.name
     local state = ui_util.switch.convert_to_state(field.state)
     local switch = table.add{type="switch", name=element_name, switch_state=state,
       left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
 
-    ui_elements[element_name] = switch
+    modal_elements[element_name] = switch
     return element_name
 end
 
@@ -146,13 +146,13 @@ options_dialog.gui_events.on_gui_elem_changed = {
     }
 }
 
-function elements.choose_elem_button.create(table, field, ui_elements)
+function elements.choose_elem_button.create(table, field, modal_elements)
     local element_name = elements.choose_elem_button.prefix .. field.name
     local choose_elem_button = table.add{type="choose-elem-button", name=element_name,
       elem_type=field.elem_type, style="fp_sprite-button_inset"}
     choose_elem_button.elem_value = field.elem_value
 
-    ui_elements[element_name] = choose_elem_button
+    modal_elements[element_name] = choose_elem_button
     return element_name
 end
 
@@ -167,9 +167,9 @@ options_dialog.dialog_settings = (function(modal_data) return {
 } end)
 
 function options_dialog.open(_, modal_data)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
-    local content_frame = ui_elements.content_frame
+    local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = modal_data.minimal_width or 0
     content_frame.add{type="label", caption=modal_data.text}
 
@@ -184,23 +184,23 @@ function options_dialog.open(_, modal_data)
         local label = table_options.add{type="label", caption=caption, tooltip=field.tooltip}
         label.style.font = "heading-3"
 
-        local element_name = elements[field.type].create(table_options, field, ui_elements)
+        local element_name = elements[field.type].create(table_options, field, modal_elements)
         modal_data.field_handlers[element_name] = field.change_handler
     end
 
     -- Call all the change handlers once to set the initial state correctly
     for element_name, change_handler in pairs(modal_data.field_handlers) do
-        change_handler(modal_data, ui_elements[element_name])
+        change_handler(modal_data, modal_elements[element_name])
     end
 end
 
 function options_dialog.close(player, action)
     local modal_data = data_util.get("modal_data", player)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
     local options_data = {}
     for _, field in pairs(modal_data.fields) do
-        local element = ui_elements[elements[field.type].prefix .. field.name]
+        local element = modal_elements[elements[field.type].prefix .. field.name]
         options_data[field.name] = elements[field.type].read(element)
     end
 

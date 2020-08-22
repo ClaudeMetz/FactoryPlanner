@@ -95,7 +95,7 @@ tutorial_dialog.gui_events = {
 }
 
 function tutorial_dialog.open(player, modal_data)
-    local frame_tabs = modal_data.ui_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
+    local frame_tabs = modal_data.modal_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
 
     local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
     tabbed_pane.style.height = 600

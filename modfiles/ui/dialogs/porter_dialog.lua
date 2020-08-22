@@ -8,18 +8,18 @@ local function set_tool_button_state(button, dialog_type, enabled)
     button.sprite = (enabled) and ("utility/" .. dialog_type) or ("fp_sprite_" .. dialog_type .. "_light")
 end
 
-local function set_dialog_submit_button(ui_elements, enabled, action_to_take)
+local function set_dialog_submit_button(modal_elements, enabled, action_to_take)
     local message = (not enabled) and {"fp.importer_issue_" .. action_to_take} or nil
-    modal_dialog.set_submit_button_state(ui_elements, enabled, message)
+    modal_dialog.set_submit_button_state(modal_elements, enabled, message)
 end
 
 -- Sets the state of either the export_subfactories- or dialog_submit-button
-local function set_relevant_submit_button(ui_elements, dialog_type, enabled)
+local function set_relevant_submit_button(modal_elements, dialog_type, enabled)
     if dialog_type == "export" then
-        set_tool_button_state(ui_elements.export_button, dialog_type, enabled)
+        set_tool_button_state(modal_elements.export_button, dialog_type, enabled)
 
     else -- dialog_type == "import"
-        set_dialog_submit_button(ui_elements, enabled, "select_subfactory")
+        set_dialog_submit_button(modal_elements, enabled, "select_subfactory")
     end
 end
 
@@ -27,34 +27,34 @@ end
 -- Sets the slave checkboxes after the master one has been clicked
 local function set_all_checkboxes(player, checkbox_state)
     local ui_state = data_util.get("ui_state", player)
-    local ui_elements = ui_state.modal_data.ui_elements
+    local modal_elements = ui_state.modal_data.modal_elements
 
-    for _, table_row in pairs(ui_elements.table_rows) do
+    for _, table_row in pairs(modal_elements.table_rows) do
         if table_row.checkbox.enabled then table_row.checkbox.state = checkbox_state end
     end
 
-    set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, checkbox_state)
+    set_relevant_submit_button(modal_elements, ui_state.modal_dialog_type, checkbox_state)
 end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
 local function adjust_after_checkbox_click(player)
     local ui_state = data_util.get("ui_state", player)
-    local ui_elements = ui_state.modal_data.ui_elements
+    local modal_elements = ui_state.modal_data.modal_elements
 
     local checked_element_count, unchecked_element_count = 0, 0
-    for _, table_row in pairs(ui_elements.table_rows) do
+    for _, table_row in pairs(modal_elements.table_rows) do
         if table_row.checkbox.state == true then checked_element_count = checked_element_count + 1
         elseif table_row.checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
     end
 
-    ui_elements.master_checkbox.state = (unchecked_element_count == 0)
-    set_relevant_submit_button(ui_elements, ui_state.modal_dialog_type, (checked_element_count > 0))
+    modal_elements.master_checkbox.state = (unchecked_element_count == 0)
+    set_relevant_submit_button(modal_elements, ui_state.modal_dialog_type, (checked_element_count > 0))
 end
 
 
 -- Adds a flow containing a textfield and a button
-local function add_textfield_and_button(ui_elements, dialog_type, button_first, button_enabled)
-    local flow = ui_elements.content_frame.add{type="flow", direction="horizontal"}
+local function add_textfield_and_button(modal_elements, dialog_type, button_first, button_enabled)
+    local flow = modal_elements.content_frame.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
 
     local function add_button()
@@ -62,7 +62,7 @@ local function add_textfield_and_button(ui_elements, dialog_type, button_first, 
           style="fp_sprite-button_tool_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
           mouse_button_filter={"left"}}
         set_tool_button_state(button, dialog_type, button_enabled)
-        ui_elements[dialog_type .. "_button"] = button
+        modal_elements[dialog_type .. "_button"] = button
     end
 
     local function add_textfield()
@@ -75,7 +75,7 @@ local function add_textfield_and_button(ui_elements, dialog_type, button_first, 
         if button_first then textfield.style.left_margin = 6
         else textfield.style.right_margin = 6 end
 
-        ui_elements[dialog_type .. "_textfield"] = textfield
+        modal_elements[dialog_type .. "_textfield"] = textfield
     end
 
     if button_first then add_button(); add_textfield()
@@ -84,15 +84,15 @@ end
 
 
 -- Initializes the subfactories table by adding it and its header
-local function setup_subfactories_table(ui_elements, add_location)
-    ui_elements.table_rows = {}
+local function setup_subfactories_table(modal_elements, add_location)
+    modal_elements.table_rows = {}
 
-    local scroll_pane = ui_elements.content_frame.add{type="scroll-pane",
+    local scroll_pane = modal_elements.content_frame.add{type="scroll-pane",
       style="fp_scroll_pane_inside_content_frame_bare"}
     scroll_pane.style.margin = 0
     scroll_pane.style.padding = 0
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
-    ui_elements.subfactories_scroll_pane = scroll_pane
+    modal_elements.subfactories_scroll_pane = scroll_pane
 
     local frame_subfactories = scroll_pane.add{type="frame", style="deep_frame_in_shallow_frame"}
     frame_subfactories.style.padding = {-2, 2, 3, 2}
@@ -105,11 +105,11 @@ local function setup_subfactories_table(ui_elements, add_location)
 
     local table_subfactories = frame_subfactories.add{type="table", style="mods_table",
       column_count=(table_size(table_columns) + 1)}
-    ui_elements.subfactories_table = table_subfactories
+    modal_elements.subfactories_table = table_subfactories
 
     -- Add master checkbox in any case
     local checkbox_master = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
-    ui_elements.master_checkbox = checkbox_master
+    modal_elements.master_checkbox = checkbox_master
 
     for column_nr, table_column in pairs(table_columns) do
         table_subfactories.style.column_alignments[column_nr] = table_column.alignment or "center"
@@ -121,8 +121,8 @@ local function setup_subfactories_table(ui_elements, add_location)
 end
 
 -- Adds a row to the subfactories table
-local function add_to_subfactories_table(ui_elements, subfactory, location_name, enable_checkbox)
-    local table_subfactories = ui_elements.subfactories_table
+local function add_to_subfactories_table(modal_elements, subfactory, location_name, enable_checkbox)
+    local table_subfactories = modal_elements.subfactories_table
 
     local identifier = (location_name or "tmp") .. "_" .. subfactory.id
     local checkbox = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_subfactory_" .. identifier,
@@ -141,7 +141,7 @@ local function add_to_subfactories_table(ui_elements, subfactory, location_name,
 
     if location_name then table_subfactories.add{type="label", caption={"fp." .. location_name}} end
 
-    ui_elements.table_rows[identifier] = {
+    modal_elements.table_rows[identifier] = {
         checkbox = checkbox,
         subfactory = subfactory
     }
@@ -151,9 +151,9 @@ end
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
 local function import_subfactories(player)
     local modal_data = data_util.get("modal_data", player)
-    local ui_elements = modal_data.ui_elements
-    local content_frame = ui_elements.content_frame
-    local textfield_export_string = ui_elements.import_textfield
+    local modal_elements = modal_data.modal_elements
+    local content_frame = modal_elements.content_frame
+    local textfield_export_string = modal_elements.import_textfield
 
     -- The imported subfactories will be temporarily contained in a factory object
     local import_factory, error = data_util.porter.get_subfactories(player, textfield_export_string.text)
@@ -163,17 +163,17 @@ local function import_subfactories(player)
         label_info.style.single_line = false
         label_info.style.bottom_margin = 4
         label_info.style.width = 330
-        ui_elements.info_label = label_info
+        modal_elements.info_label = label_info
     end
 
-    if not ui_elements.porter_line then
+    if not modal_elements.porter_line then
         local line = content_frame.add{type="line", direction="horizontal"}
         line.style.margin = {6, 0, 6, 0}
-        ui_elements.porter_line = line
+        modal_elements.porter_line = line
     end
 
-    if ui_elements.info_label then ui_elements.info_label.destroy() end
-    if ui_elements.subfactories_scroll_pane then ui_elements.subfactories_scroll_pane.destroy() end
+    if modal_elements.info_label then modal_elements.info_label.destroy() end
+    if modal_elements.subfactories_scroll_pane then modal_elements.subfactories_scroll_pane.destroy() end
 
     if error ~= nil then
         add_into_label({"fp.error_message", {"fp.importer_" .. error}})
@@ -182,33 +182,33 @@ local function import_subfactories(player)
         add_into_label({"fp.import_instruction_2"})
         modal_data.import_factory = import_factory
 
-        setup_subfactories_table(ui_elements, false)
+        setup_subfactories_table(modal_elements, false)
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
-            add_to_subfactories_table(ui_elements, subfactory, nil, true)
+            add_to_subfactories_table(modal_elements, subfactory, nil, true)
         end
 
-        ui_elements.master_checkbox.state = true
+        modal_elements.master_checkbox.state = true
         set_all_checkboxes(player, true)
     end
 
-    set_dialog_submit_button(ui_elements, (error == nil), "import_string")
-    ui_elements.frame.force_auto_center()
+    set_dialog_submit_button(modal_elements, (error == nil), "import_string")
+    modal_elements.modal_frame.force_auto_center()
 end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
 local function export_subfactories(player)
-    local ui_elements = data_util.get("ui_elements", player)
+    local modal_elements = data_util.get("modal_elements", player)
     local subfactories_to_export = {}
 
-    for _, table_row in pairs(ui_elements.table_rows) do
+    for _, table_row in pairs(modal_elements.table_rows) do
         if table_row.checkbox.state == true then
             table.insert(subfactories_to_export, table_row.subfactory)
         end
     end
     local export_string = data_util.porter.get_export_string(player, subfactories_to_export)
 
-    ui_elements.export_textfield.text = export_string
-    ui_util.select_all(ui_elements.export_textfield)
+    modal_elements.export_textfield.text = export_string
+    ui_util.select_all(modal_elements.export_textfield)
 end
 
 
@@ -233,7 +233,7 @@ import_dialog.gui_events = {
         {
             name = "fp_textfield_porter_string_import",
             handler = (function(player, element)
-                local button_import = data_util.get("ui_elements", player).import_button
+                local button_import = data_util.get("modal_elements", player).import_button
                 set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
             end)
         }
@@ -250,14 +250,14 @@ import_dialog.gui_events = {
 
 
 function import_dialog.open(_, modal_data)
-    local ui_elements = modal_data.ui_elements
-    set_dialog_submit_button(ui_elements, false, "import_string")
+    local modal_elements = modal_data.modal_elements
+    set_dialog_submit_button(modal_elements, false, "import_string")
 
-    local label_text = ui_elements.content_frame.add{type="label", caption={"fp.import_instruction_1"}}
+    local label_text = modal_elements.content_frame.add{type="label", caption={"fp.import_instruction_1"}}
     label_text.style.bottom_margin = 4
 
-    add_textfield_and_button(ui_elements, "import", false, false)
-    ui_util.select_all(ui_elements.import_textfield)
+    add_textfield_and_button(modal_elements, "import", false, false)
+    ui_util.select_all(modal_elements.import_textfield)
 end
 
 -- Imports the selected subfactories into the player's main factory
@@ -267,7 +267,7 @@ function import_dialog.close(player, action)
         local factory = ui_state.context.factory
 
         local first_subfactory = nil
-        for _, table_row in pairs(ui_state.modal_data.ui_elements.table_rows) do
+        for _, table_row in pairs(ui_state.modal_data.modal_elements.table_rows) do
             if table_row.checkbox.state == true then
                 local imported_subfactory = Factory.add(factory, table_row.subfactory)
                 calculation.update(player, imported_subfactory)
@@ -302,24 +302,24 @@ export_dialog.gui_events = {
 
 function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
-    local label_text = ui_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"}}
+    local label_text = modal_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"}}
     label_text.style.bottom_margin = 4
 
-    setup_subfactories_table(ui_elements, true)
+    setup_subfactories_table(modal_elements, true)
 
     local valid_subfactory_found = false
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-            add_to_subfactories_table(ui_elements, subfactory, factory_name, false)
+            add_to_subfactories_table(modal_elements, subfactory, factory_name, false)
             valid_subfactory_found = valid_subfactory_found or subfactory.valid
         end
     end
-    ui_elements.master_checkbox.enabled = valid_subfactory_found
+    modal_elements.master_checkbox.enabled = valid_subfactory_found
 
-    add_textfield_and_button(ui_elements, "export", true, false)
-    ui_elements.export_textfield.parent.style.top_margin = 6
+    add_textfield_and_button(modal_elements, "export", true, false)
+    modal_elements.export_textfield.parent.style.top_margin = 6
 end
 
 

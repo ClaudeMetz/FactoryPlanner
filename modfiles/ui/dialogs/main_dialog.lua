@@ -18,7 +18,7 @@ local function toggle_main_dialog(player)
     local ui_state = data_util.get("ui_state", player)
 
     if ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
-        local frame_main_dialog = ui_state.ui_elements.main_frame
+        local frame_main_dialog = ui_state.main_elements.main_frame
         if frame_main_dialog ~= nil then frame_main_dialog.visible = not frame_main_dialog.visible end
         --frame_main_dialog = main_dialog.refresh(player)
 

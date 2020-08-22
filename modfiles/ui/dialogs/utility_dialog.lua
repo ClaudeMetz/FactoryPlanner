@@ -2,9 +2,9 @@ utility_dialog = {}
 
 -- ** LOCAL UTIL **
 -- Adds a box with title and optional scope switch for the given type of utility
-local function add_utility_box(player, ui_elements, type, show_tooltip, show_switch)
-    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
-    ui_elements[type .. "_box"] = bordered_frame
+local function add_utility_box(player, modal_elements, type, show_tooltip, show_switch)
+    local bordered_frame = modal_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    modal_elements[type .. "_box"] = bordered_frame
 
     local flow_titlebar = bordered_frame.add{type="flow", direction="horizontal"}
     flow_titlebar.style.vertical_align = "center"
@@ -37,7 +37,7 @@ end
 local utility_structures = {}
 
 local function update_request_button(player, modal_data, subfactory)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
     local button_enabled, switch_enabled = true, true
     local caption, tooltip, font_color = "", "", {}
@@ -63,30 +63,30 @@ local function update_request_button(player, modal_data, subfactory)
         end
     end
 
-    ui_elements.request_button.caption = caption
-    ui_elements.request_button.tooltip = tooltip
-    ui_elements.request_button.style.font_color = font_color
-    ui_elements.request_button.enabled = button_enabled
-    ui_elements.scope_switch.enabled = switch_enabled
+    modal_elements.request_button.caption = caption
+    modal_elements.request_button.tooltip = tooltip
+    modal_elements.request_button.style.font_color = font_color
+    modal_elements.request_button.enabled = button_enabled
+    modal_elements.scope_switch.enabled = switch_enabled
 end
 
 function utility_structures.components(player, modal_data)
     local scope = data_util.get("preferences", player).utility_scopes.components
     local lower_scope = scope:lower()
     local context = data_util.get("context", player)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
-    if ui_elements.components_box == nil then
-        local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.ui_elements,
+    if modal_elements.components_box == nil then
+        local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
           "components", true, true)
-        ui_elements.components_box = components_box
-        ui_elements.scope_switch = scope_switch
+        modal_elements.components_box = components_box
+        modal_elements.scope_switch = scope_switch
 
         local button_request = custom_flow.add{type="button", name="fp_button_utility_request_items",
           style="rounded_button", mouse_button_filter={"left"}}
         button_request.style.width = 115
         button_request.style.height = 26
-        ui_elements.request_button = button_request
+        modal_elements.request_button = button_request
 
         local table_components = components_box.add{type="table", column_count=2}
         table_components.style.horizontal_spacing = 24
@@ -97,7 +97,7 @@ function utility_structures.components(player, modal_data)
             label.style.font = "heading-3"
 
             local flow = table_components.add{type="flow", direction="horizontal"}
-            ui_elements["components_" .. type .. "_flow"] = flow
+            modal_elements["components_" .. type .. "_flow"] = flow
         end
 
         add_component_row("machine")
@@ -106,7 +106,7 @@ function utility_structures.components(player, modal_data)
 
 
     local function refresh_component_flow(type)
-        local component_row = ui_elements["components_" .. type .. "_flow"]
+        local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
         local inventory_contents = modal_data.inventory_contents
@@ -154,7 +154,7 @@ function utility_structures.components(player, modal_data)
 end
 
 function utility_structures.notes(player, modal_data)
-    local utility_box = add_utility_box(player, modal_data.ui_elements, "notes", false, false)
+    local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
 
     local notes = data_util.get("context", player).subfactory.notes
     local text_box = utility_box.add{type="text-box", name="fp_text-box_subfactory_notes", text=notes}

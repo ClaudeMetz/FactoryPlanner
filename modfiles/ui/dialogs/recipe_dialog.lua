@@ -155,7 +155,7 @@ end
 
 
 local function create_filter_box(modal_data)
-    local bordered_frame = modal_data.ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
+    local bordered_frame = modal_data.modal_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
 
     local table_filters = bordered_frame.add{type="table", column_count=2}
     table_filters.style.horizontal_spacing = 16
@@ -172,13 +172,13 @@ local function create_filter_box(modal_data)
 end
 
 local function create_recipe_group_box(modal_data, relevant_group)
-    local ui_elements = modal_data.ui_elements
-    local bordered_frame = ui_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
+    local modal_elements = modal_data.modal_elements
+    local bordered_frame = modal_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
     bordered_frame.style.padding = 8
 
-    local next_index = #ui_elements.groups + 1
-    ui_elements.groups[next_index] = {name=relevant_group.proto.name, frame=bordered_frame, recipe_buttons={}}
-    local recipe_buttons = ui_elements.groups[next_index].recipe_buttons
+    local next_index = #modal_elements.groups + 1
+    modal_elements.groups[next_index] = {name=relevant_group.proto.name, frame=bordered_frame, recipe_buttons={}}
+    local recipe_buttons = modal_elements.groups[next_index].recipe_buttons
 
     local flow_group = bordered_frame.add{type="flow", direction="horizontal"}
     flow_group.style.vertical_align = "center"
@@ -219,8 +219,8 @@ end
 
 -- Creates the unfiltered recipe structure
 local function create_dialog_structure(modal_data)
-    local ui_elements = modal_data.ui_elements
-    local content_frame = ui_elements.content_frame
+    local modal_elements = modal_data.modal_elements
+    local content_frame = modal_elements.content_frame
     content_frame.style.width = 380
 
     create_filter_box(modal_data)
@@ -228,9 +228,9 @@ local function create_dialog_structure(modal_data)
     local label_warning = content_frame.add{type="label", caption={"fp.error_message", {"fp.no_recipe_found"}}}
     label_warning.style.font = "heading-2"
     label_warning.style.margin = {8, 0, 0, 8}
-    ui_elements.warning_label = label_warning
+    modal_elements.warning_label = label_warning
 
-    ui_elements.groups = {}
+    modal_elements.groups = {}
     for _, group in ipairs(ORDERED_RECIPE_GROUPS) do
         local relevant_group = modal_data.recipe_groups[group.name]
 
@@ -245,7 +245,7 @@ local function apply_recipe_filter(player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
     local any_recipe_visible, desired_scroll_pane_height = false, 72+24
-    for _, group in ipairs(modal_data.ui_elements.groups) do
+    for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
 
@@ -267,10 +267,10 @@ local function apply_recipe_filter(player)
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
 
-    modal_data.ui_elements.warning_label.visible = not any_recipe_visible
+    modal_data.modal_elements.warning_label.visible = not any_recipe_visible
 
     local scroll_pane_height = math.min(desired_scroll_pane_height, modal_data.dialog_maximal_height)
-    modal_data.ui_elements.content_frame.style.height = scroll_pane_height
+    modal_data.modal_elements.content_frame.style.height = scroll_pane_height
 end
 
 

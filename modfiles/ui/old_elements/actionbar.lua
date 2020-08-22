@@ -30,11 +30,11 @@ end
 
 -- Sets the dialog_submit-button appropriately after any data was changed
 local function handle_subfactory_data_change(modal_data, _)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
 
     -- Remove whitespace from the subfactory name. No cheating!
-    local name_text = ui_elements["fp_textfield_options_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1")
-    local icon_spec = ui_elements["fp_choose_elem_button_options_subfactory_icon"].elem_value
+    local name_text = modal_elements["fp_textfield_options_subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1")
+    local icon_spec = modal_elements["fp_choose_elem_button_options_subfactory_icon"].elem_value
 
     local issue_message = nil
     if name_text == "" and icon_spec == nil then
@@ -43,7 +43,7 @@ local function handle_subfactory_data_change(modal_data, _)
         issue_message = {"fp.options_subfactory_issue_max_characters"}
     end
 
-    modal_dialog.set_submit_button_state(ui_elements, (issue_message == nil), issue_message)
+    modal_dialog.set_submit_button_state(modal_elements, (issue_message == nil), issue_message)
 end
 
 

@@ -11,15 +11,17 @@ modal_dialog = {}
 
 -- ** LOCAL UTIL **
 local function create_base_modal_dialog(player, dialog_settings, modal_data)
+    local modal_elements = modal_data.modal_elements
+
     local frame_modal_dialog = player.gui.screen.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
     frame_modal_dialog.auto_center = true
-    modal_data.ui_elements.frame = frame_modal_dialog
+    modal_elements.modal_frame = frame_modal_dialog
 
     -- Titlebar
     if dialog_settings.caption ~= nil then
         frame_modal_dialog.caption = dialog_settings.caption or nil
     else  -- add a flow so the dialog can add its own, custom titelbar
-        modal_data.ui_elements.titlebar_flow = frame_modal_dialog.add{type="flow", direction="horizontal"}
+        modal_elements.titlebar_flow = frame_modal_dialog.add{type="flow", direction="horizontal"}
     end
 
     -- Content frame
@@ -32,12 +34,12 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
           style="fp_scroll_pane_inside_content_frame"}
         if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
 
-        modal_data.ui_elements.content_frame = scroll_pane
+        modal_elements.content_frame = scroll_pane
         main_content_element = scroll_pane
 
     else  -- if no content frame is created, simply add a flow that the dialog can add to instead
         local flow = frame_modal_dialog.add{type="flow", direction="vertical"}
-        modal_data.ui_elements.dialog_flow = flow
+        modal_elements.dialog_flow = flow
         main_content_element = flow
     end
 
@@ -78,7 +80,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
         button_submit.style.padding = {1, 8, 0, 12}
-        modal_data.ui_elements.dialog_submit_button = button_submit
+        modal_elements.dialog_submit_button = button_submit
     end
 
     return frame_modal_dialog
@@ -125,7 +127,7 @@ function modal_dialog.enter(player, dialog_settings)
     local ui_state = data_util.get("ui_state", player)
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.modal_data = dialog_settings.modal_data or {}
-    ui_state.modal_data.ui_elements = {}
+    ui_state.modal_data.modal_elements = {}
 
     local dialog_object = _G[ui_state.modal_dialog_type .. "_dialog"]
     if dialog_object.dialog_settings then
@@ -137,7 +139,7 @@ function modal_dialog.enter(player, dialog_settings)
     local immediately_closed = dialog_object.open(player, ui_state.modal_data)
 
     if not immediately_closed then
-        local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+        local frame_main_dialog = ui_state.modal_data.modal_elements.modal_frame
         frame_main_dialog.ignored_by_interaction = true
         player.opened = frame_modal_dialog
 
@@ -152,9 +154,9 @@ function modal_dialog.exit(player, button_action)
     local ui_state = data_util.get("ui_state", player)
     if ui_state.modal_dialog_type == nil then return end
 
-    local ui_elements = ui_state.modal_data.ui_elements
+    local modal_elements = ui_state.modal_data.modal_elements
     -- Cancel action if it is not possible on this dialog, or the button is disabled
-    local submit_button = ui_elements.dialog_submit_button
+    local submit_button = modal_elements.dialog_submit_button
     if button_action == "submit" and (not submit_button or not submit_button.enabled) then return end
 
     -- Call the closing function for this dialog, if it exists
@@ -164,20 +166,20 @@ function modal_dialog.exit(player, button_action)
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
 
-    ui_elements.frame.destroy()
+    modal_elements.modal_frame.destroy()
 
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
+    local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.ignored_by_interaction = false
     player.opened = frame_main_dialog
     titlebar.refresh_message(player)
 end
 
 
-function modal_dialog.set_submit_button_state(ui_elements, enabled, message)
+function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
     local tooltip = (enabled) and {"fp.confirm_dialog"} or {"fp.warning_with_icon", message}
 
-    local button = ui_elements.dialog_submit_button
+    local button = modal_elements.dialog_submit_button
     button.style.left_padding = (enabled) and 12 or 6
     button.enabled = enabled
     button.caption = caption
@@ -191,7 +193,7 @@ function modal_dialog.enter_selection_mode(player, selector_name)
     player.cursor_stack.set_stack(selector_name)
 
     local frame_main_dialog = ui_state.main_elements.main_frame
-    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+    local frame_modal_dialog = ui_state.modal_data.modal_elements.modal_frame
 
     frame_main_dialog.visible = false
     main_dialog.set_pause_state(player, frame_main_dialog, true)
@@ -206,7 +208,7 @@ function modal_dialog.leave_selection_mode(player)
     player.cursor_stack.set_stack(nil)
 
     local frame_main_dialog = ui_state.main_elements.main_frame
-    local frame_modal_dialog = player.gui.screen["fp_frame_modal_dialog"]
+    local frame_modal_dialog = ui_state.modal_data.modal_elements.modal_frame
 
     frame_main_dialog.visible = true
     main_dialog.set_pause_state(player, frame_main_dialog, false)
