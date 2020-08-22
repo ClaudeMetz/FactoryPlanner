@@ -253,7 +253,7 @@ end
 
 -- Sets the state of the hard limit switch according to what the entered limit is
 function production_handler.machine_limit_change(modal_data, textfield)
-    local switch = modal_data.ui_elements["fp_switch_on_off_options_hard_limit"]
+    local switch = modal_data.modal_elements["fp_switch_on_off_options_hard_limit"]
     local machine_limit = tonumber(textfield.text)
     if machine_limit == nil then switch.switch_state = "right" end
     switch.enabled = (machine_limit ~= nil)

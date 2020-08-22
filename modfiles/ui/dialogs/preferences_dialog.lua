@@ -11,15 +11,15 @@ local function add_preference_box(content_frame, type)
     return bordered_frame
 end
 
-local function refresh_defaults_table(player, ui_elements, type, category_id)
+local function refresh_defaults_table(player, modal_elements, type, category_id)
     local table_prototypes, all_prototypes, category_addendum
 
     if not category_id then
-        table_prototypes = ui_elements[type]
+        table_prototypes = modal_elements[type]
         all_prototypes = global["all_" .. type][type]
         category_addendum = ""
     else
-        table_prototypes = ui_elements[type][category_id]
+        table_prototypes = modal_elements[type][category_id]
         all_prototypes = global["all_" .. type].categories[category_id][type]
         category_addendum = ("_" .. category_id)
     end
@@ -89,7 +89,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
     textfield_amount.style.margin = {0, 8}
 end
 
-function preference_structures.prototypes(player, content_frame, ui_elements, type)
+function preference_structures.prototypes(player, content_frame, modal_elements, type)
     local preference_box = add_preference_box(content_frame, ("default_" .. type))
     local table_prototypes = preference_box.add{type="table", column_count=3}
     table_prototypes.style.horizontal_spacing = 20
@@ -102,10 +102,10 @@ function preference_structures.prototypes(player, content_frame, ui_elements, ty
         local table = frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
         if category_id then
-            ui_elements[type] = ui_elements[type] or {}
-            ui_elements[type][category_id] = table
+            modal_elements[type] = modal_elements[type] or {}
+            modal_elements[type][category_id] = table
         else
-            ui_elements[type] = table
+            modal_elements[type] = table
         end
     end
 
@@ -116,7 +116,7 @@ function preference_structures.prototypes(player, content_frame, ui_elements, ty
         if #all_prototypes < 2 then preference_box.visible = false; return end
 
         add_defaults_table(8, nil)
-        refresh_defaults_table(player, ui_elements, type, nil)
+        refresh_defaults_table(player, modal_elements, type, nil)
 
     else  -- structure_type == "complex"
         local all_categories = global["all_" .. type].categories
@@ -133,7 +133,7 @@ function preference_structures.prototypes(player, content_frame, ui_elements, ty
                 table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
                 add_defaults_table(8, category_id)
-                refresh_defaults_table(player, ui_elements, type, category_id)
+                refresh_defaults_table(player, modal_elements, type, category_id)
             end
         end
         if not any_category_visible then preference_box.visible = false end
@@ -187,7 +187,7 @@ local function handle_default_prototype_change(player, element, metadata)
     if type == "belts" then modal_data.refresh.main_dialog = true end
 
     prototyper.defaults.set(player, type, prototype_id, category_id)
-    refresh_defaults_table(player, modal_data.ui_elements, type, category_id)
+    refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
 
     -- If this was an alt-click, set this prototype on every category that also has it
     if metadata.alt and type == "machines" then
@@ -198,7 +198,7 @@ local function handle_default_prototype_change(player, element, metadata)
 
             if secondary_prototype_id ~= nil then
                 prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
-                refresh_defaults_table(player, modal_data.ui_elements, type, secondary_category_id)
+                refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category_id)
             end
         end
     end
@@ -250,10 +250,10 @@ preferences_dialog.gui_events = {
 
 function preferences_dialog.open(player, modal_data)
     local preferences = data_util.get("preferences", player)
-    local ui_elements = modal_data.ui_elements
+    local modal_elements = modal_data.modal_elements
     modal_data.refresh = {}
 
-    local flow_content = ui_elements.dialog_flow.add{type="flow", direction="horizontal"}
+    local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
     flow_content.style.horizontal_spacing = 12
     local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
     flow_content.style.maximal_height = main_dialog_dimensions.height * 0.75
@@ -281,13 +281,13 @@ function preferences_dialog.open(player, modal_data)
 
     preference_structures.mb_defaults(preferences, left_content_frame)
 
-    preference_structures.prototypes(player, left_content_frame, ui_elements, "belts")
-    preference_structures.prototypes(player, left_content_frame, ui_elements, "beacons")
+    preference_structures.prototypes(player, left_content_frame, modal_elements, "belts")
+    preference_structures.prototypes(player, left_content_frame, modal_elements, "beacons")
 
     local right_content_frame = add_content_frame()
 
-    preference_structures.prototypes(player, right_content_frame, ui_elements, "fuels")
-    preference_structures.prototypes(player, right_content_frame, ui_elements, "machines")
+    preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
+    preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
 end
 
 function preferences_dialog.close(player, _)
