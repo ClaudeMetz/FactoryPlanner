@@ -1,4 +1,5 @@
 require("data.data_util")
+
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Fuel")
@@ -10,11 +11,13 @@ require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
+
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.remote")
+
 require("data.calculation.interface")
 
 init = {}

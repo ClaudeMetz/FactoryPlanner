@@ -1,5 +1,4 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
-event_handler = {}
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
 local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, import_dialog, export_dialog,
@@ -140,8 +139,7 @@ for _, object in pairs(objects_that_need_handling) do
     end
 end
 
--- TODO make everything in this file file-local after listeners.lua is no more
-function event_handler.handle_gui_event(event)
+local function handle_gui_event(event)
     if event.element and event.element.get_mod() == "factoryplanner" then
         -- The event table actually contains its identifier, not its name
         local event_name = gui_identifier_map[event.name]
@@ -160,10 +158,9 @@ function event_handler.handle_gui_event(event)
 end
 
 -- Register all the GUI events from the identifier map
--- TODO not in use yet as to not overwrite the listeners registrations
---[[ for event_id, _ in pairs(gui_identifier_map) do
-    script.on_event(event_id, event_handler.handle_gui_event)
-end ]]
+for event_id, _ in pairs(gui_identifier_map) do
+    script.on_event(event_id, handle_gui_event)
+end
 
 
 
