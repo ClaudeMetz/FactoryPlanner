@@ -90,14 +90,39 @@ data.raw["gui-style"].default["fp_sprite-button_inset_tiny"] = {
 data.raw["gui-style"].default["fp_sprite-button_rounded_dark"] = {
     type = "button_style",
     default_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}},
-    hovered_graphical_set =
-    {
+    hovered_graphical_set = {
         base = {border = 4, position = {82, 738}, size = 76},
         glow = offset_by_2_rounded_corners_glow(default_glow_color)
     },
     clicked_graphical_set = {base = {border = 4, position = {162, 738}, size = 76}},
     disabled_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}}
 }
+
+-- A tool button that has the clicked-graphical set as it's default one
+data.raw["gui-style"].default["fp_sprite-button_tool_active"] = {
+    type = "button_style",
+    parent = "frame_action_button",
+    default_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8},
+        shadow = {position = {440, 24}, corner_size = 8, draw_type = "outer"}
+    },
+    clicked_graphical_set = {
+        base = {position = {0, 0}, corner_size = 8},
+        shadow = {position = {440, 24}, corner_size = 8, draw_type = "outer"},
+    }
+}
+
+data.raw["gui-style"].default["fp_button_frame_tool"] = {
+    type = "button_style",
+    parent = "frame_button",
+    font = "heading-2",
+    default_font_color = {0.9, 0.9, 0.9},
+    minimal_width = 0,
+    height = 24,
+    right_padding = 8,
+    left_padding = 8
+}
+
 
 
 

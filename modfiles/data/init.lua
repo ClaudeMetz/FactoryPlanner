@@ -1,5 +1,3 @@
-require("data.data_util")
-
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Fuel")
@@ -116,7 +114,7 @@ local function update_player_table(player)
         player_table.ui_state = {}
         reload_data()
 
-        --titlebar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
+        titlebar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
 
     else  -- existing player, only need to update
         reload_data()

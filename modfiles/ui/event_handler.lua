@@ -1,7 +1,8 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, import_dialog, export_dialog,
+local objects_that_need_handling = {main_dialog, titlebar,
+  modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog}
 
@@ -181,7 +182,8 @@ local misc_identifier_map = {
     -- Keyboard shortcuts
     ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
-    ["fp_focus_searchfield"] = "fp_focus_searchfield"
+    ["fp_focus_searchfield"] = "fp_focus_searchfield",
+    ["fp_toggle_pause"] = "fp_toggle_pause"
 }
 
 local misc_timeouts = {

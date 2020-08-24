@@ -2,7 +2,11 @@ require("util")  -- core.lualib
 table = require('__flib__.table')  -- replaces the lua table module
 
 require("data.init")
+require("data.data_util")
+
 require("ui.dialogs.main_dialog")
+require("ui.dialogs.modal_dialog")
+require("ui.ui_util")
 require("ui.event_handler")
 
 MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
