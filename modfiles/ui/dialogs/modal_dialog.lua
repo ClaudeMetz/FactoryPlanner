@@ -139,7 +139,7 @@ function modal_dialog.enter(player, dialog_settings)
     local immediately_closed = dialog_object.open(player, ui_state.modal_data)
 
     if not immediately_closed then
-        local frame_main_dialog = ui_state.modal_data.modal_elements.modal_frame
+        local frame_main_dialog = ui_state.main_elements.main_frame
         frame_main_dialog.ignored_by_interaction = true
         player.opened = frame_modal_dialog
 

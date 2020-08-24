@@ -43,6 +43,13 @@ data:extend({
     },
     {
         type = "sprite",
+        name = "fp_sprite_pause_light",
+        filename = "__factoryplanner__/graphics/pause_light.png",
+        size = 32, icon_mipmaps = 2, scale = 0.5,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
         name = "fp_sprite_warning_red",
         filename = "__factoryplanner__/graphics/warning_red.png",
         size = 32, icon_mipmaps = 2, scale = 0.25,

@@ -4,14 +4,14 @@ require("ui.ui_util")
 require("ui.event_handler")
 
 -- ** KEYBOARD SHORTCUTS **
-script.on_event("fp_toggle_pause", function(event)
+--[[ script.on_event("fp_toggle_pause", function(event)
     local player = game.get_player(event.player_index)
     local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
     if frame_main_dialog and frame_main_dialog.visible then
         local button_pause = frame_main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
         titlebar.handle_pause_button_click(player, button_pause)
     end
-end)
+end) ]]
 
 script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
