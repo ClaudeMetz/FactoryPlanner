@@ -1,5 +1,4 @@
 require("ui.dialogs.modal_dialog")
-require("ui.event_handler")
 require("ui.ui_util")
 
 main_dialog = {}
@@ -16,11 +15,13 @@ end
 
 local function toggle_main_dialog(player)
     local ui_state = data_util.get("ui_state", player)
+    local frame_main_dialog = ui_state.main_elements.main_frame
 
-    if ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
-        local frame_main_dialog = ui_state.main_elements.main_frame
-        if frame_main_dialog ~= nil then frame_main_dialog.visible = not frame_main_dialog.visible end
-        --frame_main_dialog = main_dialog.refresh(player)
+    if frame_main_dialog == nil then
+        main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
+
+    elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
+        frame_main_dialog.visible = not frame_main_dialog.visible
 
         player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil
         main_dialog.set_pause_state(player, frame_main_dialog)
@@ -54,11 +55,11 @@ main_dialog.misc_events = {
     end),
 
     on_player_display_resolution_changed = (function(player, _)
-        main_dialog.rebuild(player)
+        main_dialog.rebuild(player, false)
     end),
 
     on_player_display_scale_changed = (function(player, _)
-        main_dialog.rebuild(player)
+        main_dialog.rebuild(player, false)
     end),
 
     on_lua_shortcut = (function(player, event)
@@ -73,8 +74,26 @@ main_dialog.misc_events = {
 }
 
 
-function main_dialog.rebuild(player)
+function main_dialog.rebuild(player, default_visibility)
+    local main_elements = data_util.get("main_elements", player)
 
+    local visible = default_visibility
+    if main_elements.main_frame ~= nil then
+        visible = main_elements.main_frame.visible
+        main_elements.main_frame.destroy()
+    end
+
+    local frame_main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog",
+      visible=visible, direction="vertical"}
+    main_elements.main_frame = frame_main_dialog
+
+    local dimensions = {width=1000, height=700}  -- random numbers for now
+    frame_main_dialog.style.width = dimensions.width
+    frame_main_dialog.style.height = dimensions.height
+    ui_util.properly_center_frame(player, frame_main_dialog, dimensions.width, dimensions.height)
+
+    if visible then player.opened = frame_main_dialog end
+    main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
 function main_dialog.refresh(player, element_list)

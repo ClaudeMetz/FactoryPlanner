@@ -3,6 +3,7 @@ table = require('__flib__.table')  -- replaces the lua table module
 
 require("data.init")
 require("ui.dialogs.main_dialog")
+require("ui.event_handler")
 
 MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 DEVMODE = true  -- Enables certain conveniences for development
