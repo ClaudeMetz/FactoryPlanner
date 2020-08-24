@@ -116,7 +116,7 @@ local function update_player_table(player)
         player_table.ui_state = {}
         reload_data()
 
-        titlebar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
+        --titlebar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
 
     else  -- existing player, only need to update
         reload_data()
@@ -232,7 +232,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         elseif event.setting == "fp_subfactory_items_per_row" or
           event.setting == "fp_floor_recipes_at_once" or
           event.setting == "fp_alt_action" then
-            main_dialog.rebuild(player)
+            main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
             data_util.update_all_product_definitions(player)
