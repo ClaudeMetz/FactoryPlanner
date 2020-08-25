@@ -59,21 +59,12 @@ titlebar.misc_events = {
     end)
 }
 
-
-script.on_event("fp_toggle_pause", function(event)
-    local player = game.get_player(event.player_index)
-    local frame_main_dialog = player.gui.screen["fp_frame_main_dialog"]
-    if frame_main_dialog and frame_main_dialog.visible then
-        local button_pause = frame_main_dialog["flow_titlebar"]["flow_titlebar_buttonbar"]["fp_button_titlebar_pause"]
-        titlebar.handle_pause_button_click(player, button_pause)
-    end
-end)
-
 function titlebar.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.titlebar = {}
 
     local flow_titlebar = main_elements.main_frame.add{type="flow", direction="horizontal"}
+    flow_titlebar.style.height = 28
     flow_titlebar.style.margin = {2, 0, 4, 4}
     flow_titlebar.style.horizontal_spacing = 8
 

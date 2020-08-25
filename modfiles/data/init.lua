@@ -28,7 +28,7 @@ local function reload_settings(player)
 
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
-    settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
+    settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
     settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
@@ -228,7 +228,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             ui_util.mod_gui.toggle(player)
 
         elseif event.setting == "fp_subfactory_items_per_row" or
-          event.setting == "fp_floor_recipes_at_once" or
+          event.setting == "fp_subfactory_list_rows" or
           event.setting == "fp_alt_action" then
             main_dialog.rebuild(player, false)
 

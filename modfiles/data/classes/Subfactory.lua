@@ -31,6 +31,29 @@ function Subfactory.init(name, icon, timescale_setting)
 end
 
 
+-- Returns first whether the icon is missing, then the rich text for it
+function Subfactory.verify_icon(self)
+    local type = (self.icon.type == "virtual") and "virtual-signal" or self.icon.type
+    local subfactory_sprite = type .. "/" .. self.icon.name
+
+    if not game.is_valid_sprite_path(subfactory_sprite) then
+        return true, ("[img=utility/missing_icon]")
+    else
+        return false, ("[img=" .. subfactory_sprite .. "]")
+    end
+end
+
+function Subfactory.tostring(self)
+    if self.icon == nil then
+        return self.name
+    else
+        local _, sprite_rich_text = Subfactory.verify_icon(self)
+        return (sprite_rich_text .. "  " .. self.name)
+
+    end
+end
+
+
 function Subfactory.add(self, object)
     object.parent = self
     return Collection.add(self[object.class], object)

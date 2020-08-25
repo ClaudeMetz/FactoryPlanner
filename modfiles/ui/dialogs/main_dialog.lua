@@ -1,4 +1,5 @@
 require("ui.elements.titlebar")
+require("ui.elements.subfactory_list")
 
 main_dialog = {}
 
@@ -6,8 +7,8 @@ main_dialog = {}
 local function determine_main_dialog_dimensions(player)
     local player_table = data_util.get("table", player)
 
-    local width = 1200
-    local height = 800
+    local width = 1400
+    local height = (player_table.settings.subfactory_list_rows * 28) + 58
 
     local dimensions = {width=width, height=height}
     player_table.ui_state.main_dialog_dimensions = dimensions
@@ -82,6 +83,7 @@ function main_dialog.rebuild(player, default_visibility)
         ui_state.main_elements = {}
         main_elements = ui_state.main_elements
     end
+    main_elements.flows = {}
 
     local frame_main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog",
       visible=visible, direction="vertical"}
@@ -95,13 +97,22 @@ function main_dialog.rebuild(player, default_visibility)
     if visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
 
+
     titlebar.build(player)
 
+    local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
+    main_elements.flows["main_horizontal"] = main_horizontal
+
+    local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
+    main_elements.flows["left_vertical"] = left_vertical
+    subfactory_list.build(player)
 
     titlebar.refresh_message(player)
 end
 
 function main_dialog.refresh(player, element_list)
+    -- TODO do proper partial refreshing using the element_list
+    subfactory_list.refresh(player)
 
     titlebar.refresh_message(player)
 end

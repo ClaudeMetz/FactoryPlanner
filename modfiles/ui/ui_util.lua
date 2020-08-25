@@ -240,19 +240,6 @@ function ui_util.check_archive_status(player)
     end
 end
 
--- Returns first whether the icon is missing, then the rich text for it
-function ui_util.verify_subfactory_icon(subfactory)
-    local icon = subfactory.icon
-    local type = (icon.type == "virtual") and "virtual-signal" or icon.type
-    local subfactory_sprite = type .. "/" .. icon.name
-
-    if not game.is_valid_sprite_path(subfactory_sprite) then
-        return true, ("[img=utility/missing_icon]")
-    else
-        return false, ("[img=" .. subfactory_sprite .. "]")
-    end
-end
-
 -- Returns the attribute string for the given prototype
 -- Could figure out structure type itself, but that's slower
 function ui_util.get_attributes(type, prototype)
@@ -274,13 +261,6 @@ function ui_util.execute_alt_action(player, action_type, data)
     if remote_action ~= nil and remote_action[action_type] then
         remote_actions[action_type](player, alt_action, data)
     end
-end
-
--- Resets the selected subfactory to a valid position after one has been removed
-function ui_util.reset_subfactory_selection(player, factory, removed_gui_position)
-    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
-    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
-    ui_util.context.set_subfactory(player, subfactory)
 end
 
 
