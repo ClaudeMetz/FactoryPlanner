@@ -28,10 +28,10 @@ data:extend({
     },
     {
         type = "int-setting",
-        name = "fp_floor_recipes_at_once",
+        name = "fp_subfactory_list_rows",
         setting_type = "runtime-per-user",
-        default_value = 14,
-        allowed_values = {8, 10, 12, 14, 16, 18, 20},
+        default_value = 26,
+        allowed_values = {20, 22, 24, 26, 28, 30, 32},
         order = "c"
     },
     {

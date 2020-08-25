@@ -112,6 +112,14 @@ data.raw["gui-style"].default["fp_sprite-button_tool_active"] = {
     }
 }
 
+-- This toolbutton has the right color, vanilla 'tool_button_green' does not
+data.raw["gui-style"].default["fp_sprite-button_tool_green"] = {
+    type = "button_style",
+    parent = "item_and_count_select_confirm",
+    padding = 2,
+    left_click_sound = {{ filename = "__core__/sound/gui-tool-button.ogg", volume = 1 }}
+}
+
 data.raw["gui-style"].default["fp_button_frame_tool"] = {
     type = "button_style",
     parent = "frame_button",
@@ -284,13 +292,6 @@ data.raw["gui-style"].default["fp_sprite-button_choose_elem"] = {
     height = 30,
     width = 30,
     padding = 0
-}
-
-data.raw["gui-style"].default["fp_sprite-button_tool_green"] = {
-    type = "button_style",
-    parent = "item_and_count_select_confirm",
-    padding = 2,
-    left_click_sound = {{ filename = "__core__/sound/gui-click.ogg", volume = 1 }}
 }
 
 data.raw["gui-style"].default["fp_table_subgroup"] = {

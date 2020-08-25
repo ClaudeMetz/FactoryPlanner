@@ -1,7 +1,7 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {main_dialog, titlebar,
+local objects_that_need_handling = {main_dialog, titlebar, subfactory_list,
   modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog}
@@ -46,6 +46,7 @@ local gui_identifier_map = {
     [defines.events.on_gui_text_changed] = "on_gui_text_changed",
     [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed",
     [defines.events.on_gui_switch_state_changed] = "on_gui_switch_state_changed",
+    [defines.events.on_gui_selection_state_changed] = "on_gui_selection_state_changed",
     [defines.events.on_gui_elem_changed] = "on_gui_elem_changed",
     [defines.events.on_gui_value_changed] = "on_gui_value_changed"
 }
