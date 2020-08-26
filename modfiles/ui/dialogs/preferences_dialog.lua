@@ -32,7 +32,7 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
         local style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
         local first_line = (selected) and {"fp.annotated_title", prototype.localised_name, {"fp.selected"}}
             or prototype.localised_name
-        local tooltip = {"", first_line, "\n", ui_util.get_attributes(type, prototype)}
+        local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
 
         local sprite_button = table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip,
           name="fp_sprite-button_preference_default_" .. type .. "_" .. prototype_id .. category_addendum,

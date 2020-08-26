@@ -176,7 +176,7 @@ function subfactory_pane.handle_ingredient_element_click(player, ingredient_id, 
     local ingredient = Subfactory.get(subfactory, "Ingredient", ingredient_id)
 
     if alt then
-        ui_util.execute_alt_action(player, "show_item", {item=ingredient.proto, click=click})
+        data_util.execute_alt_action(player, "show_item", {item=ingredient.proto, click=click})
     end
 end
 
@@ -187,7 +187,7 @@ function subfactory_pane.handle_product_element_click(player, product_id, click,
     local product = Subfactory.get(subfactory, "Product", product_id)
 
     if alt then
-        ui_util.execute_alt_action(player, "show_item", {item=product.proto, click=click})
+        data_util.execute_alt_action(player, "show_item", {item=product.proto, click=click})
 
     elseif ui_util.check_archive_status(player) then
         return
@@ -233,7 +233,7 @@ function subfactory_pane.handle_byproduct_element_click(player, byproduct_id, cl
     local byproduct = Subfactory.get(subfactory, "Byproduct", byproduct_id)
 
     if alt then
-        ui_util.execute_alt_action(player, "show_item", {item=byproduct.proto, click=click})
+        data_util.execute_alt_action(player, "show_item", {item=byproduct.proto, click=click})
 
     --[[ elseif ui_util.check_archive_status(player) then
         return
