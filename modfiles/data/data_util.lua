@@ -45,6 +45,29 @@ function data_util.update_all_product_definitions(player)
     main_dialog.refresh(player, "subfactory")
 end
 
+-- Returns the attribute string for the given prototype
+function data_util.get_attributes(type, prototype)
+    local all_prototypes = global["all_" .. type]
+
+    -- Could figure out structure type itself, but that's slower
+    if all_prototypes.structure_type == "simple" then
+        return PROTOTYPE_ATTRIBUTES[type][prototype.id]
+    else  -- structure_type == "complex"
+        local category_id = all_prototypes.map[prototype.category]
+        return PROTOTYPE_ATTRIBUTES[type][category_id][prototype.id]
+    end
+end
+
+-- Executes an alt-action on the given action_type and data
+function data_util.execute_alt_action(player, action_type, data)
+    local alt_action = data_util.get("settings", player).alt_action
+
+    local remote_action = remote_actions[alt_action]
+    if remote_action ~= nil and remote_action[action_type] then
+        remote_actions[action_type](player, alt_action, data)
+    end
+end
+
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string

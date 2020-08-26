@@ -27,7 +27,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
             button_number = button_number,
             localised_name = machine_proto.localised_name,
             amount_line = amount_line,
-            tooltip_appendage = ui_util.get_attributes("machines", machine_proto),
+            tooltip_appendage = data_util.get_attributes("machines", machine_proto),
             selected = (current_proto.id == machine_proto.id)
         }
 
@@ -65,7 +65,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
             button_number = fuel_amount,
             localised_name = fuel_proto.localised_name,
             amount_line = amount_line,
-            tooltip_appendage = ui_util.get_attributes("fuels", fuel_proto),
+            tooltip_appendage = data_util.get_attributes("fuels", fuel_proto),
             selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
         }
 
@@ -88,7 +88,7 @@ function production_handler.handle_line_recipe_click(player, line_id, click, dir
 
     if alt and direction == nil then
         local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-        ui_util.execute_alt_action(player, "show_recipe",
+        data_util.execute_alt_action(player, "show_recipe",
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif direction ~= nil then  -- Shift (assembly) line in the given direction
@@ -469,7 +469,7 @@ function production_handler.handle_item_button_click(player, line_id, class, ite
     local item = Line.get(line, class, item_id)
 
     if alt then
-        ui_util.execute_alt_action(player, "show_item", {item=item.proto, click=click})
+        data_util.execute_alt_action(player, "show_item", {item=item.proto, click=click})
 
     elseif click == "left" and item.proto.type ~= "entity" then
         if item.class == "Ingredient" then  -- Pick recipe to produce this ingredient
@@ -553,7 +553,7 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
     local fuel = line.machine.fuel  -- must exist to be able to get here
 
     if alt then
-        ui_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
+        data_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=click})
 
     else
         if click == "left" then
