@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.0.5
+Date: 27. 08. 2020
   Bugfixes:
     - Fixed a crash when attempting to change fuels in certain modded situations
 
