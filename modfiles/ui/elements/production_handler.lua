@@ -567,8 +567,10 @@ function production_handler.handle_fuel_button_click(player, line_id, click, dir
             -- Applicable fuels come from all categories that this burner supports
             for category_name, _ in pairs(machine_proto.burner.categories) do
                 local category_id = global.all_fuels.map[category_name]
-                for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-                    table.insert(applicable_prototypes, fuel_proto)
+                if category_id ~= nil then
+                    for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
+                        table.insert(applicable_prototypes, fuel_proto)
+                    end
                 end
             end
 
