@@ -1,13 +1,21 @@
 require("ui.elements.titlebar")
 require("ui.elements.subfactory_list")
+require("ui.elements.item_boxes")
+require("ui.elements.view_state")
 
 main_dialog = {}
+
+local subfactory_list_width = 300
 
 -- ** LOCAL UTIL **
 local function determine_main_dialog_dimensions(player)
     local player_table = data_util.get("table", player)
 
-    local width = 1400
+    local products_per_row = player_table.settings.products_per_row
+    local boxes_width_1 = (products_per_row * 40 * 2) + (2*12)
+    local boxes_width_2 = ((products_per_row * 40) + (2*12)) * 2
+    local width = subfactory_list_width + boxes_width_1 + boxes_width_2 + (2*12) + (3*10)
+
     local height = (player_table.settings.subfactory_list_rows * 28) + 58
 
     local dimensions = {width=width, height=height}
@@ -85,6 +93,7 @@ function main_dialog.rebuild(player, default_visibility)
     end
     main_elements.flows = {}
 
+    -- Create and configure the top-level frame
     local frame_main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog",
       visible=visible, direction="vertical"}
     main_elements["main_frame"] = frame_main_dialog
@@ -97,22 +106,33 @@ function main_dialog.rebuild(player, default_visibility)
     if visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
 
-
+    -- Create the actual dialog structure
+    view_state.refresh_state(player)  -- actually initializes it
     titlebar.build(player)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
+    main_horizontal.style.horizontal_spacing = 10
     main_elements.flows["main_horizontal"] = main_horizontal
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
+    left_vertical.style.width = subfactory_list_width
     main_elements.flows["left_vertical"] = left_vertical
     subfactory_list.build(player)
+
+    local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
+    right_vertical.style.vertical_spacing = 10
+    main_elements.flows["right_vertical"] = right_vertical
+    item_boxes.build(player)
 
     titlebar.refresh_message(player)
 end
 
 function main_dialog.refresh(player, element_list)
+    view_state.refresh_state(player)
     -- TODO do proper partial refreshing using the element_list
     subfactory_list.refresh(player)
+
+    item_boxes.refresh(player)
 
     titlebar.refresh_message(player)
 end

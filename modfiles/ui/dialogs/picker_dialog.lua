@@ -469,8 +469,7 @@ function picker_dialog.close(player, action)
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
         if item == nil then  -- add item if it doesn't exist (ie. this is not an edit)
-            local item_category = modal_data.item_category  -- this is in lowercase
-            local class_name = item_category:sub(1,1):upper() .. item_category:sub(2)
+            local class_name = (modal_data.item_category:gsub("^%l", string.upper))
 
             local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
             Subfactory.add(subfactory, top_level_item)

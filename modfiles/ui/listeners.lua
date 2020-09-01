@@ -25,10 +25,10 @@ script.on_event("fp_refresh_production", function(event)
     if main_dialog.is_in_focus(player) then calculation.update(player, subfactory, true) end
 end)
 
-script.on_event("fp_cycle_production_views", function(event)
+--[[ script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
     if main_dialog.is_in_focus(player) then production_titlebar.change_view_state(player, nil) end
-end)
+end) ]]
 
 
 -- ** GUI EVENTS **
@@ -232,7 +232,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         end
 
         -- Reacts to the toggle-main-dialog-button or the close-button on the main dialog being pressed
-        if element_name == "fp_button_toggle_interface"
+        --[[ if element_name == "fp_button_toggle_interface"
           or element_name == "fp_button_titlebar_exit" then
             main_dialog.toggle(player)
 
@@ -242,31 +242,31 @@ script.on_event(defines.events.on_gui_click, function(event)
 
         -- Opens the tutorial dialog
         elseif element_name == "fp_button_titlebar_tutorial" then
-            modal_dialog.enter(player, {type="tutorial"})
+            modal_dialog.enter(player, {type="tutorial"}) ]]
 
         --[[ -- Opens the tutorial dialog
         elseif element_name == "fp_button_tutorial_add_example" then
             tutorial_dialog.add_example_subfactory(player) ]]
 
-        -- Opens the preferences dialog
+        --[[ -- Opens the preferences dialog
         elseif element_name == "fp_button_titlebar_preferences" then
             modal_dialog.enter(player, {type="preferences"})
 
         -- Toggles the archive-view-mode
         elseif element_name == "fp_button_toggle_archive" then
-            actionbar.toggle_archive_view(player)
+            actionbar.toggle_archive_view(player) ]]
 
         -- Opens utilitys dialog
-        elseif element_name == "fp_button_open_utility_dialog" then
+        --[[ else ]]if element_name == "fp_button_open_utility_dialog" then
             modal_dialog.enter(player, {type="utility"})
 
         -- Changes into the manual override of the mining prod mode
         elseif element_name == "fp_button_mining_prod_override" then
             info_pane.override_mining_prod(player)
 
-        -- Opens the add-product dialog
+        --[[ -- Opens the add-product dialog
         elseif element_name == "fp_sprite-button_add_product" then
-            modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category="product"}})
+            modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category="product"}}) ]]
 
         -- Toggles the TopLevelItems-amount display state
         elseif element_name == "fp_button_item_amount_toggle" then
@@ -297,20 +297,20 @@ script.on_event(defines.events.on_gui_click, function(event)
             local dialog_action = string.gsub(element_name, "fp_button_modal_dialog_", "")
             modal_dialog.exit(player, dialog_action) ]]
 
-        -- Reacts to a actionbar button being pressed
+        --[[ -- Reacts to a actionbar button being pressed
         elseif string.find(element_name, "^fp_button_actionbar_[a-z]+$") then
             local actionbar_action = string.gsub(element_name, "fp_button_actionbar_", "")
-            actionbar[actionbar_action .. "_subfactory"](player)
+            actionbar[actionbar_action .. "_subfactory"](player) ]]
 
         --[[ -- Reacts to an import/export porter button being pressed
         elseif string.find(element_name, "^fp_button_porter_subfactory_[a-z]+$") then
             local porter_action = string.gsub(element_name, "fp_button_porter_subfactory_", "")
             _G[porter_action .. "_dialog"][porter_action .. "_subfactories"](player) ]]
 
-        -- Reacts to a subfactory button being pressed
+        --[[ -- Reacts to a subfactory button being pressed
         elseif string.find(element_name, "^fp_sprite%-button_subfactory_%d+$") then
             local subfactory_id = tonumber(string.match(element_name, "%d+"))
-            subfactory_bar.handle_subfactory_element_click(player, subfactory_id, click, direction, action, event.alt)
+            subfactory_bar.handle_subfactory_element_click(player, subfactory_id, click, direction, action, event.alt) ]]
 
         -- Changes the timescale of the current subfactory
         elseif string.find(element_name, "^fp_button_timescale_%d+$") then

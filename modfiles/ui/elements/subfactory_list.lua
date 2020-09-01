@@ -207,6 +207,7 @@ subfactory_list.gui_events = {
                 local factory = data_util.get("context", player).factory
                 local subfactory = Factory.get_by_gui_position(factory, "Subfactory", element.selected_index)
                 ui_util.context.set_subfactory(player, subfactory)
+                main_dialog.refresh(player, "subfactory")
             end)
         }
     }
@@ -218,7 +219,6 @@ function subfactory_list.build(player)
 
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    frame_vertical.style.width = 300
     frame_vertical.style.height = data_util.get("settings", player).subfactory_list_rows * 28
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
