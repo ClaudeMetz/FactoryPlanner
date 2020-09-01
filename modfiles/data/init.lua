@@ -27,7 +27,7 @@ local function reload_settings(player)
     local settings_table = {}
 
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
-    settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
+    settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
     settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
     settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
@@ -70,7 +70,7 @@ local function reset_ui_state(player)
 
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.last_action = nil  -- The last user action (used for rate limiting)
-    ui_state_table.view_state = nil  -- The state of the production views
+    ui_state_table.view_states = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
@@ -227,7 +227,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         if event.setting == "fp_display_gui_button" then
             ui_util.mod_gui.toggle(player)
 
-        elseif event.setting == "fp_subfactory_items_per_row" or
+        elseif event.setting == "fp_products_per_row" or
           event.setting == "fp_subfactory_list_rows" or
           event.setting == "fp_alt_action" then
             main_dialog.rebuild(player, false)

@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Redesigned the main interface. This means some things are in different spots than they used to be, and some niche features got lost along the way. I'm sorry about those few that went missing, but I wanted to get this done in a reasonable amount of time. If there is anything specific you're dearly missing, please let me know on the mod portal or on Discord; I'll work to get it back in place posthaste.
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4

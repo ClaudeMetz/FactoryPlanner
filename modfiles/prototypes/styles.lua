@@ -98,7 +98,7 @@ data.raw["gui-style"].default["fp_sprite-button_rounded_dark"] = {
     disabled_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}}
 }
 
--- A tool button that has the clicked-graphical set as it's default one
+-- A tool button that has the clicked-graphical set as its default one
 data.raw["gui-style"].default["fp_sprite-button_tool_active"] = {
     type = "button_style",
     parent = "frame_action_button",

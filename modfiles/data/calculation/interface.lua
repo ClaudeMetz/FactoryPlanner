@@ -94,7 +94,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         end
     end
 
-    -- Iterate the lines from top to bottom, setting satisfaction amounts along the way
+    -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
         if line.subfloor ~= nil then
             local subfloor_product_class = structures.class.copy(product_class)

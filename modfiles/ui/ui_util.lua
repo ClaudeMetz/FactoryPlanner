@@ -6,11 +6,10 @@ ui_util = {
     switch = {}
 }
 
--- ** GUI utilities **
+-- ** GUI **
 -- Properly centers the given frame (need width/height parameters cause no API-read exists)
 function ui_util.properly_center_frame(player, frame, width, height)
-    local resolution = player.display_resolution
-    local scale = player.display_scale
+    local resolution, scale = player.display_resolution, player.display_scale
     local x_offset = ((resolution.width - (width * scale)) / 2)
     local y_offset = ((resolution.height - (height * scale)) / 2)
     frame.location = {x_offset, y_offset}
@@ -37,7 +36,35 @@ function ui_util.select_all(textfield)
 end
 
 
--- ** Tooltips **
+-- ** MISC **
+function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action)
+    local player_table = data_util.get("table", player)
+
+    if player_table.preferences.tutorial_mode and not player_table.ui_state.flags.archive_open then
+        local action_tooltip = {"fp.tut_mode_" .. element_type}
+
+        local alt_action_name, alt_action_tooltip = player_table.settings.alt_action, ""
+        if has_alt_action and alt_action_name ~= "none" then
+            alt_action_tooltip = {"fp.tut_mode_alt_action", {"fp.alt_action_" .. alt_action_name}}
+        end
+
+        return {"fp.tut_mode_tooltip", action_tooltip, alt_action_tooltip}
+    else
+        return ""
+    end
+end
+
+function ui_util.check_archive_status(player)
+    if data_util.get("flags", player).archive_open then
+        titlebar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
+        return false
+    else
+        return true
+    end
+end
+
+
+--[[ -- ** Tooltips **
 -- File-local to so this dict isn't recreated on every call of the function following it
 local valid_alt_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
   product=true, byproduct=true, ingredient=true, fuel=true}
@@ -60,9 +87,9 @@ function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
     elseif button == nil then  -- return empty string if there should be a return value
         return ""
     end
-end
+end ]]
 
--- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
+--[[ -- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
 function ui_util.determine_item_amount_and_appendage(player, view_name, item_type, amount, machine)
     local timescale = get_context(player).subfactory.timescale
     local number, appendage = nil, ""
@@ -102,7 +129,7 @@ function ui_util.determine_item_amount_and_appendage(player, view_name, item_typ
     if number == nil and amount < MARGIN_OF_ERROR then number = MARGIN_OF_ERROR - 1 end
 
     return number, appendage  -- number might be nil here
-end
+end ]]
 
 -- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
 function ui_util.generate_module_effects_tooltip_proto(module)
@@ -215,7 +242,7 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 -- ** Misc **
--- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
+--[[ -- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
 function ui_util.format_timescale(timescale, raw, whole_word)
     local ts = nil
     if timescale == 1 then
@@ -227,17 +254,7 @@ function ui_util.format_timescale(timescale, raw, whole_word)
     end
     if raw then return ts
     else return {"", "1", ts} end
-end
-
--- Checks whether the archive is open; posts an error and returns true if it is
-function ui_util.check_archive_status(player)
-    if data_util.get("flags", player).archive_open then
-        titlebar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
-        return true
-    else
-        return false
-    end
-end
+end ]]
 
 
 -- **** Mod-GUI ****
