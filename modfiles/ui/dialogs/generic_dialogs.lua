@@ -1,4 +1,6 @@
 -- This file contains general-purpose dialogs that are generic and used in several places
+-- Note: This system seems to have a problem, as references to functions stored in global
+-- break when reloading the game. In that case, just close the dialog without changes
 chooser_dialog = {}
 options_dialog = {}
 
@@ -17,7 +19,11 @@ end
 
 local function handler_chooser_button_click(player, element)
     local element_id = string.gsub(element.name, "fp_sprite%-button_chooser_element_", "")
-    data_util.get("modal_data", player).click_handler(player, element_id)
+    local click_handler = data_util.get("modal_data", player).click_handler
+
+    -- If no click handler is present, just abort mission
+    if click_handler then click_handler(player, element_id) end
+
     modal_dialog.exit(player, "cancel")
     main_dialog.refresh(player)
 end
@@ -205,5 +211,7 @@ function options_dialog.close(player, action)
         options_data[field.name] = elements[field.type].read(element)
     end
 
-    modal_data.submission_handler(player, options_data, action)
+    local submission_handler = modal_data.submission_handler
+    -- If no submission handler is present, just abort mission
+    if submission_handler then submission_handler(player, options_data, action) end
 end

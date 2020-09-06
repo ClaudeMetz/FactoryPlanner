@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
+
+---------------------------------------------------------------------------------------------------
 Version: 1.0.5
 Date: 27. 08. 2020
   Bugfixes:
