@@ -7,6 +7,8 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
+    - Fixed that having signal-type icons on your subfactories could lead to crashes
+    - Fixed that you couldn't remove subfactory icons
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.5
