@@ -479,12 +479,7 @@ function picker_dialog.close(player, action)
 
     elseif action == "delete" then
         Subfactory.remove(subfactory, item)
-
-        -- Remove useless recipes after a product has been deleted
-        calculation.update(player, subfactory)
-        Subfactory.remove_useless_lines(subfactory)
-
-        ui_util.context.set_floor(player, Subfactory.get(subfactory, "Floor", 1))
+        data_util.cleanup_subfactory(player, subfactory, false)
     end
 
     if action ~= "cancel" then

@@ -1,7 +1,7 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
 -- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {main_dialog, titlebar, subfactory_list, item_boxes, view_state,
+local objects_that_need_handling = {main_dialog, titlebar, subfactory_list, subfactory_info, item_boxes, view_state,
   modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog}
