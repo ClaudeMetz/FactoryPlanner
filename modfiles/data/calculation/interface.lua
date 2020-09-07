@@ -231,12 +231,13 @@ function calculation.util.determine_machine_count(crafts_per_tick, production_ra
         launch_delay = launch_sequence_time * production_ratio
     end
 
-    return ((production_ratio / crafts_per_tick) / timescale) + launch_delay
+    return ((production_ratio / math.min(crafts_per_tick, 60)) / timescale) + launch_delay
 end
 
 -- Calculates the production ratio from a given machine limit
 function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, is_rocket_silo)
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
+    crafts_per_tick = math.min(crafts_per_tick, 60)
     if is_rocket_silo then  -- Formula reduced by Wolfram Alpha
         return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)
     else
