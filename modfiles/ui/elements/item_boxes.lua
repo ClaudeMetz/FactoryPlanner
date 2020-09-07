@@ -26,8 +26,9 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
 
     local table_items = item_boxes_elements[name .. "_item_table"]
     table_items.clear()
-    local table_item_count = 0
+    if not subfactory or not subfactory.valid then return 0 end
 
+    local table_item_count = 0
     local default_style = (name == "ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
     local tut_mode_tooltip = (name == "product") and ui_util.generate_tutorial_tooltip(player, "tl_product", true) or ""
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
@@ -35,17 +36,17 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class_name)) do
         local required_amount = (name == "product") and Item.required_amount(item) or nil
         local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
+        if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local style, satisfaction_line = default_style, ""
-        if name == "product" then
-            if item.amount <= 0 then style = "flib_slot_button_red"
-            elseif item.amount < required_amount then style = "flib_slot_button_yellow"
-            elseif item.amount == required_amount then style = "flib_slot_button_green" end
+        if name == "product" and amount ~= nil and amount ~= "0" then
+            local satisfied_percentage = (item.amount / required_amount) * 100
+            local percentage_string = ui_util.format_number(satisfied_percentage, 3)
+            satisfaction_line = {"fp.newline", {"fp.two_word_title", (percentage_string .. "%"), {"fp.satisfied"}}}
 
-            if amount ~= nil then
-                local percentage = ui_util.format_number(((item.amount / required_amount) * 100), 3)
-                satisfaction_line = {"fp.newline", {"fp.two_word_title", (percentage .. "%"), {"fp.satisfied"}}}
-            end
+            if satisfied_percentage <= 0 then style = "flib_slot_button_red"
+            elseif satisfied_percentage < 100 then style = "flib_slot_button_yellow"
+            else style = "flib_slot_button_green" end
         end
 
         local indication = (item.proto.type == "entity") and {"fp.indication", {"fp.indication_raw_ore"}} or ""
@@ -56,6 +57,8 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
         table_items.add{type="sprite-button", name="fp_sprite-button_top_level_" .. name .. "_" .. item.id,
           sprite=item.proto.sprite, tooltip=tooltip, number=amount, style=style, mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
+
+        ::skip_item::  -- goto for fun, wooohoo
     end
 
     if allow_addition then  -- meaning allow the user to add items of this type
@@ -170,13 +173,13 @@ function item_boxes.refresh(player)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
 
-    local prow_count = refresh_item_box(player, "product", subfactory, true)
-    local brow_count = refresh_item_box(player, "byproduct", subfactory, false)
-    local irow_count = refresh_item_box(player, "ingredient", subfactory, false)
+    prow_count = refresh_item_box(player, "product", subfactory, true)
+    brow_count = refresh_item_box(player, "byproduct", subfactory, false)
+    irow_count = refresh_item_box(player, "ingredient", subfactory, false)
 
     local item_boxes_elements = ui_state.main_elements.item_boxes
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
-    local item_table_height = maxrow_count * 40
+    local item_table_height = math.max(maxrow_count, 1) * 40
 
     item_boxes_elements.product_item_table.style.height = item_table_height
     item_boxes_elements.byproduct_item_table.style.height = item_table_height

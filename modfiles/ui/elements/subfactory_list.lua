@@ -289,7 +289,7 @@ function subfactory_list.refresh(player)
     if selected_subfactory ~= nil then
         selected_index = selected_subfactory.gui_position
         for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
-            table.insert(listbox_items, Subfactory.tostring(subfactory))
+            table.insert(listbox_items, Subfactory.tostring(subfactory, true))
         end
     end
     local listbox = subfactory_list_elements.subfactory_listbox

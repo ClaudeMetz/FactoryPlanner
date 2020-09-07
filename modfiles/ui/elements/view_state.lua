@@ -115,7 +115,7 @@ end
 function view_state.process_item(metadata, item, item_amount, machine_count)
     local raw_amount = (item_amount or item.amount)
     if raw_amount == nil or (raw_amount < MARGIN_OF_ERROR and item.class ~= "Product") then
-        return nil, nil
+        return -1, nil
     end
 
     return metadata.processor(metadata, raw_amount, item.proto.type, machine_count)
@@ -124,8 +124,10 @@ end
 
 function view_state.refresh_state(player)
     local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+    if not subfactory then return end
 
-    local timescale_string = {"fp.unit_" .. timescale_map[ui_state.context.subfactory.timescale]}
+    local timescale_string = {"fp.unit_" .. timescale_map[subfactory.timescale]}
     local belts_or_lanes = data_util.get("settings", player).belts_or_lanes
     local bl_caption = {"fp.pu_" .. belts_or_lanes:sub(1, -2), 2}
     local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
