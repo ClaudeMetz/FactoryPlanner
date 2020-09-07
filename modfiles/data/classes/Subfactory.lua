@@ -43,14 +43,18 @@ function Subfactory.verify_icon(self)
     end
 end
 
-function Subfactory.tostring(self)
-    if self.icon == nil then
-        return self.name
-    else
-        local _, sprite_rich_text = Subfactory.verify_icon(self)
-        return (sprite_rich_text .. "  " .. self.name)
-
+function Subfactory.tostring(self, indicate_invalidity)
+    local status, sprite_string = "", ""
+    if indicate_invalidity and not self.valid then
+        status = "[img=fp_sprite_warning_red]  "
     end
+
+    if self.icon then
+        local _, sprite_rich_text = Subfactory.verify_icon(self)
+        sprite_string = sprite_rich_text .. "  "
+    end
+
+    return (status .. sprite_string .. self.name)
 end
 
 
