@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.0.6
+Date: 07. 09. 2020
   Bugfixes:
     - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
     - Fixed that having signal-type icons on your subfactories could lead to crashes
