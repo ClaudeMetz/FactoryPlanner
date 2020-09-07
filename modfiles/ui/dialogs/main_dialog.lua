@@ -1,5 +1,6 @@
 require("ui.elements.titlebar")
 require("ui.elements.subfactory_list")
+require("ui.elements.subfactory_info")
 require("ui.elements.item_boxes")
 require("ui.elements.view_state")
 
@@ -116,11 +117,13 @@ function main_dialog.rebuild(player, default_visibility)
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
     left_vertical.style.width = subfactory_list_width
+    left_vertical.style.vertical_spacing = 12
     main_elements.flows["left_vertical"] = left_vertical
     subfactory_list.build(player)
+    subfactory_info.build(player)
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
-    right_vertical.style.vertical_spacing = 10
+    right_vertical.style.vertical_spacing = 12
     main_elements.flows["right_vertical"] = right_vertical
     item_boxes.build(player)
 
@@ -131,6 +134,7 @@ function main_dialog.refresh(player, element_list)
     view_state.refresh_state(player)
     -- TODO do proper partial refreshing using the element_list
     subfactory_list.refresh(player)
+    subfactory_info.refresh(player)
 
     item_boxes.refresh(player)
 

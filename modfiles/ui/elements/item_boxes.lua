@@ -116,14 +116,7 @@ local function handle_item_button_click(player, button, metadata)
 
                 elseif metadata.action == "delete" then
                     Subfactory.remove(subfactory, item)
-
-                    -- Remove useless recipes after a product has been deleted
-                    calculation.update(player, subfactory)
-                    Subfactory.remove_useless_lines(subfactory)
-                    ui_util.context.set_floor(player, Subfactory.get(subfactory, "Floor", 1))
-
-                    calculation.update(player, subfactory)
-                    main_dialog.refresh(player, "subfactory")
+                    data_util.cleanup_subfactory(player, subfactory, true)
                 end
             end
         end

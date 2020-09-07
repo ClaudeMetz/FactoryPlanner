@@ -55,10 +55,11 @@ local function update_request_button(player, modal_data, subfactory)
         local logistics_research = player.force.technologies["logistic-robotics"]
 
         if not logistics_research.researched then
-            tooltip = {"fp.request_logistics_not_researched", logistics_research.localised_name}
+            tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched",
+              logistics_research.localised_name}}
             button_enabled = false
         elseif table_size(modal_data.missing_items) == 0 then
-            tooltip = {"fp.request_no_items_necessary", scope_string}
+            tooltip = {"fp.warning_with_icon", {"fp.request_no_items_necessary", scope_string}}
             button_enabled = false
         end
     end
