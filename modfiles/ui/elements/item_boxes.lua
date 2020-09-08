@@ -6,14 +6,15 @@ local function build_item_box(player, name, column_count)
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
       style="window_content_frame"}
-    window_frame.style.padding = {6, 12, 12, 12}
+    window_frame.style.padding = ITEM_BOX_PADDING
+    window_frame.style.top_padding = 6
 
     window_frame.add{type="label", caption={"fp.pu_" .. name, 2}, style="caption_label"}
 
     local item_frame = window_frame.add{type="frame", style="slot_button_deep_frame"}
     item_frame.style.top_margin = 4
     local scroll_pane = item_frame.add{type="scroll-pane", style="fp_scroll_pane_inside_content_frame_bare"}
-    scroll_pane.style.width = column_count * 40
+    scroll_pane.style.width = column_count * ITEM_BOX_BUTTON_SIZE
 
     local table_items = scroll_pane.add{type="table", column_count=column_count, style="filter_slot_table"}
     item_boxes_elements[name .. "_item_table"] = table_items
@@ -151,7 +152,7 @@ function item_boxes.build(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local flow_horizontal = parent_flow.add{type="flow", direction="horizontal"}
-    flow_horizontal.style.horizontal_spacing = 10
+    flow_horizontal.style.horizontal_spacing = HORIZONTAL_FRAME_SPACING
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
     local products_per_row = data_util.get("settings", player).products_per_row
@@ -172,7 +173,7 @@ function item_boxes.refresh(player)
 
     local item_boxes_elements = ui_state.main_elements.item_boxes
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
-    local item_table_height = math.max(maxrow_count, 1) * 40
+    local item_table_height = math.max(maxrow_count, 1) * ITEM_BOX_BUTTON_SIZE
 
     item_boxes_elements.product_item_table.style.height = item_table_height
     item_boxes_elements.byproduct_item_table.style.height = item_table_height
