@@ -29,8 +29,11 @@ function subfactory_info.build(player)
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical",
       style="inside_shallow_frame_with_padding"}
-    frame_vertical.style.height = 160
+    frame_vertical.style.height = SUBFACTORY_INFO_HEIGHT
     frame_vertical.style.horizontally_stretchable = true
+
+    local title = frame_vertical.add{type="label", caption={"fp.subfactory_info"}, style="caption_label"}
+    title.style.padding = {-6, 0, 6, 0}
 
     -- No subfactory flow - This is very stupid
     local flow_no_subfactory = frame_vertical.add{type="flow", direction="vertical"}
