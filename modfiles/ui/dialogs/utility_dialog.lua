@@ -84,9 +84,8 @@ function utility_structures.components(player, modal_data)
         modal_elements.scope_switch = scope_switch
 
         local button_request = custom_flow.add{type="button", name="fp_button_utility_request_items",
-          style="rounded_button", mouse_button_filter={"left"}}
-        button_request.style.width = 115
-        button_request.style.height = 26
+          style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+        button_request.style.width = 115  -- makes it so both possible captions fit in
         modal_elements.request_button = button_request
 
         local table_components = components_box.add{type="table", column_count=2}
@@ -250,6 +249,5 @@ function utility_dialog.open(player, modal_data)
 end
 
 function utility_dialog.close(player, _)
-    local subfactory = data_util.get("context", player).subfactory
-    info_pane.refresh_utility_table(player, subfactory)
+    main_dialog.refresh(player, {"subfactory_info"})
 end

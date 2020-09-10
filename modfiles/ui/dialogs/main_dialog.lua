@@ -134,12 +134,21 @@ function main_dialog.rebuild(player, default_visibility)
 end
 
 function main_dialog.refresh(player, element_list)
-    view_state.refresh_state(player)
-    -- TODO do proper partial refreshing using the element_list
-    subfactory_list.refresh(player)
-    subfactory_info.refresh(player)
+    -- If element_list is a table, only refresh the specified elements
+    if type(element_list) == "table" then
+        for _, element_name in pairs(element_list) do
+            _G[element_name].refresh(player)
+        end
+    else
+        -- If element_list is nil, refresh everything
+        -- If it is equal to "subfactory", refresh everything about the current subfactory
+        local subfactory_refresh = (type(element_list == "string") and element_list == "subfactory")
+        if not subfactory_refresh then subfactory_list.refresh(player) end
 
-    item_boxes.refresh(player)
+        view_state.refresh_state(player)
+        subfactory_info.refresh(player)
+        item_boxes.refresh(player)
+    end
 
     titlebar.refresh_message(player)
 end
