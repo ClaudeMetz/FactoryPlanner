@@ -2,8 +2,6 @@
 view_state = {}
 
 -- ** LOCAL UTIL **
-local timescale_map = {[1] = "second", [60] = "minute", [3600] = "hour"}
-
 local processors = {}  -- individual functions for each kind of view state
 function processors.items_per_timescale(metadata, raw_amount, item_type, _)
     local number = ui_util.format_number(raw_amount, metadata.formatting_precision)
@@ -103,7 +101,7 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
     return {
         processor = processors[selected_view.name],
         timescale_inverse = 1 / subfactory.timescale,
-        timescale_string = {"fp.unit_" .. timescale_map[subfactory.timescale]},
+        timescale_string = {"fp.unit_" .. TIMESCALE_MAP[subfactory.timescale]},
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
@@ -127,7 +125,7 @@ function view_state.refresh_state(player)
     local subfactory = ui_state.context.subfactory
     if not subfactory then return end
 
-    local timescale_string = {"fp.unit_" .. timescale_map[subfactory.timescale]}
+    local timescale_string = {"fp.unit_" .. TIMESCALE_MAP[subfactory.timescale]}
     local belts_or_lanes = data_util.get("settings", player).belts_or_lanes
     local bl_caption = {"fp.pu_" .. belts_or_lanes:sub(1, -2), 2}
     local bl_sprite = prototyper.defaults.get(player, "belts").rich_text

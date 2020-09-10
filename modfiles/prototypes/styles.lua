@@ -131,6 +131,32 @@ data.raw["gui-style"].default["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
+data.raw["gui-style"].default["fp_button_rounded_mini"] = {
+    type = "button_style",
+    parent = "rounded_button",
+    height = 26,
+    minimal_width = 0,
+    left_padding = 4,
+    right_padding = 4
+}
+
+-- Pushbutton-style used for timescale and scale buttons
+data.raw["gui-style"].default["fp_button_push"] = {
+    type = "button_style",
+    parent = "button",
+    height = 26,
+    minimal_width = 0,
+    padding = 0,
+}
+
+data.raw["gui-style"].default["fp_button_push_active"] = {
+    type = "button_style",
+    parent = "fp_button_push",
+    disabled_font_color = {},  -- pure black
+    disabled_graphical_set = {
+        base = {position = {51, 17}, corner_size = 8}
+    }
+}
 
 
 

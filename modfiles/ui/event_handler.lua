@@ -1,7 +1,6 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
--- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {main_dialog, titlebar, subfactory_list, subfactory_info, item_boxes, view_state,
+local elements_that_need_handling = {main_dialog, titlebar, subfactory_list, subfactory_info, item_boxes, view_state,
   modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog}
@@ -127,7 +126,7 @@ end)
 
 local gui_event_cache = {}
 -- Actually compile the list of GUI handlers
-for _, object in pairs(objects_that_need_handling) do
+for _, object in pairs(elements_that_need_handling) do
     if object.gui_events then
         for event_name, elements in pairs(object.gui_events) do
             gui_event_cache[event_name] = gui_event_cache[event_name] or {
@@ -215,7 +214,7 @@ end)
 
 local misc_event_cache = {}
 -- Actually compile the list of misc handlers
-for _, object in pairs(objects_that_need_handling) do
+for _, object in pairs(elements_that_need_handling) do
     if object.misc_events then
         for event_name, handler in pairs(object.misc_events) do
             misc_event_cache[event_name] = misc_event_cache[event_name] or {

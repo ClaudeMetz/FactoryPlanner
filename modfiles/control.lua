@@ -12,6 +12,8 @@ require("ui.event_handler")
 MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 DEVMODE = true  -- Enables certain conveniences for development
 
+TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
+
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 OUTER_BORDER_MARGIN = 12
 VERTICAL_FRAME_SPACING = 12
