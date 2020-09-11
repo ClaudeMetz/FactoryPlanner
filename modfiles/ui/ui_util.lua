@@ -56,7 +56,7 @@ end
 
 function ui_util.check_archive_status(player)
     if data_util.get("flags", player).archive_open then
-        titlebar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
+        title_bar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
         return false
     else
         return true

@@ -1,4 +1,4 @@
-require("ui.elements.titlebar")
+require("ui.elements.title_bar")
 require("ui.elements.subfactory_list")
 require("ui.elements.subfactory_info")
 require("ui.elements.item_boxes")
@@ -18,7 +18,7 @@ local function determine_main_dialog_dimensions(player)
     local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2
       + (2 * OUTER_BORDER_MARGIN) + (3 * HORIZONTAL_FRAME_SPACING)
 
-    -- Total height of the dialog, which is comprised of the titlebar (height 34) and the subfactory_list
+    -- Total height of the dialog, which is comprised of the title bar (height 34) and the subfactory_list
     local height = (player_table.settings.subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
       + (2 * OUTER_BORDER_MARGIN) + 34
 
@@ -112,7 +112,7 @@ function main_dialog.rebuild(player, default_visibility)
 
     -- Create the actual dialog structure
     view_state.refresh_state(player)  -- actually initializes it
-    titlebar.build(player)
+    title_bar.build(player)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
     main_horizontal.style.horizontal_spacing = HORIZONTAL_FRAME_SPACING
@@ -130,7 +130,7 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements.flows["right_vertical"] = right_vertical
     item_boxes.build(player)
 
-    titlebar.refresh_message(player)
+    title_bar.refresh_message(player)
 end
 
 function main_dialog.refresh(player, element_list)
@@ -150,7 +150,7 @@ function main_dialog.refresh(player, element_list)
         item_boxes.refresh(player)
     end
 
-    titlebar.refresh_message(player)
+    title_bar.refresh_message(player)
 end
 
 function main_dialog.toggle(player)
@@ -165,7 +165,7 @@ function main_dialog.toggle(player)
         player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil
 
         main_dialog.set_pause_state(player, frame_main_dialog)
-        titlebar.refresh_message(player)
+        title_bar.refresh_message(player)
     end
 end
 

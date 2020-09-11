@@ -17,11 +17,11 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     frame_modal_dialog.auto_center = true
     modal_elements.modal_frame = frame_modal_dialog
 
-    -- Titlebar
+    -- Title bar
     if dialog_settings.caption ~= nil then
         frame_modal_dialog.caption = dialog_settings.caption or nil
-    else  -- add a flow so the dialog can add its own, custom titelbar
-        modal_elements.titlebar_flow = frame_modal_dialog.add{type="flow", direction="horizontal"}
+    else  -- add a flow so the dialog can add its own, custom title bar
+        modal_elements.title_bar_flow = frame_modal_dialog.add{type="flow", direction="horizontal"}
     end
 
     -- Content frame
@@ -171,7 +171,7 @@ function modal_dialog.exit(player, button_action)
     local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.ignored_by_interaction = false
     player.opened = frame_main_dialog
-    titlebar.refresh_message(player)
+    title_bar.refresh_message(player)
 end
 
 
