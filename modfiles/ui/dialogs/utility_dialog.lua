@@ -6,19 +6,19 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
     local bordered_frame = modal_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
     modal_elements[type .. "_box"] = bordered_frame
 
-    local flow_titlebar = bordered_frame.add{type="flow", direction="horizontal"}
-    flow_titlebar.style.vertical_align = "center"
-    flow_titlebar.style.margin = {2, 8, 4, 0}
+    local flow_title_bar = bordered_frame.add{type="flow", direction="horizontal"}
+    flow_title_bar.style.vertical_align = "center"
+    flow_title_bar.style.margin = {2, 8, 4, 0}
 
     -- Title
     local caption = (show_tooltip) and {"fp.info_label", {"fp.utility_title_".. type}} or {"fp.utility_title_".. type}
     local tooltip = (show_tooltip) and {"fp.utility_title_" .. type .. "_tt"}
-    local label_title = flow_titlebar.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
+    local label_title = flow_title_bar.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
     label_title.style.top_margin = -2
 
     -- Empty flow for custom controls
-    flow_titlebar.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local flow_custom = flow_titlebar.add{type="flow"}
+    flow_title_bar.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local flow_custom = flow_title_bar.add{type="flow"}
     flow_custom.style.right_margin = 12
 
     -- Scope switch
@@ -26,7 +26,7 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
     if show_switch then
         local utility_scope = data_util.get("preferences", player).utility_scopes[type]
         local switch_state = (utility_scope == "Subfactory") and "left" or "right"
-        scope_switch = flow_titlebar.add{type="switch", name=("fp_switch_utility_scope_" .. type),
+        scope_switch = flow_title_bar.add{type="switch", name=("fp_switch_utility_scope_" .. type),
           switch_state=switch_state, left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
 

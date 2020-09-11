@@ -54,17 +54,17 @@ local function search_items(player, searchfield)
     end
 end
 
--- Custom titlebar construction to be able to integrate a search field into it
-local function fill_titlebar(modal_data)
-    local flow_titlebar = modal_data.modal_elements.titlebar_flow
+-- Custom title bar construction to be able to integrate a search field into it
+local function fill_title_bar(modal_data)
+    local flow_title_bar = modal_data.modal_elements.title_bar_flow
 
-    flow_titlebar.add{type="label", caption={"fp.two_word_title", {"fp.add"},
+    flow_title_bar.add{type="label", caption={"fp.two_word_title", {"fp.add"},
       {"fp.pl_" .. modal_data.item_category, 1}}, style="frame_title"}
 
-    local drag_handle = flow_titlebar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
+    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
     drag_handle.drag_target = modal_data.modal_elements.modal_frame
 
-    local searchfield = flow_titlebar.add{type="textfield", name="fp_textfield_picker_search",
+    local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_picker_search",
       style="search_popup_textfield"}
     ui_util.setup_textfield(searchfield)
     searchfield.style.width = 180
@@ -72,7 +72,7 @@ local function fill_titlebar(modal_data)
     searchfield.focus()
     modal_data.modal_elements["search_textfield"] = searchfield
 
-    flow_titlebar.add{type="sprite-button", name="fp_sprite-button_picker_search", sprite="utility/search_white",
+    flow_title_bar.add{type="sprite-button", name="fp_sprite-button_picker_search", sprite="utility/search_white",
       tooltip={"fp.search_button_tt"}, style="frame_action_button", mouse_button_filter={"left"}}
 end
 
@@ -451,7 +451,7 @@ function picker_dialog.open(player, modal_data)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.object == nil then
-        fill_titlebar(modal_data)
+        fill_title_bar(modal_data)
         add_item_picker(add_content_frame(), player)
     end
 end

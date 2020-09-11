@@ -100,14 +100,14 @@ local function handle_item_button_click(player, button, metadata)
                 else
                     local direction_string = (metadata.direction == "negative") and {"fp.left"} or {"fp.right"}
                     local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_product", 1}, direction_string}
-                    titlebar.enqueue_message(player, message, "error", 1, true)
+                    title_bar.enqueue_message(player, message, "error", 1, true)
                 end
 
             elseif metadata.click == "left" then
                 if context.floor.level == 1 then
                     modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce"}})
                 else
-                    titlebar.enqueue_message(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
+                    title_bar.enqueue_message(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
                 end
 
             elseif metadata.click == "right" then

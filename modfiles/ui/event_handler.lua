@@ -1,6 +1,6 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
-local elements_that_need_handling = {main_dialog, titlebar, subfactory_list, subfactory_info, item_boxes, view_state,
+local elements_that_need_handling = {main_dialog, title_bar, subfactory_list, subfactory_info, item_boxes, view_state,
   modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog}

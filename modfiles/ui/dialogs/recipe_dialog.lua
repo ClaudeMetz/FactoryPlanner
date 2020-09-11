@@ -100,7 +100,7 @@ local function attempt_adding_line(player, recipe_id)
     local line = Line.init(Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
     -- If changing the machine fails, this line is invalid
     if Line.change_machine(line, player, nil, nil) == false then
-        titlebar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
+        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
 
     else
         local add_after_position = ui_state.modal_data.add_after_position
@@ -145,7 +145,7 @@ local function attempt_adding_line(player, recipe_id)
             end
         end
 
-        if message ~= nil then titlebar.enqueue_message(player, message.text, message.type, 2) end
+        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 2) end
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
     end
@@ -322,7 +322,7 @@ function recipe_dialog.open(player, modal_data)
     local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
 
     if error ~= nil then
-        titlebar.enqueue_message(player, error, "error", 1)
+        title_bar.enqueue_message(player, error, "error", 1)
         modal_dialog.exit(player, "cancel")
         return true  -- let the modal dialog know that it was closed immediately
 
