@@ -112,7 +112,7 @@ function main_dialog.rebuild(player, default_visibility)
     main_dialog.set_pause_state(player, frame_main_dialog)
 
     -- Create the actual dialog structure
-    view_state.refresh_state(player)  -- actually initializes it
+    view_state.rebuild_state(player)  -- actually initializes it
     title_bar.build(player)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
@@ -147,9 +147,9 @@ function main_dialog.refresh(player, element_list)
         local subfactory_refresh = (type(element_list == "string") and element_list == "subfactory")
         if not subfactory_refresh then subfactory_list.refresh(player) end
 
-        view_state.refresh_state(player)
         subfactory_info.refresh(player)
         item_boxes.refresh(player)
+
         production_box.refresh(player)
         --production_table.refresh(player)
     end
