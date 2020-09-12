@@ -1,8 +1,9 @@
 require("ui.elements.title_bar")
 require("ui.elements.subfactory_list")
 require("ui.elements.subfactory_info")
-require("ui.elements.item_boxes")
 require("ui.elements.view_state")
+require("ui.elements.item_boxes")
+require("ui.elements.production_box")
 
 main_dialog = {}
 
@@ -129,6 +130,7 @@ function main_dialog.rebuild(player, default_visibility)
     right_vertical.style.vertical_spacing = VERTICAL_FRAME_SPACING
     main_elements.flows["right_vertical"] = right_vertical
     item_boxes.build(player)
+    production_box.build(player)  -- also builds the production table
 
     title_bar.refresh_message(player)
 end
@@ -148,6 +150,8 @@ function main_dialog.refresh(player, element_list)
         view_state.refresh_state(player)
         subfactory_info.refresh(player)
         item_boxes.refresh(player)
+        production_box.refresh(player)
+        --production_table.refresh(player)
     end
 
     title_bar.refresh_message(player)

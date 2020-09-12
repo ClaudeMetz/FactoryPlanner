@@ -13,17 +13,17 @@ require("ui.event_handler")
     end
 end) ]]
 
-script.on_event("fp_floor_up", function(event)
+--[[ script.on_event("fp_floor_up", function(event)
     local player = game.get_player(event.player_index)
     --if ui_util.rate_limiting_active(player, event.input_name, event.input_name) then return end
     if main_dialog.is_in_focus(player) then production_titlebar.handle_floor_change_click(player, "up") end
-end)
+end) ]]
 
-script.on_event("fp_refresh_production", function(event)
+--[[ script.on_event("fp_refresh_production", function(event)
     local player = game.get_player(event.player_index)
     local subfactory = data_util.get("context", event.player_index).subfactory
     if main_dialog.is_in_focus(player) then calculation.update(player, subfactory, true) end
-end)
+end) ]]
 
 --[[ script.on_event("fp_cycle_production_views", function(event)
     local player = game.get_player(event.player_index)
