@@ -67,7 +67,11 @@ function Floor.remove_if_empty(self)
         -- No need to remove eventual subfloors to the given floor,
         -- as there can't be any if the floor is empty
         Subfactory.remove(self.parent, self)
+
+        return true
     end
+
+    return false  -- returns whether the floor was deleted or not
 end
 
 function Floor.replace(self, dataset, object)
