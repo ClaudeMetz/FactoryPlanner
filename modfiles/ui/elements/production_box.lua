@@ -101,7 +101,13 @@ function production_box.build(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
+    local table_view_state = view_state.build(player, subheader)
+    main_elements.production_box["view_state_table"] = table_view_state
 
+    local label_instruction = frame_vertical.add{type="label", caption={"fp.production_instruction"},
+      style="bold_label"}
+    label_instruction.style.margin = 20
+    main_elements.production_box["instruction_label"] = label_instruction
 
     production_box.refresh(player)
     --production_table.build(player)
@@ -115,9 +121,11 @@ function production_box.refresh(player)
     local subfactory_valid = subfactory and subfactory.valid
 
     local current_level = (subfactory_valid) and subfactory.selected_floor.level or 1
+    local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
     local archive_open = (ui_state.flags.archive_open)
 
-    production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid)
+    production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
+    production_box_elements.instruction_label.visible = (subfactory_valid and not any_lines_present)
 
     production_box_elements.level_label.caption = (not subfactory_valid) and ""
       or {"fp.bold_label", {"fp.two_word_title", {"fp.level"}, current_level}}
@@ -128,4 +136,6 @@ function production_box.refresh(player)
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 2)
 
+    view_state.refresh(player, production_box_elements.view_state_table)
+    production_box_elements.view_state_table.visible = (subfactory_valid)
 end

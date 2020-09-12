@@ -27,6 +27,7 @@ local function change_timescale(player, new_timescale)
     end
 
     calculation.update(player, subfactory)
+    view_state.rebuild_state(player)
     main_dialog.refresh(player, "subfactory")
 end
 

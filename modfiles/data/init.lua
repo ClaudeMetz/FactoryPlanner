@@ -234,6 +234,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
             data_util.update_all_product_definitions(player)
+            view_state.rebuild_state(player)
+            main_dialog.rebuild(player, false)
 
         end
     end

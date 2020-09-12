@@ -82,6 +82,19 @@ end
 
 
 -- ** TOP LEVEL **
+view_state.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_button_view_state_[a-z_]+$",
+            handler = (function(player, element, _)
+                local view_name = string.gsub(element.name, "fp_button_view_state_", "")
+                select_view_state(player, view_name)
+                main_dialog.refresh(player, "subfactory")
+            end)
+        }
+    }
+}
+
 view_state.misc_events = {
     fp_cycle_production_views = (function(player, _)
         handle_view_state_change(player, nil)
@@ -120,29 +133,31 @@ function view_state.process_item(metadata, item, item_amount, machine_count)
 end
 
 
-function view_state.refresh_state(player)
+function view_state.rebuild_state(player)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
     if not subfactory then return end
 
-    local timescale_string = {"fp.unit_" .. TIMESCALE_MAP[subfactory.timescale]}
-    local belts_or_lanes = data_util.get("settings", player).belts_or_lanes
-    local bl_caption = {"fp.pu_" .. belts_or_lanes:sub(1, -2), 2}
+    local timescale = TIMESCALE_MAP[subfactory.timescale]
+    local singular_bol = data_util.get("settings", player).belts_or_lanes:sub(1, -2)
     local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
 
     local new_view_states = {
         [1] = {
             name = "items_per_timescale",
-            caption = {"fp.per_title", {"fp.pu_item", 2}, timescale_string}
+            caption = {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_" .. timescale}},
+            tooltip = {"fp.view_state_tt", {"fp.items_per_timescale", {"fp." .. timescale}}}
         },
         [2] = {
             name = "belts_or_lanes",
-            caption = {"fp.two_word_title", bl_sprite, bl_caption}
+            caption = {"fp.two_word_title", bl_sprite, {"fp.pu_" .. singular_bol, 2}},
+            tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2}}}
         },
         [3] = {
             name = "items_per_second_per_machine",
             caption = {"fp.per_title", {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_second"}},
-              "/[img=fp_generic_assembler]"}
+              "[img=fp_generic_assembler]"},
+            tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
         }
     }
 
@@ -156,4 +171,34 @@ function view_state.refresh_state(player)
 
     ui_state.view_states = new_view_states
     select_view_state(player, selected_view_name)
+end
+
+
+-- Adds itself to the given parent, and returns the table that was built
+function view_state.build(player, parent_element)
+    local view_states = data_util.get("ui_state", player).view_states
+
+    local table_view_state = parent_element.add{type="table", column_count=#view_states}
+    table_view_state.style.horizontal_spacing = 0
+
+    -- Using ipairs is important as we only want to iterate the array-part
+    for _, view_state in ipairs(view_states) do
+        local button = table_view_state.add{type="button", name="fp_button_view_state_" .. view_state.name,
+          mouse_button_filter={"left"}}
+        button.style.padding = {0, 12}
+    end
+
+    return table_view_state
+end
+
+-- Refreshes the given view state table, as there could be multiple different ones
+function view_state.refresh(player,  table_view_state)
+    local view_states = data_util.get("ui_state", player).view_states
+
+    for _, view_state in ipairs(view_states) do
+        local view_button = table_view_state["fp_button_view_state_" .. view_state.name]
+        view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
+        view_button.enabled = (not view_state.selected)
+        view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
+    end
 end

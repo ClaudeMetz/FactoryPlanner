@@ -184,7 +184,7 @@ local function handle_default_prototype_change(player, element, metadata)
     local type, prototype_id, category_id = split_name[5], split_name[6], split_name[7]
 
     local modal_data = data_util.get("modal_data", player)
-    if type == "belts" then modal_data.refresh.main_dialog = true end
+    if type == "belts" then modal_data.refresh.view_state = true end
 
     prototyper.defaults.set(player, type, prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
@@ -299,6 +299,12 @@ function preferences_dialog.close(player, _)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
 
-    if refresh.main_dialog then main_dialog.refresh(player, "subfactory")
-    elseif refresh.production_table then main_dialog.refresh(player, {"production_table"}) end
+    if refresh.view_state then
+        view_state.rebuild_state(player)
+        main_dialog.refresh(player, "subfactory")
+    end
+
+    if refresh.production_table then
+        main_dialog.refresh(player, {"production_table"})
+    end
 end
