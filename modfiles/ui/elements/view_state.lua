@@ -163,11 +163,7 @@ function view_state.rebuild_state(player)
 
     -- Conserve the previous view selection if possible
     local old_view_states = ui_state.view_states
-    local selected_view_name = "items_per_timescale"
-    if old_view_states then
-        selected_view_name = old_view_states.selected_view.name
-        old_view_states.selected_view = nil  -- help the garbage collector along
-    end
+    local selected_view_name = (old_view_states) and old_view_states.selected_view.name or "items_per_timescale"
 
     ui_state.view_states = new_view_states
     select_view_state(player, selected_view_name)
