@@ -255,8 +255,8 @@ function subfactory_list.build(player)
 
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    local list_height = data_util.get("settings", player).subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT
-    frame_vertical.style.height = list_height - (SUBFACTORY_INFO_HEIGHT + VERTICAL_FRAME_SPACING)
+    local row_count = data_util.get("settings", player).subfactory_list_rows
+    frame_vertical.style.height = SUBFACTORY_SUBHEADER_HEIGHT + (row_count * SUBFACTORY_LIST_ELEMENT_HEIGHT)
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 

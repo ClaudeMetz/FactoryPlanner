@@ -30,8 +30,8 @@ data:extend({
         type = "int-setting",
         name = "fp_subfactory_list_rows",
         setting_type = "runtime-per-user",
-        default_value = 30,
-        allowed_values = {22, 24, 26, 28, 30, 32, 34, 36},
+        default_value = 20,
+        allowed_values = {12, 14, 16, 18, 20, 22, 24, 26},
         order = "c"
     },
     {
