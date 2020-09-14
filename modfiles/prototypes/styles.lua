@@ -1,5 +1,6 @@
--- NEW STUFF
-data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame"] = {
+local styles = data.raw["gui-style"].default
+
+styles["fp_scroll-pane_inside_content_frame"] = {
     type = "scroll_pane_style",
     extra_padding_when_activated = 0,
     padding = 0,
@@ -12,18 +13,40 @@ data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame"] = {
     }
 }
 
-data.raw["gui-style"].default["fp_scroll_pane_inside_content_frame_bare"] = {
+styles["fp_scroll-pane_inside_content_frame_bare"] = {
     type = "scroll_pane_style",
-    parent = "fp_scroll_pane_inside_content_frame",
+    parent = "fp_scroll-pane_inside_content_frame",
     vertical_flow_style = {
         type = "vertical_flow_style",
         padding = 0
     }
 }
 
+-- Imitates a listbox, but allowing for way more customisation by using real buttons
+styles["fp_scroll-pane_fake_listbox"] = {
+    type = "scroll_pane_style",
+    parent = "scroll_pane_with_dark_background_under_subheader",
+    extra_right_padding_when_activated = -12,
+    background_graphical_set = { -- rubber grid
+        position = {282,17},
+        corner_size = 8,
+        overall_tiling_vertical_size = 22,
+        overall_tiling_vertical_spacing = 6,
+        overall_tiling_vertical_padding = 4,
+        overall_tiling_horizontal_padding = 4
+    },
+    vertically_stretchable = "on",
+    horizontally_stretchable = "on",
+    padding = 0,
+    vertical_flow_style = {
+        type = "vertical_flow_style",
+        vertical_spacing = 0
+    }
+}
+
 
 -- Intended for buttons of size 36
-data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
+styles["fp_frame_deep_slots_small"] = {
     type = "frame_style",
     parent = "slot_button_deep_frame",
     background_graphical_set = {
@@ -39,7 +62,7 @@ data.raw["gui-style"].default["fp_frame_deep_slots_small"] = {
 }
 
 -- Intended for buttons of size 64hx73w
-data.raw["gui-style"].default["fp_frame_deep_slots_crafting_groups"] = {
+styles["fp_frame_deep_slots_crafting_groups"] = {
     type = "frame_style",
     parent = "slot_button_deep_frame", -- "crafting_frame"
     background_graphical_set = {
@@ -54,7 +77,7 @@ data.raw["gui-style"].default["fp_frame_deep_slots_crafting_groups"] = {
     }
 }
 
-data.raw["gui-style"].default["fp_frame_bordered_stretch"] = {
+styles["fp_frame_bordered_stretch"] = {
     type = "frame_style",
     parent = "bordered_frame",
     horizontally_stretchable = "on"
@@ -62,65 +85,58 @@ data.raw["gui-style"].default["fp_frame_bordered_stretch"] = {
 
 
 -- This style is hacked together from rounded-button and textbox
-data.raw["gui-style"].default["fp_sprite-button_inset"] = {
+styles["fp_sprite-button_inset"] = {
     type = "button_style",
     parent = "icon_button",
     padding = 0,
-    default_graphical_set = {
-        base = {position = {248, 0}, corner_size = 8}
-    },
-    hovered_graphical_set = {
-        base = {position = {219, 200}, corner_size = 8}
-    },
-    clicked_graphical_set = {
-        base = {position = {265, 0}, corner_size = 8}
-    },
-    disabled_graphical_set = {
-        base = {position = {185, 200}, corner_size = 8}
-    }
+    default_graphical_set = styles.textbox.default_background,
+    hovered_graphical_set = styles.rounded_button.clicked_graphical_set,
+    clicked_graphical_set = styles.textbox.active_background,
+    disabled_graphical_set = styles.rounded_button.disabled_graphical_set
 }
 
-data.raw["gui-style"].default["fp_sprite-button_inset_tiny"] = {
+styles["fp_sprite-button_inset_tiny"] = {
     type = "button_style",
     parent = "fp_sprite-button_inset",
     size = 32
 }
 
 -- Cribs from 'dark_rounded_button', but without the stupid shadows
-data.raw["gui-style"].default["fp_sprite-button_rounded_dark"] = {
+styles["fp_sprite-button_rounded_dark"] = {
     type = "button_style",
-    default_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}},
+    default_graphical_set = {
+        base = {border = 4, position = {2, 738}, size = 76}
+    },
     hovered_graphical_set = {
         base = {border = 4, position = {82, 738}, size = 76},
         glow = offset_by_2_rounded_corners_glow(default_glow_color)
     },
-    clicked_graphical_set = {base = {border = 4, position = {162, 738}, size = 76}},
-    disabled_graphical_set = {base = {border = 4, position = {2, 738}, size = 76}}
-}
-
--- A tool button that has the clicked-graphical set as its default one
-data.raw["gui-style"].default["fp_sprite-button_tool_active"] = {
-    type = "button_style",
-    parent = "frame_action_button",
-    default_graphical_set = {
-        base = {position = {51, 17}, corner_size = 8},
-        shadow = {position = {440, 24}, corner_size = 8, draw_type = "outer"}
-    },
     clicked_graphical_set = {
-        base = {position = {0, 0}, corner_size = 8},
-        shadow = {position = {440, 24}, corner_size = 8, draw_type = "outer"},
+        base = {border = 4, position = {162, 738}, size = 76}
+    },
+    disabled_graphical_set = {
+        base = {border = 4, position = {2, 738}, size = 76}
     }
 }
 
--- This toolbutton has the right color, vanilla 'tool_button_green' does not
-data.raw["gui-style"].default["fp_sprite-button_tool_green"] = {
+-- A tool button that has the clicked-graphical set as its default one
+styles["fp_sprite-button_tool_active"] = {
+    type = "button_style",
+    parent = "frame_action_button",
+    default_graphical_set = styles.frame_button.clicked_graphical_set,
+    clicked_graphical_set = styles.frame_button.default_graphical_set
+}
+
+-- This tool button has the right color, vanilla 'tool_button_green' does not
+styles["fp_sprite-button_tool_green"] = {
     type = "button_style",
     parent = "item_and_count_select_confirm",
     padding = 2,
-    left_click_sound = {{ filename = "__core__/sound/gui-tool-button.ogg", volume = 1 }}
+    left_click_sound = styles.tool_button.left_click_sound
 }
 
-data.raw["gui-style"].default["fp_button_frame_tool"] = {
+-- Text button in the style of icon tool buttons, for use in the title bar
+styles["fp_button_frame_tool"] = {
     type = "button_style",
     parent = "frame_button",
     font = "heading-2",
@@ -131,7 +147,7 @@ data.raw["gui-style"].default["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
-data.raw["gui-style"].default["fp_button_rounded_mini"] = {
+styles["fp_button_rounded_mini"] = {
     type = "button_style",
     parent = "rounded_button",
     height = 26,
@@ -140,62 +156,35 @@ data.raw["gui-style"].default["fp_button_rounded_mini"] = {
     right_padding = 4
 }
 
--- Pushbutton-style used for timescale and scale buttons
-data.raw["gui-style"].default["fp_button_push"] = {
+-- Push-button style used for timescale and view_state buttons
+styles["fp_button_push"] = {
     type = "button_style",
     parent = "button",
     height = 26,
     minimal_width = 0,
     padding = 0,
-}
-
-data.raw["gui-style"].default["fp_button_push_active"] = {
-    type = "button_style",
-    parent = "fp_button_push",
     disabled_font_color = {},  -- pure black
-    disabled_graphical_set = {
-        base = {position = {51, 17}, corner_size = 8}
-    }
+    disabled_graphical_set = styles.button_with_shadow.clicked_graphical_set
 }
 
-
-data.raw["gui-style"].default["fp_scroll_pane_fake_listbox"] = {
-    type = "scroll_pane_style",
-    parent = "scroll_pane_with_dark_background_under_subheader",
-    extra_right_padding_when_activated = -12,
-    background_graphical_set = { -- rubber grid
-      position = {282,17},
-      corner_size = 8,
-      overall_tiling_vertical_size = 22,
-      overall_tiling_vertical_spacing = 6,
-      overall_tiling_vertical_padding = 4,
-      overall_tiling_horizontal_padding = 4
-    },
-    vertically_stretchable = 'on',
-    horizontally_stretchable = 'on',
-    padding = 0,
-    vertical_flow_style = {
-      type = 'vertical_flow_style',
-      vertical_spacing = 0
-    }
-  }
-
-  data.raw["gui-style"].default["fp_button_fake_listbox_item"] = {
-    type = 'button_style',
-    parent = 'list_box_item',
+-- A button that can be used in a fake listbox, but looks identical to the real thing
+styles["fp_button_fake_listbox_item"] = {
+    type = "button_style",
+    parent = "list_box_item",
     left_padding = 4,
     right_padding = 8,
-    horizontally_stretchable = 'on'
-  }
+    horizontally_stretchable = "on"
+}
 
-  data.raw["gui-style"].default["fp_button_fake_listbox_item_active"] = {
-    type = 'button_style',
-    parent = 'fp_button_fake_listbox_item',
-    default_graphical_set = data.raw["gui-style"].default.button.selected_graphical_set,
-    hovered_graphical_set = data.raw["gui-style"].default.button.selected_graphical_set,
-    default_font_color = data.raw["gui-style"].default.button.selected_font_color,
-    default_vertical_offset = data.raw["gui-style"].default.button.selected_vertical_offset
-  }
+-- The active style needs to be separate so the selected subfactory can still be clicked
+styles["fp_button_fake_listbox_item_active"] = {
+    type = "button_style",
+    parent = "fp_button_fake_listbox_item",
+    default_graphical_set = styles.button.selected_graphical_set,
+    hovered_graphical_set = styles.button.selected_graphical_set,
+    default_font_color = styles.button.selected_font_color,
+    default_vertical_offset = styles.button.selected_vertical_offset
+}
 
 
 

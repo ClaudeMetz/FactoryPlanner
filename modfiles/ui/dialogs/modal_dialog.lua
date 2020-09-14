@@ -31,7 +31,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         content_frame.style.vertically_stretchable = true
 
         local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical",
-          style="fp_scroll_pane_inside_content_frame"}
+          style="fp_scroll-pane_inside_content_frame"}
         if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
 
         modal_elements.content_frame = scroll_pane

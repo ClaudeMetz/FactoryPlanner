@@ -88,7 +88,7 @@ local function setup_subfactories_table(modal_elements, add_location)
     modal_elements.table_rows = {}
 
     local scroll_pane = modal_elements.content_frame.add{type="scroll-pane",
-      style="fp_scroll_pane_inside_content_frame_bare"}
+      style="fp_scroll-pane_inside_content_frame_bare"}
     scroll_pane.style.margin = 0
     scroll_pane.style.padding = 0
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly

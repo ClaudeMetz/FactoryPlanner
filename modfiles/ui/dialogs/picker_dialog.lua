@@ -131,7 +131,7 @@ local function add_item_picker(parent_flow, player)
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
-                  style="fp_scroll_pane_inside_content_frame_bare"}
+                  style="fp_scroll-pane_inside_content_frame_bare"}
 
                 -- This flow is only really needed to set the correct vertical spacing
                 flow_subgroups = scroll_pane_subgroups.add{type="flow", name="flow_group", direction="vertical"}

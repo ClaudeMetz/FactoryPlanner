@@ -262,7 +262,7 @@ function preferences_dialog.open(player, modal_data)
         local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
         content_frame.style.vertically_stretchable = true
 
-        local scroll_pane = content_frame.add{type="scroll-pane", style="fp_scroll_pane_inside_content_frame"}
+        local scroll_pane = content_frame.add{type="scroll-pane", style="fp_scroll-pane_inside_content_frame"}
         return scroll_pane
     end
 
