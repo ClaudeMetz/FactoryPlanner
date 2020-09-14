@@ -9,32 +9,6 @@ local function refresh_production(player)
     end
 end
 
-local function change_floor(player, destination)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-    local floor = ui_state.context.floor
-
-    if subfactory == nil or floor == nil then return end
-
-    local selected_floor = nil
-    if destination == "up" and floor.level > 1 then
-        selected_floor = floor.origin_line.parent
-    elseif destination == "top" then
-        selected_floor = Subfactory.get(subfactory, "Floor", 1)
-    end
-
-    -- Only need to refresh if the floor was indeed changed
-    if selected_floor ~= nil then
-        ui_util.context.set_floor(player, selected_floor)
-
-        -- Remove previous floor if it has no recipes
-        local floor_removed = Floor.remove_if_empty(floor)
-
-        if floor_removed then calculation.update(player, subfactory) end
-        main_dialog.refresh(player, {"production_box", "production_table"})
-    end
-end
-
 
 -- ** TOP LEVEL **
 production_box.gui_events = {
@@ -49,7 +23,7 @@ production_box.gui_events = {
             pattern = "^fp_button_production_floor_[a-z]+$",
             handler = (function(player, element, _)
                 local destination = string.gsub(element.name, "fp_button_production_floor_", "")
-                change_floor(player, destination)
+                production_box.change_floor(player, destination)
             end)
         }
     }
@@ -61,7 +35,7 @@ production_box.misc_events = {
     end),
 
     fp_floor_up = (function(player, _)
-        change_floor(player, "up")
+        production_box.change_floor(player, "up")
     end)
 }
 
@@ -138,4 +112,32 @@ function production_box.refresh(player)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
+end
+
+
+-- Changes the floor to either be the top one or the one above the current one
+function production_box.change_floor(player, destination)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
+
+    if subfactory == nil or floor == nil then return end
+
+    local selected_floor = nil
+    if destination == "up" and floor.level > 1 then
+        selected_floor = floor.origin_line.parent
+    elseif destination == "top" then
+        selected_floor = Subfactory.get(subfactory, "Floor", 1)
+    end
+
+    -- Only need to refresh if the floor was indeed changed
+    if selected_floor ~= nil then
+        ui_util.context.set_floor(player, selected_floor)
+
+        -- Remove previous floor if it has no recipes
+        local floor_removed = Floor.remove_if_empty(floor)
+
+        if floor_removed then calculation.update(player, subfactory) end
+        main_dialog.refresh(player, {"production_box"--[[ , "production_table" ]]})
+    end
 end

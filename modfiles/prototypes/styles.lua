@@ -159,6 +159,47 @@ data.raw["gui-style"].default["fp_button_push_active"] = {
 }
 
 
+data.raw["gui-style"].default["fp_scroll_pane_fake_listbox"] = {
+    type = "scroll_pane_style",
+    parent = "scroll_pane_with_dark_background_under_subheader",
+    extra_right_padding_when_activated = -12,
+    background_graphical_set = { -- rubber grid
+      position = {282,17},
+      corner_size = 8,
+      overall_tiling_vertical_size = 22,
+      overall_tiling_vertical_spacing = 6,
+      overall_tiling_vertical_padding = 4,
+      overall_tiling_horizontal_padding = 4
+    },
+    vertically_stretchable = 'on',
+    horizontally_stretchable = 'on',
+    padding = 0,
+    vertical_flow_style = {
+      type = 'vertical_flow_style',
+      vertical_spacing = 0
+    }
+  }
+
+  data.raw["gui-style"].default["fp_button_fake_listbox_item"] = {
+    type = 'button_style',
+    parent = 'list_box_item',
+    left_padding = 4,
+    right_padding = 8,
+    horizontally_stretchable = 'on'
+  }
+
+  data.raw["gui-style"].default["fp_button_fake_listbox_item_active"] = {
+    type = 'button_style',
+    parent = 'fp_button_fake_listbox_item',
+    default_graphical_set = data.raw["gui-style"].default.button.selected_graphical_set,
+    hovered_graphical_set = data.raw["gui-style"].default.button.selected_graphical_set,
+    default_font_color = data.raw["gui-style"].default.button.selected_font_color,
+    default_vertical_offset = data.raw["gui-style"].default.button.selected_vertical_offset
+  }
+
+
+
+
 
 -- OLD STUFF
 data.raw["gui-style"].default["fp_footer_filler"] = {

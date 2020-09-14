@@ -29,30 +29,6 @@ local function refresh_with_archive_open(player, factory)
     end
 end
 
-local function archive_subfactory(player)
-    local player_table = data_util.get("table", player)
-    local ui_state = player_table.ui_state
-    local subfactory = ui_state.context.subfactory
-    local archive_open = ui_state.flags.archive_open
-
-    local origin = archive_open and player_table.archive or player_table.factory
-    local destination = archive_open and player_table.factory or player_table.archive
-
-    local removed_gui_position = Factory.remove(origin, subfactory)
-    reset_subfactory_selection(player, origin, removed_gui_position)
-    Factory.add(destination, subfactory)
-
-    refresh_with_archive_open(player, origin)
-end
-
-local function delete_subfactory(player)
-    local context = data_util.get("context", player)
-    local removed_gui_position = Factory.remove(context.factory, context.subfactory)
-    reset_subfactory_selection(player, context.factory, removed_gui_position)
-
-    refresh_with_archive_open(player, context.factory)
-end
-
 
 local function handle_subfactory_submission(player, options, action)
     local ui_state = data_util.get("ui_state", player)
@@ -72,13 +48,13 @@ local function handle_subfactory_submission(player, options, action)
             Factory.add(factory, new_subfactory)
             ui_util.context.set_subfactory(player, new_subfactory)
         end
+        main_dialog.refresh(player, nil)
 
     elseif action == "delete" then
         local removed_gui_position = Factory.remove(factory, subfactory)
         reset_subfactory_selection(player, factory, removed_gui_position)
+        refresh_with_archive_open(player, factory)
     end
-
-    if action ~= "cancel" then main_dialog.refresh(player, nil) end
 end
 
 local function handle_subfactory_data_change(modal_data, _)
@@ -131,6 +107,73 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
         }
     }
     return modal_data
+end
+
+
+local function archive_subfactory(player)
+    local player_table = data_util.get("table", player)
+    local ui_state = player_table.ui_state
+    local subfactory = ui_state.context.subfactory
+    local archive_open = ui_state.flags.archive_open
+
+    local origin = archive_open and player_table.archive or player_table.factory
+    local destination = archive_open and player_table.factory or player_table.archive
+
+    local removed_gui_position = Factory.remove(origin, subfactory)
+    reset_subfactory_selection(player, origin, removed_gui_position)
+    Factory.add(destination, subfactory)
+
+    refresh_with_archive_open(player, origin)
+end
+
+local function edit_subfactory(player)
+    local subfactory = data_util.get("context", player).subfactory
+    local modal_data = generate_subfactory_dialog_modal_data("edit", subfactory)
+    modal_dialog.enter(player, {type="options", submit=true, delete=true, modal_data=modal_data})
+end
+
+local function delete_subfactory(player)
+    local context = data_util.get("context", player)
+    local removed_gui_position = Factory.remove(context.factory, context.subfactory)
+    reset_subfactory_selection(player, context.factory, removed_gui_position)
+    refresh_with_archive_open(player, context.factory)
+end
+
+
+local function handle_subfactory_click(player, button, metadata)
+    local subfactory_id = string.gsub(button.name, "fp_button_subfactory_", "")
+    local context = data_util.get("context", player)
+    local subfactory = Factory.get(context.factory, "Subfactory", tonumber(subfactory_id))
+
+    if metadata.direction ~= nil then  -- shift subfactory in the given direction
+        local shifting_function = (metadata.alt) and Factory.shift_to_end or Factory.shift
+        if shifting_function(context.factory, subfactory, metadata.direction) then
+            main_dialog.refresh(player, {"subfactory_list"})
+        else
+            local direction_string = (metadata.direction == "negative") and {"fp.up"} or {"fp.down"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
+            title_bar.enqueue_message(player, message, "error", 1, true)
+        end
+    else
+        local old_subfactory = context.subfactory
+        ui_util.context.set_subfactory(player, subfactory)
+
+        if metadata.click == "left" then
+            if old_subfactory.id == subfactory.id then
+                -- Reset Floor when clicking on selected subfactory
+                production_box.change_floor(player, "top")
+            end
+            main_dialog.refresh(player, nil)
+
+        elseif metadata.click == "right" then
+            if metadata.action == "edit" then
+                main_dialog.refresh(player, nil)  -- refresh to update the selected subfactory
+                edit_subfactory(player)
+            elseif metadata.action == "delete" then
+                delete_subfactory(player)
+            end
+        end
+    end
 end
 
 
@@ -187,9 +230,7 @@ subfactory_list.gui_events = {
             name = "fp_sprite-button_subfactory_edit",
             timeout = 20,
             handler = (function(player, _, _)
-                local subfactory = data_util.get("context", player).subfactory
-                local modal_data = generate_subfactory_dialog_modal_data("edit", subfactory)
-                modal_dialog.enter(player, {type="options", submit=true, delete=true, modal_data=modal_data})
+                edit_subfactory(player)
             end)
         },
         {
@@ -198,16 +239,11 @@ subfactory_list.gui_events = {
             handler = (function(player, _, _)
                 delete_subfactory(player)
             end)
-        }
-    },
-    on_gui_selection_state_changed = {
+        },
         {
-            name = "fp_list-box_subfactories",
-            handler = (function(player, element)
-                local factory = data_util.get("context", player).factory
-                local subfactory = Factory.get_by_gui_position(factory, "Subfactory", element.selected_index)
-                ui_util.context.set_subfactory(player, subfactory)
-                main_dialog.refresh(player, "subfactory")
+            pattern = "^fp_button_subfactory_%d+$",
+            handler = (function(player, element, metadata)
+                handle_subfactory_click(player, element, metadata)
             end)
         }
     }
@@ -270,10 +306,8 @@ function subfactory_list.build(player)
       mouse_button_filter={"left"}}
     main_elements.subfactory_list["delete_button"] = button_delete
 
-
-    local listbox_subfactories = frame_vertical.add{type="list-box", name="fp_list-box_subfactories",
-      style="list_box_under_subheader"}
-    listbox_subfactories.style.vertically_stretchable = true
+    -- This is not really a list-box, but it imitates one and allows additional features
+    local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll_pane_fake_listbox"}
     main_elements.subfactory_list["subfactory_listbox"] = listbox_subfactories
 
     subfactory_list.refresh(player)
@@ -285,17 +319,20 @@ function subfactory_list.refresh(player)
     local subfactory_list_elements = ui_state.main_elements.subfactory_list
 
     local selected_subfactory = ui_state.context.subfactory
-    local listbox_items, selected_index = {}, 0
+    local listbox = subfactory_list_elements.subfactory_listbox
+    listbox.clear()
 
-    if selected_subfactory ~= nil then
-        selected_index = selected_subfactory.gui_position
+    local tooltip = ui_util.generate_tutorial_tooltip(player, "subfactory", false, false, false)
+    if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
         for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
-            table.insert(listbox_items, Subfactory.tostring(subfactory, true))
+            local selected = (selected_subfactory.id == subfactory.id)
+            local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
+
+            listbox.add{type="button", name="fp_button_subfactory_" .. subfactory.id,
+              caption=Subfactory.tostring(subfactory, true), tooltip=tooltip,
+              style=style, mouse_button_filter={"left-and-right"}}
         end
     end
-    local listbox = subfactory_list_elements.subfactory_listbox
-    listbox.items = listbox_items
-    listbox.selected_index = selected_index
 
     -- Set all the button states and styles appropriately
     local subfactory_exists = (selected_subfactory ~= nil)
