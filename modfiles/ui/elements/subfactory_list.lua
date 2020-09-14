@@ -307,7 +307,7 @@ function subfactory_list.build(player)
     main_elements.subfactory_list["delete_button"] = button_delete
 
     -- This is not really a list-box, but it imitates one and allows additional features
-    local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll_pane_fake_listbox"}
+    local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll-pane_fake_listbox"}
     main_elements.subfactory_list["subfactory_listbox"] = listbox_subfactories
 
     subfactory_list.refresh(player)
