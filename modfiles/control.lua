@@ -9,18 +9,18 @@ require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
 
-MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 DEVMODE = true  -- Enables certain conveniences for development
-
+MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
-OUTER_BORDER_MARGIN = 12
-VERTICAL_FRAME_SPACING = 12
-HORIZONTAL_FRAME_SPACING = 10
-SUBFACTORY_LIST_WIDTH = 300
+FRAME_SPACING = 12
+
+SUBFACTORY_SUBHEADER_HEIGHT = 36
 SUBFACTORY_LIST_ELEMENT_HEIGHT = 28
 SUBFACTORY_INFO_HEIGHT = 180
+
+SUBFACTORY_LIST_WIDTH = 300
 ITEM_BOX_BUTTON_SIZE = 40
 ITEM_BOX_PADDING = 12
 

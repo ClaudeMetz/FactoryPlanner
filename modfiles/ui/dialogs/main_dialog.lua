@@ -12,16 +12,17 @@ local function determine_main_dialog_dimensions(player)
     local player_table = data_util.get("table", player)
 
     local products_per_row = player_table.settings.products_per_row
+    local subfactory_list_rows = player_table.settings.subfactory_list_rows
+
     -- Width of the larger ingredients-box, which has twice the buttons per row
     local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
     -- Width of the two smaller product+byproduct boxes
     local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
-    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2
-      + (2 * OUTER_BORDER_MARGIN) + (3 * HORIZONTAL_FRAME_SPACING)
+    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
 
-    -- Total height of the dialog, which is comprised of the title bar (height 34) and the subfactory_list
-    local height = (player_table.settings.subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
-      + (2 * OUTER_BORDER_MARGIN) + 34
+    local title_bar_height = 34 -- not needed anywhere, thus no global necessary
+    local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
+    local height = title_bar_height + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
 
     local dimensions = {width=width, height=height}
     player_table.ui_state.main_dialog_dimensions = dimensions
@@ -116,18 +117,18 @@ function main_dialog.rebuild(player, default_visibility)
     title_bar.build(player)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
-    main_horizontal.style.horizontal_spacing = HORIZONTAL_FRAME_SPACING
+    main_horizontal.style.horizontal_spacing = FRAME_SPACING
     main_elements.flows["main_horizontal"] = main_horizontal
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
     left_vertical.style.width = SUBFACTORY_LIST_WIDTH
-    left_vertical.style.vertical_spacing = VERTICAL_FRAME_SPACING
+    left_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["left_vertical"] = left_vertical
     subfactory_list.build(player)
     subfactory_info.build(player)
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
-    right_vertical.style.vertical_spacing = VERTICAL_FRAME_SPACING
+    right_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["right_vertical"] = right_vertical
     item_boxes.build(player)
     production_box.build(player)  -- also builds the production table

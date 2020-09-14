@@ -156,7 +156,7 @@ function item_boxes.build(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local flow_horizontal = parent_flow.add{type="flow", direction="horizontal"}
-    flow_horizontal.style.horizontal_spacing = HORIZONTAL_FRAME_SPACING
+    flow_horizontal.style.horizontal_spacing = FRAME_SPACING
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
     local products_per_row = data_util.get("settings", player).products_per_row
