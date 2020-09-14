@@ -31,7 +31,8 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
 
     local table_item_count = 0
     local default_style = (name == "ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
-    local tut_mode_tooltip = (name == "product") and ui_util.generate_tutorial_tooltip(player, "tl_product", true) or ""
+    local tut_mode_tooltip = (name == "product") and
+      ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true) or ""
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class_name)) do
@@ -117,7 +118,10 @@ local function handle_item_button_click(player, button, metadata)
 
                 elseif metadata.action == "delete" then
                     Subfactory.remove(subfactory, item)
-                    data_util.cleanup_subfactory(player, subfactory, true)
+                    data_util.cleanup_subfactory(player, subfactory)
+
+                    calculation.update(player, subfactory)
+                    main_dialog.refresh(player, "subfactory")
                 end
             end
         end

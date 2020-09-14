@@ -37,10 +37,11 @@ end
 
 
 -- ** MISC **
-function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action)
+function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action, add_padding, avoid_archive)
     local player_table = data_util.get("table", player)
 
-    if player_table.preferences.tutorial_mode and not player_table.ui_state.flags.archive_open then
+    local archive_check = (avoid_archive and player_table.ui_state.flags.archive_open)
+    if player_table.preferences.tutorial_mode and not archive_check then
         local action_tooltip = {"fp.tut_mode_" .. element_type}
 
         local alt_action_name, alt_action_tooltip = player_table.settings.alt_action, ""
@@ -48,7 +49,8 @@ function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action)
             alt_action_tooltip = {"fp.tut_mode_alt_action", {"fp.alt_action_" .. alt_action_name}}
         end
 
-        return {"fp.tut_mode_tooltip", action_tooltip, alt_action_tooltip}
+        local padding = (add_padding) and {"fp.tut_mode_tooltip_padding"} or ""
+        return {"fp.tut_mode_tooltip", padding, action_tooltip, alt_action_tooltip}
     else
         return ""
     end

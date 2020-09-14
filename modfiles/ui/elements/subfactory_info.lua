@@ -6,7 +6,10 @@ local function repair_subfactory(player)
     local subfactory = data_util.get("context", player).subfactory
 
     Subfactory.repair(subfactory, player)
-    data_util.cleanup_subfactory(player, subfactory, true)
+    data_util.cleanup_subfactory(player, subfactory)
+
+    calculation.update(player, subfactory)
+    main_dialog.refresh(player, nil)  -- needs the full refresh to reset subfactory list buttons
 end
 
 local function change_timescale(player, new_timescale)
