@@ -23,7 +23,7 @@ data:extend({
         name = "fp_products_per_row",
         setting_type = "runtime-per-user",
         default_value = 8,
-        allowed_values = {5, 6, 7, 8, 9, 10, 11, 12},
+        allowed_values = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
         order = "b"
     },
     {
