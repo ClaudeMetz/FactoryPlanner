@@ -134,7 +134,7 @@ local function reset_player_gui(player)
 
     -- All mod frames
     for _, gui_element in pairs(player.gui.screen.children) do
-        if gui_element.valid and string.find(gui_element.name, "^fp_.+$") then
+        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
             gui_element.destroy()
         end
     end
