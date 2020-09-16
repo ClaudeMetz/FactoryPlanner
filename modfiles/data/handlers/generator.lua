@@ -179,7 +179,7 @@ function generator.all_recipes()
         local existing_recipe_names = {}
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
-                and fluidbox.filter.name == "steam" then
+                and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat or fluid as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     local temperature = proto.target_temperature
@@ -402,7 +402,7 @@ function generator.all_machines()
         -- Add machines that produce steam (ie. boilers)
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
-              and fluidbox.filter.name == "steam" then
+              and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     -- Find the corresponding input fluidbox
