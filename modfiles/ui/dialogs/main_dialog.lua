@@ -4,6 +4,8 @@ require("ui.elements.subfactory_info")
 require("ui.elements.view_state")
 require("ui.elements.item_boxes")
 require("ui.elements.production_box")
+require("ui.elements.production_table")
+require("ui.elements.production_handler")
 
 main_dialog = {}
 
@@ -20,7 +22,7 @@ local function determine_main_dialog_dimensions(player)
     local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
     local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
 
-    local title_bar_height = 34 -- not needed anywhere, thus no global necessary
+    local title_bar_height = 34 -- not needed elsewhere, thus no global necessary
     local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
     local height = title_bar_height + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
 
@@ -131,7 +133,7 @@ function main_dialog.rebuild(player, default_visibility)
     right_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["right_vertical"] = right_vertical
     item_boxes.build(player)
-    production_box.build(player)  -- also builds the production table
+    production_box.build(player)  -- also builds the production_table
 
     title_bar.refresh_message(player)
 end
@@ -152,7 +154,7 @@ function main_dialog.refresh(player, element_list)
         item_boxes.refresh(player)
 
         production_box.refresh(player)
-        --production_table.refresh(player)
+        production_table.refresh(player)
     end
 
     title_bar.refresh_message(player)
