@@ -47,7 +47,7 @@ function production_box.build(player)
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
     frame_vertical.style.vertically_stretchable = true
     frame_vertical.style.horizontally_stretchable = true
-    main_elements.item_boxes["vertical_frame"] = frame_vertical
+    main_elements.production_box["vertical_frame"] = frame_vertical
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height
@@ -84,7 +84,7 @@ function production_box.build(player)
     main_elements.production_box["instruction_label"] = label_instruction
 
     production_box.refresh(player)
-    --production_table.build(player)
+    production_table.build(player)
 end
 
 function production_box.refresh(player)
@@ -138,6 +138,6 @@ function production_box.change_floor(player, destination)
         local floor_removed = Floor.remove_if_empty(floor)
 
         if floor_removed then calculation.update(player, subfactory) end
-        main_dialog.refresh(player, {"production_box"--[[ , "production_table" ]]})
+        main_dialog.refresh(player, {"production_box", "production_table"})
     end
 end
