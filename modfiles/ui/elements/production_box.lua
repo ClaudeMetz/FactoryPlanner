@@ -83,8 +83,8 @@ function production_box.build(player)
     label_instruction.style.margin = 20
     main_elements.production_box["instruction_label"] = label_instruction
 
-    production_box.refresh(player)
     production_table.build(player)
+    production_box.refresh(player)
 end
 
 function production_box.refresh(player)
@@ -112,6 +112,8 @@ function production_box.refresh(player)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
+
+    ui_state.main_elements.production_table.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
 end
 
 

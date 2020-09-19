@@ -1,3 +1,8 @@
 production_handler = {}
 
---production_handler.gui_events = {}
+-- ** TOP LEVEL **
+production_handler.gui_events = {
+    on_gui_click = {
+
+    }
+}
