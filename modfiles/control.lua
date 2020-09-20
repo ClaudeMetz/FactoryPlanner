@@ -12,6 +12,7 @@ require("ui.event_handler")
 DEVMODE = true  -- Enables certain conveniences for development
 MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
+NEW = nil  -- global variable used to store new prototype data temporarily for migration
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 FRAME_SPACING = 12

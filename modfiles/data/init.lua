@@ -90,7 +90,6 @@ end
 
 
 -- Makes sure that the given player has a player_table and a reset gui state
--- The table attribute specified what table the data should be loaded from (either global or new)
 local function update_player_table(player)
     local function reload_data()
         reload_settings(player)  -- reloads the settings of the player
