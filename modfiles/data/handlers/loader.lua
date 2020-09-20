@@ -4,7 +4,7 @@ loader = {}
 -- ** LOCAL UTIL **
 -- Returns a list of recipe groups in their proper order
 local function ordered_recipe_groups()
-    group_dict = {}
+    local group_dict = {}
 
     -- Make a dict with all recipe groups
     if not global.all_recipes.recipes then return end

@@ -171,9 +171,9 @@ function item_boxes.refresh(player)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
 
-    prow_count = refresh_item_box(player, "product", subfactory, true)
-    brow_count = refresh_item_box(player, "byproduct", subfactory, false)
-    irow_count = refresh_item_box(player, "ingredient", subfactory, false)
+    local prow_count = refresh_item_box(player, "product", subfactory, true)
+    local brow_count = refresh_item_box(player, "byproduct", subfactory, false)
+    local irow_count = refresh_item_box(player, "ingredient", subfactory, false)
 
     local item_boxes_elements = ui_state.main_elements.item_boxes
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
