@@ -39,7 +39,7 @@ function generator.all_recipes()
     local recipe_filter = {{filter="energy", comparison=">", value=0},
       {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
-        local category_id = new.all_machines.map[proto.category]
+        local category_id = NEW.all_machines.map[proto.category]
         -- Avoid any recipes that have no machine to produce them, or are annoying
         if category_id ~= nil and not generator_util.is_annoying_recipe(proto) then
             local recipe = {
@@ -251,7 +251,7 @@ function generator.all_items()
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
     local relevant_items = {}
-    for _, recipe in pairs(new.all_recipes.recipes) do
+    for _, recipe in pairs(NEW.all_recipes.recipes) do
         for _, product in pairs(recipe.products) do
             add_item(relevant_items, {proto=product, is_product=true})
         end
@@ -485,7 +485,7 @@ function generator.all_fuels()
 
     -- Determine all the fuel categories that the machine prototypes use
     local used_fuel_categories = {}
-    for _, categories in pairs(new.all_machines.categories) do
+    for _, categories in pairs(NEW.all_machines.categories) do
         for _, machine in pairs(categories.machines) do
             if machine.burner then
                 for category_name, _ in pairs(machine.burner.categories) do
@@ -497,9 +497,10 @@ function generator.all_fuels()
 
     local fuel_filter = {{filter="fuel-value", comparison=">", value=0},
       {filter="fuel-value", comparison="<", value=1e+21, mode="and"}}
+    local new_item_types = NEW.all_items.types
 
     -- Add solid fuels
-    local item_map = new.all_items.types[new.all_items.map["item"]].map
+    local item_map = new_item_types[NEW.all_items.map["item"]].map
     for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
         if item_map[proto.name] and used_fuel_categories[proto.fuel_category] ~= nil then
@@ -516,7 +517,7 @@ function generator.all_fuels()
     end
 
     -- Add liquid fuels
-    local fluid_map = new.all_items.types[new.all_items.map["fluid"]].map
+    local fluid_map = new_item_types[NEW.all_items.map["fluid"]].map
     for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
         if fluid_map[proto.name] then
