@@ -123,7 +123,6 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements.flows["main_horizontal"] = main_horizontal
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
-    left_vertical.style.width = SUBFACTORY_LIST_WIDTH
     left_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["left_vertical"] = left_vertical
     subfactory_list.build(player)

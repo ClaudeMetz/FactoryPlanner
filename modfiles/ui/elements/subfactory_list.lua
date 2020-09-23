@@ -308,6 +308,7 @@ function subfactory_list.build(player)
 
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll-pane_fake_listbox"}
+    listbox_subfactories.style.width = SUBFACTORY_LIST_WIDTH
     main_elements.subfactory_list["subfactory_listbox"] = listbox_subfactories
 
     subfactory_list.refresh(player)

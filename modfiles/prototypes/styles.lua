@@ -36,7 +36,6 @@ styles["fp_scroll-pane_fake_listbox"] = {
         overall_tiling_horizontal_padding = 4
     },
     vertically_stretchable = "on",
-    horizontally_stretchable = "on",
     padding = 0,
     vertical_flow_style = {
         type = "vertical_flow_style",
@@ -173,7 +172,8 @@ styles["fp_button_fake_listbox_item"] = {
     parent = "list_box_item",
     left_padding = 4,
     right_padding = 8,
-    horizontally_stretchable = "on"
+    horizontally_stretchable = "on",
+    horizontally_squashable = "on"
 }
 
 -- The active style needs to be separate so the selected subfactory can still be clicked
