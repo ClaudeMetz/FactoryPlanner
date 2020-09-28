@@ -82,7 +82,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
 
     flow_mb_defaults.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_amount"}},
       tooltip={"fp.preference_mb_default_amount_tt"}}
-    local textfield_amount = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_ampimt",
+    local textfield_amount = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_amount",
       text=mb_defaults.beacon_count}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 40
