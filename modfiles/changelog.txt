@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.0.8
+Date: 28. 09. 2020
   Bugfixes:
     - Fixed that the preference for the default beacon amount would not be saved
 
