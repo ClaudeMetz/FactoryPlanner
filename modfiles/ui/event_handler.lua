@@ -95,9 +95,9 @@ special_gui_handlers.on_gui_click = (function(player, event, event_handlers)
     if click == "left" then
         if not event.control and event.shift then direction = "positive"
         elseif event.control and not event.shift then direction = "negative" end
-    elseif click == "right" then
-        if event.control and not event.shift and not event.alt then action = "delete"
-        elseif not event.control and not event.shift and not event.alt then action = "edit" end
+    elseif click == "right" and not event.alt then
+        if event.control and not event.shift then action = "delete"
+        elseif not event.control and not event.shift then action = "edit" end
     end
 
     local metadata = {alt = event.alt, click = click, direction = direction, action = action}
