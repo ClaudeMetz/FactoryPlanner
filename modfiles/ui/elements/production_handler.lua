@@ -50,6 +50,26 @@ local function handle_recipe_click(player, button, metadata)
     end
 end
 
+local function handle_percentage_change(player, textfield)
+    local line_id = tonumber(string.match(textfield.name, "%d+"))
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", line_id)
+
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    relevant_line.percentage = tonumber(textfield.text) or 0
+end
+
+local function handle_percentage_confirmation(player, textfield)
+    local line_id = tonumber(string.match(textfield.name, "%d+"))
+    local textfield_name = textfield.name  -- get it here before it becomes invalid
+    local ui_state = data_util.get("ui_state", player)
+
+    calculation.update(player, ui_state.context.subfactory)
+    main_dialog.refresh(player, "subfactory")
+
+    ui_state.main_elements.production_table.table["flow_percentage_" .. line_id][textfield_name].focus()
+end
+
 
 -- ** TOP LEVEL **
 production_handler.gui_events = {
@@ -61,5 +81,22 @@ production_handler.gui_events = {
                 handle_recipe_click(player, element, metadata)
             end)
         },
+    },
+    on_gui_text_changed = {
+        {
+            pattern = "^fp_textfield_production_percentage_%d+$",
+            handler = (function(player, element)
+                handle_percentage_change(player, element)
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            pattern = "^fp_textfield_production_percentage_%d+$",
+            timeout = 20,
+            handler = (function(player, element)
+                handle_percentage_confirmation(player, element)
+            end)
+        }
     }
 }

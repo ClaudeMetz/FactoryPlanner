@@ -2,8 +2,10 @@ production_table = {}
 
 -- ** LOCAL UTIL **
 local function generate_metadata(player)
+    local ui_state = data_util.get("ui_state", player)
     local metadata = {
-        context = data_util.get("context", player),
+        context = ui_state.context,
+        archive_open = (ui_state.flags.archive_open)
     }
 
     if data_util.get("preferences", player).tutorial_mode then
@@ -38,7 +40,14 @@ function builders.recipe(_, line, parent_flow, metadata)
       sprite=recipe_proto.sprite, tooltip=tooltip, enabled=enabled, style=style, mouse_button_filter={"left-and-right"}}
 end
 
-function builders.percentage(parent_flow, line)
+function builders.percentage(_, line, parent_flow, metadata)
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+
+    local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
+      .. line.id, text=relevant_line.percentage, enabled=(not metadata.archive_open)}
+    ui_util.setup_numeric_textfield(textfield_percentage, true, false)
+    textfield_percentage.style.horizontal_align = "center"
+    textfield_percentage.style.width = 55
 end
 
 function builders.machine(parent_flow, line)
@@ -122,6 +131,7 @@ function production_table.refresh(player)
     local table_production = scroll_pane_production.add{type="table", column_count=column_count}
     table_production.style.horizontal_spacing = 12
     table_production.style.margin = {6, 18, 0, 18}
+    production_table_elements["table"] = table_production
 
     -- Column headers
     for index, column_data in ipairs(production_columns) do
@@ -137,8 +147,10 @@ function production_table.refresh(player)
 
     -- Production lines
     for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
+        -- TODO add metadata per line as well
         for _, column_data in ipairs(production_columns) do
-            local flow = table_production.add{type="flow", direction="horizontal"}
+            local flow = table_production.add{type="flow", name="flow_" .. column_data.name .. "_" .. line.id,
+              direction="horizontal"}
             builders[column_data.name](player, line, flow, metadata)
         end
     end
