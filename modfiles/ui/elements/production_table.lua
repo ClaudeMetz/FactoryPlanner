@@ -1,16 +1,41 @@
 production_table = {}
 
 -- ** LOCAL UTIL **
+local function generate_metadata(player)
+    local metadata = {
+        context = data_util.get("context", player),
+    }
 
+    if data_util.get("preferences", player).tutorial_mode then
+        metadata.recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "recipe", true, true, true)
+    end
+
+    return metadata
+end
 
 -- ** BUILDERS **
 local builders = {}
 
-function builders.recipe(parent_flow, line)
+function builders.recipe(_, line, parent_flow, metadata)
     local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     local recipe_proto = relevant_line.recipe.proto
 
-    local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style="flib_standalone_slot_button_default"}
+    local style, tooltip, enabled = "flib_standalone_slot_button_default", recipe_proto.localised_name, true
+    -- Make the first line of every subfloor un-interactable, it stays constant
+    if metadata.context.floor.level > 1 and line.gui_position == 1 then
+        style = "flib_standalone_slot_button_blue"
+        enabled = false
+    else
+        if line.subfloor then
+            tooltip = {"fp.annotated_title", tooltip, {"fp.recipe_subfloor_attached"}}
+            style = "flib_standalone_slot_button_blue"
+        end
+
+        tooltip = {"fp.two_word_title", tooltip, metadata.recipe_tutorial_tooltip or ""}
+    end
+
+    parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id,
+      sprite=recipe_proto.sprite, tooltip=tooltip, enabled=enabled, style=style, mouse_button_filter={"left-and-right"}}
 end
 
 function builders.percentage(parent_flow, line)
@@ -107,11 +132,14 @@ function production_table.refresh(player)
         table_production.style.column_alignments[index] = column_data.alignment
     end
 
+    -- Generates some data that is relevant to several different builders
+    local metadata = generate_metadata(player)
+
     -- Production lines
     for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
         for _, column_data in ipairs(production_columns) do
             local flow = table_production.add{type="flow", direction="horizontal"}
-            builders[column_data.name](flow, line)
+            builders[column_data.name](player, line, flow, metadata)
         end
     end
 end
