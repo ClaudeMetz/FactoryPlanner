@@ -15,12 +15,17 @@ local function generate_metadata(player)
     return metadata
 end
 
+local function generate_line_metadata(line)
+    return {
+        relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    }
+end
+
 -- ** BUILDERS **
 local builders = {}
 
-function builders.recipe(_, line, parent_flow, metadata)
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-    local recipe_proto = relevant_line.recipe.proto
+function builders.recipe(_, line, parent_flow, metadata, line_metadata)
+    local recipe_proto = line_metadata.relevant_line.recipe.proto
 
     local style, tooltip, enabled = "flib_slot_button_default", recipe_proto.localised_name, true
     -- Make the first line of every subfloor un-interactable, it stays constant
@@ -36,15 +41,13 @@ function builders.recipe(_, line, parent_flow, metadata)
         tooltip = {"fp.two_word_title", tooltip, metadata.recipe_tutorial_tooltip or ""}
     end
 
-    parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id,
-      sprite=recipe_proto.sprite, tooltip=tooltip, enabled=enabled, style=style, mouse_button_filter={"left-and-right"}}
+    parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id, enabled=enabled,
+      sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
 
-function builders.percentage(_, line, parent_flow, metadata)
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-
+function builders.percentage(_, line, parent_flow, metadata, line_metadata)
     local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
-      .. line.id, text=relevant_line.percentage, enabled=(not metadata.archive_open)}
+      .. line.id, text=line_metadata.relevant_line.percentage, enabled=(not metadata.archive_open)}
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
@@ -147,11 +150,12 @@ function production_table.refresh(player)
 
     -- Production lines
     for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
-        -- TODO add metadata per line as well
+        local line_metadata = generate_line_metadata(line)
+
         for _, column_data in ipairs(production_columns) do
             local flow = table_production.add{type="flow", name="flow_" .. column_data.name .. "_" .. line.id,
               direction="horizontal"}
-            builders[column_data.name](player, line, flow, metadata)
+            builders[column_data.name](player, line, flow, metadata, line_metadata)
         end
     end
 end
