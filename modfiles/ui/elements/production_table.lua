@@ -22,15 +22,15 @@ function builders.recipe(_, line, parent_flow, metadata)
     local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     local recipe_proto = relevant_line.recipe.proto
 
-    local style, tooltip, enabled = "flib_standalone_slot_button_default", recipe_proto.localised_name, true
+    local style, tooltip, enabled = "flib_slot_button_default", recipe_proto.localised_name, true
     -- Make the first line of every subfloor un-interactable, it stays constant
     if metadata.context.floor.level > 1 and line.gui_position == 1 then
-        style = "flib_standalone_slot_button_blue"
+        style = "flib_slot_button_blue"
         enabled = false
     else
         if line.subfloor then
             tooltip = {"fp.annotated_title", tooltip, {"fp.recipe_subfloor_attached"}}
-            style = "flib_standalone_slot_button_blue"
+            style = "flib_slot_button_blue"
         end
 
         tooltip = {"fp.two_word_title", tooltip, metadata.recipe_tutorial_tooltip or ""}
