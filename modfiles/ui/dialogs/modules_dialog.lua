@@ -4,10 +4,10 @@ modules_dialog = {}  -- table containing functionality shared between both dialo
 
 -- ** LOCAL UTIL **
 local function generate_module_object(ui_elements)
-    local module_choice = ui_elements.module_choice_button.elem_value
-    if module_choice then
+    local choice_button = ui_elements.module_choice_button
+    if choice_button and choice_button.valid and choice_button.elem_value then
         local module_amount = tonumber(ui_elements.module_textfield.text)
-        local module_proto = MODULE_NAME_MAP[module_choice]
+        local module_proto = MODULE_NAME_MAP[choice_button.elem_value]
         return Module.init_by_proto(module_proto, module_amount)
     else
         return nil
@@ -26,6 +26,7 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, mo
         ui_elements.no_modules_label = flow_module.add{type="label", caption={"fp.error_message",
           {"fp.module_issue_none_compatible"}}}
         ui_elements.no_modules_label.style.font = "heading-2"
+        ui_elements.no_modules_label.style.padding = 2
         return
     else
         ui_elements.no_modules_label = nil
