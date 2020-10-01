@@ -22,7 +22,7 @@ data:extend({
         type = "int-setting",
         name = "fp_products_per_row",
         setting_type = "runtime-per-user",
-        default_value = 8,
+        default_value = 7,
         allowed_values = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
         order = "b"
     },
@@ -30,8 +30,8 @@ data:extend({
         type = "int-setting",
         name = "fp_subfactory_list_rows",
         setting_type = "runtime-per-user",
-        default_value = 22,
-        allowed_values = {12, 14, 16, 18, 20, 22, 24, 26},
+        default_value = 24,
+        allowed_values = {12, 14, 16, 18, 20, 22, 24, 26, 28},
         order = "c"
     },
     {
