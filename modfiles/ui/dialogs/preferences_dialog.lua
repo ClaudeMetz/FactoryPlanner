@@ -62,31 +62,35 @@ function preference_structures.mb_defaults(preferences, content_frame)
     local mb_defaults = preferences.mb_defaults
 
     local preference_box = add_preference_box(content_frame, "mb_defaults")
-    local flow_mb_defaults = preference_box.add{type="flow", direction="horizontal"}
-    flow_mb_defaults.style.vertical_align = "center"
 
+    local function add_mb_default(type, tooltip)
+        local flow = preference_box.add{type="flow", direction="horizontal"}
+        flow.style.vertical_align = "center"
 
-    local function add_mb_default(type)
-        flow_mb_defaults.add{type="label", caption={"fp.pu_" .. type, 1}}
-
-        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
+        local choose_elem_button = flow.add{type="choose-elem-button", elem_type="item",
           name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset_tiny",
           elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
         choose_elem_button.elem_value = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
-        choose_elem_button.style.margin = {0, 12, 0, 4}
+
+        if tooltip then
+            flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_" .. type, 1}}, tooltip={"fp.preference_mb_"..type.."_tt"}}
+        else
+            flow.add{type="label", caption={"fp.preference_mb_" .. type, 1}}
+        end
     end
 
-    add_mb_default("machine")
-    add_mb_default("beacon")
+    add_mb_default("machine", false)
+    add_mb_default("machine_secondary", true)
+    add_mb_default("beacon", false)
 
-
-    flow_mb_defaults.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_amount"}},
-      tooltip={"fp.preference_mb_default_amount_tt"}}
-    local textfield_amount = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_amount",
+    local beacon_amount_flow = preference_box.add{type="flow", direction="horizontal"}
+    beacon_amount_flow.style.vertical_align = "center"
+    local textfield_amount = beacon_amount_flow.add{type="textfield", name="fp_textfield_mb_default_amount",
       text=mb_defaults.beacon_count}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
-    textfield_amount.style.width = 40
-    textfield_amount.style.margin = {0, 8}
+    textfield_amount.style.width = 32
+    beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_amount"}},
+      tooltip={"fp.preference_mb_default_amount_tt"}}
 end
 
 function preference_structures.prototypes(player, content_frame, ui_elements, type)
@@ -240,7 +244,7 @@ preferences_dialog.gui_events = {
     },
     on_gui_elem_changed = {
         {
-            pattern = "^fp_choose%-elem%-button_mb_default_[a-z]+$",
+            pattern = "^fp_choose%-elem%-button_mb_default_[a-z_]+$",
             handler = (function(player, element)
                 handle_mb_default_change(player, element)
             end)
