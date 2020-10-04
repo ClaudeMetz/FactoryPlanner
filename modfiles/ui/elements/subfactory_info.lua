@@ -253,7 +253,8 @@ function subfactory_info.refresh(player)
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
             local timescale = tonumber(string.match(button.name, "%d+"))
             local selected = (subfactory.timescale == timescale)
-            button.enabled = not (selected or archive_open)  -- gives it the correct style
+            button.style = (selected) and "fp_button_push_active" or "fp_button_push"
+            button.enabled = not (selected or archive_open)
         end
 
         -- Mining Productivity

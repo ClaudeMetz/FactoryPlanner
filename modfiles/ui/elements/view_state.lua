@@ -194,6 +194,7 @@ function view_state.refresh(player,  table_view_state)
     for _, view_state in ipairs(view_states) do
         local view_button = table_view_state["fp_button_view_state_" .. view_state.name]
         view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
-        view_button.enabled = (not view_state.selected)  -- gives it the correct style
+        view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
+        view_button.enabled = (not view_state.selected)
     end
 end
