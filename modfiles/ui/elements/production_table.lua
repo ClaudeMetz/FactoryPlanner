@@ -117,8 +117,9 @@ function production_table.refresh(player)
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = data_util.get("preferences", player)
     local context = data_util.get("context", player)
-    local production_columns, column_count = {}, 0
+    if context.subfactory == nil then return end
 
+    local production_columns, column_count = {}, 0
     for _, column_data in ipairs(all_production_columns) do
         -- Explicit comparison needed here, as both true and nil columns should be shown
         if preferences[column_data.name .. "_column"] ~= false then
