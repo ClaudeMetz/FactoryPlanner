@@ -262,7 +262,6 @@ function subfactory_list.build(player)
 
     local button_toggle_archive = subheader.add{type="button", name="fp_button_subfactories_toggle_archive",
       caption={"fp.action_toggle_archive"}, mouse_button_filter={"left"}}
-    button_toggle_archive.style.disabled_font_color = {} -- black
     main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
 
     subheader.add{type="line", direction="vertical"}
@@ -340,14 +339,18 @@ function subfactory_list.refresh(player)
     local archive_open = (ui_state.flags.archive_open)
 
     local archived_subfactory_count = Factory.count(player_table.archive, "Subfactory")
-    local subfactory_plural = {"fp.pl_subfactory", archived_subfactory_count}
-    local archive_tooltip = {"fp.action_toggle_archive_tt", (archived_subfactory_count > 0)
-      and {"fp.archive_filled", archived_subfactory_count, subfactory_plural} or {"fp.archive_empty"}}
-    subfactory_list_elements.toggle_archive_button.tooltip = archive_tooltip
     subfactory_list_elements.toggle_archive_button.enabled = (archived_subfactory_count > 0)
-
     subfactory_list_elements.toggle_archive_button.style = (archive_open) and
       "flib_selected_tool_button" or "tool_button"
+
+    if not archive_open then
+        local subfactory_plural = {"fp.pl_subfactory", archived_subfactory_count}
+        local archive_tooltip = {"fp.action_open_archive_tt", (archived_subfactory_count > 0)
+          and {"fp.archive_filled", archived_subfactory_count, subfactory_plural} or {"fp.archive_empty"}}
+        subfactory_list_elements.toggle_archive_button.tooltip = archive_tooltip
+    else
+        subfactory_list_elements.toggle_archive_button.tooltip = {"fp.action_close_archive_tt"}
+    end
 
     subfactory_list_elements.export_button.enabled = (subfactory_exists)
     subfactory_list_elements.import_button.enabled = (not archive_open)
