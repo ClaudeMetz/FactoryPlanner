@@ -136,9 +136,9 @@ end
 function view_state.rebuild_state(player)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
-    if not subfactory then return end
 
-    local timescale = TIMESCALE_MAP[subfactory.timescale]
+    -- If no subfactory exists yet, choose a default timescale so the UI can build properly
+    local timescale = (subfactory) and TIMESCALE_MAP[subfactory.timescale] or "second"
     local singular_bol = data_util.get("settings", player).belts_or_lanes:sub(1, -2)
     local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
 
