@@ -142,7 +142,8 @@ end
 
 local function handle_subfactory_click(player, button, metadata)
     local subfactory_id = string.gsub(button.name, "fp_button_subfactory_", "")
-    local context = data_util.get("context", player)
+    local ui_state = data_util.get("ui_state", player)
+    local context = ui_state.context
     local subfactory = Factory.get(context.factory, "Subfactory", tonumber(subfactory_id))
 
     if metadata.direction ~= nil then  -- shift subfactory in the given direction
@@ -162,6 +163,10 @@ local function handle_subfactory_click(player, button, metadata)
             if old_subfactory.id == subfactory.id then
                 -- Reset Floor when clicking on selected subfactory
                 production_box.change_floor(player, "top")
+            elseif ui_state.flags.recalculate_on_subfactory_change then
+                -- This flag is set when a textfield is changed but not confirmed
+                ui_state.flags.recalculate_on_subfactory_change = false
+                calculation.update(player, old_subfactory)
             end
             main_dialog.refresh(player, nil)
 

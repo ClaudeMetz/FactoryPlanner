@@ -52,11 +52,13 @@ end
 
 local function handle_percentage_change(player, textfield)
     local line_id = tonumber(string.match(textfield.name, "%d+"))
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
+    local ui_state = data_util.get("ui_state", player)
+    local line = Floor.get(ui_state.context.floor, "Line", line_id)
 
     local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     relevant_line.percentage = tonumber(textfield.text) or 0
+
+    ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
 end
 
 local function handle_percentage_confirmation(player, textfield)
@@ -64,6 +66,7 @@ local function handle_percentage_confirmation(player, textfield)
     local textfield_name = textfield.name  -- get it here before it becomes invalid
     local ui_state = data_util.get("ui_state", player)
 
+    ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh
     calculation.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
 
@@ -93,7 +96,6 @@ production_handler.gui_events = {
     on_gui_confirmed = {
         {
             pattern = "^fp_textfield_production_percentage_%d+$",
-            timeout = 20,
             handler = (function(player, element)
                 handle_percentage_confirmation(player, element)
             end)

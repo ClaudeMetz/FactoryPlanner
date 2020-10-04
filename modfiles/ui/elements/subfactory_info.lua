@@ -72,8 +72,9 @@ subfactory_info.gui_events = {
         {
             name = "fp_textfield_mining_prod_override",
             handler = (function(player, element)
-                local subfactory = data_util.get("context", player).subfactory
-                subfactory.mining_productivity = tonumber(element.text)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.context.subfactory.mining_productivity = tonumber(element.text)
+                ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
             end)
         }
     },
@@ -81,8 +82,9 @@ subfactory_info.gui_events = {
         {
             name = "fp_textfield_mining_prod_override",
             handler = (function(player, _)
-                local subfactory = data_util.get("context", player).subfactory
-                calculation.update(player, subfactory)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh
+                calculation.update(player, ui_state.context.subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)
         }
