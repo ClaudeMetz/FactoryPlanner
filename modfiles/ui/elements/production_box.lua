@@ -78,8 +78,7 @@ function production_box.build(player)
     local table_view_state = view_state.build(player, subheader)
     main_elements.production_box["view_state_table"] = table_view_state
 
-    local label_instruction = frame_vertical.add{type="label", caption={"fp.production_instruction"},
-      style="bold_label"}
+    local label_instruction = frame_vertical.add{type="label", style="bold_label"}
     label_instruction.style.margin = 20
     main_elements.production_box["instruction_label"] = label_instruction
 
@@ -99,8 +98,6 @@ function production_box.refresh(player)
     local archive_open = (ui_state.flags.archive_open)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
-    production_box_elements.instruction_label.visible = (subfactory_valid and not any_lines_present)
-
     production_box_elements.level_label.caption = (not subfactory_valid) and ""
       or {"fp.bold_label", {"fp.two_word_title", {"fp.level"}, current_level}}
 
@@ -112,6 +109,23 @@ function production_box.refresh(player)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
+
+    -- This structure is stupid and huge, but not sure how to do it more elegantly
+    production_box_elements.instruction_label.visible = false
+    if not archive_open then
+        if subfactory == nil then
+            production_box_elements.instruction_label.caption = {"fp.production_instruction_subfactory"}
+            production_box_elements.instruction_label.visible = true
+        elseif subfactory_valid then
+            if subfactory.Product.count == 0 then
+                production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
+                production_box_elements.instruction_label.visible = true
+            elseif not any_lines_present then
+                production_box_elements.instruction_label.caption = {"fp.production_instruction_recipe"}
+                production_box_elements.instruction_label.visible = true
+            end
+        end
+    end
 
     ui_state.main_elements.production_table.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
 end
