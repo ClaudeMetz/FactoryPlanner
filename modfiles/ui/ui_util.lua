@@ -23,7 +23,8 @@ end
 
 -- Sets up the given textfield as a numeric one, with the specified options
 function ui_util.setup_numeric_textfield(textfield, decimal, negative)
-    ui_util.setup_textfield(textfield)
+    textfield.lose_focus_on_confirm = true
+    textfield.clear_and_focus_on_right_click = true
     textfield.numeric = true
     textfield.allow_decimal = (decimal or false)
     textfield.allow_negative = (negative or false)
