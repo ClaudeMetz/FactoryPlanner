@@ -267,6 +267,7 @@ function subfactory_list.build(player)
 
     local button_toggle_archive = subheader.add{type="button", name="fp_button_subfactories_toggle_archive",
       caption={"fp.action_toggle_archive"}, mouse_button_filter={"left"}}
+    button_toggle_archive.style.disabled_font_color = {}
     main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
 
     subheader.add{type="line", direction="vertical"}
