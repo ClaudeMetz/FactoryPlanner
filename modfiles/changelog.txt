@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.0.10
+Date: 05. 10. 2020
   Features:
     - Added a secondary default module that will try to insert itself if the primary one is not compatible with the new machine/recipe (thanks scottsmul!)
 
