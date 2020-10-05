@@ -117,19 +117,19 @@ local function attempt_adding_line(player, recipe_id)
 
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.machine
-        local machine_secondary_module = mb_defaults.machine_secondary
-        if machine_module ~= nil then
-            if Machine.check_module_compatibility(line.machine, machine_module) then
-                local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
-                Machine.add(line.machine, new_module)
+        local secondary_module = mb_defaults.machine_secondary
 
-            elseif Machine.check_module_compatibility(line.machine, machine_secondary_module) then
-                local new_module = Module.init_by_proto(machine_secondary_module, line.machine.proto.module_limit)
-                Machine.add(line.machine, new_module)
+        if machine_module and Machine.check_module_compatibility(line.machine, machine_module) then
+            local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
+            Machine.add(line.machine, new_module)
 
-            elseif message == nil then  -- don't overwrite previous message, if it exists
-                message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
-            end
+        elseif secondary_module and Machine.check_module_compatibility(line.machine, secondary_module) then
+            local new_module = Module.init_by_proto(secondary_module, line.machine.proto.module_limit)
+            Machine.add(line.machine, new_module)
+
+        -- Only show an error if any module default is actually set
+        elseif machine_module and message == nil then  -- don't overwrite previous message, if it exists
+            message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
         end
 
         -- Add default beacon modules, if desired by the user
