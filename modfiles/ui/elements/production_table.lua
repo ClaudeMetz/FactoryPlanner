@@ -3,13 +3,17 @@ production_table = {}
 -- ** LOCAL UTIL **
 local function generate_metadata(player)
     local ui_state = data_util.get("ui_state", player)
+    local preferences = data_util.get("preferences", player)
+
     local metadata = {
         context = ui_state.context,
-        archive_open = (ui_state.flags.archive_open)
+        archive_open = (ui_state.flags.archive_open),
+        round_button_numbers = preferences.round_button_numbers
     }
 
-    if data_util.get("preferences", player).tutorial_mode then
+    if preferences.tutorial_mode then
         metadata.recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "recipe", true, true, true)
+        metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
     end
 
     return metadata
@@ -53,8 +57,45 @@ function builders.percentage(_, line, parent_flow, metadata, line_metadata)
     textfield_percentage.style.width = 55
 end
 
-function builders.machine(parent_flow, line)
+function builders.machine(_, line, parent_flow, metadata, _)
+    local machine_count = line.machine.count
 
+    if line.subfloor then  -- add a button that shows the total of all machines on the subfloor
+        -- Machine count doesn't need any special formatting in this case because it'll always be an integer
+        local tooltip = {"fp.subfloor_machine_count", machine_count, {"fp.pl_machine", machine_count}}
+        parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default",
+          enabled=false, number=machine_count, tooltip=tooltip}
+    else
+        machine_count = ui_util.format_number(machine_count, 4)
+        local tooltip_count = machine_count
+        if machine_count == "0" and line.production_ratio > 0 then
+            tooltip_count = "<0.0001"
+            machine_count = "0.01"  -- shows up as 0.0 on the button
+        end
+        if metadata.round_button_numbers then machine_count = math.ceil(machine_count) end
+
+        local style, indication, machine_limit = "flib_slot_button_default", "", line.machine.limit
+        if machine_limit ~= nil then
+            if line.machine.hard_limit then
+                style = "flib_slot_button_cyan"
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_hard", machine_limit}}}
+            elseif line.production_ratio < line.uncapped_production_ratio then
+                style = "flib_slot_button_yellow"
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_enforced", machine_limit}}}
+            else
+                style = "flib_slot_button_green"
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_set", machine_limit}}}
+            end
+        end
+
+        local machine_proto = line.machine.proto
+        local plural_parameter = (machine_count == "1") and 1 or 2
+        local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
+        local tooltip = {"", machine_proto.localised_name, number_line, indication, metadata.machine_tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
+          sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+    end
 end
 
 function builders.beacon(parent_flow, line)
