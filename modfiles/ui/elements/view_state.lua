@@ -8,7 +8,7 @@ function processors.items_per_timescale(metadata, raw_amount, item_type, _)
 
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == 1) and 1 or 2
+        local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_type == "fluid") and {"fp.pl_fluid", 1} or {"fp.pl_item", plural_parameter}
         tooltip = {"fp.two_word_title", number, {"fp.per_title", type_string, metadata.timescale_string}}
     end
@@ -24,7 +24,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_type, _)
 
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == 1) and 1 or 2
+        local plural_parameter = (number == "1") and 1 or 2
         tooltip = {"fp.two_word_title", number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
     end
 
@@ -38,9 +38,9 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_type
 
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == 1) and 1 or 2
+        local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_type == "fluid") and {"fp.pl_fluid", 1} or {"fp.pl_item", plural_parameter}
-        local item_per_second =  {"fp.per_title", type_string, {"fp.unit_second"}}
+        local item_per_second =  {"fp.per_title", type_string, {"fp.second"}}
         -- If machine_count is nil, this is a top level item and shouldn't show /machine
         local per_machine = (machine_count ~= nil) and {"fp.per_title", "", {"fp.pl_machine", 1}} or ""
         tooltip = {"fp.two_word_title", number, {"", item_per_second, per_machine}}
@@ -114,7 +114,7 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
     return {
         processor = processors[selected_view.name],
         timescale_inverse = 1 / subfactory.timescale,
-        timescale_string = {"fp.unit_" .. TIMESCALE_MAP[subfactory.timescale]},
+        timescale_string = {"fp." .. TIMESCALE_MAP[subfactory.timescale]},
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
