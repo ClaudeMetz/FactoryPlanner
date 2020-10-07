@@ -154,8 +154,11 @@ function builders.ingredients(parent_flow, line)
 
 end
 
-function builders.line_comment(parent_flow, line)
-
+function builders.line_comment(_, line, parent_flow, _, _)
+    local textfield_name = "fp_textfield_production_comment_" .. line.id
+    local textfield_comment = parent_flow.add{type="textfield", name=textfield_name, text=(line.comment or "")}
+    ui_util.setup_textfield(textfield_comment)
+    textfield_comment.style.width = 160
 end
 
 
