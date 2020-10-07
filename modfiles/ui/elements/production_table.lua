@@ -14,6 +14,7 @@ local function generate_metadata(player)
     if preferences.tutorial_mode then
         metadata.recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "recipe", true, true, true)
         metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
+        metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
     end
 
     return metadata
@@ -37,12 +38,13 @@ function builders.recipe(_, line, parent_flow, metadata, line_metadata)
         style = "flib_slot_button_blue"
         enabled = false
     else
+        local indication = ""
         if line.subfloor then
-            tooltip = {"fp.annotated_title", tooltip, {"fp.recipe_subfloor_attached"}}
+            indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
             style = "flib_slot_button_blue"
         end
 
-        tooltip = {"fp.two_word_title", tooltip, metadata.recipe_tutorial_tooltip or ""}
+        tooltip = {"", tooltip, indication, metadata.recipe_tutorial_tooltip or ""}
     end
 
     parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id, enabled=enabled,
@@ -98,8 +100,32 @@ function builders.machine(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.beacon(parent_flow, line)
+function builders.beacon(_, line, parent_flow, metadata, _)
+    -- Beacons only work on machines that have some allowed_effects
+    if line.subfloor == nil and line.machine.proto.allowed_effects ~= nil then
+        local beacon = line.beacon
 
+        if beacon == nil then
+            parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_beacon_" .. line.id,
+              sprite="fp_sprite_plus", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacons"},
+              mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+        else
+            local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
+            local number_line = {"fp.newline", {"fp.two_word_title", beacon.amount, {"fp.pl_beacon", plural_parameter}}}
+            local indication = (beacon.total_amount) and
+              {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
+            local tooltip = {"", beacon.proto.localised_name, number_line, indication, metadata.beacon_tutorial_tooltip}
+
+            local button_beacon = parent_flow.add{type="sprite-button", name="fp_sprite-button_production_beacon_"
+              .. line.id, sprite=beacon.proto.sprite, number=beacon.amount, style="flib_slot_button_default",
+              tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+            if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
+                local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
+                sprite_overlay.ignored_by_interaction = true
+            end
+        end
+    end
 end
 
 function builders.energy(parent_flow, line)
