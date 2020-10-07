@@ -65,9 +65,9 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
 
     if allow_addition then  -- meaning allow the user to add items of this type
         local button_add = table_items.add{type="sprite-button", name="fp_sprite-button_add_top_level_" .. name,
-          sprite="fp_sprite_plus", tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. name, 1}},
+          sprite="utility/add", tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. name, 1}},
           enabled=(not ui_state.flags.archive_open), style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
-        button_add.style.padding = 2
+        button_add.style.padding = 3
         button_add.style.margin = 4
         table_item_count = table_item_count + 1
     end
