@@ -179,9 +179,8 @@ function view_state.build(player, parent_element)
 
     -- Using ipairs is important as we only want to iterate the array-part
     for _, view_state in ipairs(view_states) do
-        local button = table_view_state.add{type="button", name="fp_button_view_state_" .. view_state.name,
+        table_view_state.add{type="button", name="fp_button_view_state_" .. view_state.name,
           style="fp_button_push", mouse_button_filter={"left"}}
-        button.style.padding = {0, 12}
     end
 
     return table_view_state
@@ -195,6 +194,7 @@ function view_state.refresh(player,  table_view_state)
         local view_button = table_view_state["fp_button_view_state_" .. view_state.name]
         view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
         view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
+        view_button.style.padding = {0, 12}    -- needs to be re-set when changing the style
         view_button.enabled = (not view_state.selected)
     end
 end
