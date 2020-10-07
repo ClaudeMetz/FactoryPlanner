@@ -177,9 +177,8 @@ function subfactory_info.build(player)
     main_elements.subfactory_info["timescales_table"] = table_timescales
 
     for scale, name in pairs(TIMESCALE_MAP) do
-        local button = table_timescales.add{type="button", name=("fp_button_change_timescale_to_" .. scale),
-          caption={"", "1", {"fp.unit_" .. name}}, style="fp_button_push", mouse_button_filter={"left"}}
-        button.style.width = 36
+        table_timescales.add{type="button", name=("fp_button_change_timescale_to_" .. scale), style="fp_button_push",
+          caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}
     end
 
     -- Mining productivity
@@ -256,6 +255,7 @@ function subfactory_info.refresh(player)
             local timescale = tonumber(string.match(button.name, "%d+"))
             local selected = (subfactory.timescale == timescale)
             button.style = (selected) and "fp_button_push_active" or "fp_button_push"
+            button.style.width = 42  -- needs to be re-set when changing the style
             button.enabled = not (selected or archive_open)
         end
 
