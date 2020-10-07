@@ -1,13 +1,6 @@
 data:extend({
     {
         type = "sprite",
-        name = "fp_sprite_plus",
-        filename = "__factoryplanner__/graphics/plus.png",
-        size = 128,
-        flags = {"gui-icon"}
-    },
-    {
-        type = "sprite",
         name = "fp_zone_selection",
         filename = "__factoryplanner__/graphics/zone_selection.png",
         size = 32,

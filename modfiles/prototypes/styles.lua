@@ -105,7 +105,7 @@ styles["fp_sprite-button_inset_production"] = {
     parent = "fp_sprite-button_inset",
     size = 36,
     left_margin = 2,  -- used to offset the smaller size
-    padding = 2  -- makes it so the plus doesn't look so stupid
+    padding = 5  -- makes it so the plus doesn't look so stupid
 }
 
 -- Cribs from 'dark_rounded_button', but without the stupid shadows

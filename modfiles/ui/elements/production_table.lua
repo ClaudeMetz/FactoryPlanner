@@ -107,7 +107,7 @@ function builders.beacon(_, line, parent_flow, metadata, _)
 
         if beacon == nil then
             parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_beacon_" .. line.id,
-              sprite="fp_sprite_plus", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacons"},
+              sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacons"},
               mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
         else
             local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
