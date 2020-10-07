@@ -146,11 +146,11 @@ end
 
 local function handle_machine_click(player, button, metadata)
     if not ui_util.check_archive_status(player) then return end
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.direction then  -- up/downgrades the machine
         Line.change_machine(line, player, nil, metadata.direction)
@@ -220,6 +220,26 @@ local function handle_machine_click(player, button, metadata)
 end
 
 
+local function handle_beacon_click(player, button, metadata)
+    if not ui_util.check_archive_status(player) then return end
+    if metadata.direction or metadata.alt then return end  -- not implemented for beacons
+
+    local line_id = tonumber(string.match(button.name, "%d+"))
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+
+    if metadata.click == "left" or metadata.action == "edit" then
+        modal_dialog.enter(player, {type="beacon", submit=true, delete=true,
+          modal_data={object=line.beacon, line=line}})
+
+    elseif metadata.action == "delete" then
+        Line.set_beacon(line, nil)
+        calculation.update(player, context.subfactory)
+        main_dialog.refresh(player, "subfactory")
+    end
+end
+
 -- ** TOP LEVEL **
 production_handler.gui_events = {
     on_gui_click = {
@@ -234,6 +254,21 @@ production_handler.gui_events = {
             pattern = "^fp_sprite%-button_production_machine_%d+$",
             handler = (function(player, element, metadata)
                 handle_machine_click(player, element, metadata)
+            end)
+        },
+        {
+            pattern = "^fp_sprite%-button_production_add_beacon_%d+$",
+            timeout = 20,
+            handler = (function(player, element, _)
+                local line_id = tonumber(string.match(element.name, "%d+"))
+                local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
+                modal_dialog.enter(player, {type="beacon", submit=true, modal_data={object=nil, line=line}})
+            end)
+        },
+        {
+            pattern = "^fp_sprite%-button_production_beacon_%d+$",
+            handler = (function(player, element, metadata)
+                handle_beacon_click(player, element, metadata)
             end)
         }
     },
