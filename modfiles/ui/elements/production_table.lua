@@ -8,7 +8,8 @@ local function generate_metadata(player)
     local metadata = {
         context = ui_state.context,
         archive_open = (ui_state.flags.archive_open),
-        round_button_numbers = preferences.round_button_numbers
+        round_button_numbers = preferences.round_button_numbers,
+        pollution_column = preferences.pollution_column
     }
 
     if preferences.tutorial_mode then
@@ -22,7 +23,8 @@ end
 
 local function generate_line_metadata(line)
     return {
-        relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+        relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1),
+        formatted_pollution = ui_util.format_SI_value(line.pollution, "P/m", 5)
     }
 end
 
@@ -128,12 +130,16 @@ function builders.beacon(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.energy(parent_flow, line)
-
+function builders.energy(_, line, parent_flow, metadata, line_metadata)
+    local pollution_line = (metadata.pollution_column) and ""
+      or {"fp.newline", {"fp.name_value", {"fp.u_pollution"}, line_metadata.formatted_pollution}}
+    parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
+      tooltip={"", ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
 end
 
-function builders.pollution(parent_flow, line)
-
+function builders.pollution(_, line, parent_flow, _, line_metadata)
+    parent_flow.add{type="label", caption=ui_util.format_SI_value(line.pollution, "P/m", 3),
+      tooltip=line_metadata.formatted_pollution}
 end
 
 function builders.products(parent_flow, line)
