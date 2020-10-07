@@ -278,6 +278,14 @@ production_handler.gui_events = {
             handler = (function(player, element)
                 handle_percentage_change(player, element)
             end)
+        },
+        {
+            pattern = "^fp_textfield_production_comment_%d+$",
+            handler = (function(player, element)
+                local line_id = tonumber(string.match(element.name, "%d+"))
+                local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
+                line.comment = element.text
+            end)
         }
     },
     on_gui_confirmed = {
