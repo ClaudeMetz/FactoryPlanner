@@ -68,7 +68,7 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
           sprite="utility/add", tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. name, 1}},
           enabled=(not ui_state.flags.archive_open), style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
         button_add.style.padding = 3
-        button_add.style.margin = 4
+        button_add.style.margin = {-2, 4, 0, 4}
         table_item_count = table_item_count + 1
     end
 
