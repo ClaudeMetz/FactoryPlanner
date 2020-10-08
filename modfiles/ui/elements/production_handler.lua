@@ -40,8 +40,7 @@ local function handle_recipe_click(player, button, metadata)
         ui_util.context.set_floor(player, subfloor)
         main_dialog.refresh(player, "subfactory")
 
-    -- Handle removal of clicked (assembly) line
-    elseif metadata.action == "delete" then
+    elseif metadata.action == "delete" then  -- removes this line, including subfloor(s)
         if not ui_util.check_archive_status(player) then return end
 
         Floor.remove(context.floor, line)
@@ -240,6 +239,88 @@ local function handle_beacon_click(player, button, metadata)
     end
 end
 
+
+local function apply_item_options(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local item = ui_state.modal_data.object
+        local current_amount = item.amount
+
+        local line = item.parent
+        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+
+        if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
+            local other_class = (item.class == "Product") and "Byproduct" or "Product"
+            local opposing_item = Line.get_by_type_and_name(relevant_line, other_class,
+              item.proto.type, item.proto.name)
+            if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
+        end
+
+        options.item_amount = options.item_amount or 0
+        relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
+
+        calculation.update(player, ui_state.context.subfactory)
+        main_dialog.refresh(player, "subfactory")
+    end
+end
+
+local function handle_item_click(player, button, metadata)
+    local split_string = split_string(button.name, "_")
+    local context = data_util.get("context", player)
+
+    local line = Floor.get(context.floor, "Line", tonumber(split_string[5]))
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local class = split_string[4]
+    local item = Line.get(line, class, split_string[6])
+
+    if metadata.alt then
+        data_util.execute_alt_action(player, "show_item", {item=item.proto, click=metadata.click})
+
+    elseif not ui_util.check_archive_status(player) then
+        return
+
+    elseif metadata.click == "left" and item.proto.type ~= "entity" then  -- Handles the specific type of item actions
+        if class == "Product" then -- Set the priority product
+            if line.Product.count < 2 then
+                title_bar.enqueue_message(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
+            else
+                -- Remove the priority_product if the already selected one is clicked
+                line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+
+                calculation.update(player, context.subfactory)
+                main_dialog.refresh(player, "subfactory")
+            end
+
+        elseif class == "Ingredient" then
+            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce",
+              add_after_position=((metadata.direction == "positive") and line.gui_position or nil)}})
+        end
+
+    elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
+        local type_localised_string = {"fp.pl_" .. class, 1}
+        local produce_consume = (class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
+
+        local modal_data = {
+            title = {"fp.options_item_title", type_localised_string},
+            text = {"fp.options_item_text", item.proto.localised_name},
+            submission_handler = apply_item_options,
+            object = item,
+            fields = {
+                {
+                    type = "numeric_textfield",
+                    name = "item_amount",
+                    caption = {"fp.options_item_amount"},
+                    tooltip = {"fp.options_item_amount_tt", type_localised_string, produce_consume},
+                    text = item.amount,
+                    width = 140,
+                    focus = true
+                }
+            }
+        }
+        modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+    end
+end
+
 -- ** TOP LEVEL **
 production_handler.gui_events = {
     on_gui_click = {
@@ -267,8 +348,16 @@ production_handler.gui_events = {
         },
         {
             pattern = "^fp_sprite%-button_production_beacon_%d+$",
+            timeout = 20,
             handler = (function(player, element, metadata)
                 handle_beacon_click(player, element, metadata)
+            end)
+        },
+        {
+            pattern = "^fp_sprite%-button_production_[a-zA-Z]+_%d+_%d+$",
+            timeout = 20,
+            handler = (function(player, element, metadata)
+                handle_item_click(player, element, metadata)
             end)
         }
     },
