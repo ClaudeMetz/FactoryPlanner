@@ -25,18 +25,12 @@ local function generate_metadata(player)
     return metadata
 end
 
-local function generate_line_metadata(line)
-    return {
-        relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1),
-        formatted_pollution = ui_util.format_SI_value(line.pollution, "P/m", 5)
-    }
-end
-
 -- ** BUILDERS **
 local builders = {}
 
-function builders.recipe(_, line, parent_flow, metadata, line_metadata)
-    local recipe_proto = line_metadata.relevant_line.recipe.proto
+function builders.recipe(line, parent_flow, metadata)
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local recipe_proto = relevant_line.recipe.proto
 
     local style, tooltip, enabled = "flib_slot_button_default", recipe_proto.localised_name, true
     -- Make the first line of every subfloor un-interactable, it stays constant
@@ -57,15 +51,17 @@ function builders.recipe(_, line, parent_flow, metadata, line_metadata)
       sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
 
-function builders.percentage(_, line, parent_flow, metadata, line_metadata)
+function builders.percentage(line, parent_flow, metadata)
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+
     local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
-      .. line.id, text=line_metadata.relevant_line.percentage, enabled=(not metadata.archive_open)}
+      .. line.id, text=relevant_line.percentage, enabled=(not metadata.archive_open)}
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
 end
 
-function builders.machine(_, line, parent_flow, metadata, _)
+function builders.machine(line, parent_flow, metadata)
     local machine_count = line.machine.count
 
     if line.subfloor then  -- add a button that shows the total of all machines on the subfloor
@@ -106,7 +102,7 @@ function builders.machine(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.beacon(_, line, parent_flow, metadata, _)
+function builders.beacon(line, parent_flow, metadata)
     -- Beacons only work on machines that have some allowed_effects
     if line.subfloor == nil and line.machine.proto.allowed_effects ~= nil then
         local beacon = line.beacon
@@ -134,19 +130,19 @@ function builders.beacon(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.energy(_, line, parent_flow, metadata, line_metadata)
+function builders.energy(line, parent_flow, metadata)
     local pollution_line = (metadata.pollution_column) and ""
-      or {"fp.newline", {"fp.name_value", {"fp.u_pollution"}, line_metadata.formatted_pollution}}
+      or {"fp.newline", {"fp.name_value", {"fp.u_pollution"}, ui_util.format_SI_value(line.pollution, "P/m", 5)}}
     parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
       tooltip={"", ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
 end
 
-function builders.pollution(_, line, parent_flow, _, line_metadata)
+function builders.pollution(line, parent_flow, _)
     parent_flow.add{type="label", caption=ui_util.format_SI_value(line.pollution, "P/m", 3),
-      tooltip=line_metadata.formatted_pollution}
+      tooltip=ui_util.format_SI_value(line.pollution, "P/m", 5)}
 end
 
-function builders.products(_, line, parent_flow, metadata, _)
+function builders.products(line, parent_flow, metadata)
     for _, product in ipairs(Line.get_in_order(line, "Product")) do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
@@ -178,7 +174,7 @@ function builders.products(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.byproducts(_, line, parent_flow, metadata, _)
+function builders.byproducts(line, parent_flow, metadata)
     for _, byproduct in ipairs(Line.get_in_order(line, "Byproduct")) do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
@@ -198,7 +194,7 @@ function builders.byproducts(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.ingredients(_, line, parent_flow, metadata, _)
+function builders.ingredients(line, parent_flow, metadata)
     for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
@@ -240,7 +236,7 @@ function builders.ingredients(_, line, parent_flow, metadata, _)
     end
 end
 
-function builders.line_comment(_, line, parent_flow, _, _)
+function builders.line_comment(line, parent_flow, _)
     local textfield_name = "fp_textfield_production_comment_" .. line.id
     local textfield_comment = parent_flow.add{type="textfield", name=textfield_name, text=(line.comment or "")}
     ui_util.setup_textfield(textfield_comment)
@@ -313,12 +309,10 @@ function production_table.refresh(player)
 
     -- Production lines
     for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
-        local line_metadata = generate_line_metadata(line)
-
         for _, column_data in ipairs(production_columns) do
             local flow = table_production.add{type="flow", name="flow_" .. column_data.name .. "_" .. line.id,
               direction="horizontal"}
-            builders[column_data.name](player, line, flow, metadata, line_metadata)
+            builders[column_data.name](line, flow, metadata)
         end
     end
 end
