@@ -124,7 +124,7 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
 end
 
 function view_state.process_item(metadata, item, item_amount, machine_count)
-    local raw_amount = (item_amount or item.amount)
+    local raw_amount = item_amount or item.amount
     if raw_amount == nil or (raw_amount < MARGIN_OF_ERROR and item.class ~= "Product") then
         return -1, nil
     end

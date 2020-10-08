@@ -6,16 +6,20 @@ local function generate_metadata(player)
     local preferences = data_util.get("preferences", player)
 
     local metadata = {
-        context = ui_state.context,
         archive_open = (ui_state.flags.archive_open),
         round_button_numbers = preferences.round_button_numbers,
-        pollution_column = preferences.pollution_column
+        pollution_column = preferences.pollution_column,
+        ingredient_satisfaction = preferences.ingredient_satisfaction,
+        view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory, 4, true)
     }
 
     if preferences.tutorial_mode then
         metadata.recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "recipe", true, true, true)
         metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
+        metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", false, true, true)
+        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", false, true, true)
+        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", false, true, true)
     end
 
     return metadata
@@ -36,7 +40,7 @@ function builders.recipe(_, line, parent_flow, metadata, line_metadata)
 
     local style, tooltip, enabled = "flib_slot_button_default", recipe_proto.localised_name, true
     -- Make the first line of every subfloor un-interactable, it stays constant
-    if metadata.context.floor.level > 1 and line.gui_position == 1 then
+    if line.parent.level > 1 and line.gui_position == 1 then
         style = "flib_slot_button_blue"
         enabled = false
     else
@@ -142,16 +146,98 @@ function builders.pollution(_, line, parent_flow, _, line_metadata)
       tooltip=line_metadata.formatted_pollution}
 end
 
-function builders.products(parent_flow, line)
+function builders.products(_, line, parent_flow, metadata, _)
+    for _, product in ipairs(Line.get_in_order(line, "Product")) do
+        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+          product, nil, machine_count)
+        if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
 
+        local style = "flib_slot_button_default"
+        local indication_string, tutorial_tooltip = "", ""
+
+        if not line.subfloor then
+            -- We can check for identity because they reference the same table
+            if line.priority_product_proto == product.proto then
+                style = "flib_slot_button_green"
+                indication_string = {"fp.indication", {"fp.priority_product"}}
+            end
+            tutorial_tooltip = metadata.product_tutorial_tooltip
+        end
+
+        local name_line = {"fp.two_word_title", product.proto.localised_name, indication_string}
+        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+        local tooltip = {"", name_line, number_line, tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_Product_" .. line.id
+          .. "_" .. product.id, sprite=product.proto.sprite, style=style, number=amount,
+          tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
+
+        ::skip_product::
+    end
 end
 
-function builders.byproducts(parent_flow, line)
+function builders.byproducts(_, line, parent_flow, metadata, _)
+    for _, byproduct in ipairs(Line.get_in_order(line, "Byproduct")) do
+        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+          byproduct, nil, machine_count)
+        if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
 
+        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+        local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tooltip or ""
+        local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_Byproduct_" .. line.id
+          .. "_" .. byproduct.id, sprite=byproduct.proto.sprite, style="flib_slot_button_red", number=amount,
+          tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
+
+        ::skip_byproduct::
+    end
 end
 
-function builders.ingredients(parent_flow, line)
+function builders.ingredients(_, line, parent_flow, metadata, _)
+    for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+          ingredient, nil, machine_count)
+        if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
+        local style = "flib_slot_button_green"
+        local satisfaction_line, indication_string = "", ""
+
+        if ingredient.proto.type == "entity" then
+            style = "flib_slot_button_default"
+            indication_string = {"fp.indication", {"fp.raw_ore"}}
+
+        elseif metadata.ingredient_satisfaction then
+            local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
+            local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
+
+            -- We use the formatted percentage here because it smooths out the number to 3 places
+            local satisfaction = tonumber(formatted_percentage)
+            if satisfaction <= 0 then
+                style = "flib_slot_button_red"
+            elseif satisfaction < 100 then
+                style = "flib_slot_button_yellow"
+            end  -- else, it stays green
+
+            satisfaction_line = {"fp.newline", {"fp.two_word_title", (formatted_percentage .. "%"), {"fp.satisfied"}}}
+        end
+
+        local name_line = {"fp.two_word_title", ingredient.proto.localised_name, indication_string}
+        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_Ingredient_" .. line.id
+          .. "_" .. ingredient.id, sprite=ingredient.proto.sprite, style=style, number=amount,
+          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+        ::skip_ingredient::
+    end
 end
 
 function builders.line_comment(_, line, parent_flow, _, _)

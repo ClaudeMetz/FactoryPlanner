@@ -27,6 +27,7 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
 
     local table_items = item_boxes_elements[name .. "_item_table"]
     table_items.clear()
+
     if not subfactory or not subfactory.valid then return 0 end
 
     local table_item_count = 0
