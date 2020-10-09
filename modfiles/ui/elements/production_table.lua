@@ -20,6 +20,7 @@ local function generate_metadata(player)
         metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", false, true, true)
         metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", false, true, true)
         metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", false, true, true)
+        metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", false, true, true)
     end
 
     return metadata
@@ -234,6 +235,31 @@ function builders.ingredients(line, parent_flow, metadata)
 
         ::skip_ingredient::
     end
+
+    if not line.subfloor and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
+end
+
+-- This is not a standard builder function really, as it gets called indirectly by the ingredient builder
+function builders.fuel(line, parent_flow, metadata)
+    local fuel = line.machine.fuel
+
+    local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, line.machine.count)
+    if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
+
+    local satisfaction_line = ""
+    if metadata.ingredient_satisfaction then
+        local satisfaction_percentage = (fuel.satisfied_amount / fuel.amount) * 100
+        local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
+        satisfaction_line = {"fp.newline", {"fp.two_word_title", (formatted_percentage .. "%"), {"fp.satisfied"}}}
+    end
+
+    local name_line = {"fp.annotated_title", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
+    local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+    local tooltip = {"", name_line, number_line, satisfaction_line, metadata.fuel_tutorial_tooltip}
+
+    parent_flow.add{type="sprite-button", name="fp_sprite-button_production_fuel_" .. line.id,
+      sprite=fuel.proto.sprite, style="flib_slot_button_cyan", number=amount,
+      tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 end
 
 function builders.line_comment(line, parent_flow, _)

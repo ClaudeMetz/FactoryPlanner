@@ -321,6 +321,91 @@ local function handle_item_click(player, button, metadata)
     end
 end
 
+
+local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
+    local ui_state = data_util.get("ui_state", player)
+    local timescale = ui_state.context.subfactory.timescale
+
+    local view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory, 4, true)
+    local current_proto = line.machine.fuel.proto
+    local button_definitions = {}
+
+    for _, fuel_proto in pairs(applicable_prototypes) do
+        local category_id = global.all_fuels.map[fuel_proto.category]
+
+        local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
+          line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
+        local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
+          fuel_proto.fuel_value, timescale)
+
+        local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
+          fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
+
+        local definition = {
+            element_id = category_id .. "_" .. fuel_proto.id,
+            sprite = fuel_proto.sprite,
+            button_number = amount,
+            localised_name = fuel_proto.localised_name,
+            amount_line = number_tooltip or "",
+            tooltip_appendage = data_util.get_attributes("fuels", fuel_proto),
+            selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
+        }
+
+        table.insert(button_definitions, definition)
+    end
+
+    return button_definitions
+end
+
+local function apply_fuel_choice(player, new_fuel_id_string)
+    local ui_state = data_util.get("ui_state", player)
+
+    local split_string = split_string(new_fuel_id_string, "_")
+    local new_fuel_proto = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
+
+    ui_state.modal_data.object.proto = new_fuel_proto
+    calculation.update(player, ui_state.context.subfactory)
+    main_dialog.refresh(player, "subfactory")
+end
+
+local function handle_fuel_click(player, button, metadata)
+    local line_id = tonumber(string.match(button.name, "%d+"))
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local fuel = line.machine.fuel  -- must exist to be able to get here
+
+    if metadata.alt then
+        data_util.execute_alt_action(player, "show_item", {item=fuel.proto, click=metadata.click})
+
+    elseif not ui_util.check_archive_status(player) then
+        return
+
+    elseif metadata.click == "left" then
+        modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce",
+          add_after_position=((metadata.direction == "positive") and line.gui_position or nil)}})
+
+    elseif metadata.click == "right" then
+        -- Applicable fuels come from all categories that this burner supports
+        local applicable_prototypes = {}
+        for category_name, _ in pairs(line.machine.proto.burner.categories) do
+            local category_id = global.all_fuels.map[category_name]
+            for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
+                table.insert(applicable_prototypes, fuel_proto)
+            end
+        end
+
+        local modal_data = {
+            title = {"fp.pl_fuel", 1},
+            text = {"fp.chooser_fuel", line.machine.proto.localised_name},
+            click_handler = apply_fuel_choice,
+            button_definitions = compile_fuel_chooser_buttons(player, line, applicable_prototypes),
+            object = fuel
+        }
+        modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
+    end
+end
+
 -- ** TOP LEVEL **
 production_handler.gui_events = {
     on_gui_click = {
@@ -353,11 +438,18 @@ production_handler.gui_events = {
                 handle_beacon_click(player, element, metadata)
             end)
         },
-        {
-            pattern = "^fp_sprite%-button_production_[a-zA-Z]+_%d+_%d+$",
+        {   -- This catches Product, Byproduct and Ingredient, but not fuel
+            pattern = "^fp_sprite%-button_production_[A-Za-z]+_%d+_%d+$",
             timeout = 20,
             handler = (function(player, element, metadata)
                 handle_item_click(player, element, metadata)
+            end)
+        },
+        {   -- This only the fuel button (no item id necessary)
+            pattern = "^fp_sprite%-button_production_fuel_%d+$",
+            timeout = 20,
+            handler = (function(player, element, metadata)
+                handle_fuel_click(player, element, metadata)
             end)
         }
     },
