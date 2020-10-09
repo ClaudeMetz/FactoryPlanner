@@ -86,11 +86,14 @@ function generator.all_recipes()
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
-            local produces_solid = false
             local products = proto.mineable_properties.products
+            if not products then goto incompatible_proto end
+
+            local produces_solid = false
             for _, product in pairs(products) do  -- detects all solid mining recipes
-                if product.type == "item" then produces_solid = true end
+                if product.type == "item" then produces_solid = true; break end
             end
+            if not produces_solid then goto incompatible_proto end
 
             if produces_solid then
                 local recipe = custom_recipe()
@@ -124,6 +127,8 @@ function generator.all_recipes()
             --else
                 -- crude-oil and angels-natural-gas go here (not interested atm)
             end
+
+            ::incompatible_proto::
 
         -- Add offshore-pump fluid recipes
         elseif proto.fluid then
