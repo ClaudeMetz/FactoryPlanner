@@ -283,7 +283,7 @@ function beacon_dialog.open(player, modal_data)
     -- Create blank beacon as a stand-in
     local beacon_proto = (beacon) and beacon.proto or prototyper.defaults.get(player, "beacons")
     local beacon_count = (beacon) and beacon.amount or data_util.get("preferences", player).mb_defaults.beacon_count
-    local blank_beacon = Beacon.blank_init(beacon_proto, beacon_count, line)
+    local blank_beacon = Beacon.init(beacon_proto, beacon_count, line)
     modal_data.blank_beacon = blank_beacon
     local module = (beacon) and beacon.module or nil
 

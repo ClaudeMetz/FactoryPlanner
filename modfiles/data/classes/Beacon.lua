@@ -1,29 +1,8 @@
 -- This is a 'class' representing a (group of) beacon(s) and the modules attached to it
 Beacon = {}
 
--- TODO potentially remove this and apply changes to beacons bit by bit instead of replacing them
-function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module_amount, total_amount)
-    local module = Module.init_by_proto(module_proto, module_amount)
-
-    local beacon = {
-        proto = beacon_proto,
-        amount = beacon_amount,
-        module = module,
-        total_amount = total_amount,
-        total_effects = nil,
-        valid = true,
-        class = "Beacon"
-    }
-    beacon.module.parent = beacon
-
-    -- Initialise total_effects
-    Beacon.summarize_effects(beacon)
-
-    return beacon
-end
-
--- Init a beacon without modules to compare the compatibility of potential modules to
-function Beacon.blank_init(beacon_proto, beacon_amount, parent_line)
+-- Init a beacon without a module, which will have to be added afterwards
+function Beacon.init(beacon_proto, beacon_amount, parent_line)
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount or 0,
@@ -31,6 +10,7 @@ function Beacon.blank_init(beacon_proto, beacon_amount, parent_line)
         valid = true,
         class = "Beacon"
     }
+    -- Exceptionally set in the object init itself, because it'll be used before being added to a line
     beacon.parent = parent_line
 
     -- Initialize total_effects with all zeroes
@@ -38,7 +18,6 @@ function Beacon.blank_init(beacon_proto, beacon_amount, parent_line)
 
     return beacon
 end
-
 
 -- Exceptionally, a setter function to automatically run additional functionality
 function Beacon.set_module(self, module)

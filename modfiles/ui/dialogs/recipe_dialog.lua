@@ -132,7 +132,7 @@ local function attempt_adding_line(player, recipe_id)
         local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
 
         if beacon_module_proto ~= nil and beacon_count ~= nil then
-            local blank_beacon = Beacon.blank_init(beacon_proto, beacon_count, line)
+            local blank_beacon = Beacon.init(beacon_proto, beacon_count, line)
 
             if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
                 local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
