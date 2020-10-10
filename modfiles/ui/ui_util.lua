@@ -134,7 +134,7 @@ function ui_util.determine_item_amount_and_appendage(player, view_name, item_typ
     return number, appendage  -- number might be nil here
 end ]]
 
--- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
+--[[ -- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
 function ui_util.generate_module_effects_tooltip_proto(module)
     -- First, generate the appropriate effects table
     local effects = {}
@@ -145,7 +145,7 @@ function ui_util.generate_module_effects_tooltip_proto(module)
 
     -- Then, let the tooltip function generate the actual tooltip
     return ui_util.generate_module_effects_tooltip(effects, nil)
-end
+end ]]
 
 -- Generates a tooltip out of the given effects, ignoring those that are 0
 function ui_util.generate_module_effects_tooltip(effects, machine_proto)
