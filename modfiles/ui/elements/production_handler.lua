@@ -219,6 +219,29 @@ local function handle_machine_click(player, button, metadata)
 end
 
 
+local function handle_module_click(player, button, metadata)
+    if not ui_util.check_archive_status(player) then return end
+    if metadata.direction or metadata.alt then return end  -- not implemented for modules
+
+    local split_string = split_string(button.name, "_")
+    local context = data_util.get("context", player)
+
+    local line = Floor.get(context.floor, "Line", split_string[6])
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local module = Machine.get(line.machine, "Module", split_string[7])
+
+    if metadata.click == "left" or metadata.action == "edit" then
+        modal_dialog.enter(player, {type="module", submit=true, delete=true,
+          modal_data={object=module, machine=line.machine}})
+
+    elseif metadata.action == "delete" then
+        Machine.remove(line.machine, module)
+        calculation.update(player, context.subfactory)
+        main_dialog.refresh(player, "subfactory")
+    end
+end
+
+
 local function handle_beacon_click(player, button, metadata)
     if not ui_util.check_archive_status(player) then return end
     if metadata.direction or metadata.alt then return end  -- not implemented for beacons
@@ -268,10 +291,10 @@ local function handle_item_click(player, button, metadata)
     local split_string = split_string(button.name, "_")
     local context = data_util.get("context", player)
 
-    local line = Floor.get(context.floor, "Line", tonumber(split_string[5]))
+    local line = Floor.get(context.floor, "Line", split_string[6])
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local class = split_string[4]
-    local item = Line.get(line, class, split_string[6])
+    local class = split_string[5]
+    local item = Line.get(line, class, split_string[7])
 
     if metadata.alt then
         data_util.execute_alt_action(player, "show_item", {item=item.proto, click=metadata.click})
@@ -423,6 +446,22 @@ production_handler.gui_events = {
             end)
         },
         {
+            pattern = "^fp_sprite%-button_production_add_module_%d+$",
+            timeout = 20,
+            handler = (function(player, element, _)
+                local line_id = tonumber(string.match(element.name, "%d+"))
+                local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
+                modal_dialog.enter(player, {type="module", submit=true, modal_data={object=nil, machine=line.machine}})
+            end)
+        },
+        {
+            pattern = "^fp_sprite%-button_production_machine_Module_%d+_%d+$",
+            timeout = 20,
+            handler = (function(player, element, metadata)
+                handle_module_click(player, element, metadata)
+            end)
+        },
+        {
             pattern = "^fp_sprite%-button_production_add_beacon_%d+$",
             timeout = 20,
             handler = (function(player, element, _)
@@ -439,7 +478,7 @@ production_handler.gui_events = {
             end)
         },
         {   -- This catches Product, Byproduct and Ingredient, but not fuel
-            pattern = "^fp_sprite%-button_production_[A-Za-z]+_%d+_%d+$",
+            pattern = "^fp_sprite%-button_production_item_[A-Z][a-z]+_%d+_%d+$",
             timeout = 20,
             handler = (function(player, element, metadata)
                 handle_item_click(player, element, metadata)

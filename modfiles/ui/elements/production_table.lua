@@ -17,6 +17,7 @@ local function generate_metadata(player)
         metadata.recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "recipe", true, true, true)
         metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
+        metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
         metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", false, true, true)
         metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", false, true, true)
         metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", false, true, true)
@@ -71,6 +72,7 @@ function builders.machine(line, parent_flow, metadata)
         parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default",
           enabled=false, number=machine_count, tooltip=tooltip}
     else
+        -- Machine
         machine_count = ui_util.format_number(machine_count, 4)
         local tooltip_count = machine_count
         if machine_count == "0" and line.production_ratio > 0 then
@@ -100,34 +102,66 @@ function builders.machine(line, parent_flow, metadata)
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
           sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+        -- Modules - can only be added to machines that have any module slots
+        if machine_proto.module_limit == 0 then return end
+        parent_flow.add{type="line", direction="vertical"}
+
+        for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
+            number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
+            tooltip = {"", module.proto.localised_name, number_line, metadata.module_tutorial_tooltip}
+            -- The above variables don't need to be-initialized
+
+            parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_Module_" .. line.id
+              .. "_" .. module.id, sprite=module.proto.sprite, tooltip=tooltip, number=module.amount,
+              style="flib_slot_button_default", mouse_button_filter={"left-and-right"}}
+        end
+
+        if Machine.empty_slot_count(line.machine) > 0 then
+            parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_module_" .. line.id,
+              sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_module"},
+              mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+        end
     end
 end
 
 function builders.beacon(line, parent_flow, metadata)
     -- Beacons only work on machines that have some allowed_effects
-    if line.subfloor == nil and line.machine.proto.allowed_effects ~= nil then
-        local beacon = line.beacon
+    if line.subfloor ~= nil or line.machine.proto.allowed_effects == nil then return end
 
-        if beacon == nil then
-            parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_beacon_" .. line.id,
-              sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacons"},
-              mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
-        else
-            local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
-            local number_line = {"fp.newline", {"fp.two_word_title", beacon.amount, {"fp.pl_beacon", plural_parameter}}}
-            local indication = (beacon.total_amount) and
-              {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
-            local tooltip = {"", beacon.proto.localised_name, number_line, indication, metadata.beacon_tutorial_tooltip}
+    local beacon = line.beacon
+    if beacon == nil then
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_beacon_" .. line.id,
+            sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacon"},
+            mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+    else
+        -- Beacon
+        local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
+        local number_line = {"fp.newline", {"fp.two_word_title", beacon.amount, {"fp.pl_beacon", plural_parameter}}}
+        local indication = (beacon.total_amount) and
+            {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
+        local tooltip = {"", beacon.proto.localised_name, number_line, indication, metadata.beacon_tutorial_tooltip}
 
-            local button_beacon = parent_flow.add{type="sprite-button", name="fp_sprite-button_production_beacon_"
-              .. line.id, sprite=beacon.proto.sprite, number=beacon.amount, style="flib_slot_button_default",
-              tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+        local button_beacon = parent_flow.add{type="sprite-button", name="fp_sprite-button_production_beacon_"
+            .. line.id, sprite=beacon.proto.sprite, number=beacon.amount, style="flib_slot_button_default",
+            tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
-            if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
-                local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
-                sprite_overlay.ignored_by_interaction = true
-            end
+        if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
+            local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
+            sprite_overlay.ignored_by_interaction = true
         end
+
+        -- Module
+        parent_flow.add{type="line", direction="vertical"}
+        local module_proto, module_amount = beacon.module.proto, beacon.module.amount
+
+        -- Can use simplified number line because module amount is an integer
+        number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
+        tooltip = {"", module_proto.localised_name, number_line}
+        -- The above variables don't need to be-initialized
+
+        parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
+          number=module_amount, style="flib_slot_button_default"}
     end
 end
 
@@ -167,7 +201,7 @@ function builders.products(line, parent_flow, metadata)
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, tutorial_tooltip}
 
-        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_Product_" .. line.id
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Product_" .. line.id
           .. "_" .. product.id, sprite=product.proto.sprite, style=style, number=amount,
           tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
 
@@ -187,7 +221,7 @@ function builders.byproducts(line, parent_flow, metadata)
         local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tooltip or ""
         local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
 
-        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_Byproduct_" .. line.id
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Byproduct_" .. line.id
           .. "_" .. byproduct.id, sprite=byproduct.proto.sprite, style="flib_slot_button_red", number=amount,
           tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
 
@@ -229,7 +263,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tooltip}
 
-        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_Ingredient_" .. line.id
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Ingredient_" .. line.id
           .. "_" .. ingredient.id, sprite=ingredient.proto.sprite, style=style, number=amount,
           tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
@@ -239,7 +273,7 @@ function builders.ingredients(line, parent_flow, metadata)
     if not line.subfloor and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
 end
 
--- This is not a standard builder function really, as it gets called indirectly by the ingredient builder
+-- This is not a standard builder function, as it gets called indirectly by the ingredient builder
 function builders.fuel(line, parent_flow, metadata)
     local fuel = line.machine.fuel
 
@@ -317,7 +351,7 @@ function production_table.refresh(player)
     scroll_pane_production.clear()
 
     local table_production = scroll_pane_production.add{type="table", column_count=column_count}
-    table_production.style.horizontal_spacing = 12
+    table_production.style.horizontal_spacing = 16
     table_production.style.margin = {6, 18, 0, 18}
     production_table_elements["table"] = table_production
 
@@ -336,8 +370,7 @@ function production_table.refresh(player)
     -- Production lines
     for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
         for _, column_data in ipairs(production_columns) do
-            local flow = table_production.add{type="flow", name="flow_" .. column_data.name .. "_" .. line.id,
-              direction="horizontal"}
+            local flow = table_production.add{type="flow", direction="horizontal"}
             builders[column_data.name](line, flow, metadata)
         end
     end
