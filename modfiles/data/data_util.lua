@@ -75,6 +75,34 @@ function data_util.cleanup_subfactory(player, subfactory)
     ui_util.context.set_floor(player, Subfactory.get(subfactory, "Floor", 1))
 end
 
+-- Formats the given effects for use in a tooltip
+function data_util.format_module_effects(effects, multiplier, limit_effects)
+    local tooltip_lines, effect_applies = {""}, false
+
+    for effect_name, effect_value in pairs(effects) do
+        if type(effect_value) == "table" then effect_value = effect_value.bonus end
+
+        if effect_value ~= 0 then
+            effect_applies = true
+
+            local capped_indication = ""
+            if limit_effects then
+                if effect_name == "productivity" and effect_value < 0 then
+                    effect_value, capped_indication = 0, {"fp.effect_maxed"}
+                elseif effect_value < -0.8 then
+                    effect_value, capped_indication = -0.8, {"fp.effect_maxed"}
+                end
+            end
+
+            -- Force display of either a '+' or '-', also round the result
+            local display_value = ("%+d"):format(math.floor((effect_value * multiplier * 100) + 0.5))
+            table.insert(tooltip_lines, {"fp.module_" .. effect_name, display_value, capped_indication})
+        end
+    end
+
+    if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
+end
+
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string

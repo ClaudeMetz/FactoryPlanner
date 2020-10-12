@@ -12,6 +12,7 @@ function Machine.init_by_proto(proto)
         Module = Collection.init("Module"),
         module_count = 0,  -- updated automatically
         total_effects = nil,
+        effects_tooltip = "",
         valid = true,
         class = "Machine"
     }
@@ -88,6 +89,8 @@ function Machine.summarize_effects(self)
         for name, effect in pairs(module.proto.effects) do
             module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
         end
+
+        module.effects_tooltip = data_util.format_module_effects(module.proto.effects, module.amount, false)
     end
 
     self.total_effects = module_effects
