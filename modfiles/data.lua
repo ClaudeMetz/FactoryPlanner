@@ -1,4 +1,3 @@
-require("prototypes.fonts")
 require("prototypes.styles")
 require("prototypes.sprites")
 require("prototypes.hotkeys")
