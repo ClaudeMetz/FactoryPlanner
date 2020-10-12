@@ -98,7 +98,8 @@ function builders.machine(line, parent_flow, metadata)
         local machine_proto = line.machine.proto
         local plural_parameter = (machine_count == "1") and 1 or 2
         local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
-        local tooltip = {"", machine_proto.localised_name, number_line, indication, metadata.machine_tutorial_tooltip}
+        local tooltip = {"", machine_proto.localised_name, number_line, indication, line.machine.effects_tooltip,
+          metadata.machine_tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
           sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
@@ -109,7 +110,8 @@ function builders.machine(line, parent_flow, metadata)
 
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
-            tooltip = {"", module.proto.localised_name, number_line, metadata.module_tutorial_tooltip}
+            tooltip = {"", module.proto.localised_name, number_line, module.effects_tooltip,
+              metadata.module_tutorial_tooltip}
             -- The above variables don't need to be-initialized
 
             parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_Module_" .. line.id
@@ -140,7 +142,8 @@ function builders.beacon(line, parent_flow, metadata)
         local number_line = {"fp.newline", {"fp.two_word_title", beacon.amount, {"fp.pl_beacon", plural_parameter}}}
         local indication = (beacon.total_amount) and
             {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
-        local tooltip = {"", beacon.proto.localised_name, number_line, indication, metadata.beacon_tutorial_tooltip}
+        local tooltip = {"", beacon.proto.localised_name, number_line, indication, beacon.effects_tooltip,
+          metadata.beacon_tutorial_tooltip}
 
         local button_beacon = parent_flow.add{type="sprite-button", name="fp_sprite-button_production_beacon_"
             .. line.id, sprite=beacon.proto.sprite, number=beacon.amount, style="flib_slot_button_default",

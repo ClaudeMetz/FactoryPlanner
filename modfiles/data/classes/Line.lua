@@ -194,6 +194,9 @@ function Line.summarize_effects(self, summarize_machine, summarize_beacon)
     end
 
     self.total_effects = module_effects
+
+    -- The effects tooltip is saved on the machine, but includes all possible effects
+    self.machine.effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
 end
 
 -- Returns the total effects influencing this line, including mining productivity

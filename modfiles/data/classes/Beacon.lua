@@ -7,6 +7,7 @@ function Beacon.init(beacon_proto, beacon_amount, parent_line)
         proto = beacon_proto,
         amount = beacon_amount or 0,
         total_effects = nil,
+        effects_tooltip = "",
         valid = true,
         class = "Beacon"
     }
@@ -43,6 +44,8 @@ function Beacon.summarize_effects(self)
     end
 
     self.total_effects = module_effects
+    self.effects_tooltip = data_util.format_module_effects(module_effects, 1, false)
+    -- The module itself doesn't need an effects_tooltip as it would mirror the beacon one
 end
 
 
