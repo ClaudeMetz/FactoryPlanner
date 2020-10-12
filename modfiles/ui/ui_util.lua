@@ -67,127 +67,6 @@ function ui_util.check_archive_status(player)
 end
 
 
---[[ -- ** Tooltips **
--- File-local to so this dict isn't recreated on every call of the function following it
-local valid_alt_types = {tl_ingredient=true, tl_product=true, tl_byproduct=true, recipe=true,
-  product=true, byproduct=true, ingredient=true, fuel=true}
-
--- Either adds the tutorial tooltip to the button, or returns it if none is given
-function ui_util.tutorial_tooltip(player, button, tut_type, line_break)
-    local player_table = data_util.get("table", player)
-
-    if player_table.preferences.tutorial_mode then
-        local b = line_break and "\n\n" or ""
-        local alt_action = player_table.settings.alt_action
-        local f = (valid_alt_types[tut_type] and alt_action ~= "none")
-          and {"fp.tut_alt_action", {"fp.alt_action_" .. alt_action}} or ""
-        if button ~= nil then
-            button.tooltip = {"", button.tooltip, b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. tut_type}, f}
-        else
-            return {"", b, {"fp.tut_mode"}, "\n", {"fp.tut_" .. tut_type}, f}
-        end
-
-    elseif button == nil then  -- return empty string if there should be a return value
-        return ""
-    end
-end ]]
-
---[[ -- Determines the raw amount and the text-appendage for the given item (spec. by type, amount)
-function ui_util.determine_item_amount_and_appendage(player, view_name, item_type, amount, machine)
-    local timescale = get_context(player).subfactory.timescale
-    local number, appendage = nil, ""
-
-    if view_name == "items_per_timescale" then
-        number = amount
-
-        local type_text = (item_type == "fluid") and {"fp.fluid"} or
-          ((number == 1) and {"fp.item"} or {"fp.items"})
-        appendage = {"", type_text, "/", ui_util.format_timescale(timescale, true, false)}
-
-    elseif view_name == "belts_or_lanes" and item_type ~= "fluid" then
-        local throughput = prototyper.defaults.get(player, "belts").throughput
-        local show_belts = (get_settings(player).belts_or_lanes == "belts")
-        local divisor = (show_belts) and throughput or (throughput / 2)
-        number = amount / divisor / timescale
-
-        appendage = (show_belts) and ((number == 1) and {"fp.belt"} or {"fp.belts"}) or
-          ((number == 1) and {"fp.lane"} or {"fp.lanes"})
-
-    elseif view_name == "items_per_second_per_machine" then
-        -- Show items/s/1 (machine) if it's a top level item
-        local number_of_machines = (machine ~= nil) and machine.count or 1
-        number = amount / timescale / number_of_machines
-
-        local type_text = (item_type == "fluid") and {"fp.fluid"} or
-          ((number == 1) and {"fp.item"} or {"fp.items"})
-        -- Shows items/s/machine if a machine_count is given
-        local per_machine = (machine ~= nil) and {"", "/", {"fp.machine"}} or ""
-        appendage = {"", type_text, "/", {"fp.unit_second"}, per_machine}
-
-    end
-
-    -- If no number would be shown, but the amount is still tiny, adjust the number to be
-    -- smaller than the margin of error, so it gets automatically hidden afterwards
-    -- Kinda hacky way to do this, but doesn't matter probably ¯\_(ツ)_/¯
-    if number == nil and amount < MARGIN_OF_ERROR then number = MARGIN_OF_ERROR - 1 end
-
-    return number, appendage  -- number might be nil here
-end ]]
-
---[[ -- Returns a tooltip containing the effects of the given module (works for Module-classes or prototypes)
-function ui_util.generate_module_effects_tooltip_proto(module)
-    -- First, generate the appropriate effects table
-    local effects = {}
-    local raw_effects = (module.proto ~= nil) and module.proto.effects or module.effects
-    for name, effect in pairs(raw_effects) do
-        effects[name] = (module.proto ~= nil) and (effect.bonus * module.amount) or effect.bonus
-    end
-
-    -- Then, let the tooltip function generate the actual tooltip
-    return ui_util.generate_module_effects_tooltip(effects, nil)
-end ]]
-
--- Generates a tooltip out of the given effects, ignoring those that are 0
-function ui_util.generate_module_effects_tooltip(effects, machine_proto)
-    local localised_names = {
-        consumption = {"fp.module_consumption"},
-        speed = {"fp.module_speed"},
-        productivity = {"fp.module_productivity"},
-        pollution = {"fp.module_pollution"}
-    }
-
-    local tooltip = {""}
-    for name, effect in pairs(effects) do
-        if effect ~= 0 then
-            local appendage = ""
-
-            -- Handle effect caps and mining productivity if this is a machine-tooltip
-            if machine_proto ~= nil then
-                -- Consumption, speed and pollution are capped at -80%
-                if (name == "consumption" or name == "speed" or name == "pollution") and effect < -0.8 then
-                    effect = -0.8
-                    appendage = {"", " (", {"fp.capped"}, ")"}
-
-                -- Productivity can't go lower than 0
-                elseif name == "productivity" then
-                    if effect < 0 then
-                        effect = 0
-                        appendage = {"", " (", {"fp.capped"}, ")"}
-                    end
-                end
-            end
-
-            -- Force display of either a '+' or '-'
-            local number = ("%+d"):format(math.floor((effect * 100) + 0.5))
-            tooltip = {"", tooltip, "\n", localised_names[name], ": ", number, "%", appendage}
-        end
-    end
-
-    if table_size(tooltip) > 1 then return {"", "\n", tooltip}
-    else return tooltip end
-end
-
-
 -- ** Number formatting **
 -- Formats given number to given number of significant digits
 function ui_util.format_number(number, precision)
@@ -243,21 +122,6 @@ function ui_util.format_SI_value(value, unit, precision)
     local prefix = (scale_counter == 0) and "" or {"fp.prefix_" .. prefixes[scale_counter + 1]}
     return {"", sign .. ui_util.format_number(value, precision) .. " ", prefix, units[unit]}
 end
-
--- ** Misc **
---[[ -- Returns string representing the given timescale (Currently only needs to handle 1 second/minute/hour)
-function ui_util.format_timescale(timescale, raw, whole_word)
-    local ts = nil
-    if timescale == 1 then
-        ts = whole_word and {"fp.second"} or {"fp.unit_second"}
-    elseif timescale == 60 then
-        ts = whole_word and {"fp.minute"} or {"fp.unit_minute"}
-    elseif timescale == 3600 then
-        ts = whole_word and {"fp.hour"} or {"fp.unit_hour"}
-    end
-    if raw then return ts
-    else return {"", "1", ts} end
-end ]]
 
 
 -- **** Mod-GUI ****
@@ -332,7 +196,7 @@ function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip, l
     local function add_label()
         caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
         label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
-        label.style.font = "fp-font-15p"
+        label.style.font = "default-semibold"
     end
 
     if label_first then add_label(); add_switch(); label.style.right_margin = 8

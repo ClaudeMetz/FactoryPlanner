@@ -133,14 +133,14 @@ function attribute_generators.fuels(fuel)
 end
 
 function attribute_generators.belts(belt)
-    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.items"}, "/", {"fp.unit_second"}}
+    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
 end
 
 function attribute_generators.machines(machine)
     local energy_usage = machine.energy_usage * 60
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
            {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
-           {"fp.cpollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
+           {"fp.u_pollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
