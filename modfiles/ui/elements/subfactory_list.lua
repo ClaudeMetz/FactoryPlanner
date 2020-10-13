@@ -44,7 +44,7 @@ local function handle_subfactory_submission(player, options, action)
             -- Don't save over the unknown signal to preserve what's saved behind it
             if icon and icon.name ~= "signal-unknown" then subfactory.icon = icon end
         else
-            local new_subfactory = Subfactory.init(name, icon, get_settings(player).default_timescale)
+            local new_subfactory = Subfactory.init(name, icon, data_util.get("settings", player).default_timescale)
             Factory.add(factory, new_subfactory)
             ui_util.context.set_subfactory(player, new_subfactory)
         end
