@@ -294,7 +294,7 @@ function preferences_dialog.close(player, _)
     local refresh = data_util.get("modal_data", player).refresh
 
     if refresh.ingredient_satisfaction then
-        local player_table = get_table(player)
+        local player_table = data_util.get("table", player)
         Factory.update_ingredient_satisfactions(player_table.factory)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
