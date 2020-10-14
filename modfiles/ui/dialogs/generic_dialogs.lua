@@ -21,28 +21,24 @@ local function handler_chooser_button_click(player, element)
     modal_dialog.exit(player, "cancel")
 end
 
-
 chooser_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title},
-    create_content_frame = true
+    create_content_frame = true,
+    subheader_text = modal_data.text
 } end)
 
 -- Handles populating the chooser dialog
 function chooser_dialog.open(_, modal_data)
     local modal_elements = modal_data.modal_elements
-
     local content_frame = modal_elements.content_frame
-    content_frame.add{type="label", caption=modal_data.text}
 
     local frame_choices = content_frame.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
-    frame_choices.style.margin = {10, 0, 4, 0}
     modal_elements.choices_table = frame_choices.add{type="table", column_count=8, style="filter_slot_table"}
 
     for _, definition in ipairs(modal_data.button_definitions) do
         add_chooser_button(modal_elements, definition)
     end
 end
-
 
 chooser_dialog.gui_events = {
     on_gui_click = {
@@ -53,7 +49,6 @@ chooser_dialog.gui_events = {
         }
     }
 }
-
 
 
 -- ** OPTIONS **
@@ -162,7 +157,8 @@ end
 
 options_dialog.dialog_settings = (function(modal_data) return {
     caption = modal_data.title,
-    create_content_frame = true
+    create_content_frame = true,
+    subheader_text = modal_data.text
 } end)
 
 function options_dialog.open(_, modal_data)
@@ -170,10 +166,9 @@ function options_dialog.open(_, modal_data)
 
     local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = modal_data.minimal_width or 0
-    content_frame.add{type="label", caption=modal_data.text}
 
     local table_options = content_frame.add{type="table", column_count=2}
-    table_options.style.margin = {12, 0, 4, 2}
+    table_options.style.margin = {0, 12, 8, 2}
     table_options.style.horizontal_spacing = 24
     table_options.style.vertical_spacing = 16
 

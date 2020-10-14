@@ -30,6 +30,13 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         local content_frame = frame_modal_dialog.add{type="frame", direction="vertical", style="inside_shallow_frame"}
         content_frame.style.vertically_stretchable = true
 
+        if dialog_settings.subheader_text then
+            local subheader = content_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
+            subheader.style.horizontally_stretchable = true
+            subheader.style.padding = {12, 24, 12, 12}
+            subheader.add{type="label", caption=dialog_settings.subheader_text, style="control_input_shortcut_label"}
+        end
+
         local scroll_pane = content_frame.add{type="scroll-pane", direction="vertical", style="flib_naked_scroll_pane"}
         if dialog_settings.disable_scroll_pane then scroll_pane.vertical_scroll_policy = "never" end
 
