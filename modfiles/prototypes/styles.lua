@@ -1,5 +1,7 @@
 local styles = data.raw["gui-style"].default
 
+-- Nomenclature: small = size 36; tiny = size 32
+
 -- Imitates a listbox, but allowing for way more customisation by using real buttons
 styles["fp_scroll-pane_fake_listbox"] = {
     type = "scroll_pane_style",
@@ -168,3 +170,12 @@ styles["fp_button_fake_listbox_item_active"] = {
     default_font_color = styles.button.selected_font_color,
     default_vertical_offset = styles.button.selected_vertical_offset
 }
+
+-- Generate smaller versions of flib's slot buttons (size 36)
+for _, color in pairs{"default", "green", "yellow", "red", "blue", "cyan"} do
+    styles["flib_slot_button_" .. color .. "_small"] = {
+        type = "button_style",
+        parent = "flib_slot_button_" .. color,
+        size = 36
+      }
+end

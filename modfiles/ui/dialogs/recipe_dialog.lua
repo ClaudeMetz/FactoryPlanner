@@ -195,9 +195,9 @@ local function create_recipe_group_box(modal_data, relevant_group)
     for _, recipe in pairs(relevant_group.recipes) do
         local recipe_proto = recipe.proto
 
-        local style = "flib_slot_button_green"
-        if not recipe.enabled then style = "flib_slot_button_yellow"
-        elseif recipe_proto.hidden then style = "flib_slot_button_default" end
+        local style = "flib_slot_button_green_small"
+        if not recipe.enabled then style = "flib_slot_button_yellow_small"
+        elseif recipe_proto.hidden then style = "flib_slot_button_default_small" end
 
         local button_name = "fp_button_recipe_pick_" .. recipe_proto.id
         local button_recipe
@@ -211,8 +211,6 @@ local function create_recipe_group_box(modal_data, relevant_group)
             button_recipe.locked = true
         end
 
-        button_recipe.style.height = 36
-        button_recipe.style.width = 36
         table.insert(recipe_buttons, {name=recipe_proto.name, button=button_recipe})
     end
 end
