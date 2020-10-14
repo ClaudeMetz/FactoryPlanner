@@ -129,8 +129,8 @@ end
 function ui_util.mod_gui.create(player)
     local frame_flow = mod_gui.get_button_flow(player)
     if not frame_flow["fp_button_toggle_interface"] then
-        frame_flow.add{type="button", name="fp_button_toggle_interface", caption="FP", tooltip={"fp.open_main_dialog"},
-          style=mod_gui.button_style, mouse_button_filter={"left"}}
+        frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
+          tooltip={"fp.toggle_interface_tt"}, style=mod_gui.button_style, mouse_button_filter={"left"}}
     end
 
     frame_flow["fp_button_toggle_interface"].visible = data_util.get("settings", player).show_gui_button
