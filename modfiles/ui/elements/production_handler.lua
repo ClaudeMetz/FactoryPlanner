@@ -429,21 +429,17 @@ local function handle_fuel_click(player, button, metadata)
     end
 end
 
--- ** TOP LEVEL **
+-- ** EVENTS **
 production_handler.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_sprite%-button_production_recipe_%d+$",
             timeout = 20,
-            handler = (function(player, element, metadata)
-                handle_recipe_click(player, element, metadata)
-            end)
+            handler = handle_recipe_click
         },
         {
             pattern = "^fp_sprite%-button_production_machine_%d+$",
-            handler = (function(player, element, metadata)
-                handle_machine_click(player, element, metadata)
-            end)
+            handler = handle_machine_click
         },
         {
             pattern = "^fp_sprite%-button_production_add_module_%d+$",
@@ -457,9 +453,7 @@ production_handler.gui_events = {
         {
             pattern = "^fp_sprite%-button_production_machine_Module_%d+_%d+$",
             timeout = 20,
-            handler = (function(player, element, metadata)
-                handle_module_click(player, element, metadata)
-            end)
+            handler = handle_module_click
         },
         {
             pattern = "^fp_sprite%-button_production_add_beacon_%d+$",
@@ -473,31 +467,23 @@ production_handler.gui_events = {
         {
             pattern = "^fp_sprite%-button_production_beacon_%d+$",
             timeout = 20,
-            handler = (function(player, element, metadata)
-                handle_beacon_click(player, element, metadata)
-            end)
+            handler = handle_beacon_click
         },
         {   -- This catches Product, Byproduct and Ingredient, but not fuel
             pattern = "^fp_sprite%-button_production_item_[A-Z][a-z]+_%d+_%d+$",
             timeout = 20,
-            handler = (function(player, element, metadata)
-                handle_item_click(player, element, metadata)
-            end)
+            handler = handle_item_click
         },
         {   -- This only the fuel button (no item id necessary)
             pattern = "^fp_sprite%-button_production_fuel_%d+$",
             timeout = 20,
-            handler = (function(player, element, metadata)
-                handle_fuel_click(player, element, metadata)
-            end)
+            handler = handle_fuel_click
         }
     },
     on_gui_text_changed = {
         {
             pattern = "^fp_textfield_production_percentage_%d+$",
-            handler = (function(player, element)
-                handle_percentage_change(player, element)
-            end)
+            handler = handle_percentage_change
         },
         {
             pattern = "^fp_textfield_production_comment_%d+$",
@@ -511,9 +497,7 @@ production_handler.gui_events = {
     on_gui_confirmed = {
         {
             pattern = "^fp_textfield_production_percentage_%d+$",
-            handler = (function(player, element)
-                handle_percentage_confirmation(player, element)
-            end)
+            handler = handle_percentage_confirmation
         }
     }
 }

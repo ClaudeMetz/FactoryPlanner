@@ -206,22 +206,32 @@ utility_dialog.dialog_settings = (function(_) return {
     create_content_frame = true
 } end)
 
+function utility_dialog.open(player, modal_data)
+    -- Add the players' relevant inventory components to modal_data
+    modal_data.inventory_contents = player.get_main_inventory().get_contents()
+
+    utility_structures.components(player, modal_data)
+    utility_structures.notes(player, modal_data)
+end
+
+function utility_dialog.close(player, _)
+    main_dialog.refresh(player, {"subfactory_info"})
+end
+
+
+-- ** EVENTS **
 utility_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_utility_request_items",
             timeout = 20,
-            handler = (function(player, _, _)
-                handle_item_request(player)
-            end)
+            handler = handle_item_request
         }
     },
     on_gui_switch_state_changed = {
         {
             pattern = "^fp_switch_utility_scope_[a-z]+$",
-            handler = (function(player, element)
-                handle_scope_change(player, element)
-            end)
+            handler = handle_scope_change
         }
     },
     on_gui_text_changed = {
@@ -235,19 +245,5 @@ utility_dialog.gui_events = {
 }
 
 utility_dialog.misc_events = {
-    on_player_main_inventory_changed = (function(player, _)
-        handle_inventory_change(player)
-    end)
+    on_player_main_inventory_changed = handle_inventory_change
 }
-
-function utility_dialog.open(player, modal_data)
-    -- Add the players' relevant inventory components to modal_data
-    modal_data.inventory_contents = player.get_main_inventory().get_contents()
-
-    utility_structures.components(player, modal_data)
-    utility_structures.notes(player, modal_data)
-end
-
-function utility_dialog.close(player, _)
-    main_dialog.refresh(player, {"subfactory_info"})
-end

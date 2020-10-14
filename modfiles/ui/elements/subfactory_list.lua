@@ -183,77 +183,6 @@ end
 
 
 -- ** TOP LEVEL **
-subfactory_list.gui_events = {
-    on_gui_click = {
-        {
-            name = "fp_button_subfactories_toggle_archive",
-            handler = (function(player, _, _)
-                toggle_archive(player)
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactories_export",
-            timeout = 20,
-            handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="export"})
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactories_import",
-            timeout = 20,
-            handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="import", submit=true})
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactory_archive",
-            handler = (function(player, _, _)
-                archive_subfactory(player)
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactory_duplicate",
-            handler = (function(player, _, _)
-                local ui_state = data_util.get("ui_state", player)
-                local subfactory = ui_state.context.subfactory
-
-                -- This relies on the porting-functionality. It basically exports and
-                -- immediately imports the subfactory, effectively duplicating it
-                local export_string = data_util.porter.get_export_string(player, {subfactory})
-                data_util.add_subfactories_by_string(player, export_string, true)
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactory_add",
-            timeout = 20,
-            handler = (function(player, _, _)
-                local modal_data = generate_subfactory_dialog_modal_data("new", nil)
-                modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactory_edit",
-            timeout = 20,
-            handler = (function(player, _, _)
-                edit_subfactory(player)
-            end)
-        },
-        {
-            name = "fp_sprite-button_subfactory_delete",
-            timeout = 20,
-            handler = (function(player, _, _)
-                delete_subfactory(player)
-            end)
-        },
-        {
-            pattern = "^fp_button_subfactory_%d+$",
-            handler = (function(player, element, metadata)
-                handle_subfactory_click(player, element, metadata)
-            end)
-        }
-    }
-}
-
 function subfactory_list.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.subfactory_list = {}
@@ -372,3 +301,64 @@ function subfactory_list.refresh(player)
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
 end
+
+
+-- ** EVENTS **
+subfactory_list.gui_events = {
+    on_gui_click = {
+        {
+            name = "fp_button_subfactories_toggle_archive",
+            handler = toggle_archive
+        },
+        {
+            name = "fp_sprite-button_subfactories_export",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="export"})
+            end)
+        },
+        {
+            name = "fp_sprite-button_subfactories_import",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="import", submit=true})
+            end)
+        },
+        {
+            name = "fp_sprite-button_subfactory_archive",
+            handler = archive_subfactory
+        },
+        {
+            name = "fp_sprite-button_subfactory_duplicate",
+            handler = (function(player, _, _)
+                local ui_state = data_util.get("ui_state", player)
+                local subfactory = ui_state.context.subfactory
+
+                -- This relies on the porting-functionality. It basically exports and
+                -- immediately imports the subfactory, effectively duplicating it
+                local export_string = data_util.porter.get_export_string(player, {subfactory})
+                data_util.add_subfactories_by_string(player, export_string, true)
+            end)
+        },
+        {
+            name = "fp_sprite-button_subfactory_add",
+            timeout = 20,
+            handler = (function(player, _, _)
+                local modal_data = generate_subfactory_dialog_modal_data("new", nil)
+                modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+            end)
+        },
+        {
+            name = "fp_sprite-button_subfactory_edit",
+            timeout = 20,
+            handler = edit_subfactory
+        },
+        {
+            name = "fp_sprite-button_subfactory_delete",
+            timeout = 20,
+            handler = delete_subfactory
+        },
+        {
+            pattern = "^fp_button_subfactory_%d+$",
+            handler = handle_subfactory_click
+        }
+    }
+}

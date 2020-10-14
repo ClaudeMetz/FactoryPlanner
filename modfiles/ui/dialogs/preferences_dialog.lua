@@ -210,42 +210,6 @@ preferences_dialog.dialog_settings = (function(_) return {
     force_auto_center = true
 } end)
 
-preferences_dialog.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_sprite%-button_preference_default_[a-z]+_%d+_?%d*$",
-            handler = (function(player, element, metadata)
-                handle_default_prototype_change(player, element, metadata)
-            end)
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "fp_textfield_mb_default_amount",
-            handler = (function(player, element)
-                local mb_defaults = data_util.get("preferences", player).mb_defaults
-                mb_defaults.beacon_count = tonumber(element.text)
-            end)
-        }
-    },
-    on_gui_checked_state_changed = {
-        {
-            pattern = "^fp_checkbox_preference_[a-z]+_[a-z_]+$",
-            handler = (function(player, element)
-                handle_checkbox_preference_change(player, element)
-            end)
-        }
-    },
-    on_gui_elem_changed = {
-        {
-            pattern = "^fp_choose%-elem%-button_mb_default_[a-z]+$",
-            handler = (function(player, element)
-                handle_mb_default_change(player, element)
-            end)
-        }
-    }
-}
-
 function preferences_dialog.open(player, modal_data)
     local preferences = data_util.get("preferences", player)
     local modal_elements = modal_data.modal_elements
@@ -305,3 +269,35 @@ function preferences_dialog.close(player, _)
         main_dialog.refresh(player, {"production_table"})
     end
 end
+
+
+-- ** EVENTS **
+preferences_dialog.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_sprite%-button_preference_default_[a-z]+_%d+_?%d*$",
+            handler = handle_default_prototype_change
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_mb_default_amount",
+            handler = (function(player, element)
+                local mb_defaults = data_util.get("preferences", player).mb_defaults
+                mb_defaults.beacon_count = tonumber(element.text)
+            end)
+        }
+    },
+    on_gui_checked_state_changed = {
+        {
+            pattern = "^fp_checkbox_preference_[a-z]+_[a-z_]+$",
+            handler = handle_checkbox_preference_change
+        }
+    },
+    on_gui_elem_changed = {
+        {
+            pattern = "^fp_choose%-elem%-button_mb_default_[a-z]+$",
+            handler = handle_mb_default_change
+        }
+    }
+}

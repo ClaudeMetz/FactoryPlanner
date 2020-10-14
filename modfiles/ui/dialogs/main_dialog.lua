@@ -42,50 +42,6 @@ end
 
 
 -- ** TOP LEVEL **
-main_dialog.gui_events = {
-    on_gui_closed = {
-        {
-            name = "fp_frame_main_dialog",
-            handler = (function(player, _)
-                main_dialog.toggle(player)
-            end)
-        }
-    },
-    on_gui_click = {
-        {
-            name = "fp_button_toggle_interface",
-            handler = (function(player, _, _)
-                main_dialog.toggle(player)
-            end)
-        }
-    }
-}
-
-main_dialog.misc_events = {
-    on_gui_opened = (function(player, _)
-        handle_other_gui_opening(player)
-    end),
-
-    on_player_display_resolution_changed = (function(player, _)
-        main_dialog.rebuild(player, false)
-    end),
-
-    on_player_display_scale_changed = (function(player, _)
-        main_dialog.rebuild(player, false)
-    end),
-
-    on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" then
-            main_dialog.toggle(player)
-        end
-    end),
-
-    fp_toggle_main_dialog = (function(player, _)
-        main_dialog.toggle(player)
-    end)
-}
-
-
 function main_dialog.rebuild(player, default_visibility)
     local ui_state = data_util.get("ui_state", player)
     local main_elements = ui_state.main_elements
@@ -193,3 +149,41 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
         end
     end
 end
+
+
+-- ** EVENTS **
+main_dialog.gui_events = {
+    on_gui_closed = {
+        {
+            name = "fp_frame_main_dialog",
+            handler = main_dialog.toggle
+        }
+    },
+    on_gui_click = {
+        {
+            name = "fp_button_toggle_interface",
+            timeout = 20,
+            handler = main_dialog.toggle
+        }
+    }
+}
+
+main_dialog.misc_events = {
+    on_gui_opened = handle_other_gui_opening,
+
+    on_player_display_resolution_changed = (function(player, _)
+        main_dialog.rebuild(player, false)
+    end),
+
+    on_player_display_scale_changed = (function(player, _)
+        main_dialog.rebuild(player, false)
+    end),
+
+    on_lua_shortcut = (function(player, event)
+        if event.prototype_name == "fp_open_interface" then
+            main_dialog.toggle(player)
+        end
+    end),
+
+    fp_toggle_main_dialog = main_dialog.toggle
+}

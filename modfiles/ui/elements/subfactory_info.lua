@@ -36,61 +36,6 @@ end
 
 
 -- ** TOP LEVEL **
-subfactory_info.gui_events = {
-    on_gui_click = {
-        {
-            name = "fp_button_subfactory_repair",
-            timeout = 20,
-            handler = (function(player, _, _)
-                repair_subfactory(player)
-            end)
-        },
-        {
-            name = "fp_button_view_utilities",
-            handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="utility"})
-            end)
-        },
-        {
-            pattern = "^fp_button_change_timescale_to_%d+$",
-            handler = (function(player, element, _)
-                local new_timescale = tonumber(string.match(element.name, "%d+"))
-                change_timescale(player, new_timescale)
-            end)
-        },
-        {
-            name = "fp_button_override_mining_prod",
-            handler = (function(player, _, _)
-                local subfactory = data_util.get("context", player).subfactory
-                subfactory.mining_productivity = 0
-                calculation.update(player, subfactory)
-                main_dialog.refresh(player, "subfactory")
-            end)
-        },
-    },
-    on_gui_text_changed = {
-        {
-            name = "fp_textfield_mining_prod_override",
-            handler = (function(player, element)
-                local ui_state = data_util.get("ui_state", player)
-                ui_state.context.subfactory.mining_productivity = tonumber(element.text)
-                ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
-            end)
-        }
-    },
-    on_gui_confirmed = {
-        {
-            name = "fp_textfield_mining_prod_override",
-            handler = (function(player, _)
-                local ui_state = data_util.get("ui_state", player)
-                ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh
-                calculation.update(player, ui_state.context.subfactory)
-                main_dialog.refresh(player, "subfactory")
-            end)
-        }
-    }
-}
-
 function subfactory_info.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.subfactory_info = {}
@@ -279,3 +224,58 @@ function subfactory_info.refresh(player)
         subfactory_info_elements.percentage_label.visible = custom_prod_set
     end
 end
+
+
+-- ** EVENTS **
+subfactory_info.gui_events = {
+    on_gui_click = {
+        {
+            name = "fp_button_subfactory_repair",
+            timeout = 20,
+            handler = repair_subfactory
+        },
+        {
+            name = "fp_button_view_utilities",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="utility"})
+            end)
+        },
+        {
+            pattern = "^fp_button_change_timescale_to_%d+$",
+            handler = (function(player, element, _)
+                local new_timescale = tonumber(string.match(element.name, "%d+"))
+                change_timescale(player, new_timescale)
+            end)
+        },
+        {
+            name = "fp_button_override_mining_prod",
+            handler = (function(player, _, _)
+                local subfactory = data_util.get("context", player).subfactory
+                subfactory.mining_productivity = 0
+                calculation.update(player, subfactory)
+                main_dialog.refresh(player, "subfactory")
+            end)
+        },
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_mining_prod_override",
+            handler = (function(player, element)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.context.subfactory.mining_productivity = tonumber(element.text)
+                ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "fp_textfield_mining_prod_override",
+            handler = (function(player, _)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh
+                calculation.update(player, ui_state.context.subfactory)
+                main_dialog.refresh(player, "subfactory")
+            end)
+        }
+    }
+}
