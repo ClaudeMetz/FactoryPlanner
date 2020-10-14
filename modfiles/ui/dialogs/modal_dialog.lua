@@ -76,6 +76,9 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         button_delete.style.height = 32
         button_delete.style.minimal_width = 0
         button_delete.style.padding = {0, 8}
+
+        -- If there is a delete button present, we need to set a minimum dialog width for it to look good
+        frame_modal_dialog.style.minimal_width = 340
     end
     -- One 'drag handle' should always be visible
     button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}

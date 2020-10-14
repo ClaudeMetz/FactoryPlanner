@@ -163,9 +163,7 @@ options_dialog.dialog_settings = (function(modal_data) return {
 
 function options_dialog.open(_, modal_data)
     local modal_elements = modal_data.modal_elements
-
     local content_frame = modal_elements.content_frame
-    content_frame.style.minimal_width = modal_data.minimal_width or 0
 
     local table_options = content_frame.add{type="table", column_count=2}
     table_options.style.margin = {0, 12, 8, 2}
