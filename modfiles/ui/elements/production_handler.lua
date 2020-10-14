@@ -320,7 +320,7 @@ local function handle_item_click(player, button, metadata)
         end
 
     elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
-        local type_localised_string = {"fp.pl_" .. class, 1}
+        local type_localised_string = {"fp.pl_" .. class:lower(), 1}
         local produce_consume = (class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
 
         local modal_data = {
