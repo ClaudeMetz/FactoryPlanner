@@ -63,11 +63,9 @@ function title_bar.build(player)
     configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", name="fp_sprite-button_title_bar_close_interface",
-      sprite="utility/close_white", tooltip={"fp.close_interface"}, style="frame_action_button",
-      mouse_button_filter={"left"}}
+      sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
+      tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 2
-    button_close.hovered_sprite = "utility/close_black"
-    button_close.clicked_sprite = "utility/close_black"
 end
 
 
