@@ -7,7 +7,7 @@
     "factorio_version": "1.0",
     "dependencies": [
         "base >= 1.0.0",
-        "flib >= 0.3.0",
+        "flib >= 0.4.1",
         "? FNEI",
         "? what-is-it-really-used-for",
         "? RecipeBook"

@@ -1,27 +1,5 @@
 local styles = data.raw["gui-style"].default
 
-styles["fp_scroll-pane_inside_content_frame"] = {
-    type = "scroll_pane_style",
-    extra_padding_when_activated = 0,
-    padding = 0,
-    graphical_set = {
-      shadow = default_inner_shadow
-    },
-    vertical_flow_style = {
-      type = "vertical_flow_style",
-      padding = 12
-    }
-}
-
-styles["fp_scroll-pane_inside_content_frame_bare"] = {
-    type = "scroll_pane_style",
-    parent = "fp_scroll-pane_inside_content_frame",
-    vertical_flow_style = {
-        type = "vertical_flow_style",
-        padding = 0
-    }
-}
-
 -- Imitates a listbox, but allowing for way more customisation by using real buttons
 styles["fp_scroll-pane_fake_listbox"] = {
     type = "scroll_pane_style",
@@ -132,14 +110,6 @@ styles["fp_sprite-button_tool_active"] = {
     parent = "frame_action_button",
     default_graphical_set = styles.frame_button.clicked_graphical_set,
     clicked_graphical_set = styles.frame_button.default_graphical_set
-}
-
--- This tool button has the right color, vanilla 'tool_button_green' does not
-styles["fp_sprite-button_tool_green"] = {
-    type = "button_style",
-    parent = "item_and_count_select_confirm",
-    padding = 2,
-    left_click_sound = styles.tool_button.left_click_sound
 }
 
 -- Text button in the style of icon tool buttons, for use in the title bar

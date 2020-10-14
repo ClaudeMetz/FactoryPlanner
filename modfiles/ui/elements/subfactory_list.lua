@@ -296,9 +296,8 @@ function subfactory_list.build(player)
     subheader.add{type="line", direction="vertical"}
 
     local button_add = subheader.add{type="sprite-button", name="fp_sprite-button_subfactory_add",
-      sprite="utility/add", tooltip={"fp.action_add_subfactory"}, style="fp_sprite-button_tool_green",
+      sprite="utility/add", tooltip={"fp.action_add_subfactory"}, style="flib_tool_button_light_green",
       mouse_button_filter={"left"}}
-    button_add.style.top_margin = 0
     main_elements.subfactory_list["add_button"] = button_add
 
     local button_edit = subheader.add{type="sprite-button", name="fp_sprite-button_subfactory_edit",

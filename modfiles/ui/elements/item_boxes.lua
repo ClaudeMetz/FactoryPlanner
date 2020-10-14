@@ -13,7 +13,7 @@ local function build_item_box(player, name, column_count)
 
     local item_frame = window_frame.add{type="frame", style="slot_button_deep_frame"}
     item_frame.style.top_margin = 4
-    local scroll_pane = item_frame.add{type="scroll-pane", style="fp_scroll-pane_inside_content_frame_bare"}
+    local scroll_pane = item_frame.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
     scroll_pane.style.width = column_count * ITEM_BOX_BUTTON_SIZE
 
     local table_items = scroll_pane.add{type="table", column_count=column_count, style="filter_slot_table"}
