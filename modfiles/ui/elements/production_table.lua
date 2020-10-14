@@ -327,7 +327,8 @@ function production_table.build(player)
 
     -- Can't do much here since the table needs to be destroyed on refresh anyways
     local frame_vertical = main_elements.production_box.vertical_frame
-    local scroll_pane_production = frame_vertical.add{type="scroll-pane", direction="vertical"}
+    local scroll_pane_production = frame_vertical.add{type="scroll-pane", direction="vertical",
+      style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.horizontally_stretchable = true
     main_elements.production_table["production_scroll_pane"] = scroll_pane_production
 
