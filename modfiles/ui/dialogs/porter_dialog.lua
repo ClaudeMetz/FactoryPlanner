@@ -59,7 +59,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
 
     local function add_button()
         local button = flow.add{type="sprite-button", name="fp_button_porter_subfactory_" .. dialog_type,
-          style="fp_sprite-button_tool_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
+          style="flib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
           mouse_button_filter={"left"}}
         set_tool_button_state(button, dialog_type, button_enabled)
         modal_elements[dialog_type .. "_button"] = button
@@ -87,10 +87,7 @@ end
 local function setup_subfactories_table(modal_elements, add_location)
     modal_elements.table_rows = {}
 
-    local scroll_pane = modal_elements.content_frame.add{type="scroll-pane",
-      style="fp_scroll-pane_inside_content_frame_bare"}
-    scroll_pane.style.margin = 0
-    scroll_pane.style.padding = 0
+    local scroll_pane = modal_elements.content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
     modal_elements.subfactories_scroll_pane = scroll_pane
 

@@ -262,8 +262,7 @@ function preferences_dialog.open(player, modal_data)
         local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
         content_frame.style.vertically_stretchable = true
 
-        local scroll_pane = content_frame.add{type="scroll-pane", style="fp_scroll-pane_inside_content_frame"}
-        return scroll_pane
+        return content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane"}
     end
 
     local left_content_frame = add_content_frame()
@@ -273,7 +272,7 @@ function preferences_dialog.open(player, modal_data)
     label_preferences_info.style.single_line = false
 
     local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
-       "ingredient_satisfaction", "round_button_numbers"}
+      "ingredient_satisfaction", "round_button_numbers"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
     local production_preference_names = {"pollution_column", "line_comment_column"}
