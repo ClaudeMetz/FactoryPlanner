@@ -73,7 +73,8 @@ local function fill_title_bar(modal_data)
     modal_data.modal_elements["search_textfield"] = searchfield
 
     flow_title_bar.add{type="sprite-button", name="fp_sprite-button_picker_search", sprite="utility/search_white",
-      tooltip={"fp.search_button_tt"}, style="frame_action_button", mouse_button_filter={"left"}}
+      hovered_sprite="utility/search_black", clicked_sprite="utility/search_black", tooltip={"fp.search_button_tt"},
+      style="frame_action_button", mouse_button_filter={"left"}}
 end
 
 local function add_item_picker(parent_flow, player)
