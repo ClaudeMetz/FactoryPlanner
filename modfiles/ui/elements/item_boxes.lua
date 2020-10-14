@@ -69,7 +69,7 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
           sprite="utility/add", tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. name, 1}},
           enabled=(not ui_state.flags.archive_open), style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
         button_add.style.padding = 3
-        button_add.style.margin = {-2, 4, 0, 4}
+        button_add.style.margin = 3
         table_item_count = table_item_count + 1
     end
 
@@ -160,9 +160,9 @@ function item_boxes.refresh(player)
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
     local item_table_height = math.max(maxrow_count, 1) * ITEM_BOX_BUTTON_SIZE
 
-    item_boxes_elements.product_item_table.style.height = item_table_height
-    item_boxes_elements.byproduct_item_table.style.height = item_table_height
-    item_boxes_elements.ingredient_item_table.style.height = item_table_height
+    item_boxes_elements.product_item_table.parent.style.height = item_table_height
+    item_boxes_elements.byproduct_item_table.parent.style.height = item_table_height
+    item_boxes_elements.ingredient_item_table.parent.style.height = item_table_height
 end
 
 
