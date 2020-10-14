@@ -124,7 +124,9 @@ title_bar.gui_events = {
     on_gui_click = {
         {
             name = "fp_sprite-button_title_bar_close_interface",
-            handler = main_dialog.toggle
+            handler = (function(player, _, _)
+                main_dialog.toggle(player)  -- can't use simple form because main_dialog is not yet defined
+            end)
         },
         {
             name = "fp_sprite-button_title_bar_pause_game",
