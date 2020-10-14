@@ -84,7 +84,6 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
     local modal_data = {
         title = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_subfactory", 1}},
         text = {"fp.options_subfactory_text"},
-        minimal_width = 325,
         submission_handler = handle_subfactory_submission,
         object = subfactory,
         fields = {
