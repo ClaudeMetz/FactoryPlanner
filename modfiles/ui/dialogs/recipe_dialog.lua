@@ -290,28 +290,6 @@ recipe_dialog.dialog_settings = (function(_) return {
     force_auto_center = true
 } end)
 
-recipe_dialog.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_button_recipe_pick_%d+$",
-            timeout = 20,
-            handler = (function(player, element, _)
-                local recipe_id = tonumber(string.match(element.name, "%d+"))
-                attempt_adding_line(player, recipe_id)
-            end)
-        }
-    },
-    on_gui_switch_state_changed = {
-        {
-            pattern = "^fp_switch_recipe_filter_[a-z]+$",
-            handler = (function(player, element)
-                handle_filter_change(player, element)
-            end)
-        }
-    }
-}
-
-
 -- Handles populating the recipe dialog
 function recipe_dialog.open(player, modal_data)
     local product = modal_data.product
@@ -347,3 +325,24 @@ function recipe_dialog.open(player, modal_data)
         end
     end
 end
+
+
+-- ** EVENTS **
+recipe_dialog.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_button_recipe_pick_%d+$",
+            timeout = 20,
+            handler = (function(player, element, _)
+                local recipe_id = tonumber(string.match(element.name, "%d+"))
+                attempt_adding_line(player, recipe_id)
+            end)
+        }
+    },
+    on_gui_switch_state_changed = {
+        {
+            pattern = "^fp_switch_recipe_filter_[a-z]+$",
+            handler = handle_filter_change
+        }
+    }
+}

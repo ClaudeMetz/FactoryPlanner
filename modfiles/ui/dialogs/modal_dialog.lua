@@ -87,38 +87,6 @@ end
 
 
 -- ** TOP LEVEL **
-modal_dialog.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_button_modal_dialog_[a-z]+$",
-            handler = (function(player, element, _)
-                local dialog_action = string.gsub(element.name, "fp_button_modal_dialog_", "")
-                modal_dialog.exit(player, dialog_action)
-            end)
-        }
-    },
-    on_gui_closed = {
-        {
-            name = "fp_frame_modal_dialog",
-            handler = (function(player, _)
-                if data_util.get("flags", player).selection_mode then
-                    modal_dialog.leave_selection_mode(player)
-                else
-                    modal_dialog.exit(player, "cancel")
-                end
-            end)
-        }
-    }
-}
-
-modal_dialog.misc_events = {
-    fp_confirm_dialog = (function(player, _)
-        if not data_util.get("flags", player).selection_mode then
-            modal_dialog.exit(player, "submit")
-        end
-    end)
-}
-
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, dialog_settings)
     if player.gui.screen["fp_frame_modal_dialog"] then return end
@@ -216,3 +184,37 @@ function modal_dialog.leave_selection_mode(player)
     frame_modal_dialog.ignored_by_interaction = false
     frame_modal_dialog.force_auto_center()
 end
+
+
+-- ** EVENTS **
+modal_dialog.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_button_modal_dialog_[a-z]+$",
+            handler = (function(player, element, _)
+                local dialog_action = string.gsub(element.name, "fp_button_modal_dialog_", "")
+                modal_dialog.exit(player, dialog_action)
+            end)
+        }
+    },
+    on_gui_closed = {
+        {
+            name = "fp_frame_modal_dialog",
+            handler = (function(player, _)
+                if data_util.get("flags", player).selection_mode then
+                    modal_dialog.leave_selection_mode(player)
+                else
+                    modal_dialog.exit(player, "cancel")
+                end
+            end)
+        }
+    }
+}
+
+modal_dialog.misc_events = {
+    fp_confirm_dialog = (function(player, _)
+        if not data_util.get("flags", player).selection_mode then
+            modal_dialog.exit(player, "submit")
+        end
+    end)
+}

@@ -27,18 +27,6 @@ chooser_dialog.dialog_settings = (function(modal_data) return {
     create_content_frame = true
 } end)
 
-chooser_dialog.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
-            timeout = 20,
-            handler = (function(player, element, _)
-                handler_chooser_button_click(player, element)
-            end)
-        }
-    }
-}
-
 -- Handles populating the chooser dialog
 function chooser_dialog.open(_, modal_data)
     local modal_elements = modal_data.modal_elements
@@ -54,6 +42,17 @@ function chooser_dialog.open(_, modal_data)
         add_chooser_button(modal_elements, definition)
     end
 end
+
+
+chooser_dialog.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
+            timeout = 20,
+            handler = handler_chooser_button_click
+        }
+    }
+}
 
 
 

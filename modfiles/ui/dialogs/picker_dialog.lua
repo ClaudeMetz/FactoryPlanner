@@ -369,68 +369,6 @@ picker_dialog.dialog_settings = (function(modal_data) return {
     force_auto_center = true
 } end)
 
-picker_dialog.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_sprite%-button_item_group_%d+$",
-            handler = (function(player, element, _)
-                local modal_data = data_util.get("modal_data", player)
-                local group_id = tonumber(string.match(element.name, "%d+"))
-                select_item_group(modal_data, group_id)
-            end)
-        },
-        {
-            pattern = "^fp_button_item_pick_%d+_%d+$",
-            handler = (function(player, element, _)
-                handle_item_pick(player, element)
-            end)
-        },
-        {
-            name = "fp_sprite-button_picker_search",
-            handler = (function(player, _, _)
-                focus_searchfield(player)
-            end)
-        }
-    },
-    on_gui_elem_changed = {
-        {
-            name = "fp_choose-elem-button_picker_belt",
-            handler = (function(player, element)
-                handle_belt_pick(player, element)
-            end)
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "fp_textfield_picker_search",
-            handler = (function(player, element)
-                search_items(player, element)
-            end)
-        },
-        {
-            name = "fp_textfield_picker_item_amount",
-            handler = (function(player, _)
-                local modal_data = data_util.get("modal_data", player)
-                update_dialog_submit_button(modal_data.modal_elements)
-            end)
-        },
-        {
-            name = "fp_textfield_picker_belt_amount",
-            handler = (function(player, _)
-                local modal_data = data_util.get("modal_data", player)
-                sync_amounts(modal_data)  -- defined_by ~= "amount"
-                update_dialog_submit_button(modal_data.modal_elements)
-            end)
-        }
-    }
-}
-
-picker_dialog.misc_events = {
-    fp_focus_searchfield = (function(player, _)
-        focus_searchfield(player)
-    end)
-}
-
 function picker_dialog.open(player, modal_data)
     modal_data.timescale = data_util.get("context", player).subfactory.timescale
     modal_data.lob = data_util.get("settings", player).belts_or_lanes
@@ -487,3 +425,57 @@ function picker_dialog.close(player, action)
         main_dialog.refresh(player, "subfactory")
     end
 end
+
+
+-- ** EVENTS **
+picker_dialog.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_sprite%-button_item_group_%d+$",
+            handler = (function(player, element, _)
+                local modal_data = data_util.get("modal_data", player)
+                local group_id = tonumber(string.match(element.name, "%d+"))
+                select_item_group(modal_data, group_id)
+            end)
+        },
+        {
+            pattern = "^fp_button_item_pick_%d+_%d+$",
+            handler = handle_item_pick
+        },
+        {
+            name = "fp_sprite-button_picker_search",
+            handler = focus_searchfield
+        }
+    },
+    on_gui_elem_changed = {
+        {
+            name = "fp_choose-elem-button_picker_belt",
+            handler = handle_belt_pick
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_picker_search",
+            handler = search_items
+        },
+        {
+            name = "fp_textfield_picker_item_amount",
+            handler = (function(player, _)
+                local modal_data = data_util.get("modal_data", player)
+                update_dialog_submit_button(modal_data.modal_elements)
+            end)
+        },
+        {
+            name = "fp_textfield_picker_belt_amount",
+            handler = (function(player, _)
+                local modal_data = data_util.get("modal_data", player)
+                sync_amounts(modal_data)  -- defined_by ~= "amount"
+                update_dialog_submit_button(modal_data.modal_elements)
+            end)
+        }
+    }
+}
+
+picker_dialog.misc_events = {
+    fp_focus_searchfield = focus_searchfield
+}

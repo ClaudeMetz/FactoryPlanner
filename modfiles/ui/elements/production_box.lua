@@ -11,34 +11,6 @@ end
 
 
 -- ** TOP LEVEL **
-production_box.gui_events = {
-    on_gui_click = {
-        {
-            name = "fp_sprite-button_production_refresh",
-            handler = (function(player, _, _)
-                refresh_production(player)
-            end)
-        },
-        {
-            pattern = "^fp_button_production_floor_[a-z]+$",
-            handler = (function(player, element, _)
-                local destination = string.gsub(element.name, "fp_button_production_floor_", "")
-                production_box.change_floor(player, destination)
-            end)
-        }
-    }
-}
-
-production_box.misc_events = {
-    fp_refresh_production = (function(player, _)
-        refresh_production(player)
-    end),
-
-    fp_floor_up = (function(player, _)
-        production_box.change_floor(player, "up")
-    end)
-}
-
 function production_box.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.production_box = {}
@@ -157,3 +129,30 @@ function production_box.change_floor(player, destination)
         main_dialog.refresh(player, {"production_box", "production_table"})
     end
 end
+
+
+-- ** EVENTS **
+production_box.gui_events = {
+    on_gui_click = {
+        {
+            name = "fp_sprite-button_production_refresh",
+            timeout = 20,
+            handler = refresh_production
+        },
+        {
+            pattern = "^fp_button_production_floor_[a-z]+$",
+            handler = (function(player, element, _)
+                local destination = string.gsub(element.name, "fp_button_production_floor_", "")
+                production_box.change_floor(player, destination)
+            end)
+        }
+    }
+}
+
+production_box.misc_events = {
+    fp_refresh_production = refresh_production,
+
+    fp_floor_up = (function(player, _)
+        production_box.change_floor(player, "up")
+    end)
+}

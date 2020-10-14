@@ -71,6 +71,24 @@ tutorial_dialog.dialog_settings = (function(_) return {
     create_content_frame = false
 } end)
 
+function tutorial_dialog.open(player, modal_data)
+    local frame_tabs = modal_data.modal_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
+
+    local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
+    tabbed_pane.style.height = 600
+
+    for _, tab_name in ipairs(tab_definitions) do
+        local tab = tabbed_pane.add{type="tab"}
+        local tab_pane = tabbed_pane.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+        tab_pane.style.width = 555
+
+        tab_definitions[tab_name](player, tab, tab_pane)
+        tabbed_pane.add_tab(tab, tab_pane)
+    end
+end
+
+
+-- ** EVENTS **
 tutorial_dialog.gui_events = {
     on_gui_click = {
         {
@@ -93,19 +111,3 @@ tutorial_dialog.gui_events = {
         }
     }
 }
-
-function tutorial_dialog.open(player, modal_data)
-    local frame_tabs = modal_data.modal_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
-
-    local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
-    tabbed_pane.style.height = 600
-
-    for _, tab_name in ipairs(tab_definitions) do
-        local tab = tabbed_pane.add{type="tab"}
-        local tab_pane = tabbed_pane.add{type="scroll-pane", style="flib_naked_scroll_pane"}
-        tab_pane.style.width = 555
-
-        tab_definitions[tab_name](player, tab, tab_pane)
-        tabbed_pane.add_tab(tab, tab_pane)
-    end
-end

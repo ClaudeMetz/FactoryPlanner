@@ -131,26 +131,6 @@ end
 
 
 -- ** TOP LEVEL **
-item_boxes.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_sprite%-button_add_top_level_[a-z]+$",
-            timeout = 20,
-            handler = (function(player, element, _)
-                local item_category = string.gsub(element.name, "fp_sprite%-button_add_top_level_", "")
-                modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category=item_category}})
-            end)
-        },
-        {
-            pattern = "^fp_sprite%-button_top_level_[a-z]+_%d+$",
-            timeout = 20,
-            handler = (function(player, element, metadata)
-                handle_item_button_click(player, element, metadata)
-            end)
-        }
-    }
-}
-
 function item_boxes.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.item_boxes = {}
@@ -184,3 +164,23 @@ function item_boxes.refresh(player)
     item_boxes_elements.byproduct_item_table.style.height = item_table_height
     item_boxes_elements.ingredient_item_table.style.height = item_table_height
 end
+
+
+-- ** EVENTS **
+item_boxes.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_sprite%-button_add_top_level_[a-z]+$",
+            timeout = 20,
+            handler = (function(player, element, _)
+                local item_category = string.gsub(element.name, "fp_sprite%-button_add_top_level_", "")
+                modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category=item_category}})
+            end)
+        },
+        {
+            pattern = "^fp_sprite%-button_top_level_[a-z]+_%d+$",
+            timeout = 20,
+            handler = handle_item_button_click
+        }
+    }
+}

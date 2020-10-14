@@ -232,50 +232,6 @@ beacon_dialog.dialog_settings = (function(modal_data) return {
     force_auto_center = true
 } end)
 
-beacon_dialog.gui_events = {
-    on_gui_elem_changed = {
-        {
-            name = "fp_choose-elem-button_beacon_choice",
-            handler = (function(player, element)
-                handle_beacon_change(player, element)
-            end)
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "fp_textfield_beacon_amount",
-            handler = (function(player, _)
-                local modal_elements = data_util.get("modal_elements", player)
-                update_dialog_submit_button(modal_elements)
-            end)
-        }
-    },
-    on_gui_click = {
-        {
-            name = "fp_sprite-button_beacon_total_amount",
-            timeout = 20,
-            handler = (function(player, _, _)
-                modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
-            end)
-        }
-    }
-}
-
-beacon_dialog.misc_events = {
-    on_player_cursor_stack_changed = (function(player, _)
-        -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-        if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
-            modal_dialog.leave_selection_mode(player)
-        end
-    end),
-    on_player_selected_area = (function(player, event)
-        if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
-            handle_beacon_selection(player, event.entities)
-        end
-    end)
-}
-
-
 function beacon_dialog.open(player, modal_data)
     local beacon, line = modal_data.object, modal_data.line
     local modal_elements = modal_data.modal_elements
@@ -334,6 +290,47 @@ function beacon_dialog.close(player, action)
     end
 end
 
+beacon_dialog.gui_events = {
+    on_gui_elem_changed = {
+        {
+            name = "fp_choose-elem-button_beacon_choice",
+            handler = handle_beacon_change
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_beacon_amount",
+            handler = (function(player, _)
+                local modal_elements = data_util.get("modal_elements", player)
+                update_dialog_submit_button(modal_elements)
+            end)
+        }
+    },
+    on_gui_click = {
+        {
+            name = "fp_sprite-button_beacon_total_amount",
+            timeout = 20,
+            handler = (function(player, _, _)
+                modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
+            end)
+        }
+    }
+}
+
+beacon_dialog.misc_events = {
+    on_player_cursor_stack_changed = (function(player, _)
+        -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
+        if data_util.get("flags", player).selection_mode and not player.cursor_stack.valid_for_read then
+            modal_dialog.leave_selection_mode(player)
+        end
+    end),
+    on_player_selected_area = (function(player, event)
+        if event.item == "fp_beacon_selector" and data_util.get("flags", player).selection_mode then
+            handle_beacon_selection(player, event.entities)
+        end
+    end)
+}
+
 
 -- ** SHARED **
 modules_dialog.gui_events = {
@@ -359,9 +356,7 @@ modules_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "fp_textfield_module_amount",
-            handler = (function(player, element)
-                handle_module_textfield_change(player, element)
-            end)
+            handler = handle_module_textfield_change
         }
     }
 }

@@ -82,25 +82,6 @@ end
 
 
 -- ** TOP LEVEL **
-view_state.gui_events = {
-    on_gui_click = {
-        {
-            pattern = "^fp_button_view_state_[a-z_]+$",
-            handler = (function(player, element, _)
-                local view_name = string.gsub(element.name, "fp_button_view_state_", "")
-                select_view_state(player, view_name)
-                main_dialog.refresh(player, "subfactory")
-            end)
-        }
-    }
-}
-
-view_state.misc_events = {
-    fp_cycle_production_views = (function(player, _)
-        handle_view_state_change(player, nil)
-    end)
-}
-
 -- Creates metadata relevant for a whole batch of items
 function view_state.generate_metadata(player, subfactory, formatting_precision, include_tooltip)
     local player_table = data_util.get("table", player)
@@ -198,3 +179,24 @@ function view_state.refresh(player,  table_view_state)
         view_button.enabled = (not view_state.selected)
     end
 end
+
+
+-- ** EVENTS **
+view_state.gui_events = {
+    on_gui_click = {
+        {
+            pattern = "^fp_button_view_state_[a-z_]+$",
+            handler = (function(player, element, _)
+                local view_name = string.gsub(element.name, "fp_button_view_state_", "")
+                select_view_state(player, view_name)
+                main_dialog.refresh(player, "subfactory")
+            end)
+        }
+    }
+}
+
+view_state.misc_events = {
+    fp_cycle_production_views = (function(player, _)
+        handle_view_state_change(player, nil)
+    end)
+}

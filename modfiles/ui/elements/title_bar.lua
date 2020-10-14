@@ -26,39 +26,6 @@ local function toggle_paused_state(player, button)
 end
 
 -- ** TOP LEVEL **
-title_bar.gui_events = {
-    on_gui_click = {
-        {
-            name = "fp_sprite-button_title_bar_close_interface",
-            handler = (function(player, _, _)
-                main_dialog.toggle(player)
-            end)
-        },
-        {
-            name = "fp_sprite-button_title_bar_pause_game",
-            handler = (function(player, element, _)
-                toggle_paused_state(player, element)
-            end)
-        },
-        {
-            pattern = "^fp_button_title_bar_[a-z]+$",
-            handler = (function(player, element, _)
-                local dialog_name = string.gsub(element.name, "fp_button_title_bar_", "")
-                modal_dialog.enter(player, {type=dialog_name})
-            end)
-        }
-    }
-}
-
-title_bar.misc_events = {
-    fp_toggle_pause = (function(player, _)
-        local main_elements = data_util.get("main_elements", player)
-        if main_elements.main_frame and main_elements.main_frame.visible then
-            toggle_paused_state(player, main_elements.title_bar.pause_button)
-        end
-    end)
-}
-
 function title_bar.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.title_bar = {}
@@ -150,3 +117,34 @@ function title_bar.refresh_message(player)
         if message.lifetime <= 0 then message_queue[index] = nil end
     end
 end
+
+
+-- ** EVENTS **
+title_bar.gui_events = {
+    on_gui_click = {
+        {
+            name = "fp_sprite-button_title_bar_close_interface",
+            handler = main_dialog.toggle
+        },
+        {
+            name = "fp_sprite-button_title_bar_pause_game",
+            handler = toggle_paused_state
+        },
+        {
+            pattern = "^fp_button_title_bar_[a-z]+$",
+            handler = (function(player, element, _)
+                local dialog_name = string.gsub(element.name, "fp_button_title_bar_", "")
+                modal_dialog.enter(player, {type=dialog_name})
+            end)
+        }
+    }
+}
+
+title_bar.misc_events = {
+    fp_toggle_pause = (function(player, _)
+        local main_elements = data_util.get("main_elements", player)
+        if main_elements.main_frame and main_elements.main_frame.visible then
+            toggle_paused_state(player, main_elements.title_bar.pause_button)
+        end
+    end)
+}

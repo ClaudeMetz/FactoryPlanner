@@ -211,36 +211,6 @@ import_dialog.dialog_settings = (function(_) return {
     disable_scroll_pane = true
 } end)
 
-import_dialog.gui_events = {
-    on_gui_click = {
-        {
-            name = "fp_button_porter_subfactory_import",
-            timeout = 20,
-            handler = (function(player, _, _)
-                import_subfactories(player)
-            end)
-        }
-    },
-    on_gui_text_changed = {
-        {
-            name = "fp_textfield_porter_string_import",
-            handler = (function(player, element)
-                local button_import = data_util.get("modal_elements", player).import_button
-                set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
-            end)
-        }
-    },
-    on_gui_confirmed = {
-        {
-            name = "fp_textfield_porter_string_import",
-            handler = (function(player, element)
-                if element.text ~= "" then import_subfactories(player) end
-            end)
-        }
-    }
-}
-
-
 function import_dialog.open(_, modal_data)
     local modal_elements = modal_data.modal_elements
     set_dialog_submit_button(modal_elements, false, "import_string")
@@ -272,6 +242,33 @@ function import_dialog.close(player, action)
     end
 end
 
+import_dialog.gui_events = {
+    on_gui_click = {
+        {
+            name = "fp_button_porter_subfactory_import",
+            timeout = 20,
+            handler = import_subfactories
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_porter_string_import",
+            handler = (function(player, element)
+                local button_import = data_util.get("modal_elements", player).import_button
+                set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
+            end)
+        }
+    },
+    on_gui_confirmed = {
+        {
+            name = "fp_textfield_porter_string_import",
+            handler = (function(player, element)
+                if element.text ~= "" then import_subfactories(player) end
+            end)
+        }
+    }
+}
+
 
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
@@ -279,18 +276,6 @@ export_dialog.dialog_settings = (function(_) return {
     create_content_frame = true,
     disable_scroll_pane = true
 } end)
-
-export_dialog.gui_events = {
-    on_gui_click = {
-        {
-            name = "fp_button_porter_subfactory_export",
-            timeout = 20,
-            handler = (function(player, _, _)
-                export_subfactories(player)
-            end)
-        }
-    }
-}
 
 function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
@@ -314,6 +299,16 @@ function export_dialog.open(player, modal_data)
     modal_elements.export_textfield.parent.style.top_margin = 6
 end
 
+export_dialog.gui_events = {
+    on_gui_click = {
+        {
+            name = "fp_button_porter_subfactory_export",
+            timeout = 20,
+            handler = export_subfactories
+        }
+    }
+}
+
 
 -- ** SHARED **
 porter_dialog.gui_events = {
@@ -326,9 +321,7 @@ porter_dialog.gui_events = {
         },
         {
             pattern = "^fp_checkbox_porter_subfactory_[a-z]+_%d+$",
-            handler = (function(player, _)
-                adjust_after_checkbox_click(player)
-            end)
+            handler = adjust_after_checkbox_click
         }
     }
 }
