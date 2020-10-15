@@ -106,7 +106,9 @@ function builders.machine(line, parent_flow, metadata)
 
         -- Modules - can only be added to machines that have any module slots
         if machine_proto.module_limit == 0 then return end
-        parent_flow.add{type="line", direction="vertical"}
+
+        local separator = parent_flow.add{type="line", direction="vertical"}
+        separator.style.padding = {4, 0}
 
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
@@ -155,7 +157,8 @@ function builders.beacon(line, parent_flow, metadata)
         end
 
         -- Module
-        parent_flow.add{type="line", direction="vertical"}
+        local separator = parent_flow.add{type="line", direction="vertical"}
+        separator.style.padding = {4, 0}
         local module_proto, module_amount = beacon.module.proto, beacon.module.amount
 
         -- Can use simplified number line because module amount is an integer
@@ -318,7 +321,7 @@ local all_production_columns = {
     {name="products", caption={"fp.pu_product", 2}, tooltip=nil, minimal_width=0, alignment="left"},
     {name="byproducts", caption={"fp.pu_byproduct", 2}, tooltip=nil, minimal_width=0, alignment="left"},
     {name="ingredients", caption={"fp.pu_ingredient", 2}, tooltip=nil, minimal_width=0, alignment="left"},
-    {name="line_comment", caption={"fp.column_comment"}, tooltip=nil, minimal_width=0, alignment="left"},
+    {name="line_comment", caption={"fp.column_comment"}, tooltip=nil, minimal_width=0, alignment="left"}
 }
 
 function production_table.build(player)
@@ -338,8 +341,8 @@ end
 function production_table.refresh(player)
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = data_util.get("preferences", player)
-    local context = data_util.get("context", player)
-    if context.subfactory == nil then return end
+    local ui_state = data_util.get("ui_state", player)
+    if ui_state.context.subfactory == nil then return end
 
     local production_columns, column_count = {}, 0
     for _, column_data in ipairs(all_production_columns) do
@@ -349,14 +352,16 @@ function production_table.refresh(player)
             production_columns[column_count] = column_data
         end
     end
+    column_count = column_count + 1
 
     local production_table_elements = data_util.get("main_elements", player).production_table
     local scroll_pane_production = production_table_elements.production_scroll_pane
     scroll_pane_production.clear()
 
-    local table_production = scroll_pane_production.add{type="table", column_count=column_count}
+    local table_production = scroll_pane_production.add{type="table", column_count=column_count,
+      style="fp_table_production"}
     table_production.style.horizontal_spacing = 16
-    table_production.style.margin = {6, 18, 0, 18}
+    table_production.style.padding = {6, 0, 0, 12}
     production_table_elements["table"] = table_production
 
     -- Column headers
@@ -367,15 +372,17 @@ function production_table.refresh(player)
         label_column.style.bottom_margin = 6
         table_production.style.column_alignments[index] = column_data.alignment
     end
+    table_production.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Generates some data that is relevant to several different builders
     local metadata = generate_metadata(player)
 
     -- Production lines
-    for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
+    for _, line in ipairs(Floor.get_in_order(ui_state.context.floor, "Line")) do
         for _, column_data in ipairs(production_columns) do
             local flow = table_production.add{type="flow", direction="horizontal"}
             builders[column_data.name](line, flow, metadata)
         end
+        table_production.add{type="empty-widget"}
     end
 end

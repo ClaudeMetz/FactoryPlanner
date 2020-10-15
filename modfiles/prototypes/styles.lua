@@ -63,6 +63,17 @@ styles["fp_frame_bordered_stretch"] = {
 }
 
 
+styles["fp_table_production"] = {
+    type = "table_style",
+    odd_row_graphical_set =
+      {
+        filename = "__core__/graphics/gui-new.png",
+        position = {472, 25},
+        size = 1
+      }
+}
+
+
 -- This style is hacked together from rounded-button and textbox
 styles["fp_sprite-button_inset"] = {
     type = "button_style",
