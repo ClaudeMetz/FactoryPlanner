@@ -22,7 +22,14 @@ end
 -- Refresh the dialog, quitting archive view if it has become empty
 local function refresh_with_archive_open(player, factory)
     local archive_open = data_util.get("flags", player).archive_open
+
     if archive_open and Factory.count(factory, "Subfactory") == 0 then
+        -- Make sure the just-unarchived subfactory is the selected one in factory; It'll always be the last one
+        local main_factory = data_util.get("table", player).factory
+        local last_position = Factory.count(main_factory, "Subfactory")
+        -- It's okay to set selected_subfactory directly here, as toggle_archive calls the proper context util function
+        main_factory.selected_subfactory = Factory.get_by_gui_position(main_factory, "Subfactory", last_position)
+
         toggle_archive(player)  -- does refreshing on its own
     else
         main_dialog.refresh(player, nil)
