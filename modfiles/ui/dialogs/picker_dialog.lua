@@ -13,13 +13,6 @@ local function select_item_group(modal_data, new_group_id)
     end
 end
 
-local function focus_searchfield(player)
-    local ui_state = data_util.get("ui_state", player)
-    if ui_state.modal_dialog_type == "picker" and ui_state.modal_data.object == nil then
-        ui_util.select_all(ui_state.modal_data.modal_elements.search_textfield)
-    end
-end
-
 local function search_items(player, searchfield)
     local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
     local modal_data = data_util.get("modal_data", player)
@@ -52,29 +45,6 @@ local function search_items(player, searchfield)
         local group_id_to_select = is_selected_group_visible and selected_group_id or first_visible_group_id
         select_item_group(modal_data, group_id_to_select)
     end
-end
-
--- Custom title bar construction to be able to integrate a search field into it
-local function fill_title_bar(modal_data)
-    local flow_title_bar = modal_data.modal_elements.title_bar_flow
-
-    flow_title_bar.add{type="label", caption={"fp.two_word_title", {"fp.add"},
-      {"fp.pl_" .. modal_data.item_category, 1}}, style="frame_title"}
-
-    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
-    drag_handle.drag_target = modal_data.modal_elements.modal_frame
-
-    local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_picker_search",
-      style="search_popup_textfield"}
-    ui_util.setup_textfield(searchfield)
-    searchfield.style.width = 180
-    searchfield.style.margin = {-3, 4, 0, 0}
-    searchfield.focus()
-    modal_data.modal_elements["search_textfield"] = searchfield
-
-    flow_title_bar.add{type="sprite-button", name="fp_sprite-button_picker_search", sprite="utility/search_white",
-      hovered_sprite="utility/search_black", clicked_sprite="utility/search_black", tooltip={"fp.search_button_tt"},
-      style="frame_action_button", mouse_button_filter={"left"}}
 end
 
 local function add_item_picker(parent_flow, player)
@@ -364,11 +334,14 @@ end
 
 
 -- ** TOP LEVEL **
-picker_dialog.dialog_settings = (function(modal_data) return {
-    caption = (modal_data.object) and {"fp.two_word_title", {"fp.edit"},
-      {"fp.pl_" .. modal_data.item_category, 1}} or nil,
-    force_auto_center = true
-} end)
+picker_dialog.dialog_settings = (function(modal_data)
+    local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
+    return {
+        caption = {"fp.two_word_title", action, {"fp.pl_" .. modal_data.item_category, 1}},
+        search_function = (not modal_data.object) and search_items or nil,
+        force_auto_center = true
+    }
+end)
 
 function picker_dialog.open(player, modal_data)
     modal_data.timescale = data_util.get("context", player).subfactory.timescale
@@ -390,7 +363,6 @@ function picker_dialog.open(player, modal_data)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.object == nil then
-        fill_title_bar(modal_data)
         add_item_picker(add_content_frame(), player)
     end
 end
@@ -442,10 +414,6 @@ picker_dialog.gui_events = {
         {
             pattern = "^fp_button_item_pick_%d+_%d+$",
             handler = handle_item_pick
-        },
-        {
-            name = "fp_sprite-button_picker_search",
-            handler = focus_searchfield
         }
     },
     on_gui_elem_changed = {
@@ -455,10 +423,6 @@ picker_dialog.gui_events = {
         }
     },
     on_gui_text_changed = {
-        {
-            name = "fp_textfield_picker_search",
-            handler = search_items
-        },
         {
             name = "fp_textfield_picker_item_amount",
             handler = (function(player, _)
@@ -475,8 +439,4 @@ picker_dialog.gui_events = {
             end)
         }
     }
-}
-
-picker_dialog.misc_events = {
-    fp_focus_searchfield = focus_searchfield
 }
