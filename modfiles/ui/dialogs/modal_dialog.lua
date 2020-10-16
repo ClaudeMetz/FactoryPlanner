@@ -19,9 +19,30 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Title bar
     if dialog_settings.caption ~= nil then
-        frame_modal_dialog.caption = dialog_settings.caption or nil
-    else  -- add a flow so the dialog can add its own, custom title bar
-        modal_elements.title_bar_flow = frame_modal_dialog.add{type="flow", direction="horizontal"}
+        if dialog_settings.search_function then  -- add a search field if requested
+            local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
+            flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
+
+            local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
+            drag_handle.drag_target = frame_modal_dialog
+
+            local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_modal_search",
+              style="search_popup_textfield"}
+            searchfield.style.width = 180
+            searchfield.style.margin = {-3, 4, 0, 0}
+            ui_util.setup_textfield(searchfield)
+            searchfield.focus()
+            modal_elements.search_textfield = searchfield
+
+            flow_title_bar.add{type="sprite-button", name="fp_sprite-button_modal_search", sprite="utility/search_white",
+              hovered_sprite="utility/search_black", clicked_sprite="utility/search_black",
+              tooltip={"fp.search_button_tt"}, style="frame_action_button", mouse_button_filter={"left"}}
+
+            modal_data.search_function = dialog_settings.search_function
+
+        else  -- Otherwise, let the frame handle the titlebar
+            frame_modal_dialog.caption = dialog_settings.caption or nil
+        end
     end
 
     -- Content frame
@@ -62,7 +83,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Cancel/Back button
     local action = dialog_settings.submit and "cancel" or "back"
-    local button_cancel = button_bar.add{type="button", name="fp_button_modal_dialog_cancel", style="back_button",
+    local button_cancel = button_bar.add{type="button", name="fp_button_modal_action_cancel", style="back_button",
       caption={"fp." .. action}, tooltip={"fp." .. action .. "_dialog"}, mouse_button_filter={"left"}}
     button_cancel.style.minimal_width = 0
     button_cancel.style.padding = {1, 12, 0, 12}
@@ -71,7 +92,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     if dialog_settings.delete then
         button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
 
-        local button_delete = button_bar.add{type="button", name="fp_button_modal_dialog_delete",
+        local button_delete = button_bar.add{type="button", name="fp_button_modal_action_delete",
           caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
         button_delete.style.font = "default-dialog-button"
         button_delete.style.height = 32
@@ -86,7 +107,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Submit button
     if dialog_settings.submit then
-        local button_submit = button_bar.add{type="button", name="fp_button_modal_dialog_submit", caption={"fp.submit"},
+        local button_submit = button_bar.add{type="button", name="fp_button_modal_action_submit", caption={"fp.submit"},
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
         button_submit.style.padding = {1, 8, 0, 12}
@@ -201,10 +222,24 @@ end
 modal_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_button_modal_dialog_[a-z]+$",
+            pattern = "^fp_button_modal_action_[a-z]+$",
             handler = (function(player, element, _)
-                local dialog_action = string.gsub(element.name, "fp_button_modal_dialog_", "")
+                local dialog_action = string.gsub(element.name, "fp_button_modal_action_", "")
                 modal_dialog.exit(player, dialog_action)
+            end)
+        },
+        {
+            name = "fp_sprite-button_modal_search",
+            handler = (function(player, _, _)
+                ui_util.select_all(data_util.get("modal_elements", player).search_textfield)
+            end)
+        }
+    },
+    on_gui_text_changed = {
+        {
+            name = "fp_textfield_modal_search",
+            handler = (function(player, element)
+                data_util.get("modal_data", player).search_function(player, element)
             end)
         }
     },
@@ -226,6 +261,15 @@ modal_dialog.misc_events = {
     fp_confirm_dialog = (function(player, _)
         if not data_util.get("flags", player).selection_mode then
             modal_dialog.exit(player, "submit")
+        end
+    end),
+
+    fp_focus_searchfield = (function(player, _)
+        local ui_state = data_util.get("ui_state", player)
+
+        if ui_state.modal_dialog_type ~= nil then
+            local textfield_search = ui_state.modal_data.modal_elements.search_textfield
+            if textfield_search then ui_util.select_all(textfield_search) end
         end
     end)
 }
