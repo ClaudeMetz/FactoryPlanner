@@ -215,7 +215,6 @@ local function create_recipe_group_box(modal_data, relevant_group)
     end
 end
 
--- Creates the unfiltered recipe structure
 local function create_dialog_structure(modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
@@ -237,8 +236,7 @@ local function create_dialog_structure(modal_data)
     end
 end
 
--- Filters the current recipes according to the filters that have been set
-local function apply_recipe_filter(player)
+local function apply_recipe_filter(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
@@ -250,8 +248,8 @@ local function apply_recipe_filter(player)
         for _, recipe in pairs(group.recipe_buttons) do
             local recipe_data = group_data.recipes[recipe.name]
 
-            -- Boolean algebra is reduced here; to understand the intended meaning, take a look at this:
-            local visible = (disabled or recipe_data.enabled) and (hidden or not recipe_data.proto.hidden)
+            local found = string.find(recipe.name, search_term, 1, true)
+            local visible = found and (disabled or recipe_data.enabled) and (hidden or not recipe_data.proto.hidden)
 
             recipe.button.visible = visible
             any_group_recipe_visible = any_group_recipe_visible or visible
@@ -279,13 +277,14 @@ local function handle_filter_change(player, element)
     data_util.get("modal_data", player).filters[filter_name] = boolean_state
     data_util.get("preferences", player).recipe_filters[filter_name] = boolean_state
 
-    apply_recipe_filter(player)
+    apply_recipe_filter(player, "")
 end
 
 
 -- ** TOP LEVEL **
 recipe_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
+    search_function = apply_recipe_filter,
     create_content_frame = true,
     force_auto_center = true
 } end)
@@ -321,7 +320,7 @@ function recipe_dialog.open(player, modal_data)
             modal_data.filters = show.filters
 
             create_dialog_structure(modal_data)
-            apply_recipe_filter(player)
+            apply_recipe_filter(player, "")
         end
     end
 end
