@@ -362,17 +362,16 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
     local current_proto = line.machine.fuel.proto
     local button_definitions = {}
 
+    local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
+      line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
+
     for _, fuel_proto in pairs(applicable_prototypes) do
-        local category_id = global.all_fuels.map[fuel_proto.category]
-
-        local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
-          line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
         local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
-          fuel_proto.fuel_value, timescale)
-
+        fuel_proto.fuel_value, timescale)
         local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-          fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
+        fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
 
+        local category_id = global.all_fuels.map[fuel_proto.category]
         local definition = {
             element_id = category_id .. "_" .. fuel_proto.id,
             sprite = fuel_proto.sprite,
@@ -382,7 +381,6 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
             tooltip_appendage = data_util.get_attributes("fuels", fuel_proto),
             selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
         }
-
         table.insert(button_definitions, definition)
     end
 
