@@ -256,8 +256,9 @@ end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
 function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
+    local drain = math.ceil(machine_count) * (machine_proto.energy_drain * 60)
     local consumption_multiplier = 1 + math.max(total_effects.consumption, -0.8)
-    return machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
+    return (machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier) + drain
 end
 
 -- Determines the amount of pollution this recipe produces

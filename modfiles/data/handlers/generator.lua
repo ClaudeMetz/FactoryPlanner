@@ -309,7 +309,7 @@ function generator.all_machines()
 
         -- Determine data related to the energy source
         local energy_type, emissions, burner = nil, 0, nil  -- emissions remain at 0 if no energy source is present
-        local energy_usage = proto.energy_usage or proto.max_energy_usage or 0
+        local energy_usage, energy_drain = (proto.energy_usage or proto.max_energy_usage or 0), 0
 
         -- Determine the details of this entities energy source
         local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
@@ -333,6 +333,7 @@ function generator.all_machines()
 
         elseif proto.electric_energy_source_prototype then
             energy_type = "electric"
+            energy_drain = proto.electric_energy_source_prototype.drain
             emissions = proto.electric_energy_source_prototype.emissions
 
         elseif proto.void_energy_source_prototype then
@@ -362,6 +363,7 @@ function generator.all_machines()
             speed = speed,
             energy_type = energy_type,
             energy_usage = energy_usage,
+            energy_drain = energy_drain,
             emissions = emissions,
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
