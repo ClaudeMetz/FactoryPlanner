@@ -380,7 +380,8 @@ function production_table.refresh(player)
     -- Production lines
     for _, line in ipairs(Floor.get_in_order(ui_state.context.floor, "Line")) do
         for _, column_data in ipairs(production_columns) do
-            local flow = table_production.add{type="flow", direction="horizontal"}
+            local flow = table_production.add{type="flow", name="flow_" .. column_data.name
+              .. "_" .. line.id, direction="horizontal"}
             builders[column_data.name](line, flow, metadata)
         end
         table_production.add{type="empty-widget"}
