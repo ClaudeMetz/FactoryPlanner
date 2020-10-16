@@ -26,6 +26,25 @@ local function generate_floor_data(player, subfactory, floor)
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
 
         else
+            -- If a line has a percentage of zero, it doesn't need to go through the model
+            if line.percentage == 0 then
+                calculation.interface.set_line_result{
+                    player_index = player.index,
+                    floor_id = floor.id,
+                    line_id = line.id,
+                    machine_count = 0,
+                    energy_consumption = 0,
+                    pollution = 0,
+                    production_ratio = 0,
+                    uncapped_production_ratio = 0,
+                    Product = structures.class.init(),
+                    Byproduct = structures.class.init(),
+                    Ingredient = structures.class.init(),
+                    fuel_amount = nil
+                }
+                goto skip_line
+            end
+
             line_data.recipe_proto = line.recipe.proto  -- reference
             line_data.timescale = subfactory.timescale
             line_data.percentage = line.percentage
@@ -56,6 +75,7 @@ local function generate_floor_data(player, subfactory, floor)
         end
 
         table.insert(floor_data.lines, line_data)
+        ::skip_line::
     end
 
     return floor_data
