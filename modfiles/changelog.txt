@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Updated to a newer version of flib (v0.4.1)
     - Various minor UI improvements unrelated to the main interface redesign
   Bugfixes:
-    -
+    - Fixed that changing the limit on a machine would reset the 'hard limit'-switch
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4
