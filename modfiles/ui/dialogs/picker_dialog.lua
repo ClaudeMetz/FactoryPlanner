@@ -13,8 +13,7 @@ local function select_item_group(modal_data, new_group_id)
     end
 end
 
-local function search_items(player, searchfield)
-    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+local function search_items(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local modal_elements = modal_data.modal_elements
 

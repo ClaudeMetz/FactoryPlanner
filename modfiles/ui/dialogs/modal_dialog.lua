@@ -239,7 +239,8 @@ modal_dialog.gui_events = {
         {
             name = "fp_textfield_modal_search",
             handler = (function(player, element)
-                data_util.get("modal_data", player).search_function(player, element)
+                local search_term = element.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+                data_util.get("modal_data", player).search_function(player, search_term)
             end)
         }
     },
