@@ -123,11 +123,20 @@ local function apply_machine_choice(player, machine_id)
 end
 
 local function machine_limit_change(modal_data, textfield)
-    -- Sets the state of the hard limit switch according to what the entered limit is
     local switch = modal_data.modal_elements["fp_switch_on_off_options_hard_limit"]
     local machine_limit = tonumber(textfield.text)
-    if machine_limit == nil then switch.switch_state = "right" end
-    switch.enabled = (machine_limit ~= nil)
+
+    -- If it goes from empty to filled, reset a possible previous switch state
+    if modal_data.previous_limit == nil and modal_data.previous_switch_state then
+        switch.switch_state = modal_data.previous_switch_state
+    -- If it goes from filled to empty, save the switch state end set it to be disabled
+    elseif machine_limit == nil then
+        modal_data.previous_switch_state = switch.switch_state
+        switch.switch_state = "right"
+    end
+
+    switch.enabled = (machine_limit ~= nil)  -- The switch only makes sense if you have a machine limit
+    modal_data.previous_limit = machine_limit  -- Record the previous limit to know how it changes
 end
 
 local function apply_machine_options(player, options, action)
