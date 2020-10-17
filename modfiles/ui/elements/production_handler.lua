@@ -1,6 +1,18 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
+local function handle_toggle_change(player, checkbox)
+    local line_id = tonumber(string.match(checkbox.name, "%d+"))
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", line_id)
+
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    relevant_line.active = checkbox.state
+
+    calculation.update(player, context.subfactory)
+    main_dialog.refresh(player, "subfactory")
+end
+
 local function handle_recipe_click(player, button, metadata)
     local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
@@ -485,6 +497,12 @@ production_handler.gui_events = {
             pattern = "^fp_sprite%-button_production_fuel_%d+$",
             timeout = 20,
             handler = handle_fuel_click
+        }
+    },
+    on_gui_checked_state_changed = {
+        {
+            pattern = "^fp_checkbox_production_toggle_%d+$",
+            handler = handle_toggle_change
         }
     },
     on_gui_text_changed = {

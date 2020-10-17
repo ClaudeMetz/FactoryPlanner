@@ -6,6 +6,7 @@ function Line.init(recipe)
 
     return {
         recipe = recipe,  -- can be nil
+        active = (is_standalone_line) and true or nil,
         percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
@@ -230,6 +231,8 @@ function Line.pack(self)
 
     else
         packed_line.recipe = Recipe.pack(self.recipe)
+
+        packed_line.active = self.active
         packed_line.percentage = self.percentage
 
         packed_line.machine = Machine.pack(self.machine)
@@ -246,16 +249,18 @@ function Line.unpack(packed_self)
     -- Only lines without subfloors are ever unpacked, so it can be treated as such
     local self = Line.init(packed_self.recipe)
 
+    self.active = packed_self.active
+    self.percentage = packed_self.percentage
+
     self.machine = Machine.unpack(packed_self.machine)
     self.machine.parent = self
 
     self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
     if self.beacon then self.beacon.parent = self end
-
-    self.comment = packed_self.comment
-    self.percentage = packed_self.percentage
-    self.priority_product_proto = packed_self.priority_product_proto
     -- Effects are summarized by the ensuing validation
+
+    self.priority_product_proto = packed_self.priority_product_proto
+    self.comment = packed_self.comment
 
     return self
 end

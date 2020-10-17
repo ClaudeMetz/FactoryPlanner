@@ -4,9 +4,10 @@ function migration.global()
 end
 
 function migration.player_table(player_table)
-    if player_table.ui_state then
+    --if player_table.ui_state then
         player_table.ui_state.view_states = player_table.ui_state.view_state
-    end
+    --end
+    player_table.preferences.toggle_column = false
 end
 
 function migration.subfactory(subfactory)
@@ -17,6 +18,8 @@ function migration.subfactory(subfactory)
                 for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
                     module.effects_tooltip = ""
                 end
+
+                line.active = true
             end
 
             if line.beacon then
@@ -28,6 +31,16 @@ function migration.subfactory(subfactory)
 end
 
 function migration.packed_subfactory(packed_subfactory)
+    local function update_lines(floor)
+        for _, packed_line in ipairs(floor.Line.objects) do
+            if packed_line.subfloor then
+                update_lines(packed_line.subfloor)
+            else
+                packed_line.active = true
+            end
+        end
+    end
+    update_lines(packed_subfactory.top_floor)
 end
 
 return migration
