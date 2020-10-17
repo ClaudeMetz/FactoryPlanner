@@ -3,9 +3,10 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Redesigned the main interface. This means that some things are in different spots than they used to be, and some niche features got lost along the way. I'm sorry about those few that went missing, but I needed to get this done in a reasonable amount of time. If there is anything specific you're dearly missing, please let me know on the mod portal or on Discord.
+    - Added an optional production column to quickly disable certain recipes by checkbox
     - Added a search bar to the recipe picker
-    - The calculation model now considers the base energy drain that most electrical machines have
   Changes:
+    - The calculation model now considers the base energy drain that most electrical machines have
     - Updated to a newer version of flib (v0.4.1)
     - Various minor UI improvements unrelated to the main interface redesign
   Bugfixes:

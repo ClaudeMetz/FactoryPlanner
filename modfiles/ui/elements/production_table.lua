@@ -30,6 +30,11 @@ end
 -- ** BUILDERS **
 local builders = {}
 
+function builders.toggle(line, parent_flow, _)
+    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active}
+end
+
 function builders.recipe(line, parent_flow, metadata)
     local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
     local recipe_proto = relevant_line.recipe.proto
@@ -312,8 +317,9 @@ end
 
 -- ** TOP LEVEL **
 local all_production_columns = {
+    {name="toggle", caption=nil, tooltip=nil, minimal_width=0, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, tooltip=nil, minimal_width=0, alignment="center"},
-    {name="percentage", caption={"fp.info_label", "%"}, tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},
+    {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, tooltip=nil, minimal_width=0, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, tooltip=nil, minimal_width=0, alignment="left"},
     {name="energy", caption={"fp.u_energy"}, tooltip=nil, minimal_width=0, alignment="center"},
@@ -366,8 +372,9 @@ function production_table.refresh(player)
 
     -- Column headers
     for index, column_data in ipairs(production_columns) do
-        local label_column = table_production.add{type="label", caption=column_data.caption,
-          tooltip=column_data.tooltip, style="bold_label"}
+        local caption = (column_data.tooltip) and {"fp.info_label", column_data.caption} or column_data.caption
+        local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
+          style="bold_label"}
         label_column.style.minimal_width = column_data.minimal_width
         label_column.style.bottom_margin = 6
         table_production.style.column_alignments[index] = column_data.alignment

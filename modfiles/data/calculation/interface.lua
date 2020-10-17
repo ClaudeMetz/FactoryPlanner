@@ -6,7 +6,6 @@ calculation = {
     util = {}
 }
 
-
 -- ** LOCAL UTIL **
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, subfactory, floor)
@@ -17,6 +16,7 @@ local function generate_floor_data(player, subfactory, floor)
 
     local mining_productivity = (subfactory.mining_productivity ~= nil) and
       (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+    local check_usefulness = data_util.get("preferences", player).toggle_column
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
@@ -24,10 +24,24 @@ local function generate_floor_data(player, subfactory, floor)
         if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
             line_data.recipe_proto = Floor.get(line.subfloor, "Line", 1).recipe.proto
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
+            table.insert(floor_data.lines, line_data)
 
         else
-            -- If a line has a percentage of zero, it doesn't need to go through the model
-            if line.percentage == 0 then
+            local line_is_useful = true
+            if check_usefulness then  -- only care about this if the toggle_column is visible
+                -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
+                if line.percentage == 0 or not line.active then line_is_useful = false end
+
+                -- If this line is on a subfloor and the top line of the floor is useless, the line is useless too
+                if line_is_useful and line.parent.level > 1 then
+                    local first_floor_line = Floor.get(line.parent, "Line", 1)
+                    if first_floor_line.percentage == 0 or not first_floor_line.active then line_is_useful = false end
+                end
+            end
+
+            if not line_is_useful then  -- any useless line doesn't need to go through the model
+                local blank_class = structures.class.init()
+
                 calculation.interface.set_line_result{
                     player_index = player.index,
                     floor_id = floor.id,
@@ -37,45 +51,43 @@ local function generate_floor_data(player, subfactory, floor)
                     pollution = 0,
                     production_ratio = 0,
                     uncapped_production_ratio = 0,
-                    Product = structures.class.init(),
-                    Byproduct = structures.class.init(),
-                    Ingredient = structures.class.init(),
+                    Product = blank_class,
+                    Byproduct = blank_class,
+                    Ingredient = blank_class,
                     fuel_amount = nil
                 }
-                goto skip_line
-            end
-
-            line_data.recipe_proto = line.recipe.proto  -- reference
-            line_data.timescale = subfactory.timescale
-            line_data.percentage = line.percentage
-            line_data.production_type = line.recipe.production_type
-            line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
-            line_data.beacon_consumption = 0
-            line_data.priority_product_proto = line.priority_product_proto  -- reference
-            line_data.machine_proto = line.machine.proto  -- reference
-
-            -- Fuel prototype
-            if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
-
-            -- Total effects
-            if line.machine.proto.mining then
-                -- If there is mining prod, a copy of the table is required
-                local effects = table.shallow_copy(line.total_effects)
-                effects.productivity = effects.productivity + mining_productivity
-                line_data.total_effects = effects
             else
-                -- If there's no mining prod, a reference will suffice
-                line_data.total_effects = line.total_effects
-            end
+                line_data.recipe_proto = line.recipe.proto  -- reference
+                line_data.timescale = subfactory.timescale
+                line_data.percentage = line.percentage  -- non-zero
+                line_data.production_type = line.recipe.production_type
+                line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
+                line_data.beacon_consumption = 0
+                line_data.priority_product_proto = line.priority_product_proto  -- reference
+                line_data.machine_proto = line.machine.proto  -- reference
 
-            -- Beacon total (can be calculated here, which is faster and simpler)
-            if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-                line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
+                -- Fuel prototype
+                if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
+
+                -- Total effects
+                if line.machine.proto.mining then
+                    -- If there is mining prod, a copy of the table is required
+                    local effects = table.shallow_copy(line.total_effects)
+                    effects.productivity = effects.productivity + mining_productivity
+                    line_data.total_effects = effects
+                else
+                    -- If there's no mining prod, a reference will suffice
+                    line_data.total_effects = line.total_effects
+                end
+
+                -- Beacon total (can be calculated here, which is faster and simpler)
+                if line.beacon ~= nil and line.beacon.total_amount ~= nil then
+                    line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
+                end
+
+                table.insert(floor_data.lines, line_data)
             end
         end
-
-        table.insert(floor_data.lines, line_data)
-        ::skip_line::
     end
 
     return floor_data

@@ -150,10 +150,15 @@ local function handle_checkbox_preference_change(player, element)
         refresh.production_table = true
     end
 
+    if preference_name == "toggle_column" then
+        refresh.calculations = true
+    end
+
     if preference_name == "ingredient_satisfaction" then
-        refresh.production_table = true
         -- Only recalculate if the satisfaction data will actually be shown now
         refresh.ingredient_satisfaction = (element.state)
+
+        refresh.production_table = true
     end
 end
 
@@ -237,7 +242,7 @@ function preferences_dialog.open(player, modal_data)
       "ingredient_satisfaction", "round_button_numbers"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
-    local production_preference_names = {"pollution_column", "line_comment_column"}
+    local production_preference_names = {"toggle_column", "pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
     preference_structures.mb_defaults(preferences, left_content_frame)
@@ -262,6 +267,12 @@ function preferences_dialog.close(player, _)
 
     if refresh.view_state then
         view_state.rebuild_state(player)
+        main_dialog.refresh(player, "subfactory")
+    end
+
+    if refresh.calculations then
+        local context = data_util.get("context", player)
+        calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 

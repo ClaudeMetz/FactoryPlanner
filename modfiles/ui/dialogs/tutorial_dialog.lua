@@ -25,6 +25,7 @@ function tab_definitions.interface(player, tab, tab_pane)
     local active_mods = game.active_mods
     local no_other_mods_active = (table_size(active_mods) == 3 and active_mods["base"] ~= nil
       and active_mods["factoryplanner"] ~= nil and active_mods["flib"] ~= nil)
+    if DEVMODE then no_other_mods_active = true end  -- skip this check for development, because debugger
     local tutorial_mode = data_util.get("preferences", player).tutorial_mode
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
