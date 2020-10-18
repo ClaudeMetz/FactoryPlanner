@@ -106,11 +106,12 @@ local function handle_item_button_click(player, button, metadata)
                 end
 
             elseif metadata.click == "left" then
-                if context.floor.level == 1 then
-                    modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce"}})
-                else
-                    title_bar.enqueue_message(player, {"fp.error_product_wrong_floor"}, "error", 1, true)
+                if context.floor.level > 1 then
+                    production_box.change_floor(player, "top")
+                    title_bar.enqueue_message(player, {"fp.error_product_wrong_floor"}, "warning", 2, false)
                 end
+
+                modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce"}})
 
             elseif metadata.click == "right" then
                 if metadata.action == "edit" then
