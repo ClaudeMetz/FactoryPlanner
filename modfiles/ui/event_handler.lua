@@ -92,7 +92,7 @@ special_gui_handlers.on_gui_click = (function(player, event, event_handlers)
     if event.button == defines.mouse_button_type.left then click = "left"
     elseif event.button == defines.mouse_button_type.right then click = "right" end
 
-    if click == "left" and not event.alt then
+    if click == "left" then
         if not event.control and event.shift then direction = "positive"
         elseif event.control and not event.shift then direction = "negative" end
     elseif click == "right" and not event.alt then
