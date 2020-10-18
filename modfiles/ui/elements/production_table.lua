@@ -349,7 +349,7 @@ function production_table.refresh(player)
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = data_util.get("preferences", player)
     local ui_state = data_util.get("ui_state", player)
-    if ui_state.context.subfactory == nil then return end
+    if not ui_state.context.subfactory or not ui_state.context.subfactory.valid then return end
 
     local production_columns, column_count = {}, 0
     for _, column_data in ipairs(all_production_columns) do
