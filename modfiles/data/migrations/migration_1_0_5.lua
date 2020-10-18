@@ -12,6 +12,8 @@ end
 
 function migration.subfactory(subfactory)
     for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
+        if floor.level > 1 then floor.defining_line = floor.Line.datasets[1] end
+
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             if not line.subfloor then
                 line.machine.effects_tooltip = ""

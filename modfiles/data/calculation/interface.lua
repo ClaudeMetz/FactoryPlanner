@@ -22,7 +22,7 @@ local function generate_floor_data(player, subfactory, floor)
         local line_data = { id = line.id }
 
         if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
-            line_data.recipe_proto = Floor.get(line.subfloor, "Line", 1).recipe.proto
+            line_data.recipe_proto = line.subfloor.defining_line.recipe.proto
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
             table.insert(floor_data.lines, line_data)
 
@@ -34,7 +34,7 @@ local function generate_floor_data(player, subfactory, floor)
 
                 -- If this line is on a subfloor and the top line of the floor is useless, the line is useless too
                 if line_is_useful and line.parent.level > 1 then
-                    local first_floor_line = Floor.get(line.parent, "Line", 1)
+                    local first_floor_line = line.parent.defining_line
                     if first_floor_line.percentage == 0 or not first_floor_line.active then line_is_useful = false end
                 end
             end

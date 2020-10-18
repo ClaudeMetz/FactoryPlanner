@@ -4,7 +4,8 @@ Floor = {}
 function Floor.init(creating_line)
     local floor = {
         level = 1,  -- top floor has a level of 1, it's initialized with Floor.init(nil)
-        origin_line = nil,  -- set below
+        origin_line = nil,  -- set below, only if level > 1. The line this subfloor is attached to
+        defining_line = nil,  -- set below, only if level > 1. First line of this subfloor
         Line = Collection.init("Line"),
         valid = true,
         class = "Floor"
@@ -16,14 +17,16 @@ function Floor.init(creating_line)
         floor.level = creating_line.parent.level + 1
         floor.parent = creating_line.parent
 
-        local origin_line = Line.init(nil)
-        -- No need to set a machine in this case
+        local origin_line = Line.init(nil)  -- No need to set a machine in this case
 
-        origin_line.subfloor = floor
-        floor.origin_line = origin_line
+        origin_line.subfloor = floor  -- Link up the newly created origin_line with its subfloor
+        floor.origin_line = origin_line  -- and vice versa
 
+        -- Replace the creating_line on its floor with the newly created origin_line
         Floor.replace(creating_line.parent, creating_line, origin_line)
-        Floor.add(floor, creating_line)
+
+        Floor.add(floor, creating_line)  -- Add the creating_line to the subfloor in the first spot
+        floor.defining_line = creating_line  -- which makes it the defining_line on this floor
     end
 
     return floor
@@ -58,12 +61,12 @@ function Floor.remove(self, dataset)
 end
 
 -- Floor deletes itself if it consists of only its mandatory first line
+-- That line can't be invalid as the whole subfloor would be removed already at that point
 function Floor.remove_if_empty(self)
     if self.level > 1 and self.Line.count == 1 then
         local origin_line = self.origin_line
-        local first_line = self.Line.datasets[1]
 
-        Floor.replace(origin_line.parent, origin_line, first_line)
+        Floor.replace(origin_line.parent, origin_line, self.defining_line)
         -- No need to remove eventual subfloors to the given floor,
         -- as there can't be any if the floor is empty
         Subfactory.remove(self.parent, self)
@@ -177,7 +180,7 @@ function Floor.unpack(packed_self, self)
             Floor.add(self, subfloor_line)
 
             -- Use that line to create the subfloor, which moves it to the newly created floor
-            local subfloor = Floor.init(subfloor_line)
+            local subfloor = Floor.init(subfloor_line)  -- sets origin_ and defining_line
             subfloor.origin_line.comment = packed_line.comment  -- carry over the origin_line's comment
             Subfactory.add(self.parent, subfloor)
 
