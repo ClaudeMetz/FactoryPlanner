@@ -389,7 +389,6 @@ function picker_dialog.close(player, action)
 
     elseif action == "delete" then
         Subfactory.remove(subfactory, item)
-        data_util.cleanup_subfactory(player, subfactory)
     end
 
     if action ~= "cancel" then

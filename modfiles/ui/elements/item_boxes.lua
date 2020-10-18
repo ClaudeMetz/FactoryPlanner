@@ -119,7 +119,6 @@ local function handle_item_button_click(player, button, metadata)
 
                 elseif metadata.action == "delete" then
                     Subfactory.remove(subfactory, item)
-                    data_util.cleanup_subfactory(player, subfactory)
 
                     calculation.update(player, subfactory)
                     main_dialog.refresh(player, "subfactory")
