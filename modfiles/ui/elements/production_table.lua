@@ -30,9 +30,10 @@ end
 -- ** BUILDERS **
 local builders = {}
 
-function builders.toggle(line, parent_flow, _)
+function builders.toggle(line, parent_flow, metadata)
     local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-    parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active}
+    parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active,
+      enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
 end
 
 function builders.recipe(line, parent_flow, metadata)
