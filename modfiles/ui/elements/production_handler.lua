@@ -242,7 +242,7 @@ end
 
 local function handle_module_click(player, button, metadata)
     if not ui_util.check_archive_status(player) then return end
-    if metadata.direction or metadata.alt then return end  -- not implemented for modules
+    if metadata.alt then return end  -- not implemented for modules
 
     local split_string = split_string(button.name, "_")
     local context = data_util.get("context", player)
@@ -265,7 +265,7 @@ end
 
 local function handle_beacon_click(player, button, metadata)
     if not ui_util.check_archive_status(player) then return end
-    if metadata.direction or metadata.alt then return end  -- not implemented for beacons
+    if metadata.alt then return end  -- not implemented for beacons
 
     local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
@@ -337,7 +337,7 @@ local function handle_item_click(player, button, metadata)
 
         elseif class == "Ingredient" then
             modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce",
-              add_after_position=((metadata.direction == "positive") and line.gui_position or nil)}})
+              add_after_position=((metadata.shift) and line.gui_position or nil)}})
         end
 
     elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
@@ -425,7 +425,7 @@ local function handle_fuel_click(player, button, metadata)
 
     elseif metadata.click == "left" then
         modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce",
-          add_after_position=((metadata.direction == "positive") and line.gui_position or nil)}})
+          add_after_position=((metadata.shift) and line.gui_position or nil)}})
 
     elseif metadata.click == "right" then
         -- Applicable fuels come from all categories that this burner supports
