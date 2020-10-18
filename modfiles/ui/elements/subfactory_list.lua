@@ -74,7 +74,7 @@ local function handle_subfactory_data_change(modal_data, _)
     local issue_message = nil
     if name_text == "" and icon_spec == nil then
         issue_message = {"fp.options_subfactory_issue_choose_either"}
-    elseif string.len(name_text) > 64 then
+    elseif string.len(name_text) > 256 then
         issue_message = {"fp.options_subfactory_issue_max_characters"}
     end
 
@@ -100,6 +100,7 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
                 change_handler = handle_subfactory_data_change,
                 caption = {"fp.options_subfactory_name"},
                 text = (subfactory) and subfactory.name or "",
+                width = 200,
                 focus = true
             },
             {
@@ -262,15 +263,16 @@ function subfactory_list.refresh(player)
     local listbox = subfactory_list_elements.subfactory_listbox
     listbox.clear()
 
-    local tooltip = ui_util.generate_tutorial_tooltip(player, "subfactory", false, false, false)
+    local tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "subfactory", false, true, false)
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
         for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
             local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
+            local caption = Subfactory.tostring(subfactory, true)
+            local tooltip = {"", caption, tutorial_tooltip}
 
-            listbox.add{type="button", name="fp_button_subfactory_" .. subfactory.id,
-              caption=Subfactory.tostring(subfactory, true), tooltip=tooltip,
-              style=style, mouse_button_filter={"left-and-right"}}
+            listbox.add{type="button", name="fp_button_subfactory_" .. subfactory.id, caption=caption,
+              tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
         end
     end
 
