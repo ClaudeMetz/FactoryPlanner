@@ -68,13 +68,6 @@ function data_util.execute_alt_action(player, action_type, data)
     end
 end
 
--- Removes useless lines and optionally refreshes the interface
-function data_util.cleanup_subfactory(player, subfactory)
-    calculation.update(player, subfactory)
-    Subfactory.remove_useless_lines(subfactory)
-    ui_util.context.set_floor(player, Subfactory.get(subfactory, "Floor", 1))
-end
-
 -- Formats the given effects for use in a tooltip
 function data_util.format_module_effects(effects, multiplier, limit_effects)
     local tooltip_lines, effect_applies = {""}, false

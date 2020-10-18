@@ -95,24 +95,6 @@ function Subfactory.shift(self, dataset, direction)
 end
 
 
--- Removes all lines that are useless (ie have production_ratio of 0)
--- This gets away with only checking the top floor, as no subfloor-lines can become useless if the
--- parent line is still useful, and vice versa (It's still set up to be recursively useable)
-function Subfactory.remove_useless_lines(self)
-    local function clear_floor(floor)
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            if line.production_ratio == 0 then
-                Floor.remove(floor, line)
-            end
-        end
-    end
-
-    local top_floor = Subfactory.get(self, "Floor", 1)
-    clear_floor(top_floor)
-    self.selected_floor = top_floor
-end
-
-
 -- Returns the machines and modules needed to actually build this subfactory
 function Subfactory.get_component_data(self)
     local components = {machines={}, modules={}}
