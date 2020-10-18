@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Added a search bar to the recipe picker
   Changes:
     - The calculation model now considers the base energy drain that most electrical machines have
+    - Setting recipe item amounts directly now behaves more intuitively
     - Updated to a newer version of flib (v0.4.1)
     - Various minor UI improvements unrelated to the main interface redesign
   Bugfixes:

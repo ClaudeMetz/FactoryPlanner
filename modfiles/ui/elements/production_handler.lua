@@ -341,6 +341,10 @@ local function handle_item_click(player, button, metadata)
         end
 
     elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
+        -- Set the view state so that the amount shown in the dialog makes sense
+        local view_actually_changed = view_state.select(player, "items_per_timescale")
+        if view_actually_changed then main_dialog.refresh(player, "subfactory") end
+
         local type_localised_string = {"fp.pl_" .. class:lower(), 1}
         local produce_consume = (class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
 

@@ -49,31 +49,15 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_type
     return number, tooltip
 end
 
-
-local function select_view_state(player, view_name)
-    local view_states = data_util.get("ui_state", player).view_states
-
-    for view_id, view_state in ipairs(view_states) do
-        view_state.id = view_id
-
-        if view_state.name == view_name then
-            view_states.selected_view = view_state
-            view_state.selected = true
-        else
-            view_state.selected = false
-        end
-    end
-end
-
 local function handle_view_state_change(player, new_view_name)
     local view_states = data_util.get("ui_state", player).view_states
 
     if view_states and main_dialog.is_in_focus(player) then
         if new_view_name ~= nil then
-            select_view_state(player, new_view_name)
+            view_state.select(player, new_view_name)
         else
             local new_view_id = view_states.selected_view.id % #view_states + 1
-            select_view_state(player, view_states[new_view_id].name)
+            view_state.select(player, view_states[new_view_id].name)
         end
 
         main_dialog.refresh(player, "subfactory")
@@ -147,11 +131,10 @@ function view_state.rebuild_state(player)
     local selected_view_name = (old_view_states) and old_view_states.selected_view.name or "items_per_timescale"
 
     ui_state.view_states = new_view_states
-    select_view_state(player, selected_view_name)
+    view_state.select(player, selected_view_name)
 end
 
 
--- Adds itself to the given parent, and returns the table that was built
 function view_state.build(player, parent_element)
     local view_states = data_util.get("ui_state", player).view_states
 
@@ -167,7 +150,6 @@ function view_state.build(player, parent_element)
     return table_view_state
 end
 
--- Refreshes the given view state table, as there could be multiple different ones
 function view_state.refresh(player,  table_view_state)
     local view_states = data_util.get("ui_state", player).view_states
 
@@ -180,6 +162,25 @@ function view_state.refresh(player,  table_view_state)
     end
 end
 
+function view_state.select(player, view_name)
+    local view_states = data_util.get("ui_state", player).view_states
+
+    if view_states.selected_view and view_states.selected_view.name == view_name then return false end
+
+    for view_id, view_state in ipairs(view_states) do
+        view_state.id = view_id
+
+        if view_state.name == view_name then
+            view_states.selected_view = view_state
+            view_state.selected = true
+        else
+            view_state.selected = false
+        end
+    end
+
+    return true  -- return that the view state was indeed changed
+end
+
 
 -- ** EVENTS **
 view_state.gui_events = {
@@ -188,7 +189,7 @@ view_state.gui_events = {
             pattern = "^fp_button_view_state_[a-z_]+$",
             handler = (function(player, element, _)
                 local view_name = string.gsub(element.name, "fp_button_view_state_", "")
-                select_view_state(player, view_name)
+                view_state.select(player, view_name)
                 main_dialog.refresh(player, "subfactory")
             end)
         }
