@@ -126,6 +126,7 @@ local function add_to_subfactories_table(modal_elements, subfactory, location_na
       state=false, enabled=(enable_checkbox or subfactory.valid)}
 
     local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, false)}
+    label.style.maximal_width = 350
     label.style.right_margin = 4
 
     local validity_caption = (subfactory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
