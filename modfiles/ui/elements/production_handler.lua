@@ -288,20 +288,24 @@ local function apply_item_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local item = ui_state.modal_data.object
-        local current_amount = item.amount
+        local relevant_line = (item.parent.subfloor) and item.parent.subfloor.defining_line or item.parent
 
-        local line = item.parent
-        local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-
-        if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
+        local current_amount, item_amount = item.amount, options.item_amount or 0
+        if item.class ~= "Ingredient" then
             local other_class = (item.class == "Product") and "Byproduct" or "Product"
-            local opposing_item = Line.get_by_type_and_name(relevant_line, other_class,
+            local corresponding_item = Line.get_by_type_and_name(relevant_line, other_class,
               item.proto.type, item.proto.name)
-            if opposing_item ~= nil then current_amount = current_amount + opposing_item.amount end
+
+            if corresponding_item then  -- Further adjustments if item is both product and byproduct
+                -- In either case, we need to consider the sum of both types as the current amount
+                current_amount = current_amount + corresponding_item.amount
+
+                -- If it's a byproduct, we want to set its amount to the exact number entered, which this does
+                if item.class == "Byproduct" then item_amount = item_amount + corresponding_item.amount end
+            end
         end
 
-        options.item_amount = options.item_amount or 0
-        relevant_line.percentage = (relevant_line.percentage * options.item_amount) / current_amount
+        relevant_line.percentage = (relevant_line.percentage * item_amount) / current_amount
 
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
