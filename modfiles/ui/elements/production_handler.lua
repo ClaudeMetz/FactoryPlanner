@@ -6,7 +6,7 @@ local function handle_toggle_change(player, checkbox)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", line_id)
 
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     relevant_line.active = checkbox.state
 
     calculation.update(player, context.subfactory)
@@ -34,7 +34,7 @@ local function handle_recipe_click(player, button, metadata)
         end
 
     elseif metadata.alt then
-        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+        local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
         data_util.execute_alt_action(player, "show_recipe",
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
@@ -67,7 +67,7 @@ local function handle_percentage_change(player, textfield)
     local ui_state = data_util.get("ui_state", player)
     local line = Floor.get(ui_state.context.floor, "Line", line_id)
 
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     relevant_line.percentage = tonumber(textfield.text) or 0
 
     ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
@@ -291,7 +291,7 @@ local function apply_item_options(player, options, action)
         local current_amount = item.amount
 
         local line = item.parent
-        local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+        local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
         if item.class ~= "Ingredient" then  -- For products and byproducts, find if the item exists in the other space
             local other_class = (item.class == "Product") and "Byproduct" or "Product"

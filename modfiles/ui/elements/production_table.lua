@@ -31,13 +31,13 @@ end
 local builders = {}
 
 function builders.toggle(line, parent_flow, metadata)
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active,
       enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
 end
 
 function builders.recipe(line, parent_flow, metadata)
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe_proto = relevant_line.recipe.proto
 
     local style, tooltip, enabled = "flib_slot_button_default_small", recipe_proto.localised_name, true
@@ -60,7 +60,7 @@ function builders.recipe(line, parent_flow, metadata)
 end
 
 function builders.percentage(line, parent_flow, metadata)
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
       .. line.id, text=relevant_line.percentage, enabled=(not metadata.archive_open)}
