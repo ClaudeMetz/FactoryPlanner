@@ -46,7 +46,6 @@ data:extend({
         type = "custom-input",
         name = "fp_focus_searchfield",
         key_sequence = "",
-        linked_game_control = "focus-search",
-        order = "g"
+        linked_game_control = "focus-search"
     }
 })
