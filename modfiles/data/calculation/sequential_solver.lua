@@ -1,109 +1,8 @@
 -- Contains the 'meat and potatoes' calculation model that struggles with some more complex setups
 sequential_solver = {}
 
-function sequential_solver.update_subfactory(subfactory_data)
-    -- Initialize aggregate with the top level items
-    local aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
-    for _, product in ipairs(subfactory_data.top_level_products) do
-        structures.aggregate.add(aggregate, "Product", product)
-    end
-
-    sequential_solver.update_floor(subfactory_data.top_floor, aggregate)  -- updates aggregate
-
-    -- Fuels are combined with Ingredients for top-level purposes
-    calculation.interface.set_subfactory_result {
-        player_index = subfactory_data.player_index,
-        energy_consumption = aggregate.energy_consumption,
-        pollution = aggregate.pollution,
-        Product = aggregate.Product,
-        Byproduct = aggregate.Byproduct,
-        Ingredient = aggregate.Ingredient
-    }
-end
-
-
-function sequential_solver.update_floor(floor_data, aggregate)
-    local desired_products = structures.class.copy(aggregate.Product)
-
-    for _, line_data in ipairs(floor_data.lines) do
-        local subfloor = line_data.subfloor
-        if subfloor ~= nil then
-            -- Convert proto product table to class for easier and faster access
-            local proto_products = structures.class.init()
-            for _, product in pairs(line_data.recipe_proto.products) do
-                proto_products[product.type][product.name] = true
-            end
-
-            -- Determine the products that are relevant for this subfloor
-            local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
-            for _, product in ipairs(structures.class.to_array(aggregate.Product)) do
-                local type, name = product.type, product.name
-                if proto_products[type][name] ~= nil then
-                    subfloor_aggregate.Product[type][name] = aggregate.Product[type][name]
-                end
-            end
-
-            local floor_products = structures.class.to_array(subfloor_aggregate.Product)
-            sequential_solver.update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
-
-
-            -- Convert the internal product-format into positive products for the line and main aggregate
-            for _, product in pairs(floor_products) do
-                local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
-                subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
-            end
-
-            -- Update the main aggregate with the results
-            aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
-            aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
-
-            -- Subtract subfloor products as produced
-            for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do
-                structures.aggregate.subtract(aggregate, "Product", item)
-            end
-
-            structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate, "Byproduct", "Product")
-            structures.class.balance_items(subfloor_aggregate.Byproduct, aggregate, "Product", "Byproduct")
-
-
-            -- Update the parent line of the subfloor with the results from the subfloor aggregate
-            calculation.interface.set_line_result {
-                player_index = aggregate.player_index,
-                floor_id = aggregate.floor_id,
-                line_id = line_data.id,
-                machine_count = subfloor_aggregate.machine_count,
-                energy_consumption = subfloor_aggregate.energy_consumption,
-                pollution = subfloor_aggregate.pollution,
-                production_ratio = nil,
-                uncapped_production_ratio = nil,
-                Product = subfloor_aggregate.Product,
-                Byproduct = subfloor_aggregate.Byproduct,
-                Ingredient = subfloor_aggregate.Ingredient,
-                fuel_amount = nil
-            }
-        else
-            -- Update aggregate according to the current line, which also adjusts the respective line object
-            sequential_solver.update_line(line_data, aggregate)  -- updates aggregate
-        end
-    end
-
-    -- Convert all outstanding non-desired products to ingredients
-    for _, product in pairs(structures.class.to_array(aggregate.Product)) do
-        if desired_products[product.type][product.name] == nil then
-            structures.aggregate.add(aggregate, "Ingredient", product)
-            structures.aggregate.subtract(aggregate, "Product", product)
-        else
-            -- Add top level products that are also ingredients to the ingredients
-            local negative_amount = product.amount - desired_products[product.type][product.name]
-            if negative_amount > 0 then
-                structures.aggregate.add(aggregate, "Ingredient", product, negative_amount)
-            end
-        end
-    end
-end
-
-
-function sequential_solver.update_line(line_data, aggregate)
+-- ** LOCAL UTIL **
+local function update_line(line_data, aggregate)
     local recipe_proto, machine_proto = line_data.recipe_proto, line_data.machine_proto
     local total_effects, timescale = line_data.total_effects, line_data.timescale
 
@@ -268,5 +167,108 @@ function sequential_solver.update_line(line_data, aggregate)
         Byproduct = Byproduct,
         Ingredient = Ingredient,
         fuel_amount = fuel_amount
+    }
+end
+
+
+local function update_floor(floor_data, aggregate)
+    local desired_products = structures.class.copy(aggregate.Product)
+
+    for _, line_data in ipairs(floor_data.lines) do
+        local subfloor = line_data.subfloor
+        if subfloor ~= nil then
+            -- Convert proto product table to class for easier and faster access
+            local proto_products = structures.class.init()
+            for _, product in pairs(line_data.recipe_proto.products) do
+                proto_products[product.type][product.name] = true
+            end
+
+            -- Determine the products that are relevant for this subfloor
+            local subfloor_aggregate = structures.aggregate.init(aggregate.player_index, subfloor.id)
+            for _, product in ipairs(structures.class.to_array(aggregate.Product)) do
+                local type, name = product.type, product.name
+                if proto_products[type][name] ~= nil then
+                    subfloor_aggregate.Product[type][name] = aggregate.Product[type][name]
+                end
+            end
+
+            local floor_products = structures.class.to_array(subfloor_aggregate.Product)
+            update_floor(subfloor, subfloor_aggregate)  -- updates aggregate
+
+
+            -- Convert the internal product-format into positive products for the line and main aggregate
+            for _, product in pairs(floor_products) do
+                local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
+                subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
+            end
+
+            -- Update the main aggregate with the results
+            aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
+            aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
+
+            -- Subtract subfloor products as produced
+            for _, item in ipairs(structures.class.to_array(subfloor_aggregate.Product)) do
+                structures.aggregate.subtract(aggregate, "Product", item)
+            end
+
+            structures.class.balance_items(subfloor_aggregate.Ingredient, aggregate, "Byproduct", "Product")
+            structures.class.balance_items(subfloor_aggregate.Byproduct, aggregate, "Product", "Byproduct")
+
+
+            -- Update the parent line of the subfloor with the results from the subfloor aggregate
+            calculation.interface.set_line_result {
+                player_index = aggregate.player_index,
+                floor_id = aggregate.floor_id,
+                line_id = line_data.id,
+                machine_count = subfloor_aggregate.machine_count,
+                energy_consumption = subfloor_aggregate.energy_consumption,
+                pollution = subfloor_aggregate.pollution,
+                production_ratio = nil,
+                uncapped_production_ratio = nil,
+                Product = subfloor_aggregate.Product,
+                Byproduct = subfloor_aggregate.Byproduct,
+                Ingredient = subfloor_aggregate.Ingredient,
+                fuel_amount = nil
+            }
+        else
+            -- Update aggregate according to the current line, which also adjusts the respective line object
+            update_line(line_data, aggregate)  -- updates aggregate
+        end
+    end
+
+    -- Convert all outstanding non-desired products to ingredients
+    for _, product in pairs(structures.class.to_array(aggregate.Product)) do
+        if desired_products[product.type][product.name] == nil then
+            structures.aggregate.add(aggregate, "Ingredient", product)
+            structures.aggregate.subtract(aggregate, "Product", product)
+        else
+            -- Add top level products that are also ingredients to the ingredients
+            local negative_amount = product.amount - desired_products[product.type][product.name]
+            if negative_amount > 0 then
+                structures.aggregate.add(aggregate, "Ingredient", product, negative_amount)
+            end
+        end
+    end
+end
+
+
+-- ** TOP LEVEL **
+function sequential_solver.update_subfactory(subfactory_data)
+    -- Initialize aggregate with the top level items
+    local aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
+    for _, product in ipairs(subfactory_data.top_level_products) do
+        structures.aggregate.add(aggregate, "Product", product)
+    end
+
+    update_floor(subfactory_data.top_floor, aggregate)  -- updates aggregate
+
+    -- Fuels are combined with Ingredients for top-level purposes
+    calculation.interface.set_subfactory_result {
+        player_index = subfactory_data.player_index,
+        energy_consumption = aggregate.energy_consumption,
+        pollution = aggregate.pollution,
+        Product = aggregate.Product,
+        Byproduct = aggregate.Byproduct,
+        Ingredient = aggregate.Ingredient
     }
 end
