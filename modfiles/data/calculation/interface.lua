@@ -1,4 +1,4 @@
-require("model")
+require("sequential_solver")
 require("structures")
 
 calculation = {
@@ -39,7 +39,7 @@ local function generate_floor_data(player, subfactory, floor)
                 end
             end
 
-            if not line_is_useful then  -- any useless line doesn't need to go through the model
+            if not line_is_useful then  -- any useless line doesn't need to go through the solver
                 local blank_class = structures.class.init()
 
                 calculation.interface.set_line_result{
@@ -157,11 +157,11 @@ end
 function calculation.update(player, subfactory)
     if subfactory ~= nil and subfactory.valid then
         local player_table = data_util.get("table", player)
-        -- Save the active subfactory in global so the model doesn't have to pass it around
+        -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        model.update_subfactory(subfactory_data)
+        sequential_solver.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
     end
 end

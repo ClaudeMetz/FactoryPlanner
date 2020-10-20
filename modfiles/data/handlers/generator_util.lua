@@ -183,7 +183,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
 
         -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
-        -- Also add proddable_amount so productivity bonus can be un-applied later in the model
+        -- Also add proddable_amount so productivity bonus can be un-applied later at the calculation step
         if base_ingredient.ignore_productivity then
             formatted_ingredient.ignore_productivity = true
             formatted_ingredient.proddable_amount = formatted_ingredient.amount
