@@ -1,4 +1,5 @@
 require("sequential_solver")
+require("matrix_solver")
 require("structures")
 
 calculation = {
@@ -161,7 +162,9 @@ function calculation.update(player, subfactory)
         player_table.active_subfactory = subfactory
 
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        sequential_solver.update_subfactory(subfactory_data)
+        local solver = (subfactory.matrix_free_items) and matrix_solver or sequential_solver
+
+        solver.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
     end
 end

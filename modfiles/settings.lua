@@ -57,5 +57,12 @@ data:extend({
         default_value = "belts",
         allowed_values = {"belts", "lanes"},
         order = "f"
-    }
+    },
+    {
+        type = "bool-setting",
+        name = "fp_prefer_matrix_solver",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "g"
+    },
 })
