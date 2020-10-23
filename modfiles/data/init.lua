@@ -32,6 +32,7 @@ local function reload_settings(player)
     settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = settings["fp_default_timescale"].value
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
 
     global.players[player.index].settings = settings_table
 end
