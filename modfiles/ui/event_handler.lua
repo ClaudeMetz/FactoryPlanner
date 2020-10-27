@@ -3,7 +3,7 @@
 local elements_that_need_handling = {main_dialog, title_bar, subfactory_list, subfactory_info, item_boxes,
   production_box, production_handler, view_state, modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
-  modules_dialog, picker_dialog, recipe_dialog}
+  modules_dialog, picker_dialog, recipe_dialog, matrix_dialog}
 
 
 -- ** RATE LIMITING **
