@@ -4,6 +4,7 @@ require("preferences_dialog")
 require("utility_dialog")
 require("picker_dialog")
 require("recipe_dialog")
+require("matrix_dialog")
 require("modules_dialog")
 require("porter_dialog")
 
@@ -14,6 +15,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     local modal_elements = modal_data.modal_elements
 
     local frame_modal_dialog = player.gui.screen.add{type="frame", name="fp_frame_modal_dialog", direction="vertical"}
+    frame_modal_dialog.style.minimal_width = 240
     frame_modal_dialog.auto_center = true
     modal_elements.modal_frame = frame_modal_dialog
 

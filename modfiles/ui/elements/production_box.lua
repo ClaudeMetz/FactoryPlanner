@@ -9,6 +9,18 @@ local function refresh_production(player)
     end
 end
 
+local function handle_matrix_toggle(player)
+    local subfactory = data_util.get("context", player).subfactory
+
+    if subfactory.matrix_free_items == nil then
+        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
+        modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=true}})
+    else
+        subfactory.matrix_free_items = nil
+        refresh_production(player)  -- recalculate with the sequential solver
+    end
+end
+
 
 -- ** TOP LEVEL **
 function production_box.build(player)
@@ -47,6 +59,18 @@ function production_box.build(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
+    local table_matrix_solver = subheader.add{type="table", column_count=2}
+    table_matrix_solver.style.horizontal_spacing = 0
+    table_matrix_solver.style.right_margin = 12
+
+    local button_solver_toggle = table_matrix_solver.add{type="button", name="fp_button_production_solver_toggle",
+      caption={"fp.matrix_solver"}, style="fp_button_push", mouse_button_filter={"left"}}
+    main_elements.production_box["solver_toggle_button"] = button_solver_toggle
+    local button_solver_configure = table_matrix_solver.add{type="button", name="fp_button_production_solver_configure",
+      caption="[img=info]", style="fp_button_push", mouse_button_filter={"left"}}
+    button_solver_configure.style.padding = {0, 8}
+    main_elements.production_box["solver_configure_button"] = button_solver_configure
+
     local table_view_state = view_state.build(player, subheader)
     main_elements.production_box["view_state_table"] = table_view_state
 
@@ -67,6 +91,7 @@ function production_box.refresh(player)
 
     local current_level = (subfactory_valid) and subfactory.selected_floor.level or 1
     local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
+    local matrix_solver_active = subfactory.matrix_free_items ~= nil
     local archive_open = (ui_state.flags.archive_open)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
@@ -78,6 +103,12 @@ function production_box.refresh(player)
 
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 2)
+
+    production_box_elements.solver_toggle_button.style = (matrix_solver_active)
+      and "fp_button_push_active" or "fp_button_push"
+    production_box_elements.solver_toggle_button.style.padding = {0, 8}  -- needs to be re-set when changing the style
+
+    production_box_elements.solver_configure_button.enabled = (matrix_solver_active)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
@@ -144,6 +175,16 @@ production_box.gui_events = {
             handler = (function(player, element, _)
                 local destination = string.gsub(element.name, "fp_button_production_floor_", "")
                 production_box.change_floor(player, destination)
+            end)
+        },
+        {
+            name = "fp_button_production_solver_toggle",
+            handler = handle_matrix_toggle
+        },
+        {
+            name = "fp_button_production_solver_configure",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}})
             end)
         }
     }

@@ -157,7 +157,7 @@ function view_state.refresh(player,  table_view_state)
         local view_button = table_view_state["fp_button_view_state_" .. view_state.name]
         view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
         view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
-        view_button.style.padding = {0, 12}    -- needs to be re-set when changing the style
+        view_button.style.padding = {0, 12}  -- needs to be re-set when changing the style
         view_button.enabled = (not view_state.selected)
     end
 end
