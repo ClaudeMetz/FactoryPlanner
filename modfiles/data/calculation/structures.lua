@@ -28,6 +28,18 @@ function structures.aggregate.subtract(aggregate, class_name, item, amount)
     structures.class.add(aggregate[class_name], item, -(amount or item.amount))
 end
 
+-- Adds the first given aggregate to the second
+function structures.aggregate.add_aggregate(from_aggregate, to_aggregate)
+    to_aggregate.energy_consumption = to_aggregate.energy_consumption + from_aggregate.energy_consumption
+    to_aggregate.pollution = to_aggregate.pollution + from_aggregate.pollution
+
+    local classes = {"Product", "Byproduct", "Ingredient"}
+    for _, class in ipairs(classes) do
+        for _, item in ipairs(structures.class.to_array(from_aggregate[class])) do
+            structures.aggregate.add(to_aggregate, class, item)
+        end
+    end
+end
 
 function structures.class.init()
     return {
