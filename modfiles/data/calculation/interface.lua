@@ -181,7 +181,8 @@ function calculation.interface.get_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = nil
+        top_floor = nil,
+        matrix_free_items = subfactory.matrix_free_items,
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
