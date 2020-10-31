@@ -169,11 +169,11 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     eliminated_items = matrix_solver.set_diff(eliminated_items, produced_outputs)
     local result = {
         recipes = subfactory_metadata.recipes,
-        ingredients = matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs),
-        products = matrix_solver.set_to_ordered_list(produced_outputs),
-        byproducts = matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts),
-        eliminated_items = matrix_solver.set_to_ordered_list(eliminated_items),
-        free_items = matrix_solver.set_to_ordered_list(free_items)
+        ingredients = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs)),
+        products = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(produced_outputs)),
+        byproducts = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts)),
+        eliminated_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(eliminated_items)),
+        free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(free_items))
     }
     return result
 end
@@ -248,7 +248,8 @@ function matrix_solver.update_subfactory(subfactory_data)
         free_variables["item_"..k] = true
     end
     for i, v in ipairs(matrix_free_items) do
-        free_variables["item_"..v] = true
+        local item_key = matrix_solver.get_item_key(v.type, v.name)
+        free_variables["item_"..item_key] = true
     end
     local col_set = matrix_solver.union_sets(line_names, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
@@ -344,8 +345,6 @@ function matrix_solver.update_subfactory(subfactory_data)
         end
     end
 
-    matrix_free_item_protos = matrix_solver.get_item_protos(matrix_free_items)
-
     calculation.interface.set_subfactory_result {
         player_index = subfactory_data.player_index,
         energy_consumption = top_floor_aggregate.energy_consumption,
@@ -353,7 +352,7 @@ function matrix_solver.update_subfactory(subfactory_data)
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient,
-        matrix_free_items = matrix_free_item_protos
+        matrix_free_items = matrix_free_item
     }
 end
 
@@ -544,8 +543,6 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale
     local machine_speed = line_data.machine_proto.speed
-    llog('LINE_DATA')
-    llog(line_data)
     local speed_multiplier = (1 + math.max(line_data.total_effects.speed, -0.8))
     local productivity_multiplier = (1 + math.max(line_data.total_effects.productivity, 0))
     local energy = recipe_proto.energy
