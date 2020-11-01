@@ -26,17 +26,27 @@ local function create_item_category(modal_data, type)
 end
 
 local function swap_item_category(player, element)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+
     local split_string = split_string(element.name, "_")
     local type, proto_index = split_string[4], tonumber(split_string[5])
 
     local modal_data = data_util.get("modal_data", player)
-    local item_array = modal_data[type .. "_items"]
-    local swapped_proto = item_array[proto_index]
-    table.remove(item_array, proto_index)
+    local free_items = modal_data["free_items"]
 
-    local opposing_type = (type == "free") and "constrained" or "free"
-    local opposing_item_array = modal_data[opposing_type .. "_items"]
-    table.insert(opposing_item_array, swapped_proto)
+    -- update the free items here, set the constrained items based on linear dependence data
+    if type == "free" then
+        table.remove(subfactory.matrix_free_items, proto_index)
+    else -- "constrained"
+        local item_proto = modal_data["constrained_items"][proto_index]
+        table.insert(subfactory.matrix_free_items, item_proto)
+    end
+
+    local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_modal_data)
+    modal_data.constrained_items = linear_dependence_data.allowed_free_items --todo: rename constrained_items to something like allowed_free_items
+    modal_data.free_items = matrix_modal_data.free_items
 
     refresh_item_category(modal_data, "constrained")
     refresh_item_category(modal_data, "free")
@@ -53,13 +63,10 @@ function matrix_dialog.open(player, modal_data)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
 
-    -- Provisional item to test the swapping, need to fill in what goes here
-    -- Also the format could need to be adjusted
-    local items = Subfactory.get_in_order(subfactory, "Product")
-
-    -- Both of these need to be continuously indexed (for now)
-    modal_data.constrained_items = {items[1].proto, items[2].proto, items[3].proto}
-    modal_data.free_items = subfactory.matrix_free_items
+    local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_modal_data)
+    modal_data.constrained_items = linear_dependence_data.allowed_free_items --todo: rename constrained_items to something like allowed_free_items
+    modal_data.free_items = matrix_modal_data.free_items
 
     create_item_category(modal_data, "constrained")
     create_item_category(modal_data, "free")
