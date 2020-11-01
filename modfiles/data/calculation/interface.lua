@@ -162,9 +162,15 @@ function calculation.update(player, subfactory)
         player_table.active_subfactory = subfactory
 
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        local solver = (subfactory.matrix_free_items) and matrix_solver or sequential_solver
+        --TODO: eventually revert to solver.update_subfactory
+        if subfactory.matrix_free_items then
+            matrix_solver.run_matrix_solver(subfactory_data, false)
+        else
+            sequential_solver.update_subfactory(subfactory_data)
+        end
+        --local solver = (subfactory.matrix_free_items) and matrix_solver or sequential_solver
 
-        solver.update_subfactory(subfactory_data)
+        --solver.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
     end
 end

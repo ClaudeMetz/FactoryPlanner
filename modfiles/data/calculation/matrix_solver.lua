@@ -179,27 +179,32 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
 end
 
 function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data)
-    local linear_dependence_data = {
-        linearly_dependent_recipes = {},
-        linearly_dependent_items = {},
-        potential_free_items = {}
-    }
     local num_rows = #modal_data.ingredients + #modal_data.products + #modal_data.byproducts + #modal_data.eliminated_items + #modal_data.free_items
     local num_cols = #modal_data.recipes + #modal_data.ingredients + #modal_data.byproducts + #modal_data.free_items
     -- return early if these don't match since the matrix solver can crash when these are different
     if num_rows < num_cols then
-        return linear_dependence_data
+        local result = {
+            linearly_dependent_recipes = {},
+            linearly_dependent_items = {},
+            allowed_free_items = {}
+        }
+        return result
     end
+
+    local linearly_dependent_recipes = {}
+    local linearly_dependent_items = {}
+    local allowed_free_items = {}
+
     local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-    local linearly_dependent_cols = matrix_solver.run_matrix_solver(player, subfactory_data, modal_data.free_items, true)
+    local linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
     for col_name, _ in pairs(linearly_dependent_cols) do
         local col_split_str = split_string(col_name, "_")
         if col_split_str[1] == "recipe" then
             local recipe_key = col_split_str[2]
-            linear_dependence_data.linearly_dependent_recipes[recipe_key] = true
+            linearly_dependent_recipes[recipe_key] = true
         else -- "item"
             local item_key = col_split_str[2].."_"..col_split_str[3]
-            linear_dependence_data.linearly_dependent_items[item_key] = true
+            linearly_dependent_items[item_key] = true
         end
     end
     -- check which eliminated items could be made free while still retaining linear independence
@@ -207,19 +212,24 @@ function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data
         local eliminated_items = modal_data.eliminated_items
         for _, eliminated_item in ipairs(eliminated_items) do
             local curr_free_items = matrix_solver.shallowcopy(modal_data.free_items)
-            matrix_solver.insert(curr_free_items, eliminated_item)
-            linearly_dependent_cols = matrix_solver.run_matrix_solver(player, subfactory_data, curr_free_items, true)
+            table.insert(curr_free_items, eliminated_item)
+            linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
             if next(linearly_dependent_cols) == nil then
-                linear_dependence_data.potential_free_items[eliminated_item] = true
+                local item_key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
+                allowed_free_items[item_key] = true
             end
         end
     end
-    return linear_dependence_data
+    local result = {
+        linearly_dependent_recipes = linearly_dependent_recipes,
+        linearly_dependent_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(linearly_dependent_items)),
+        allowed_free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(allowed_free_items))
+    }
+    return result
 end
 
 
-function matrix_solver.update_subfactory(subfactory_data)
-    local check_linear_dependence = false -- TODO: make a function arg
+function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
     local matrix_free_items = subfactory_data.matrix_free_items
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
