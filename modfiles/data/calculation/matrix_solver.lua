@@ -175,6 +175,8 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
         eliminated_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(eliminated_items)),
         free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(free_items))
     }
+    result.num_rows = #result.ingredients + #result.products + #result.byproducts + #result.eliminated_items + #result.free_items
+    result.num_cols = #result.recipes + #result.ingredients + #result.byproducts + #result.free_items
     return result
 end
 
