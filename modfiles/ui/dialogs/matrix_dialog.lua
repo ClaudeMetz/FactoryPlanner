@@ -12,10 +12,10 @@ local function refresh_item_category(modal_data, type)
     end
 end
 
-local function create_item_category(modal_data, type)
+local function create_item_category(modal_data, type, label_arg)
     local flow_category = modal_data.modal_elements.content_frame.add{type="flow", direction="vertical"}
 
-    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items"}}
+    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items", label_arg}}
     label_title.style.font = "heading-2"
 
     local frame_items = flow_category.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
@@ -37,6 +37,7 @@ local function swap_item_category(player, element)
 
     -- update the free items here, set the constrained items based on linear dependence data
     if type == "free" then
+        -- TODO: seems a little hacky to assume the gui's list has the same order as the subfactory?
         table.remove(subfactory.matrix_free_items, proto_index)
     else -- "constrained"
         local item_proto = modal_data["constrained_items"][proto_index]
@@ -65,10 +66,20 @@ function matrix_dialog.open(player, modal_data)
 
     local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_modal_data)
+
+    -- too many ways to create the products
+    if matrix_modal_data.num_rows < matrix_modal_data.num_cols then
+        local label_title = modal_data.modal_elements.content_frame.add{type="label", caption={"fp.matrix_linear_dependent_recipes"}}
+        label_title.style.font = "heading-2"
+        return
+    end
+
     modal_data.constrained_items = linear_dependence_data.allowed_free_items --todo: rename constrained_items to something like allowed_free_items
     modal_data.free_items = matrix_modal_data.free_items
 
-    create_item_category(modal_data, "constrained")
+    local num_needed_free_items = matrix_modal_data.num_rows - matrix_modal_data.num_cols + #matrix_modal_data.free_items
+
+    create_item_category(modal_data, "constrained", num_needed_free_items)
     create_item_category(modal_data, "free")
 end
 
