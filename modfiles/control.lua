@@ -17,6 +17,7 @@ NEW = nil  -- global variable used to store new prototype data temporarily for m
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 FRAME_SPACING = 12
 
+TITLE_BAR_HEIGHT = 32
 SUBFACTORY_SUBHEADER_HEIGHT = 36
 SUBFACTORY_LIST_ELEMENT_HEIGHT = 28
 SUBFACTORY_INFO_HEIGHT = 180
