@@ -31,19 +31,20 @@ function title_bar.build(player)
     main_elements.title_bar = {}
 
     local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal"}
-    flow_title_bar.style.height = 28
-    flow_title_bar.style.margin = {2, 0, 4, 4}
+    flow_title_bar.style.height = 30
+    flow_title_bar.style.top_margin = 2
     flow_title_bar.style.horizontal_spacing = 8
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title"}
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="heading_1_label"}
 
     local label_hint = flow_title_bar.add{type="label"}
     label_hint.style.font = "heading-2"
+    label_hint.style.margin = {2, 0, 0, 8}
     main_elements.title_bar["hint_label"] = label_hint
 
     local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
     drag_handle.drag_target = main_elements.main_frame
-    drag_handle.style.margin = {1, 2, 0, 2}
+    drag_handle.style.top_margin = 1
 
     -- Buttons
     flow_title_bar.add{type="button", name="fp_button_title_bar_tutorial", caption={"fp.tutorial"},
@@ -106,8 +107,10 @@ function title_bar.refresh_message(player)
         if new_message ~= nil then break end
     end
 
+    -- Set caption and hide if no message is shown so that the margins work out
     title_bar_elements.hint_label.caption = (new_message) and
       {"fp." .. new_message.type .. "_message", new_message.text} or ""
+    title_bar_elements.hint_label.visible = (new_message)
 
     -- Decrease the lifetime of every queued message
     for index, message in pairs(message_queue) do

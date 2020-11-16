@@ -8,7 +8,7 @@ Date: 00. 00. 0000
   Changes:
     - The calculation model now considers the base energy drain that most electrical machines have
     - Setting recipe item amounts directly now behaves more intuitively
-    - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth to keep it around.
+    - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth keeping around.
     - Increased the maximum length of subfactory names to 256 characters, while accomodating for longer names in the UI
     - Various minor UI improvements unrelated to the main interface redesign
     - Updated to a newer version of flib (v0.4.1)
