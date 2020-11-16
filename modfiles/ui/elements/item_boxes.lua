@@ -125,6 +125,9 @@ local function handle_item_button_click(player, button, metadata)
                     main_dialog.refresh(player, "subfactory")
                 end
             end
+
+        elseif item_class == "Byproduct" then
+            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="consume"}})
         end
     end
 end
