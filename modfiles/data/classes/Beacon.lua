@@ -23,10 +23,11 @@ function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module
 end
 
 -- Init a beacon without modules to compare the compatibility of potential modules to
-function Beacon.blank_init(beacon_proto, beacon_amount, parent_line)
+function Beacon.blank_init(beacon_proto, beacon_amount, total_amount, parent_line)
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount or 0,
+        total_amount = total_amount,
         total_effects = nil,
         valid = true,
         class = "Beacon"
