@@ -10,7 +10,7 @@ We solve the matrix equation Ax = b, where:
     - x is the vector of unknowns that we're solving for, and whose jth entry will be the # buildings needed for recipe j
     - b is the vector whose ith entry is the desired output/timescale for item i
 Note the current implementation requires a square matrix.
-If there are more recipes than items, the problem is under-constrained and some recipes must be deleted.
+If there are more recipes than items, the problem is under-constrained and some recipes must be deleted. SpaceCatNote: Simplex algo i am working on might be able to do that automatically based on "costs" specified by the user
 If there are more items than recipes, the problem is over-constrained (this is more common).
     In this case we can construct "pseudo-recipes" for certrain items that produce 1/timescale/"building".
     Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or output after solving.
@@ -21,6 +21,12 @@ Currently the algorithm assumes any item which is part of at least one input and
     The dialog calls constrained intermediate items "eliminated" since their output is constrained to zero.
 If a recipe has loops, typically the user needs to make voids or free variables.
     Note that currently the factory planner doesn't do anything if a user clicks on byproducts, so at this time it is impossible to make voids.
+
+Simplex Algo:
+Author: SpaceCat~Chan ????-??-??
+github: SpaceCat-Chan
+
+based on https://www.hec.ca/en/cams/help/topics/The_steps_of_the_simplex_algorithm.pdf
 --]]
 matrix_solver = {}
 
@@ -797,4 +803,61 @@ function matrix_solver.shallowcopy(table)
         copy[key] = value
     end
     return copy
+end
+
+
+--Simplex Algo starts here
+
+function matrix_solver.convert_matrix_to_simplex_table(matrix)
+    local Result = {}
+    for row_index, column in matrix in pairs(matrix) do
+        local insert_row = {}
+        
+        for column_index, count in pairs(column) do
+            if column_index ~= #column then
+                table.insert(insert_row, count)
+            else
+                for slacks = 1, #column+1 do
+                    if slacks == column_index then
+                        table.insert(insert_row, -1)
+                    else
+                        table.insert(insert_row, 0)
+                    end
+                end
+            end
+            table.insert(insert_row, -count)
+        end
+        table.insert(Result, insert_row)
+    end
+    local cost_row = {}
+    for row_index, column in pairs(matrix) do
+        table.insert(cost_row, 0)        
+    end
+    if #matrix ~= 0 then 
+        for slack = 1, #matrix[1] do
+            table.insert(cost_row, 0)
+        end
+    end
+    table.insert(cost_row, 1)
+    table.insert(cost_row, 0)
+
+    table.insert(Result, cost_row)
+
+    return Result
+end
+
+function matrix_solver.make_simplex_restraints_positive(simplex)
+
+end
+
+function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
+    if simplex[row_index][column_index] == 0 then
+        llog("HELP! division by zero in gaussion elimination")
+    end
+    for row,column_table in pairs(simplex) do
+        local Factor = -(simplex[row][column_index]/simplex[row_index][column_index])
+        for column,value in pairs(column_table) do
+            simplex[row][column] = simplex[row][column] + Factor * simplex[row][column_index]
+        end
+    end
 end
