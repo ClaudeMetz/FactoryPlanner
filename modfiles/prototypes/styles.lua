@@ -381,3 +381,26 @@ data.raw["gui-style"].default["fp_button_existing_product"] = {
 
 --data.raw["gui-style"].default["crafting_queue_slot"].size = 24
 --data.raw["gui-style"].default["slot_button"].size = 24
+
+
+
+
+-- Temporary style copied from Factorio 1.0, not needed with the redesign
+data.raw["gui-style"].default["icon_button"] = {
+    type = "button_style",
+    parent = "button",
+    default_font_color = {},
+    size = 38,
+    top_padding = 1,
+    right_padding = 0,
+    bottom_padding = 1,
+    left_padding = 0,
+    left_click_sound = {{ filename = "__core__/sound/gui-square-button.ogg", volume = 1 }},
+    default_graphical_set =
+    {
+    filename = "__core__/graphics/gui.png",
+    corner_size = 3,
+    position = {8, 0},
+    scale = 1
+    }
+}
