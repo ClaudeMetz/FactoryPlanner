@@ -182,14 +182,16 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     for _, base_ingredient in pairs(recipe_proto.ingredients) do
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
 
-        -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
-        -- Also add proddable_amount so productivity bonus can be un-applied later in the model
-        if base_ingredient.ignore_productivity then
-            formatted_ingredient.ignore_productivity = true
-            formatted_ingredient.proddable_amount = formatted_ingredient.amount
-        end
+        if formatted_ingredient.amount > 0 then
+            -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
+            -- Also add proddable_amount so productivity bonus can be un-applied later in the model
+            if base_ingredient.ignore_productivity then
+                formatted_ingredient.ignore_productivity = true
+                formatted_ingredient.proddable_amount = formatted_ingredient.amount
+            end
 
-        table.insert(ingredients, formatted_ingredient)
+            table.insert(ingredients, formatted_ingredient)
+        end
     end
 
     local indexed_ingredients = create_type_indexed_list(ingredients)
@@ -199,13 +201,16 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     local products = {}
     for _, base_product in pairs(recipe_proto.products) do
         local formatted_product = generate_formatted_item(base_product, "product")
-        table.insert(products, formatted_product)
 
-        -- Update the main product as well, if present
-        if recipe_proto.main_product ~= nil and
-          formatted_product.type == recipe_proto.main_product.type and
-          formatted_product.name == recipe_proto.main_product.name then
-            recipe_proto.main_product = formatted_product
+        if formatted_product.amount > 0 then
+            table.insert(products, formatted_product)
+
+            -- Update the main product as well, if present
+            if recipe_proto.main_product ~= nil and
+            formatted_product.type == recipe_proto.main_product.type and
+            formatted_product.name == recipe_proto.main_product.name then
+                recipe_proto.main_product = formatted_product
+            end
         end
     end
 
