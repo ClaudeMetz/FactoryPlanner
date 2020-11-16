@@ -54,6 +54,7 @@ function model.update_floor(floor_data, aggregate)
             end
 
             -- Update the main aggregate with the results
+            aggregate.machine_count = aggregate.machine_count + subfloor_aggregate.machine_count
             aggregate.energy_consumption = aggregate.energy_consumption + subfloor_aggregate.energy_consumption
             aggregate.pollution = aggregate.pollution + subfloor_aggregate.pollution
 
