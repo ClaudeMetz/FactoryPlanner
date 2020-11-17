@@ -808,7 +808,7 @@ end
 
 --Simplex Algo starts here
 
----@class SimplexTableu
+---@class SimplexTableau
 ---@field public internal number[][]
 ---@field public basic_variables integer[]
 ---@field public is_basic_variable table<integer, integer>
@@ -819,9 +819,9 @@ end
 ---@field public recipe_count integer
 
 ---@param matrix number[][]
----@return SimplexTableu
+---@return SimplexTableau
 function matrix_solver.convert_matrix_to_simplex_table(matrix)
-    ---@type SimplexTableu
+    ---@type SimplexTableau
     local result = {}
 
     local VariableCount = #matrix - 1
@@ -869,7 +869,7 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
 
     result.objective_coefficients = {}
     for i = 1, result.raw_variable_count do
-        result.objective_coefficients[i] = 1
+        result.objective_coefficients[i] = -1
     end
     for i = result.raw_variable_count + 1, result.variable_count do
         result.objective_coefficients[i] = 0
@@ -880,23 +880,67 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     return result
 end
 
----@param simplex SimplexTableu
+---@param simplex SimplexTableau
 ---@param row_index integer
 ---@param column_index integer
 function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
     if simplex[row_index][column_index] == 0 then
         llog("HELP! division by zero in gaussion elimination")
     end
-    for row,column_table in pairs(simplex) do
+    for row,column_table in pairs(simplex.internal) do
         local Factor = -(simplex[row][column_index]/simplex[row_index][column_index])
         for column,value in pairs(column_table) do
             simplex[row][column] = simplex[row][column] + Factor * simplex[row][column_index]
         end
+        simplex.constraints[row] = simplex.constraints[row] + Factor * simplex.constraints[row]
     end
 end
 
-function matrix_solver.find_entering_variable()
+---@param simplex SimplexTableau
+---@return integer|nil
+function matrix_solver.find_entering_variable(simplex)
+    local entering_variable = nil
+    local largest_found_objective = -math.huge
+    for variable = 1, simplex.variable_count do
+        local zj = matrix_solver.find_zj_value(simplex, variable)
+        local Cj_zj = simplex.constraints[variable - zj]
+        if Cj_zj > largest_found_objective and Cj_zj > 0 then
+            largest_found_objective = Cj_zj
+            entering_variable = variable
+        end
+    end
+    return entering_variable
 end
 
-function matrix_solver.find_leaving_variable()
+---@param simplex SimplexTableau
+---@param entering_variable integer
+---@return integer
+function matrix_solver.find_leaving_variable(simplex, entering_variable)
+    local smallest_found_ratio = math.huge
+    local leaving_variable = nil
+    for basic_variable = 1, simplex.recipe_count do repeat
+        local entering_column = simplex.internal[basic_variable][entering_variable]
+        if entering_column <= 0 then
+            break -- works as a continue due to repeat until loop
+        end
+        local ratio = simplex.constraints[basic_variables] / entering_column
+        if ratio < smallest_found_ratio then
+            smallest_found_ratio = ratio
+            leaving_variable = basic_variable
+        end
+    until true end
+    return leaving_variable
 end
+
+---@param simplex SimplexTableau
+---@param variable integer
+---@return number
+function matrix_solver.find_zj_value(simplex, variable)
+    local Accumulated = 0
+    for basic_variable = 1, simplex.recipe_count do
+        local basic_coefficient = simplex.objective_coefficients[simplex.basic_variables[basic_variable]]
+        Accumulated += simplex.internal[basic_variable][variable] * basic_coefficient
+    end
+    return Accumulated
+end
+
