@@ -815,7 +815,7 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
         
         for column_index, count in pairs(column) do
             if column_index ~= #column then
-                table.insert(insert_row, count)
+                table.insert(insert_row, -count)
             else
                 for slacks = 1, #column+1 do
                     if slacks == column_index then
@@ -831,7 +831,7 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     end
     local cost_row = {}
     for row_index, column in pairs(matrix) do
-        table.insert(cost_row, 0)        
+        table.insert(cost_row, 0) --replace this with actual cost values later
     end
     if #matrix ~= 0 then 
         for slack = 1, #matrix[1] do
@@ -847,7 +847,21 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
 end
 
 function matrix_solver.make_simplex_restraints_positive(simplex)
-
+    local row_with_smallest_restraint = -1
+    local smallest_restraint = math.huge
+    for row = 1, #simplex-1 do
+        if simplex[row][#simplex[row]] < smallest_restraint then
+            smallest_restraint = simplex[row][#simplex[row]]
+            row_with_smallest_restraint = row
+        end
+        table.insert(simplex[row], -1) --value that will be used to make the restraints positive
+    end
+    if row_with_smallest_restraint == -1 then
+        llog("no rows in simplex")
+        return -1
+    end
+    matrix_solver.gaussian_elimination(simplex, row_with_smallest_restraint, #simplex[row_with_smallest_restraint])
+    matrix_solver.get_best_simplex(simplex, function() return  end)
 end
 
 function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
