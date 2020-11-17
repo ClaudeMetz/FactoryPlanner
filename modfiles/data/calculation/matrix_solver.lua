@@ -808,62 +808,81 @@ end
 
 --Simplex Algo starts here
 
+---@class SimplexTableu
+---@field public internal number[][]
+---@field public basic_variables integer[]
+---@field public is_basic_variable table<integer, integer>
+---@field public constraints number[]
+---@field public objective_coefficients number[]
+---@field public raw_variable_count integer
+---@field public variable_count integer
+---@field public recipe_count integer
+
+---@param matrix number[][]
+---@return SimplexTableu
 function matrix_solver.convert_matrix_to_simplex_table(matrix)
-    local Result = {}
-    for row_index, column in matrix in pairs(matrix) do
-        local insert_row = {}
-        
-        for column_index, count in pairs(column) do
-            if column_index ~= #column then
-                table.insert(insert_row, -count)
+    ---@type SimplexTableu
+    local result = {}
+
+    local VariableCount = #matrix - 1
+    if VariableCount == 0 then
+        return {}
+    end
+    local RecipeCount = #(matrix[1])
+    if RecipeCount == 0 then
+        return {}
+    end
+
+    result.raw_variable_count = VariableCount
+    result.variable_count = VariableCount + RecipeCount
+    result.recipe_count = RecipeCount
+
+    --rows are recipies, columns are variables, list of lists, first list is rows
+    ---@type number[][]
+    local internal = {}
+    for Recipe = 1, RecipeCount do
+        internal[Recipe] = {}
+        for Variable = 1, result.raw_variable_count do
+            internal[Recipe][Variable] = matrix[Variable][Recipe]
+        end
+        for SlackVariable = result.raw_variable_count+1, result.variable_count do
+            if Recipe == SlackVariable-RecipeCount then
+                internal[Recipe][SlackVariable] = -1
             else
-                for slacks = 1, #column+1 do
-                    if slacks == column_index then
-                        table.insert(insert_row, -1)
-                    else
-                        table.insert(insert_row, 0)
-                    end
-                end
+                internal[Recipe][SlackVariable] = 0
             end
-            table.insert(insert_row, -count)
-        end
-        table.insert(Result, insert_row)
-    end
-    local cost_row = {}
-    for row_index, column in pairs(matrix) do
-        table.insert(cost_row, 0) --replace this with actual cost values later
-    end
-    if #matrix ~= 0 then 
-        for slack = 1, #matrix[1] do
-            table.insert(cost_row, 0)
         end
     end
-    table.insert(cost_row, 1)
-    table.insert(cost_row, 0)
+    result.internal = internal
 
-    table.insert(Result, cost_row)
+    result.basic_variables = {}
+    result.is_basic_variable = {}
+    for slack = 1, result.recipe_count do
+        result.basic_variables[slack] = slack + result.raw_variable_count
+        result.is_basic_variable[slack + result.raw_variable_count] = slack
+    end
 
-    return Result
+    result.constraints = {}
+    for constraint = 1, result.recipe_count do
+        result.constraints[constraint] = matrix[VariableCount+1][constraint]
+    end
+
+    result.objective_coefficients = {}
+    for i = 1, result.raw_variable_count do
+        result.objective_coefficients[i] = 1
+    end
+    for i = result.raw_variable_count + 1, result.variable_count do
+        result.objective_coefficients[i] = 0
+    end
+    
+
+
+    return result
 end
 
-function matrix_solver.make_simplex_restraints_positive(simplex)
-    local row_with_smallest_restraint = -1
-    local smallest_restraint = math.huge
-    for row = 1, #simplex-1 do
-        if simplex[row][#simplex[row]] < smallest_restraint then
-            smallest_restraint = simplex[row][#simplex[row]]
-            row_with_smallest_restraint = row
-        end
-        table.insert(simplex[row], -1) --value that will be used to make the restraints positive
-    end
-    if row_with_smallest_restraint == -1 then
-        llog("no rows in simplex")
-        return -1
-    end
-    matrix_solver.gaussian_elimination(simplex, row_with_smallest_restraint, #simplex[row_with_smallest_restraint])
-    matrix_solver.get_best_simplex(simplex, function() return  end)
-end
-
+---@param simplex SimplexTableu
+---@param row_index integer
+---@param column_index integer
 function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
     if simplex[row_index][column_index] == 0 then
         llog("HELP! division by zero in gaussion elimination")
@@ -874,4 +893,10 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
             simplex[row][column] = simplex[row][column] + Factor * simplex[row][column_index]
         end
     end
+end
+
+function matrix_solver.find_entering_variable()
+end
+
+function matrix_solver.find_leaving_variable()
 end
