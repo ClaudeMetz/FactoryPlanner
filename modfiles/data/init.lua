@@ -172,8 +172,12 @@ local function handle_configuration_change()
         -- Create or update player_table
         local player_table = update_player_table(player)
 
-        -- Run the prototyper on the player
+        -- Migrate the default prototypes for the player
         prototyper.run(player_table)
+
+        -- Update the validity of the entire factory and archive
+        Collection.validate_datasets(player_table.factory.Subfactory)
+        Collection.validate_datasets(player_table.archive.Subfactory)
 
         reset_player_gui(player)  -- Destroys all existing GUI's
         ui_util.mod_gui.create(player)  -- Recreates the mod-GUI
