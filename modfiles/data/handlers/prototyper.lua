@@ -24,18 +24,13 @@ function prototyper.setup()
     end
 end
 
--- Updates the relevant data of the given player to fit the new data
+-- Migrates the default prototypes of the given player
 function prototyper.run(player_table)
-    -- Then, update the default/preferred datasets
     for _, data_type in ipairs(data_types) do
         if player_table.preferences.default_prototypes[data_type] ~= nil then
             prototyper.defaults.migrate(player_table, data_type)
         end
     end
-
-    -- Update the validity of all elements of the factory and archive
-    Collection.validate_datasets(player_table.factory.Subfactory)
-    Collection.validate_datasets(player_table.archive.Subfactory)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
@@ -45,6 +40,7 @@ function prototyper.finish()
     end
     NEW = nil
 
+    -- Generate new lua-globals acting as a static cache for some important data
     loader.run()
 end
 
