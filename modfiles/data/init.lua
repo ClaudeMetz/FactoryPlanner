@@ -79,6 +79,7 @@ local function reset_ui_state(player)
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    ui_state_table.queued_dialog_settings = nil  -- Info on dialog to open after the current one closes
 
     ui_state_table.flags = {
         floor_total = false,  -- Whether the floor or subfactory totals are displayed
