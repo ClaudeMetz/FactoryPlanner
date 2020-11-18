@@ -943,12 +943,19 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
     if simplex.internal[row_index][column_index] == 0 then
         llog("HELP! division by zero in gaussion elimination")
     end
-    for equation,column_table in pairs(simplex.internal) do
+    for equation,column_table in pairs(simplex.internal) do repeat
+        if equation == row_index then
+            break
+        end
         local Factor = -1 * simplex.internal[equation][column_index] / simplex.internal[row_index][column_index]
         for variable,value in pairs(column_table) do
             simplex.internal[equation][variable] = simplex.internal[equation][variable] + Factor * simplex.internal[row_index][variable]
         end
         simplex.constraints[equation] = simplex.constraints[equation] + Factor * simplex.constraints[row_index]
+    until true end
+    local pivot = simplex.internal[row_index][column_index]
+    for column,value in pairs(simplex.internal[row_index]) do
+        simplex.internal[row_index][column] = value / pivot
     end
 end
 
