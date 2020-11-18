@@ -966,8 +966,8 @@ function matrix_solver.find_entering_variable(simplex)
     local largest_found_objective = -math.huge
     for variable = 1, simplex.variable_count do
         local zj = matrix_solver.find_zj_value(simplex, variable)
-        local Cj_zj = (simplex.constraints[variable] or 0) - zj
-        if Cj_zj > largest_found_objective and Cj_zj > 0 then
+        local Cj_zj = (simplex.objective_coefficients[variable] or 0) - zj
+        if Cj_zj > largest_found_objective and Cj_zj < 0 then
             largest_found_objective = Cj_zj
             entering_variable = variable
         end
