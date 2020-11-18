@@ -339,8 +339,9 @@ local function handle_item_click(player, button, metadata)
                 main_dialog.refresh(player, "subfactory")
             end
 
-        elseif class == "Ingredient" then
-            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce",
+        else  -- Byproduct or Ingredient
+            local production_type = (class == "Byproduct") and "consume" or "produce"
+            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type,
               add_after_position=((metadata.shift) and line.gui_position or nil)}})
         end
 

@@ -123,9 +123,17 @@ end
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, dialog_settings)
-    if player.gui.screen["fp_frame_modal_dialog"] then return end
-
     local ui_state = data_util.get("ui_state", player)
+
+    -- If a dialog is currently open, and this one wants to be queued, do so
+    if player.gui.screen["fp_frame_modal_dialog"] ~= nil then
+        if dialog_settings.allow_queueing then
+            ui_state.queued_dialog_settings = dialog_settings
+        else
+            return  -- otherwise, disallow opening more than one modal dialog at a time
+        end
+    end
+
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.modal_data = dialog_settings.modal_data or {}
     ui_state.modal_data.modal_elements = {}
@@ -173,6 +181,11 @@ function modal_dialog.exit(player, button_action)
     frame_main_dialog.ignored_by_interaction = false
     player.opened = frame_main_dialog
     title_bar.refresh_message(player)
+
+    if ui_state.queued_dialog_settings ~= nil then
+        modal_dialog.enter(player, ui_state.queued_dialog_settings)
+        ui_state.queued_dialog_settings = nil
+    end
 end
 
 

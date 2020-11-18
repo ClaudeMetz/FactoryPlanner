@@ -17,7 +17,6 @@ function Subfactory.init(name, icon, settings)
         Byproduct = Collection.init("Item"),
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
-        -- TODO write migration and (un)packing for this
         matrix_free_items = (settings.prefer_matrix_solver) and {} or nil,
         selected_floor = nil,
         item_request_proxy = nil,

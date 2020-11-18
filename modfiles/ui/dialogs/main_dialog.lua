@@ -18,16 +18,16 @@ local function determine_main_dialog_dimensions(player)
 
     -- Width of the larger ingredients-box, which has twice the buttons per row
     local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
-    -- Width of the two smaller product+byproduct boxes
+    -- Width of the two smaller product+byproduct-boxes
     local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
     local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
 
-    local title_bar_height = 34 -- not needed elsewhere, thus no global necessary
     local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
-    local height = title_bar_height + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
+    local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
 
     local dimensions = {width=width, height=height}
     player_table.ui_state.main_dialog_dimensions = dimensions
+
     return dimensions
 end
 

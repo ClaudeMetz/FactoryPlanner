@@ -40,21 +40,20 @@ function builders.recipe(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe_proto = relevant_line.recipe.proto
 
-    local style, tooltip, enabled = "flib_slot_button_default_small", recipe_proto.localised_name, true
+    local style, enabled, indication = "flib_slot_button_default_small", true, ""
     -- Make the first line of every subfloor un-interactable, it stays constant
     if line.parent.level > 1 and line.gui_position == 1 then
         style = "flib_slot_button_blue_small"
         enabled = false
-    else
-        local indication = ""
-        if line.subfloor then
-            indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
-            style = "flib_slot_button_blue_small"
-        end
-
-        tooltip = {"", tooltip, indication, metadata.recipe_tutorial_tooltip or ""}
+    elseif line.subfloor then
+        style = "flib_slot_button_blue_small"
+        indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
+    elseif line.recipe.production_type == "consume" then
+        style = "flib_slot_button_red_small"
+        indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
     end
 
+    local tooltip = {"", recipe_proto.localised_name, indication, (metadata.recipe_tutorial_tooltip or "")}
     parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id, enabled=enabled,
       sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
@@ -71,6 +70,7 @@ end
 
 function builders.machine(line, parent_flow, metadata)
     local machine_count = line.machine.count
+    parent_flow.style.horizontal_spacing = 2
 
     if line.subfloor then  -- add a button that shows the total of all machines on the subfloor
         -- Machine count doesn't need any special formatting in this case because it'll always be an integer
@@ -114,7 +114,7 @@ function builders.machine(line, parent_flow, metadata)
         if machine_proto.module_limit == 0 then return end
 
         local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.padding = {4, 0}
+        separator.style.margin = 4
 
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
@@ -235,7 +235,7 @@ function builders.byproducts(line, parent_flow, metadata)
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Byproduct_" .. line.id
           .. "_" .. byproduct.id, sprite=byproduct.proto.sprite, style="flib_slot_button_red_small", number=amount,
-          tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
+          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_byproduct::
     end
