@@ -272,8 +272,13 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local col_set = matrix_solver.union_sets(line_names, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
+    local simplex = matrix_solver.do_simplex_algo(matrix)
+    matrix_solver.print_simplex(simplex)
 
+    matrix_solver.print_matrix(matrix) --SUPER AAAA
     matrix_solver.to_reduced_row_echelon_form(matrix)
+    matrix_solver.print_matrix(matrix) --SUPER AAAA
+
     if check_linear_dependence then
         local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix)
         local linearly_dependent_variables = {}
@@ -816,7 +821,7 @@ end
 ---@field public objective_coefficients number[]
 ---@field public raw_variable_count integer
 ---@field public variable_count integer
----@field public recipe_count integer
+---@field public equation_count integer
 
 ---@param matrix number[][]
 ---@return SimplexTableau
@@ -824,32 +829,32 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     ---@type SimplexTableau
     local result = {}
 
-    local VariableCount = #matrix - 1
-    if VariableCount == 0 then
+    local EquationCount = #matrix - 1
+    if EquationCount == 0 then
         return {}
     end
-    local RecipeCount = #(matrix[1])
-    if RecipeCount == 0 then
+    local VariableCount = #(matrix[1])
+    if VariableCount == 0 then
         return {}
     end
 
     result.raw_variable_count = VariableCount
-    result.variable_count = VariableCount + RecipeCount
-    result.recipe_count = RecipeCount
+    result.variable_count = VariableCount + EquationCount
+    result.equation_count = EquationCount
 
-    --rows are recipies, columns are variables, list of lists, first list is rows
+    --rows are equations/items, columns are variables/recipies, list of lists, first list is rows
     ---@type number[][]
     local internal = {}
-    for Recipe = 1, RecipeCount do
-        internal[Recipe] = {}
-        for Variable = 1, result.raw_variable_count do
-            internal[Recipe][Variable] = matrix[Variable][Recipe]
+    for equation = 1, result.equation_count do
+        internal[equation] = {}
+        for variable = 1, result.raw_variable_count do
+            internal[equation][variable] = matrix[equation][variable]
         end
-        for SlackVariable = result.raw_variable_count+1, result.variable_count do
-            if Recipe == SlackVariable-RecipeCount then
-                internal[Recipe][SlackVariable] = -1
+        for slack = result.raw_variable_count+1, result.variable_count do
+            if equation == slack-result.equation_count then
+                internal[equation][slack] = -1
             else
-                internal[Recipe][SlackVariable] = 0
+                internal[equation][slack] = 0
             end
         end
     end
@@ -857,14 +862,14 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
 
     result.basic_variables = {}
     result.is_basic_variable = {}
-    for slack = 1, result.recipe_count do
+    for slack = 1, result.equation_count do
         result.basic_variables[slack] = slack + result.raw_variable_count
         result.is_basic_variable[slack + result.raw_variable_count] = slack
     end
 
     result.constraints = {}
-    for constraint = 1, result.recipe_count do
-        result.constraints[constraint] = matrix[VariableCount+1][constraint]
+    for constraint = 1, result.equation_count do
+        result.constraints[constraint] = matrix[constraint][result.variable_count]
     end
 
     result.objective_coefficients = {}
@@ -897,7 +902,7 @@ function matrix_solver.do_simplex_algo(matrix)
     local keep_going = true
     while keep_going do
         local stop, error = matrix_solver.do_simplex_iteration(simplex)
-        keep_going = !stop
+        keep_going = not stop
         if error then
             llog(error)
         end
@@ -908,11 +913,13 @@ end
 ---@param simplex SimplexTableau
 ---@return boolean, nil|string
 function matrix_solver.do_simplex_iteration(simplex)
+    matrix_solver.print_simplex(simplex)
     local entering_variable = matrix_solver.find_entering_variable(simplex)
     if entering_variable == nil then
         --optimal solution found, leaving
         return true
     end
+    llog(entering_variable)
     local leaving_variable = matrix_solver.find_leaving_variable(simplex, entering_variable)
     if leaving_variable == nil then
         --problem is unbounded
@@ -935,12 +942,12 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
     if simplex[row_index][column_index] == 0 then
         llog("HELP! division by zero in gaussion elimination")
     end
-    for row,column_table in pairs(simplex.internal) do
-        local Factor = -(simplex[row][column_index]/simplex[row_index][column_index])
-        for column,value in pairs(column_table) do
-            simplex[row][column] = simplex[row][column] + Factor * simplex[row][column_index]
+    for equation,column_table in pairs(simplex.internal) do
+        local Factor = -(simplex[equation][column_index]/simplex[row_index][column_index])
+        for variable,value in pairs(column_table) do
+            simplex[equation][variable] = simplex[equation][variable] + Factor * simplex[equation][column_index]
         end
-        simplex.constraints[row] = simplex.constraints[row] + Factor * simplex.constraints[row]
+        simplex.constraints[equation] = simplex.constraints[equation] + Factor * simplex.constraints[equation]
     end
 end
 
@@ -951,7 +958,7 @@ function matrix_solver.find_entering_variable(simplex)
     local largest_found_objective = -math.huge
     for variable = 1, simplex.variable_count do
         local zj = matrix_solver.find_zj_value(simplex, variable)
-        local Cj_zj = simplex.constraints[variable - zj]
+        local Cj_zj = (simplex.constraints[variable] or 0) - zj
         if Cj_zj > largest_found_objective and Cj_zj > 0 then
             largest_found_objective = Cj_zj
             entering_variable = variable
@@ -966,9 +973,9 @@ end
 function matrix_solver.find_leaving_variable(simplex, entering_variable)
     local smallest_found_ratio = math.huge
     local leaving_variable = nil
-    for basic_variable = 1, simplex.recipe_count do repeat
+    for basic_variable = 1, simplex.equation_count do repeat
         local entering_column = simplex.internal[basic_variable][entering_variable]
-        if entering_column <= 0 then
+        if entering_column < 0 then
             break -- works as a continue due to repeat until loop
         end
         local ratio = simplex.constraints[basic_variable] / entering_column
@@ -985,10 +992,29 @@ end
 ---@return number
 function matrix_solver.find_zj_value(simplex, variable)
     local Accumulated = 0
-    for basic_variable = 1, simplex.recipe_count do
+    for basic_variable = 1, simplex.equation_count do
         local basic_coefficient = simplex.objective_coefficients[simplex.basic_variables[basic_variable]]
-        Accumulated += simplex.internal[basic_variable][variable] * basic_coefficient
+        Accumulated = Accumulated + simplex.internal[basic_variable][variable] * basic_coefficient
     end
     return Accumulated
 end
 
+---@param simplex SimplexTableau
+function matrix_solver.print_simplex(simplex)
+    s = ""
+    s = s.."{\n"
+    for equation,row in ipairs(simplex.internal) do
+        s = s.."  {"
+        for variable,col in ipairs(row) do
+            s = s..(col)
+            s = s.." "
+        end
+        llog(equation)
+        llog(#simplex.constraints)
+        s = s..(simplex.constraints[equation])
+
+        s = s.."}\n"
+    end
+    s = s.."}"
+    llog(s)
+end
