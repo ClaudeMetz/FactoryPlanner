@@ -944,11 +944,11 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
         llog("HELP! division by zero in gaussion elimination")
     end
     for equation,column_table in pairs(simplex.internal) do
-        local Factor = -(simplex.internal[equation][column_index]/simplex.internal[row_index][column_index])
+        local Factor = -1 * simplex.internal[equation][column_index] / simplex.internal[row_index][column_index]
         for variable,value in pairs(column_table) do
-            simplex.internal[equation][variable] = simplex.internal[equation][variable] + Factor * simplex.internal[equation][column_index]
+            simplex.internal[equation][variable] = simplex.internal[equation][variable] + Factor * simplex.internal[row_index][variable]
         end
-        simplex.constraints[equation] = simplex.constraints[equation] + Factor * simplex.constraints[equation]
+        simplex.constraints[equation] = simplex.constraints[equation] + Factor * simplex.constraints[row_index]
     end
 end
 
