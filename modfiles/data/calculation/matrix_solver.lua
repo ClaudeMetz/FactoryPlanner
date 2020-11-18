@@ -875,9 +875,39 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
         result.objective_coefficients[i] = 0
     end
     
-
-
     return result
+end
+
+---@param matrix number[][]
+---@return SimplexTableau
+function matrix_solver.do_simplex_algo(matrix)
+    local simplex = matrix_solver.convert_matrix_to_simplex_table(matrix)
+    local keep_going = true
+    while keep_going do
+        local stop, error = matrix_solver.do_simplex_iteration(simplex)
+        keep_going = !stop
+        if error then
+            llog(error)
+        end
+    end
+    return simplex
+end
+
+---@param simplex SimplexTableau
+---@return boolean, nil|string
+function matrix_solver.do_simplex_iteration(simplex)
+    local entering_variable = matrix_solver.find_entering_variable(simplex)
+    if entering_variable == nil then
+        --optimal solution found, leaving
+        return true
+    end
+    local leaving_variable = matrix_solver.find_leaving_variable(simplex, entering_variable)
+    if leaving_variable == nil then
+        --problem is unbounded
+        return true, "simplex is unbounded"
+    end
+    matrix_solver.gaussian_elimination(simplex, leaving_variable, entering_variable)
+    return false
 end
 
 ---@param simplex SimplexTableau
@@ -914,7 +944,7 @@ end
 
 ---@param simplex SimplexTableau
 ---@param entering_variable integer
----@return integer
+---@return integer|nil
 function matrix_solver.find_leaving_variable(simplex, entering_variable)
     local smallest_found_ratio = math.huge
     local leaving_variable = nil
