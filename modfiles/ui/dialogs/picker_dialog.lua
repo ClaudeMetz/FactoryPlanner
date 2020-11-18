@@ -80,7 +80,6 @@ local function add_item_picker(parent_flow, player)
     local current_item_rows, max_item_rows = 0, 0
     local current_items_in_table_count = 0
     for _, item_proto in ipairs(SORTED_ITEMS) do
-        -- TODO this ingredient_only business only works on product pickers
         if not item_proto.hidden and not item_proto.ingredient_only then
             local group_name = item_proto.group.name
             local group_id = group_id_cache[group_name]

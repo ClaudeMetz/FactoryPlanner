@@ -282,7 +282,8 @@ function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
     local modal_elements = modal_data.modal_elements
 
-    local label_text = modal_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"}}
+    local label_text = modal_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"},
+      tooltip={"fp.export_instruction_1_tt"}}
     label_text.style.bottom_margin = 4
 
     setup_subfactories_table(modal_elements, true)

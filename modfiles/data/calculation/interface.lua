@@ -22,7 +22,7 @@ local function generate_floor_data(player, subfactory, floor)
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
 
-        if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
+        if line.subfloor ~= nil then
             line_data.recipe_proto = line.subfloor.defining_line.recipe.proto
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
             table.insert(floor_data.lines, line_data)

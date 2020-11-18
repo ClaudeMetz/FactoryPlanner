@@ -79,6 +79,7 @@ local function reset_ui_state(player)
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    ui_state_table.queued_dialog_settings = nil  -- Info on dialog to open after the current one closes
 
     ui_state_table.flags = {
         floor_total = false,  -- Whether the floor or subfactory totals are displayed
@@ -171,8 +172,12 @@ local function handle_configuration_change()
         -- Create or update player_table
         local player_table = update_player_table(player)
 
-        -- Run the prototyper on the player
+        -- Migrate the default prototypes for the player
         prototyper.run(player_table)
+
+        -- Update the validity of the entire factory and archive
+        Collection.validate_datasets(player_table.factory.Subfactory)
+        Collection.validate_datasets(player_table.archive.Subfactory)
 
         reset_player_gui(player)  -- Destroys all existing GUI's
         ui_util.mod_gui.create(player)  -- Recreates the mod-GUI
