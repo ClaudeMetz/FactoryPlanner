@@ -269,9 +269,11 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         local item_key = matrix_solver.get_item_key(v.type, v.name)
         free_variables["item_"..item_key] = true
     end
+    llog("\n\n\n\n\n\n\nNEW THING:")
     local col_set = matrix_solver.union_sets(line_names, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
+
     local simplex = matrix_solver.do_simplex_algo(matrix)
     matrix_solver.print_simplex(simplex)
 
@@ -630,7 +632,7 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
 end
 
 function matrix_solver.print_matrix(m)
-    s = ""
+    local s = ""
     s = s.."{\n"
     for i,row in ipairs(m) do
         s = s.."  {"
@@ -829,11 +831,11 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     ---@type SimplexTableau
     local result = {}
 
-    local EquationCount = #matrix - 1
+    local EquationCount = #matrix
     if EquationCount == 0 then
         return {}
     end
-    local VariableCount = #(matrix[1])
+    local VariableCount = #(matrix[1]) - 1
     if VariableCount == 0 then
         return {}
     end
@@ -869,7 +871,7 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
 
     result.constraints = {}
     for constraint = 1, result.equation_count do
-        result.constraints[constraint] = matrix[constraint][result.variable_count]
+        result.constraints[constraint] = matrix[constraint][result.raw_variable_count+1]
     end
 
     result.objective_coefficients = {}
@@ -919,7 +921,6 @@ function matrix_solver.do_simplex_iteration(simplex)
         --optimal solution found, leaving
         return true
     end
-    llog(entering_variable)
     local leaving_variable = matrix_solver.find_leaving_variable(simplex, entering_variable)
     if leaving_variable == nil then
         --problem is unbounded
@@ -927,10 +928,10 @@ function matrix_solver.do_simplex_iteration(simplex)
     end
     matrix_solver.gaussian_elimination(simplex, leaving_variable, entering_variable)
     
-    local basic_position = simplex.is_basic_variable[leaving_variable]
-    simplex.is_basic_variable[leaving_variable] = nil
-    simplex.basic_variables[basic_position] = entering_variable
-    simplex.is_basic_variable[entering_variable] = basic_position
+    local basic_index = simplex.basic_variables[leaving_variable]
+    simplex.is_basic_variable[basic_index] = nil
+    simplex.basic_variables[leaving_variable] = entering_variable
+    simplex.is_basic_variable[entering_variable] = leaving_variable
     
     return false
 end
@@ -939,13 +940,13 @@ end
 ---@param row_index integer
 ---@param column_index integer
 function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
-    if simplex[row_index][column_index] == 0 then
+    if simplex.internal[row_index][column_index] == 0 then
         llog("HELP! division by zero in gaussion elimination")
     end
     for equation,column_table in pairs(simplex.internal) do
-        local Factor = -(simplex[equation][column_index]/simplex[row_index][column_index])
+        local Factor = -(simplex.internal[equation][column_index]/simplex.internal[row_index][column_index])
         for variable,value in pairs(column_table) do
-            simplex[equation][variable] = simplex[equation][variable] + Factor * simplex[equation][column_index]
+            simplex.internal[equation][variable] = simplex.internal[equation][variable] + Factor * simplex.internal[equation][column_index]
         end
         simplex.constraints[equation] = simplex.constraints[equation] + Factor * simplex.constraints[equation]
     end
@@ -1001,7 +1002,7 @@ end
 
 ---@param simplex SimplexTableau
 function matrix_solver.print_simplex(simplex)
-    s = ""
+    local s = ""
     s = s.."{\n"
     for equation,row in ipairs(simplex.internal) do
         s = s.."  {"
@@ -1009,8 +1010,6 @@ function matrix_solver.print_simplex(simplex)
             s = s..(col)
             s = s.." "
         end
-        llog(equation)
-        llog(#simplex.constraints)
         s = s..(simplex.constraints[equation])
 
         s = s.."}\n"
