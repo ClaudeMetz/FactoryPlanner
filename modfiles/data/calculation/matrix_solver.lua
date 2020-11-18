@@ -878,6 +878,24 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     return result
 end
 
+---@param simplex SimplexTableau
+---@param column integer
+---@return number
+function matrix_solver.find_result_from_column(simplex, column)
+    local found_row = nil
+    for row = 1, simplex.recipe_count do
+        if simplex.internal[row][column] == 1 then
+            if found_row ~= nil then
+                return 0
+            end
+            found_row = row
+        elseif simplex.internal[row][column] ~= 0 then
+            return 0
+        end
+    end
+    return simplex.constraints[found_row]
+end
+
 ---@param matrix number[][]
 ---@return SimplexTableau
 function matrix_solver.do_simplex_algo(matrix)
@@ -907,6 +925,12 @@ function matrix_solver.do_simplex_iteration(simplex)
         return true, "simplex is unbounded"
     end
     matrix_solver.gaussian_elimination(simplex, leaving_variable, entering_variable)
+    
+    local basic_position = simplex.is_basic_variable[leaving_variable]
+    simplex.is_basic_variable[leaving_variable] = nil
+    simplex.basic_variables[basic_position] = entering_variable
+    simplex.is_basic_variable[entering_variable] = basic_position
+    
     return false
 end
 
@@ -953,7 +977,7 @@ function matrix_solver.find_leaving_variable(simplex, entering_variable)
         if entering_column <= 0 then
             break -- works as a continue due to repeat until loop
         end
-        local ratio = simplex.constraints[basic_variables] / entering_column
+        local ratio = simplex.constraints[basic_variable] / entering_column
         if ratio < smallest_found_ratio then
             smallest_found_ratio = ratio
             leaving_variable = basic_variable
