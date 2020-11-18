@@ -882,18 +882,12 @@ end
 ---@param column integer
 ---@return number
 function matrix_solver.find_result_from_column(simplex, column)
-    local found_row = nil
-    for row = 1, simplex.recipe_count do
-        if simplex.internal[row][column] == 1 then
-            if found_row ~= nil then
-                return 0
-            end
-            found_row = row
-        elseif simplex.internal[row][column] ~= 0 then
-            return 0
-        end
+    local basic_position = simplex.is_basic_variable[column]
+    if basic_position then
+        return simplex.constraints[basic_position]
+    else
+        return 0
     end
-    return simplex.constraints[found_row]
 end
 
 ---@param matrix number[][]
