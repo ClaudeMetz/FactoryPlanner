@@ -178,13 +178,7 @@ end
 function calculation.start_matrix_solver(player, subfactory)
     local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     if matrix_modal_data.num_rows ~= matrix_modal_data.num_cols then
-        -- INSTRUCTIONS TO THERENAS
-        -- 1. Create a subfactory with one output and multiple allowed input recipes (eg solid fuel)
-        -- 2. Add a recipe for this product (eg light oil -> solid fuel)
-        -- 3. Add another recipe for the same product (eg petroleum -> solid fuel)
-        -- This should open the matrix solver dialog because of a bad state (eg linearly dependent columns)
-        -- However nothing happens, probably because the recipe dialog is still open
-        modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}})
+        modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}, allow_queueing=true})
     else
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
         matrix_solver.run_matrix_solver(subfactory_data, false)
