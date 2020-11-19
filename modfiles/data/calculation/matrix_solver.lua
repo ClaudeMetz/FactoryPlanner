@@ -820,7 +820,6 @@ end
 ---@field public basic_variables integer[]
 ---@field public is_basic_variable table<integer, integer>
 ---@field public constraints number[]
----@field public objective_coefficients number[]
 ---@field public raw_variable_count integer
 ---@field public variable_count integer
 ---@field public equation_count integer
@@ -859,12 +858,13 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
                 internal[equation][slack] = 0
             end
         end
+        internal[equation][result.variable_count+1] = 0
     end
     result.internal = internal
 
     result.basic_variables = {}
     result.is_basic_variable = {}
-    for slack = 1, result.equation_count do
+    for slack = 1, result.equation_count + 1 do
         result.basic_variables[slack] = slack + result.raw_variable_count
         result.is_basic_variable[slack + result.raw_variable_count] = slack
     end
@@ -873,15 +873,20 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     for constraint = 1, result.equation_count do
         result.constraints[constraint] = matrix[constraint][result.raw_variable_count+1]
     end
-
-    result.objective_coefficients = {}
+    result.constraints[result.equation_count+1] = 0
+    
+    internal[result.equation_count+1] = {}
     for i = 1, result.raw_variable_count do
-        result.objective_coefficients[i] = -1
+        internal[result.equation_count+1][i] = 1
     end
     for i = result.raw_variable_count + 1, result.variable_count do
-        result.objective_coefficients[i] = 0
+        internal[result.equation_count+1][i] = 0
     end
+    internal[result.equation_count+1][result.variable_count+1] = 1
     
+    result.equation_count = result.equation_count + 1
+    result.variable_count = result.variable_count + 1
+
     return result
 end
 
@@ -948,10 +953,7 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
             break
         end
         local Factor = -1 * simplex.internal[equation][column_index] / simplex.internal[row_index][column_index]
-        for variable,value in pairs(column_table) do
-            simplex.internal[equation][variable] = simplex.internal[equation][variable] + Factor * simplex.internal[row_index][variable]
-        end
-        simplex.constraints[equation] = simplex.constraints[equation] + Factor * simplex.constraints[row_index]
+        matrix_solver.guassian_step(simplex, row_index, Factor, equation)
     until true end
     local pivot = simplex.internal[row_index][column_index]
     for column,value in pairs(simplex.internal[row_index]) do
@@ -960,15 +962,28 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
 end
 
 ---@param simplex SimplexTableau
+---@param row integer
+---@param multiplier number
+---@param replace_row integer
+function matrix_solver.guassian_step(simplex, row, multiplier, replace_row)
+    local from = simplex.internal[row]
+    local to = simplex.internal[replace_row]
+    for column = 1, simplex.variable_count do
+        to[column] = to[column] + from[column] * multiplier
+    end
+    simplex.constraints[replace_row] = simplex.constraints[replace_row] + multiplier * simplex.constraints[row]
+end
+
+---@param simplex SimplexTableau
 ---@return integer|nil
 function matrix_solver.find_entering_variable(simplex)
     local entering_variable = nil
-    local largest_found_objective = -math.huge
+    local smallest_found_objective = math.huge
     for variable = 1, simplex.variable_count do
         local zj = matrix_solver.find_zj_value(simplex, variable)
-        local Cj_zj = (simplex.objective_coefficients[variable] or 0) - zj
-        if Cj_zj > largest_found_objective and Cj_zj < 0 then
-            largest_found_objective = Cj_zj
+        local Cj_zj = simplex.internal[simplex.equation_count][variable] - zj
+        if Cj_zj < smallest_found_objective and Cj_zj > 0 then
+            smallest_found_objective = Cj_zj
             entering_variable = variable
         end
     end
@@ -1000,8 +1015,8 @@ end
 ---@return number
 function matrix_solver.find_zj_value(simplex, variable)
     local Accumulated = 0
-    for basic_variable = 1, simplex.equation_count do
-        local basic_coefficient = simplex.objective_coefficients[simplex.basic_variables[basic_variable]]
+    for basic_variable = 1, simplex.equation_count-1 do
+        local basic_coefficient = simplex.internal[simplex.equation_count][simplex.basic_variables[basic_variable]]
         Accumulated = Accumulated + simplex.internal[basic_variable][variable] * basic_coefficient
     end
     return Accumulated
@@ -1015,7 +1030,7 @@ function matrix_solver.print_simplex(simplex)
         s = s.."  {"
         for variable,col in ipairs(row) do
             s = s..(col)
-            s = s.." "
+            s = s..string.rep(" ", matrix_solver.logest_in_column(simplex, variable) - string.len(tostring(col)) + 1)
         end
         s = s..(simplex.constraints[equation])
 
@@ -1023,4 +1038,13 @@ function matrix_solver.print_simplex(simplex)
     end
     s = s.."}"
     llog(s)
+end
+
+---@param simplex SimplexTableau
+function matrix_solver.logest_in_column(simplex, column)
+    local longest = 0
+    for _,row in pairs(simplex.internal) do
+        longest = math.max(longest, string.len(tostring(row[column])))
+    end
+    return longest
 end
