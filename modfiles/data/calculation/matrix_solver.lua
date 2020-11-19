@@ -554,9 +554,9 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale
+    local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_proto.speed
     local speed_multiplier = (1 + math.max(line_data.total_effects.speed, -0.8))
-    local productivity_multiplier = (1 + math.max(line_data.total_effects.productivity, 0))
     local energy = recipe_proto.energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end
@@ -566,22 +566,23 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
         -- the factorio wiki says 40.33, but I saw this elsewhere in the code (and this agrees with the online factorio calculator). Not sure which is correct.
         time_per_craft = time_per_craft + 41.25/100
     end
-    local amount_per_timescale = machine_count * timescale / time_per_craft
+    local crafts_per_tick = machine_count * timescale / time_per_craft
     line_aggregate.production_ratio = amount_per_timescale
     line_aggregate.uncapped_production_ratio = amount_per_timescale
     for _, product in pairs(recipe_proto.products) do
+        local prodded_amount = calculation.util.determine_prodded_amount(product, crafts_per_tick, total_effects)
         local item_key = matrix_solver.get_item_key(product.type, product.name)
         if subfactory_metadata~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
-            structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale * productivity_multiplier)
+            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * crafts_per_tick)
         else
-            structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)
+            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * crafts_per_tick)
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
+        local prodded_amount = calculation.util.determine_prodded_amount(ingredient, crafts_per_tick, total_effects)
+        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, prodded_amount * crafts_per_tick)
     end
 
-    -- some of this is copied from model.lua
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
     local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
