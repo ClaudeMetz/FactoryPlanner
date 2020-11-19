@@ -564,7 +564,7 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     if recipe_proto.name == "rocket-part" then
         -- extra time for launch sequence
         -- the factorio wiki says 40.33, but I saw this elsewhere in the code (and this agrees with the online factorio calculator). Not sure which is correct.
-        time_per_craft = time_per_craft + 41.25/100
+        time_per_craft = time_per_craft + 41.25
     end
     local crafts_per_tick = machine_count * timescale / time_per_craft
     line_aggregate.production_ratio = amount_per_timescale
@@ -579,8 +579,11 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        local prodded_amount = calculation.util.determine_prodded_amount(ingredient, crafts_per_tick, total_effects)
-        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, prodded_amount * crafts_per_tick)
+        local amount = ingredient.amount
+        if ingredient.ignore_productivity then
+            amount = calculation.util.determine_prodded_amount(ingredient, crafts_per_tick, total_effects)
+        end
+        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, amount * crafts_per_tick)
     end
 
     -- Determine energy consumption (including potential fuel needs) and pollution
