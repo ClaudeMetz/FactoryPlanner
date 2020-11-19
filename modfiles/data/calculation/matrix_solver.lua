@@ -819,7 +819,6 @@ end
 ---@field public internal number[][]
 ---@field public basic_variables integer[]
 ---@field public is_basic_variable table<integer, integer>
----@field public constraints number[]
 ---@field public raw_variable_count integer
 ---@field public variable_count integer
 ---@field public equation_count integer
@@ -851,11 +850,11 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
         for variable = 1, result.raw_variable_count do
             internal[equation][variable] = matrix[equation][variable]
         end
-        for slack = result.raw_variable_count+1, result.variable_count do
-            if equation == slack-result.equation_count then
-                internal[equation][slack] = -1
+        for slack = 1, result.equation_count do
+            if equation == slack then
+                internal[equation][slack+result.raw_variable_count] = -1
             else
-                internal[equation][slack] = 0
+                internal[equation][slack+result.raw_variable_count] = 0
             end
         end
         internal[equation][result.variable_count+1] = 0
@@ -890,6 +889,71 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     return result
 end
 
+---@param matrix number[][]
+---@return number[][]
+local function CopyMatrix(matrix)
+    local copy = {}
+    for k,v in pairs(matrix) do
+        copy[k] = {}
+        for kk,vv in pairs(v) do
+            copy[k][kk] = vv
+        end
+    end
+    return copy
+end
+
+---@param matrix number[][]
+---@param objectives number[]
+local function InjectObjectivesInMatrix(matrix, objectives)
+    matrix[#matrix+1] = objectives
+end
+
+---@param matrix number[][]
+---@return number[][]
+local function TransposeMatrix(matrix)
+    local Transpose = {}
+    for i = 1, #matrix[1] do
+        Transpose[i] = {}
+        for j=1, #matrix do
+            Transpose[i][j] = matrix[j][i]
+        end
+    end
+    return Transpose
+end
+
+---@param matrix number[][]
+---@return SimplexTableau
+function WrapIntoSimplex(matrix)
+    ---@type SimplexTableau
+    local Simplex = {}
+
+    Simplex.raw_variable_count = #matrix[1] - 1
+    Simplex.equation_count = #matrix
+    Simplex.variable_count = Simplex.raw_variable_count + Simplex.equation_count
+
+    Simplex.internal = matrix
+
+    --adding slacks
+    for equation = 1, Simplex.equation_count do
+        local old_constraint = matrix[equation][Simplex.raw_variable_count + 1]
+        for slack = 1, Simplex.equation_count do
+            if slack == equation then
+                Simplex.internal[equation][slack + Simplex.raw_variable_count] = 1
+            else
+                Simplex.internal[equation][slack + Simplex.raw_variable_count] = 0
+            end
+        end
+        Simplex.internal[equation][Simplex.variable_count + 1] = old_constraint
+    end
+
+    for i = 1, Simplex.equation_count do
+        Simplex.basic_variables[i] = i + Simplex.raw_variable_count
+        Simplex.is_basic_variable[i + Simplex.raw_variable_count] = i
+    end
+    
+    return Simplex
+end
+
 ---@param simplex SimplexTableau
 ---@param column integer
 ---@return number
@@ -905,7 +969,14 @@ end
 ---@param matrix number[][]
 ---@return SimplexTableau
 function matrix_solver.do_simplex_algo(matrix)
-    local simplex = matrix_solver.convert_matrix_to_simplex_table(matrix)
+    local copy = CopyMatrix(matrix)
+    local objectives = {}
+    for i = 1, #matrix[1] do
+        objectives[i] = 1
+    end
+    InjectObjectivesInMatrix(copy, objectives)
+    local transpose = TransposeMatrix(copy)
+    local simplex = WrapIntoSimplex(transpose)
     local keep_going = true
     while keep_going do
         local stop, error = matrix_solver.do_simplex_iteration(simplex)
@@ -980,10 +1051,9 @@ function matrix_solver.find_entering_variable(simplex)
     local entering_variable = nil
     local smallest_found_objective = math.huge
     for variable = 1, simplex.variable_count do
-        local zj = matrix_solver.find_zj_value(simplex, variable)
-        local Cj_zj = simplex.internal[simplex.equation_count][variable] - zj
-        if Cj_zj < smallest_found_objective and Cj_zj > 0 then
-            smallest_found_objective = Cj_zj
+        local Cj = simplex.internal[simplex.equation_count][variable]
+        if Cj < smallest_found_objective and Cj < 0 then
+            smallest_found_objective = Cj
             entering_variable = variable
         end
     end
@@ -998,10 +1068,10 @@ function matrix_solver.find_leaving_variable(simplex, entering_variable)
     local leaving_variable = nil
     for basic_variable = 1, simplex.equation_count do repeat
         local entering_column = simplex.internal[basic_variable][entering_variable]
-        if entering_column < 0 then
+        if entering_column >= 0 then
             break -- works as a continue due to repeat until loop
         end
-        local ratio = simplex.constraints[basic_variable] / entering_column
+        local ratio = -1 * simplex.constraints[basic_variable] / entering_column
         if ratio < smallest_found_ratio then
             smallest_found_ratio = ratio
             leaving_variable = basic_variable
