@@ -933,6 +933,10 @@ function WrapIntoSimplex(matrix)
 
     Simplex.internal = matrix
 
+    for i = 1, Simplex.raw_variable_count do
+        Simplex.internal[#Simplex.internal][i] = -Simplex.internal[#Simplex.internal][i]
+    end
+
     --adding slacks
     for equation = 1, Simplex.equation_count do
         local old_constraint = matrix[equation][Simplex.raw_variable_count + 1]
@@ -946,6 +950,8 @@ function WrapIntoSimplex(matrix)
         Simplex.internal[equation][Simplex.variable_count + 1] = old_constraint
     end
 
+    Simplex.basic_variables = {}
+    Simplex.is_basic_variable = {}
     for i = 1, Simplex.equation_count do
         Simplex.basic_variables[i] = i + Simplex.raw_variable_count
         Simplex.is_basic_variable[i + Simplex.raw_variable_count] = i
@@ -960,7 +966,7 @@ end
 function matrix_solver.find_result_from_column(simplex, column)
     local basic_position = simplex.is_basic_variable[column]
     if basic_position then
-        return simplex.constraints[basic_position]
+        return simplex.internal[basic_position][simplex.variable_count+1]
     else
         return 0
     end
@@ -1039,21 +1045,20 @@ end
 function matrix_solver.guassian_step(simplex, row, multiplier, replace_row)
     local from = simplex.internal[row]
     local to = simplex.internal[replace_row]
-    for column = 1, simplex.variable_count do
+    for column = 1, simplex.variable_count+1 do
         to[column] = to[column] + from[column] * multiplier
     end
-    simplex.constraints[replace_row] = simplex.constraints[replace_row] + multiplier * simplex.constraints[row]
 end
 
 ---@param simplex SimplexTableau
 ---@return integer|nil
 function matrix_solver.find_entering_variable(simplex)
     local entering_variable = nil
-    local smallest_found_objective = math.huge
+    local most_negative_found_objective = math.huge
     for variable = 1, simplex.variable_count do
         local Cj = simplex.internal[simplex.equation_count][variable]
-        if Cj < smallest_found_objective and Cj < 0 then
-            smallest_found_objective = Cj
+        if Cj < most_negative_found_objective and Cj < 0 then
+            most_negative_found_objective = Cj
             entering_variable = variable
         end
     end
@@ -1066,12 +1071,12 @@ end
 function matrix_solver.find_leaving_variable(simplex, entering_variable)
     local smallest_found_ratio = math.huge
     local leaving_variable = nil
-    for basic_variable = 1, simplex.equation_count do repeat
+    for basic_variable = 1, simplex.equation_count - 1 do repeat
         local entering_column = simplex.internal[basic_variable][entering_variable]
-        if entering_column >= 0 then
+        if entering_column <= 0 then
             break -- works as a continue due to repeat until loop
         end
-        local ratio = -1 * simplex.constraints[basic_variable] / entering_column
+        local ratio = simplex.internal[basic_variable][simplex.variable_count+1] / entering_column
         if ratio < smallest_found_ratio then
             smallest_found_ratio = ratio
             leaving_variable = basic_variable
@@ -1102,7 +1107,6 @@ function matrix_solver.print_simplex(simplex)
             s = s..(col)
             s = s..string.rep(" ", matrix_solver.logest_in_column(simplex, variable) - string.len(tostring(col)) + 1)
         end
-        s = s..(simplex.constraints[equation])
 
         s = s.."}\n"
     end
