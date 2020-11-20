@@ -977,8 +977,32 @@ end
 function matrix_solver.do_simplex_algo(matrix)
     local copy = CopyMatrix(matrix)
     local objectives = {}
+    local is_psuedo = true
     for i = 1, #matrix[1] do
-        objectives[i] = 1
+        if is_psuedo then
+            --check pseudo
+            local hit_1 = false
+            for j = 1, #matrix do
+                if matrix[j][i] ~= 0 then
+                    if matrix[j][i] == 1 then
+                        hit_1 = not hit_1
+                        if not hit_1 then
+                            break
+                        end
+                    else
+                        hit_1 = false
+                        break
+                    end
+                end
+            end
+            is_psuedo = hit_1
+        end
+        if is_psuedo then
+            objectives[i] = 1
+        else
+            objectives[i] = 0
+        end
+        objectives = {0,1,0,0,0,0}
     end
     InjectObjectivesInMatrix(copy, objectives)
     local transpose = TransposeMatrix(copy)
@@ -1030,7 +1054,7 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
             break
         end
         local Factor = -1 * simplex.internal[equation][column_index] / simplex.internal[row_index][column_index]
-        matrix_solver.guassian_step(simplex, row_index, Factor, equation)
+        matrix_solver.guassian_step(simplex, row_index, Factor, equation, column_index)
     until true end
     local pivot = simplex.internal[row_index][column_index]
     for column,value in pairs(simplex.internal[row_index]) do
@@ -1038,15 +1062,26 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
     end
 end
 
+local abs = math.abs
+
 ---@param simplex SimplexTableau
 ---@param row integer
 ---@param multiplier number
 ---@param replace_row integer
-function matrix_solver.guassian_step(simplex, row, multiplier, replace_row)
+---@param orig_column integer
+function matrix_solver.guassian_step(simplex, row, multiplier, replace_row, orig_column)
     local from = simplex.internal[row]
     local to = simplex.internal[replace_row]
     for column = 1, simplex.variable_count+1 do
-        to[column] = to[column] + from[column] * multiplier
+        if column == orig_column then
+            to[column] = 0
+        else
+            local result = to[column] + from[column] * multiplier
+            if abs(result) < 1e-5 then
+                result = 0
+            end
+            to[column] = result
+        end
     end
 end
 
