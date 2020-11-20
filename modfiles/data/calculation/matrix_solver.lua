@@ -434,25 +434,6 @@ function matrix_solver.get_lines_metadata(lines, player_index)
     local line_inputs = {}
     local line_outputs = {}
     for _, line in pairs(lines) do
-        line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1, true)
-        for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
-            for item_name, _ in pairs(item_data) do
-                local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-                line_inputs[item_key] = true
-            end
-        end
-        -- for item_type_name, item_data in pairs(line_aggregate.Fuel) do
-        --     for item_name, _ in pairs(item_data) do
-        --         local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-        --         line_inputs[item_key] = true
-        --     end
-        -- end
-        for item_type_name, item_data in pairs(line_aggregate.Product) do
-            for item_name, _ in pairs(item_data) do
-                local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-                line_outputs[item_key] = true
-            end
-        end
         if line.subfloor ~= nil then
             floor_metadata = matrix_solver.get_lines_metadata(line.subfloor.lines, player_index)
             for i, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
@@ -461,6 +442,25 @@ function matrix_solver.get_lines_metadata(lines, player_index)
             line_inputs = matrix_solver.union_sets(line_inputs, floor_metadata.line_inputs)
             line_outputs = matrix_solver.union_sets(line_outputs, floor_metadata.line_outputs)
         else
+            line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1, true)
+            for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
+                for item_name, _ in pairs(item_data) do
+                    local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+                    line_inputs[item_key] = true
+                end
+            end
+            -- for item_type_name, item_data in pairs(line_aggregate.Fuel) do
+            --     for item_name, _ in pairs(item_data) do
+            --         local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+            --         line_inputs[item_key] = true
+            --     end
+            -- end
+            for item_type_name, item_data in pairs(line_aggregate.Product) do
+                for item_name, _ in pairs(item_data) do
+                    local item_key = matrix_solver.get_item_key(item_type_name, item_name)
+                    line_outputs[item_key] = true
+                end
+            end
             table.insert(line_recipes, line.recipe_proto.id)
         end
     end
