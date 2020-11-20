@@ -63,6 +63,11 @@ matrix_dialog.dialog_settings = (function(_) return {
 function matrix_dialog.open(player, modal_data)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    if #subfactory_data.top_floor.lines == 0 then
+        modal_dialog.exit(player, "cancel")
+        return true
+    end
 
     local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_modal_data)
