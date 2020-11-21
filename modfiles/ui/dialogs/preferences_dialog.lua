@@ -58,33 +58,44 @@ end
 
 function preference_structures.mb_defaults(preferences, content_frame)
     local mb_defaults = preferences.mb_defaults
-
     local preference_box = add_preference_box(content_frame, "mb_defaults")
-    local flow_mb_defaults = preference_box.add{type="flow", direction="horizontal"}
-    flow_mb_defaults.style.vertical_align = "center"
 
+    local function add_mb_default_button(parent_flow, type)
+        local flow = parent_flow.add{type="flow", direction="horizontal"}
+        flow.style.vertical_align = "center"
+        flow.style.horizontal_spacing = 8
 
-    local function add_mb_default(type)
-        flow_mb_defaults.add{type="label", caption={"fp.pu_" .. type, 1}}
-
-        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
+        flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_" .. type}},
+          tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
+        local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
+        flow.add{type="choose-elem-button", elem_type="item", item=item,
           name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset_tiny",
           elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
-        choose_elem_button.elem_value = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
-        choose_elem_button.style.margin = {0, 12, 0, 4}
     end
 
-    add_mb_default("machine")
-    add_mb_default("beacon")
+    local table_mb_defaults = preference_box.add{type="table", column_count=3}
+    table_mb_defaults.style.horizontal_spacing = 18
+    -- Table alignment is so stupid
+    table_mb_defaults.style.column_alignments[1] = "left"
+    table_mb_defaults.style.column_alignments[2] = "right"
+    table_mb_defaults.style.column_alignments[3] = "right"
 
+    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_machine", 1}}}
+    add_mb_default_button(table_mb_defaults, "machine")
+    add_mb_default_button(table_mb_defaults, "machine_secondary")
 
-    flow_mb_defaults.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_amount"}},
-      tooltip={"fp.preference_mb_default_amount_tt"}}
-    local textfield_amount = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_ampimt",
+    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_beacon", 1}}}
+    add_mb_default_button(table_mb_defaults, "beacon")
+
+    local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
+    beacon_amount_flow.style.vertical_align = "center"
+    beacon_amount_flow.style.horizontal_spacing = 8
+    beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
+      tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
+    local textfield_amount = beacon_amount_flow.add{type="textfield", name="fp_textfield_mb_default_beacon_amount",
       text=mb_defaults.beacon_count}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
-    textfield_amount.style.width = 40
-    textfield_amount.style.margin = {0, 8}
+    textfield_amount.style.width = 42
 end
 
 function preference_structures.prototypes(player, content_frame, modal_elements, type)

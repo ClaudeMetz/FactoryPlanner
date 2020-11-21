@@ -16,6 +16,65 @@ Date: 00. 00. 0000
     - Fixed that changing the limit on a machine would reset the 'hard limit'-switch
 
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.13
+Date: 16. 11. 2020
+  Bugfixes:
+    - Fixed a crash with Space Exploration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.12
+Date: 16. 11. 2020
+  Bugfixes:
+    - Added a couple missing locale strings
+    - Fixed an issue where the beacon total would not be shown when editing a beacon
+    - Fixed an issue where the total machine count for a subfloor would be incorrect if that subfloor had itself a subfloor
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.11
+Date: 09. 10. 2020
+  Bugfixes:
+    - Fixed a crash when trying to load a map with the 'Nauvis Melange' mod
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.10
+Date: 05. 10. 2020
+  Features:
+    - Added a secondary default module that will try to insert itself if the primary one is not compatible with the new machine/recipe (thanks scottmsul!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.9
+Date: 01. 10. 2020
+  Bugfixes:
+    - Fixed a crash related to the beacon dialog in certain modded situations
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.8
+Date: 28. 09. 2020
+  Bugfixes:
+    - Fixed that the preference for the default beacon amount would not be saved
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.7
+Date: 16. 09. 2020
+  Bugfixes:
+    - Hotfixed a crash on load with the newest version of Space Exploration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.6
+Date: 07. 09. 2020
+  Bugfixes:
+    - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
+    - Fixed that having signal-type icons on your subfactories could lead to crashes
+    - Fixed that you couldn't remove subfactory icons
+    - Fixed that heavily beaconed machine amounts were not calculated accurately (thanks talshorer!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.5
+Date: 27. 08. 2020
+  Bugfixes:
+    - Fixed a crash when attempting to change fuels in certain modded situations
+
+---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: 17. 08. 2020
   Features:

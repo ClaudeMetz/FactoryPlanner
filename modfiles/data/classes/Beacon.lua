@@ -2,10 +2,11 @@
 Beacon = {}
 
 -- Init a beacon without a module, which will have to be added afterwards
-function Beacon.init(beacon_proto, beacon_amount, parent_line)
+function Beacon.init(beacon_proto, beacon_amount, total_amount, parent_line)
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount or 0,
+        total_amount = total_amount,
         total_effects = nil,
         effects_tooltip = "",
         valid = true,
