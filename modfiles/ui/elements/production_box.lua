@@ -91,7 +91,7 @@ function production_box.refresh(player)
 
     local current_level = (subfactory_valid) and subfactory.selected_floor.level or 1
     local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
-    local matrix_solver_active = subfactory.matrix_free_items ~= nil
+    local matrix_solver_active = (subfactory_valid and subfactory.matrix_free_items ~= nil)
     local archive_open = (ui_state.flags.archive_open)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
@@ -104,10 +104,12 @@ function production_box.refresh(player)
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 2)
 
+    production_box_elements.solver_toggle_button.visible = (subfactory_valid)
     production_box_elements.solver_toggle_button.style = (matrix_solver_active)
       and "fp_button_push_active" or "fp_button_push"
     production_box_elements.solver_toggle_button.style.padding = {0, 8}  -- needs to be re-set when changing the style
 
+    production_box_elements.solver_configure_button.visible = (subfactory_valid)
     production_box_elements.solver_configure_button.enabled = (matrix_solver_active)
 
     view_state.refresh(player, production_box_elements.view_state_table)
