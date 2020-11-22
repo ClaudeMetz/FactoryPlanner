@@ -33,7 +33,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             searchfield.style.width = 180
             searchfield.style.margin = {-3, 4, 0, 0}
             ui_util.setup_textfield(searchfield)
-            searchfield.focus()
             modal_elements.search_textfield = searchfield
 
             flow_title_bar.add{type="sprite-button", name="fp_sprite-button_modal_search", sprite="utility/search_white",

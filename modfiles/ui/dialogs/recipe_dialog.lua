@@ -326,6 +326,7 @@ function recipe_dialog.open(player, modal_data)
 
             create_dialog_structure(modal_data)
             apply_recipe_filter(player, "")
+            modal_data.modal_elements.search_textfield.focus()
         end
     end
 end
