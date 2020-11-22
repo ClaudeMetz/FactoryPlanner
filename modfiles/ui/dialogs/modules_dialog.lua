@@ -187,7 +187,9 @@ end
 module_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_module", 1}},
     create_content_frame = true,
-    force_auto_center = true
+    force_auto_center = true,
+    show_submit_button = true,
+    show_delete_button = (modal_data.object ~= nil)
 } end)
 
 function module_dialog.open(_, modal_data)
@@ -230,7 +232,9 @@ end
 beacon_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_beacon", 1}},
     create_content_frame = true,
-    force_auto_center = true
+    force_auto_center = true,
+    show_submit_button = true,
+    show_delete_button = (modal_data.object ~= nil)
 } end)
 
 function beacon_dialog.open(player, modal_data)

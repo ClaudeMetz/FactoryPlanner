@@ -115,8 +115,7 @@ local function handle_item_button_click(player, button, metadata)
 
             elseif metadata.click == "right" then
                 if metadata.action == "edit" then
-                    modal_dialog.enter(player, {type="picker", submit=true, delete=true,
-                      modal_data={object=item, item_category="product"}})
+                    modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
 
                 elseif metadata.action == "delete" then
                     Subfactory.remove(subfactory, item)
@@ -177,7 +176,7 @@ item_boxes.gui_events = {
             timeout = 20,
             handler = (function(player, element, _)
                 local item_category = string.gsub(element.name, "fp_sprite%-button_add_top_level_", "")
-                modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category=item_category}})
+                modal_dialog.enter(player, {type="picker", modal_data={item_category=item_category}})
             end)
         },
         {

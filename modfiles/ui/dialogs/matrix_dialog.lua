@@ -46,7 +46,8 @@ end
 -- ** TOP LEVEL **
 matrix_dialog.dialog_settings = (function(_) return {
     caption = {"fp.matrix_solver"},
-    create_content_frame = true
+    create_content_frame = true,
+    show_submit_button = true
 } end)
 
 function matrix_dialog.open(player, modal_data)

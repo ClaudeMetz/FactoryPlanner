@@ -14,7 +14,7 @@ local function handle_matrix_toggle(player)
 
     if subfactory.matrix_free_items == nil then
         subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-        modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=true}})
+        modal_dialog.enter(player, {type="matrix", modal_data={first_open=true}})
     else
         subfactory.matrix_free_items = nil
         refresh_production(player)  -- recalculate with the sequential solver
@@ -186,7 +186,7 @@ production_box.gui_events = {
         {
             name = "fp_button_production_solver_configure",
             handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}})
+                modal_dialog.enter(player, {type="matrix", modal_data={first_open=false}})
             end)
         }
     }

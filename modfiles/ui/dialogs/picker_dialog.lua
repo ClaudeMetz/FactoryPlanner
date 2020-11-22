@@ -337,7 +337,9 @@ picker_dialog.dialog_settings = (function(modal_data)
     return {
         caption = {"fp.two_word_title", action, {"fp.pl_" .. modal_data.item_category, 1}},
         search_function = (not modal_data.object) and search_items or nil,
-        force_auto_center = true
+        force_auto_center = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.object ~= nil)
     }
 end)
 

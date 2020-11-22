@@ -209,7 +209,8 @@ end
 import_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
     create_content_frame = true,
-    disable_scroll_pane = true
+    disable_scroll_pane = true,
+    show_submit_button = true
 } end)
 
 function import_dialog.open(_, modal_data)

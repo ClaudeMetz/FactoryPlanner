@@ -163,8 +163,10 @@ end
 
 options_dialog.dialog_settings = (function(modal_data) return {
     caption = modal_data.title,
+    subheader_text = modal_data.text,
     create_content_frame = true,
-    subheader_text = modal_data.text
+    show_submit_button = true,
+    show_delete_button = modal_data.allow_deletion
 } end)
 
 function options_dialog.open(_, modal_data)
