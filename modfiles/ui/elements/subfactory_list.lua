@@ -92,6 +92,7 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
         title = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_subfactory", 1}},
         text = {"fp.options_subfactory_text"},
         submission_handler = handle_subfactory_submission,
+        allow_deletion = (action == "edit"),
         object = subfactory,
         fields = {
             {
@@ -136,7 +137,7 @@ end
 local function edit_subfactory(player)
     local subfactory = data_util.get("context", player).subfactory
     local modal_data = generate_subfactory_dialog_modal_data("edit", subfactory)
-    modal_dialog.enter(player, {type="options", submit=true, delete=true, modal_data=modal_data})
+    modal_dialog.enter(player, {type="options", modal_data=modal_data})
 end
 
 local function delete_subfactory(player)
@@ -327,7 +328,7 @@ subfactory_list.gui_events = {
         {
             name = "fp_sprite-button_subfactories_import",
             handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="import", submit=true})
+                modal_dialog.enter(player, {type="import"})
             end)
         },
         {
@@ -351,7 +352,7 @@ subfactory_list.gui_events = {
             timeout = 20,
             handler = (function(player, _, _)
                 local modal_data = generate_subfactory_dialog_modal_data("new", nil)
-                modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+                modal_dialog.enter(player, {type="options", modal_data=modal_data})
             end)
         },
         {

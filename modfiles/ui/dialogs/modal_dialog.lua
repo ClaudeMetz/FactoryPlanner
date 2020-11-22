@@ -42,7 +42,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
             modal_data.search_function = dialog_settings.search_function
 
-        else  -- Otherwise, let the frame handle the titlebar
+        else  -- otherwise, let the frame handle the titlebar
             frame_modal_dialog.caption = dialog_settings.caption or nil
         end
     end
@@ -84,14 +84,14 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     button_bar.style.horizontal_spacing = 0
 
     -- Cancel/Back button
-    local action = dialog_settings.submit and "cancel" or "back"
+    local action = dialog_settings.show_submit_button and "cancel" or "back"
     local button_cancel = button_bar.add{type="button", name="fp_button_modal_action_cancel", style="back_button",
       caption={"fp." .. action}, tooltip={"fp." .. action .. "_dialog"}, mouse_button_filter={"left"}}
     button_cancel.style.minimal_width = 0
     button_cancel.style.padding = {1, 12, 0, 12}
 
     -- Delete button and spacers
-    if dialog_settings.delete then
+    if dialog_settings.show_delete_button then
         button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_action_delete",
@@ -108,7 +108,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
 
     -- Submit button
-    if dialog_settings.submit then
+    if dialog_settings.show_submit_button then
         local button_submit = button_bar.add{type="button", name="fp_button_modal_action_submit", caption={"fp.submit"},
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0

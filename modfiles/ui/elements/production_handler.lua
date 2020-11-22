@@ -235,7 +235,7 @@ local function handle_machine_click(player, button, metadata)
                 }
             }
         }
-        modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+        modal_dialog.enter(player, {type="options", modal_data=modal_data})
     end
 end
 
@@ -252,8 +252,7 @@ local function handle_module_click(player, button, metadata)
     local module = Machine.get(line.machine, "Module", split_string[7])
 
     if metadata.click == "left" or metadata.action == "edit" then
-        modal_dialog.enter(player, {type="module", submit=true, delete=true,
-          modal_data={object=module, machine=line.machine}})
+        modal_dialog.enter(player, {type="module", modal_data={object=module, machine=line.machine}})
 
     elseif metadata.action == "delete" then
         Machine.remove(line.machine, module)
@@ -273,8 +272,7 @@ local function handle_beacon_click(player, button, metadata)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.click == "left" or metadata.action == "edit" then
-        modal_dialog.enter(player, {type="beacon", submit=true, delete=true,
-          modal_data={object=line.beacon, line=line}})
+        modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
 
     elseif metadata.action == "delete" then
         Line.set_beacon(line, nil)
@@ -370,7 +368,7 @@ local function handle_item_click(player, button, metadata)
                 }
             }
         }
-        modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+        modal_dialog.enter(player, {type="options", modal_data=modal_data})
     end
 end
 
@@ -477,7 +475,7 @@ production_handler.gui_events = {
             handler = (function(player, element, _)
                 local line_id = tonumber(string.match(element.name, "%d+"))
                 local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
-                modal_dialog.enter(player, {type="module", submit=true, modal_data={object=nil, machine=line.machine}})
+                modal_dialog.enter(player, {type="module", modal_data={object=nil, machine=line.machine}})
             end)
         },
         {
@@ -491,7 +489,7 @@ production_handler.gui_events = {
             handler = (function(player, element, _)
                 local line_id = tonumber(string.match(element.name, "%d+"))
                 local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
-                modal_dialog.enter(player, {type="beacon", submit=true, modal_data={object=nil, line=line}})
+                modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
             end)
         },
         {
