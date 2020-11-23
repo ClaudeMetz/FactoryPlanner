@@ -1,4 +1,4 @@
-require("mod-gui")
+mod_gui = require("mod-gui")
 
 ui_util = {
     mod_gui = {},
