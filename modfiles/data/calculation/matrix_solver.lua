@@ -223,8 +223,6 @@ function matrix_solver.run_matrix_solver(subfactory_data)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
-    matrix[6][4] = 0
-
     matrix_solver.print_rows(rows)
     matrix_solver.print_columns(columns)
 
@@ -242,8 +240,8 @@ function matrix_solver.run_matrix_solver(subfactory_data)
             local line_aggregate = nil
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
-                local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-                --local machine_count = simplex.internal[#columns.values+1][#rows.values+col_num]
+                --local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
+                local machine_count = simplex.internal[#columns.values+1][#rows.values+col_num]
                 line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, false, subfactory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
@@ -283,8 +281,8 @@ function matrix_solver.run_matrix_solver(subfactory_data)
         local split_str = split_string(item_line_key, "_")
         local item_key = split_str[2].."_"..split_str[3]
         local item = matrix_solver.get_item(item_key)
-        local amount = matrix[col_num][#columns.values+1]
-        --local amount = simplex.internal[#columns.values+1][#rows.values+col_num]
+        --local amount = matrix[col_num][#columns.values+1]
+        local amount = simplex.internal[#columns.values+1][#rows.values+col_num]
         if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
@@ -838,7 +836,11 @@ function WrapIntoSimplex(matrix)
     ---@type SimplexTableau
     local Simplex = {}
 
-    Simplex.raw_variable_count = #matrix[1] - 1
+    if #matrix == 0 then
+        Simplex.raw_variable_count = 0
+    else
+        Simplex.raw_variable_count = #matrix[1] - 1
+    end
     Simplex.equation_count = #matrix
     Simplex.variable_count = Simplex.raw_variable_count + Simplex.equation_count
 
@@ -886,6 +888,9 @@ end
 ---@param matrix number[][]
 ---@return SimplexTableau
 function matrix_solver.do_simplex_algo(matrix, rows, columns)
+    if #matrix == 0 then
+        return WrapIntoSimplex(matrix)
+    end
     local copy = CopyMatrix(matrix)
     local objectives = {}
     local is_psuedo = true
@@ -895,7 +900,7 @@ function matrix_solver.do_simplex_algo(matrix, rows, columns)
         if split_name[1] == "fluid" or split_name[1] == "item" then
             local item_name = matrix_solver.get_item_name(split_name[2].."_"..split_name[3])
             if item_name == "fluid_water" then
-                objectives[i] = 100
+                objectives[i] = 1
             else
                 objectives[i] = 100
             end
