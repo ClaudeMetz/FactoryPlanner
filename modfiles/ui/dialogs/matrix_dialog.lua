@@ -65,16 +65,8 @@ function matrix_dialog.open(player, modal_data)
     local subfactory = ui_state.context.subfactory
 
     local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
-    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_modal_data)
 
-    -- too many ways to create the products
-    if matrix_modal_data.num_rows < matrix_modal_data.num_cols then
-        local label_title = modal_data.modal_elements.content_frame.add{type="label", caption={"fp.matrix_linear_dependent_recipes"}}
-        label_title.style.font = "heading-2"
-        return
-    end
-
-    modal_data.constrained_items = linear_dependence_data.allowed_free_items --todo: rename constrained_items to something like allowed_free_items
+    modal_data.constrained_items = {} --todo: rename constrained_items to something like allowed_free_items
     modal_data.free_items = matrix_modal_data.free_items
 
     local num_needed_free_items = matrix_modal_data.num_rows - matrix_modal_data.num_cols + #matrix_modal_data.free_items

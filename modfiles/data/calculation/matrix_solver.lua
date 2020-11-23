@@ -186,57 +186,6 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     return result
 end
 
-function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data)
-    local num_rows = #modal_data.ingredients + #modal_data.products + #modal_data.byproducts + #modal_data.eliminated_items + #modal_data.free_items
-    local num_cols = #modal_data.recipes + #modal_data.ingredients + #modal_data.byproducts + #modal_data.free_items
-    -- return early if these don't match since the matrix solver can crash when these are different
-    if num_rows < num_cols then
-        local result = {
-            linearly_dependent_recipes = {},
-            linearly_dependent_items = {},
-            allowed_free_items = {}
-        }
-        return result
-    end
-
-    local linearly_dependent_recipes = {}
-    local linearly_dependent_items = {}
-    local allowed_free_items = {}
-
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-    local linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
-    for col_name, _ in pairs(linearly_dependent_cols) do
-        local col_split_str = split_string(col_name, "_")
-        if col_split_str[1] == "recipe" then
-            local recipe_key = col_split_str[2]
-            linearly_dependent_recipes[recipe_key] = true
-        else -- "item"
-            local item_key = col_split_str[2].."_"..col_split_str[3]
-            linearly_dependent_items[item_key] = true
-        end
-    end
-    -- check which eliminated items could be made free while still retaining linear independence
-    if #linearly_dependent_cols == 0 and num_cols < num_rows then
-        local eliminated_items = modal_data.eliminated_items
-        for _, eliminated_item in ipairs(eliminated_items) do
-            local curr_free_items = matrix_solver.shallowcopy(modal_data.free_items)
-            table.insert(curr_free_items, eliminated_item)
-            linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
-            if next(linearly_dependent_cols) == nil then
-                local item_key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
-                allowed_free_items[item_key] = true
-            end
-        end
-    end
-    local result = {
-        linearly_dependent_recipes = linearly_dependent_recipes,
-        linearly_dependent_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(linearly_dependent_items)),
-        allowed_free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(allowed_free_items))
-    }
-    return result
-end
-
-
 function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
     local matrix_free_items = subfactory_data.matrix_free_items
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
@@ -273,6 +222,8 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local col_set = matrix_solver.union_sets(line_names, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
+
+    matrix[6][4] = 0
 
     matrix_solver.print_rows(rows)
     matrix_solver.print_columns(columns)
@@ -314,8 +265,8 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
             local line_aggregate = nil
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
-                --local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-                local machine_count = simplex.internal[#columns.values+1][#rows.values+col_num]
+                local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
+                --local machine_count = simplex.internal[#columns.values+1][#rows.values+col_num]
                 line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, false, subfactory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
@@ -355,8 +306,8 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         local split_str = split_string(item_line_key, "_")
         local item_key = split_str[2].."_"..split_str[3]
         local item = matrix_solver.get_item(item_key)
-        --local amount = matrix[col_num][#columns.values+1]
-        local amount = simplex.internal[#columns.values+1][#rows.values+col_num]
+        local amount = matrix[col_num][#columns.values+1]
+        --local amount = simplex.internal[#columns.values+1][#rows.values+col_num]
         if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
