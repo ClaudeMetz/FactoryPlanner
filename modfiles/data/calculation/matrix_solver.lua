@@ -227,11 +227,8 @@ function matrix_solver.run_matrix_solver(subfactory_data)
     matrix_solver.print_columns(columns)
 
     local simplex = matrix_solver.do_simplex_algo(matrix, rows, columns)
-    matrix_solver.print_simplex(simplex)
 
-    matrix_solver.print_matrix(matrix) --SUPER AAAA
-    matrix_solver.to_reduced_row_echelon_form(matrix)
-    matrix_solver.print_matrix(matrix) --SUPER AAAA
+    matrix_solver.print_matrix(matrix)
 
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
@@ -241,7 +238,7 @@ function matrix_solver.run_matrix_solver(subfactory_data)
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
                 --local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-                local machine_count = simplex.internal[#columns.values+1][#rows.values+col_num]
+                local machine_count = matrix_solver.find_result_from_column(matrix, simplex, col_num, columns, rows)
                 line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, false, subfactory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
@@ -281,8 +278,8 @@ function matrix_solver.run_matrix_solver(subfactory_data)
         local split_str = split_string(item_line_key, "_")
         local item_key = split_str[2].."_"..split_str[3]
         local item = matrix_solver.get_item(item_key)
-        --local amount = matrix[col_num][#columns.values+1]
-        local amount = simplex.internal[#columns.values+1][#rows.values+col_num]
+        --this no longer works for the simplex case
+        local amount = matrix_solver.find_result_from_column(matrix, simplex, col_num, columns, rows)
         if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
@@ -876,12 +873,25 @@ end
 ---@param simplex SimplexTableau
 ---@param column integer
 ---@return number
-function matrix_solver.find_result_from_column(simplex, column)
-    local basic_position = simplex.is_basic_variable[column]
-    if basic_position then
-        return simplex.internal[basic_position][simplex.variable_count+1]
-    else
+function matrix_solver.find_result_from_column(recipe_matrix, simplex, column, col_set, row_set)
+    if #simplex.internal == 0 then
         return 0
+    end
+    local value = simplex.internal[simplex.equation_count][simplex.raw_variable_count+column]
+    if value > 0 then
+        return value
+    else
+        local accumulated = 0
+        local name = split_string(col_set.values[column], "_")
+        if name[1] == "line" then
+            return 0
+        end
+        local row_index = row_set.map[name[2].."_"..name[3]]
+
+        for i=1,#col_set.values do
+            accumulated = accumulated + recipe_matrix[row_index][i] * simplex.internal[simplex.equation_count][simplex.raw_variable_count+i]
+        end
+        return -accumulated
     end
 end
 
@@ -1044,7 +1054,7 @@ function matrix_solver.print_simplex(simplex)
         s = s.."  {"
         for variable,col in ipairs(row) do
             s = s..(col)
-            s = s..string.rep(" ", matrix_solver.logest_in_column(simplex, variable) - string.len(tostring(col)) + 1)
+            s = s..string.rep(" ", matrix_solver.longest_in_column(simplex, variable) - string.len(tostring(col)) + 1)
         end
 
         s = s.."}\n"
@@ -1054,7 +1064,7 @@ function matrix_solver.print_simplex(simplex)
 end
 
 ---@param simplex SimplexTableau
-function matrix_solver.logest_in_column(simplex, column)
+function matrix_solver.longest_in_column(simplex, column)
     local longest = 0
     for _,row in pairs(simplex.internal) do
         longest = math.max(longest, string.len(tostring(row[column])))
