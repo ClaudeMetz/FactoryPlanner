@@ -63,7 +63,7 @@ function matrix_solver.get_item_name(item_key)
 end
 
 function matrix_solver.print_rows(rows)
-    s = 'ROWS\n'
+    local s = 'ROWS\n'
     for i, k in ipairs(rows.values) do
         local item_name = matrix_solver.get_item_name(k)
         s = s..'ROW '..i..': '..item_name..'\n'
@@ -72,7 +72,7 @@ function matrix_solver.print_rows(rows)
 end
 
 function matrix_solver.print_columns(columns)
-    s = 'COLUMNS\n'
+    local s = 'COLUMNS\n'
     for i, k in ipairs(columns.values) do
         local col_split_str = split_string(k, "_")
         if col_split_str[1]=="line" then
@@ -87,7 +87,7 @@ function matrix_solver.print_columns(columns)
 end
 
 function matrix_solver.print_items_set(items)
-    item_name_set = {}
+    local item_name_set = {}
     for k, _ in pairs(items) do
         local item_name = matrix_solver.get_item_name(k)
         item_name_set[item_name] = k
@@ -96,7 +96,7 @@ function matrix_solver.print_items_set(items)
 end
 
 function matrix_solver.print_items_list(items)
-    item_name_set = {}
+    local item_name_set = {}
     for _, k in ipairs(items) do
         local item_name = matrix_solver.get_item_name(k)
         item_name_set[item_name] = k
@@ -186,7 +186,7 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     return result
 end
 
-function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
+function matrix_solver.run_matrix_solver(subfactory_data)
     local matrix_free_items = subfactory_data.matrix_free_items
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
@@ -234,29 +234,6 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     matrix_solver.print_matrix(matrix) --SUPER AAAA
     matrix_solver.to_reduced_row_echelon_form(matrix)
     matrix_solver.print_matrix(matrix) --SUPER AAAA
-
-    if check_linear_dependence then
-        local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix)
-        local linearly_dependent_variables = {}
-        for col, _ in pairs(linearly_dependent_cols) do
-            local col_name = columns.values[col]
-            local col_split_str = split_string(col_name, "_")
-            if col_split_str[1] == "line" then
-                local floor = subfactory_data.top_floor
-                for i=2, #col_split_str-1 do
-                    local line_table_id = col_split_str[i]
-                    floor = floor.lines[line_table_id].subfloor
-                end
-                local line_table_id = col_split_str[#col_split_str]
-                local line = floor.lines[line_table_id]
-                local recipe_id = line.recipe_proto.id
-                linearly_dependent_variables["recipe_"..recipe_id] = true
-            else -- item
-                linearly_dependent_variables[col_name] = true
-            end
-        end
-        return linearly_dependent_variables
-    end
 
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
@@ -333,7 +310,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         Product = main_aggregate.Product,
         Byproduct = main_aggregate.Byproduct,
         Ingredient = main_aggregate.Ingredient,
-        matrix_free_items = matrix_free_item
+        matrix_free_items = matrix_free_items
     }
 end
 
@@ -346,14 +323,14 @@ function matrix_solver.consolidate(aggregate)
     local function compare_classes(input_class, output_class)
         for type, type_table in pairs(aggregate[output_class]) do
             for item, output_amount in pairs(type_table) do
-                item_table = {
+                local item_table = {
                     type=type,
                     name=item
                 }
                 if aggregate[input_class][type] ~= nil then
                     if aggregate[input_class][type][item] ~= nil then
                         local input_amount = aggregate[input_class][type][item]
-                        net_amount = output_amount - input_amount
+                        local net_amount = output_amount - input_amount
                         if net_amount > 0 then
                             structures.aggregate.subtract(aggregate, input_class, item_table, input_amount)
                             structures.aggregate.subtract(aggregate, output_class, item_table, input_amount)
@@ -387,7 +364,8 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = matrix_solver.union_sets(line_inputs, line_outputs)
     local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
     local byproducts = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
-    result = {
+
+    return {
         recipes = lines_metadata.line_recipes,
         desired_outputs = desired_outputs,
         all_items = all_items,
@@ -395,7 +373,6 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
         byproducts = byproducts,
         unproduced_outputs = unproduced_outputs
     }
-    return result
 end
 
 function matrix_solver.get_lines_metadata(lines, player_index)
@@ -403,7 +380,7 @@ function matrix_solver.get_lines_metadata(lines, player_index)
     local line_inputs = {}
     local line_outputs = {}
     for _, line in pairs(lines) do
-        line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1, true)
+        local line_aggregate = matrix_solver.get_line_aggregate(line, player_index, 1, 1, true)
         for item_type_name, item_data in pairs(line_aggregate.Ingredient) do
             for item_name, _ in pairs(item_data) do
                 local item_key = matrix_solver.get_item_key(item_type_name, item_name)
@@ -423,7 +400,7 @@ function matrix_solver.get_lines_metadata(lines, player_index)
             end
         end
         if line.subfloor ~= nil then
-            floor_metadata = matrix_solver.get_lines_metadata(line.subfloor.lines, player_index)
+            local floor_metadata = matrix_solver.get_lines_metadata(line.subfloor.lines, player_index)
             for i, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
                 table.insert(line_recipes, subfloor_line_recipe)
             end
@@ -475,7 +452,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
             local line = floor.lines[line_table_id]
 
             -- use amounts for 1 building as matrix entries
-            line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, 1, true)
+            local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, 1, true)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -692,7 +669,7 @@ function matrix_solver.to_reduced_row_echelon_form(m)
         if first_nonzero_col ~= 0 then
             -- subtract curr_row from previous rows to make leading entry a 0
             for i = 1, curr_row-1 do
-                factor = m[i][first_nonzero_col]
+                local factor = m[i][first_nonzero_col]
                 for j = first_nonzero_col, num_cols do
                     m[i][j] = m[i][j] - m[curr_row][j] * factor
                 end
@@ -700,28 +677,6 @@ function matrix_solver.to_reduced_row_echelon_form(m)
         end
     end
     -- END REDUCED ROW ECHELON FORM PART
-end
-
-function matrix_solver.find_linearly_dependent_cols(matrix)
-    local row_index = 1
-    local num_rows = #matrix
-    local num_cols = #matrix[1]-1
-    local ones_map = {}
-    local col_set = {}
-    for col_index=1, num_cols do
-        if matrix[row_index][col_index]==1 then
-            ones_map[row_index] = col_index
-            row_index = row_index+1
-        else
-            col_set[col_index] = true
-            for i=1, row_index do
-                if matrix[i][col_index] ~= 0 then
-                    col_set[ones_map[i]] = true
-                end
-            end
-        end
-    end
-    return col_set
 end
 
 -- utility function that removes from a sorted array in place
