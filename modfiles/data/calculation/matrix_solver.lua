@@ -274,7 +274,10 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
-    local simplex = matrix_solver.do_simplex_algo(matrix)
+    matrix_solver.print_rows(rows)
+    matrix_solver.print_columns(columns)
+
+    local simplex = matrix_solver.do_simplex_algo(matrix, rows, columns)
     matrix_solver.print_simplex(simplex)
 
     matrix_solver.print_matrix(matrix) --SUPER AAAA
@@ -311,7 +314,8 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
             local line_aggregate = nil
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
-                local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
+                --local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
+                local machine_count = simplex.internal[#columns.values+1][#rows.values+col_num]
                 line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, false, subfactory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
@@ -351,7 +355,8 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         local split_str = split_string(item_line_key, "_")
         local item_key = split_str[2].."_"..split_str[3]
         local item = matrix_solver.get_item(item_key)
-        local amount = matrix[col_num][#columns.values+1]
+        --local amount = matrix[col_num][#columns.values+1]
+        local amount = simplex.internal[#columns.values+1][#rows.values+col_num]
         if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
@@ -974,35 +979,23 @@ end
 
 ---@param matrix number[][]
 ---@return SimplexTableau
-function matrix_solver.do_simplex_algo(matrix)
+function matrix_solver.do_simplex_algo(matrix, rows, columns)
     local copy = CopyMatrix(matrix)
     local objectives = {}
     local is_psuedo = true
     for i = 1, #matrix[1] do
-        if is_psuedo then
-            --check pseudo
-            local hit_1 = false
-            for j = 1, #matrix do
-                if matrix[j][i] ~= 0 then
-                    if matrix[j][i] == 1 then
-                        hit_1 = not hit_1
-                        if not hit_1 then
-                            break
-                        end
-                    else
-                        hit_1 = false
-                        break
-                    end
-                end
+        local name = columns.values[i] or "line_AA"
+        local split_name = split_string(name, "_")
+        if split_name[1] == "fluid" or split_name[1] == "item" then
+            local item_name = matrix_solver.get_item_name(split_name[2].."_"..split_name[3])
+            if item_name == "fluid_water" then
+                objectives[i] = 100
+            else
+                objectives[i] = 100
             end
-            is_psuedo = hit_1
-        end
-        if is_psuedo then
-            objectives[i] = 1
         else
             objectives[i] = 0
         end
-        objectives = {0,1,0,0,0,0}
     end
     InjectObjectivesInMatrix(copy, objectives)
     local transpose = TransposeMatrix(copy)
