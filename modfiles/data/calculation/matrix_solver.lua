@@ -272,14 +272,23 @@ function matrix_solver.run_matrix_solver(subfactory_data)
 
     local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
 
+    local skip_count = 0
+    for _,column in pairs(columns.values) do
+        if split_string(column, "_")[1] == "item" then
+            skip_count = skip_count + 1
+        end
+    end
+
     -- set main_aggregate free variables
-    for item_line_key, _ in pairs(free_variables) do
-        local col_num = columns.map[item_line_key]
-        local split_str = split_string(item_line_key, "_")
-        local item_key = split_str[2].."_"..split_str[3]
+    for item_key, _ in pairs(all_items) do
         local item = matrix_solver.get_item(item_key)
+        local row_num = rows.map[item_key]
+
         --this no longer works for the simplex case
-        local amount = matrix_solver.find_result_from_column(matrix, simplex, col_num, columns, rows)
+        local amount = matrix_solver.find_result_from_row(matrix, simplex, row_num, columns, skip_count)
+        if subfactory_metadata.desired_outputs[item_key] then
+            amount = amount + subfactory_metadata.desired_outputs[item_key]
+        end
         if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
             -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
@@ -350,7 +359,7 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
     local desired_outputs = {}
     for _, product in pairs(subfactory_data.top_level_products) do
         local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
-        desired_outputs[item_key] = true
+        desired_outputs[item_key] = product.amount
     end
     local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines, subfactory_data.player_index)
     local line_inputs = lines_metadata.line_inputs
@@ -881,18 +890,21 @@ function matrix_solver.find_result_from_column(recipe_matrix, simplex, column, c
     if value > 0 then
         return value
     else
-        local accumulated = 0
         local name = split_string(col_set.values[column], "_")
         if name[1] == "line" then
             return 0
         end
         local row_index = row_set.map[name[2].."_"..name[3]]
-
-        for i=1,#col_set.values do
-            accumulated = accumulated + recipe_matrix[row_index][i] * simplex.internal[simplex.equation_count][simplex.raw_variable_count+i]
-        end
-        return -accumulated
+        return matrix_solver.find_result_from_row(recipe_matrix, simplex, row_index, col_set, row_set)
     end
+end
+
+function matrix_solver.find_result_from_row(recipe_matrix, simplex, row, col_set, skip_count)
+    local accumulated = 0
+    for i=skip_count+1,#col_set.values do
+        accumulated = accumulated + recipe_matrix[row][i] * simplex.internal[simplex.equation_count][simplex.raw_variable_count+i]
+    end
+    return -accumulated
 end
 
 ---@param matrix number[][]
