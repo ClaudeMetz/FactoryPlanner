@@ -25,8 +25,8 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     if module_filter and #module_filter[1].name == 0 then
         modal_elements.no_modules_label = flow_module.add{type="label", caption={"fp.error_message",
           {"fp.module_issue_none_compatible"}}}
-        ui_elements.no_modules_label.style.font = "heading-2"
-        ui_elements.no_modules_label.style.padding = 2
+        modal_elements.no_modules_label.style.font = "heading-2"
+        modal_elements.no_modules_label.style.padding = 2
         return
     else
         modal_elements.no_modules_label = nil
