@@ -47,16 +47,16 @@ end
 
 -- ** LLOG **
 -- Internally used logging function for a single table
-local function _llog(table)
+local function _llog(table_to_print)
     local excludes = LLOG_EXCLUDES or {}  -- Optional custom excludes defined by the parent mod
 
-    if type(table) ~= "table" then return (tostring(table)) end
+    if type(table_to_print) ~= "table" then return (tostring(table_to_print)) end
 
     local tab_width, super_space = 2, ""
     for _=0, tab_width-1, 1 do super_space = super_space .. " " end
 
-    local function format(table, depth)
-        if table_size(table) == 0 then return "{}" end
+    local function format(table_part, depth)
+        if table_size(table_part) == 0 then return "{}" end
 
         local spacing = ""
         for _=0, depth-1, 1 do spacing = spacing .. " " end
@@ -65,7 +65,7 @@ local function _llog(table)
         local out, first_element = "{", true
         local preceding_name = 0
 
-        for name, value in pairs(table) do
+        for name, value in pairs(table_part) do
             local element = tostring(value)
             if type(value) == "string" then
                 element = "'" .. element .. "'"
@@ -90,7 +90,7 @@ local function _llog(table)
         return (out .. "\n" .. spacing .. "}")
     end
 
-    return format(table, 0)
+    return format(table_to_print, 0)
 end
 
 -- User-facing function, handles multiple tables at being passed at once
@@ -104,8 +104,8 @@ function llog(...)
     elseif arg_nr == 1 then
         out = out .. " " .. _llog(select(1, ...))
     else
-        for index, table in ipairs{...} do
-            out = out .. "\n" .. index .. ": " ..  _llog(table)
+        for index, table_to_print in ipairs{...} do
+            out = out .. "\n" .. index .. ": " ..  _llog(table_to_print)
         end
     end
 
