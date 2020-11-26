@@ -220,7 +220,7 @@ function production_handler.handle_machine_change(player, line_id, machine_id, c
                         change_handler = production_handler.machine_limit_change,
                         caption = {"fp.options_machine_limit"},
                         tooltip = {"fp.options_machine_limit_tt"},
-                        text = line.machine.limit or "",
+                        text = line.machine.limit,  -- can be nil
                         focus = true
                     },
                     {

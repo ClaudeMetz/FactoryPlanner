@@ -11,8 +11,8 @@ function tab_definitions.interface(player, tab, tab_pane)
         frame.style.horizontally_stretchable = true
 
         frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}, style="caption_label"}
-        local text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
-        text.style.single_line = false
+        local label_text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
+        label_text.style.single_line = false
 
         return frame
     end

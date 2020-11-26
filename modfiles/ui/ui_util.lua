@@ -17,13 +17,11 @@ function ui_util.properly_center_frame(player, frame, width, height)
     frame.location = {x_offset, y_offset}
 end
 
--- Sets basic attributes on the given textfield
 function ui_util.setup_textfield(textfield)
     textfield.lose_focus_on_confirm = true
     textfield.clear_and_focus_on_right_click = true
 end
 
--- Sets up the given textfield as a numeric one, with the specified options
 function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     ui_util.setup_textfield(textfield)
     textfield.numeric = true
@@ -31,7 +29,6 @@ function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     textfield.allow_negative = (negative or false)
 end
 
--- Focuses and selects all the text of the given textfield
 function ui_util.select_all(textfield)
     textfield.focus()
     textfield.select_all()
