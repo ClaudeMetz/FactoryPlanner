@@ -62,7 +62,7 @@ function builders.percentage(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
-      .. line.id, text=relevant_line.percentage, enabled=(not metadata.archive_open)}
+      .. line.id, text=tostring(relevant_line.percentage), enabled=(not metadata.archive_open)}
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
