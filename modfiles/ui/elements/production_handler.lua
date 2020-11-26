@@ -223,7 +223,7 @@ local function handle_machine_click(player, button, metadata)
                     change_handler = machine_limit_change,
                     caption = {"fp.options_machine_limit"},
                     tooltip = {"fp.options_machine_limit_tt"},
-                    text = line.machine.limit or "",
+                    text = line.machine.limit,  -- can be nil
                     focus = true
                 },
                 {

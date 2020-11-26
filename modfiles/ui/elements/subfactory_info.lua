@@ -216,7 +216,7 @@ function subfactory_info.refresh(player)
         subfactory_info_elements.override_prod_bonus_button.visible = not custom_prod_set
 
         if custom_prod_set then  -- only change the text when the textfield will actually be shown
-            subfactory_info_elements.prod_bonus_override_textfield.text = subfactory.mining_productivity
+            subfactory_info_elements.prod_bonus_override_textfield.text = tostring(subfactory.mining_productivity)
         end
         subfactory_info_elements.prod_bonus_override_textfield.enabled = (not archive_open)
         subfactory_info_elements.prod_bonus_override_textfield.visible = custom_prod_set

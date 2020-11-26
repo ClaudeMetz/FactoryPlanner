@@ -90,10 +90,12 @@ function preference_structures.mb_defaults(preferences, content_frame)
     local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
     beacon_amount_flow.style.vertical_align = "center"
     beacon_amount_flow.style.horizontal_spacing = 8
+
     beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
       tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
+
     local textfield_amount = beacon_amount_flow.add{type="textfield", name="fp_textfield_mb_default_beacon_amount",
-      text=mb_defaults.beacon_count}
+      text=tostring(mb_defaults.beacon_count or "")}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 42
 end

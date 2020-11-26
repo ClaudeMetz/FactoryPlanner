@@ -77,7 +77,6 @@ styles["fp_table_production"] = {
 -- This style is hacked together from rounded-button and textbox
 styles["fp_sprite-button_inset"] = {
     type = "button_style",
-    parent = "icon_button",
     padding = 0,
     default_graphical_set = styles.textbox.default_background,
     hovered_graphical_set = styles.rounded_button.clicked_graphical_set,
