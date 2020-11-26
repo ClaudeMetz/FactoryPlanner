@@ -98,7 +98,8 @@ elements.numeric_textfield = {prefix = "fp_textfield_options_numberic_"}
 
 function elements.numeric_textfield.create(table, field, ui_elements)
     local element_name = elements.numeric_textfield.prefix .. field.name
-    local textfield = table.add{type="textfield", name=element_name, text=field.text}
+
+    local textfield = table.add{type="textfield", name=element_name, text=tostring(field.text or "")}
     textfield.style.width = (field.width or 75)
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then ui_util.select_all(textfield) end

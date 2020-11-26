@@ -125,7 +125,7 @@ function info_pane.refresh_mining_prod_table(player, subfactory, table_info_elem
 
     if subfactory.mining_productivity ~= nil then
         local textfield_prod_bonus = table_mining_prod.add{type="textfield", name="fp_textfield_mining_prod",
-          text=subfactory.mining_productivity}
+          text=tostring(subfactory.mining_productivity)}
         textfield_prod_bonus.style.width = 60
         textfield_prod_bonus.style.height = 26
         ui_util.setup_numeric_textfield(textfield_prod_bonus, true, true)

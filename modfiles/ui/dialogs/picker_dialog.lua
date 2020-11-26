@@ -304,7 +304,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_amount.add{type="label", caption={"fp.amount"}}
 
-    local item_amount = (item and defined_by == "amount") and item.required_amount.amount or nil
+    local item_amount = (item and defined_by == "amount") and tostring(item.required_amount.amount) or ""
     local textfield_amount = flow_amount.add{type="textfield", name="fp_textfield_picker_item_amount", text=item_amount}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 90
@@ -314,7 +314,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local flow_belts = create_flow()
     flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
 
-    local belt_amount = (item and defined_by ~= "amount") and item.required_amount.amount or ""
+    local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount.amount) or ""
     local textfield_belts = flow_belts.add{type="textfield", name="fp_textfield_picker_belt_amount", text=belt_amount}
     ui_util.setup_numeric_textfield(textfield_belts, true, false)
     textfield_belts.style.width = 85

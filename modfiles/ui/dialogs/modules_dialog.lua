@@ -54,7 +54,8 @@ local function add_module_line(parent_flow, ui_elements, module, empty_slots, mo
     slider.style.margin = {0, 6}
     ui_elements["module_slider"] = slider
 
-    local textfield_slider = flow_module.add{type="textfield", name="fp_textfield_module_amount", text=slider_value}
+    local textfield_slider = flow_module.add{type="textfield", name="fp_textfield_module_amount",
+      text=tostring(slider_value)}
     ui_util.setup_numeric_textfield(textfield_slider, false, false)
     textfield_slider.style.width = 40
     ui_elements["module_textfield"] = textfield_slider
@@ -83,7 +84,8 @@ local function add_beacon_line(parent_flow, ui_elements, beacon)
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
 
-    local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon.amount}
+    local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
+    local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon_amount}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     ui_util.select_all(textfield_amount)
     textfield_amount.style.width = 40
@@ -93,7 +95,7 @@ local function add_beacon_line(parent_flow, ui_elements, beacon)
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"}}
 
     local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
-      text=beacon.total_amount}
+      text=tostring(beacon.total_amount or "")}
     ui_util.setup_numeric_textfield(textfield_total, true, false)
     textfield_total.style.width = 40
     ui_elements["beacon_total_textfield"] = textfield_total
@@ -135,7 +137,7 @@ local function handle_module_textfield_change(player, element)
     local slider_maximum = module_slider.get_slider_maximum()
     local new_number = math.min((tonumber(element.text) or 0), slider_maximum)
 
-    element.text = new_number
+    element.text = tostring(new_number)
     module_slider.slider_value = new_number
 
     update_dialog_submit_button(ui_elements)
@@ -176,7 +178,7 @@ end
 
 local function handle_beacon_selection(player, entities)
     local ui_elements = data_util.get("ui_elements", player)
-    ui_elements.beacon_total_textfield.text = table_size(entities)
+    ui_elements.beacon_total_textfield.text = tostring(table_size(entities))
     ui_elements.beacon_total_textfield.focus()
 
     modal_dialog.leave_selection_mode(player)
@@ -317,7 +319,8 @@ function beacon_dialog.close(player, action)
         -- The prototype is already updated on elem_changed
 
         beacon.amount = tonumber(ui_elements.beacon_textfield.text)
-        beacon.total_amount = tonumber(ui_elements.beacon_total_textfield.text)
+        local total_amount = tonumber(ui_elements.beacon_total_textfield.text)
+        beacon.total_amount = (total_amount > 0) and total_amount or nil
 
         local module = generate_module_object(ui_elements)
         Beacon.set_module(beacon, module)
@@ -348,7 +351,7 @@ modules_dialog.gui_events = {
             name = "fp_slider_module_amount",
             handler = (function(player, element)
                 local ui_elements = data_util.get("ui_elements", player)
-                ui_elements.module_textfield.text = element.slider_value
+                ui_elements.module_textfield.text = tostring(element.slider_value)
                 update_dialog_submit_button(ui_elements)
             end)
         }
