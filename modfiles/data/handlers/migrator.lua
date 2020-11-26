@@ -26,7 +26,7 @@ local migration_masterlist = {
     [19] = {version="0.18.49", migration=require("data.migrations.migration_0_18_49")},
     [20] = {version="0.18.51", migration=require("data.migrations.migration_0_18_51")},
     [21] = {version="1.0.6", migration=require("data.migrations.migration_1_0_6")},
-    [22] = {version="1.0.14", migration=require("data.migrations.migration_1_0_14")},
+    [22] = {version="1.1.3", migration=require("data.migrations.migration_1_1_3")},
 }
 
 -- ** LOCAL UTIL **
