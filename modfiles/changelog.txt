@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.2
+Date: 26. 11. 2020
   Bugfixes:
     - Fixed various crashes caused by textbox behavior having changed with 1.1
 
