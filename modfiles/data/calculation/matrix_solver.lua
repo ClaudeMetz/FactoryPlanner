@@ -876,7 +876,7 @@ function WrapIntoSimplex(matrix)
     Simplex.basic_variables = {}
     Simplex.is_basic_variable = {}
     for i = 1, Simplex.equation_count do
-        Simplex.basic_variables[i] = {index = i + Simplex.raw_variable_count, int_index = i}
+        Simplex.basic_variables[i] = i + Simplex.raw_variable_count
         Simplex.is_basic_variable[i + Simplex.raw_variable_count] = i
     end
     
@@ -965,8 +965,8 @@ function matrix_solver.do_simplex_iteration(simplex)
     matrix_solver.gaussian_elimination(simplex, leaving_variable, entering_variable)
     
     local basic_index = simplex.basic_variables[leaving_variable]
-    simplex.is_basic_variable[basic_index.index] = nil
-    simplex.basic_variables[leaving_variable] = {index = entering_variable, int_index = basic_index.int_index}
+    simplex.is_basic_variable[basic_index] = nil
+    simplex.basic_variables[leaving_variable] = entering_variable
     simplex.is_basic_variable[entering_variable] = leaving_variable
     
     return false
@@ -983,7 +983,7 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
         if equation == row_index then
             break
         end
-        local Factor = -1 * simplex.internal[equation][column_index] / simplex.internal[row_index][column_index]
+        local Factor = -1 * matrix_solver.access_simplex(simplex, equation, column_index) / matrix_solver.access_simplex(simplex, row_index, column_index)
         matrix_solver.guassian_step(simplex, row_index, Factor, equation, column_index)
     until true end
     local pivot = simplex.internal[row_index][column_index]
@@ -1003,8 +1003,8 @@ function matrix_solver.guassian_step(simplex, row, multiplier, replace_row, orig
     local from = simplex.internal[row]
     local to = simplex.internal[replace_row]
     for column = 1, simplex.variable_count+1 do
-        if column == orig_column then
-            to[column] = 0
+        if column == orig_column or simplex.is_basic_variable[column] then
+            --do nothing
         else
             local result = to[column] + from[column] * multiplier
             if abs(result) < 1e-5 then
@@ -1021,7 +1021,7 @@ function matrix_solver.find_entering_variable(simplex)
     local entering_variable = nil
     local most_negative_found_objective = math.huge
     for variable = 1, simplex.variable_count do
-        local Cj = simplex.internal[simplex.equation_count][variable]
+        local Cj = matrix_solver.access_simplex(simplex, simplex.equation_count, variable)
         if Cj < most_negative_found_objective and Cj < 0 then
             most_negative_found_objective = Cj
             entering_variable = variable
@@ -1037,11 +1037,11 @@ function matrix_solver.find_leaving_variable(simplex, entering_variable)
     local smallest_found_ratio = math.huge
     local leaving_variable = nil
     for basic_variable = 1, simplex.equation_count - 1 do repeat
-        local entering_column = simplex.internal[basic_variable][entering_variable]
+        local entering_column = matrix_solver.access_simplex(simplex, basic_variable, entering_variable)
         if entering_column <= 0 then
             break -- works as a continue due to repeat until loop
         end
-        local ratio = simplex.internal[basic_variable][simplex.variable_count+1] / entering_column
+        local ratio = matrix_solver.access_simplex(simplex, basic_variable, simplex.variable_count+1) / entering_column
         if ratio < smallest_found_ratio then
             smallest_found_ratio = ratio
             leaving_variable = basic_variable
@@ -1069,10 +1069,10 @@ function matrix_solver.print_simplex(simplex)
     for equation,row in ipairs(simplex.internal) do
         s = s.."  {"
         for variable,col in ipairs(row) do
-            s = s..(col)
+            local value = matrix_solver.access_simplex(simplex, equation, variable)
+            s = s..value
             s = s..string.rep(" ", matrix_solver.longest_in_column(simplex, variable) - string.len(tostring(col)) + 1)
         end
-
         s = s.."}\n"
     end
     s = s.."}"
@@ -1082,8 +1082,28 @@ end
 ---@param simplex SimplexTableau
 function matrix_solver.longest_in_column(simplex, column)
     local longest = 0
-    for _,row in pairs(simplex.internal) do
-        longest = math.max(longest, string.len(tostring(row[column])))
+    for row,_ in pairs(simplex.internal) do
+        local value = matrix_solver.access_simplex(simplex, row, column)
+        longest = math.max(longest, string.len(tostring(value)))
     end
     return longest
+end
+
+---@param simplex SimplexTableau
+---@param row integer
+---@param column integer
+---@return number
+function matrix_solver.access_simplex(simplex, row, column)
+    local value
+    local is_basic = simplex.is_basic_variable[column]
+    if is_basic then
+        if row == is_basic then
+            value = 1
+        else
+            value = 0
+        end
+    else
+        value = simplex.internal[row][column]
+    end
+    return value
 end
