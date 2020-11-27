@@ -183,7 +183,7 @@ styles["fp_button_fake_listbox_item_active"] = {
 }
 
 -- Generate smaller versions of flib's slot buttons (size 36)
-for _, color in pairs{"default", "green", "yellow", "red", "blue", "cyan"} do
+for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["flib_slot_button_" .. color .. "_small"] = {
         type = "button_style",
         parent = "flib_slot_button_" .. color,
