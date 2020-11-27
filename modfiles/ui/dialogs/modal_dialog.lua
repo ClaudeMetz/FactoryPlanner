@@ -163,9 +163,14 @@ function modal_dialog.exit(player, button_action)
     if ui_state.modal_dialog_type == nil then return end
 
     local modal_elements = ui_state.modal_data.modal_elements
-    -- Cancel action if it is not possible on this dialog, or the button is disabled
     local submit_button = modal_elements.dialog_submit_button
-    if button_action == "submit" and (not submit_button or not submit_button.enabled) then return end
+
+    -- Cancel action if it is not possible on this dialog, or the button is disabled
+    if button_action == "submit" and (not submit_button or not submit_button.enabled) then
+        -- Make sure to re-set the opened dialog in case this function was called from on_gui_closed
+        player.opened = modal_elements.modal_frame
+        return
+    end
 
     -- Call the closing function for this dialog, if it exists
     local closing_function = _G[ui_state.modal_dialog_type .. "_dialog"].close
@@ -262,10 +267,14 @@ modal_dialog.gui_events = {
         {
             name = "fp_frame_modal_dialog",
             handler = (function(player, _)
-                if data_util.get("flags", player).selection_mode then
+                local ui_state = data_util.get("ui_state", player)
+
+                if ui_state.flags.selection_mode then
                     modal_dialog.leave_selection_mode(player)
                 else
-                    modal_dialog.exit(player, "cancel")
+                    local submit_button = ui_state.modal_data.modal_elements.dialog_submit_button
+                    local action = (submit_button ~= nil) and "submit" or "cancel"
+                    modal_dialog.exit(player, action)
                 end
             end)
         }
