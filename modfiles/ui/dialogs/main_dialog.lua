@@ -162,7 +162,6 @@ main_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_toggle_interface",
-            timeout = 20,
             handler = main_dialog.toggle
         }
     }

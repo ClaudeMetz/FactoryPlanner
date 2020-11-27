@@ -349,7 +349,6 @@ subfactory_list.gui_events = {
         },
         {
             name = "fp_sprite-button_subfactory_add",
-            timeout = 20,
             handler = (function(player, _, _)
                 local modal_data = generate_subfactory_dialog_modal_data("new", nil)
                 modal_dialog.enter(player, {type="options", modal_data=modal_data})
@@ -357,7 +356,6 @@ subfactory_list.gui_events = {
         },
         {
             name = "fp_sprite-button_subfactory_edit",
-            timeout = 20,
             handler = edit_subfactory
         },
         {
