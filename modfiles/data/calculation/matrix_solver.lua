@@ -730,9 +730,13 @@ end
 
 --Simplex Algo starts here
 
+---@class int_pair
+---@field public index integer
+---@field public one_index integer
+
 ---@class SimplexTableau
 ---@field public internal number[][]
----@field public basic_variables integer[]
+---@field public basic_variables int_pair[]
 ---@field public is_basic_variable table<integer, integer>
 ---@field public raw_variable_count integer
 ---@field public variable_count integer
@@ -779,7 +783,7 @@ function matrix_solver.convert_matrix_to_simplex_table(matrix)
     result.basic_variables = {}
     result.is_basic_variable = {}
     for slack = 1, result.equation_count + 1 do
-        result.basic_variables[slack] = slack + result.raw_variable_count
+        result.basic_variables[slack] = {index = slack + result.raw_variable_count, int_index = slack}
         result.is_basic_variable[slack + result.raw_variable_count] = slack
     end
 
@@ -872,7 +876,7 @@ function WrapIntoSimplex(matrix)
     Simplex.basic_variables = {}
     Simplex.is_basic_variable = {}
     for i = 1, Simplex.equation_count do
-        Simplex.basic_variables[i] = i + Simplex.raw_variable_count
+        Simplex.basic_variables[i] = {index = i + Simplex.raw_variable_count, int_index = i}
         Simplex.is_basic_variable[i + Simplex.raw_variable_count] = i
     end
     
@@ -961,8 +965,8 @@ function matrix_solver.do_simplex_iteration(simplex)
     matrix_solver.gaussian_elimination(simplex, leaving_variable, entering_variable)
     
     local basic_index = simplex.basic_variables[leaving_variable]
-    simplex.is_basic_variable[basic_index] = nil
-    simplex.basic_variables[leaving_variable] = entering_variable
+    simplex.is_basic_variable[basic_index.index] = nil
+    simplex.basic_variables[leaving_variable] = {index = entering_variable, int_index = basic_index.int_index}
     simplex.is_basic_variable[entering_variable] = leaving_variable
     
     return false
@@ -975,7 +979,7 @@ function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
     if simplex.internal[row_index][column_index] == 0 then
         llog("HELP! division by zero in gaussion elimination")
     end
-    for equation,column_table in pairs(simplex.internal) do repeat
+    for equation,_ in pairs(simplex.internal) do repeat
         if equation == row_index then
             break
         end
