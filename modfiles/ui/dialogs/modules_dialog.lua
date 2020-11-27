@@ -282,7 +282,7 @@ function beacon_dialog.close(player, action)
 
         beacon.amount = tonumber(modal_elements.beacon_textfield.text)
         local total_amount = tonumber(modal_elements.beacon_total_textfield.text)
-        beacon.total_amount = (total_amount > 0) and total_amount or nil
+        beacon.total_amount = (total_amount and total_amount > 0) and total_amount or nil
 
         local module = generate_module_object(modal_elements)
         Beacon.set_module(beacon, module)
