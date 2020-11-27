@@ -7,31 +7,42 @@ options_dialog = {}
 -- ** CHOOSER **
 local function add_chooser_button(modal_elements, definition)
     local element_name = "fp_sprite-button_chooser_element_" .. definition.element_id
-    local style = (definition.selected) and "flib_slot_button_green" or "flib_slot_button_default"
+    local style, indication = "flib_slot_button_default", ""
 
-    local first_line = (definition.selected) and {"fp.annotated_title", definition.localised_name, {"fp.selected"}}
-      or definition.localised_name
+    if definition.selected then
+        style = "flib_slot_button_green"
+        indication = {"fp.indication", {"fp.selected"}}
+    elseif definition.preferred then
+        style = "flib_slot_button_pink"
+        indication = {"fp.indication", {"fp.preferred"}}
+    end
+
+    local first_line = {"fp.two_word_title", definition.localised_name, indication}
     local tooltip = {"", first_line, "\n", definition.amount_line, "\n\n", definition.tooltip_appendage}
 
     modal_elements.choices_table.add{type="sprite-button", name=element_name, style=style, tooltip=tooltip,
       sprite=definition.sprite, number=definition.button_number, mouse_button_filter={"left"}}
 end
 
-local function handler_chooser_button_click(player, element)
+local function handler_chooser_button_click(player, element, metadata)
     local element_id = string.gsub(element.name, "fp_sprite%-button_chooser_element_", "")
     local click_handler = data_util.get("modal_data", player).click_handler
 
     -- If no click handler is present, just abort mission
-    if click_handler then click_handler(player, element_id) end
+    if click_handler then click_handler(player, element_id, metadata) end
 
     modal_dialog.exit(player, "cancel")
 end
 
-chooser_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title},
-    create_content_frame = true,
-    subheader_text = modal_data.text
-} end)
+chooser_dialog.dialog_settings = (function(modal_data)
+    local info_tag = (modal_data.text_tooltip) and "[img=info]" or ""
+    return {
+        caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title},
+        create_content_frame = true,
+        subheader_text = {"fp.chooser_text", modal_data.text, info_tag},
+        subheader_tooltip = (modal_data.text_tooltip or "")
+    }
+end)
 
 -- Handles populating the chooser dialog
 function chooser_dialog.open(_, modal_data)
