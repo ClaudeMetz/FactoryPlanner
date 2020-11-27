@@ -116,7 +116,7 @@ function builders.machine(line, parent_flow, metadata)
         if machine_proto.module_limit == 0 then return end
 
         local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.margin = 4
+        separator.style.padding = {2, 0}
 
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
@@ -166,7 +166,8 @@ function builders.beacon(line, parent_flow, metadata)
 
         -- Module
         local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.padding = {4, 0}
+        separator.style.padding = {2, 0}
+        separator.style.margin = {0, -2}
         local module_proto, module_amount = beacon.module.proto, beacon.module.amount
 
         -- Can use simplified number line because module amount is an integer
