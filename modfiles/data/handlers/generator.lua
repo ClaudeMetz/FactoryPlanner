@@ -72,8 +72,9 @@ function generator.all_recipes()
 
 
     -- Determine all the items that can be inserted usefully into a rocket silo
+    local launch_products_filter = {{filter="has-rocket-launch-products"}}
     local rocket_silo_inputs = {}
-    for _, item in pairs(game.item_prototypes) do  -- (no filter to detect this possible)
+    for _, item in pairs(game.get_filtered_item_prototypes(launch_products_filter)) do
         if table_size(item.rocket_launch_products) > 0 then
             table.insert(rocket_silo_inputs, item)
         end
