@@ -90,9 +90,11 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
     local round_button_numbers = data_util.get("preferences", player).round_button_numbers
     local timescale = data_util.get("context", player).subfactory.timescale
 
+    local category_id = global.all_machines.map[line.recipe.proto.category]
+    local default_proto = prototyper.defaults.get(player, "machines", category_id)
     local current_proto = line.machine.proto
-    local button_definitions = {}
 
+    local button_definitions = {}
     for _, machine_proto in ipairs(applicable_prototypes) do
         local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
           line.recipe.proto, Line.get_total_effects(line, player))
@@ -113,7 +115,8 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
             localised_name = machine_proto.localised_name,
             amount_line = amount_line,
             tooltip_appendage = data_util.get_attributes("machines", machine_proto),
-            selected = (current_proto.id == machine_proto.id)
+            selected = (current_proto.id == machine_proto.id),
+            preferred = (default_proto.id == machine_proto.id)
         }
 
         table.insert(button_definitions, definition)
@@ -122,13 +125,16 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
     return button_definitions
 end
 
-local function apply_machine_choice(player, machine_id)
+local function apply_machine_choice(player, machine_id, metadata)
     local ui_state = data_util.get("ui_state", player)
     local machine = ui_state.modal_data.object
 
     local machine_category_id = global.all_machines.map[machine.proto.category]
     local machine_proto = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
     Line.change_machine(machine.parent, player, machine_proto, nil)
+
+    -- Optionally adjust the preferred prototype
+    if metadata.alt then prototyper.defaults.set(player, "machines", machine_proto.id, machine_category_id) end
 
     calculation.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
@@ -201,6 +207,7 @@ local function handle_machine_click(player, button, metadata)
             local modal_data = {
                 title = {"fp.pl_machine", 1},
                 text = {"fp.chooser_machine", line.recipe.proto.localised_name},
+                text_tooltip = {"fp.chooser_machine_tt"},
                 click_handler = apply_machine_choice,
                 button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
                 object = line.machine
@@ -406,7 +413,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
     return button_definitions
 end
 
-local function apply_fuel_choice(player, new_fuel_id_string)
+local function apply_fuel_choice(player, new_fuel_id_string, _)
     local ui_state = data_util.get("ui_state", player)
 
     local split_string = split_string(new_fuel_id_string, "_")

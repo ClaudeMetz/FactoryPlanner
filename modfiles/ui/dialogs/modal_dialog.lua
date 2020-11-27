@@ -56,7 +56,8 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             local subheader = content_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
             subheader.style.horizontally_stretchable = true
             subheader.style.padding = {12, 24, 12, 12}
-            local label = subheader.add{type="label", caption=dialog_settings.subheader_text}
+            local label = subheader.add{type="label", caption=dialog_settings.subheader_text,
+              tooltip=dialog_settings.subheader_tooltip}
             label.style.font = "default-semibold"
         end
 
