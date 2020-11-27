@@ -3,7 +3,7 @@ utility_dialog = {}
 -- ** LOCAL UTIL **
 -- Adds a box with title and optional scope switch for the given type of utility
 local function add_utility_box(player, ui_elements, type, show_tooltip, show_switch)
-    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    local bordered_frame = ui_elements.content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     ui_elements[type .. "_box"] = bordered_frame
 
     local flow_titlebar = bordered_frame.add{type="flow", direction="horizontal"}

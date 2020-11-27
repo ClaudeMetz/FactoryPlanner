@@ -7,7 +7,7 @@ function tab_definitions.interface(player, tab, tab_pane)
     tab.caption = {"fp.interface"}
 
     local function add_base_frame(name)
-        local frame = tab_pane.add{type="frame", style="bordered_frame", direction="vertical"}
+        local frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch", direction="vertical"}
         frame.style.horizontally_stretchable = true
 
         frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}, style="caption_label"}
@@ -46,7 +46,7 @@ end
 function tab_definitions.usage(_, tab, tab_pane)
     tab.caption = {"fp.usage"}
 
-    local bordered_frame = tab_pane.add{type="frame", style="bordered_frame"}
+    local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
     local label_usage = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
     label_usage.style.single_line = false
     label_usage.style.padding = 2
@@ -58,7 +58,7 @@ function tab_definitions.pro_tips(_, tab, tab_pane)
     local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
       "recursive_subfloors", "views", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
     for _, name in ipairs(protip_names) do
-        local bordered_frame = tab_pane.add{type="frame", style="bordered_frame"}
+        local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
         local label = bordered_frame.add{type="label", caption={"fp.pro_" .. name}}
         label.style.single_line = false
     end
