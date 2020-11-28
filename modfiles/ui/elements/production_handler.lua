@@ -1,6 +1,17 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
+-- Fills the cursor with a blueprint for the given entity, which is either a machine or a beacon
+local function set_cursor_blueprint(player, entity_name, module_list, recipe_name)
+    main_dialog.toggle(player)
+    player.clear_cursor()  -- Move the cursor's content back into inventory (I hope)
+
+    player.cursor_stack.set_stack{name="fp_cursor_blueprint"}
+    player.cursor_stack.set_blueprint_entities{{entity_number=1, name=entity_name, position={0, 0},
+      items=module_list, recipe=recipe_name}}
+end
+
+
 local function handle_toggle_change(player, checkbox)
     local line_id = tonumber(string.match(checkbox.name, "%d+"))
     local context = data_util.get("context", player)
@@ -178,21 +189,31 @@ local function handle_machine_click(player, button, metadata)
     local line = Floor.get(context.floor, "Line", line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if metadata.direction then  -- up/downgrades the machine
+    if metadata.direction then
         Line.change_machine(line, player, nil, metadata.direction)
 
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
-    elseif metadata.alt then  -- resets this machine to its default state
-        Line.change_machine(line, player, nil, nil)
-        line.machine.limit = nil
-        line.machine.hard_limit = false
+    elseif metadata.alt then
+        if metadata.click == "right" then  -- resets this machine to its default state
+            Line.change_machine(line, player, nil, nil)
+            line.machine.limit = nil
+            line.machine.hard_limit = false
 
-        calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+            calculation.update(player, context.subfactory)
+            main_dialog.refresh(player, "subfactory")
 
-    elseif metadata.click == "left" then  -- opens the machine chooser
+        elseif metadata.click == "left" then
+            local module_list = {}
+            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+                module_list[module.proto.name] = module.amount
+            end
+
+            set_cursor_blueprint(player, line.machine.proto.name, module_list, line.recipe.proto.name)
+        end
+
+    elseif metadata.click == "left" then
         local machine_category_id = global.all_machines.map[line.machine.proto.category]
         local category_prototypes = global.all_machines.categories[machine_category_id].machines
 
@@ -217,7 +238,7 @@ local function handle_machine_click(player, button, metadata)
             title_bar.enqueue_message(player, {"fp.error_no_other_machine_choice"}, "error", 1, true)
         end
 
-    elseif metadata.click == "right" then  -- open the machine limit options
+    elseif metadata.click == "right" then
         local modal_data = {
             title = {"fp.options_machine_title"},
             text = {"fp.options_machine_text", line.machine.proto.localised_name},
@@ -271,14 +292,18 @@ end
 
 local function handle_beacon_click(player, button, metadata)
     if not ui_util.check_archive_status(player) then return end
-    if metadata.alt then return end  -- not implemented for beacons
 
     local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if metadata.click == "left" or metadata.action == "edit" then
+    if metadata.alt and metadata.click == "left" then
+        local beacon_module = line.beacon.module
+        local module_list = {[beacon_module.proto.name] = beacon_module.amount}
+        set_cursor_blueprint(player, line.beacon.proto.name, module_list, nil)
+
+    elseif metadata.click == "left" or metadata.action == "edit" then
         modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
 
     elseif metadata.action == "delete" then
@@ -463,6 +488,7 @@ local function handle_fuel_click(player, button, metadata)
         modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
     end
 end
+
 
 -- ** EVENTS **
 production_handler.gui_events = {
