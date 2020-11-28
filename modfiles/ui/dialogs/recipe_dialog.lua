@@ -245,7 +245,7 @@ local function apply_recipe_filter(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
-    local any_recipe_visible, desired_scroll_pane_height = false, 72+24
+    local any_recipe_visible, desired_scroll_pane_height = false, 64+24
     for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
