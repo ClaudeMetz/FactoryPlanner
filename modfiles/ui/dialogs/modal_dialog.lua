@@ -173,10 +173,12 @@ function modal_dialog.exit(player, button_action)
     local modal_elements = ui_state.modal_data.modal_elements
     local submit_button = modal_elements.dialog_submit_button
 
-    -- Cancel action if it is not possible on this dialog, or the button is disabled
-    if button_action == "submit" and (not submit_button or not submit_button.enabled) then
-        -- Make sure to re-set the opened dialog in case this function was called from on_gui_closed
-        player.opened = modal_elements.modal_frame
+    -- If no action is give, submit if possible, otherwise close the dialog
+    if button_action == nil then
+        button_action = (submit_button and submit_button.enabled)and "submit" or "cancel"
+
+    -- Stop exiting if it is not possible on this dialog, or the button is disabled
+    elseif button_action == "submit" and (not submit_button or not submit_button.enabled) then
         return
     end
 
@@ -188,7 +190,7 @@ function modal_dialog.exit(player, button_action)
     ui_state.modal_data = nil
 
     modal_elements.modal_frame.destroy()
-    modal_elements.dimming_frame.destroy()
+    if modal_elements.dimming_frame then modal_elements.dimming_frame.destroy() end
 
     player.opened = ui_state.main_elements.main_frame
     title_bar.refresh_message(player)
@@ -288,9 +290,8 @@ modal_dialog.gui_events = {
                 if ui_state.flags.selection_mode then
                     modal_dialog.leave_selection_mode(player)
                 else
-                    local submit_button = ui_state.modal_data.modal_elements.dialog_submit_button
-                    local action = (submit_button ~= nil) and "submit" or "cancel"
-                    modal_dialog.exit(player, action)
+                    -- Calling this without an action will make it choose the appropriate one
+                    modal_dialog.exit(player, nil)
                 end
             end)
         }
