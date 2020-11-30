@@ -208,6 +208,7 @@ end
 -- ** IMPORT DIALOG **
 import_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
+    subheader_text = {"fp.import_instruction_1"},
     create_content_frame = true,
     disable_scroll_pane = true,
     show_submit_button = true
@@ -216,9 +217,6 @@ import_dialog.dialog_settings = (function(_) return {
 function import_dialog.open(_, modal_data)
     local modal_elements = modal_data.modal_elements
     set_dialog_submit_button(modal_elements, false, "import_string")
-
-    local label_text = modal_elements.content_frame.add{type="label", caption={"fp.import_instruction_1"}}
-    label_text.style.bottom_margin = 4
 
     add_textfield_and_button(modal_elements, "import", false, false)
     ui_util.select_all(modal_elements.import_textfield)
@@ -275,6 +273,8 @@ import_dialog.gui_events = {
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
     caption = {"fp.two_word_title", {"fp.export"}, {"fp.pl_subfactory", 1}},
+    subheader_text = {"fp.export_instruction"},
+    subheader_tooltip = {"fp.export_instruction_tt"},
     create_content_frame = true,
     disable_scroll_pane = true
 } end)
@@ -282,10 +282,6 @@ export_dialog.dialog_settings = (function(_) return {
 function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
     local modal_elements = modal_data.modal_elements
-
-    local label_text = modal_elements.content_frame.add{type="label", caption={"fp.export_instruction_1"},
-      tooltip={"fp.export_instruction_1_tt"}}
-    label_text.style.bottom_margin = 4
 
     setup_subfactories_table(modal_elements, true)
 

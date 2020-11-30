@@ -38,9 +38,9 @@ chooser_dialog.dialog_settings = (function(modal_data)
     local info_tag = (modal_data.text_tooltip) and "[img=info]" or ""
     return {
         caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title},
-        create_content_frame = true,
         subheader_text = {"fp.chooser_text", modal_data.text, info_tag},
-        subheader_tooltip = (modal_data.text_tooltip or "")
+        subheader_tooltip = (modal_data.text_tooltip or ""),
+        create_content_frame = true
     }
 end)
 
