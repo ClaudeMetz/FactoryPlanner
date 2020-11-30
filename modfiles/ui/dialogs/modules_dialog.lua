@@ -186,13 +186,18 @@ end
 
 
 -- ** MODULE **
-module_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_module", 1}},
-    create_content_frame = true,
-    force_auto_center = true,
-    show_submit_button = true,
-    show_delete_button = (modal_data.object ~= nil)
-} end)
+module_dialog.dialog_settings = (function(modal_data)
+    local action = (modal_data.object) and "edit" or "add"
+    local machine_name = modal_data.machine.proto.localised_name
+    return {
+        caption = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_module", 1}},
+        subheader_text = {"fp.modules_instruction_" .. action, {"fp.pl_module", 1}, machine_name},
+        create_content_frame = true,
+        force_auto_center = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.object ~= nil)
+    }
+end)
 
 function module_dialog.open(_, modal_data)
     local module, machine = modal_data.object, modal_data.machine
@@ -231,13 +236,18 @@ end
 
 
 -- ** BEACON **
-beacon_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_beacon", 1}},
-    create_content_frame = true,
-    force_auto_center = true,
-    show_submit_button = true,
-    show_delete_button = (modal_data.object ~= nil)
-} end)
+beacon_dialog.dialog_settings = (function(modal_data)
+    local action = (modal_data.object) and "edit" or "add"
+    local machine_name = modal_data.line.machine.proto.localised_name
+    return {
+        caption = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_beacon", 1}},
+        subheader_text = {("fp.modules_instruction_" .. action), {"fp.pl_beacon", 1}, machine_name},
+        create_content_frame = true,
+        force_auto_center = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.object ~= nil)
+    }
+end)
 
 function beacon_dialog.open(player, modal_data)
     local beacon, line = modal_data.object, modal_data.line
