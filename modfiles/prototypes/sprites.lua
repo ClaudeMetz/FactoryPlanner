@@ -1,6 +1,13 @@
 data:extend({
     {
         type = "sprite",
+        name = "fp_semitransparent_pixel",
+        filename = "__factoryplanner__/graphics/semitransparent_pixel.png",
+        size = 1,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
         name = "fp_zone_selection",
         filename = "__factoryplanner__/graphics/zone_selection.png",
         size = 32,
