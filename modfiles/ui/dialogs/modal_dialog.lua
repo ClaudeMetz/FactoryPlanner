@@ -154,7 +154,7 @@ function modal_dialog.enter(player, dialog_settings)
 
         local dimensions = ui_state.main_dialog_dimensions
         dimming_frame.style.size = {dimensions.width, dimensions.height}
-        ui_util.properly_center_frame(player, dimming_frame, dimensions.width, dimensions.height)
+        dimming_frame.location = ui_state.main_elements.main_frame.location
 
         frame_modal_dialog.bring_to_front()
         player.opened = frame_modal_dialog
