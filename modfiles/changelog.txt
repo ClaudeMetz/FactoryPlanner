@@ -11,6 +11,7 @@ Date: 00. 00. 0000
     - The calculation model now considers the base energy drain that most electrical machines have
     - Setting recipe item amounts directly now behaves more intuitively
     - Hitting the 'E' keyboard shortcut now confirms the dialog that is open if possible, mirroring the vanilla behavior introduced with 1.1
+    - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)
     - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth keeping around.
     - Increased the maximum length of subfactory names to 256 characters, while accomodating for longer names in the UI
     - Various minor UI improvements unrelated to the main interface redesign
