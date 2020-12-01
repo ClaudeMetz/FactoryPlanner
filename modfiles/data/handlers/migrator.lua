@@ -3,6 +3,9 @@
 
 migrator = {}
 
+-- Factory exchange strings from versions before this can no longer be imported
+local last_migratable_version = "0.18.0"
+
 -- Returns a table containing all existing migrations in order
 local migration_masterlist = {
     [1] = {version="0.18.20", migration=require("data.migrations.migration_0_18_20")},
@@ -98,8 +101,9 @@ end
 
 -- Applies any appropriate migrations to the given export_table's subfactories
 function migrator.migrate_export_table(export_table)
-    local migrations = determine_migrations(export_table.mod_version)
+    if not compare_versions(last_migratable_version, export_table.mod_version) then error() end
 
+    local migrations = determine_migrations(export_table.mod_version)
     for _, packed_subfactory in pairs(export_table.subfactories) do
         -- This migration type won't need the player argument, and removing it allows
         -- us to run imports without having a player attached
