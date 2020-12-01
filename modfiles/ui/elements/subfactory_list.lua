@@ -343,7 +343,7 @@ subfactory_list.gui_events = {
 
                 -- This relies on the porting-functionality. It basically exports and
                 -- immediately imports the subfactory, effectively duplicating it
-                local export_string = data_util.porter.get_export_string(player, {subfactory})
+                local export_string = data_util.porter.get_export_string({subfactory})
                 data_util.add_subfactories_by_string(player, export_string, true)
             end)
         },

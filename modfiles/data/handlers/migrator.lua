@@ -97,11 +97,13 @@ function migrator.migrate_player_table(player)
 end
 
 -- Applies any appropriate migrations to the given export_table's subfactories
-function migrator.migrate_export_table(export_table, player)
+function migrator.migrate_export_table(export_table)
     local migrations = determine_migrations(export_table.mod_version)
 
     for _, packed_subfactory in pairs(export_table.subfactories) do
-        apply_migrations(migrations, "packed_subfactory", packed_subfactory, player)
+        -- This migration type won't need the player argument, and removing it allows
+        -- us to run imports without having a player attached
+        apply_migrations(migrations, "packed_subfactory", packed_subfactory, nil)
     end
     export_table.mod_version = global.mod_version
 end
