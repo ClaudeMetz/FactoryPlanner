@@ -176,8 +176,8 @@ function calculation.update(player, subfactory)
 end
 
 function calculation.start_matrix_solver(player, subfactory)
-    local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
-    if matrix_modal_data.num_rows ~= matrix_modal_data.num_cols then
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory)
+    if matrix_metadata.num_rows ~= matrix_metadata.num_cols then
         modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}, allow_queueing=true})
     else
         local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
