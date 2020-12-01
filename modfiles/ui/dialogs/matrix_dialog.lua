@@ -37,7 +37,7 @@ local function swap_item_category(player, element)
 
     -- update the free items here, set the constrained items based on linear dependence data
     if type == "free" then
-        -- TODO: seems a little hacky to assume the gui's list has the same order as the subfactory?
+        -- note this assumes the gui's list has the same order as the subfactory
         table.remove(subfactory.matrix_free_items, proto_index)
     else -- "constrained"
         local item_proto = modal_data["constrained_items"][proto_index]

@@ -397,8 +397,6 @@ function matrix_solver.consolidate(aggregate)
             end
         end
     end
-    -- compare_classes("Fuel", "Product")
-    -- compare_classes("Fuel", "Byproduct")
     compare_classes("Ingredient", "Product")
     compare_classes("Ingredient", "Byproduct")
 end
@@ -449,12 +447,6 @@ function matrix_solver.get_lines_metadata(lines, player_index)
                     line_inputs[item_key] = true
                 end
             end
-            -- for item_type_name, item_data in pairs(line_aggregate.Fuel) do
-            --     for item_name, _ in pairs(item_data) do
-            --         local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-            --         line_inputs[item_key] = true
-            --     end
-            -- end
             for item_type_name, item_data in pairs(line_aggregate.Product) do
                 for item_name, _ in pairs(item_data) do
                     local item_key = matrix_solver.get_item_key(item_type_name, item_name)
@@ -523,14 +515,6 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
                     matrix[row_num][col_num] = matrix[row_num][col_num] - amount
                 end
             end
-
-            -- for item_type_name, items in pairs(line_aggregate.Fuel) do
-            --     for item_name, amount in pairs(items) do
-            --         local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-            --         local row_num = rows.map[item_key]
-            --         matrix[row_num][col_num] = matrix[row_num][col_num] - amount
-            --     end
-            -- end
         end
     end
 
@@ -609,8 +593,6 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     elseif line_data.machine_proto.energy_type == "void" then
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
-
-    -- TODO: (possibly) Include beacon energy consumption (?)
 
     line_aggregate.energy_consumption = energy_consumption
     line_aggregate.pollution = pollution

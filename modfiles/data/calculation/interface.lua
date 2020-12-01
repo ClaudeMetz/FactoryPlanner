@@ -161,16 +161,13 @@ function calculation.update(player, subfactory)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        --TODO: eventually revert to solver.update_subfactory
         if subfactory.matrix_free_items then
             calculation.start_matrix_solver(player, subfactory)
         else
             local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
             sequential_solver.update_subfactory(subfactory_data)
         end
-        --local solver = (subfactory.matrix_free_items) and matrix_solver or sequential_solver
 
-        --solver.update_subfactory(subfactory_data)
         player_table.active_subfactory = nil
     end
 end
