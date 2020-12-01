@@ -149,7 +149,7 @@ local function import_subfactories(player)
     local textfield_export_string = modal_elements.import_textfield
 
     -- The imported subfactories will be temporarily contained in a factory object
-    local import_factory, error = data_util.porter.get_subfactories(player, textfield_export_string.text)
+    local import_factory, error = data_util.porter.get_subfactories(textfield_export_string.text)
 
     local function add_into_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
@@ -198,7 +198,7 @@ local function export_subfactories(player)
             table.insert(subfactories_to_export, table_row.subfactory)
         end
     end
-    local export_string = data_util.porter.get_export_string(player, subfactories_to_export)
+    local export_string = data_util.porter.get_export_string(subfactories_to_export)
 
     modal_elements.export_textfield.text = export_string
     ui_util.select_all(modal_elements.export_textfield)
