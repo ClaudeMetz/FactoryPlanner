@@ -1,11 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
-  Changes:
-    -
   Bugfixes:
+    - Fixed a crash in certain modded situations
     - Fixed a horrible styling issue that made the pro tips boxes not align properly
 
 ---------------------------------------------------------------------------------------------------
