@@ -141,7 +141,7 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
-function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
+function matrix_solver.get_matrix_solver_metadata(player, subfactory)
     local eliminated_items = {}
     local free_items = {}
     local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
