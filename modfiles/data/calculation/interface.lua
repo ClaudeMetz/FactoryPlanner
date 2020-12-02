@@ -173,7 +173,8 @@ function calculation.update(player, subfactory)
 end
 
 function calculation.start_matrix_solver(player, subfactory)
-    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory)
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
 
     if matrix_metadata.num_rows == 0 then return end -- do nothing
 
@@ -182,7 +183,6 @@ function calculation.start_matrix_solver(player, subfactory)
         return
     end
 
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
     matrix_solver.run_matrix_solver(subfactory_data, false)
 end
 

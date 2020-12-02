@@ -141,10 +141,9 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
-function matrix_solver.get_matrix_solver_metadata(player, subfactory)
+function matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
     local eliminated_items = {}
     local free_items = {}
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local raw_inputs = subfactory_metadata.raw_inputs
@@ -153,11 +152,11 @@ function matrix_solver.get_matrix_solver_metadata(player, subfactory)
     local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
     local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = matrix_solver.set_diff(all_items, free_variables)
-    if subfactory.matrix_free_items == nil then
+    if subfactory_data.matrix_free_items == nil then
         eliminated_items = intermediate_items
     else
         -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
-        local free_items_list = subfactory.matrix_free_items
+        local free_items_list = subfactory_data.matrix_free_items
         for _, free_item in ipairs(free_items_list) do
             free_items[free_item["identifier"]] = true
         end
@@ -232,7 +231,10 @@ end
 
 
 function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
-    local matrix_free_items = subfactory_data.matrix_free_items
+    -- run through get_matrix_solver_metadata to check against recipe changes
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
+    matrix_free_items = matrix_metadata.free_items
+
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local rows = matrix_solver.get_mapping_struct(all_items)
