@@ -91,10 +91,16 @@ function matrix_dialog.open(player, modal_data)
         return
     end
 
-    modal_data.constrained_items = linear_dependence_data.allowed_free_items --todo: rename constrained_items to something like allowed_free_items
+    modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
 
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
+
+    -- user doesn't need select any free items, just run the matrix solver
+    if num_needed_free_items == 0 then
+        modal_dialog.exit(player, "submit")
+        return true
+    end
 
     create_item_category(modal_data, "constrained", num_needed_free_items)
     create_item_category(modal_data, "free")
