@@ -1,6 +1,17 @@
 matrix_dialog = {}
 
 -- ** LOCAL UTIL **
+local function update_dialog_submit_button(modal_data, matrix_metadata)
+    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
+    local curr_free_items = #modal_data["free_items"]
+
+    local message = nil
+    if num_needed_free_items > curr_free_items then
+        message = {"fp.matrix_constrained_items", num_needed_free_items} -- "choose X free items"
+    end
+    modal_dialog.set_submit_button_state(modal_data.modal_elements, (message == nil), message)
+end
+
 local function refresh_item_category(modal_data, type)
     local table_items = modal_data.modal_elements[type .. "_table"]
     table_items.clear()
@@ -51,6 +62,7 @@ local function swap_item_category(player, element)
 
     refresh_item_category(modal_data, "constrained")
     refresh_item_category(modal_data, "free")
+    update_dialog_submit_button(modal_data, matrix_metadata)
 end
 
 
@@ -86,6 +98,7 @@ function matrix_dialog.open(player, modal_data)
 
     create_item_category(modal_data, "constrained", num_needed_free_items)
     create_item_category(modal_data, "free")
+    update_dialog_submit_button(modal_data, matrix_metadata)
 end
 
 function matrix_dialog.close(player, action)
