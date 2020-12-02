@@ -174,12 +174,16 @@ end
 
 function calculation.start_matrix_solver(player, subfactory)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory)
+
+    if matrix_metadata.num_rows == 0 then return end -- do nothing
+
     if matrix_metadata.num_rows ~= matrix_metadata.num_cols then
         modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}, allow_queueing=true})
-    else
-        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        matrix_solver.run_matrix_solver(subfactory_data, false)
+        return
     end
+
+    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    matrix_solver.run_matrix_solver(subfactory_data, false)
 end
 
 -- Updates the given subfactory's ingredient satisfactions
