@@ -160,7 +160,7 @@ local function handle_subfactory_click(player, button, metadata)
             main_dialog.refresh(player, {"subfactory_list"})
         else
             local direction_string = (metadata.direction == "negative") and {"fp.up"} or {"fp.down"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_subfactory", 1}, direction_string}
             title_bar.enqueue_message(player, message, "error", 1, true)
         end
     else

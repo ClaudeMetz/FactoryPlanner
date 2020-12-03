@@ -224,7 +224,9 @@ local function handle_machine_click(player, button, metadata)
             end
         end
 
-        if #applicable_prototypes > 1 then  -- changing machines only makes sense if there is something to change to
+        if #applicable_prototypes <= 1 then  -- changing machines only makes sense if there is something to change to
+            title_bar.enqueue_message(player, {"fp.warning_no_other_machine_choice"}, "warning", 1, true)
+        else
             local modal_data = {
                 title = {"fp.pl_machine", 1},
                 text = {"fp.chooser_machine", line.recipe.proto.localised_name},
@@ -234,8 +236,6 @@ local function handle_machine_click(player, button, metadata)
                 object = line.machine
             }
             modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
-        else
-            title_bar.enqueue_message(player, {"fp.error_no_other_machine_choice"}, "error", 1, true)
         end
 
     elseif metadata.click == "right" then
@@ -360,7 +360,7 @@ local function handle_item_click(player, button, metadata)
     elseif metadata.click == "left" and item.proto.type ~= "entity" then  -- Handles the specific type of item actions
         if class == "Product" then -- Set the priority product
             if line.Product.count < 2 then
-                title_bar.enqueue_message(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
+                title_bar.enqueue_message(player, {"fp.warning_no_prioritizing_single_product"}, "warning", 1, true)
             else
                 -- Remove the priority_product if the already selected one is clicked
                 line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
