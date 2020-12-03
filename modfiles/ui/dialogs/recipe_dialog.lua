@@ -79,14 +79,11 @@ local function run_preliminary_checks(player, product, production_type)
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
-        return nil, error, show
+        return nil, error, nil
 
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
-        if not chosen_recipe.enabled then  -- Show warning if adding unresearched recipe
-            show.message={text={"fp.warning_disabled_recipe"}, type="warning"}
-        end
-        return chosen_recipe.proto.id, nil, show
+        return chosen_recipe.proto.id, nil, nil
 
     else  -- 2+ relevant recipes
         return relevant_recipes, nil, show
@@ -96,11 +93,12 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id)
     local ui_state = data_util.get("ui_state", player)
+    local recipe = Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type)
+    local line = Line.init(recipe)
 
-    local line = Line.init(Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
     -- If changing the machine fails, this line is invalid
     if Line.change_machine(line, player, nil, nil) == false then
-        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
+        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
 
     else
         local add_after_position = ui_state.modal_data.add_after_position
@@ -111,9 +109,13 @@ local function attempt_adding_line(player, recipe_id)
             Floor.insert_at(ui_state.context.floor, (add_after_position + 1), line)
         end
 
-        local message = ui_state.modal_data.message
         local preferences = data_util.get("preferences", player)
         local mb_defaults = preferences.mb_defaults
+        local message = nil
+
+        if not (recipe.proto.custom or player.force.recipes[recipe.proto.name].enabled) then
+            message = {text={"fp.warning_recipe_disabled"}, type="warning"}
+        end
 
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.machine
@@ -150,9 +152,10 @@ local function attempt_adding_line(player, recipe_id)
             end
         end
 
-        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 2) end
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
+
+        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
     end
 
     modal_dialog.exit(player, "cancel")
@@ -304,14 +307,13 @@ function recipe_dialog.open(player, modal_data)
     local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
 
     if error ~= nil then
-        title_bar.enqueue_message(player, error, "error", 1)
+        title_bar.enqueue_message(player, error, "error", 1, false)
         modal_dialog.exit(player, "cancel")
         return true  -- let the modal dialog know that it was closed immediately
 
     else
         -- If 1 relevant recipe is found, add it immediately and exit dialog
         if type(result) == "number" then  -- the given number being the recipe_id
-            modal_data.message = show.message
             attempt_adding_line(player, result)
             return true  -- idem above
 
