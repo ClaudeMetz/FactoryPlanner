@@ -333,7 +333,7 @@ function generator_util.determine_launch_sequence_time(silo_proto)
         rocket_ready = 14,  -- estimate for satellite insertion delay
         launch_started = silo_proto.launch_wait_time + 1,
         engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
-        -- In lua, math.log(x) calculates the natural logarithm
+        -- math.log(x) calculates the natural logarithm
         rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
           / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
         lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
