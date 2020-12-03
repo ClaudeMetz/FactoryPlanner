@@ -5,15 +5,81 @@ Date: 00. 00. 0000
     - Redesigned the main interface. This means that some things are in different spots than they used to be, and some niche features got lost along the way. I'm sorry about those few that went missing, but I needed to get this done in a reasonable amount of time. If there is anything specific you're dearly missing, please let me know on the mod portal or on Discord.
     - Added an optional production column to quickly disable certain recipes by checkbox
     - Added a search bar to the recipe picker
+    - You can now alt-click any machine or beacon in your production line to put it into your cursor as a blueprint for easy stamping
+    - You can now also alt-click a machine when changing it to implicitly set it to the preferred one for its category
   Changes:
     - The calculation model now considers the base energy drain that most electrical machines have
     - Setting recipe item amounts directly now behaves more intuitively
+    - Hitting the 'E' keyboard shortcut now confirms the dialog that is open if possible, mirroring the vanilla behavior introduced with 1.1
+    - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)
     - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth keeping around.
     - Increased the maximum length of subfactory names to 256 characters, while accomodating for longer names in the UI
     - Various minor UI improvements unrelated to the main interface redesign
-    - Updated to a newer version of flib (v0.4.1)
+    - Removed migrations for versions before 0.18 since the game doesn't load those saves anymore
+    - Updated to a newer version of flib (v0.6.0)
   Bugfixes:
     - Fixed that changing the limit on a machine would reset the 'hard limit'-switch
+    - Finally found a workaround for the issue that clicks would go 'through' the main dialog if a modal one was open
+    - Fixed the beacon tooltip in preferences displaying incorrect energy consumption values
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.13
+Date: 16. 11. 2020
+  Bugfixes:
+    - Fixed a crash with Space Exploration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.12
+Date: 16. 11. 2020
+  Bugfixes:
+    - Added a couple missing locale strings
+    - Fixed an issue where the beacon total would not be shown when editing a beacon
+    - Fixed an issue where the total machine count for a subfloor would be incorrect if that subfloor had itself a subfloor
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.11
+Date: 09. 10. 2020
+  Bugfixes:
+    - Fixed a crash when trying to load a map with the 'Nauvis Melange' mod
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.10
+Date: 05. 10. 2020
+  Features:
+    - Added a secondary default module that will try to insert itself if the primary one is not compatible with the new machine/recipe (thanks scottmsul!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.9
+Date: 01. 10. 2020
+  Bugfixes:
+    - Fixed a crash related to the beacon dialog in certain modded situations
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.8
+Date: 28. 09. 2020
+  Bugfixes:
+    - Fixed that the preference for the default beacon amount would not be saved
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.7
+Date: 16. 09. 2020
+  Bugfixes:
+    - Hotfixed a crash on load with the newest version of Space Exploration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.6
+Date: 07. 09. 2020
+  Bugfixes:
+    - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
+    - Fixed that having signal-type icons on your subfactories could lead to crashes
+    - Fixed that you couldn't remove subfactory icons
+    - Fixed that heavily beaconed machine amounts were not calculated accurately (thanks talshorer!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.5
+Date: 27. 08. 2020
+  Bugfixes:
+    - Fixed a crash when attempting to change fuels in certain modded situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4

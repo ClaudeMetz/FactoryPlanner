@@ -94,6 +94,7 @@ local function generate_floor_data(player, subfactory, floor)
     return floor_data
 end
 
+
 -- Replaces the items of the given object (of given class) using the given result
 local function update_object_items(object, item_class, item_results)
     local object_class = _G[object.class]
@@ -164,7 +165,7 @@ function calculation.update(player, subfactory)
         if subfactory.matrix_free_items then
             calculation.start_matrix_solver(player, subfactory)
         else
-            local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+            local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
             sequential_solver.update_subfactory(subfactory_data)
         end
 
@@ -173,7 +174,7 @@ function calculation.update(player, subfactory)
 end
 
 function calculation.start_matrix_solver(player, subfactory)
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
 
     if matrix_metadata.num_rows == 0 then return end -- do nothing
@@ -193,8 +194,32 @@ end
 
 
 -- ** INTERFACE **
+
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.get_subfactory_data(player, subfactory)
+calculation.interface.generate_subfactory_data(player, subfactory)
+    local subfactory_data = {
+        player_index = player.index,
+        top_level_products = {},
+        top_floor = nil,
+        matrix_free_items = subfactory.matrix_free_items
+    }
+
+    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
+        local product_data = {
+            proto = product.proto,  -- reference
+            amount = Item.required_amount(product)
+        }
+        table.insert(subfactory_data.top_level_products, product_data)
+    end
+
+    local top_floor = Subfactory.get(subfactory, "Floor", 1)
+    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
+
+    return subfactory_data
+end
+
+-- Returns a table containing all the data needed to run the calculations for the given subfactory
+function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
@@ -282,11 +307,13 @@ function calculation.util.determine_machine_count(crafts_per_tick, production_ra
         launch_delay = launch_sequence_time * production_ratio
     end
 
-    return ((production_ratio / crafts_per_tick) / timescale) + launch_delay
+    return ((production_ratio / math.min(crafts_per_tick, 60)) / timescale) + launch_delay
 end
 
 -- Calculates the production ratio from a given machine limit
 function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, is_rocket_silo)
+    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+
     -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
     if is_rocket_silo then  -- Formula reduced by Wolfram Alpha
         return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)

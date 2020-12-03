@@ -55,7 +55,7 @@ local function swap_item_category(player, element)
         table.insert(subfactory.matrix_free_items, item_proto)
     end
 
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory_data, matrix_metadata)
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
@@ -70,13 +70,14 @@ end
 -- ** TOP LEVEL **
 matrix_dialog.dialog_settings = (function(_) return {
     caption = {"fp.matrix_solver"},
-    create_content_frame = true
+    create_content_frame = true,
+    show_submit_button = true
 } end)
 
 function matrix_dialog.open(player, modal_data)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
+    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
     if #subfactory_data.top_floor.lines == 0 then
         modal_dialog.exit(player, "cancel")
         return true

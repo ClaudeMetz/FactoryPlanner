@@ -4,10 +4,10 @@ modules_dialog = {}  -- table containing functionality shared between both dialo
 
 -- ** LOCAL UTIL **
 local function generate_module_object(modal_elements)
-    local module_choice = modal_elements.module_choice_button.elem_value
-    if module_choice then
+    local choice_button = modal_elements.module_choice_button
+    if choice_button and choice_button.valid and choice_button.elem_value then
         local module_amount = tonumber(modal_elements.module_textfield.text)
-        local module_proto = MODULE_NAME_MAP[module_choice]
+        local module_proto = MODULE_NAME_MAP[choice_button.elem_value]
         return Module.init_by_proto(module_proto, module_amount)
     else
         return nil
@@ -26,6 +26,7 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
         modal_elements.no_modules_label = flow_module.add{type="label", caption={"fp.error_message",
           {"fp.module_issue_none_compatible"}}}
         modal_elements.no_modules_label.style.font = "heading-2"
+        modal_elements.no_modules_label.style.padding = 2
         return
     else
         modal_elements.no_modules_label = nil
@@ -53,7 +54,8 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     slider.style.margin = {0, 6}
     modal_elements["module_slider"] = slider
 
-    local textfield_slider = flow_module.add{type="textfield", name="fp_textfield_module_amount", text=slider_value}
+    local textfield_slider = flow_module.add{type="textfield", name="fp_textfield_module_amount",
+      text=tostring(slider_value)}
     ui_util.setup_numeric_textfield(textfield_slider, false, false)
     textfield_slider.style.width = 40
     modal_elements["module_textfield"] = textfield_slider
@@ -82,7 +84,8 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
 
-    local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon.amount}
+    local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
+    local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon_amount}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     ui_util.select_all(textfield_amount)
     textfield_amount.style.width = 40
@@ -92,7 +95,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"}}
 
     local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
-      text=beacon.total_amount}
+      text=tostring(beacon.total_amount or "")}
     ui_util.setup_numeric_textfield(textfield_total, true, false)
     textfield_total.style.width = 40
     modal_elements["beacon_total_textfield"] = textfield_total
@@ -134,7 +137,7 @@ local function handle_module_textfield_change(player, element)
     local slider_maximum = module_slider.get_slider_maximum()
     local new_number = math.min((tonumber(element.text) or 0), slider_maximum)
 
-    element.text = new_number
+    element.text = tostring(new_number)
     module_slider.slider_value = new_number
 
     update_dialog_submit_button(modal_elements)
@@ -175,7 +178,7 @@ end
 
 local function handle_beacon_selection(player, entities)
     local modal_elements = data_util.get("modal_elements", player)
-    modal_elements.beacon_total_textfield.text = table_size(entities)
+    modal_elements.beacon_total_textfield.text = tostring(table_size(entities))
     modal_elements.beacon_total_textfield.focus()
 
     modal_dialog.leave_selection_mode(player)
@@ -183,11 +186,18 @@ end
 
 
 -- ** MODULE **
-module_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_module", 1}},
-    create_content_frame = true,
-    force_auto_center = true
-} end)
+module_dialog.dialog_settings = (function(modal_data)
+    local action = (modal_data.object) and "edit" or "add"
+    local machine_name = modal_data.machine.proto.localised_name
+    return {
+        caption = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_module", 1}},
+        subheader_text = {"fp.modules_instruction_" .. action, {"fp.pl_module", 1}, machine_name},
+        create_content_frame = true,
+        force_auto_center = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.object ~= nil)
+    }
+end)
 
 function module_dialog.open(_, modal_data)
     local module, machine = modal_data.object, modal_data.machine
@@ -226,11 +236,18 @@ end
 
 
 -- ** BEACON **
-beacon_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", ((modal_data.object) and {"fp.edit"} or {"fp.add"}), {"fp.pl_beacon", 1}},
-    create_content_frame = true,
-    force_auto_center = true
-} end)
+beacon_dialog.dialog_settings = (function(modal_data)
+    local action = (modal_data.object) and "edit" or "add"
+    local machine_name = modal_data.line.machine.proto.localised_name
+    return {
+        caption = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_beacon", 1}},
+        subheader_text = {("fp.modules_instruction_" .. action), {"fp.pl_beacon", 1}, machine_name},
+        create_content_frame = true,
+        force_auto_center = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.object ~= nil)
+    }
+end)
 
 function beacon_dialog.open(player, modal_data)
     local beacon, line = modal_data.object, modal_data.line
@@ -239,7 +256,8 @@ function beacon_dialog.open(player, modal_data)
     -- Create blank beacon as a stand-in
     local beacon_proto = (beacon) and beacon.proto or prototyper.defaults.get(player, "beacons")
     local beacon_count = (beacon) and beacon.amount or data_util.get("preferences", player).mb_defaults.beacon_count
-    local blank_beacon = Beacon.init(beacon_proto, beacon_count, line)
+    local total_amount = (beacon) and beacon.total_amount or nil
+    local blank_beacon = Beacon.init(beacon_proto, beacon_count, total_amount, line)
     modal_data.blank_beacon = blank_beacon
     local module = (beacon) and beacon.module or nil
 
@@ -273,7 +291,8 @@ function beacon_dialog.close(player, action)
         -- The prototype is already updated on elem_changed
 
         beacon.amount = tonumber(modal_elements.beacon_textfield.text)
-        beacon.total_amount = tonumber(modal_elements.beacon_total_textfield.text)
+        local total_amount = tonumber(modal_elements.beacon_total_textfield.text)
+        beacon.total_amount = (total_amount and total_amount > 0) and total_amount or nil
 
         local module = generate_module_object(modal_elements)
         Beacon.set_module(beacon, module)
@@ -348,7 +367,7 @@ modules_dialog.gui_events = {
             name = "fp_slider_module_amount",
             handler = (function(player, element)
                 local modal_elements = data_util.get("modal_elements", player)
-                modal_elements.module_textfield.text = element.slider_value
+                modal_elements.module_textfield.text = tostring(element.slider_value)
                 update_dialog_submit_button(modal_elements)
             end)
         }

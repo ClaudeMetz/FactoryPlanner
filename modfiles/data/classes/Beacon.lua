@@ -2,10 +2,11 @@
 Beacon = {}
 
 -- Init a beacon without a module, which will have to be added afterwards
-function Beacon.init(beacon_proto, beacon_amount, parent_line)
+function Beacon.init(beacon_proto, beacon_amount, total_amount, parent_line)
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount or 0,
+        total_amount = total_amount,
         total_effects = nil,
         effects_tooltip = "",
         valid = true,
@@ -50,29 +51,25 @@ end
 
 
 function Beacon.check_module_compatibility(self, module_proto)
-    local compatible = true
     local recipe_proto, machine_proto = self.parent.recipe.proto, self.parent.machine.proto
 
     if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
       and not module_proto.limitations[recipe_proto.name] then
-        compatible = false
+        return false
     end
 
-    if compatible then
-        local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
-        if machine_effects == nil or beacon_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
-                    compatible = false
-                    break
-                end
+    local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
+    if machine_effects == nil or beacon_effects == nil then
+        return false
+    else
+        for effect_name, _ in pairs(module_proto.effects) do
+            if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
+                return false
             end
         end
     end
 
-    return compatible
+    return true
 end
 
 function Beacon.compile_module_filter(self)

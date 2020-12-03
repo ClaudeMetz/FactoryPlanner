@@ -62,6 +62,18 @@ styles["fp_frame_bordered_stretch"] = {
     horizontally_stretchable = "on"
 }
 
+styles["fp_frame_semitransparent"] = {
+    type = "frame_style",
+    graphical_set = {
+        base = {
+            type = "composition",
+            filename = "__factoryplanner__/graphics/semitransparent_pixel.png",
+            corner_size = 1,
+            position = {0, 0}
+        }
+    }
+}
+
 
 styles["fp_table_production"] = {
     type = "table_style",
@@ -77,7 +89,7 @@ styles["fp_table_production"] = {
 -- This style is hacked together from rounded-button and textbox
 styles["fp_sprite-button_inset"] = {
     type = "button_style",
-    parent = "icon_button",
+    size = 40,
     padding = 0,
     default_graphical_set = styles.textbox.default_background,
     hovered_graphical_set = styles.rounded_button.clicked_graphical_set,
@@ -184,7 +196,7 @@ styles["fp_button_fake_listbox_item_active"] = {
 }
 
 -- Generate smaller versions of flib's slot buttons (size 36)
-for _, color in pairs{"default", "green", "yellow", "red", "blue", "cyan"} do
+for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["flib_slot_button_" .. color .. "_small"] = {
         type = "button_style",
         parent = "flib_slot_button_" .. color,

@@ -18,10 +18,10 @@ local function generate_metadata(player)
         metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
         metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
-        metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", false, true, true)
-        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", false, true, true)
-        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", false, true, true)
-        metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", false, true, true)
+        metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", true, true, true)
+        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", true, true, true)
+        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", true, true, true)
+        metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
     end
 
     return metadata
@@ -40,11 +40,13 @@ function builders.recipe(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe_proto = relevant_line.recipe.proto
 
-    local style, enabled, indication = "flib_slot_button_default_small", true, ""
+    local style, enabled = "flib_slot_button_default_small", true
+    local indication, tutorial_tooltip = "", metadata.recipe_tutorial_tooltip
     -- Make the first line of every subfloor un-interactable, it stays constant
     if line.parent.level > 1 and line.gui_position == 1 then
-        style = "flib_slot_button_blue_small"
+        style = "flib_slot_button_grey_small"
         enabled = false
+        tutorial_tooltip = ""
     elseif line.subfloor then
         style = "flib_slot_button_blue_small"
         indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
@@ -53,7 +55,7 @@ function builders.recipe(line, parent_flow, metadata)
         indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
     end
 
-    local tooltip = {"", recipe_proto.localised_name, indication, (metadata.recipe_tutorial_tooltip or "")}
+    local tooltip = {"", recipe_proto.localised_name, indication, tutorial_tooltip}
     parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id, enabled=enabled,
       sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
@@ -62,7 +64,7 @@ function builders.percentage(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
-      .. line.id, text=relevant_line.percentage, enabled=(not metadata.archive_open)}
+      .. line.id, text=tostring(relevant_line.percentage), enabled=(not metadata.archive_open)}
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
@@ -90,10 +92,10 @@ function builders.machine(line, parent_flow, metadata)
         local style, indication, machine_limit = "flib_slot_button_default_small", "", line.machine.limit
         if machine_limit ~= nil then
             if line.machine.hard_limit then
-                style = "flib_slot_button_cyan_small"
+                style = "flib_slot_button_pink_small"
                 indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_hard", machine_limit}}}
             elseif line.production_ratio < line.uncapped_production_ratio then
-                style = "flib_slot_button_yellow_small"
+                style = "flib_slot_button_orange_small"
                 indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_enforced", machine_limit}}}
             else
                 style = "flib_slot_button_green_small"
@@ -114,7 +116,7 @@ function builders.machine(line, parent_flow, metadata)
         if machine_proto.module_limit == 0 then return end
 
         local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.margin = 4
+        separator.style.padding = {2, 0}
 
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
@@ -164,7 +166,8 @@ function builders.beacon(line, parent_flow, metadata)
 
         -- Module
         local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.padding = {4, 0}
+        separator.style.padding = {2, 0}
+        separator.style.margin = {0, -2}
         local module_proto, module_amount = beacon.module.proto, beacon.module.amount
 
         -- Can use simplified number line because module amount is an integer
@@ -203,7 +206,7 @@ function builders.products(line, parent_flow, metadata)
         if not line.subfloor then
             -- We can check for identity because they reference the same table
             if line.priority_product_proto == product.proto then
-                style = "flib_slot_button_green_small"
+                style = "flib_slot_button_pink_small"
                 indication_string = {"fp.indication", {"fp.priority_product"}}
             end
             tutorial_tooltip = metadata.product_tutorial_tooltip

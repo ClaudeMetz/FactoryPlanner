@@ -1,6 +1,18 @@
 item_boxes = {}
 
 --- ** LOCAL UTIL **
+local function add_recipe(player, context, type, item)
+    if context.floor.level > 1 then
+        production_box.change_floor(player, "top")
+        local message = {"fp.warning_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
+        -- This needs a lifetime of 2 to survive one additional refresh down the chain
+        title_bar.enqueue_message(player, message, "warning", 2, false)
+    end
+
+    local production_type = (type == "product") and "produce" or "consume"
+    modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type}})
+end
+
 local function build_item_box(player, name, column_count)
     local item_boxes_elements = data_util.get("main_elements", player).item_boxes
 
@@ -106,17 +118,11 @@ local function handle_item_button_click(player, button, metadata)
                 end
 
             elseif metadata.click == "left" then
-                if context.floor.level > 1 then
-                    production_box.change_floor(player, "top")
-                    title_bar.enqueue_message(player, {"fp.error_product_wrong_floor"}, "warning", 2, false)
-                end
-
-                modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce"}})
+                add_recipe(player, context, "product", item)
 
             elseif metadata.click == "right" then
                 if metadata.action == "edit" then
-                    modal_dialog.enter(player, {type="picker", submit=true, delete=true,
-                      modal_data={object=item, item_category="product"}})
+                    modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
 
                 elseif metadata.action == "delete" then
                     Subfactory.remove(subfactory, item)
@@ -127,7 +133,7 @@ local function handle_item_button_click(player, button, metadata)
             end
 
         elseif item_class == "Byproduct" then
-            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="consume"}})
+            add_recipe(player, context, "byproduct", item)
         end
     end
 end
@@ -174,15 +180,13 @@ item_boxes.gui_events = {
     on_gui_click = {
         {
             pattern = "^fp_sprite%-button_add_top_level_[a-z]+$",
-            timeout = 20,
             handler = (function(player, element, _)
                 local item_category = string.gsub(element.name, "fp_sprite%-button_add_top_level_", "")
-                modal_dialog.enter(player, {type="picker", submit=true, modal_data={item_category=item_category}})
+                modal_dialog.enter(player, {type="picker", modal_data={item_category=item_category}})
             end)
         },
         {
             pattern = "^fp_sprite%-button_top_level_[a-z]+_%d+$",
-            timeout = 20,
             handler = handle_item_button_click
         }
     }
