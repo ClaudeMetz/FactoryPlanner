@@ -124,7 +124,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
     local default_prototypes = preferences.default_prototypes[type]
     if default_prototypes.structure_type == "simple" then
         local all_prototypes = global["all_" .. type][type]
-        if #all_prototypes < 2 then preference_box.visible = false; return end
+        if #all_prototypes < 1 then preference_box.visible = false; return end
 
         add_defaults_table(8, nil)
         refresh_defaults_table(player, modal_elements, type, nil)
