@@ -258,26 +258,17 @@ function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto,
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, is_rocket_silo)
-    local launch_delay = 0
-    if is_rocket_silo then  -- This calculation only works for unmodified rockets
-        local launch_sequence_time = 41.25 / timescale  -- in seconds
-        launch_delay = launch_sequence_time * production_ratio
-    end
-
-    return ((production_ratio / math.min(crafts_per_tick, 60)) / timescale) + launch_delay
+function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
+    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+    return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
 end
 
--- Calculates the production ratio from a given machine limit
-function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, is_rocket_silo)
+-- Calculates the production ratio that the given amount of machines would result in
+-- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
+function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
     crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
-
-    -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
-    if is_rocket_silo then  -- Formula reduced by Wolfram Alpha
-        return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)
-    else
-        return machine_limit * timescale * crafts_per_tick
-    end
+    -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
+    return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
 end
 
 -- Calculates the product amount after applying productivity bonuses

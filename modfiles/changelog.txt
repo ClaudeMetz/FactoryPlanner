@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - You can now also alt-click a machine when changing it to implicitly set it to the preferred one for its category
   Changes:
     - The calculation model now considers the base energy drain that most electrical machines have
+    - The calculation model now also takes the different launch sequence times for modded rocket silos into account
     - Setting recipe item amounts directly now behaves more intuitively
     - Hitting the 'E' keyboard shortcut now confirms the dialog that is open if possible, mirroring the vanilla behavior introduced with 1.1
     - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)

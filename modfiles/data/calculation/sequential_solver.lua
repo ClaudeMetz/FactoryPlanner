@@ -55,7 +55,7 @@ local function update_line(line_data, aggregate)
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
         local capped_production_ratio = calculation.util.determine_production_ratio(crafts_per_tick,
-          machine_limit.limit, timescale, machine_proto.is_rocket_silo)
+          machine_limit.limit, timescale, machine_proto.launch_sequence_time)
         production_ratio = machine_limit.hard_limit and
           capped_production_ratio or math.min(production_ratio, capped_production_ratio)
     end
@@ -115,7 +115,7 @@ local function update_line(line_data, aggregate)
 
     -- Determine machine count
     local machine_count = calculation.util.determine_machine_count(crafts_per_tick, production_ratio,
-      timescale, machine_proto.is_rocket_silo)
+      timescale, machine_proto.launch_sequence_time)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count)
