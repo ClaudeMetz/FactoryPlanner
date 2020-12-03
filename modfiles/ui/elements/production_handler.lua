@@ -3,12 +3,17 @@ production_handler = {}
 -- ** LOCAL UTIL **
 -- Fills the cursor with a blueprint for the given entity, which is either a machine or a beacon
 local function set_cursor_blueprint(player, entity_name, module_list, recipe_name)
-    main_dialog.toggle(player)
-    player.clear_cursor()  -- Move the cursor's content back into inventory (I hope)
+    local script_inventory = game.create_inventory(1)
+    local blank_slot = script_inventory[1]
 
-    player.cursor_stack.set_stack{name="fp_cursor_blueprint"}
-    player.cursor_stack.set_blueprint_entities{{entity_number=1, name=entity_name, position={0, 0},
+    blank_slot.set_stack{name="fp_cursor_blueprint"}
+    blank_slot.set_blueprint_entities{{entity_number=1, name=entity_name, position={0, 0},
       items=module_list, recipe=recipe_name}}
+    player.add_to_clipboard(blank_slot)
+    player.activate_paste()
+    script_inventory.destroy()
+
+    main_dialog.toggle(player)
 end
 
 
