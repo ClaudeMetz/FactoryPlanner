@@ -57,7 +57,7 @@ local function swap_item_category(player, element)
 
     local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
-    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_metadata)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory_data, matrix_metadata)
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
 
@@ -83,7 +83,7 @@ function matrix_dialog.open(player, modal_data)
     end
 
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
-    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory, matrix_metadata)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory_data, matrix_metadata)
 
     -- too many ways to create the products
     if matrix_metadata.num_rows < matrix_metadata.num_cols then
