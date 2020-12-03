@@ -179,9 +179,9 @@ function matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
     return result
 end
 
-function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data)
-    local num_rows = #modal_data.ingredients + #modal_data.products + #modal_data.byproducts + #modal_data.eliminated_items + #modal_data.free_items
-    local num_cols = #modal_data.recipes + #modal_data.ingredients + #modal_data.byproducts + #modal_data.free_items
+function matrix_solver.get_linear_dependence_data(player, subfactory_data, matrix_metadata)
+    local num_rows = #matrix_metadata.ingredients + #matrix_metadata.products + #matrix_metadata.byproducts + #matrix_metadata.eliminated_items + #matrix_metadata.free_items
+    local num_cols = #matrix_metadata.recipes + #matrix_metadata.ingredients + #matrix_metadata.byproducts + #matrix_metadata.free_items
     -- return early if these don't match since the matrix solver can crash when these are different
     if num_rows < num_cols then
         local result = {
@@ -196,7 +196,6 @@ function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data
     local linearly_dependent_items = {}
     local allowed_free_items = {}
 
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
     local linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
     for col_name, _ in pairs(linearly_dependent_cols) do
         local col_split_str = split_string(col_name, "_")
@@ -210,9 +209,9 @@ function matrix_solver.get_linear_dependence_data(player, subfactory, modal_data
     end
     -- check which eliminated items could be made free while still retaining linear independence
     if #linearly_dependent_cols == 0 and num_cols < num_rows then
-        local eliminated_items = modal_data.eliminated_items
+        local eliminated_items = matrix_metadata.eliminated_items
         for _, eliminated_item in ipairs(eliminated_items) do
-            local curr_free_items = matrix_solver.shallowcopy(modal_data.free_items)
+            local curr_free_items = matrix_solver.shallowcopy(matrix_metadata.free_items)
             table.insert(curr_free_items, eliminated_item)
             linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
             if next(linearly_dependent_cols) == nil then
