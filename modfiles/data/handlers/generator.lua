@@ -374,7 +374,7 @@ function generator.all_machines()
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
-            is_rocket_silo = (proto.rocket_parts_required ~= nil),
+            launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
             burner = burner
         }
 
