@@ -72,8 +72,9 @@ function generator.all_recipes()
 
 
     -- Determine all the items that can be inserted usefully into a rocket silo
+    local launch_products_filter = {{filter="has-rocket-launch-products"}}
     local rocket_silo_inputs = {}
-    for _, item in pairs(game.item_prototypes) do  -- (no filter to detect this possible)
+    for _, item in pairs(game.get_filtered_item_prototypes(launch_products_filter)) do
         if table_size(item.rocket_launch_products) > 0 then
             table.insert(rocket_silo_inputs, item)
         end
@@ -86,11 +87,14 @@ function generator.all_recipes()
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
-            local produces_solid = false
             local products = proto.mineable_properties.products
+            if not products then goto incompatible_proto end
+
+            local produces_solid = false
             for _, product in pairs(products) do  -- detects all solid mining recipes
-                if product.type == "item" then produces_solid = true end
+                if product.type == "item" then produces_solid = true; break end
             end
+            if not produces_solid then goto incompatible_proto end
 
             if produces_solid then
                 local recipe = custom_recipe()
@@ -124,6 +128,8 @@ function generator.all_recipes()
             --else
                 -- crude-oil and angels-natural-gas go here (not interested atm)
             end
+
+            ::incompatible_proto::
 
         -- Add offshore-pump fluid recipes
         elseif proto.fluid then
@@ -179,7 +185,7 @@ function generator.all_recipes()
         local existing_recipe_names = {}
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
-                and fluidbox.filter.name == "steam" then
+                and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat or fluid as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     local temperature = proto.target_temperature
@@ -404,7 +410,7 @@ function generator.all_machines()
         -- Add machines that produce steam (ie. boilers)
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
-              and fluidbox.filter.name == "steam" then
+              and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     -- Find the corresponding input fluidbox

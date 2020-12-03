@@ -79,14 +79,11 @@ local function run_preliminary_checks(player, product, production_type)
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
-        return nil, error, show
+        return nil, error, nil
 
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
-        if not chosen_recipe.enabled then  -- Show warning if adding unresearched recipe
-            show.message={text={"fp.warning_disabled_recipe"}, type="warning"}
-        end
-        return chosen_recipe.proto.id, nil, show
+        return chosen_recipe.proto.id, nil, nil
 
     else  -- 2+ relevant recipes
         return relevant_recipes, nil, show
@@ -96,11 +93,12 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id)
     local ui_state = data_util.get("ui_state", player)
+    local recipe = Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type)
+    local line = Line.init(recipe)
 
-    local line = Line.init(Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
     -- If changing the machine fails, this line is invalid
     if Line.change_machine(line, player, nil, nil) == false then
-        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
+        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
 
     else
         local add_after_position = ui_state.modal_data.add_after_position
@@ -111,20 +109,29 @@ local function attempt_adding_line(player, recipe_id)
             Floor.insert_at(ui_state.context.floor, (add_after_position + 1), line)
         end
 
-        local message = ui_state.modal_data.message
         local preferences = data_util.get("preferences", player)
         local mb_defaults = preferences.mb_defaults
+        local message = nil
+
+        if not (recipe.proto.custom or player.force.recipes[recipe.proto.name].enabled) then
+            message = {text={"fp.warning_recipe_disabled"}, type="warning"}
+        end
 
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.machine
-        if machine_module ~= nil then
-            if Machine.check_module_compatibility(line.machine, machine_module) then
-                local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
-                Machine.add(line.machine, new_module)
+        local secondary_module = mb_defaults.machine_secondary
 
-            elseif message == nil then  -- don't overwrite previous message, if it exists
-                message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
-            end
+        if machine_module and Machine.check_module_compatibility(line.machine, machine_module) then
+            local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
+            Machine.add(line.machine, new_module)
+
+        elseif secondary_module and Machine.check_module_compatibility(line.machine, secondary_module) then
+            local new_module = Module.init_by_proto(secondary_module, line.machine.proto.module_limit)
+            Machine.add(line.machine, new_module)
+
+        -- Only show an error if any module default is actually set
+        elseif machine_module and message == nil then  -- don't overwrite previous message, if it exists
+            message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
         end
 
         -- Add default beacon modules, if desired by the user
@@ -132,7 +139,7 @@ local function attempt_adding_line(player, recipe_id)
         local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
 
         if beacon_module_proto ~= nil and beacon_count ~= nil then
-            local blank_beacon = Beacon.init(beacon_proto, beacon_count, line)
+            local blank_beacon = Beacon.init(beacon_proto, beacon_count, nil, line)
 
             if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
                 local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
@@ -145,9 +152,10 @@ local function attempt_adding_line(player, recipe_id)
             end
         end
 
-        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 2) end
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
+
+        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
     end
 
     modal_dialog.exit(player, "cancel")
@@ -240,7 +248,7 @@ local function apply_recipe_filter(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
-    local any_recipe_visible, desired_scroll_pane_height = false, 72+24
+    local any_recipe_visible, desired_scroll_pane_height = false, 64+24
     for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
@@ -282,8 +290,10 @@ end
 
 
 -- ** TOP LEVEL **
-recipe_dialog.dialog_settings = (function(_) return {
+recipe_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
+    subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
+      modal_data.product.proto.localised_name},
     search_function = apply_recipe_filter,
     create_content_frame = true,
     force_auto_center = true
@@ -297,14 +307,13 @@ function recipe_dialog.open(player, modal_data)
     local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
 
     if error ~= nil then
-        title_bar.enqueue_message(player, error, "error", 1)
+        title_bar.enqueue_message(player, error, "error", 1, false)
         modal_dialog.exit(player, "cancel")
         return true  -- let the modal dialog know that it was closed immediately
 
     else
         -- If 1 relevant recipe is found, add it immediately and exit dialog
         if type(result) == "number" then  -- the given number being the recipe_id
-            modal_data.message = show.message
             attempt_adding_line(player, result)
             return true  -- idem above
 
@@ -321,6 +330,7 @@ function recipe_dialog.open(player, modal_data)
 
             create_dialog_structure(modal_data)
             apply_recipe_filter(player, "")
+            modal_data.modal_elements.search_textfield.focus()
         end
     end
 end

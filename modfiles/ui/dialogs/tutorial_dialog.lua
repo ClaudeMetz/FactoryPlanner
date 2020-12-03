@@ -7,12 +7,12 @@ function tab_definitions.interface(player, tab, tab_pane)
     tab.caption = {"fp.interface"}
 
     local function add_base_frame(name)
-        local frame = tab_pane.add{type="frame", style="bordered_frame", direction="vertical"}
+        local frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch", direction="vertical"}
         frame.style.horizontally_stretchable = true
 
         frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}, style="caption_label"}
-        local text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
-        text.style.single_line = false
+        local label_text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
+        label_text.style.single_line = false
 
         return frame
     end
@@ -22,17 +22,17 @@ function tab_definitions.interface(player, tab, tab_pane)
     local flow_interactive = frame_interactive.add{type="flow", direction="horizontal"}
     flow_interactive.style.margin = {12, 20, 8, 20}
 
-    local active_mods = game.active_mods
-    local no_other_mods_active = (table_size(active_mods) == 3 and active_mods["base"] ~= nil
-      and active_mods["factoryplanner"] ~= nil and active_mods["flib"] ~= nil)
-    if DEVMODE then no_other_mods_active = true end  -- skip this check for development, because debugger
-    local tutorial_mode = data_util.get("preferences", player).tutorial_mode
+    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    -- If the tutorial subfactory is valid, it can be imported regardless of the current modset
+    local subfactory_compatible = (global.tutorial_subfactory and global.tutorial_subfactory.valid)
+    local button_tooltip = (not subfactory_compatible) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
+      tooltip=button_tooltip, enabled=subfactory_compatible, mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_tooltip = (not no_other_mods_active) and {"fp.warning_message", {"fp.create_example_error"}} or nil
-    flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
-      tooltip=button_tooltip, enabled=no_other_mods_active, mouse_button_filter={"left"}}
-    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local tutorial_mode = data_util.get("preferences", player).tutorial_mode
     ui_util.switch.add_on_off(flow_interactive, "tutorial_mode", tutorial_mode, {"fp.tutorial_mode"}, nil, true)
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -47,7 +47,7 @@ end
 function tab_definitions.usage(_, tab, tab_pane)
     tab.caption = {"fp.usage"}
 
-    local bordered_frame = tab_pane.add{type="frame", style="bordered_frame"}
+    local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
     local label_usage = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
     label_usage.style.single_line = false
     label_usage.style.padding = 2
@@ -59,7 +59,7 @@ function tab_definitions.pro_tips(_, tab, tab_pane)
     local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
       "recursive_subfloors", "views", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
     for _, name in ipairs(protip_names) do
-        local bordered_frame = tab_pane.add{type="frame", style="bordered_frame"}
+        local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
         local label = bordered_frame.add{type="label", caption={"fp.pro_" .. name}}
         label.style.single_line = false
     end
@@ -96,7 +96,14 @@ tutorial_dialog.gui_events = {
             name = "fp_button_tutorial_add_example",
             timeout = 20,
             handler = (function(player, _, _)
-                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
+                -- If this button can be pressed, the tutorial subfactory is valid implicitly
+                local factory = data_util.get("table", player).factory
+                local subfactory = Factory.add(factory, global.tutorial_subfactory)
+
+                ui_util.context.set_subfactory(player, subfactory)
+                calculation.update(player, subfactory)
+
+                main_dialog.refresh(player, nil)
                 modal_dialog.exit(player, "cancel")
             end)
         }

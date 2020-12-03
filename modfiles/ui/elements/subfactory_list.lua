@@ -49,7 +49,7 @@ local function handle_subfactory_submission(player, options, action)
         if subfactory ~= nil then
             subfactory.name = name
             -- Don't save over the unknown signal to preserve what's saved behind it
-            if icon and icon.name ~= "signal-unknown" then subfactory.icon = icon end
+            if not icon or icon.name ~= "signal-unknown" then subfactory.icon = icon end
         else
             local new_subfactory = Subfactory.init(name, icon, data_util.get("settings", player))
             Factory.add(factory, new_subfactory)
@@ -92,6 +92,7 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
         title = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_subfactory", 1}},
         text = {"fp.options_subfactory_text"},
         submission_handler = handle_subfactory_submission,
+        allow_deletion = (action == "edit"),
         object = subfactory,
         fields = {
             {
@@ -136,7 +137,7 @@ end
 local function edit_subfactory(player)
     local subfactory = data_util.get("context", player).subfactory
     local modal_data = generate_subfactory_dialog_modal_data("edit", subfactory)
-    modal_dialog.enter(player, {type="options", submit=true, delete=true, modal_data=modal_data})
+    modal_dialog.enter(player, {type="options", modal_data=modal_data})
 end
 
 local function delete_subfactory(player)
@@ -159,7 +160,7 @@ local function handle_subfactory_click(player, button, metadata)
             main_dialog.refresh(player, {"subfactory_list"})
         else
             local direction_string = (metadata.direction == "negative") and {"fp.up"} or {"fp.down"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.subfactory"}, direction_string}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_subfactory", 1}, direction_string}
             title_bar.enqueue_message(player, message, "error", 1, true)
         end
     else
@@ -327,7 +328,7 @@ subfactory_list.gui_events = {
         {
             name = "fp_sprite-button_subfactories_import",
             handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="import", submit=true})
+                modal_dialog.enter(player, {type="import"})
             end)
         },
         {
@@ -342,21 +343,19 @@ subfactory_list.gui_events = {
 
                 -- This relies on the porting-functionality. It basically exports and
                 -- immediately imports the subfactory, effectively duplicating it
-                local export_string = data_util.porter.get_export_string(player, {subfactory})
+                local export_string = data_util.porter.get_export_string({subfactory})
                 data_util.add_subfactories_by_string(player, export_string, true)
             end)
         },
         {
             name = "fp_sprite-button_subfactory_add",
-            timeout = 20,
             handler = (function(player, _, _)
                 local modal_data = generate_subfactory_dialog_modal_data("new", nil)
-                modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+                modal_dialog.enter(player, {type="options", modal_data=modal_data})
             end)
         },
         {
             name = "fp_sprite-button_subfactory_edit",
-            timeout = 20,
             handler = edit_subfactory
         },
         {

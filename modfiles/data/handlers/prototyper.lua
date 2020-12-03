@@ -42,6 +42,11 @@ function prototyper.finish()
 
     -- Generate new lua-globals acting as a static cache for some important data
     loader.run()
+
+    -- Save tutorial subfactory to global for better performance
+    -- This can't be done on_load since game is not available at that stage
+    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)
+    if not error then global.tutorial_subfactory = Factory.get(imported_tutorial_factory, "Subfactory", 1) end
 end
 
 

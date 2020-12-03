@@ -56,7 +56,7 @@ local function reload_preferences(player)
     preferences.line_comment_column = preferences.line_comment_column or false
 
     preferences.mb_defaults = preferences.mb_defaults or
-      {machine = nil, beacon = nil, beacon_count = nil}
+      {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}
 
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {
@@ -117,7 +117,7 @@ local function update_player_table(player)
         player_table.ui_state = {}
         reload_data()
 
-        title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
+        title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
 
     else  -- existing player, only need to update
         reload_data()

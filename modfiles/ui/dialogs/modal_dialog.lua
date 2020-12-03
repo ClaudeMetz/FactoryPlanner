@@ -33,7 +33,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             searchfield.style.width = 180
             searchfield.style.margin = {-3, 4, 0, 0}
             ui_util.setup_textfield(searchfield)
-            searchfield.focus()
             modal_elements.search_textfield = searchfield
 
             flow_title_bar.add{type="sprite-button", name="fp_sprite-button_modal_search", sprite="utility/search_white",
@@ -42,7 +41,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
             modal_data.search_function = dialog_settings.search_function
 
-        else  -- Otherwise, let the frame handle the titlebar
+        else  -- otherwise, let the frame handle the titlebar
             frame_modal_dialog.caption = dialog_settings.caption or nil
         end
     end
@@ -57,7 +56,8 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             local subheader = content_frame.add{type="frame", direction="horizontal", style="subheader_frame"}
             subheader.style.horizontally_stretchable = true
             subheader.style.padding = {12, 24, 12, 12}
-            local label = subheader.add{type="label", caption=dialog_settings.subheader_text}
+            local label = subheader.add{type="label", caption=dialog_settings.subheader_text,
+              tooltip=dialog_settings.subheader_tooltip}
             label.style.font = "default-semibold"
         end
 
@@ -84,14 +84,14 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     button_bar.style.horizontal_spacing = 0
 
     -- Cancel/Back button
-    local action = dialog_settings.submit and "cancel" or "back"
+    local action = dialog_settings.show_submit_button and "cancel" or "back"
     local button_cancel = button_bar.add{type="button", name="fp_button_modal_action_cancel", style="back_button",
       caption={"fp." .. action}, tooltip={"fp." .. action .. "_dialog"}, mouse_button_filter={"left"}}
     button_cancel.style.minimal_width = 0
     button_cancel.style.padding = {1, 12, 0, 12}
 
     -- Delete button and spacers
-    if dialog_settings.delete then
+    if dialog_settings.show_delete_button then
         button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_action_delete",
@@ -108,7 +108,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
 
     -- Submit button
-    if dialog_settings.submit then
+    if dialog_settings.show_submit_button then
         local button_submit = button_bar.add{type="button", name="fp_button_modal_action_submit", caption={"fp.submit"},
           tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
@@ -147,8 +147,15 @@ function modal_dialog.enter(player, dialog_settings)
     local immediately_closed = dialog_object.open(player, ui_state.modal_data)
 
     if not immediately_closed then
-        local frame_main_dialog = ui_state.main_elements.main_frame
-        frame_main_dialog.ignored_by_interaction = true
+        local dimming_frame = player.gui.screen.add{type="frame", name="fp_frame_that_dimms",
+          style="fp_frame_semitransparent"}
+        ui_state.modal_data.modal_elements.dimming_frame = dimming_frame
+
+        local dimensions = ui_state.main_dialog_dimensions
+        dimming_frame.style.size = {dimensions.width, dimensions.height}
+        dimming_frame.location = ui_state.main_elements.main_frame.location
+
+        frame_modal_dialog.bring_to_front()
         player.opened = frame_modal_dialog
 
         if dialog_settings.force_auto_center then
@@ -163,9 +170,16 @@ function modal_dialog.exit(player, button_action)
     if ui_state.modal_dialog_type == nil then return end
 
     local modal_elements = ui_state.modal_data.modal_elements
-    -- Cancel action if it is not possible on this dialog, or the button is disabled
     local submit_button = modal_elements.dialog_submit_button
-    if button_action == "submit" and (not submit_button or not submit_button.enabled) then return end
+
+    -- If no action is give, submit if possible, otherwise close the dialog
+    if button_action == nil then
+        button_action = (submit_button and submit_button.enabled)and "submit" or "cancel"
+
+    -- Stop exiting if it is not possible on this dialog, or the button is disabled
+    elseif button_action == "submit" and (not submit_button or not submit_button.enabled) then
+        return
+    end
 
     -- Call the closing function for this dialog, if it exists
     local closing_function = _G[ui_state.modal_dialog_type .. "_dialog"].close
@@ -175,10 +189,9 @@ function modal_dialog.exit(player, button_action)
     ui_state.modal_data = nil
 
     modal_elements.modal_frame.destroy()
+    if modal_elements.dimming_frame then modal_elements.dimming_frame.destroy() end
 
-    local frame_main_dialog = ui_state.main_elements.main_frame
-    frame_main_dialog.ignored_by_interaction = false
-    player.opened = frame_main_dialog
+    player.opened = ui_state.main_elements.main_frame
     title_bar.refresh_message(player)
 
     if ui_state.queued_dialog_settings ~= nil then
@@ -206,13 +219,14 @@ function modal_dialog.enter_selection_mode(player, selector_name)
     player.cursor_stack.set_stack(selector_name)
 
     local frame_main_dialog = ui_state.main_elements.main_frame
-    local frame_modal_dialog = ui_state.modal_data.modal_elements.modal_frame
-
     frame_main_dialog.visible = false
     main_dialog.set_pause_state(player, frame_main_dialog, true)
 
-    frame_modal_dialog.ignored_by_interaction = true
-    frame_modal_dialog.location = {25, 50}
+    local modal_elements = ui_state.modal_data.modal_elements
+    modal_elements.dimming_frame.visible = false
+
+    modal_elements.modal_frame.ignored_by_interaction = true
+    modal_elements.modal_frame.location = {25, 50}
 end
 
 function modal_dialog.leave_selection_mode(player)
@@ -220,21 +234,29 @@ function modal_dialog.leave_selection_mode(player)
     ui_state.flags.selection_mode = false
     player.cursor_stack.set_stack(nil)
 
+    local modal_elements = ui_state.modal_data.modal_elements
+    modal_elements.dimming_frame.visible = true
+
+    -- .opened needs to be set because on_gui_closed sets it to nil
+    player.opened = modal_elements.modal_frame
+    modal_elements.modal_frame.ignored_by_interaction = false
+    modal_elements.modal_frame.force_auto_center()
+
     local frame_main_dialog = ui_state.main_elements.main_frame
-    local frame_modal_dialog = ui_state.modal_data.modal_elements.modal_frame
-
-    frame_main_dialog.visible = true
     main_dialog.set_pause_state(player, frame_main_dialog, false)
-
-    player.opened = frame_modal_dialog  -- needs to be set because on_gui_closed sets it to nil
-    frame_modal_dialog.ignored_by_interaction = false
-    frame_modal_dialog.force_auto_center()
+    frame_main_dialog.visible = true
 end
 
 
 -- ** EVENTS **
 modal_dialog.gui_events = {
     on_gui_click = {
+        {
+            name = "fp_frame_that_dimms",
+            handler = (function(player, _, _)
+                data_util.get("modal_elements", player).modal_frame.bring_to_front()
+            end)
+        },
         {
             pattern = "^fp_button_modal_action_[a-z]+$",
             handler = (function(player, element, _)
@@ -262,10 +284,13 @@ modal_dialog.gui_events = {
         {
             name = "fp_frame_modal_dialog",
             handler = (function(player, _)
-                if data_util.get("flags", player).selection_mode then
+                local ui_state = data_util.get("ui_state", player)
+
+                if ui_state.flags.selection_mode then
                     modal_dialog.leave_selection_mode(player)
                 else
-                    modal_dialog.exit(player, "cancel")
+                    -- Calling this without an action will make it choose the appropriate one
+                    modal_dialog.exit(player, nil)
                 end
             end)
         }

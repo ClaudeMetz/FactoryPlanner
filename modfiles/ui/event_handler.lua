@@ -209,8 +209,9 @@ local misc_timeouts = {
 local special_misc_handlers = {}
 
 special_misc_handlers.on_gui_opened = (function(_, event)
-    -- This should only fire when a UI not associated with FP is opened, to properly close FP's stuff
-    return (event.gui_type ~= defines.gui_type.custom or not event.element.get_mod() == "factoryplanner")
+    -- This should only fire when a UI not associated with FP is opened to properly close FP's stuff
+    return (event.gui_type ~= defines.gui_type.custom or not event.element
+      or event.element.get_mod() ~= "factoryplanner")
 end)
 
 
@@ -240,19 +241,13 @@ local function handle_misc_event(event)
         local player = game.get_player(event.player_index)
 
         -- Check if the action is allowed to be carried out by rate limiting
-        if not rate_limit_action(player, event_name, event.tick, nil, event_handlers.timeout) then
-            return
-        end
+        if not rate_limit_action(player, event_name, event.tick, nil, event_handlers.timeout) then return end
 
         -- If a special handler is set, it needs to return true before proceeding with the registered handlers
         local special_handler = event_handlers.special_handler
-        if special_handler and not event_handlers.special_handler(player, event) then
-            return
-        end
+        if special_handler and not event_handlers.special_handler(player, event) then return end
 
-        for _, registered_handler in pairs(event_handlers.registered_handlers) do
-            registered_handler(player, event)
-        end
+        for _, registered_handler in pairs(event_handlers.registered_handlers) do registered_handler(player, event) end
     end
 end
 

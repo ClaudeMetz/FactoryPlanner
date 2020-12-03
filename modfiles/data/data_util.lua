@@ -25,7 +25,7 @@ end
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string, refresh_interface)
     local context = data_util.get("context", player)
-    local first_subfactory = Factory.import_by_string(context.factory, player, export_string)
+    local first_subfactory = Factory.import_by_string(context.factory, export_string)
 
     ui_util.context.set_subfactory(player, first_subfactory)
     calculation.update(player, first_subfactory)
@@ -99,9 +99,10 @@ end
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string
-function data_util.porter.get_export_string(player, subfactories)
+function data_util.porter.get_export_string(subfactories)
     local export_table = {
-        mod_version = data_util.get("table", player).mod_version,
+        -- This can use the global mod_version since it's only called for migrated, valid subfactories
+        mod_version = global.mod_version,
         subfactories = {}
     }
 
@@ -114,7 +115,7 @@ function data_util.porter.get_export_string(player, subfactories)
 end
 
 -- Converts the given factory exchange string into a temporary Factory
-function data_util.porter.get_subfactories(player, export_string)
+function data_util.porter.get_subfactories(export_string)
     local export_table = nil
 
     if not pcall(function()
@@ -123,7 +124,7 @@ function data_util.porter.get_subfactories(player, export_string)
     end) then return nil, "decoding_failure" end
 
     if not pcall(function()
-        migrator.migrate_export_table(export_table, player)
+        migrator.migrate_export_table(export_table)
     end) then return nil, "migration_failure" end
 
     local import_factory = Factory.init()

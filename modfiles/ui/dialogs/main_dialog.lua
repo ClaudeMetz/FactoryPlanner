@@ -11,10 +11,9 @@ main_dialog = {}
 
 -- ** LOCAL UTIL **
 local function determine_main_dialog_dimensions(player)
-    local player_table = data_util.get("table", player)
-
-    local products_per_row = player_table.settings.products_per_row
-    local subfactory_list_rows = player_table.settings.subfactory_list_rows
+    local settings = data_util.get("settings", player)
+    local products_per_row = settings.products_per_row
+    local subfactory_list_rows = settings.subfactory_list_rows
 
     -- Width of the larger ingredients-box, which has twice the buttons per row
     local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
@@ -25,10 +24,7 @@ local function determine_main_dialog_dimensions(player)
     local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
     local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
 
-    local dimensions = {width=width, height=height}
-    player_table.ui_state.main_dialog_dimensions = dimensions
-
-    return dimensions
+    return {width=width, height=height}
 end
 
 -- No idea how to write this so it works when in selection mode
@@ -63,6 +59,8 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = determine_main_dialog_dimensions(player)
+    ui_state.main_dialog_dimensions = dimensions
+
     frame_main_dialog.style.width = dimensions.width
     frame_main_dialog.style.height = dimensions.height
     ui_util.properly_center_frame(player, frame_main_dialog, dimensions.width, dimensions.height)
@@ -162,7 +160,6 @@ main_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_toggle_interface",
-            timeout = 20,
             handler = main_dialog.toggle
         }
     }
