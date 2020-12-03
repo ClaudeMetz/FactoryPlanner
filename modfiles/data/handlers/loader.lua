@@ -124,7 +124,7 @@ local attribute_generators = {}
 function attribute_generators.beacons(beacon)
     return {"", {"fp.module_slots"}, ": " .. beacon.module_limit .. "\n",
            {"fp.effectivity"}, ": " .. (beacon.effectivity * 100) .. "%\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage * 60, "W", 3)}
 end
 
 function attribute_generators.fuels(fuel)
@@ -137,10 +137,10 @@ function attribute_generators.belts(belt)
 end
 
 function attribute_generators.machines(machine)
-    local energy_usage = machine.energy_usage * 60
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
-           {"fp.u_pollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage * 60, "W", 3), "\n",
+           {"fp.u_pollution"}, ": ", ui_util.format_SI_value((machine.energy_usage * (machine.emissions * 60)) * 60,
+             "P/m", 3), "\n",
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
