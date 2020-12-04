@@ -365,7 +365,7 @@ function generator_util.add_recipe_tooltip(recipe)
     end
 
     if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}} end
-    for _, item_type in ipairs({"ingredients", "products"}) do
+    for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         multi_insert{"\n  ", {"fp.name_value", {locale_key, 2}, ""}}
         if #recipe[item_type] == 0 then

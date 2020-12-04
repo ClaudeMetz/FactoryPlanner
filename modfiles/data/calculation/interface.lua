@@ -162,29 +162,24 @@ function calculation.update(player, subfactory)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        if subfactory.matrix_free_items then
-            calculation.start_matrix_solver(player, subfactory)
+        local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+
+        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
+
+            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
+                if matrix_metadata.num_rows == matrix_metadata.num_cols then
+                    matrix_solver.run_matrix_solver(subfactory_data, false)
+                else
+                    modal_dialog.enter(player, {type="matrix", modal_data={first_open=false}, allow_queueing=true})
+                end
+            end
         else
-            local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
             sequential_solver.update_subfactory(subfactory_data)
         end
 
-        player_table.active_subfactory = nil
+        player_table.active_subfactory = nil  -- reset after calculations have been carried out
     end
-end
-
-function calculation.start_matrix_solver(player, subfactory)
-    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
-
-    if matrix_metadata.num_rows == 0 then return end -- do nothing
-
-    if matrix_metadata.num_rows ~= matrix_metadata.num_cols then
-        modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}, allow_queueing=true})
-        return
-    end
-
-    matrix_solver.run_matrix_solver(subfactory_data, false)
 end
 
 -- Updates the given subfactory's ingredient satisfactions
@@ -194,37 +189,13 @@ end
 
 
 -- ** INTERFACE **
-
--- Returns a table containing all the data needed to run the calculations for the given subfactory
-calculation.interface.generate_subfactory_data(player, subfactory)
-    local subfactory_data = {
-        player_index = player.index,
-        top_level_products = {},
-        top_floor = nil,
-        matrix_free_items = subfactory.matrix_free_items
-    }
-
-    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local product_data = {
-            proto = product.proto,  -- reference
-            amount = Item.required_amount(product)
-        }
-        table.insert(subfactory_data.top_level_products, product_data)
-    end
-
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
-
-    return subfactory_data
-end
-
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
 function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
         top_floor = nil,
-        matrix_free_items = subfactory.matrix_free_items,
+        matrix_free_items = subfactory.matrix_free_items
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
