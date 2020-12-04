@@ -52,7 +52,7 @@ local function sorted_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
     local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
+    for _, type in pairs{"item", "fluid"} do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             -- Silly checks needed here for migration purposes
             if item.group.valid and item.subgroup.valid then table.insert(items, item) end
@@ -78,7 +78,7 @@ local function identifier_item_map()
     local map = {}
 
     local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
+    for _, type in pairs{"item", "fluid"} do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             -- Identifier existance-check for migration reasons
             if item.identifier ~= nil then map[item.identifier] = item end
