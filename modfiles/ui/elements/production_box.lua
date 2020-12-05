@@ -78,7 +78,6 @@ function production_box.build(player)
     label_instruction.style.margin = 20
     main_elements.production_box["instruction_label"] = label_instruction
 
-    production_table.build(player)
     production_box.refresh(player)
 end
 
@@ -131,8 +130,6 @@ function production_box.refresh(player)
             end
         end
     end
-
-    ui_state.main_elements.production_table.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
 end
 
 
@@ -159,7 +156,7 @@ function production_box.change_floor(player, destination)
         local floor_removed = Floor.remove_if_empty(floor)
 
         if floor_removed then calculation.update(player, subfactory) end
-        main_dialog.refresh(player, {"production_box", "production_table"})
+        main_dialog.refresh(player, "production_detail")
     end
 end
 

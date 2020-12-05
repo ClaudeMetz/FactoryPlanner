@@ -169,9 +169,8 @@ local function handle_checkbox_preference_change(player, element)
 
     if preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
-        refresh.ingredient_satisfaction = (element.state)
-
-        refresh.production_table = true
+        refresh.update_ingredient_satisfaction = (element.state)
+        refresh.production_table = true  -- always refresh the production_table
     end
 end
 
@@ -270,28 +269,35 @@ function preferences_dialog.open(player, modal_data)
 end
 
 function preferences_dialog.close(player, _)
+    -- We refresh all these things only when closing to avoid duplicate refreshes
     local refresh = data_util.get("modal_data", player).refresh
 
-    if refresh.ingredient_satisfaction then
+    if refresh.update_ingredient_satisfaction then
         local player_table = data_util.get("table", player)
         Factory.update_ingredient_satisfactions(player_table.factory)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
 
+    local context_to_refresh = nil  -- don't refresh by default
+
+    -- The order of these matters, they go from smallest context to biggest
+    if refresh.production_table then
+        context_to_refresh = "production_table"
+    end
+
     if refresh.view_state then
+        -- Rebuilding state requires every button that shows item amounts to refresh
         view_state.rebuild_state(player)
-        main_dialog.refresh(player, "subfactory")
+        context_to_refresh = "production"
     end
 
     if refresh.calculations then
         local context = data_util.get("context", player)
         calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        context_to_refresh = "subfactory"
     end
 
-    if refresh.production_table then
-        main_dialog.refresh(player, {"production_table"})
-    end
+    if context_to_refresh then main_dialog.refresh(player, context_to_refresh) end
 end
 
 

@@ -8,7 +8,7 @@ local function repair_subfactory(player)
     Subfactory.repair(subfactory, player)
 
     calculation.update(player, subfactory)
-    main_dialog.refresh(player, nil)  -- needs the full refresh to reset subfactory list buttons
+    main_dialog.refresh(player, "all")  -- needs the full refresh to reset subfactory list buttons
 end
 
 local function change_timescale(player, new_timescale)

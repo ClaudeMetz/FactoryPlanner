@@ -66,7 +66,7 @@ local function handle_recipe_click(player, button, metadata)
         end
 
         ui_util.context.set_floor(player, subfloor)
-        main_dialog.refresh(player, "subfactory")
+        main_dialog.refresh(player, "production_detail")
 
     elseif metadata.action == "delete" then  -- removes this line, including subfloor(s)
         if not ui_util.check_archive_status(player) then return end
@@ -195,10 +195,14 @@ local function handle_machine_click(player, button, metadata)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.direction then
-        Line.change_machine(line, player, nil, metadata.direction)
+        local success = Line.change_machine(line, player, nil, metadata.direction)
 
-        calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        if not success then
+            title_bar.refresh_message(player)
+        else
+            calculation.update(player, context.subfactory)
+            main_dialog.refresh(player, "subfactory")
+        end
 
     elseif metadata.alt then
         if metadata.click == "right" then  -- resets this machine to its default state
