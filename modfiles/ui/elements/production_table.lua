@@ -352,7 +352,14 @@ function production_table.refresh(player)
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = data_util.get("preferences", player)
     local ui_state = data_util.get("ui_state", player)
-    if not ui_state.context.subfactory or not ui_state.context.subfactory.valid then return end
+    local subfactory = ui_state.context.subfactory
+
+    local production_table_elements = ui_state.main_elements.production_table
+    local subfactory_valid = (subfactory and subfactory.valid)
+    local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
+
+    production_table_elements.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
+    if not subfactory_valid then return end
 
     local production_columns, column_count = {}, 0
     for _, column_data in ipairs(all_production_columns) do
@@ -364,7 +371,6 @@ function production_table.refresh(player)
     end
     column_count = column_count + 1
 
-    local production_table_elements = data_util.get("main_elements", player).production_table
     local scroll_pane_production = production_table_elements.production_scroll_pane
     scroll_pane_production.clear()
 

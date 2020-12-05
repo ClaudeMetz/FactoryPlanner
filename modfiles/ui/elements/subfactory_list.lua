@@ -9,7 +9,7 @@ local function toggle_archive(player)
 
     local factory = archive_open and player_table.archive or player_table.factory
     ui_util.context.set_factory(player, factory)
-    main_dialog.refresh(player, nil)
+    main_dialog.refresh(player, "all")
 end
 
 -- Resets the selected subfactory to a valid position after one has been removed
@@ -32,7 +32,7 @@ local function refresh_with_archive_open(player, factory)
 
         toggle_archive(player)  -- does refreshing on its own
     else
-        main_dialog.refresh(player, nil)
+        main_dialog.refresh(player, "all")
     end
 end
 
@@ -55,7 +55,7 @@ local function handle_subfactory_submission(player, options, action)
             Factory.add(factory, new_subfactory)
             ui_util.context.set_subfactory(player, new_subfactory)
         end
-        main_dialog.refresh(player, nil)
+        main_dialog.refresh(player, "all")
 
     elseif action == "delete" then
         local removed_gui_position = Factory.remove(factory, subfactory)
@@ -157,7 +157,7 @@ local function handle_subfactory_click(player, button, metadata)
     if metadata.direction ~= nil then  -- shift subfactory in the given direction
         local shifting_function = (metadata.alt) and Factory.shift_to_end or Factory.shift
         if shifting_function(context.factory, subfactory, metadata.direction) then
-            main_dialog.refresh(player, {"subfactory_list"})
+            main_dialog.refresh(player, "subfactory_list")
         else
             local direction_string = (metadata.direction == "negative") and {"fp.up"} or {"fp.down"}
             local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_subfactory", 1}, direction_string}
@@ -176,11 +176,11 @@ local function handle_subfactory_click(player, button, metadata)
                 ui_state.flags.recalculate_on_subfactory_change = false
                 calculation.update(player, old_subfactory)
             end
-            main_dialog.refresh(player, nil)
+            main_dialog.refresh(player, "all")
 
         elseif metadata.click == "right" then
             if metadata.action == "edit" then
-                main_dialog.refresh(player, nil)  -- refresh to update the selected subfactory
+                main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
                 edit_subfactory(player)
             elseif metadata.action == "delete" then
                 delete_subfactory(player)

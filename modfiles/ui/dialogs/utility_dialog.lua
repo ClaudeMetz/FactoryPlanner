@@ -216,7 +216,7 @@ function utility_dialog.open(player, modal_data)
 end
 
 function utility_dialog.close(player, _)
-    main_dialog.refresh(player, {"subfactory_info"})
+    main_dialog.refresh(player, "subfactory_info")
 end
 
 

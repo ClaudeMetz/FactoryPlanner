@@ -60,7 +60,7 @@ local function handle_view_state_change(player, new_view_name)
             view_state.select(player, view_states[new_view_id].name)
         end
 
-        main_dialog.refresh(player, "subfactory")
+        main_dialog.refresh(player, "production")
     end
 end
 
@@ -190,7 +190,7 @@ view_state.gui_events = {
             handler = (function(player, element, _)
                 local view_name = string.gsub(element.name, "fp_button_view_state_", "")
                 view_state.select(player, view_name)
-                main_dialog.refresh(player, "subfactory")
+                main_dialog.refresh(player, "production")
             end)
         }
     }

@@ -86,30 +86,40 @@ function main_dialog.rebuild(player, default_visibility)
     right_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["right_vertical"] = right_vertical
     item_boxes.build(player)
-    production_box.build(player)  -- also builds the production_table
+    production_box.build(player)
+    production_table.build(player)
 
     title_bar.refresh_message(player)
 end
 
-function main_dialog.refresh(player, element_list)
-    -- If element_list is a table, only refresh the specified elements
-    if type(element_list) == "table" then
-        for _, element_name in pairs(element_list) do
-            _G[element_name].refresh(player)
-        end
+
+local refreshable_elements = {subfactory_list=true, subfactory_info=true,
+  item_boxes=true, production_box=true, production_table=true}
+
+function main_dialog.refresh(player, context_to_refresh)
+    if context_to_refresh == nil then return end
+    local element_to_refresh = refreshable_elements[context_to_refresh]
+
+    if element_to_refresh ~= nil then
+        -- If the given argument points to a specific element, only refresh that one
+        element_to_refresh.refresh(player)
     else
-        -- If element_list is nil, refresh everything
-        -- If it is equal to "subfactory", refresh everything about the current subfactory
-        local subfactory_refresh = (type(element_list == "string") and element_list == "subfactory")
-        if not subfactory_refresh then subfactory_list.refresh(player) end
+        -- If not, it designates a category of elements that need to be refreshed
+        -- The code to refresh is independent for each element so call order doesn't matter
 
-        subfactory_info.refresh(player)
-        item_boxes.refresh(player)
-
-        production_box.refresh(player)
         production_table.refresh(player)
+        -- If you only want the production table, refresh it using "production_table"
+        production_box.refresh(player)
+        if context_to_refresh == "production_detail" then goto end_refresh end
+        item_boxes.refresh(player)
+        if context_to_refresh == "production" then goto end_refresh end
+        subfactory_info.refresh(player)
+        if context_to_refresh == "subfactory" then goto end_refresh end
+        subfactory_list.refresh(player)
+        -- Refreshing everything doesn't need a name, but should be called "all" for clarity
     end
 
+    ::end_refresh::
     title_bar.refresh_message(player)
 end
 

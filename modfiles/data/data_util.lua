@@ -29,7 +29,7 @@ function data_util.add_subfactories_by_string(player, export_string, refresh_int
 
     ui_util.context.set_subfactory(player, first_subfactory)
     calculation.update(player, first_subfactory)
-    if refresh_interface then main_dialog.refresh(player, nil) end
+    if refresh_interface then main_dialog.refresh(player, "all") end
 end
 
 -- Goes through every subfactory's top level products and updates their defined_by

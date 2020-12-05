@@ -103,7 +103,7 @@ tutorial_dialog.gui_events = {
                 ui_util.context.set_subfactory(player, subfactory)
                 calculation.update(player, subfactory)
 
-                main_dialog.refresh(player, nil)
+                main_dialog.refresh(player, "all")
                 modal_dialog.exit(player, "cancel")
             end)
         }
@@ -114,7 +114,7 @@ tutorial_dialog.gui_events = {
             handler = (function(player, element)
                 local new_state = ui_util.switch.convert_to_boolean(element.switch_state)
                 data_util.get("preferences", player).tutorial_mode = new_state
-                main_dialog.refresh(player, nil)
+                main_dialog.refresh(player, "all")
             end)
         }
     }

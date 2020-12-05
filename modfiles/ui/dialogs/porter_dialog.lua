@@ -238,7 +238,7 @@ function import_dialog.close(player, action)
         end
 
         ui_util.context.set_subfactory(player, first_subfactory)
-        main_dialog.refresh(player, nil)
+        main_dialog.refresh(player, "all")
     end
 end
 
