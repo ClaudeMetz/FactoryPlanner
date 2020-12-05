@@ -44,7 +44,6 @@ local function swap_item_category(player, element)
     local type, proto_index = split_string[4], tonumber(split_string[5])
 
     local modal_data = data_util.get("modal_data", player)
-    local free_items = modal_data["free_items"]
 
     -- update the free items here, set the constrained items based on linear dependence data
     if type == "free" then
