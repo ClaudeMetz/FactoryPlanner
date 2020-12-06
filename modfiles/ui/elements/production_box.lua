@@ -66,9 +66,10 @@ function production_box.build(player)
     local button_solver_toggle = table_matrix_solver.add{type="button", name="fp_button_production_solver_toggle",
       caption={"fp.matrix_solver"}, style="fp_button_push", mouse_button_filter={"left"}}
     main_elements.production_box["solver_toggle_button"] = button_solver_toggle
-    local button_solver_configure = table_matrix_solver.add{type="button", name="fp_button_production_solver_configure",
-      caption="[img=info]", style="fp_button_push", mouse_button_filter={"left"}}
-    button_solver_configure.style.padding = {0, 8}
+    local button_solver_configure = table_matrix_solver.add{type="sprite-button", sprite="utility/change_recipe",
+      name="fp_button_production_solver_configure", style="fp_button_push", mouse_button_filter={"left"}}
+    button_solver_configure.style.size = 26
+    button_solver_configure.style.padding = -2
     main_elements.production_box["solver_configure_button"] = button_solver_configure
 
     local table_view_state = view_state.build(player, subheader)
