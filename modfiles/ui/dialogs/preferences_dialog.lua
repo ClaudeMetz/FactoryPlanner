@@ -326,7 +326,7 @@ preferences_dialog.gui_events = {
     },
     on_gui_elem_changed = {
         {
-            pattern = "^fp_choose%-elem%-button_mb_default_[a-z]+$",
+            pattern = "^fp_choose%-elem%-button_mb_default_[a-z_]+$",
             handler = handle_mb_default_change
         }
     }
