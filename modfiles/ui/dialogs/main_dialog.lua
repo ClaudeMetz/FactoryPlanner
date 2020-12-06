@@ -98,11 +98,10 @@ local refreshable_elements = {subfactory_list=true, subfactory_info=true,
 
 function main_dialog.refresh(player, context_to_refresh)
     if context_to_refresh == nil then return end
-    local element_to_refresh = refreshable_elements[context_to_refresh]
 
-    if element_to_refresh ~= nil then
+    if refreshable_elements[context_to_refresh] ~= nil then
         -- If the given argument points to a specific element, only refresh that one
-        element_to_refresh.refresh(player)
+        _G[context_to_refresh].refresh(player)
     else
         -- If not, it designates a category of elements that need to be refreshed
         -- The code to refresh is independent for each element so call order doesn't matter
