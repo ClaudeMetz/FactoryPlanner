@@ -15,6 +15,7 @@ Date: 00. 00. 0000
     - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)
     - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth keeping around.
     - Increased the maximum length of subfactory names to 256 characters, while accomodating for longer names in the UI
+    - Added some dimming to the interface to indicate that a modal dialog is open and/or the game is paused while the main interface is open
     - Various minor UI improvements unrelated to the main interface redesign
     - Removed migrations for versions before 0.18 since the game doesn't load those saves anymore
     - Updated to a newer version of flib (v0.6.0)
