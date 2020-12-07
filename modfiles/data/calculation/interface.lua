@@ -94,28 +94,6 @@ local function generate_floor_data(player, subfactory, floor)
     return floor_data
 end
 
--- Returns a table containing all the data needed to run the calculations for the given subfactory
-local function generate_subfactory_data(player, subfactory)
-    local subfactory_data = {
-        player_index = player.index,
-        top_level_products = {},
-        top_floor = nil
-    }
-
-    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local product_data = {
-            proto = product.proto,  -- reference
-            amount = Item.required_amount(product)
-        }
-        table.insert(subfactory_data.top_level_products, product_data)
-    end
-
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
-
-    return subfactory_data
-end
-
 
 -- Replaces the items of the given object (of given class) using the given result
 local function update_object_items(object, item_class, item_results)
@@ -184,11 +162,23 @@ function calculation.update(player, subfactory)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        local subfactory_data = generate_subfactory_data(player, subfactory)
-        local solver = (subfactory.matrix_free_items) and matrix_solver or sequential_solver
+        local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
 
-        solver.update_subfactory(subfactory_data)
-        player_table.active_subfactory = nil
+        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
+
+            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
+                if matrix_metadata.num_rows == matrix_metadata.num_cols then
+                    matrix_solver.run_matrix_solver(subfactory_data, false)
+                else
+                    modal_dialog.enter(player, {type="matrix", modal_data={first_open=false}, allow_queueing=true})
+                end
+            end
+        else
+            sequential_solver.update_subfactory(subfactory_data)
+        end
+
+        player_table.active_subfactory = nil  -- reset after calculations have been carried out
     end
 end
 
@@ -199,6 +189,29 @@ end
 
 
 -- ** INTERFACE **
+-- Returns a table containing all the data needed to run the calculations for the given subfactory
+function calculation.interface.generate_subfactory_data(player, subfactory)
+    local subfactory_data = {
+        player_index = player.index,
+        top_level_products = {},
+        top_floor = nil,
+        matrix_free_items = subfactory.matrix_free_items
+    }
+
+    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
+        local product_data = {
+            proto = product.proto,  -- reference
+            amount = Item.required_amount(product)
+        }
+        table.insert(subfactory_data.top_level_products, product_data)
+    end
+
+    local top_floor = Subfactory.get(subfactory, "Floor", 1)
+    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
+
+    return subfactory_data
+end
+
 -- Updates the active subfactories top-level data with the given result
 function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
