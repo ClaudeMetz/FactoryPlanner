@@ -125,13 +125,12 @@ end
 function modal_dialog.enter(player, dialog_settings)
     local ui_state = data_util.get("ui_state", player)
 
-    -- If a dialog is currently open, and this one wants to be queued, do so
     if player.gui.screen["fp_frame_modal_dialog"] ~= nil then
+        -- If a dialog is currently open, and this one wants to be queued, do so
         if dialog_settings.allow_queueing then
             ui_state.queued_dialog_settings = dialog_settings
-        else
-            return  -- otherwise, disallow opening more than one modal dialog at a time
         end
+        return
     end
 
     ui_state.modal_dialog_type = dialog_settings.type

@@ -1,6 +1,17 @@
 matrix_dialog = {}
 
 -- ** LOCAL UTIL **
+local function update_dialog_submit_button(modal_data, matrix_metadata)
+    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
+    local curr_free_items = #modal_data["free_items"]
+
+    local message = nil
+    if num_needed_free_items > curr_free_items then
+        message = {"fp.matrix_constrained_items", num_needed_free_items} -- "choose X free items"
+    end
+    modal_dialog.set_submit_button_state(modal_data.modal_elements, (message == nil), message)
+end
+
 local function refresh_item_category(modal_data, type)
     local table_items = modal_data.modal_elements[type .. "_table"]
     table_items.clear()
@@ -12,10 +23,10 @@ local function refresh_item_category(modal_data, type)
     end
 end
 
-local function create_item_category(modal_data, type)
+local function create_item_category(modal_data, type, label_arg)
     local flow_category = modal_data.modal_elements.content_frame.add{type="flow", direction="vertical"}
 
-    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items"}}
+    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items", label_arg}}
     label_title.style.font = "heading-2"
 
     local frame_items = flow_category.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
@@ -26,20 +37,32 @@ local function create_item_category(modal_data, type)
 end
 
 local function swap_item_category(player, element)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+
     local split_string = split_string(element.name, "_")
     local type, proto_index = split_string[4], tonumber(split_string[5])
 
     local modal_data = data_util.get("modal_data", player)
-    local item_array = modal_data[type .. "_items"]
-    local swapped_proto = item_array[proto_index]
-    table.remove(item_array, proto_index)
 
-    local opposing_type = (type == "free") and "constrained" or "free"
-    local opposing_item_array = modal_data[opposing_type .. "_items"]
-    table.insert(opposing_item_array, swapped_proto)
+    -- update the free items here, set the constrained items based on linear dependence data
+    if type == "free" then
+        -- note this assumes the gui's list has the same order as the subfactory
+        table.remove(subfactory.matrix_free_items, proto_index)
+    else -- "constrained"
+        local item_proto = modal_data["constrained_items"][proto_index]
+        table.insert(subfactory.matrix_free_items, item_proto)
+    end
+
+    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory_data, matrix_metadata)
+    modal_data.constrained_items = linear_dependence_data.allowed_free_items
+    modal_data.free_items = matrix_metadata.free_items
 
     refresh_item_category(modal_data, "constrained")
     refresh_item_category(modal_data, "free")
+    update_dialog_submit_button(modal_data, matrix_metadata)
 end
 
 
@@ -53,17 +76,36 @@ matrix_dialog.dialog_settings = (function(_) return {
 function matrix_dialog.open(player, modal_data)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
+    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+    if #subfactory_data.top_floor.lines == 0 then
+        modal_dialog.exit(player, "cancel")
+        return true
+    end
 
-    -- Provisional item to test the swapping, need to fill in what goes here
-    -- Also the format could need to be adjusted
-    local items = Subfactory.get_in_order(subfactory, "Product")
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(player, subfactory_data, matrix_metadata)
 
-    -- Both of these need to be continuously indexed (for now)
-    modal_data.constrained_items = {items[1].proto, items[2].proto, items[3].proto}
-    modal_data.free_items = subfactory.matrix_free_items
+    -- too many ways to create the products
+    if matrix_metadata.num_rows < matrix_metadata.num_cols then
+        local label_title = modal_data.modal_elements.content_frame.add{type="label", caption={"fp.matrix_linear_dependent_recipes"}}
+        label_title.style.font = "heading-2"
+        return
+    end
 
-    create_item_category(modal_data, "constrained")
+    modal_data.constrained_items = linear_dependence_data.allowed_free_items
+    modal_data.free_items = matrix_metadata.free_items
+
+    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
+
+    -- user doesn't need select any free items, just run the matrix solver
+    if num_needed_free_items == 0 then
+        modal_dialog.exit(player, "submit")
+        return true
+    end
+
+    create_item_category(modal_data, "constrained", num_needed_free_items)
     create_item_category(modal_data, "free")
+    update_dialog_submit_button(modal_data, matrix_metadata)
 end
 
 function matrix_dialog.close(player, action)
