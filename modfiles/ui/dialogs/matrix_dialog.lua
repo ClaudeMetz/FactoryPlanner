@@ -26,8 +26,9 @@ end
 local function create_item_category(modal_data, type, label_arg)
     local flow_category = modal_data.modal_elements.content_frame.add{type="flow", direction="vertical"}
 
-    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items", label_arg,
-      {"fp.pl_item", label_arg}}}
+    local title_string = (type == "free") and {"fp.matrix_free_items"} or
+      {"fp.matrix_constrained_items", label_arg, {"fp.pl_item", label_arg}}
+    local label_title = flow_category.add{type="label", caption=title_string}
     label_title.style.font = "heading-2"
 
     local frame_items = flow_category.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
