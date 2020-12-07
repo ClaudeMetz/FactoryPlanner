@@ -7,7 +7,7 @@ local function update_dialog_submit_button(modal_data, matrix_metadata)
 
     local message = nil
     if num_needed_free_items > curr_free_items then
-        message = {"fp.matrix_constrained_items", num_needed_free_items} -- "choose X free items"
+        message = {"fp.matrix_constrained_items", num_needed_free_items, {"fp.pl_item", num_needed_free_items}}
     end
     modal_dialog.set_submit_button_state(modal_data.modal_elements, (message == nil), message)
 end
@@ -26,7 +26,8 @@ end
 local function create_item_category(modal_data, type, label_arg)
     local flow_category = modal_data.modal_elements.content_frame.add{type="flow", direction="vertical"}
 
-    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items", label_arg}}
+    local label_title = flow_category.add{type="label", caption={"fp.matrix_" .. type .. "_items", label_arg,
+      {"fp.pl_item", label_arg}}}
     label_title.style.font = "heading-2"
 
     local frame_items = flow_category.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
