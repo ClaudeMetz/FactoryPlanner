@@ -147,13 +147,13 @@ function modal_dialog.enter(player, dialog_settings)
     local immediately_closed = dialog_object.open(player, ui_state.modal_data)
 
     if not immediately_closed then
-        local dimming_frame = player.gui.screen.add{type="frame", name="fp_frame_that_dimms",
+        local interface_dimmer = player.gui.screen.add{type="frame", name="fp_frame_interface_dimmer",
           style="fp_frame_semitransparent"}
-        ui_state.modal_data.modal_elements.dimming_frame = dimming_frame
+        ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
 
         local dimensions = ui_state.main_dialog_dimensions
-        dimming_frame.style.size = {dimensions.width, dimensions.height}
-        dimming_frame.location = ui_state.main_elements.main_frame.location
+        interface_dimmer.style.size = {dimensions.width, dimensions.height}
+        interface_dimmer.location = ui_state.main_elements.main_frame.location
 
         frame_modal_dialog.bring_to_front()
         player.opened = frame_modal_dialog
@@ -189,7 +189,7 @@ function modal_dialog.exit(player, button_action)
     ui_state.modal_data = nil
 
     modal_elements.modal_frame.destroy()
-    if modal_elements.dimming_frame then modal_elements.dimming_frame.destroy() end
+    if modal_elements.interface_dimmer then modal_elements.interface_dimmer.destroy() end
 
     player.opened = ui_state.main_elements.main_frame
     title_bar.refresh_message(player)
@@ -223,7 +223,7 @@ function modal_dialog.enter_selection_mode(player, selector_name)
     main_dialog.set_pause_state(player, frame_main_dialog, true)
 
     local modal_elements = ui_state.modal_data.modal_elements
-    modal_elements.dimming_frame.visible = false
+    modal_elements.interface_dimmer.visible = false
 
     modal_elements.modal_frame.ignored_by_interaction = true
     modal_elements.modal_frame.location = {25, 50}
@@ -235,7 +235,7 @@ function modal_dialog.leave_selection_mode(player)
     player.cursor_stack.set_stack(nil)
 
     local modal_elements = ui_state.modal_data.modal_elements
-    modal_elements.dimming_frame.visible = true
+    modal_elements.interface_dimmer.visible = true
 
     -- .opened needs to be set because on_gui_closed sets it to nil
     player.opened = modal_elements.modal_frame
@@ -243,8 +243,8 @@ function modal_dialog.leave_selection_mode(player)
     modal_elements.modal_frame.force_auto_center()
 
     local frame_main_dialog = ui_state.main_elements.main_frame
-    main_dialog.set_pause_state(player, frame_main_dialog, false)
     frame_main_dialog.visible = true
+    main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
 
@@ -252,7 +252,7 @@ end
 modal_dialog.gui_events = {
     on_gui_click = {
         {
-            name = "fp_frame_that_dimms",
+            name = "fp_frame_interface_dimmer",
             handler = (function(player, _, _)
                 data_util.get("modal_elements", player).modal_frame.bring_to_front()
             end)

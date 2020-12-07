@@ -148,12 +148,25 @@ end
 
 -- Sets the game.paused-state as is appropriate
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
+    local pause = false
     if not game.is_multiplayer() and player.controller_type ~= defines.controllers.editor then
         if data_util.get("preferences", player).pause_on_interface and not force_false then
-            game.tick_paused = frame_main_dialog.visible  -- only pause when the main dialog is open
-        else
-            game.tick_paused = false
+            pause = frame_main_dialog.visible  -- only pause when the main dialog is open
         end
+    end
+    game.tick_paused = pause
+
+    local background_dimmer = player.gui.screen["fp_frame_background_dimmer"]
+    -- Always destroy the dimmer to deal with screen resolution changes
+    -- Not the most efficient solution, but the most practical one
+    if background_dimmer then background_dimmer.destroy() end
+
+    if pause then
+        background_dimmer = player.gui.screen.add{type="frame",
+          name="fp_frame_background_dimmer", style="fp_frame_semitransparent"}
+        background_dimmer.style.size = player.display_resolution
+
+        frame_main_dialog.bring_to_front()
     end
 end
 
@@ -170,7 +183,20 @@ main_dialog.gui_events = {
         {
             name = "fp_button_toggle_interface",
             handler = main_dialog.toggle
-        }
+        },
+        {
+            name = "fp_frame_background_dimmer",
+            handler = (function(player, _, _)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.main_elements.main_frame.bring_to_front()
+
+                if ui_state.modal_dialog_type ~= nil then
+                    local modal_elements = ui_state.modal_data.modal_elements
+                    modal_elements.interface_dimmer.bring_to_front()
+                    modal_elements.modal_frame.bring_to_front()
+                end
+            end)
+        },
     }
 }
 
