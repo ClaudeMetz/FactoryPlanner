@@ -250,7 +250,7 @@ local function handle_machine_click(player, button, metadata)
             modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
         end
 
-    elseif metadata.click == "right" then
+    elseif metadata.click == "right" and context.subfactory.matrix_free_items == nil then
         local modal_data = {
             title = {"fp.options_machine_title"},
             text = {"fp.options_machine_text", line.machine.proto.localised_name},
@@ -373,7 +373,7 @@ local function handle_item_click(player, button, metadata)
         if class == "Product" then -- Set the priority product
             if line.Product.count < 2 then
                 title_bar.enqueue_message(player, {"fp.warning_no_prioritizing_single_product"}, "warning", 1, true)
-            else
+            elseif context.subfactory.matrix_free_items == nil then
                 -- Remove the priority_product if the already selected one is clicked
                 line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
 
@@ -392,7 +392,7 @@ local function handle_item_click(player, button, metadata)
             end
         end
 
-    elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
+    elseif metadata.click == "right" and context.subfactory.matrix_free_items == nil then
         -- Set the view state so that the amount shown in the dialog makes sense
         local view_actually_changed = view_state.select(player, "items_per_timescale")
         if view_actually_changed then main_dialog.refresh(player, "subfactory") end

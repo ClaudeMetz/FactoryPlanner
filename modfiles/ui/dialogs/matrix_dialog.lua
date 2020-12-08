@@ -115,7 +115,6 @@ function matrix_dialog.close(player, action)
     local subfactory = ui_state.context.subfactory
 
     if action == "submit" then
-        -- This is provisional, I don't know what format you intend to store the free items in
         subfactory.matrix_free_items = ui_state.modal_data.free_items
 
         calculation.update(player, subfactory)
