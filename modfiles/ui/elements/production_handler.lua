@@ -55,18 +55,21 @@ local function handle_recipe_click(player, button, metadata)
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif metadata.click == "left" then  -- Attaches a subfloor to this line
-        local subfloor = line.subfloor
+        if line.recipe.production_type == "consume" then
+            title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
+        else
+            local subfloor = line.subfloor
+            if subfloor == nil then
+                if not ui_util.check_archive_status(player) then return end
 
-        if subfloor == nil then
-            if not ui_util.check_archive_status(player) then return end
+                subfloor = Floor.init(line)  -- attaches itself to the given line automatically
+                Subfactory.add(context.subfactory, subfloor)
+                calculation.update(player, context.subfactory)
+            end
 
-            subfloor = Floor.init(line)  -- attaches itself to the given line automatically
-            Subfactory.add(context.subfactory, subfloor)
-            calculation.update(player, context.subfactory)
+            ui_util.context.set_floor(player, subfloor)
+            main_dialog.refresh(player, "production_detail")
         end
-
-        ui_util.context.set_floor(player, subfloor)
-        main_dialog.refresh(player, "production_detail")
 
     elseif metadata.action == "delete" then  -- removes this line, including subfloor(s)
         if not ui_util.check_archive_status(player) then return end
