@@ -15,21 +15,21 @@ local function generate_metadata(player)
     }
 
     if preferences.tutorial_mode then
+        -- Choose the right type of tutorial text right here if possible
+        local matrix_postfix = (metadata.matrix_solver_active) and "_matrix" or ""
+
         metadata.producing_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "producing_recipe",
           true, true, true)
         metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
           true, true, true)
-        metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
-        metadata.machine_matrix_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine_matrix",
+        metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine" .. matrix_postfix,
           false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
         metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
         metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", true, true, true)
-        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", true, true, true)
-        metadata.byproduct_matrix_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct_matrix",
-          true, true, true)
-        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", true, true, true)
-        metadata.ingredient_matrix_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient_matrix",
+        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct" .. matrix_postfix,
+         true, true, true)
+        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient" .. matrix_postfix,
           true, true, true)
         metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
     end
@@ -118,10 +118,8 @@ function builders.machine(line, parent_flow, metadata)
         local machine_proto = line.machine.proto
         local plural_parameter = (machine_count == "1") and 1 or 2
         local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
-        local tutorial_tooltip = (metadata.matrix_solver_active) and metadata.machine_matrix_tutorial_tooltip
-          or metadata.machine_tutorial_tooltip
         local tooltip = {"", machine_proto.localised_name, number_line, indication, line.machine.effects_tooltip,
-          tutorial_tooltip}
+          metadata.machine_tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
           sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
@@ -247,8 +245,7 @@ function builders.byproducts(line, parent_flow, metadata)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tut_type = (metadata.matrix_solver_active) and "byproduct_matrix" or "byproduct"
-        local tutorial_tooltip = (not line.subfloor) and metadata[tut_type .. "_tutorial_tooltip"] or ""
+        local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tooltip or ""
         local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Byproduct_" .. line.id
@@ -291,9 +288,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line = {"fp.two_word_title", ingredient.proto.localised_name, indication_string}
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tutorial_tooltip = (metadata.matrix_solver_active) and metadata.ingredient_matrix_tutorial_tooltip
-          or metadata.ingredient_tutorial_tooltip
-        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tooltip}
+        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Ingredient_" .. line.id
           .. "_" .. ingredient.id, sprite=ingredient.proto.sprite, style=style, number=amount,
