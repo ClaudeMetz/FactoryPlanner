@@ -61,9 +61,8 @@ function main_dialog.rebuild(player, default_visibility)
     local dimensions = determine_main_dialog_dimensions(player)
     ui_state.main_dialog_dimensions = dimensions
 
-    frame_main_dialog.style.width = dimensions.width
-    frame_main_dialog.style.height = dimensions.height
-    ui_util.properly_center_frame(player, frame_main_dialog, dimensions.width, dimensions.height)
+    frame_main_dialog.style.size = dimensions
+    ui_util.properly_center_frame(player, frame_main_dialog, dimensions)
 
     if visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)

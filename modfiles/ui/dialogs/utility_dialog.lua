@@ -85,8 +85,7 @@ function utility_structures.components(player, modal_data)
 
         local button_request = custom_flow.add{type="button", name="fp_button_utility_request_items",
           style="rounded_button", mouse_button_filter={"left"}}
-        button_request.style.width = 115
-        button_request.style.height = 26
+        button_request.style.size = {115, 26}
         modal_elements.request_button = button_request
 
         local table_components = components_box.add{type="table", column_count=2}
@@ -159,8 +158,7 @@ function utility_structures.notes(player, modal_data)
 
     local notes = data_util.get("context", player).subfactory.notes
     local text_box = utility_box.add{type="text-box", name="fp_text-box_subfactory_notes", text=notes}
-    text_box.style.width = 500
-    text_box.style.height = 250
+    text_box.style.size = {500, 250}
     text_box.word_wrap = true
     text_box.style.top_margin = -2
 end
