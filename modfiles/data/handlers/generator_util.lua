@@ -316,7 +316,7 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
--- Determines how long a rocket takes to launch for the given rocket silo prototype in seconds
+-- Determines how long a rocket takes to launch for the given rocket silo prototype
 -- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
 -- due to how the game code is written. If one stage is completed, you can only progress to the next one
 -- in the next tick. No stages can be skipped, meaning a minimal sequence time is around 10 ticks long.
@@ -333,7 +333,7 @@ function generator_util.determine_launch_sequence_time(silo_proto)
         rocket_ready = 14,  -- estimate for satellite insertion delay
         launch_started = silo_proto.launch_wait_time + 1,
         engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
-        -- math.log(x) calculates the natural logarithm
+        -- This calculates a fractional amount of ticks. Also, math.log(x) calculates the natural logarithm
         rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
           / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
         lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
@@ -345,7 +345,7 @@ function generator_util.determine_launch_sequence_time(silo_proto)
         total_ticks = total_ticks + ticks_taken
     end
 
-    return (total_ticks / 60)
+    return (total_ticks / 60)  -- retured value is in seconds
 end
 
 
