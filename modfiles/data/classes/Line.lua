@@ -259,6 +259,7 @@ function Line.unpack(packed_self)
     if self.beacon then self.beacon.parent = self end
     -- Effects are summarized by the ensuing validation
 
+    -- The prototype will be automatically unpacked by the validation process
     self.priority_product_proto = packed_self.priority_product_proto
     self.comment = packed_self.comment
 
@@ -321,6 +322,11 @@ function Line.repair(self, player)
 
         if self.valid then Line.summarize_effects(self, false, false) end
     end
+
+    -- Clear item prototypes so we don't need to rely on the solver to remove them
+    Line.clear(self, "Product")
+    Line.clear(self, "Byproduct")
+    Line.clear(self, "Ingredient")
 
     return self.valid
 end
