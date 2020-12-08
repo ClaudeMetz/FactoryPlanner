@@ -103,8 +103,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     local button_total = flow_beacon.add{type="sprite-button", name="fp_sprite-button_beacon_total_amount",
       tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
     button_total.style.padding = 2
-    button_total.style.width = 26
-    button_total.style.height = 26
+    button_total.style.size = 26
     button_total.style.top_margin = 1
 end
 

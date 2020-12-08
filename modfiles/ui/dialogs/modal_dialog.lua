@@ -151,8 +151,7 @@ function modal_dialog.enter(player, dialog_settings)
           style="fp_frame_semitransparent"}
         ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
 
-        local dimensions = ui_state.main_dialog_dimensions
-        interface_dimmer.style.size = {dimensions.width, dimensions.height}
+        interface_dimmer.style.size = ui_state.main_dialog_dimensions
         interface_dimmer.location = ui_state.main_elements.main_frame.location
 
         frame_modal_dialog.bring_to_front()

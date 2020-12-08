@@ -141,8 +141,7 @@ function subfactory_info.build(player)
     main_elements.subfactory_info["override_prod_bonus_button"] = button_override_prod_bonus
 
     local textfield_prod_bonus = flow_mining_prod.add{type="textfield", name="fp_textfield_mining_prod_override"}
-    textfield_prod_bonus.style.width = 60
-    textfield_prod_bonus.style.height = 26
+    textfield_prod_bonus.style.size = {60, 26}
     ui_util.setup_numeric_textfield(textfield_prod_bonus, true, true)
     main_elements.subfactory_info["prod_bonus_override_textfield"] = textfield_prod_bonus
 
