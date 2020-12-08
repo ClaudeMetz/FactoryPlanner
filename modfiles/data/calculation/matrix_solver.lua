@@ -348,7 +348,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
             structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
         end
     end
-    
+
     -- set products for unproduced items
     for _, product in pairs(subfactory_data.top_level_products) do
         local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
@@ -546,10 +546,9 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
-    if line_data.machine_proto.is_rocket_silo then
-        -- extra time for launch sequence
-        -- the factorio wiki says 40.33, but I saw this elsewhere in the code (and this agrees with the online factorio calculator). Not sure which is correct.
-        time_per_craft = time_per_craft + 41.25
+    local launch_sequence_time = line_data.machine_proto.launch_sequence_time
+    if launch_sequence_time then
+        time_per_craft = time_per_craft + launch_sequence_time
     end
     local single_crafts_per_tick = timescale / time_per_craft
     local total_crafts_per_tick = machine_count * single_crafts_per_tick
