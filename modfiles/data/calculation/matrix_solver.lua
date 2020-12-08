@@ -694,6 +694,7 @@ function matrix_solver.to_reduced_row_echelon_form(m)
 
             -- subtract from the remaining rows so their first entries are zero
             for i = first_nonzero_row+1, num_rows do
+                factor = m[i][curr_col]
                 for j = curr_col, num_cols do
                     m[i][j] = m[i][j] - m[pivot_row][j] * factor
                     -- check rounding errors from floating point arthmetic
