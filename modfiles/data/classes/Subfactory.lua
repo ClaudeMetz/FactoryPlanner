@@ -1,14 +1,11 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon, settings)
-    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
-    settings = settings or {default_timescale = 0, prefer_matrix_solver = false}
-
+function Subfactory.init(name, icon)
     local subfactory = {
         name = name,
         icon = icon,
-        timescale = timescale_to_number[settings.default_timescale],
+        timescale = nil,  -- needs to be set after init
         energy_consumption = 0,
         pollution = 0,
         notes = "",
@@ -17,7 +14,7 @@ function Subfactory.init(name, icon, settings)
         Byproduct = Collection.init("Item"),
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
-        matrix_free_items = (settings.prefer_matrix_solver) and {} or nil,
+        matrix_free_items = nil,
         selected_floor = nil,
         item_request_proxy = nil,
         valid = true,
@@ -156,8 +153,7 @@ function Subfactory.pack(self)
 end
 
 function Subfactory.unpack(packed_self)
-    -- The current settings are not relevant for this subfactory as we'll just overwrite them anyways
-    local self = Subfactory.init(packed_self.name, packed_self.icon, nil)
+    local self = Subfactory.init(packed_self.name, packed_self.icon)
 
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
