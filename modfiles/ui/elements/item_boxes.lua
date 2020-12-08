@@ -2,6 +2,11 @@ item_boxes = {}
 
 --- ** LOCAL UTIL **
 local function add_recipe(player, context, type, item)
+    if type == "byproduct" and context.subfactory.matrix_free_items == nil then
+        title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
+        return
+    end
+
     if context.floor.level > 1 then
         production_box.change_floor(player, "top")
         local message = {"fp.warning_recipe_wrong_floor", {"fp.pu_" .. type, 1}}

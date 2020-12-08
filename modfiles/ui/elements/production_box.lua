@@ -16,8 +16,22 @@ local function handle_matrix_toggle(player)
         subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
         modal_dialog.enter(player, {type="matrix", modal_data={first_open=true}})
     else
-        subfactory.matrix_free_items = nil
-        refresh_production(player)  -- recalculate with the sequential solver
+        subfactory.matrix_free_items = nil  -- disable the matrix solver
+
+        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
+        local function remove_consuming_recipes(floor)
+            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+                if line.subfloor then remove_consuming_recipes(line.subfloor)
+                elseif line.recipe.production_type == "consume" then Floor.remove(floor, line) end
+            end
+        end
+
+        -- The sequential solver doesn't like byproducts yet, so remove those lines
+        local top_floor = Subfactory.get(subfactory, "Floor", 1)
+        remove_consuming_recipes(top_floor)
+
+        -- Recalculate with the sequential solver
+        refresh_production(player)
     end
 end
 
