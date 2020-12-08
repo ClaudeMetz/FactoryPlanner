@@ -26,11 +26,13 @@ local function reload_settings(player)
     local settings = settings.get_player_settings(player)
     local settings_table = {}
 
+    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
+
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
     settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
     settings_table.alt_action = settings["fp_alt_action"].value
-    settings_table.default_timescale = settings["fp_default_timescale"].value
+    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
 

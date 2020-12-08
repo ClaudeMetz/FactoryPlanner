@@ -43,6 +43,7 @@ function Floor.insert_at(self, gui_position, object)
     return Collection.insert_at(self[object.class], gui_position, object)
 end
 
+
 function Floor.remove(self, dataset)
     -- Remove the subfloor(s) associated to a line recursively, so they don't hang around
     if dataset.class == "Line" and dataset.subfloor ~= nil then
@@ -76,6 +77,7 @@ function Floor.remove_if_empty(self)
 
     return false  -- returns whether the floor was deleted or not
 end
+
 
 function Floor.replace(self, dataset, object)
     object.parent = self
