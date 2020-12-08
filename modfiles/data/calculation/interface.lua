@@ -165,7 +165,7 @@ function calculation.update(player, subfactory)
         local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
 
         if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
-            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(player, subfactory_data)
+            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
                 if matrix_metadata.num_rows == matrix_metadata.num_cols then
@@ -219,6 +219,7 @@ function calculation.interface.set_subfactory_result(result)
 
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
+    subfactory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
