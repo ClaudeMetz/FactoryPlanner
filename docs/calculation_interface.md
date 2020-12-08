@@ -18,6 +18,7 @@ Be aware that the floors in this mod are recursive in nature. Every line on a fl
 - `top_level_products` - An array containing all the top level products the user configured. These are the products that this subfactory should actually produce. Each element in this array has the following fields:
   - `proto` - A custom prototype that specifies the item/fluid that should be produced.
   - `amount` - The actual amount of this item that should be produced.
+- `matrix_free_items` - An array containing the prototypes of the items that the user set as `free` in context of the matrix solver.
 - `top_floor` - This is a table that is the jumping-off point for your solver. It has the following fields:
   - `id` - The internal id of this floor. You'll need this when feeding the calculated results back to the mod.
   - `lines` - An array containing all the lines on this floor. What data each line contains depends on whether it is a simple recipe line, or whether it is a line representing a subfloor.
@@ -51,6 +52,7 @@ This is the point where the `class` structure comes into play, which is document
   - `player_index` - The index of the player that these calculations have been run for. `subfactory_data` provides this to you.
   - `energy_consumption` [1] - The total electrical energy consumption of this subfactory. Should be pretty-self explanatory.
   - `pollution` [2] - The total amount of pollution produced by this subfactory.
+  - `matrix_free_items` - An array containing the prototypes of the items that the user set as `free` in context of the matrix solver that the solver might have decided to change.
   - `Product` [3] - This part of the results works a bit counter-intuitively (read: bad implementation). It is a table of tables that follows the `class` format. However, as products are intially defined by the user, it differs from `Byproduct` and `Ingredient` in what the amounts in the class mean. The amounts here signal the amount of items *missing* to fully satisfy the users demand for that product. As an example, if this class specifies an amount of 40 electronic circuits, it means that there are 40 circuits missing to fully satisfy the demand. Following this logic, a totally empty class means that the demand for every product is fully satisfied.
   - `Byproduct` [4] - A table of tables that follows the `class` format. The amounts associated to the items in that class specify the amounts of byproduct the whole subfactory produces.
   - `Ingredient` [5] - A table of tables that follows the `class` format. The amounts associated to the items in that class specify the amounts of ingredient that the whole subfactory requires as input.
@@ -110,7 +112,7 @@ These are functions that you can use in your solver so you don't have to worry t
   - `crafts_per_tick` - A value that needs to be determined using the `determine_crafts_per_tick` function first.
   - `production_ratio` - A value that refers to the precise amount of times the recipe of the current line needs to be run to produce the desired amount. As an example, if you require 15 copper cables, and their recipe produces 3 cables at a time, the `production ratio` of this line would be `15/3=5`.
   - `timescale` - A value that is provided on each line.
-  - `is_rocket_silo` - A value that can be found on the custom `machine` prototype that is provided for each line.
+  - `launch_sequence_time` - A value that can be found on the custom `machine` prototype that is provided for each line.
 
 ### `calculation.util.determine_production_ratio()`
 
@@ -119,7 +121,7 @@ These are functions that you can use in your solver so you don't have to worry t
   - `crafts_per_tick` - A value that needs to be determined using the `determine_crafts_per_tick` function first.
   - `machine_limit` - A value that specifies the exact amount of machines that the current line should use. This is useful when incorporating a user-determined limit on the number of machines per line.
   - `timescale` - A value that is provided on each line.
-  - `is_rocket_silo` - A value that can be found on the custom `machine` prototype that is provided for each line.
+  - `launch_sequence_time` - A value that can be found on the custom `machine` prototype that is provided for each line.
 
 ### `calculation.util.determine_prodded_amount()`
 
@@ -220,3 +222,10 @@ There are two types of data structures, one of which builds upon the other. Ther
 ### `structures.aggregate.subtract()`
 
 - This function works basically identically to `aggregate.add`, with the difference that it subtracts the relevant amount instead of adding it.
+
+### `structures.aggregate.add_aggregate(from_aggregate, to_aggregate)`
+
+- This function adds all the first aggregate to the second, which includes `energy_consumtion`, `pollution`, `Product`, `Byproduct` and `Ingredient`. The function does not create a new aggregate that it returns, instead it modifies the `to_aggregate` one without returning anything.
+- It has the following arguments, in order:
+  - `from_aggregate` - The aggreagte whose content gets extracted to be added to the other one, and is not modified in any way.
+  - `to_aggregate` - The aggreagte that the other one's contents get added to, meaning this one is modified by the function.
