@@ -7,6 +7,7 @@ local function generate_metadata(player)
 
     local metadata = {
         archive_open = (ui_state.flags.archive_open),
+        matrix_solver_active = (ui_state.context.subfactory.matrix_free_items ~= nil),
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
@@ -19,11 +20,17 @@ local function generate_metadata(player)
         metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
           true, true, true)
         metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
+        metadata.machine_matrix_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine_matrix",
+          false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
         metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
         metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", true, true, true)
         metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct", true, true, true)
+        metadata.byproduct_matrix_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct_matrix",
+          true, true, true)
         metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient", true, true, true)
+        metadata.ingredient_matrix_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient_matrix",
+          true, true, true)
         metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
     end
 
@@ -67,8 +74,9 @@ end
 function builders.percentage(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
+    local enabled = (not metadata.archive_open and not metadata.matrix_solver_active)
     local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
-      .. line.id, text=tostring(relevant_line.percentage), enabled=(not metadata.archive_open)}
+      .. line.id, text=tostring(relevant_line.percentage), enabled=enabled}
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
@@ -94,7 +102,7 @@ function builders.machine(line, parent_flow, metadata)
         if metadata.round_button_numbers then machine_count = math.ceil(machine_count) end
 
         local style, indication, machine_limit = "flib_slot_button_default_small", "", line.machine.limit
-        if machine_limit ~= nil then
+        if not metadata.matrix_solver_active and machine_limit ~= nil then
             if line.machine.hard_limit then
                 style = "flib_slot_button_pink_small"
                 indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_hard", machine_limit}}}
@@ -110,8 +118,10 @@ function builders.machine(line, parent_flow, metadata)
         local machine_proto = line.machine.proto
         local plural_parameter = (machine_count == "1") and 1 or 2
         local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
+        local tutorial_tooltip = (metadata.matrix_solver_active) and metadata.machine_matrix_tutorial_tooltip
+          or metadata.machine_tutorial_tooltip
         local tooltip = {"", machine_proto.localised_name, number_line, indication, line.machine.effects_tooltip,
-          metadata.machine_tutorial_tooltip}
+          tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
           sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
@@ -207,7 +217,7 @@ function builders.products(line, parent_flow, metadata)
         local style = "flib_slot_button_default_small"
         local indication_string, tutorial_tooltip = "", ""
 
-        if not line.subfloor then
+        if not line.subfloor and not metadata.matrix_solver_active then
             -- We can check for identity because they reference the same table
             if line.priority_product_proto == product.proto then
                 style = "flib_slot_button_pink_small"
@@ -237,7 +247,8 @@ function builders.byproducts(line, parent_flow, metadata)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tooltip or ""
+        local tut_type = (metadata.matrix_solver_active) and "byproduct_matrix" or "byproduct"
+        local tutorial_tooltip = (not line.subfloor) and metadata[tut_type .. "_tutorial_tooltip"] or ""
         local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Byproduct_" .. line.id
@@ -280,7 +291,9 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line = {"fp.two_word_title", ingredient.proto.localised_name, indication_string}
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tooltip}
+        local tutorial_tooltip = (metadata.matrix_solver_active) and metadata.ingredient_matrix_tutorial_tooltip
+          or metadata.ingredient_tutorial_tooltip
+        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Ingredient_" .. line.id
           .. "_" .. ingredient.id, sprite=ingredient.proto.sprite, style=style, number=amount,

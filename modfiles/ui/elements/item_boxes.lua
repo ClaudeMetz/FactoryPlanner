@@ -48,10 +48,18 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
     if not subfactory or not subfactory.valid then return 0 end
 
     local table_item_count = 0
-    local default_style = (name == "ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
-    local tut_mode_tooltip = (name == "product") and
-      ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true) or ""
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
+    local default_style, tut_mode_tooltip = "flib_slot_button_default", ""
+
+    if name == "product" then
+        default_style = "flib_slot_button_red"
+        tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true)
+    elseif name == "byproduct" then
+        default_style = "flib_slot_button_red"
+        if subfactory.matrix_free_items ~= nil then
+            tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_byproduct", true, true, true)
+        end
+    end
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class_name)) do
         local required_amount = (name == "product") and Item.required_amount(item) or nil
