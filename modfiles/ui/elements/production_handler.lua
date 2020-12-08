@@ -383,8 +383,13 @@ local function handle_item_click(player, button, metadata)
 
         else  -- Byproduct or Ingredient
             local production_type = (class == "Byproduct") and "consume" or "produce"
-            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type,
-              add_after_position=((metadata.shift) and line.gui_position or nil)}})
+            -- The sequential solver does not support byproduct recipes at the moment
+            if production_type == "consume" and context.subfactory.matrix_free_items == nil then
+                title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
+            else
+                modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type,
+                  add_after_position=((metadata.shift) and line.gui_position or nil)}})
+            end
         end
 
     elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
