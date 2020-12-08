@@ -14,7 +14,10 @@ local function generate_metadata(player)
     }
 
     if preferences.tutorial_mode then
-        metadata.recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "recipe", true, true, true)
+        metadata.producing_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "producing_recipe",
+          true, true, true)
+        metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
+          true, true, true)
         metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine", false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
         metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
@@ -41,7 +44,7 @@ function builders.recipe(line, parent_flow, metadata)
     local recipe_proto = relevant_line.recipe.proto
 
     local style, enabled = "flib_slot_button_default_small", true
-    local indication, tutorial_tooltip = "", metadata.recipe_tutorial_tooltip
+    local indication, tutorial_tooltip = "", metadata.producing_recipe_tutorial_tooltip
     -- Make the first line of every subfloor un-interactable, it stays constant
     if line.parent.level > 1 and line.gui_position == 1 then
         style = "flib_slot_button_grey_small"
@@ -53,6 +56,7 @@ function builders.recipe(line, parent_flow, metadata)
     elseif line.recipe.production_type == "consume" then
         style = "flib_slot_button_red_small"
         indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
+        tutorial_tooltip = metadata.consuming_recipe_tutorial_tooltip
     end
 
     local tooltip = {"", recipe_proto.localised_name, indication, tutorial_tooltip}
