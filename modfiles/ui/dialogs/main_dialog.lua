@@ -27,13 +27,26 @@ local function determine_main_dialog_dimensions(player)
     return {width=width, height=height}
 end
 
--- No idea how to write this so it works when in selection mode
-local function handle_other_gui_opening(player)
-    local frame_main_dialog = data_util.get("main_elements", player).main_frame
-    if frame_main_dialog and frame_main_dialog.visible then
-        frame_main_dialog.visible = false
-        main_dialog.set_pause_state(player, frame_main_dialog)
-    end
+-- Makes sure that another GUI can open properly while a modal dialog is open.
+-- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
+-- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
+-- We need to consider that if the technology screen is opened (which is the reason we get this event),
+-- the game automtically closes the currently open GUI before calling this one. This means the top layer
+-- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
+-- layer at this point and need to close the things below, if there are any.
+local function handle_other_gui_opening(player, event)
+    local ui_state = data_util.get("ui_state", player)
+
+    -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
+    if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel") end
+
+    -- Then, at this point we're at most at the stage where the main dialog is open, so close it
+    if main_dialog.is_in_focus(player) then main_dialog.toggle(player) end
+
+    -- This is the magic glue that holds this pile of crap together. Both modal_dialog.exit and main_dialog.toggle
+    -- manipulate player.opened, so we need to restore it at the end so the desired GUI actually opens
+    player.opened = (event.entity or event.item or event.equipment or event.other_player
+      or event.element or event.gui_type)
 end
 
 
