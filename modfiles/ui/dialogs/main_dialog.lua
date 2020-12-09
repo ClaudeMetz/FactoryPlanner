@@ -36,17 +36,24 @@ end
 -- layer at this point and need to close the things below, if there are any.
 local function handle_other_gui_opening(player, event)
     local ui_state = data_util.get("ui_state", player)
+    local reset_needed = false
 
     -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-    if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel") end
+    if ui_state.modal_dialog_type ~= nil then
+        modal_dialog.exit(player, "cancel")
+        reset_needed = true
+    end
 
     -- Then, at this point we're at most at the stage where the main dialog is open, so close it
-    if main_dialog.is_in_focus(player) then main_dialog.toggle(player) end
+    if main_dialog.is_in_focus(player) then
+        main_dialog.toggle(player)
+        reset_needed = true
+    end
 
     -- This is the magic glue that holds this pile of crap together. Both modal_dialog.exit and main_dialog.toggle
     -- manipulate player.opened, so we need to restore it at the end so the desired GUI actually opens
-    player.opened = (event.entity or event.item or event.equipment or event.other_player
-      or event.element or event.gui_type)
+    if reset_needed then player.opened = (event.entity or event.item or event.equipment or
+      event.other_player or event.element or event.gui_type) end
 end
 
 local function handle_background_dimmer_click(player)
