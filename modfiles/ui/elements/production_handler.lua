@@ -115,6 +115,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
 
     local button_definitions = {}
     for _, machine_proto in ipairs(applicable_prototypes) do
+        -- Need to get total effects here to include mining productivity
         local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
           line.recipe.proto, Line.get_total_effects(line, player))
         local machine_count = calculation.util.determine_machine_count(crafts_per_tick,

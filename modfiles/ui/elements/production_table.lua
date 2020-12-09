@@ -5,13 +5,18 @@ local function generate_metadata(player)
     local ui_state = data_util.get("ui_state", player)
     local preferences = data_util.get("preferences", player)
 
+    local subfactory = ui_state.context.subfactory
+    local mining_productivity = (subfactory.mining_productivity ~= nil) and
+      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+
     local metadata = {
         archive_open = (ui_state.flags.archive_open),
-        matrix_solver_active = (ui_state.context.subfactory.matrix_free_items ~= nil),
+        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
+        mining_productivity = mining_productivity,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
-        view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory, 4, true)
+        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
     }
 
     if preferences.tutorial_mode then
@@ -116,10 +121,17 @@ function builders.machine(line, parent_flow, metadata)
         end
 
         local machine_proto = line.machine.proto
+        local effects_tooltip = line.machine.effects_tooltip
+        if machine_proto.mining then  -- Dynamically generate effects tooltip to include mining productivity
+            local module_effects = table.shallow_copy(line.total_effects)
+            module_effects.productivity = module_effects.productivity + metadata.mining_productivity
+            effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
+        end
+
         local plural_parameter = (machine_count == "1") and 1 or 2
         local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
-        local tooltip = {"", machine_proto.localised_name, number_line, indication, line.machine.effects_tooltip,
-          metadata.machine_tutorial_tooltip}
+        local tutorial_tooltip = metadata.machine_tutorial_tooltip
+        local tooltip = {"", machine_proto.localised_name, number_line, indication, effects_tooltip, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
           sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
