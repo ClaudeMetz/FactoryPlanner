@@ -49,6 +49,17 @@ local function handle_other_gui_opening(player, event)
       or event.element or event.gui_type)
 end
 
+local function handle_background_dimmer_click(player)
+    local ui_state = data_util.get("ui_state", player)
+    ui_state.main_elements.main_frame.bring_to_front()
+
+    if ui_state.modal_dialog_type ~= nil then
+        local modal_elements = ui_state.modal_data.modal_elements
+        modal_elements.interface_dimmer.bring_to_front()
+        modal_elements.modal_frame.bring_to_front()
+    end
+end
+
 
 -- ** TOP LEVEL **
 function main_dialog.rebuild(player, default_visibility)
@@ -198,17 +209,8 @@ main_dialog.gui_events = {
         },
         {
             name = "fp_frame_background_dimmer",
-            handler = (function(player, _, _)
-                local ui_state = data_util.get("ui_state", player)
-                ui_state.main_elements.main_frame.bring_to_front()
-
-                if ui_state.modal_dialog_type ~= nil then
-                    local modal_elements = ui_state.modal_data.modal_elements
-                    modal_elements.interface_dimmer.bring_to_front()
-                    modal_elements.modal_frame.bring_to_front()
-                end
-            end)
-        },
+            handler = handle_background_dimmer_click
+        }
     }
 }
 
