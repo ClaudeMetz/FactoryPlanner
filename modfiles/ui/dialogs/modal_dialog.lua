@@ -173,7 +173,7 @@ function modal_dialog.exit(player, button_action)
 
     -- If no action is give, submit if possible, otherwise close the dialog
     if button_action == nil then
-        button_action = (submit_button and submit_button.enabled)and "submit" or "cancel"
+        button_action = (submit_button and submit_button.enabled) and "submit" or "cancel"
 
     -- Stop exiting if it is not possible on this dialog, or the button is disabled
     elseif button_action == "submit" and (not submit_button or not submit_button.enabled) then

@@ -171,7 +171,7 @@ function calculation.update(player, subfactory)
                 if matrix_metadata.num_rows == matrix_metadata.num_cols then
                     matrix_solver.run_matrix_solver(subfactory_data, false)
                 else
-                    modal_dialog.enter(player, {type="matrix", modal_data={first_open=false}, allow_queueing=true})
+                    modal_dialog.enter(player, {type="matrix", allow_queueing=true})
                 end
             end
         else
