@@ -3,7 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Redesigned the main interface. This means that some things are in different spots than they used to be, and some niche features got lost along the way. I'm sorry about those few that went missing, but I needed to get this done in a reasonable amount of time. If there is anything specific you're dearly missing, please let me know on the mod portal or on Discord.
-    - Added a matrix solver. It can be individually enabled for every subfactory and helps to automatically balance out certain advanced recipe setups like oil processing and cracking. It can also solve recipe chains that involve loops by asking you for some additional information. This feature is a beta still, so if you run into any problems, please let us know. Huge thanks to scottmsul for taking the charge in implementing this one!
+    - Added a matrix solver. It can be individually enabled for every subfactory and helps to automatically balance out certain advanced recipe setups like oil processing and cracking, with support for voiding byproducts. It can also solve looping recipe chains by asking you for some input from your side. This whole feature is a beta still, so if you run into any problems, please let us know. Huge thanks to scottmsul for taking the charge in implementing this one!
     - Added an optional production column to quickly disable certain recipes by checkbox
     - Added a search bar to the recipe picker
     - You can now alt-click any machine or beacon in your production line to put it into your cursor as a blueprint for easy stamping
