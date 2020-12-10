@@ -56,9 +56,8 @@ local function swap_item_category(player, element)
         table.insert(subfactory.matrix_free_items, item_proto)
     end
 
-    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
-    local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(modal_data.subfactory_data)
+    local linear_dependence_data = matrix_solver.get_linear_dependence_data(modal_data.subfactory_data, matrix_metadata)
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
 
@@ -78,30 +77,35 @@ matrix_dialog.dialog_settings = (function(_) return {
 function matrix_dialog.open(player, modal_data)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
-    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-    if #subfactory_data.top_floor.lines == 0 then
+
+    if subfactory.selected_floor.Line.count == 0 then  -- does this subfactory have any lines?
         modal_dialog.exit(player, "cancel")
         return true
     end
 
+    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+    modal_data.subfactory_data = subfactory_data
+
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
-    -- too many ways to create the products
-    if matrix_metadata.num_rows < matrix_metadata.num_cols then
-        local label_title = modal_data.modal_elements.content_frame.add{type="label", caption={"fp.matrix_linear_dependent_recipes"}}
-        label_title.style.font = "heading-2"
-        return
+    if matrix_metadata.num_rows < matrix_metadata.num_cols then  -- too many ways to create the products
+        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 2, false)
+        ui_state.queued_dialog_settings = nil  -- bit hacky this bit
+        modal_dialog.exit(player, "cancel")
+        return true
     end
 
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
 
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
-
     -- user doesn't need select any free items, just run the matrix solver
     if num_needed_free_items == 0 then
-        modal_dialog.exit(player, "submit")
+        if modal_data.configuration then
+            title_bar.enqueue_message(player, {"fp.warning_no_matrix_configuration_needed"}, "warning", 2, false)
+        end
+        modal_dialog.exit(player, "cancel")
         return true
     end
 
@@ -111,16 +115,16 @@ function matrix_dialog.open(player, modal_data)
 end
 
 function matrix_dialog.close(player, action)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-
     if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local subfactory = ui_state.context.subfactory
         subfactory.matrix_free_items = ui_state.modal_data.free_items
 
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
-    elseif action == "cancel" and ui_state.modal_data.first_open then
-        subfactory.matrix_free_items = nil
+
+    elseif action == "cancel" then
+        main_dialog.refresh(player, "production_detail")
     end
 end
 
