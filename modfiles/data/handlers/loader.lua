@@ -4,7 +4,7 @@ loader = {}
 -- ** LOCAL UTIL **
 -- Returns a list of recipe groups in their proper order
 local function ordered_recipe_groups()
-    group_dict = {}
+    local group_dict = {}
 
     -- Make a dict with all recipe groups
     if not global.all_recipes.recipes then return end
@@ -52,7 +52,7 @@ local function sorted_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
     local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
+    for _, type in pairs{"item", "fluid"} do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             -- Silly checks needed here for migration purposes
             if item.group.valid and item.subgroup.valid then table.insert(items, item) end
@@ -78,7 +78,7 @@ local function identifier_item_map()
     local map = {}
 
     local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
+    for _, type in pairs{"item", "fluid"} do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             -- Identifier existance-check for migration reasons
             if item.identifier ~= nil then map[item.identifier] = item end
@@ -124,7 +124,7 @@ local attribute_generators = {}
 function attribute_generators.beacons(beacon)
     return {"", {"fp.module_slots"}, ": " .. beacon.module_limit .. "\n",
            {"fp.effectivity"}, ": " .. (beacon.effectivity * 100) .. "%\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage * 60, "W", 3)}
 end
 
 function attribute_generators.fuels(fuel)
@@ -133,14 +133,14 @@ function attribute_generators.fuels(fuel)
 end
 
 function attribute_generators.belts(belt)
-    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.items"}, "/", {"fp.unit_second"}}
+    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
 end
 
 function attribute_generators.machines(machine)
-    local energy_usage = machine.energy_usage * 60
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
-           {"fp.cpollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage * 60, "W", 3), "\n",
+           {"fp.u_pollution"}, ": ", ui_util.format_SI_value((machine.energy_usage * (machine.emissions * 60)) * 60,
+             "P/m", 3), "\n",
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 

@@ -148,9 +148,9 @@ function Collection.shift_to_end(self, main_dataset, direction)
         return false
     end
 
+    local secondary_gui_position = (direction == "positive") and self.count or 1
     -- To simplify the code, remove the dataset and re-insert it at the right position
     Collection.remove(self, main_dataset)
-    local secondary_gui_position = (direction == "positive") and self.count or 1
     Collection.insert_at(self, secondary_gui_position, main_dataset)
 
     return true

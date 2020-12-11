@@ -1,9 +1,9 @@
 data:extend({
     {
         type = "sprite",
-        name = "fp_sprite_plus",
-        filename = "__factoryplanner__/graphics/plus.png",
-        size = 128,
+        name = "fp_semitransparent_pixel",
+        filename = "__factoryplanner__/graphics/semitransparent_pixel.png",
+        size = 1,
         flags = {"gui-icon"}
     },
     {
@@ -43,9 +43,23 @@ data:extend({
     },
     {
         type = "sprite",
+        name = "fp_sprite_pause_light",
+        filename = "__factoryplanner__/graphics/pause_light.png",
+        size = 32, icon_mipmaps = 2, scale = 0.5,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
         name = "fp_sprite_warning_red",
         filename = "__factoryplanner__/graphics/warning_red.png",
         size = 32, icon_mipmaps = 2, scale = 0.25,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_archive_dark",
+        filename = "__factoryplanner__/graphics/archive_dark.png",
+        size = 32, icon_mipmaps = 2,
         flags = {"gui-icon"}
     }
 })

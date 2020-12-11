@@ -316,6 +316,38 @@ function generator_util.determine_entity_sprite(proto)
     return nil
 end
 
+-- Determines how long a rocket takes to launch for the given rocket silo prototype
+-- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
+-- due to how the game code is written. If one stage is completed, you can only progress to the next one
+-- in the next tick. No stages can be skipped, meaning a minimal sequence time is around 10 ticks long.
+function generator_util.determine_launch_sequence_time(silo_proto)
+    local rocket_proto = silo_proto.rocket_entity_prototype
+    if not rocket_proto then return nil end  -- meaning this isn't a rocket silo proto
+
+    local rocket_flight_threshold = 0.5  -- hardcoded in the game files
+    local launch_steps = {
+        lights_blinking_open = (1 / silo_proto.light_blinking_speed) + 1,
+        doors_opening = (1 / silo_proto.door_opening_speed) + 1,
+        doors_opened = silo_proto.rocket_rising_delay + 1,
+        rocket_rising = (1 / rocket_proto.rising_speed) + 1,
+        rocket_ready = 14,  -- estimate for satellite insertion delay
+        launch_started = silo_proto.launch_wait_time + 1,
+        engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
+        -- This calculates a fractional amount of ticks. Also, math.log(x) calculates the natural logarithm
+        rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
+          / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
+        lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
+        doors_closing = (1 / silo_proto.door_opening_speed) + 1
+    }
+
+    local total_ticks = 0
+    for _, ticks_taken in pairs(launch_steps) do
+        total_ticks = total_ticks + ticks_taken
+    end
+
+    return (total_ticks / 60)  -- retured value is in seconds
+end
+
 
 -- Returns nil if no effect is true, returns the effects otherwise
 function generator_util.format_allowed_effects(allowed_effects)
@@ -365,7 +397,7 @@ function generator_util.add_recipe_tooltip(recipe)
     end
 
     if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}} end
-    for _, item_type in ipairs({"ingredients", "products"}) do
+    for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         multi_insert{"\n  ", {"fp.name_value", {locale_key, 2}, ""}}
         if #recipe[item_type] == 0 then

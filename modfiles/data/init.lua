@@ -1,4 +1,3 @@
-require("data.data_util")
 require("data.classes.Collection")
 require("data.classes.Item")
 require("data.classes.Fuel")
@@ -10,11 +9,13 @@ require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
+
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.remote")
+
 require("data.calculation.interface")
 
 init = {}
@@ -25,12 +26,15 @@ local function reload_settings(player)
     local settings = settings.get_player_settings(player)
     local settings_table = {}
 
+    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
+
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
-    settings_table.items_per_row = tonumber(settings["fp_subfactory_items_per_row"].value)
-    settings_table.recipes_at_once = tonumber(settings["fp_floor_recipes_at_once"].value)
+    settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
+    settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
     settings_table.alt_action = settings["fp_alt_action"].value
-    settings_table.default_timescale = settings["fp_default_timescale"].value
+    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
 
     global.players[player.index].settings = settings_table
 end
@@ -49,6 +53,7 @@ local function reload_preferences(player)
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
     preferences.round_button_numbers = preferences.round_button_numbers or false
 
+    preferences.toggle_column = preferences.toggle_column or false
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
 
@@ -68,18 +73,21 @@ local function reset_ui_state(player)
     local ui_state_table = {}
 
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
-    ui_state_table.last_action = nil  -- The last user action, used for rate limiting
-    ui_state_table.view_state = nil  -- The state of the production views
+    ui_state_table.last_action = nil  -- The last user action (used for rate limiting)
+    ui_state_table.view_states = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
+    ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    ui_state_table.queued_dialog_settings = nil  -- Info on dialog to open after the current one closes
 
     ui_state_table.flags = {
         floor_total = false,  -- Whether the floor or subfactory totals are displayed
         archive_open = false,  -- Wether the players subfactory archive is currently open
-        selection_mode = false  -- Whether the player is currently using a selector
+        selection_mode = false,  -- Whether the player is currently using a selector
+        recalculate_on_subfactory_change = false  -- Whether calculations should re-run
     }
 
     -- The UI table gets replaced because the whole interface is reset
@@ -88,7 +96,6 @@ end
 
 
 -- Makes sure that the given player has a player_table and a reset gui state
--- The table attribute specified what table the data should be loaded from (either global or new)
 local function update_player_table(player)
     local function reload_data()
         reload_settings(player)  -- reloads the settings of the player
@@ -112,7 +119,7 @@ local function update_player_table(player)
         player_table.ui_state = {}
         reload_data()
 
-        titlebar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
+        title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
 
     else  -- existing player, only need to update
         reload_data()
@@ -132,7 +139,7 @@ local function reset_player_gui(player)
 
     -- All mod frames
     for _, gui_element in pairs(player.gui.screen.children) do
-        if gui_element.valid and string.find(gui_element.name, "^fp_.+$") then
+        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
             gui_element.destroy()
         end
     end
@@ -167,8 +174,12 @@ local function handle_configuration_change()
         -- Create or update player_table
         local player_table = update_player_table(player)
 
-        -- Run the prototyper on the player
+        -- Migrate the default prototypes for the player
         prototyper.run(player_table)
+
+        -- Update the validity of the entire factory and archive
+        Collection.validate_datasets(player_table.factory.Subfactory)
+        Collection.validate_datasets(player_table.archive.Subfactory)
 
         reset_player_gui(player)  -- Destroys all existing GUI's
         ui_util.mod_gui.create(player)  -- Recreates the mod-GUI
@@ -182,7 +193,7 @@ local function handle_configuration_change()
         local player_table = global.players[index]
         for _, factory_name in pairs{"factory", "archive"} do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                calculation.update(player, subfactory, false)
+                calculation.update(player, subfactory)
             end
         end
     end
@@ -225,13 +236,14 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         if event.setting == "fp_display_gui_button" then
             ui_util.mod_gui.toggle(player)
 
-        elseif event.setting == "fp_subfactory_items_per_row" or
-          event.setting == "fp_floor_recipes_at_once" or
+        elseif event.setting == "fp_products_per_row" or
+          event.setting == "fp_subfactory_list_rows" or
           event.setting == "fp_alt_action" then
-            main_dialog.refresh(player, true)
+            main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
             data_util.update_all_product_definitions(player)
+            main_dialog.rebuild(player, false)
 
         end
     end
@@ -241,35 +253,3 @@ end)
 -- ** COMMANDS **
 -- Allows running the config_changed function manually, to reset stuff (shouldn't be needed actually)
 commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}, handle_configuration_change)
-
-
--- ** GLOBAL UTIL **
--- TODO remove when everything uses the new system
--- Returns the player table for the given player
-function get_table(player)
-    return global.players[player.index]
-end
-
-function get_settings(player)
-    return global.players[player.index].settings
-end
-
-function get_preferences(player)
-    return global.players[player.index].preferences
-end
-
-function get_ui_state(player)
-    return global.players[player.index].ui_state
-end
-
-function get_context(player)
-    return global.players[player.index].ui_state.context
-end
-
-function get_modal_data(player)
-    return global.players[player.index].ui_state.modal_data
-end
-
-function get_flags(player)
-    return global.players[player.index].ui_state.flags
-end

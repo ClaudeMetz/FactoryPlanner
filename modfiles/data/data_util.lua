@@ -8,9 +8,10 @@ local getter_functions = {
     settings = (function(index) return global.players[index].settings end),
     preferences = (function(index) return global.players[index].preferences end),
     ui_state = (function(index) return global.players[index].ui_state end),
+    main_elements = (function(index) return global.players[index].ui_state.main_elements end),
     context = (function(index) return global.players[index].ui_state.context end),
     modal_data = (function(index) return global.players[index].ui_state.modal_data end),
-    ui_elements = (function(index) return global.players[index].ui_state.modal_data.ui_elements end),
+    modal_elements = (function(index) return global.players[index].ui_state.modal_data.modal_elements end),
     flags = (function(index) return global.players[index].ui_state.flags end)
 }
 
@@ -24,27 +25,84 @@ end
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string, refresh_interface)
     local context = data_util.get("context", player)
-    local first_subfactory = Factory.import_by_string(context.factory, player, export_string)
+    local first_subfactory = Factory.import_by_string(context.factory, export_string)
 
     ui_util.context.set_subfactory(player, first_subfactory)
-    calculation.update(player, first_subfactory, refresh_interface)
+    calculation.update(player, first_subfactory)
+    if refresh_interface then main_dialog.refresh(player, "all") end
 end
 
 -- Goes through every subfactory's top level products and updates their defined_by
 function data_util.update_all_product_definitions(player)
     local player_table = data_util.get("table", player)
+
     local defined_by = player_table.settings.belts_or_lanes
     Factory.update_product_definitions(player_table.factory, defined_by)
     Factory.update_product_definitions(player_table.archive, defined_by)
-    main_dialog.refresh(player, true)
+
+    local subfactory = player_table.ui_state.context.subfactory
+    calculation.update(player, subfactory)
+    main_dialog.refresh(player, "subfactory")
+end
+
+-- Returns the attribute string for the given prototype
+function data_util.get_attributes(type, prototype)
+    local all_prototypes = global["all_" .. type]
+
+    -- Could figure out structure type itself, but that's slower
+    if all_prototypes.structure_type == "simple" then
+        return PROTOTYPE_ATTRIBUTES[type][prototype.id]
+    else  -- structure_type == "complex"
+        local category_id = all_prototypes.map[prototype.category]
+        return PROTOTYPE_ATTRIBUTES[type][category_id][prototype.id]
+    end
+end
+
+-- Executes an alt-action on the given action_type and data
+function data_util.execute_alt_action(player, action_type, data)
+    local alt_action = data_util.get("settings", player).alt_action
+
+    local remote_action = remote_actions[alt_action]
+    if remote_action ~= nil and remote_action[action_type] then
+        remote_actions[action_type](player, alt_action, data)
+    end
+end
+
+-- Formats the given effects for use in a tooltip
+function data_util.format_module_effects(effects, multiplier, limit_effects)
+    local tooltip_lines, effect_applies = {""}, false
+
+    for effect_name, effect_value in pairs(effects) do
+        if type(effect_value) == "table" then effect_value = effect_value.bonus end
+
+        if effect_value ~= 0 then
+            effect_applies = true
+
+            local capped_indication = ""
+            if limit_effects then
+                if effect_name == "productivity" and effect_value < 0 then
+                    effect_value, capped_indication = 0, {"fp.effect_maxed"}
+                elseif effect_value < -0.8 then
+                    effect_value, capped_indication = -0.8, {"fp.effect_maxed"}
+                end
+            end
+
+            -- Force display of either a '+' or '-', also round the result
+            local display_value = ("%+d"):format(math.floor((effect_value * multiplier * 100) + 0.5))
+            table.insert(tooltip_lines, {"fp.module_" .. effect_name, display_value, capped_indication})
+        end
+    end
+
+    if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
 end
 
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string
-function data_util.porter.get_export_string(player, subfactories)
+function data_util.porter.get_export_string(subfactories)
     local export_table = {
-        mod_version = data_util.get("table", player).mod_version,
+        -- This can use the global mod_version since it's only called for migrated, valid subfactories
+        mod_version = global.mod_version,
         subfactories = {}
     }
 
@@ -57,7 +115,7 @@ function data_util.porter.get_export_string(player, subfactories)
 end
 
 -- Converts the given factory exchange string into a temporary Factory
-function data_util.porter.get_subfactories(player, export_string)
+function data_util.porter.get_subfactories(export_string)
     local export_table = nil
 
     if not pcall(function()
@@ -66,7 +124,7 @@ function data_util.porter.get_subfactories(player, export_string)
     end) then return nil, "decoding_failure" end
 
     if not pcall(function()
-        migrator.migrate_export_table(export_table, player)
+        migrator.migrate_export_table(export_table)
     end) then return nil, "migration_failure" end
 
     local import_factory = Factory.init()

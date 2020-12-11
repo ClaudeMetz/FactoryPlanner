@@ -12,6 +12,7 @@ function Machine.init_by_proto(proto)
         Module = Collection.init("Module"),
         module_count = 0,  -- updated automatically
         total_effects = nil,
+        effects_tooltip = "",
         valid = true,
         class = "Machine"
     }
@@ -88,6 +89,8 @@ function Machine.summarize_effects(self)
         for name, effect in pairs(module.proto.effects) do
             module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
         end
+
+        module.effects_tooltip = data_util.format_module_effects(module.proto.effects, module.amount, false)
     end
 
     self.total_effects = module_effects
@@ -99,28 +102,27 @@ function Machine.empty_slot_count(self)
 end
 
 function Machine.check_module_compatibility(self, module_proto)
-    local compatible = true
     local recipe = self.parent.recipe
+
+    if self.proto.module_limit == 0 then return false end
 
     if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
       and not module_proto.limitations[recipe.proto.name] then
-        compatible = false
+        return false
     end
 
-    if compatible then
-        local allowed_effects = self.proto.allowed_effects
-        if allowed_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if allowed_effects[effect_name] == false then
-                    compatible = false
-                end
+    local allowed_effects = self.proto.allowed_effects
+    if allowed_effects == nil then
+        return false
+    else
+        for effect_name, _ in pairs(module_proto.effects) do
+            if allowed_effects[effect_name] == false then
+                return false
             end
         end
     end
 
-    return compatible
+    return true
 end
 
 function Machine.compile_module_filter(self)

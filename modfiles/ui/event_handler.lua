@@ -1,10 +1,9 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
-event_handler = {}
 
--- (not really objects, as in instances of a class, but naming is hard, alright?)
-local objects_that_need_handling = {main_dialog, modal_dialog, porter_dialog, import_dialog, export_dialog,
+local elements_that_need_handling = {main_dialog, title_bar, subfactory_list, subfactory_info, item_boxes,
+  production_box, production_handler, view_state, modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
-  modules_dialog, picker_dialog, recipe_dialog}
+  modules_dialog, picker_dialog, recipe_dialog, matrix_dialog}
 
 
 -- ** RATE LIMITING **
@@ -88,8 +87,21 @@ end
 local special_gui_handlers = {}
 
 special_gui_handlers.on_gui_click = (function(player, event, event_handlers)
-    local metadata = {alt=event.alt}
+    local click, direction, action
 
+    if event.button == defines.mouse_button_type.left then click = "left"
+    elseif event.button == defines.mouse_button_type.right then click = "right" end
+
+    if click == "left" then
+        if not event.control and event.shift then direction = "positive"
+        elseif event.control and not event.shift then direction = "negative" end
+    elseif click == "right" and not event.alt then
+        if event.control and not event.shift then action = "delete"
+        elseif not event.control and not event.shift then action = "edit" end
+    end
+
+    local metadata = {shift=event.shift, control=event.control, alt=event.alt,
+      click=click, direction=direction, action=action}
     standard_gui_handler(player, event, event_handlers, metadata)
 end)
 
@@ -114,7 +126,7 @@ end)
 
 local gui_event_cache = {}
 -- Actually compile the list of GUI handlers
-for _, object in pairs(objects_that_need_handling) do
+for _, object in pairs(elements_that_need_handling) do
     if object.gui_events then
         for event_name, elements in pairs(object.gui_events) do
             gui_event_cache[event_name] = gui_event_cache[event_name] or {
@@ -140,8 +152,7 @@ for _, object in pairs(objects_that_need_handling) do
     end
 end
 
--- TODO make everything in this file file-local after listeners.lua is no more
-function event_handler.handle_gui_event(event)
+local function handle_gui_event(event)
     if event.element and event.element.get_mod() == "factoryplanner" then
         -- The event table actually contains its identifier, not its name
         local event_name = gui_identifier_map[event.name]
@@ -160,10 +171,9 @@ function event_handler.handle_gui_event(event)
 end
 
 -- Register all the GUI events from the identifier map
--- TODO not in use yet as to not overwrite the listeners registrations
---[[ for event_id, _ in pairs(gui_identifier_map) do
-    script.on_event(event_id, event_handler.handle_gui_event)
-end ]]
+for event_id, _ in pairs(gui_identifier_map) do
+    script.on_event(event_id, handle_gui_event)
+end
 
 
 
@@ -184,7 +194,11 @@ local misc_identifier_map = {
     -- Keyboard shortcuts
     ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
-    ["fp_focus_searchfield"] = "fp_focus_searchfield"
+    ["fp_focus_searchfield"] = "fp_focus_searchfield",
+    ["fp_toggle_pause"] = "fp_toggle_pause",
+    ["fp_cycle_production_views"] = "fp_cycle_production_views",
+    ["fp_refresh_production"] = "fp_refresh_production",
+    ["fp_floor_up"] = "fp_floor_up"
 }
 
 local misc_timeouts = {
@@ -195,7 +209,7 @@ local misc_timeouts = {
 local special_misc_handlers = {}
 
 special_misc_handlers.on_gui_opened = (function(_, event)
-    -- This should only fire when a UI not associated with FP is opened, to properly close FP's stuff
+    -- This should only fire when a UI not associated with FP is opened to properly close FP's stuff
     return (event.gui_type ~= defines.gui_type.custom or not event.element
       or event.element.get_mod() ~= "factoryplanner")
 end)
@@ -203,7 +217,7 @@ end)
 
 local misc_event_cache = {}
 -- Actually compile the list of misc handlers
-for _, object in pairs(objects_that_need_handling) do
+for _, object in pairs(elements_that_need_handling) do
     if object.misc_events then
         for event_name, handler in pairs(object.misc_events) do
             misc_event_cache[event_name] = misc_event_cache[event_name] or {
@@ -233,9 +247,7 @@ local function handle_misc_event(event)
         local special_handler = event_handlers.special_handler
         if special_handler and not event_handlers.special_handler(player, event) then return end
 
-        for _, registered_handler in pairs(event_handlers.registered_handlers) do
-            registered_handler(player, event)
-        end
+        for _, registered_handler in pairs(event_handlers.registered_handlers) do registered_handler(player, event) end
     end
 end
 
