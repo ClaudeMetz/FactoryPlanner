@@ -1,7 +1,7 @@
 tutorial_dialog = {}
 
 -- ** LOCAL UTIL **
-local tab_definitions = {"interface", "usage", "pro_tips"}
+local tab_definitions = {"interface", "usage", "matrix_solver", "pro_tips"}
 
 function tab_definitions.interface(player, tab, tab_pane)
     tab.caption = {"fp.interface"}
@@ -22,16 +22,17 @@ function tab_definitions.interface(player, tab, tab_pane)
     local flow_interactive = frame_interactive.add{type="flow", direction="horizontal"}
     flow_interactive.style.margin = {12, 20, 8, 20}
 
-    local active_mods = game.active_mods
-    local no_other_mods_active = (table_size(active_mods) == 3 and active_mods["base"] ~= nil
-      and active_mods["factoryplanner"] ~= nil and active_mods["flib"] ~= nil)
-    local tutorial_mode = data_util.get("preferences", player).tutorial_mode
+    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    -- If the tutorial subfactory is valid, it can be imported regardless of the current modset
+    local subfactory_compatible = (global.tutorial_subfactory and global.tutorial_subfactory.valid)
+    local button_tooltip = (not subfactory_compatible) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
+      tooltip=button_tooltip, enabled=subfactory_compatible, mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
-    local button_tooltip = (not no_other_mods_active) and {"fp.warning_message", {"fp.create_example_error"}} or nil
-    flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
-      tooltip=button_tooltip, enabled=no_other_mods_active, mouse_button_filter={"left"}}
-    flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local tutorial_mode = data_util.get("preferences", player).tutorial_mode
     ui_util.switch.add_on_off(flow_interactive, "tutorial_mode", tutorial_mode, {"fp.tutorial_mode"}, nil, true)
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -47,9 +48,18 @@ function tab_definitions.usage(_, tab, tab_pane)
     tab.caption = {"fp.usage"}
 
     local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
-    local label_usage = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
-    label_usage.style.single_line = false
-    label_usage.style.padding = 2
+    local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
+    label_text.style.single_line = false
+    label_text.style.padding = 2
+end
+
+function tab_definitions.matrix_solver(_, tab, tab_pane)
+    tab.caption = {"fp.matrix_solver"}
+
+    local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
+    local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_matrix_solver_text"}}
+    label_text.style.single_line = false
+    label_text.style.padding = 2
 end
 
 function tab_definitions.pro_tips(_, tab, tab_pane)
@@ -71,13 +81,38 @@ tutorial_dialog.dialog_settings = (function(_) return {
     create_content_frame = false
 } end)
 
+function tutorial_dialog.open(player, modal_data)
+    local frame_tabs = modal_data.modal_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
+
+    local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
+    tabbed_pane.style.height = 600
+
+    for _, tab_name in ipairs(tab_definitions) do
+        local tab = tabbed_pane.add{type="tab"}
+        local tab_pane = tabbed_pane.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+        tab_pane.style.width = 555
+
+        tab_definitions[tab_name](player, tab, tab_pane)
+        tabbed_pane.add_tab(tab, tab_pane)
+    end
+end
+
+
+-- ** EVENTS **
 tutorial_dialog.gui_events = {
     on_gui_click = {
         {
             name = "fp_button_tutorial_add_example",
             timeout = 20,
             handler = (function(player, _, _)
-                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
+                -- If this button can be pressed, the tutorial subfactory is valid implicitly
+                local factory = data_util.get("table", player).factory
+                local subfactory = Factory.add(factory, global.tutorial_subfactory)
+
+                ui_util.context.set_subfactory(player, subfactory)
+                calculation.update(player, subfactory)
+
+                main_dialog.refresh(player, "all")
                 modal_dialog.exit(player, "cancel")
             end)
         }
@@ -88,24 +123,8 @@ tutorial_dialog.gui_events = {
             handler = (function(player, element)
                 local new_state = ui_util.switch.convert_to_boolean(element.switch_state)
                 data_util.get("preferences", player).tutorial_mode = new_state
-                main_dialog.refresh(player)
+                main_dialog.refresh(player, "all")
             end)
         }
     }
 }
-
-function tutorial_dialog.open(player, modal_data)
-    local frame_tabs = modal_data.ui_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
-
-    local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
-    tabbed_pane.style.height = 600
-
-    for _, tab_name in ipairs(tab_definitions) do
-        local tab = tabbed_pane.add{type="tab"}
-        local tab_pane = tabbed_pane.add{type="scroll-pane", style="fp_scroll_pane_inside_content_frame"}
-        tab_pane.style.width = 555
-
-        tab_definitions[tab_name](player, tab, tab_pane)
-        tabbed_pane.add_tab(tab, tab_pane)
-    end
-end

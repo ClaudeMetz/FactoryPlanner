@@ -1,13 +1,11 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon, timescale_setting)
-    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
-
+function Subfactory.init(name, icon)
     local subfactory = {
         name = name,
         icon = icon,
-        timescale = timescale_to_number[timescale_setting],
+        timescale = nil,  -- needs to be set after init
         energy_consumption = 0,
         pollution = 0,
         notes = "",
@@ -16,6 +14,7 @@ function Subfactory.init(name, icon, timescale_setting)
         Byproduct = Collection.init("Item"),
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
+        matrix_free_items = nil,
         selected_floor = nil,
         item_request_proxy = nil,
         valid = true,
@@ -28,6 +27,33 @@ function Subfactory.init(name, icon, timescale_setting)
     Subfactory.add(subfactory, subfactory.selected_floor)
 
     return subfactory
+end
+
+
+-- Returns first whether the icon is missing, then the rich text for it
+function Subfactory.verify_icon(self)
+    local type = (self.icon.type == "virtual") and "virtual-signal" or self.icon.type
+    local subfactory_sprite = type .. "/" .. self.icon.name
+
+    if not game.is_valid_sprite_path(subfactory_sprite) then
+        return true, ("[img=utility/missing_icon]")
+    else
+        return false, ("[img=" .. subfactory_sprite .. "]")
+    end
+end
+
+function Subfactory.tostring(self, indicate_invalidity)
+    local status, sprite_string = "", ""
+    if indicate_invalidity and not self.valid then
+        status = "[img=fp_sprite_warning_red]  "
+    end
+
+    if self.icon then
+        local _, sprite_rich_text = Subfactory.verify_icon(self)
+        sprite_string = sprite_rich_text .. "  "
+    end
+
+    return (status .. sprite_string .. self.name)
 end
 
 
@@ -65,24 +91,6 @@ end
 
 function Subfactory.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
-end
-
-
--- Removes all lines that are useless (ie have production_ratio of 0)
--- This gets away with only checking the top floor, as no subfloor-lines can become useless if the
--- parent line is still useful, and vice versa (It's still set up to be recursively useable)
-function Subfactory.remove_useless_lines(self)
-    local function clear_floor(floor)
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            if line.production_ratio == 0 then
-                Floor.remove(floor, line)
-            end
-        end
-    end
-
-    local top_floor = Subfactory.get(self, "Floor", 1)
-    clear_floor(top_floor)
-    self.selected_floor = top_floor
 end
 
 
@@ -130,6 +138,11 @@ end
 
 
 function Subfactory.pack(self)
+    local packed_free_items = (self.matrix_free_items) and {} or nil
+    for index, proto in pairs(self.matrix_free_items or {}) do
+        packed_free_items[index] = prototyper.util.simplify_prototype(proto)
+    end
+
     return {
         name = self.name,
         icon = self.icon,
@@ -137,6 +150,7 @@ function Subfactory.pack(self)
         notes = self.notes,
         mining_productivity = self.mining_productivity,
         Product = Collection.pack(self.Product),
+        matrix_free_items = packed_free_items,
         -- Floors get packed by recursive nesting, which is necessary for a json-type data
         -- structure. It will need to be unpacked into the regular structure 'manually'.
         top_floor = Floor.pack(Subfactory.get(self, "Floor", 1)),
@@ -145,12 +159,20 @@ function Subfactory.pack(self)
 end
 
 function Subfactory.unpack(packed_self)
-    local self = Subfactory.init(packed_self.name, packed_self.icon, 0)
+    local self = Subfactory.init(packed_self.name, packed_self.icon)
 
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
+
+    if packed_self.matrix_free_items then
+        self.matrix_free_items = {}
+        for index, proto in pairs(packed_self.matrix_free_items) do
+            -- Prototypes will be automatically unpacked by the validation process
+            self.matrix_free_items[index] = proto
+        end
+    end
 
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
     local top_floor = self.selected_floor
@@ -163,6 +185,13 @@ end
 -- Needs validation: Product, Floor
 function Subfactory.validate(self)
     self.valid = Collection.validate_datasets(self.Product)
+
+    -- Validating matrix_free_items is a bit messy with the current functions,
+    -- it might be worth it to change it into a Collection at some point
+    for index, _ in pairs(self.matrix_free_items or {}) do
+        self.valid = prototyper.util.validate_prototype_object(self.matrix_free_items, index, "items", "type")
+          and self.valid
+    end
 
     -- Floor validation is called on the top floor, which recursively goes through its subfloors
     local top_floor = Subfactory.get(self, "Floor", 1)
@@ -183,6 +212,17 @@ function Subfactory.repair(self, player)
 
     -- Unrepairable item-objects get removed, so the subfactory will always be valid afterwards
     Collection.repair_datasets(self.Product, nil)
+
+    -- Clear item prototypes so we don't need to rely on the solver to remove them
+    Subfactory.clear(self, "Byproduct")
+    Subfactory.clear(self, "Ingredient")
+
+    -- Remove any unrepairable free item so the subfactory remains valid
+    -- (Not sure if this removing-while-iterating actually works)
+    local free_items = self.matrix_free_items
+    for index, item_proto in pairs(free_items or {}) do
+        if item_proto.simplified then table.remove(free_items, index) end
+    end
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     Floor.repair(top_floor, player)

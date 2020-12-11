@@ -1,386 +1,430 @@
-require("production_handler")
-
 production_table = {}
 
 -- ** LOCAL UTIL **
--- Creates and places a single module button
-local function create_module_button(flow, module, type, button_name)
-    local m = (module.amount == 1) and {"fp.module"} or {"fp.modules"}
-    local tutorial_tooltip = ui_util.tutorial_tooltip(game.get_player(flow.player_index), nil, type, true)
+local function generate_metadata(player)
+    local ui_state = data_util.get("ui_state", player)
+    local preferences = data_util.get("preferences", player)
 
-    local button_module = flow.add{type="sprite-button", name=button_name, sprite=module.proto.sprite,
-      style="fp_button_icon_medium_recipe", number=module.amount, mouse_button_filter={"left-and-right"},
-      tooltip={"", module.proto.localised_name, "\n", module.amount, " ", m,
-      ui_util.generate_module_effects_tooltip_proto(module), tutorial_tooltip}}
-    button_module.style.padding = 2
+    local subfactory = ui_state.context.subfactory
+    local mining_productivity = (subfactory.mining_productivity ~= nil) and
+      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+
+    local metadata = {
+        archive_open = (ui_state.flags.archive_open),
+        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
+        mining_productivity = mining_productivity,
+        round_button_numbers = preferences.round_button_numbers,
+        pollution_column = preferences.pollution_column,
+        ingredient_satisfaction = preferences.ingredient_satisfaction,
+        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
+    }
+
+    if preferences.tutorial_mode then
+        -- Choose the right type of tutorial text right here if possible
+        local matrix_postfix = (metadata.matrix_solver_active) and "_matrix" or ""
+
+        metadata.producing_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "producing_recipe",
+          true, true, true)
+        metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
+          true, true, true)
+        metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine" .. matrix_postfix,
+          false, true, true)
+        metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
+        metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
+        metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", true, true, true)
+        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct" .. matrix_postfix,
+         true, true, true)
+        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient" .. matrix_postfix,
+          true, true, true)
+        metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
+    end
+
+    return metadata
 end
 
--- Creates the flow containing all line items of the given type
-local function create_item_button_flow(player_table, gui_table, line, class, style_color)
-    local player = game.get_player(gui_table.player_index)
-    local preferences = player_table.preferences
+-- ** BUILDERS **
+local builders = {}
 
-    local view_name = player_table.ui_state.view_state.selected_view.name
-    local round_belts = (view_name == "belts_or_lanes" and preferences.round_button_numbers)
-
-    local flow = gui_table.add{type="flow", name="flow_line_products_" .. class .. "_" .. line.id,
-      direction="horizontal"}
-
-    local style = "fp_button_icon_medium_" .. style_color
-    local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, string.lower(class), true)
-
-    local function create_item_button(item, indication)
-        local raw_amount, appendage = nil, ""
-        -- Don't show a number for subfloors in the items/s/machine view, as it's nonsensical
-        if not (line.subfloor ~= nil and view_name == "items_per_second_per_machine") then
-            raw_amount, appendage = ui_util.determine_item_amount_and_appendage(player, view_name,
-              item.proto.type, item.amount, line.machine)
-        end
-
-        if raw_amount == nil or raw_amount > MARGIN_OF_ERROR then
-            -- Determine potential different button style and the potential satisfaction line
-            local actual_style, satisfaction_line = style, ""
-            indication = indication or ""
-
-            -- The priority_product is always stored on the first line of the subfloor, if there is one
-            local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-            local priority_product_proto = relevant_line.priority_product_proto
-
-            if item.proto.type == "entity" then
-                actual_style = "fp_button_icon_medium_blank"
-
-            elseif class == "Product" and priority_product_proto ~= nil and
-                priority_product_proto.type == item.proto.type and
-                priority_product_proto.name == item.proto.name then
-                actual_style = "fp_button_icon_medium_green"
-
-            elseif (class == "Ingredient" or class == "Fuel") and preferences.ingredient_satisfaction then
-                local satisfaction_percentage = ui_util.format_number(((item.satisfied_amount / item.amount) * 100), 3)
-
-                if class == "Ingredient" then  -- colors only change for Ingredients, not Fuel
-                    local satisfaction = tonumber(satisfaction_percentage)
-                    if satisfaction == 0 then
-                        actual_style = "fp_button_icon_medium_red"
-                    elseif satisfaction < 100 then
-                        actual_style = "fp_button_icon_medium_yellow"
-                    elseif satisfaction >= 100 then
-                        actual_style = "fp_button_icon_medium_green"
-                    end
-                end
-
-                satisfaction_line = {"", "\n", satisfaction_percentage, "% ", {"fp.satisfied"}}
-            end
-
-            -- Determine the correct indication
-            if class == "Product" and priority_product_proto == item.proto then
-                indication = {"fp.indication", {"fp.priority"}}
-            elseif class == "Ingredient" and item.proto.type == "entity" then
-                indication = {"fp.indication", {"fp.raw_ore"}}
-            end
-
-            local number_line, button_number = "", nil
-            if raw_amount ~= nil then
-                local rounded_amount = ui_util.format_number(raw_amount, 4)
-                number_line = {"", "\n" .. rounded_amount .. " ", appendage}
-                button_number = (round_belts) and math.ceil(raw_amount) or rounded_amount
-            end
-            local tooltip = {"", item.proto.localised_name, indication, number_line, satisfaction_line,
-              tutorial_tooltip}
-
-            flow.add{type="sprite-button", name="fp_sprite-button_line_" .. line.id .. "_" .. class
-              .. "_" .. (item.id or 1), sprite=item.proto.sprite, style=actual_style, number=button_number,
-              tooltip=tooltip, mouse_button_filter={"left-and-right"}}
-        end
-    end
-
-    -- Create all the buttons of the given class
-    for _, item in ipairs(Line.get_in_order(line, class)) do
-        create_item_button(item)
-    end
-
-    -- Add the fuel button if necessary
-    if class == "Ingredient" and line.subfloor == nil and line.machine.fuel then
-        local indication = {"fp.indication", {"fp.fuel"}}
-        class = "Fuel"
-        style = "fp_button_icon_medium_cyan"
-        tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "fuel", true)
-        create_item_button(line.machine.fuel, indication)
-    end
+function builders.toggle(line, parent_flow, metadata)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active,
+      enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
 end
 
+function builders.recipe(line, parent_flow, metadata)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    local recipe_proto = relevant_line.recipe.proto
 
--- Creates a single row of the table containing all (assembly) lines
-local function create_line_table_row(player, line)
-    local table_production = player.gui.screen["fp_frame_main_dialog"]["flow_production_pane"]
-      ["scroll-pane_production_pane"]["table_production_pane"]
+    local style, enabled = "flib_slot_button_default_small", true
+    local indication, tutorial_tooltip = "", metadata.producing_recipe_tutorial_tooltip
+    -- Make the first line of every subfloor un-interactable, it stays constant
+    if line.parent.level > 1 and line.gui_position == 1 then
+        style = "flib_slot_button_grey_small"
+        enabled = false
+        tutorial_tooltip = ""
+    elseif line.subfloor then
+        style = "flib_slot_button_blue_small"
+        indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
+    elseif line.recipe.production_type == "consume" then
+        style = "flib_slot_button_red_small"
+        indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
+        tutorial_tooltip = metadata.consuming_recipe_tutorial_tooltip
+    end
 
-    local player_table = get_table(player)
-    local ui_state = player_table.ui_state
-    local archive_open = ui_state.flags.archive_open
-    local preferences = get_preferences(player)
+    local tooltip = {"", recipe_proto.localised_name, indication, tutorial_tooltip}
+    parent_flow.add{type="sprite-button", name="fp_sprite-button_production_recipe_" .. line.id, enabled=enabled,
+      sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
+end
 
+function builders.percentage(line, parent_flow, metadata)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
-    -- Recipe button
-    production_table.refresh_recipe_button(player, line, table_production)
-
-
-    -- Percentage textfield
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-    local textfield_percentage = table_production.add{type="textfield", name="fp_textfield_line_percentage_" .. line.id,
-      text=tostring(relevant_line.percentage), enabled=(not archive_open)}
+    local enabled = (not metadata.archive_open and not metadata.matrix_solver_active)
+    local textfield_percentage = parent_flow.add{type="textfield", name="fp_textfield_production_percentage_"
+      .. line.id, text=tostring(relevant_line.percentage), enabled=enabled}
     ui_util.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
+end
 
+function builders.machine(line, parent_flow, metadata)
+    local machine_count = line.machine.count
+    parent_flow.style.horizontal_spacing = 2
 
-    -- Machine button
-    production_table.refresh_machine_table(player, line, table_production)
+    if line.subfloor then  -- add a button that shows the total of all machines on the subfloor
+        -- Machine count doesn't need any special formatting in this case because it'll always be an integer
+        local tooltip = {"fp.subfloor_machine_count", machine_count, {"fp.pl_machine", machine_count}}
+        parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default_small",
+          enabled=false, number=machine_count, tooltip=tooltip}
+    else
+        -- Machine
+        machine_count = ui_util.format_number(machine_count, 4)
+        local tooltip_count = machine_count
+        if machine_count == "0" and line.production_ratio > 0 then
+            tooltip_count = "<0.0001"
+            machine_count = "0.01"  -- shows up as 0.0 on the button
+        end
+        if metadata.round_button_numbers then machine_count = math.ceil(machine_count) end
 
+        local style, indication, machine_limit = "flib_slot_button_default_small", "", line.machine.limit
+        if not metadata.matrix_solver_active and machine_limit ~= nil then
+            if line.machine.hard_limit then
+                style = "flib_slot_button_pink_small"
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_hard", machine_limit}}}
+            elseif line.production_ratio < line.uncapped_production_ratio then
+                style = "flib_slot_button_orange_small"
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_enforced", machine_limit}}}
+            else
+                style = "flib_slot_button_green_small"
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_set", machine_limit}}}
+            end
+        end
 
-    -- Modules
-    local flow_modules = table_production.add{type="flow", name="flow_line_modules_" .. line.id, direction="horizontal"}
-    if line.subfloor == nil and line.machine.proto.module_limit > 0 then
+        local machine_proto = line.machine.proto
+        local effects_tooltip = line.machine.effects_tooltip
+        if machine_proto.mining then  -- Dynamically generate effects tooltip to include mining productivity
+            local module_effects = table.shallow_copy(line.total_effects)
+            module_effects.productivity = module_effects.productivity + metadata.mining_productivity
+            effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
+        end
+
+        local plural_parameter = (machine_count == "1") and 1 or 2
+        local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
+        local tutorial_tooltip = metadata.machine_tutorial_tooltip
+        local tooltip = {"", machine_proto.localised_name, number_line, indication, effects_tooltip, tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_" .. line.id, style=style,
+          sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+        -- Modules - can only be added to machines that have any module slots
+        if machine_proto.module_limit == 0 then return end
+
+        local separator = parent_flow.add{type="line", direction="vertical"}
+        separator.style.padding = {2, 0}
+
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
-            create_module_button(flow_modules, module, "module", "fp_sprite-button_line_module_" .. line.id
-              .. "_" .. module.id)
+            number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
+            tooltip = {"", module.proto.localised_name, number_line, module.effects_tooltip,
+              metadata.module_tutorial_tooltip}
+            -- The above variables don't need to be-initialized
+
+            parent_flow.add{type="sprite-button", name="fp_sprite-button_production_machine_Module_" .. line.id
+              .. "_" .. module.id, sprite=module.proto.sprite, tooltip=tooltip, number=module.amount,
+              style="flib_slot_button_default_small", mouse_button_filter={"left-and-right"}}
         end
 
         if Machine.empty_slot_count(line.machine) > 0 then
-            flow_modules.add{type="sprite-button", name="fp_sprite-button_line_add_module_"
-              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_a_module"},
-              mouse_button_filter={"left"}, enabled=(not archive_open)}
+            parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_module_" .. line.id,
+              sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_module"},
+              mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
         end
     end
+end
 
-
-    -- Beacons
-    local flow_beacons = table_production.add{type="flow", name="flow_line_beacons_" .. line.id, direction="horizontal"}
-    flow_beacons.style.vertical_align = "center"
+function builders.beacon(line, parent_flow, metadata)
     -- Beacons only work on machines that have some allowed_effects
-    if line.subfloor == nil and line.machine.proto.allowed_effects ~= nil then
-        if line.beacon == nil then  -- only add the add-beacon-button if this does not have a beacon yet
-            flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_add_beacon_"
-              .. line.id, sprite="fp_sprite_plus", style="fp_sprite-button_inset_line", tooltip={"fp.add_beacons"},
-              mouse_button_filter={"left"}, enabled=(not archive_open)}
-        else
-            local beacon = line.beacon
-            create_module_button(flow_beacons, beacon.module, "beacon_module",
-              "fp_sprite-button_line_beacon_module_" .. line.id)
-            flow_beacons.add{type="label", name="label_beacon_separator", caption="X"}
+    if line.subfloor ~= nil or line.machine.proto.allowed_effects == nil then return end
 
-            local m = (beacon.amount == 1) and {"fp.beacon"} or {"fp.beacons"}
-            local b = (beacon.total_amount ~= nil) and {"", " (", {"fp.total"}, ": ", beacon.total_amount, ")"} or ""
-            local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "beacon_beacon", true)
+    local beacon = line.beacon
+    if beacon == nil then
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_add_beacon_" .. line.id,
+            sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacon"},
+            mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+    else
+        -- Beacon
+        local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
+        local number_line = {"fp.newline", {"fp.two_word_title", beacon.amount, {"fp.pl_beacon", plural_parameter}}}
+        local indication = (beacon.total_amount) and
+            {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
+        local tooltip = {"", beacon.proto.localised_name, number_line, indication, beacon.effects_tooltip,
+          metadata.beacon_tutorial_tooltip}
 
-            local button_beacon = flow_beacons.add{type="sprite-button", name="fp_sprite-button_line_beacon_beacon_"
-              .. line.id, sprite=beacon.proto.sprite, style="fp_button_icon_medium_recipe", number=beacon.amount,
-              mouse_button_filter={"left-and-right"}, tooltip={"", beacon.proto.localised_name, "\n", beacon.amount,
-              " ", m, b, ui_util.generate_module_effects_tooltip(beacon.total_effects, nil), tutorial_tooltip}}
-            button_beacon.style.padding = 2
+        local button_beacon = parent_flow.add{type="sprite-button", name="fp_sprite-button_production_beacon_"
+            .. line.id, sprite=beacon.proto.sprite, number=beacon.amount, style="flib_slot_button_default_small",
+            tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
-            if beacon.total_amount ~= nil then
-                local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
-                sprite_overlay.ignored_by_interaction = true
-            end
+        if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
+            local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
+            sprite_overlay.ignored_by_interaction = true
         end
+
+        -- Module
+        local separator = parent_flow.add{type="line", direction="vertical"}
+        separator.style.padding = {2, 0}
+        separator.style.margin = {0, -2}
+        local module_proto, module_amount = beacon.module.proto, beacon.module.amount
+
+        -- Can use simplified number line because module amount is an integer
+        number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
+        tooltip = {"", module_proto.localised_name, number_line}
+        -- The above variables don't need to be-initialized
+
+        parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
+          number=module_amount, style="flib_slot_button_default_small"}
+    end
+end
+
+function builders.energy(line, parent_flow, metadata)
+    local pollution_line = (metadata.pollution_column) and ""
+      or {"fp.newline", {"fp.name_value", {"fp.u_pollution"}, ui_util.format_SI_value(line.pollution, "P/m", 5)}}
+    parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
+      tooltip={"", ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
+end
+
+function builders.pollution(line, parent_flow, _)
+    parent_flow.add{type="label", caption=ui_util.format_SI_value(line.pollution, "P/m", 3),
+      tooltip=ui_util.format_SI_value(line.pollution, "P/m", 5)}
+end
+
+function builders.products(line, parent_flow, metadata)
+    for _, product in ipairs(Line.get_in_order(line, "Product")) do
+        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+          product, nil, machine_count)
+        if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
+
+        local style = "flib_slot_button_default_small"
+        local indication_string, tutorial_tooltip = "", ""
+
+        if not line.subfloor and not metadata.matrix_solver_active then
+            -- We can check for identity because they reference the same table
+            if line.priority_product_proto == product.proto then
+                style = "flib_slot_button_pink_small"
+                indication_string = {"fp.indication", {"fp.priority_product"}}
+            end
+            tutorial_tooltip = metadata.product_tutorial_tooltip
+        end
+
+        local name_line = {"fp.two_word_title", product.proto.localised_name, indication_string}
+        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+        local tooltip = {"", name_line, number_line, tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Product_" .. line.id
+          .. "_" .. product.id, sprite=product.proto.sprite, style=style, number=amount,
+          tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
+
+        ::skip_product::
+    end
+end
+
+function builders.byproducts(line, parent_flow, metadata)
+    for _, byproduct in ipairs(Line.get_in_order(line, "Byproduct")) do
+        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+          byproduct, nil, machine_count)
+        if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
+
+        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+        local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tooltip or ""
+        local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Byproduct_" .. line.id
+          .. "_" .. byproduct.id, sprite=byproduct.proto.sprite, style="flib_slot_button_red_small", number=amount,
+          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+        ::skip_byproduct::
+    end
+end
+
+function builders.ingredients(line, parent_flow, metadata)
+    for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+        -- items/s/machine does not make sense for lines with subfloors, show items/s instead
+        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+          ingredient, nil, machine_count)
+        if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
+
+        local style = "flib_slot_button_green_small"
+        local satisfaction_line, indication_string = "", ""
+
+        if ingredient.proto.type == "entity" then
+            style = "flib_slot_button_default_small"
+            indication_string = {"fp.indication", {"fp.raw_ore"}}
+
+        elseif metadata.ingredient_satisfaction then
+            local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
+            local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
+
+            -- We use the formatted percentage here because it smooths out the number to 3 places
+            local satisfaction = tonumber(formatted_percentage)
+            if satisfaction <= 0 then
+                style = "flib_slot_button_red_small"
+            elseif satisfaction < 100 then
+                style = "flib_slot_button_yellow_small"
+            end  -- else, it stays green
+
+            satisfaction_line = {"fp.newline", {"fp.two_word_title", (formatted_percentage .. "%"), {"fp.satisfied"}}}
+        end
+
+        local name_line = {"fp.two_word_title", ingredient.proto.localised_name, indication_string}
+        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tooltip}
+
+        parent_flow.add{type="sprite-button", name="fp_sprite-button_production_item_Ingredient_" .. line.id
+          .. "_" .. ingredient.id, sprite=ingredient.proto.sprite, style=style, number=amount,
+          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+        ::skip_ingredient::
     end
 
+    if not line.subfloor and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
+end
 
-    -- Energy label (don't add pollution to the tooltip if it gets it's own column)
-    local pollution_line = (preferences.pollution_column) and "" or {"", "\n", {"fp.cpollution"}, ": ",
-      ui_util.format_SI_value(line.pollution, "P/m", 3)}
-    table_production.add{type="label", name="fp_label_line_energy_" .. line.id,
-      caption=ui_util.format_SI_value(line.energy_consumption, "W", 3), tooltip={"",
-      ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
+-- This is not a standard builder function, as it gets called indirectly by the ingredient builder
+function builders.fuel(line, parent_flow, metadata)
+    local fuel = line.machine.fuel
 
+    local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, line.machine.count)
+    if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
-    -- Pollution label
-    if preferences.pollution_column then
-        table_production.add{type="label", name="fp_label_line_pollution_" .. line.id,
-          caption=ui_util.format_SI_value(line.pollution, "P/m", 3),
-          tooltip={"", ui_util.format_SI_value(line.pollution, "P/m", 5)}}
+    local satisfaction_line = ""
+    if metadata.ingredient_satisfaction then
+        local satisfaction_percentage = (fuel.satisfied_amount / fuel.amount) * 100
+        local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
+        satisfaction_line = {"fp.newline", {"fp.two_word_title", (formatted_percentage .. "%"), {"fp.satisfied"}}}
     end
 
+    local name_line = {"fp.annotated_title", fuel.proto.localised_name, {"fp.pu_fuel", 1}}
+    local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
+    local tooltip = {"", name_line, number_line, satisfaction_line, metadata.fuel_tutorial_tooltip}
 
-    -- Item buttons
-    create_item_button_flow(player_table, table_production, line, "Product", "blank")
-    create_item_button_flow(player_table, table_production, line, "Byproduct", "red")
-    create_item_button_flow(player_table, table_production, line, "Ingredient", "green")
+    parent_flow.add{type="sprite-button", name="fp_sprite-button_production_fuel_" .. line.id,
+      sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small", number=amount,
+      tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+end
 
-
-    -- Comment textfield
-    if preferences.line_comment_column then
-        local textfield_comment = table_production.add{type="textfield", name="fp_textfield_line_comment_" .. line.id,
-          text=(line.comment or "")}
-        ui_util.setup_textfield(textfield_comment)
-        textfield_comment.style.width = 160
-    end
+function builders.line_comment(line, parent_flow, _)
+    local textfield_name = "fp_textfield_production_comment_" .. line.id
+    local textfield_comment = parent_flow.add{type="textfield", name=textfield_name, text=(line.comment or "")}
+    ui_util.setup_textfield(textfield_comment)
+    textfield_comment.style.width = 160
 end
 
 
 -- ** TOP LEVEL **
--- Refreshes the production table by reloading the data
+local all_production_columns = {
+    {name="toggle", caption=nil, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="recipe", caption={"fp.pu_recipe", 1}, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},
+    {name="machine", caption={"fp.pu_machine", 1}, tooltip=nil, minimal_width=0, alignment="left"},
+    {name="beacon", caption={"fp.pu_beacon", 1}, tooltip=nil, minimal_width=0, alignment="left"},
+    {name="energy", caption={"fp.u_energy"}, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="pollution", caption={"fp.u_pollution"}, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="products", caption={"fp.pu_product", 2}, tooltip=nil, minimal_width=0, alignment="left"},
+    {name="byproducts", caption={"fp.pu_byproduct", 2}, tooltip=nil, minimal_width=0, alignment="left"},
+    {name="ingredients", caption={"fp.pu_ingredient", 2}, tooltip=nil, minimal_width=0, alignment="left"},
+    {name="line_comment", caption={"fp.column_comment"}, tooltip=nil, minimal_width=0, alignment="left"}
+}
+
+function production_table.build(player)
+    local main_elements = data_util.get("main_elements", player)
+    main_elements.production_table = {}
+
+    -- Can't do much here since the table needs to be destroyed on refresh anyways
+    local frame_vertical = main_elements.production_box.vertical_frame
+    local scroll_pane_production = frame_vertical.add{type="scroll-pane", direction="vertical",
+      style="flib_naked_scroll_pane_no_padding"}
+    scroll_pane_production.style.horizontally_stretchable = true
+    main_elements.production_table["production_scroll_pane"] = scroll_pane_production
+
+    production_table.refresh(player)
+end
+
 function production_table.refresh(player)
-    local flow_production = player.gui.screen["fp_frame_main_dialog"]["flow_production_pane"]
-    -- Cuts function short if the production pane hasn't been initialized yet
-    if not flow_production then return end
+    -- Determine the column_count first, because not all columns are nessecarily shown
+    local preferences = data_util.get("preferences", player)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
 
-    flow_production["label_production_info"].visible = false
-    local scroll_pane_production = flow_production["scroll-pane_production_pane"]
-    local preferences = get_preferences(player)
+    local production_table_elements = ui_state.main_elements.production_table
+    local subfactory_valid = (subfactory and subfactory.valid)
+    local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
 
-    -- Production table needs to be destroyed to change it's column count
-    local table_production = scroll_pane_production["table_production_pane"]
-    if table_production ~= nil then table_production.destroy() end
+    production_table_elements.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
+    if not subfactory_valid then return end
 
-    local column_count = 9
-    for _, optional_column in pairs{preferences.pollution_column, preferences.line_comment_column} do
-        if optional_column == true then column_count = column_count + 1 end
+    local production_columns, column_count = {}, 0
+    for _, column_data in ipairs(all_production_columns) do
+        -- Explicit comparison needed here, as both true and nil columns should be shown
+        if preferences[column_data.name .. "_column"] ~= false then
+            column_count = column_count + 1
+            production_columns[column_count] = column_data
+        end
     end
+    column_count = column_count + 1
 
-    table_production = scroll_pane_production.add{type="table", name="table_production_pane", column_count=column_count}
-    table_production.style = "table_with_selection"
+    local scroll_pane_production = production_table_elements.production_scroll_pane
+    scroll_pane_production.clear()
+
+    local table_production = scroll_pane_production.add{type="table", column_count=column_count,
+      style="fp_table_production"}
     table_production.style.horizontal_spacing = 16
-    table_production.style.top_padding = 0
-    table_production.style.left_margin = 6
+    table_production.style.padding = {6, 0, 0, 12}
+    production_table_elements["table"] = table_production
 
-    local context = get_context(player)
-    if context.subfactory ~= nil and context.subfactory.valid then
-        if context.floor.Line.count == 0 then
-            scroll_pane_production.visible = false
-            flow_production["label_production_info"].visible = true
-        else
-            scroll_pane_production.visible = true
-
-            -- Custom column creation
-            local function add_line_comments_column()
-                local flow = table_production.add{type="flow", name="flow_comment_clear", direction="horizontal"}
-                flow.style.vertical_align = "center"
-                local title = flow.add{type="label", name="label_title_comment", caption={"", {"fp.comments"}, " "}}
-                title.style.font = "fp-font-16p"
-                local button = flow.add{type="button", name="fp_button_production_clear_comments",
-                  caption={"fp.clear"},  tooltip={"fp.clear_recipe_comments"}, style="fp_button_mini",
-                  mouse_button_filter={"left"}}
-                button.style.font = "fp-font-14p-semi"
-                button.style.height = 20
-                button.style.left_padding = 1
-                button.style.right_padding = 1
-            end
-
-            -- Table titles
-            local titles = {
-                {name="recipe", label={"fp.recipe"}, alignment="middle-center"},
-                {name="percent", label="% [img=info]", tooltip={"fp.line_percentage_tooltip"},
-                  alignment="middle-center"},
-                {name="machine", label={"fp.cmachine"}, alignment="middle-center"},
-                {name="modules", label={"fp.cmodules"}, alignment="middle-center"},
-                {name="beacons", label={"fp.cbeacons"}, alignment="middle-center"},
-                {name="energy", label={"fp.energy"}, alignment="middle-center"},
-                {name="pollution", show=preferences.pollution_column, label={"fp.cpollution"},
-                  alignment="middle-center"},
-                {name="products", label={"fp.products"}, alignment="middle-left"},
-                {name="byproducts", label={"fp.byproducts"}, alignment="middle-left"},
-                {name="ingredients", label={"fp.ingredients"}, alignment="middle-left"},
-                {name="line_comments", show=preferences.line_comment_column,
-                  custom_function=add_line_comments_column, alignment="middle-left"}
-            }
-
-            for index, title in ipairs(titles) do
-                if title.show == nil or title.show == true then
-                    table_production.style.column_alignments[index] = title.alignment
-
-                    if title.custom_function then
-                        title.custom_function()
-                    else
-                        local label_title = table_production.add{type="label", name="label_title_" .. title.name,
-                          caption=title.label, tooltip=title.tooltip}
-                        label_title.style.font = "fp-font-16p"
-                    end
-                end
-            end
-
-            -- Table rows
-            for _, line in ipairs(Floor.get_in_order(context.floor, "Line")) do
-                create_line_table_row(player, line)
-            end
-        end
+    -- Column headers
+    for index, column_data in ipairs(production_columns) do
+        local caption = (column_data.tooltip) and {"fp.info_label", column_data.caption} or column_data.caption
+        local label_column = table_production.add{type="label", caption=caption, tooltip=column_data.tooltip,
+          style="bold_label"}
+        label_column.style.minimal_width = column_data.minimal_width
+        label_column.style.bottom_margin = 6
+        table_production.style.column_alignments[index] = column_data.alignment
     end
-end
+    table_production.add{type="empty-widget", style="flib_horizontal_pusher"}
 
+    -- Generates some data that is relevant to several different builders
+    local metadata = generate_metadata(player)
 
--- Separate function so it can be refreshed independently
-function production_table.refresh_recipe_button(player, line, table_production)
-    local ui_state = get_ui_state(player)
-
-    local relevant_line = (line.subfloor == nil) and line or Floor.get(line.subfloor, "Line", 1)
-    local recipe_proto = relevant_line.recipe.proto
-
-    local tooltip, style, enabled = recipe_proto.localised_name, "fp_button_icon_medium_blank", true
-    -- Make the first line of every subfloor uninteractable, it stays constant
-    if ui_state.context.floor.level > 1 and line.gui_position == 1 then
-        style = "fp_button_icon_medium_hidden"
-        enabled = false
-    else
-        if line.subfloor then
-            tooltip = {"", tooltip, {"fp.indication", {"fp.subfloor_attached"}}}
-            style = "fp_button_icon_medium_green"
+    -- Production lines
+    for _, line in ipairs(Floor.get_in_order(ui_state.context.floor, "Line")) do
+        for _, column_data in ipairs(production_columns) do
+            local flow = table_production.add{type="flow", name="flow_" .. column_data.name
+              .. "_" .. line.id, direction="horizontal"}
+            builders[column_data.name](line, flow, metadata)
         end
-
-        -- Tutorial tooltip only needed for interactable buttons
-        tooltip = {"", tooltip, ui_util.tutorial_tooltip(player, nil, "recipe", true)}
-    end
-
-    local button_name = "fp_sprite-button_line_recipe_" .. line.id
-    local button_recipe = table_production[button_name]
-
-    if button_recipe == nil then  -- either create or refresh the recipe button
-        table_production.add{type="sprite-button", name=button_name, style=style, sprite=recipe_proto.sprite,
-          tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
-    else
-        button_recipe.tooltip = tooltip
-        button_recipe.style = style
-        button_recipe.enabled = enabled
-    end
-end
-
--- Separate function so it can be refreshed independently
-function production_table.refresh_machine_table(player, line, table_production)
-    if line.subfloor ~= nil then
-        local machine_count = line.machine.count
-        local machine_text = (machine_count == 1) and {"fp.machine"} or {"fp.machines"}
-
-        table_production.add{type="sprite-button", name="sprite-button_subfloor_machine_total_" .. line.id,
-          sprite="fp_generic_assembler", style="fp_button_icon_medium_blank", enabled=false, number=machine_count,
-          tooltip={"", machine_count, " ", machine_text, " ", {"fp.subfloor_machine_count"}}}
-
-    else  -- otherwise, show the machine button as normal
-        local machine_proto = line.machine.proto
-        local total_effects = Line.get_total_effects(line, player)
-        local machine_count = ui_util.format_number(line.machine.count, 4)
-        local machine_text = (tonumber(machine_count) == 1) and {"fp.machine"} or {"fp.machines"}
-
-        local limit = line.machine.limit
-        local style, limit_notice = "fp_button_icon_medium_recipe", ""
-        if limit ~= nil then
-            if line.machine.hard_limit then
-                style = "fp_button_icon_medium_cyan"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_hard", limit}, " -"}
-            elseif line.production_ratio < line.uncapped_production_ratio then
-                style = "fp_button_icon_medium_yellow"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_enforced", limit}, " -"}
-            else
-                style = "fp_button_icon_medium_green"
-                limit_notice = {"", "\n- ", {"fp.machine_limit_set", limit}, " -"}
-            end
-        end
-
-        local tutorial_tooltip = ui_util.tutorial_tooltip(player, nil, "machine", true)
-        local display_count = (machine_count == "0" and line.production_ratio > 0) and "<0.0001" or machine_count
-        local button = table_production.add{type="sprite-button", name="fp_sprite-button_line_machine_" .. line.id,
-          sprite=machine_proto.sprite, style=style, mouse_button_filter={"left-and-right"},
-          tooltip={"", machine_proto.localised_name, limit_notice, "\n", display_count, " ", machine_text,
-          ui_util.generate_module_effects_tooltip(total_effects, machine_proto), tutorial_tooltip}}
-        button.number = (get_preferences(player).round_button_numbers) and math.ceil(machine_count) or machine_count
-        button.style.padding = 1
+        table_production.add{type="empty-widget"}
     end
 end

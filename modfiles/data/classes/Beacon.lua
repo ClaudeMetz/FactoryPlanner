@@ -1,37 +1,18 @@
 -- This is a 'class' representing a (group of) beacon(s) and the modules attached to it
 Beacon = {}
 
--- TODO potentially remove this and apply changes to beacons bit by bit instead of replacing them
-function Beacon.init_by_protos(beacon_proto, beacon_amount, module_proto, module_amount, total_amount)
-    local module = Module.init_by_proto(module_proto, module_amount)
-
-    local beacon = {
-        proto = beacon_proto,
-        amount = beacon_amount,
-        module = module,
-        total_amount = total_amount,
-        total_effects = nil,
-        valid = true,
-        class = "Beacon"
-    }
-    beacon.module.parent = beacon
-
-    -- Initialise total_effects
-    Beacon.summarize_effects(beacon)
-
-    return beacon
-end
-
--- Init a beacon without modules to compare the compatibility of potential modules to
-function Beacon.blank_init(beacon_proto, beacon_amount, total_amount, parent_line)
+-- Init a beacon without a module, which will have to be added afterwards
+function Beacon.init(beacon_proto, beacon_amount, total_amount, parent_line)
     local beacon = {
         proto = beacon_proto,
         amount = beacon_amount or 0,
         total_amount = total_amount,
         total_effects = nil,
+        effects_tooltip = "",
         valid = true,
         class = "Beacon"
     }
+    -- Exceptionally set in the object init itself, because it'll be used before being added to a line
     beacon.parent = parent_line
 
     -- Initialize total_effects with all zeroes
@@ -39,7 +20,6 @@ function Beacon.blank_init(beacon_proto, beacon_amount, total_amount, parent_lin
 
     return beacon
 end
-
 
 -- Exceptionally, a setter function to automatically run additional functionality
 function Beacon.set_module(self, module)
@@ -65,33 +45,31 @@ function Beacon.summarize_effects(self)
     end
 
     self.total_effects = module_effects
+    self.effects_tooltip = data_util.format_module_effects(module_effects, 1, false)
+    -- The module itself doesn't need an effects_tooltip as it would mirror the beacon one
 end
 
 
 function Beacon.check_module_compatibility(self, module_proto)
-    local compatible = true
     local recipe_proto, machine_proto = self.parent.recipe.proto, self.parent.machine.proto
 
     if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
       and not module_proto.limitations[recipe_proto.name] then
-        compatible = false
+        return false
     end
 
-    if compatible then
-        local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
-        if machine_effects == nil or beacon_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
-                    compatible = false
-                    break
-                end
+    local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
+    if machine_effects == nil or beacon_effects == nil then
+        return false
+    else
+        for effect_name, _ in pairs(module_proto.effects) do
+            if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
+                return false
             end
         end
     end
 
-    return compatible
+    return true
 end
 
 function Beacon.compile_module_filter(self)

@@ -1,11 +1,11 @@
-require("model")
+require("sequential_solver")
+require("matrix_solver")
 require("structures")
 
 calculation = {
     interface = {},
     util = {}
 }
-
 
 -- ** LOCAL UTIL **
 -- Generates structured data of the given floor for calculation
@@ -17,49 +17,83 @@ local function generate_floor_data(player, subfactory, floor)
 
     local mining_productivity = (subfactory.mining_productivity ~= nil) and
       (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+    local check_usefulness = data_util.get("preferences", player).toggle_column
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
 
-        if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
-            line_data.recipe_proto = Floor.get(line.subfloor, "Line", 1).recipe.proto
+        if line.subfloor ~= nil then
+            line_data.recipe_proto = line.subfloor.defining_line.recipe.proto
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
+            table.insert(floor_data.lines, line_data)
 
         else
-            line_data.recipe_proto = line.recipe.proto  -- reference
-            line_data.timescale = subfactory.timescale
-            line_data.percentage = line.percentage
-            line_data.production_type = line.recipe.production_type
-            line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
-            line_data.beacon_consumption = 0
-            line_data.priority_product_proto = line.priority_product_proto  -- reference
-            line_data.machine_proto = line.machine.proto  -- reference
+            local line_is_useful = true
+            if check_usefulness then  -- only care about this if the toggle_column is visible
+                -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
+                if line.percentage == 0 or not line.active then line_is_useful = false end
 
-            -- Fuel prototype
-            if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
-
-            -- Total effects
-            if line.machine.proto.mining then
-                -- If there is mining prod, a copy of the table is required
-                local effects = table.shallow_copy(line.total_effects)
-                effects.productivity = effects.productivity + mining_productivity
-                line_data.total_effects = effects
-            else
-                -- If there's no mining prod, a reference will suffice
-                line_data.total_effects = line.total_effects
+                -- If this line is on a subfloor and the top line of the floor is useless, the line is useless too
+                if line_is_useful and line.parent.level > 1 then
+                    local first_floor_line = line.parent.defining_line
+                    if first_floor_line.percentage == 0 or not first_floor_line.active then line_is_useful = false end
+                end
             end
 
-            -- Beacon total (can be calculated here, which is faster and simpler)
-            if line.beacon ~= nil and line.beacon.total_amount ~= nil then
-                line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
+            if not line_is_useful then  -- any useless line doesn't need to go through the solver
+                local blank_class = structures.class.init()
+
+                calculation.interface.set_line_result{
+                    player_index = player.index,
+                    floor_id = floor.id,
+                    line_id = line.id,
+                    machine_count = 0,
+                    energy_consumption = 0,
+                    pollution = 0,
+                    production_ratio = 0,
+                    uncapped_production_ratio = 0,
+                    Product = blank_class,
+                    Byproduct = blank_class,
+                    Ingredient = blank_class,
+                    fuel_amount = nil
+                }
+            else
+                line_data.recipe_proto = line.recipe.proto  -- reference
+                line_data.timescale = subfactory.timescale
+                line_data.percentage = line.percentage  -- non-zero
+                line_data.production_type = line.recipe.production_type
+                line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
+                line_data.beacon_consumption = 0
+                line_data.priority_product_proto = line.priority_product_proto  -- reference
+                line_data.machine_proto = line.machine.proto  -- reference
+
+                -- Fuel prototype
+                if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
+
+                -- Total effects
+                if line.machine.proto.mining then
+                    -- If there is mining prod, a copy of the table is required
+                    local effects = table.shallow_copy(line.total_effects)
+                    effects.productivity = effects.productivity + mining_productivity
+                    line_data.total_effects = effects
+                else
+                    -- If there's no mining prod, a reference will suffice
+                    line_data.total_effects = line.total_effects
+                end
+
+                -- Beacon total (can be calculated here, which is faster and simpler)
+                if line.beacon ~= nil and line.beacon.total_amount ~= nil then
+                    line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
+                end
+
+                table.insert(floor_data.lines, line_data)
             end
         end
-
-        table.insert(floor_data.lines, line_data)
     end
 
     return floor_data
 end
+
 
 -- Replaces the items of the given object (of given class) using the given result
 local function update_object_items(object, item_class, item_results)
@@ -94,7 +128,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         end
     end
 
-    -- Iterate the lines from top to bottom, setting satisfaction amounts along the way
+    -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
     for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
         if line.subfloor ~= nil then
             local subfloor_product_class = structures.class.copy(product_class)
@@ -122,18 +156,30 @@ end
 
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
-function calculation.update(player, subfactory, refresh)
+function calculation.update(player, subfactory)
     if subfactory ~= nil and subfactory.valid then
         local player_table = data_util.get("table", player)
-        -- Save the active subfactory in global so the model doesn't have to pass it around
+        -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        model.update_subfactory(subfactory_data)
-        player_table.active_subfactory = nil
-    end
+        local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
 
-    if refresh then main_dialog.refresh(player) end
+        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+
+            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
+                if matrix_metadata.num_rows == matrix_metadata.num_cols then
+                    matrix_solver.run_matrix_solver(subfactory_data, false)
+                else
+                    modal_dialog.enter(player, {type="matrix", allow_queueing=true})
+                end
+            end
+        else
+            sequential_solver.update_subfactory(subfactory_data)
+        end
+
+        player_table.active_subfactory = nil  -- reset after calculations have been carried out
+    end
 end
 
 -- Updates the given subfactory's ingredient satisfactions
@@ -144,11 +190,12 @@ end
 
 -- ** INTERFACE **
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.get_subfactory_data(player, subfactory)
+function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = nil
+        top_floor = nil,
+        matrix_free_items = subfactory.matrix_free_items
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -172,6 +219,7 @@ function calculation.interface.set_subfactory_result(result)
 
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
+    subfactory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -224,26 +272,17 @@ function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto,
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, is_rocket_silo)
-    local launch_delay = 0
-    if is_rocket_silo then  -- This calculation only works for unmodified rockets
-        local launch_sequence_time = 41.25 / timescale  -- in seconds
-        launch_delay = launch_sequence_time * production_ratio
-    end
-
-    return ((production_ratio / math.min(crafts_per_tick, 60)) / timescale) + launch_delay
+function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
+    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+    return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
 end
 
--- Calculates the production ratio from a given machine limit
-function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, is_rocket_silo)
+-- Calculates the production ratio that the given amount of machines would result in
+-- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
+function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
     crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
-
-    -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
-    if is_rocket_silo then  -- Formula reduced by Wolfram Alpha
-        return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)
-    else
-        return machine_limit * timescale * crafts_per_tick
-    end
+    -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
+    return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
 end
 
 -- Calculates the product amount after applying productivity bonuses
@@ -260,8 +299,9 @@ end
 
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
 function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
+    local drain = math.ceil(machine_count) * (machine_proto.energy_drain * 60)
     local consumption_multiplier = 1 + math.max(total_effects.consumption, -0.8)
-    return machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
+    return (machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier) + drain
 end
 
 -- Determines the amount of pollution this recipe produces

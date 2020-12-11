@@ -6,6 +6,7 @@ function Module.init_by_proto(proto, amount)
     return {
         proto = proto,
         amount = amount,
+        effects_tooltip = "",
         valid = true,
         class = "Module"
     }

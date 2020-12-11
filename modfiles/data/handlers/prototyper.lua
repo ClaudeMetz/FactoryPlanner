@@ -18,34 +18,35 @@ local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules",
 -- ** TOP LEVEL **
 -- Generates the new data and mapping_tables and saves them to lua-globals
 function prototyper.setup()
-    new = {}
+    NEW = {}
     for _, data_type in ipairs(data_types) do
-        new["all_" .. data_type] = generator["all_" .. data_type]()
+        NEW["all_" .. data_type] = generator["all_" .. data_type]()
     end
 end
 
--- Updates the relevant data of the given player to fit the new data
+-- Migrates the default prototypes of the given player
 function prototyper.run(player_table)
-    -- Then, update the default/preferred datasets
     for _, data_type in ipairs(data_types) do
         if player_table.preferences.default_prototypes[data_type] ~= nil then
             prototyper.defaults.migrate(player_table, data_type)
         end
     end
-
-    -- Update the validity of all elements of the factory and archive
-    Collection.validate_datasets(player_table.factory.Subfactory)
-    Collection.validate_datasets(player_table.archive.Subfactory)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
 function prototyper.finish()
     for _, data_type in ipairs(data_types) do
-        global["all_" .. data_type] = new["all_" .. data_type]
+        global["all_" .. data_type] = NEW["all_" .. data_type]
     end
-    new = nil
+    NEW = nil
 
+    -- Generate new lua-globals acting as a static cache for some important data
     loader.run()
+
+    -- Save tutorial subfactory to global for better performance
+    -- This can't be done on_load since game is not available at that stage
+    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)
+    if not error then global.tutorial_subfactory = Factory.get(imported_tutorial_factory, "Subfactory", 1) end
 end
 
 
@@ -68,7 +69,7 @@ end
 
 -- Returns the prototype defined by the given names, if it exists
 function prototyper.util.get_new_prototype_by_name(data_type, proto_name, category_name)
-    local current_prototype_table = new or global  -- need to check which one is currently in use
+    local current_prototype_table = NEW or global  -- need to check which one is currently in use
     local new_prototypes = current_prototype_table["all_" .. data_type]
 
     if new_prototypes.structure_type == "simple" then
@@ -110,7 +111,7 @@ local specific_fallbacks = { ["fuels"] = { ["chemical"] = "coal" } }
 -- Returns the fallback default for the given type of prototype
 function prototyper.defaults.get_fallback(type)
     -- Use the lua-global new-table if it exists, use global otherwise
-    local data_table = new or global
+    local data_table = NEW or global
     local all_prototypes = data_table["all_" .. type]
     local specific_fallback = specific_fallbacks[type]
 
@@ -160,7 +161,7 @@ end
 
 -- Migrates the default_prototypes preferences, trying to preserve the users choices
 function prototyper.defaults.migrate(player_table, type)
-    local new_prototypes = new["all_" .. type]
+    local new_prototypes = NEW["all_" .. type]
     local default_prototypes = player_table.preferences.default_prototypes
     local default = default_prototypes[type]
 

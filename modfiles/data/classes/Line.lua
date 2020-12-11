@@ -6,6 +6,7 @@ function Line.init(recipe)
 
     return {
         recipe = recipe,  -- can be nil
+        active = (is_standalone_line) and true or nil,
         percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
@@ -156,7 +157,7 @@ function Line.change_machine(self, player, machine_proto, direction)
         end
 
         local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, grading_direction}
-        titlebar.enqueue_message(player, message, "error", 1, false)
+        title_bar.enqueue_message(player, message, "error", 1, false)
         return false
     end
 end
@@ -194,6 +195,9 @@ function Line.summarize_effects(self, summarize_machine, summarize_beacon)
     end
 
     self.total_effects = module_effects
+
+    -- The effects tooltip is saved on the machine, but includes all possible effects
+    self.machine.effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
 end
 
 -- Returns the total effects influencing this line, including mining productivity
@@ -227,6 +231,8 @@ function Line.pack(self)
 
     else
         packed_line.recipe = Recipe.pack(self.recipe)
+
+        packed_line.active = self.active
         packed_line.percentage = self.percentage
 
         packed_line.machine = Machine.pack(self.machine)
@@ -243,16 +249,19 @@ function Line.unpack(packed_self)
     -- Only lines without subfloors are ever unpacked, so it can be treated as such
     local self = Line.init(packed_self.recipe)
 
+    self.active = packed_self.active
+    self.percentage = packed_self.percentage
+
     self.machine = Machine.unpack(packed_self.machine)
     self.machine.parent = self
 
     self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
     if self.beacon then self.beacon.parent = self end
-
-    self.comment = packed_self.comment
-    self.percentage = packed_self.percentage
-    self.priority_product_proto = packed_self.priority_product_proto
     -- Effects are summarized by the ensuing validation
+
+    -- The prototype will be automatically unpacked by the validation process
+    self.priority_product_proto = packed_self.priority_product_proto
+    self.comment = packed_self.comment
 
     return self
 end
@@ -313,6 +322,11 @@ function Line.repair(self, player)
 
         if self.valid then Line.summarize_effects(self, false, false) end
     end
+
+    -- Clear item prototypes so we don't need to rely on the solver to remove them
+    Line.clear(self, "Product")
+    Line.clear(self, "Byproduct")
+    Line.clear(self, "Ingredient")
 
     return self.valid
 end
