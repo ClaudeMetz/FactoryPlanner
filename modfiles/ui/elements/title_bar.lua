@@ -31,20 +31,20 @@ function title_bar.build(player)
     main_elements.title_bar = {}
 
     local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal"}
-    flow_title_bar.style.height = 30
-    flow_title_bar.style.top_margin = 2
     flow_title_bar.style.horizontal_spacing = 8
+    flow_title_bar.drag_target = main_elements.main_frame
+    -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
+    flow_title_bar.style.height = 28
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="heading_1_label"}
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
+      ignored_by_interaction=true}
 
-    local label_hint = flow_title_bar.add{type="label"}
+    local label_hint = flow_title_bar.add{type="label", ignored_by_interaction=true}
     label_hint.style.font = "heading-2"
-    label_hint.style.margin = {2, 0, 0, 8}
+    label_hint.style.margin = {0, 0, 0, 8}
     main_elements.title_bar["hint_label"] = label_hint
 
-    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
-    drag_handle.drag_target = main_elements.main_frame
-    drag_handle.style.top_margin = 1
+    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
 
     -- Buttons
     flow_title_bar.add{type="button", name="fp_button_title_bar_tutorial", caption={"fp.tutorial"},
