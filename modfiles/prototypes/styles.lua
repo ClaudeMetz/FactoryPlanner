@@ -128,14 +128,6 @@ styles["fp_sprite-button_rounded_dark"] = {
     }
 }
 
--- A tool button that has the clicked-graphical set as its default one
-styles["fp_sprite-button_tool_active"] = {
-    type = "button_style",
-    parent = "frame_action_button",
-    default_graphical_set = styles.frame_button.clicked_graphical_set,
-    clicked_graphical_set = styles.frame_button.default_graphical_set
-}
-
 -- Text button in the style of icon tool buttons, for use in the title bar
 styles["fp_button_frame_tool"] = {
     type = "button_style",
@@ -169,10 +161,11 @@ styles["fp_button_push"] = {
 styles["fp_button_push_active"] = {
     type = "button_style",
     parent = "fp_button_push",
-    default_graphical_set = styles.button_with_shadow.clicked_graphical_set,
-    clicked_graphical_set = styles.button_with_shadow.default_graphical_set,
+    default_graphical_set = styles.button.selected_graphical_set,
+    hovered_graphical_set = styles.button.selected_hovered_graphical_set,
+    clicked_graphical_set = styles.button.selected_clicked_graphical_set,
     disabled_font_color = {},  -- black
-    disabled_graphical_set = styles.button_with_shadow.clicked_graphical_set
+    disabled_graphical_set = styles.button.selected_graphical_set
 }
 
 -- A button that can be used in a fake listbox, but looks identical to the real thing
@@ -190,7 +183,8 @@ styles["fp_button_fake_listbox_item_active"] = {
     type = "button_style",
     parent = "fp_button_fake_listbox_item",
     default_graphical_set = styles.button.selected_graphical_set,
-    hovered_graphical_set = styles.button.selected_graphical_set,
+    hovered_graphical_set = styles.button.selected_hovered_graphical_set,
+    clicked_graphical_set = styles.button.selected_clicked_graphical_set,
     default_font_color = styles.button.selected_font_color,
     default_vertical_offset = styles.button.selected_vertical_offset
 }
