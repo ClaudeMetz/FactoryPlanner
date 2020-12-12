@@ -187,3 +187,9 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
         size = 36
     }
 end
+styles["flib_standalone_slot_button_default_tiny"] = {
+    type = "button_style",
+    parent = "flib_standalone_slot_button_default",
+    size = 32,
+    top_margin = 1
+}

@@ -69,7 +69,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
           tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
         local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
         flow.add{type="choose-elem-button", elem_type="item", item=item,
-          name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset_tiny",
+          name="fp_choose-elem-button_mb_default_" .. type, style="flib_standalone_slot_button_default_tiny",
           elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
     end
 

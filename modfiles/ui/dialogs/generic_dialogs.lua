@@ -160,7 +160,7 @@ options_dialog.gui_events.on_gui_elem_changed = {
 function elements.choose_elem_button.create(table, field, modal_elements)
     local element_name = elements.choose_elem_button.prefix .. field.name
     local choose_elem_button = table.add{type="choose-elem-button", name=element_name,
-      elem_type=field.elem_type, style="fp_sprite-button_inset"}
+      elem_type=field.elem_type, style="flib_standalone_slot_button_default"}
     choose_elem_button.elem_value = field.elem_value
 
     modal_elements[element_name] = choose_elem_button
