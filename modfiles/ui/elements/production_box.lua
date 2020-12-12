@@ -14,7 +14,7 @@ local function handle_matrix_toggle(player)
 
     if subfactory.matrix_free_items == nil then
         subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-        modal_dialog.enter(player, {type="matrix"})
+        refresh_production(player)
     else
         subfactory.matrix_free_items = nil  -- disable the matrix solver
 
