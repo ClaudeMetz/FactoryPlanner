@@ -563,25 +563,25 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     if launch_sequence_time then
         time_per_craft = time_per_craft + launch_sequence_time
     end
-    local single_crafts_per_tick = timescale / time_per_craft
-    local total_crafts_per_tick = machine_count * single_crafts_per_tick
-    line_aggregate.production_ratio = total_crafts_per_tick
-    line_aggregate.uncapped_production_ratio = total_crafts_per_tick
+    local crafts_per_second = 1 / time_per_craft
+    local total_crafts_per_timescale = timescale * machine_count * crafts_per_second
+    line_aggregate.production_ratio = total_crafts_per_timescale
+    line_aggregate.uncapped_production_ratio = total_crafts_per_timescale
     for _, product in pairs(recipe_proto.products) do
-        local prodded_amount = calculation.util.determine_prodded_amount(product, single_crafts_per_tick, total_effects)
+        local prodded_amount = calculation.util.determine_prodded_amount(product, crafts_per_second, total_effects)
         local item_key = matrix_solver.get_item_key(product.type, product.name)
         if subfactory_metadata~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
-            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts_per_tick)
+            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts_per_timescale)
         else
-            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts_per_tick)
+            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts_per_timescale)
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
         local amount = ingredient.amount
         if ingredient.ignore_productivity then
-            amount = calculation.util.determine_prodded_amount(ingredient, single_crafts_per_tick, total_effects)
+            amount = calculation.util.determine_prodded_amount(ingredient, crafts_per_second, total_effects)
         end
-        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, amount * total_crafts_per_tick)
+        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, amount * total_crafts_per_timescale)
     end
 
     -- Determine energy consumption (including potential fuel needs) and pollution
