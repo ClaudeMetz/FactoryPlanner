@@ -48,15 +48,12 @@ function production_box.build(player)
     main_elements.production_box["vertical_frame"] = frame_vertical
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
-    subheader.style.maximal_height = 100  -- large value to nullify maximal_height
-    subheader.style.padding = {8, 8, 6, 8}
 
     local button_refresh = subheader.add{type="sprite-button", name="fp_sprite-button_production_refresh",
       sprite="utility/refresh", style="tool_button", tooltip={"fp.refresh_production"}, mouse_button_filter={"left"}}
     main_elements.production_box["refresh_button"] = button_refresh
 
-    local label_title = subheader.add{type="label", caption={"fp.production"}, style="frame_title"}
-    label_title.style.padding = 0
+    local label_title = subheader.add{type="label", caption={"fp.production"}, style="heading_2_label"}
     label_title.style.left_margin = 6
 
     local label_level = subheader.add{type="label"}
