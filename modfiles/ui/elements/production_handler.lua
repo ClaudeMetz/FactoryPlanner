@@ -58,7 +58,6 @@ local function handle_recipe_click(player, button, metadata)
         if not ui_util.check_archive_status(player) then return end
 
         local subfloor = line.subfloor
-
         if not subfloor and line.recipe.production_type == "consume" then
             title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
         else

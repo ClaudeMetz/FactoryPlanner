@@ -208,6 +208,8 @@ production_box.misc_events = {
     fp_refresh_production = refresh_production,
 
     fp_floor_up = (function(player, _)
-        production_box.change_floor(player, "up")
+        if main_dialog.is_in_focus(player) then
+            production_box.change_floor(player, "up")
+        end
     end)
 }
