@@ -145,8 +145,8 @@ title_bar.gui_events = {
 
 title_bar.misc_events = {
     fp_toggle_pause = (function(player, _)
-        local main_elements = data_util.get("main_elements", player)
-        if main_elements.main_frame and main_elements.main_frame.visible then
+        if main_dialog.is_in_focus(player) then
+            local main_elements = data_util.get("main_elements", player)
             toggle_paused_state(player, main_elements.title_bar.pause_button)
         end
     end)
