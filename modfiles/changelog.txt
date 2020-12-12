@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed that the example subfactory was improperly cached, leading to several issues all over the UI
+    - Fixed a crash on migration
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.5
