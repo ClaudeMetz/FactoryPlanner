@@ -90,8 +90,9 @@ function matrix_dialog.open(player, modal_data)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
     if matrix_metadata.num_rows < matrix_metadata.num_cols then  -- too many ways to create the products
-        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 2, false)
-        ui_state.queued_dialog_settings = nil  -- bit hacky this bit
+        -- TODO this is hacky, not sure why it needs 3 cycles to be shown at all
+        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 3, false)
+        ui_state.queued_dialog_settings = nil  -- TODO bit hacky this bit
         modal_dialog.exit(player, "cancel")
         return true
     end
