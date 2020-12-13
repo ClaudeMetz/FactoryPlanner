@@ -85,7 +85,7 @@ function utility_structures.components(player, modal_data)
         modal_elements.scope_switch = scope_switch
 
         local button_request = custom_flow.add{type="button", name="fp_button_utility_request_items",
-          style="rounded_button", mouse_button_filter={"left"}}
+          mouse_button_filter={"left"}}
         button_request.style.size = {115, 26}
         modal_elements.request_button = button_request
 
