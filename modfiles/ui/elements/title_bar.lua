@@ -93,7 +93,8 @@ function title_bar.refresh_message(player)
     local types = {"error", "warning", "hint"}
 
     -- TODO this is not the proper way to do this probably, but it works
-    if ui_state.context.subfactory.linearly_dependant then
+    local subfactory = ui_state.context.subfactory
+    if subfactory and subfactory.valid and subfactory.linearly_dependant then
         title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 1, false)
     end
 
