@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.7
+Date: 13. 12. 2020
   Bugfixes:
     - Fixed a crash when opening the interface with no subfactories that was introduced in the last version
 
