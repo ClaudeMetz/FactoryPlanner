@@ -51,6 +51,15 @@ function builders.toggle(line, parent_flow, metadata)
       enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
 end
 
+function builders.done(line, parent_flow, metadata)
+    button = parent_flow.add{type="sprite-button", name="fp_button_production_done_" .. line.id,
+      sprite="utility/close_fat",  style="tool_button", mouse_button_filter={"left"}}
+    if line.done then
+      button.sprite="utility/check_mark"
+      button.style="tool_button_green"
+    end
+end
+
 function builders.recipe(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe_proto = relevant_line.recipe.proto
@@ -346,6 +355,7 @@ end
 -- ** TOP LEVEL **
 local all_production_columns = {
     {name="toggle", caption=nil, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="done", caption={"fp.column_done"}, tooltip={"fp.column_done_tt"}, minimal_width=0, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, tooltip=nil, minimal_width=0, alignment="center"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, tooltip=nil, minimal_width=0, alignment="left"},

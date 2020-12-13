@@ -16,7 +16,6 @@ local function set_cursor_blueprint(player, entity_name, module_list, recipe_nam
     main_dialog.toggle(player)
 end
 
-
 local function handle_toggle_change(player, checkbox)
     local line_id = tonumber(string.match(checkbox.name, "%d+"))
     local context = data_util.get("context", player)
@@ -24,6 +23,17 @@ local function handle_toggle_change(player, checkbox)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     relevant_line.active = checkbox.state
+
+    calculation.update(player, context.subfactory)
+    main_dialog.refresh(player, "subfactory")
+end
+
+local function handle_done_click(player, button)
+    local line_id = tonumber(string.match(button.name, "%d+"))
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", line_id)
+
+    line.done = not line.done
 
     calculation.update(player, context.subfactory)
     main_dialog.refresh(player, "subfactory")
@@ -551,6 +561,10 @@ production_handler.gui_events = {
         {   -- This only the fuel button (no item id necessary)
             pattern = "^fp_sprite%-button_production_fuel_%d+$",
             handler = handle_fuel_click
+        },
+        {
+            pattern = "^fp_button_production_done_%d+$",
+            handler = handle_done_click
         }
     },
     on_gui_checked_state_changed = {

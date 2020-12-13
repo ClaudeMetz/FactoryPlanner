@@ -22,6 +22,7 @@ function Line.init(recipe)
         uncapped_production_ratio = (is_standalone_line) and 0 or nil,
         subfloor = nil,
         valid = true,
+        done = false,
         class = "Line"
     }
 end
@@ -223,6 +224,7 @@ end
 function Line.pack(self)
     local packed_line = {
         comment = self.comment,
+        done = self.done,
         class = self.class
     }
 
@@ -250,6 +252,7 @@ function Line.unpack(packed_self)
     local self = Line.init(packed_self.recipe)
 
     self.active = packed_self.active
+    self.done = packed_self.done
     self.percentage = packed_self.percentage
 
     self.machine = Machine.unpack(packed_self.machine)
