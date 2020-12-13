@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.6
+Date: 13. 12. 2020
   Changes:
     - The message that your current subfactory is linearly dependant is now shown more consistently
   Bugfixes:
