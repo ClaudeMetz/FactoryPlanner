@@ -32,7 +32,7 @@ function title_bar.build(player)
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
     -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
-    flow_title_bar.style.height = 28
+    flow_title_bar.style.height = TITLE_BAR_HEIGHT
 
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
       ignored_by_interaction=true}
