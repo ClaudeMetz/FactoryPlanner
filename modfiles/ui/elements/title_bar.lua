@@ -92,6 +92,11 @@ function title_bar.refresh_message(player)
     -- The message types are ordered by priority
     local types = {"error", "warning", "hint"}
 
+    -- TODO this is not the proper way to do this probably, but it works
+    if ui_state.context.subfactory.linearly_dependant then
+        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 1, false)
+    end
+
     local new_message = nil
     -- Go over the all types and messages, trying to find one that should be shown
     for _, type in ipairs(types) do

@@ -17,6 +17,7 @@ local function handle_matrix_toggle(player)
         refresh_production(player)
     else
         subfactory.matrix_free_items = nil  -- disable the matrix solver
+        subfactory.linearly_dependant = false
 
         -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
         local function remove_consuming_recipes(floor)
