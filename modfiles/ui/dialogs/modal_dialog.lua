@@ -23,10 +23,11 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     if dialog_settings.caption ~= nil then
         if dialog_settings.search_function then  -- add a search field if requested
             local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
-            flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
+            flow_title_bar.drag_target = frame_modal_dialog
+            flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title",
+              ignored_by_interaction=true}
 
-            local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
-            drag_handle.drag_target = frame_modal_dialog
+            flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
 
             local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_modal_search",
               style="search_popup_textfield"}
@@ -92,7 +93,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Delete button and spacers
     if dialog_settings.show_delete_button then
-        button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+        button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}.drag_target = frame_modal_dialog
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_action_delete",
           caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
@@ -105,7 +106,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         frame_modal_dialog.style.minimal_width = 340
     end
     -- One 'drag handle' should always be visible
-    button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+    button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}.drag_target = frame_modal_dialog
 
     -- Submit button
     if dialog_settings.show_submit_button then
