@@ -8,6 +8,45 @@ calculation = {
 }
 
 -- ** LOCAL UTIL **
+local function set_blank_line(player, floor, line)
+    local blank_class = structures.class.init()
+    calculation.interface.set_line_result{
+        player_index = player.index,
+        floor_id = floor.id,
+        line_id = line.id,
+        machine_count = 0,
+        energy_consumption = 0,
+        pollution = 0,
+        production_ratio = (not line.subfloor) and 0 or nil,
+        uncapped_production_ratio = (not line.subfloor) and 0 or nil,
+        Product = blank_class,
+        Byproduct = blank_class,
+        Ingredient = blank_class,
+        fuel_amount = nil
+    }
+end
+
+local function set_blank_subfactory(player, subfactory)
+    local blank_class = structures.class.init()
+    calculation.interface.set_subfactory_result {
+        player_index = player.index,
+        energy_consumption = 0,
+        pollution = 0,
+        Product = blank_class,
+        Byproduct = blank_class,
+        Ingredient = blank_class,
+        matrix_free_items = subfactory.matrix_free_items
+    }
+
+    -- Subfactory structure does not matter as every line just needs to be blanked out
+    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
+        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+            set_blank_line(player, floor, line)
+        end
+    end
+end
+
+
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, subfactory, floor)
     local floor_data = {
@@ -41,22 +80,7 @@ local function generate_floor_data(player, subfactory, floor)
             end
 
             if not line_is_useful then  -- any useless line doesn't need to go through the solver
-                local blank_class = structures.class.init()
-
-                calculation.interface.set_line_result{
-                    player_index = player.index,
-                    floor_id = floor.id,
-                    line_id = line.id,
-                    machine_count = 0,
-                    energy_consumption = 0,
-                    pollution = 0,
-                    production_ratio = 0,
-                    uncapped_production_ratio = 0,
-                    Product = blank_class,
-                    Byproduct = blank_class,
-                    Ingredient = blank_class,
-                    fuel_amount = nil
-                }
+                set_blank_line(player, floor, line)
             else
                 line_data.recipe_proto = line.recipe.proto  -- reference
                 line_data.timescale = subfactory.timescale
@@ -171,11 +195,13 @@ function calculation.update(player, subfactory)
                 if matrix_metadata.num_rows == matrix_metadata.num_cols then
                     matrix_solver.run_matrix_solver(subfactory_data, false)
                     subfactory.linearly_dependant = false
+                else
+                    set_blank_subfactory(player, subfactory)  -- reset subfactory by blanking everything
 
-                -- Don't open the dialog if calculations are run during migration etc.
-                -- TODO not sure if this is okay to do, so consider it a hotfix for now
-                elseif main_dialog.is_in_focus(player) then
-                    modal_dialog.enter(player, {type="matrix", allow_queueing=true})
+                    -- Don't open the dialog if calculations are run during migration etc.
+                    if main_dialog.is_in_focus(player) then
+                        modal_dialog.enter(player, {type="matrix", allow_queueing=true})
+                    end
                 end
             end
         else
