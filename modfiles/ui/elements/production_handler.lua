@@ -381,7 +381,7 @@ end
 local function handle_item_click(player, button, metadata)
     local split_string = split_string(button.name, "_")
     local context = data_util.get("context", player)
-    -- game.print("button.name: "..button.name)
+
     local line = Floor.get(context.floor, "Line", split_string[6])
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local class = split_string[5]
@@ -411,7 +411,6 @@ local function handle_item_click(player, button, metadata)
             if production_type == "consume" and context.subfactory.matrix_free_items == nil then
                 title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
             else
-                -- game.print("line.gui_position: "..(line.gui_position or nil))
                 modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type,
                   add_after_position=((metadata.shift) and line.gui_position or nil)}})
             end
