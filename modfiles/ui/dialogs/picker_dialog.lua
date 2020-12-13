@@ -61,7 +61,7 @@ local function add_item_picker(parent_flow, player)
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
-    local frame_filters = parent_flow.add{type="frame", style="fp_frame_picker"}
+    local frame_filters = parent_flow.add{type="frame", style="fp_frame_slot_table"}
     modal_elements["filter_frame"] = frame_filters
 
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
@@ -92,7 +92,7 @@ local function add_item_picker(parent_flow, player)
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
-                  style="fp_scroll-pane_picker"}
+                  style="fp_scroll-pane_slot_table"}
                 scroll_pane_subgroups.style.vertically_stretchable = true
 
                 local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}

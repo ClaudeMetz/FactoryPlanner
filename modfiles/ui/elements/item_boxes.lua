@@ -22,18 +22,23 @@ local function build_item_box(player, name, column_count)
     local item_boxes_elements = data_util.get("main_elements", player).item_boxes
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
-      style="window_content_frame"}
-    window_frame.style.padding = ITEM_BOX_PADDING
+      style="inside_shallow_frame"}
     window_frame.style.top_padding = 6
+    window_frame.style.bottom_padding = ITEM_BOX_PADDING
 
-    window_frame.add{type="label", caption={"fp.pu_" .. name, 2}, style="caption_label"}
+    local label = window_frame.add{type="label", caption={"fp.pu_" .. name, 2}, style="caption_label"}
+    label.style.left_padding = ITEM_BOX_PADDING
+    label.style.bottom_margin = 4
 
-    local item_frame = window_frame.add{type="frame", style="slot_button_deep_frame"}
-    item_frame.style.top_margin = 4
-    local scroll_pane = item_frame.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
-    scroll_pane.style.width = column_count * ITEM_BOX_BUTTON_SIZE
+    local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
+    scroll_pane.style.maximal_height = ITEM_BOX_MAX_ROWS * ITEM_BOX_BUTTON_SIZE
+    scroll_pane.style.horizontally_stretchable = false
+    scroll_pane.style.vertically_stretchable = false
 
-    local table_items = scroll_pane.add{type="table", column_count=column_count, style="filter_slot_table"}
+    local item_frame = scroll_pane.add{type="frame", style="slot_button_deep_frame"}
+    item_frame.style.width = column_count * ITEM_BOX_BUTTON_SIZE
+
+    local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
     item_boxes_elements[name .. "_item_table"] = table_items
 end
 
@@ -178,13 +183,17 @@ function item_boxes.refresh(player)
     local brow_count = refresh_item_box(player, "byproduct", subfactory, false)
     local irow_count = refresh_item_box(player, "ingredient", subfactory, false)
 
-    local item_boxes_elements = ui_state.main_elements.item_boxes
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
-    local item_table_height = math.max(maxrow_count, 1) * ITEM_BOX_BUTTON_SIZE
+    local item_table_height = math.min(math.max(maxrow_count, 1), ITEM_BOX_MAX_ROWS) * ITEM_BOX_BUTTON_SIZE
 
-    item_boxes_elements.product_item_table.parent.style.height = item_table_height
-    item_boxes_elements.byproduct_item_table.parent.style.height = item_table_height
-    item_boxes_elements.ingredient_item_table.parent.style.height = item_table_height
+    -- set the heights for both the visible frame and the scroll pane containing it
+    local item_boxes_elements = ui_state.main_elements.item_boxes
+    item_boxes_elements.product_item_table.parent.style.minimal_height = item_table_height
+    item_boxes_elements.product_item_table.parent.parent.style.minimal_height = item_table_height
+    item_boxes_elements.byproduct_item_table.parent.style.minimal_height = item_table_height
+    item_boxes_elements.byproduct_item_table.parent.parent.style.minimal_height = item_table_height
+    item_boxes_elements.ingredient_item_table.parent.style.minimal_height = item_table_height
+    item_boxes_elements.ingredient_item_table.parent.parent.style.minimal_height = item_table_height
 end
 
 

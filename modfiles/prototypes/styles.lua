@@ -23,7 +23,7 @@ styles["fp_scroll-pane_fake_listbox"] = {
     }
 }
 
-styles["fp_scroll-pane_picker"] = {
+styles["fp_scroll-pane_slot_table"] = {
     type = "scroll_pane_style",
     parent = "filter_scroll_pane",
     bottom_margin = 0,
@@ -36,14 +36,14 @@ styles["fp_scroll-pane_picker"] = {
     }
 }
 
-styles["fp_frame_picker"] = {
+styles["fp_frame_slot_table"] = {
     type = "frame_style",
     parent = "filter_frame",
     top_padding = 4,
     bottom_padding = 12,
     graphical_set = table.deepcopy(styles.filter_frame.graphical_set)
 }
-styles["fp_frame_picker"].graphical_set.base.bottom = nil
+styles["fp_frame_slot_table"].graphical_set.base.bottom = nil
 
 -- Intended for buttons of size 36
 styles["fp_frame_deep_slots_small"] = {
