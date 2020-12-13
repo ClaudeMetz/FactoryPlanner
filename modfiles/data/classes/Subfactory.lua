@@ -15,6 +15,7 @@ function Subfactory.init(name, icon)
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
         matrix_free_items = nil,
+        linearly_dependant = false,  -- determined by the solver
         selected_floor = nil,
         item_request_proxy = nil,
         valid = true,
