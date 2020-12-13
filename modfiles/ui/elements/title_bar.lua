@@ -92,6 +92,12 @@ function title_bar.refresh_message(player)
     -- The message types are ordered by priority
     local types = {"error", "warning", "hint"}
 
+    -- TODO this is not the proper way to do this probably, but it works
+    local subfactory = ui_state.context.subfactory
+    if subfactory and subfactory.valid and subfactory.linearly_dependant then
+        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 1, false)
+    end
+
     local new_message = nil
     -- Go over the all types and messages, trying to find one that should be shown
     for _, type in ipairs(types) do
@@ -145,8 +151,8 @@ title_bar.gui_events = {
 
 title_bar.misc_events = {
     fp_toggle_pause = (function(player, _)
-        local main_elements = data_util.get("main_elements", player)
-        if main_elements.main_frame and main_elements.main_frame.visible then
+        if main_dialog.is_in_focus(player) then
+            local main_elements = data_util.get("main_elements", player)
             toggle_paused_state(player, main_elements.title_bar.pause_button)
         end
     end)

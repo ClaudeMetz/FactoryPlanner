@@ -14,9 +14,10 @@ local function handle_matrix_toggle(player)
 
     if subfactory.matrix_free_items == nil then
         subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-        modal_dialog.enter(player, {type="matrix"})
+        refresh_production(player)
     else
         subfactory.matrix_free_items = nil  -- disable the matrix solver
+        subfactory.linearly_dependant = false
 
         -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
         local function remove_consuming_recipes(floor)
@@ -208,6 +209,8 @@ production_box.misc_events = {
     fp_refresh_production = refresh_production,
 
     fp_floor_up = (function(player, _)
-        production_box.change_floor(player, "up")
+        if main_dialog.is_in_focus(player) then
+            production_box.change_floor(player, "up")
+        end
     end)
 }

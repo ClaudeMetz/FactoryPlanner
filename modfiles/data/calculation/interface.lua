@@ -170,7 +170,11 @@ function calculation.update(player, subfactory)
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
                 if matrix_metadata.num_rows == matrix_metadata.num_cols then
                     matrix_solver.run_matrix_solver(subfactory_data, false)
-                else
+                    subfactory.linearly_dependant = false
+
+                -- Don't open the dialog if calculations are run during migration etc.
+                -- TODO not sure if this is okay to do, so consider it a hotfix for now
+                elseif main_dialog.is_in_focus(player) then
                     modal_dialog.enter(player, {type="matrix", allow_queueing=true})
                 end
             end
