@@ -1,11 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.00.00
 Date: 00. 00. 0000
-  Features:
-    -
   Changes:
     - The message that your current subfactory is linearly dependant is now shown more consistently
   Bugfixes:
+    - Fixed a frequent crash when manipulating a subfactory that has linearly dependant recipes
     - Fixed that the example subfactory was improperly cached, leading to several issues all over the UI
     - Fixed that hitting certain Factory Planer hotkeys before opening the UI for the first time would crash
     - Fixed that the matrix solver calculations would be incorrect when productivity modules were involved
