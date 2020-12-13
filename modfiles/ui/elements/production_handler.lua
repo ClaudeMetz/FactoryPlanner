@@ -17,13 +17,35 @@ local function set_cursor_blueprint(player, entity_name, module_list, recipe_nam
 end
 
 
-local function handle_toggle_change(player, checkbox)
+local function handle_toggle_click(player, checkbox, metadata)
     local line_id = tonumber(string.match(checkbox.name, "%d+"))
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", line_id)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.active = checkbox.state
+
+    -- Simple clicking just sets relevant line state and clt-clicking inverts states of all lines
+    if not metadata.alt then
+        relevant_line.active = checkbox.state
+    else
+        -- Check if there is an inactive line in the floor
+        local has_inactive_lines = false;
+        for _, current_line in ipairs(Floor.get_in_order(context.floor, "Line")) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            if not current_relevant_line.active then
+                has_inactive_lines = true
+                break
+            end
+        end
+
+        -- Set new checkbox states
+        local new_active_state = has_inactive_lines and relevant_line.active
+        for _, current_line in ipairs(Floor.get_in_order(context.floor, "Line")) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            current_relevant_line.active = new_active_state
+        end
+        relevant_line.active = true
+    end
 
     calculation.update(player, context.subfactory)
     main_dialog.refresh(player, "subfactory")
@@ -359,7 +381,7 @@ end
 local function handle_item_click(player, button, metadata)
     local split_string = split_string(button.name, "_")
     local context = data_util.get("context", player)
-
+    -- game.print("button.name: "..button.name)
     local line = Floor.get(context.floor, "Line", split_string[6])
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local class = split_string[5]
@@ -389,6 +411,7 @@ local function handle_item_click(player, button, metadata)
             if production_type == "consume" and context.subfactory.matrix_free_items == nil then
                 title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
             else
+                -- game.print("line.gui_position: "..(line.gui_position or nil))
                 modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type,
                   add_after_position=((metadata.shift) and line.gui_position or nil)}})
             end
@@ -552,12 +575,10 @@ production_handler.gui_events = {
         {   -- This only the fuel button (no item id necessary)
             pattern = "^fp_sprite%-button_production_fuel_%d+$",
             handler = handle_fuel_click
-        }
-    },
-    on_gui_checked_state_changed = {
+        },
         {
             pattern = "^fp_checkbox_production_toggle_%d+$",
-            handler = handle_toggle_change
+            handler = handle_toggle_click
         }
     },
     on_gui_text_changed = {
