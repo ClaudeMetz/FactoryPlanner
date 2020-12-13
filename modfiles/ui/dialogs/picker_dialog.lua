@@ -7,7 +7,6 @@ local function select_item_group(modal_data, new_group_id)
 
     for group_id, group_elements in pairs(modal_data.modal_elements.groups) do
         local selected_group = (group_id == new_group_id)
-        group_elements.button.style = (selected_group) and "fp_sprite-button_rounded_dark" or "rounded_button"
         group_elements.button.enabled = not selected_group
         group_elements.scroll_pane.visible = selected_group
     end
@@ -57,15 +56,12 @@ local function add_item_picker(parent_flow, player)
     modal_elements["warning_label"] = label_warning
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
-    local frame_item_groups = parent_flow.add{type="frame", direction="vertical",
-      style="fp_frame_deep_slots_crafting_groups"}
-    local table_item_groups = frame_item_groups.add{type="table", column_count=6}
-    table_item_groups.style.width = 442
+    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=6}
+    table_item_groups.style.width = 71 * 6
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
-    local frame_filters = parent_flow.add{type="frame", style="slot_button_deep_frame"}
-    frame_filters.style.top_margin = 8
+    local frame_filters = parent_flow.add{type="frame", style="fp_frame_picker"}
     modal_elements["filter_frame"] = frame_filters
 
     local group_id_cache, group_flow_cache, subgroup_table_cache = {}, {}, {}
@@ -92,23 +88,26 @@ local function add_item_picker(parent_flow, player)
 
                 local button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_"
                   .. group_id, sprite=("item-group/" .. group_name), tooltip=item_proto.group.localised_name,
-                  mouse_button_filter={"left"}}  -- style set by item group selection
-                button_group.style.minimal_width = 0
-                button_group.style.height = 64
-                button_group.style.padding = 2
-                button_group.style.horizontally_stretchable = true
+                  mouse_button_filter={"left"}, style="fp_sprite-button_group_tab"}
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
-                  style="flib_naked_scroll_pane_no_padding"}
+                  style="fp_scroll-pane_picker"}
+                scroll_pane_subgroups.style.vertically_stretchable = true
+
+                local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}
+                frame_subgroups.style.vertically_stretchable = true
+                -- dirty hack to fix weird extra bottom margin when the scroll pane is inactive
+                frame_subgroups.style.bottom_margin = -12
 
                 -- This flow is only really needed to set the correct vertical spacing
-                flow_subgroups = scroll_pane_subgroups.add{type="flow", name="flow_group", direction="vertical"}
+                flow_subgroups = frame_subgroups.add{type="flow", name="flow_group", direction="vertical"}
                 flow_subgroups.style.vertical_spacing = 0
                 group_flow_cache[group_id] = flow_subgroups
 
                 modal_elements.groups[group_id] = {
                     button = button_group,
+                    frame = frame_subgroups,
                     scroll_pane = scroll_pane_subgroups,
                     subgroup_tables = {}
                 }
@@ -351,20 +350,15 @@ function picker_dialog.open(player, modal_data)
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
 
-    local function add_content_frame()
-        local content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
-        content_frame.style.vertically_stretchable = true
-        return content_frame
-    end
-
-    local item_content_frame = add_content_frame()
+    local item_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     item_content_frame.style.minimal_width = 325
     item_content_frame.style.padding = {12, 12, 6, 12}
     add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.object)
 
     -- The item picker only needs to show when adding a new item
     if modal_data.object == nil then
-        add_item_picker(add_content_frame(), player)
+        local picker_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+        add_item_picker(picker_content_frame, player)
     end
 end
 
