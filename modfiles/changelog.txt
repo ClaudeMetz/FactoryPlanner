@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Removed a misleading Pro Tip; They are super old and due for a rewrite anyways
+    - Renamed 'Energy' to 'Power' where appropriate
   Bugfixes:
     -
 
