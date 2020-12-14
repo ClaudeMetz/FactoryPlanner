@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Changes:
-    - Removed a misleading Pro Tip; They are super old and due for a rewrite anyways
+    - Removed a couple of mistakes with the tutorial writing; It's super old and due for a rewrite anyways
     - Renamed 'Energy' to 'Power' where appropriate
   Bugfixes:
     - Fixed that opening another mod's interface while FP is open could crash
