@@ -317,6 +317,11 @@ function generator.all_machines()
         local energy_type, emissions, burner = nil, 0, nil  -- emissions remain at 0 if no energy source is present
         local energy_usage, energy_drain = (proto.energy_usage or proto.max_energy_usage or 0), 0
 
+        -- Determine the name of the item that actually builds this machine for the item requester
+        -- There can technically be more than one, but I just use the first one
+        local items_to_place_this, built_by_item = proto.items_to_place_this, nil
+        if items_to_place_this then built_by_item = items_to_place_this[1].name end
+
         -- Determine the details of this entities energy source
         local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
         if burner_prototype then
@@ -371,6 +376,7 @@ function generator.all_machines()
             energy_usage = energy_usage,
             energy_drain = energy_drain,
             emissions = emissions,
+            built_by_item = built_by_item,
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
@@ -590,11 +596,15 @@ function generator.all_beacons()
     for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite ~= nil then
+            local items_to_place_this, built_by_item = proto.items_to_place_this, nil
+            if items_to_place_this then built_by_item = items_to_place_this[1].name end
+
             generator_util.data_structure.insert{
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = sprite,
                 category = "fp_beacon",  -- custom category to be similar to machines
+                built_by_item = built_by_item,
                 allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
