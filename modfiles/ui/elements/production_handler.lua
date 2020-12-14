@@ -24,7 +24,7 @@ local function handle_toggle_click(player, checkbox, metadata)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
-    -- Simple clicking just sets relevant line state and clt-clicking inverts states of all lines
+    -- Simple clicking just sets relevant line state and alt-clicking inverts states of all lines
     if not metadata.alt then
         relevant_line.active = checkbox.state
     else
