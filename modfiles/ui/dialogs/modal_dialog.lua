@@ -164,7 +164,7 @@ function modal_dialog.enter(player, dialog_settings)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
-function modal_dialog.exit(player, button_action)
+function modal_dialog.exit(player, button_action, skip_player_opened)
     local ui_state = data_util.get("ui_state", player)
     if ui_state.modal_dialog_type == nil then return end
 
@@ -190,7 +190,7 @@ function modal_dialog.exit(player, button_action)
     modal_elements.modal_frame.destroy()
     if modal_elements.interface_dimmer then modal_elements.interface_dimmer.destroy() end
 
-    player.opened = ui_state.main_elements.main_frame
+    if not skip_player_opened then player.opened = ui_state.main_elements.main_frame end
     title_bar.refresh_message(player)
 
     if ui_state.queued_dialog_settings ~= nil then
