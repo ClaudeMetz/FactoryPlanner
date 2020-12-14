@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.8
+Date: 15. 12. 2020
   Changes:
     - Removed a couple of mistakes with the tutorial writing; It's super old and due for a rewrite anyways
     - Renamed 'Energy' to 'Power' where appropriate
