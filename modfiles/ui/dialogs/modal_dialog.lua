@@ -190,7 +190,7 @@ function modal_dialog.exit(player, button_action, skip_player_opened)
     modal_elements.modal_frame.destroy()
     if modal_elements.interface_dimmer then modal_elements.interface_dimmer.destroy() end
 
-    if not skip_player_opened then player.opened = ui_state.main_elements.main_frame end
+    if skip_player_opened ~= true then player.opened = ui_state.main_elements.main_frame end
     title_bar.refresh_message(player)
 
     if ui_state.queued_dialog_settings ~= nil then
@@ -243,7 +243,12 @@ function modal_dialog.leave_selection_mode(player)
 
     local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.visible = true
-    main_dialog.set_pause_state(player, frame_main_dialog)
+
+    local paused = main_dialog.set_pause_state(player, frame_main_dialog)
+    if paused then  -- a bit hacky, but w/e
+        modal_elements.interface_dimmer.bring_to_front()
+        modal_elements.modal_frame.bring_to_front()
+    end
 end
 
 

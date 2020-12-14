@@ -149,7 +149,8 @@ function main_dialog.toggle(player, skip_player_opened)
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
         frame_main_dialog.visible = not frame_main_dialog.visible
-        if not skip_player_opened then player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil end
+        -- Explicit check for 'true' needed because the event handler can call this with a table as the second argument
+        if skip_player_opened ~= true then player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
         title_bar.refresh_message(player)
@@ -186,6 +187,8 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
 
         frame_main_dialog.bring_to_front()
     end
+
+    return pause
 end
 
 
