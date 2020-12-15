@@ -114,7 +114,7 @@ end
 function matrix_solver.union_sets(...)
     local arg = {...}
     local result = {}
-    for _, set in ipairs(arg) do
+    for _, set in pairs(arg) do
         for val, _ in pairs(set) do
             result[val] = true
         end
@@ -126,7 +126,7 @@ function matrix_solver.intersect_sets(...)
     local arg = {...}
     local counts = {}
     local num_sets = #arg
-    for _, set in ipairs(arg) do
+    for _, set in pairs(arg) do
         for val, _ in pairs(set) do
             if not counts[val] then
                 counts[val] = 1
@@ -144,10 +144,22 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
+function matrix_solver.num_elements(...)
+    local arg = {...}
+    local count = 0
+    for _, set in pairs(arg) do
+        for e, _ in pairs(set) do
+            count = count + 1
+        end
+    end
+    return count
+end
+
 function matrix_solver.get_matrix_solver_metadata(subfactory_data)
     local eliminated_items = {}
     local free_items = {}
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local recipes = subfactory_metadata.recipes
     local all_items = subfactory_metadata.all_items
     local raw_inputs = subfactory_metadata.raw_inputs
     local byproducts = subfactory_metadata.byproducts
@@ -167,27 +179,24 @@ function matrix_solver.get_matrix_solver_metadata(subfactory_data)
         free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
         eliminated_items = matrix_solver.set_diff(intermediate_items, free_items)
     end
-    -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
-    eliminated_items = matrix_solver.set_diff(eliminated_items, produced_outputs)
+    local num_rows = matrix_solver.num_elements(ingredients, byproducts, eliminated_items, free_items)
+    local num_cols = matrix_solver.num_elements(recipes, ingredients, byproducts, free_items)
     local result = {
         recipes = subfactory_metadata.recipes,
         ingredients = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs)),
         products = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(produced_outputs)),
         byproducts = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts)),
         eliminated_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(eliminated_items)),
-        free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(free_items))
+        free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(free_items)),
+        num_rows = num_rows,
+        num_cols = num_cols
     }
-    result.num_rows = #result.ingredients + #result.products + #result.byproducts + #result.eliminated_items
-      + #result.free_items
-    result.num_cols = #result.recipes + #result.ingredients + #result.byproducts + #result.free_items
     return result
 end
 
 function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
-    local num_rows = #matrix_metadata.ingredients + #matrix_metadata.products + #matrix_metadata.byproducts
-      + #matrix_metadata.eliminated_items + #matrix_metadata.free_items
-    local num_cols = #matrix_metadata.recipes + #matrix_metadata.ingredients + #matrix_metadata.byproducts
-      + #matrix_metadata.free_items
+    local num_rows = matrix_metadata.num_rows
+    local num_cols = matrix_metadata.num_cols
     -- return early if these don't match since the matrix solver can crash when these are different
     if num_rows < num_cols then
         local result = {
