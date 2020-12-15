@@ -21,13 +21,14 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Title bar
     if dialog_settings.caption ~= nil then
+        local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
+        flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
+
+        local drag_handle = flow_title_bar.add{type="empty-widget", name="fp_empty-widget_modal_drag_handle",
+          style="flib_titlebar_drag_handle", mouse_button_filter={"middle"}}
+        drag_handle.drag_target = frame_modal_dialog
+
         if dialog_settings.search_function then  -- add a search field if requested
-            local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
-            flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
-
-            local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
-            drag_handle.drag_target = frame_modal_dialog
-
             local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_modal_search",
               style="search_popup_textfield"}
             searchfield.style.width = 180
@@ -40,9 +41,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
               tooltip={"fp.search_button_tt"}, style="frame_action_button", mouse_button_filter={"left"}}
 
             modal_data.search_function = dialog_settings.search_function
-
-        else  -- otherwise, let the frame handle the titlebar
-            frame_modal_dialog.caption = dialog_settings.caption or nil
         end
     end
 
@@ -259,6 +257,13 @@ modal_dialog.gui_events = {
             name = "fp_frame_interface_dimmer",
             handler = (function(player, _, _)
                 data_util.get("modal_elements", player).modal_frame.bring_to_front()
+            end)
+        },
+        {
+            name = "fp_empty-widget_modal_drag_handle",
+            handler = (function(player, _, _)
+                local modal_elements = data_util.get("modal_elements", player)
+                modal_elements.modal_frame.force_auto_center()
             end)
         },
         {
