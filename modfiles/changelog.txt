@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    - The matrix solver now allows you to select products are free items as well, which comes in handy when you subfactory has very few recipes
+  Bugfixes:
+    -
+
+---------------------------------------------------------------------------------------------------
 Version: 1.1.8
 Date: 15. 12. 2020
   Changes:
