@@ -1,12 +1,13 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.8
+Date: 15. 12. 2020
   Changes:
-    - Removed a misleading Pro Tip; They are super old and due for a rewrite anyways
+    - Removed a couple of mistakes with the tutorial writing; It's super old and due for a rewrite anyways
     - Renamed 'Energy' to 'Power' where appropriate
   Bugfixes:
     - Fixed that opening another mod's interface while FP is open could crash
     - Fixed that requesting machines and modules would crash in certain modded situations
+    - Fixed the beacon selector not working properly when the game is paused
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.7
