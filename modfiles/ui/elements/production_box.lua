@@ -20,10 +20,15 @@ local function handle_matrix_toggle(player)
         subfactory.linearly_dependant = false
 
         -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
+        local any_lines_removed = false
         local function remove_consuming_recipes(floor)
             for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-                if line.subfloor then remove_consuming_recipes(line.subfloor)
-                elseif line.recipe.production_type == "consume" then Floor.remove(floor, line) end
+                if line.subfloor then
+                    remove_consuming_recipes(line.subfloor)
+                elseif line.recipe.production_type == "consume" then
+                    Floor.remove(floor, line)
+                    any_lines_removed = true
+                end
             end
         end
 
@@ -31,8 +36,11 @@ local function handle_matrix_toggle(player)
         local top_floor = Subfactory.get(subfactory, "Floor", 1)
         remove_consuming_recipes(top_floor)
 
-        -- Recalculate with the sequential solver
-        refresh_production(player)
+        if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
+            title_bar.enqueue_message(player, {"fp.hint_byproducts_removed"}, "hint", 1, false)
+        end
+
+        refresh_production(player)  -- recalculate with the sequential solver
     end
 end
 
