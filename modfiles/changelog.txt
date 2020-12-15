@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.9
+Date: 15. 12. 2020
   Features:
     - Alt-clicking the 'add subfactory'-button now takes you directly to the product picker
     - Middle-clicking the grab handle on any dialog now re-centers it
