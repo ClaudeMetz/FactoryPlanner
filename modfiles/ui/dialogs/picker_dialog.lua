@@ -224,7 +224,7 @@ local function set_item_proto(modal_data, item_proto)
 
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
-    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or nil
+    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or ""
 
     -- Disable definition by belt for fluids
     local is_fluid = item_proto and item_proto.type == "fluid"
