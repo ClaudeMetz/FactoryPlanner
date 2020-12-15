@@ -6,6 +6,7 @@ Date: 00. 00. 0000
     - Middle-clicking the grab handle on any dialog now re-centers it
   Changes:
     - The matrix solver now allows you to select products are free items as well, which comes in handy when you subfactory has very few recipes
+    - Added a message when deactivating the matrix solver informing you that byproduct recipes have been deleted
   Bugfixes:
     - Fixed that the matrix solver dialog would not pop up sometimes after adding a recipe
 
