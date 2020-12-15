@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - The matrix solver now allows you to select products are free items as well, which comes in handy when you subfactory has very few recipes
   Bugfixes:
-    -
+    - Fixed that the matrix solver dialog would not pop up sometimes after adding a recipe
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.8
