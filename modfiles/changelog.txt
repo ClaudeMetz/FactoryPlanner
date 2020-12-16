@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed that alt-adding a subfactory would crash if you had no other subfactories
+    - Fixed that you couldn't view subfloors for subfactories that are in the archive
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.9
