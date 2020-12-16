@@ -345,7 +345,11 @@ picker_dialog.dialog_settings = (function(modal_data)
 end)
 
 function picker_dialog.open(player, modal_data)
-    modal_data.timescale = data_util.get("context", player).subfactory.timescale
+    -- Create a blank subfactory if requested
+    local subfactory = (modal_data.create_subfactory) and subfactory_list.add_subfactory(player, "", nil)
+      or data_util.get("context", player).subfactory
+
+    modal_data.timescale = subfactory.timescale
     modal_data.lob = data_util.get("settings", player).belts_or_lanes
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
@@ -389,8 +393,7 @@ function picker_dialog.close(player, action)
 
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
                 local split_sprite = split_string(top_level_item.proto.sprite, "/")
-                local icon = {type=split_sprite[1], name=split_sprite[2]}
-                subfactory = subfactory_list.add_subfactory(player, "", icon)  -- name would require translation request
+                subfactory.icon = {type=split_sprite[1], name=split_sprite[2]}
                 refresh_scope = "all"  -- need to refresh subfactory list too
             end
 
