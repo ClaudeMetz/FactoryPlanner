@@ -626,3 +626,42 @@ function generator.all_beacons()
     generator_util.data_structure.generate_map(false)
     return generator_util.data_structure.get()
 end
+
+-- Generates a table containing all available wagons
+function generator.all_wagons()
+    generator_util.data_structure.init("complex", "categories", "wagons", "category")
+
+    local function solid_storage(proto)
+        storage = proto.get_inventory_size(1)
+        return storage, {"fp.pl_stack", storage}
+    end
+    local function fluid_storage(proto)
+        return proto.fluid_capacity, {"fp.pl_fluid", 1}
+    end
+    local categories = {{type = "cargo-wagon", get_storage = solid_storage},
+                        {type = "fluid-wagon", get_storage = fluid_storage}}
+    for _, category in ipairs(categories) do
+        local wagon_filter = {{filter="type", type=category.type}}
+        for _, proto in pairs(game.get_filtered_entity_prototypes(wagon_filter)) do
+            local storage, type_string = category.get_storage(proto)
+            generator_util.data_structure.insert{
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = generator_util.determine_entity_sprite(proto),
+                category = category.type,
+                storage=storage,
+                type_string=type_string,
+                rich_text = "[entity=" .. proto.name .. "]",
+            }
+        end
+    end
+
+    local function sorting_function(a, b)
+        if a.storage < b.storage then return true
+        elseif a.storage > b.storage then return false end
+    end
+
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
+end

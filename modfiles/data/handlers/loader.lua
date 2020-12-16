@@ -144,9 +144,13 @@ function attribute_generators.machines(machine)
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
+function attribute_generators.wagons(wagon)
+    return {"", {"fp.storage"}, ": " .. ui_util.format_number(wagon.storage, 4) .. " ", wagon.type_string}
+end
+
 -- Generates the attribute strings for some types of prototypes
 local function prototype_attributes()
-    local relevant_prototypes = {"belts", "beacons", "fuels", "machines"}
+    local relevant_prototypes = {"belts", "beacons", "fuels", "machines", "wagons"}
     local attributes = {}
 
     for _, type in pairs(relevant_prototypes) do
