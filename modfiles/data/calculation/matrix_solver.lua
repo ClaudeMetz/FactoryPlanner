@@ -197,15 +197,6 @@ end
 function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
     local num_rows = matrix_metadata.num_rows
     local num_cols = matrix_metadata.num_cols
-    -- return early if these don't match since the matrix solver can crash when these are different
-    if num_rows < num_cols then
-        local result = {
-            linearly_dependent_recipes = {},
-            linearly_dependent_items = {},
-            allowed_free_items = {}
-        }
-        return result
-    end
 
     local linearly_dependent_recipes = {}
     local linearly_dependent_items = {}
@@ -744,17 +735,31 @@ function matrix_solver.to_reduced_row_echelon_form(m)
 end
 
 function matrix_solver.find_linearly_dependent_cols(matrix)
+    -- Returns linearly dependent columns from a row-reduced matrix
+    -- Algorithm works as follows:
+    -- For each column:
+    --      If this column has a leading 1, track which row maps to this column using the ones_map variable (eg cols 1, 2, 3, 5)
+    --      Otherwise, this column is linearly dependent (eg col 4)
+    --          For any non-zero rows in this col, the col which contains that row's leading 1 is also linearly dependent
+    --                    (eg for col 4, we have row 2 -> col 2 and row 3 -> col 3)
+    -- The example below would give cols 2, 3, 4 as being linearly dependent (x's are non-zeros)
+    -- 1 0 0 0 0
+    -- 0 1 x x 0
+    -- 0 0 1 x 0
+    -- 0 0 0 0 1
+    -- I haven't proven this is 100% correct, this is just something I came up with
     local row_index = 1
+    local num_rows = #matrix
     local num_cols = #matrix[1]-1
     local ones_map = {}
     local col_set = {}
     for col_index=1, num_cols do
-        if matrix[row_index][col_index]==1 then
+        if (row_index <= num_rows) and (matrix[row_index][col_index]==1) then
             ones_map[row_index] = col_index
             row_index = row_index+1
         else
             col_set[col_index] = true
-            for i=1, row_index do
+            for i=1, row_index-1 do
                 if matrix[i][col_index] ~= 0 then
                     col_set[ones_map[i]] = true
                 end
