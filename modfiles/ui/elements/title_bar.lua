@@ -29,7 +29,7 @@ function title_bar.build(player)
     main_elements.title_bar = {}
 
     local flow_title_bar = main_elements.main_frame.add{type="flow", name="fp_flow_main_titlebar",
-      direction="horizontal", mouse_button_filter={"middle"}}
+      direction="horizontal"}
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
     -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
@@ -132,10 +132,12 @@ title_bar.gui_events = {
     on_gui_click = {
         {
             name = "fp_flow_main_titlebar",
-            handler = (function(player, _, _)
-                local ui_state = data_util.get("ui_state", player)
-                local main_frame = ui_state.main_elements.main_frame
-                ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+            handler = (function(player, _, metadata)
+                if metadata.click == "middle" then
+                    local ui_state = data_util.get("ui_state", player)
+                    local main_frame = ui_state.main_elements.main_frame
+                    ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+                end
             end)
         },
         {
