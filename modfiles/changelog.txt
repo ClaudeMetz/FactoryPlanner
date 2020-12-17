@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.10
+Date: 17. 12. 2020
   Changes:
     - The matrix solver now tells you which recipes it has detected as linearly dependant, letting you know the ones that cause it to not be able to solve
   Bugfixes:
