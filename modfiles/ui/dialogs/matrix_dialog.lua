@@ -1,6 +1,19 @@
 matrix_dialog = {}
 
 -- ** LOCAL UTIL **
+local function show_linearly_dependent_recipes(modal_data, recipe_protos)
+    local flow_recipes = modal_data.modal_elements.content_frame.add{type="flow", direction="vertical"}
+    local label_title = flow_recipes.add{type="label", caption={"fp.matrix_linearly_dependent_recipes"}}
+    label_title.style.font = "heading-2"
+
+    local frame_recipes = flow_recipes.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+    local table_recipes = frame_recipes.add{type="table", column_count=8, style="filter_slot_table"}
+    for _, recipe_proto in ipairs(recipe_protos) do
+        table_recipes.add{type="sprite", name="fp_sprite-matrix_recipe_" .. recipe_proto.id,
+          sprite=recipe_proto.sprite, tooltip=recipe_proto.localised_name}
+    end
+end
+
 local function update_dialog_submit_button(modal_data, matrix_metadata)
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
     local curr_free_items = #modal_data["free_items"]
@@ -86,21 +99,15 @@ function matrix_dialog.open(player, modal_data)
     local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
 
-    if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items>0 then
-        subfactory.matrix_free_items = {}
-        subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-        matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
-    end
-
     modal_data.subfactory_data = subfactory_data
 
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
-    if matrix_metadata.num_rows < matrix_metadata.num_cols then  -- too many ways to create the products
+    if #linear_dependence_data.linearly_dependent_recipes > 0 then  -- too many ways to create the products
+        show_linearly_dependent_recipes(modal_data, linear_dependence_data.linearly_dependent_recipes)
         subfactory.linearly_dependant = true
-        ui_state.queued_dialog_settings = nil  -- TODO bit hacky this bit
-        modal_dialog.exit(player, "cancel")
-        return true
+        modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
+        return
     end
     subfactory.linearly_dependant = false  -- TODO not the proper way to signal this, but it works
 
