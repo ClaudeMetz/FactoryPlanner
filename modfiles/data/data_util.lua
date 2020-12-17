@@ -122,6 +122,7 @@ function data_util.porter.get_export_string(subfactories)
     local export_table = {
         -- This can use the global mod_version since it's only called for migrated, valid subfactories
         mod_version = global.mod_version,
+        export_modset = global.installed_mods,
         subfactories = {}
     }
 
@@ -159,10 +160,63 @@ function data_util.porter.get_subfactories(export_string)
             -- and potentially un-simplify the prototypes that came in packed
             Subfactory.validate(unpacked_subfactory)
         end
+
+        -- Include the modset at export time to be displayed to the user if a subfactory is invalid
+        import_factory.export_modset = export_table.export_modset
+
     end) then return nil, "unpacking_failure" end
 
     -- This is not strictly a decoding failure, but close enough
     if import_factory.Subfactory.count == 0 then return nil, "decoding_failure" end
 
     return import_factory, nil
+end
+
+-- Creates a nice tooltip laying out which mods were added, removed and updated since the subfactory became invalid
+function data_util.porter.format_modset_diff(old_modset)
+    if not old_modset then return "" end
+
+    local changes = {added={}, removed={}, updated={}}
+    local new_modset = game.active_mods
+
+    -- Determine changes by running through both sets of mods once each
+    for name, current_version in pairs(new_modset) do
+        local old_version = old_modset[name]
+        if not old_version then
+            changes.added[name] = current_version
+        elseif old_version ~= current_version then
+            changes.updated[name] = {old=old_version, current=current_version}
+        end
+    end
+
+    for name, old_version in pairs(old_modset) do
+        if not new_modset[name] then
+            changes.removed[name] = old_version
+        end
+    end
+
+    local tooltip = {"", {"fp.subfactory_modset_changes"}}  -- Compose tooltip from all three types of changes
+
+    if table_size(changes.added) > 0 then
+        table.insert(tooltip, {"fp.subfactory_mod_added"})
+        for name, version in pairs(changes.added) do
+            table.insert(tooltip, {"fp.subfactory_mod_and_version", name, version})
+        end
+    end
+
+    if table_size(changes.removed) > 0 then
+        table.insert(tooltip, {"fp.subfactory_mod_removed"})
+        for name, version in pairs(changes.removed) do
+            table.insert(tooltip, {"fp.subfactory_mod_and_version", name, version})
+        end
+    end
+
+    if table_size(changes.updated) > 0 then
+        table.insert(tooltip, {"fp.subfactory_mod_updated"})
+        for name, versions in pairs(changes.updated) do
+            table.insert(tooltip, {"fp.subfactory_mod_and_versions", name, versions.old, versions.current})
+        end
+    end
+
+    return tooltip
 end
