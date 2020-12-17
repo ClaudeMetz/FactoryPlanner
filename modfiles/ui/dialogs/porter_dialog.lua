@@ -125,7 +125,7 @@ local function add_to_subfactories_table(modal_elements, subfactory, location_na
     local checkbox = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_subfactory_" .. identifier,
       state=false, enabled=(enable_checkbox or subfactory.valid)}
 
-    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, false)}
+    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, true)}
     label.style.maximal_width = 350
     label.style.right_margin = 4
 

@@ -96,6 +96,25 @@ function data_util.format_module_effects(effects, multiplier, limit_effects)
     if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
 end
 
+-- Registers the event to delete a trashed subfactory on time and refresh the interface
+-- It feels weird to store the relevant information in upvalues of the function, but it works
+function data_util.register_subfactory_deletion(player_index, subfactory)
+    script.on_nth_tick(subfactory.tick_of_deletion, function(_)
+        local archive = subfactory.parent
+        local removed_gui_position = Factory.remove(archive, subfactory)
+        script.on_nth_tick(subfactory.tick_of_deletion, nil)
+
+        local player = game.get_player(player_index)
+        if data_util.get("main_elements", player).main_frame == nil then return end
+
+        if data_util.get("flags", player).archive_open then
+            subfactory_list.refresh_after_deletion(player, archive, removed_gui_position)
+        else  -- doing this if is a bit dumb, but it works (I think)
+            main_dialog.refresh(player, "all")
+        end
+    end)
+end
+
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string
