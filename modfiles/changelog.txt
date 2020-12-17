@@ -1,4 +1,38 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    - Fixed that alt-adding a subfactory would crash if you had no other subfactories
+    - Fixed that you couldn't view subfloors for subfactories that are in the archive
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.9
+Date: 15. 12. 2020
+  Features:
+    - Alt-clicking the 'add subfactory'-button now takes you directly to the product picker
+    - Middle-clicking the grab handle on any dialog now re-centers it
+  Changes:
+    - The matrix solver now allows you to select products are free items as well, which comes in handy when you subfactory has very few recipes
+    - Added a message when deactivating the matrix solver informing you that byproduct recipes have been deleted
+  Bugfixes:
+    - Fixed that the matrix solver dialog would not pop up sometimes after adding a recipe
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.8
+Date: 15. 12. 2020
+  Changes:
+    - Removed a couple of mistakes with the tutorial writing; It's super old and due for a rewrite anyways
+    - Renamed 'Energy' to 'Power' where appropriate
+  Bugfixes:
+    - Fixed that opening another mod's interface while FP is open could crash
+    - Fixed that requesting machines and modules would crash in certain modded situations
+    - Fixed the beacon selector not working properly when the game is paused
+
+---------------------------------------------------------------------------------------------------
 Version: 1.1.7
 Date: 13. 12. 2020
   Bugfixes:

@@ -84,9 +84,16 @@ function matrix_dialog.open(player, modal_data)
     end
 
     local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+
+    if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items>0 then
+        subfactory.matrix_free_items = {}
+        subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+        matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+    end
+
     modal_data.subfactory_data = subfactory_data
 
-    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
     if matrix_metadata.num_rows < matrix_metadata.num_cols then  -- too many ways to create the products

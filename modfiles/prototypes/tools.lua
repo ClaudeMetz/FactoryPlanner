@@ -7,7 +7,6 @@ local beacon_selector = {
     subgroup = "other",
     order = "z_fp1",
     stack_size = 1,
-    stackable = false,
     show_in_library = false,
     selection_color = { r = 0.75, g = 0, b = 0.75 },
     alt_selection_color = { r = 0.75, g = 0, b = 0.75 },
@@ -19,13 +18,11 @@ local beacon_selector = {
     entity_type_filters = {"beacon"}
 }
 
-
 local cursor_blueprint = util.table.deepcopy(data.raw["blueprint"]["blueprint"])
 cursor_blueprint.name = "fp_cursor_blueprint"
 cursor_blueprint.order = "z_fp2"
 cursor_blueprint.show_in_library = false
-table.insert(cursor_blueprint.flags, "only-in-cursor")
 table.insert(cursor_blueprint.flags, "hidden")
-
+table.insert(cursor_blueprint.flags, "only-in-cursor")
 
 data:extend{beacon_selector, cursor_blueprint}

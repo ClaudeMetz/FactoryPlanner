@@ -34,26 +34,14 @@ end
 -- the game automtically closes the currently open GUI before calling this one. This means the top layer
 -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
 -- layer at this point and need to close the things below, if there are any.
-local function handle_other_gui_opening(player, event)
+local function handle_other_gui_opening(player)
     local ui_state = data_util.get("ui_state", player)
-    local reset_needed = false
 
     -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-    if ui_state.modal_dialog_type ~= nil then
-        modal_dialog.exit(player, "cancel")
-        reset_needed = true
-    end
+    if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel", true) end
 
     -- Then, at this point we're at most at the stage where the main dialog is open, so close it
-    if main_dialog.is_in_focus(player) then
-        main_dialog.toggle(player)
-        reset_needed = true
-    end
-
-    -- This is the magic glue that holds this pile of crap together. Both modal_dialog.exit and main_dialog.toggle
-    -- manipulate player.opened, so we need to restore it at the end so the desired GUI actually opens
-    if reset_needed then player.opened = (event.entity or event.item or event.equipment or
-      event.other_player or event.element or event.gui_type) end
+    if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
 end
 
 local function handle_background_dimmer_click(player)
@@ -152,7 +140,7 @@ function main_dialog.refresh(player, context_to_refresh)
     title_bar.refresh_message(player)
 end
 
-function main_dialog.toggle(player)
+function main_dialog.toggle(player, skip_player_opened)
     local ui_state = data_util.get("ui_state", player)
     local frame_main_dialog = ui_state.main_elements.main_frame
 
@@ -161,7 +149,8 @@ function main_dialog.toggle(player)
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
         frame_main_dialog.visible = not frame_main_dialog.visible
-        player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil
+        -- Explicit check for 'true' needed because the event handler can call this with a table as the second argument
+        if skip_player_opened ~= true then player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
         title_bar.refresh_message(player)
@@ -198,6 +187,8 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
 
         frame_main_dialog.bring_to_front()
     end
+
+    return pause
 end
 
 

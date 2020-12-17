@@ -55,13 +55,14 @@ local function handle_recipe_click(player, button, metadata)
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif metadata.click == "left" then  -- Attaches a subfloor to this line
-        if not ui_util.check_archive_status(player) then return end
-
         local subfloor = line.subfloor
+
         if not subfloor and line.recipe.production_type == "consume" then
+            if not ui_util.check_archive_status(player) then return end
             title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
         else
             if subfloor == nil then
+                if not ui_util.check_archive_status(player) then return end
                 subfloor = Floor.init(line)  -- attaches itself to the given line automatically
                 Subfactory.add(context.subfactory, subfloor)
                 calculation.update(player, context.subfactory)

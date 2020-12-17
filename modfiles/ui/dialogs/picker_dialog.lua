@@ -223,7 +223,7 @@ local function set_item_proto(modal_data, item_proto)
 
     local item_choice_button = modal_elements.item_choice_button
     item_choice_button.sprite = (item_proto) and item_proto.sprite or nil
-    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or nil
+    item_choice_button.tooltip = (item_proto) and item_proto.tooltip or ""
 
     -- Disable definition by belt for fluids
     local is_fluid = item_proto and item_proto.type == "fluid"
@@ -344,7 +344,11 @@ picker_dialog.dialog_settings = (function(modal_data)
 end)
 
 function picker_dialog.open(player, modal_data)
-    modal_data.timescale = data_util.get("context", player).subfactory.timescale
+    -- Create a blank subfactory if requested
+    local subfactory = (modal_data.create_subfactory) and subfactory_list.add_subfactory(player, "", nil)
+      or data_util.get("context", player).subfactory
+
+    modal_data.timescale = subfactory.timescale
     modal_data.lob = data_util.get("settings", player).belts_or_lanes
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
@@ -367,6 +371,7 @@ function picker_dialog.close(player, action)
     local subfactory = data_util.get("context", player).subfactory
     local item = modal_data.object
 
+    local refresh_scope = "subfactory"
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
@@ -374,13 +379,19 @@ function picker_dialog.close(player, action)
 
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
-        if item == nil then  -- add item if it doesn't exist (ie. this is not an edit)
-            local class_name = (modal_data.item_category:gsub("^%l", string.upper))
-
-            local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
-            Subfactory.add(subfactory, top_level_item)
-        else
+        if item ~= nil then  -- ie. this is an edit
             item.required_amount = req_amount
+        else
+            local class_name = (modal_data.item_category:gsub("^%l", string.upper))
+            local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
+
+            if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
+                local split_sprite = split_string(top_level_item.proto.sprite, "/")
+                subfactory.icon = {type=split_sprite[1], name=split_sprite[2]}
+                refresh_scope = "all"  -- need to refresh subfactory list too
+            end
+
+            Subfactory.add(subfactory, top_level_item)  -- finally add the item to the subfactory
         end
 
     elseif action == "delete" then
@@ -389,7 +400,7 @@ function picker_dialog.close(player, action)
 
     if action ~= "cancel" then
         calculation.update(player, subfactory)
-        main_dialog.refresh(player, "subfactory")
+        main_dialog.refresh(player, refresh_scope)
     end
 end
 

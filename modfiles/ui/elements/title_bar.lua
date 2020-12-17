@@ -28,7 +28,8 @@ function title_bar.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.title_bar = {}
 
-    local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal"}
+    local flow_title_bar = main_elements.main_frame.add{type="flow", name="fp_flow_main_titlebar",
+      direction="horizontal", mouse_button_filter={"middle"}}
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
     -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
@@ -42,7 +43,8 @@ function title_bar.build(player)
     label_hint.style.margin = {0, 0, 0, 8}
     main_elements.title_bar["hint_label"] = label_hint
 
-    flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+    flow_title_bar.add{type="empty-widget", name="fp_empty-widget_main_drag_handle",
+      style="flib_titlebar_drag_handle", ignored_by_interaction=true}
 
     -- Buttons
     flow_title_bar.add{type="button", name="fp_button_title_bar_tutorial", caption={"fp.tutorial"},
@@ -128,6 +130,14 @@ end
 -- ** EVENTS **
 title_bar.gui_events = {
     on_gui_click = {
+        {
+            name = "fp_flow_main_titlebar",
+            handler = (function(player, _, _)
+                local ui_state = data_util.get("ui_state", player)
+                local main_frame = ui_state.main_elements.main_frame
+                ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+            end)
+        },
         {
             name = "fp_sprite-button_title_bar_close_interface",
             handler = (function(player, _, _)

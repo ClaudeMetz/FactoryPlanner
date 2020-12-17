@@ -39,7 +39,6 @@ end
 
 local function handle_subfactory_submission(player, options, action)
     local ui_state = data_util.get("ui_state", player)
-    local factory = ui_state.context.factory
     local subfactory = ui_state.modal_data.object
 
     if action == "submit" then
@@ -51,20 +50,15 @@ local function handle_subfactory_submission(player, options, action)
             -- Don't save over the unknown signal to preserve what's saved behind it
             if not icon or icon.name ~= "signal-unknown" then subfactory.icon = icon end
         else
-            local new_subfactory = Subfactory.init(name, icon)
-
-            local settings = data_util.get("settings", player)
-            new_subfactory.timescale = settings.default_timescale
-            if settings.prefer_matrix_solver then new_subfactory.matrix_free_items = {} end
-
-            Factory.add(factory, new_subfactory)
-            ui_util.context.set_subfactory(player, new_subfactory)
+            subfactory_list.add_subfactory(player, name, icon)
         end
         main_dialog.refresh(player, "all")
 
     elseif action == "delete" then
+        local factory = ui_state.context.factory
         local removed_gui_position = Factory.remove(factory, subfactory)
         reset_subfactory_selection(player, factory, removed_gui_position)
+
         refresh_with_archive_open(player, factory)
     end
 end
@@ -137,6 +131,18 @@ local function archive_subfactory(player)
     Factory.add(destination, subfactory)
 
     refresh_with_archive_open(player, origin)
+end
+
+local function add_subfactory(player, _, metadata)
+    if metadata.alt then
+        -- If alt is pressed, go right to the item picker, which will determine the subfactory icon
+        modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
+          create_subfactory=true}})
+
+    else  -- otherwise, go through the normal proceedure
+        local modal_data = generate_subfactory_dialog_modal_data("new", nil)
+        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+    end
 end
 
 local function edit_subfactory(player)
@@ -316,6 +322,20 @@ function subfactory_list.refresh(player)
 end
 
 
+-- Utility function to centralize subfactory creation behavior
+function subfactory_list.add_subfactory(player, name, icon)
+    local subfactory = Subfactory.init(name, icon)
+
+    local settings = data_util.get("settings", player)
+    subfactory.timescale = settings.default_timescale
+    if settings.prefer_matrix_solver then subfactory.matrix_free_items = {} end
+
+    local context = data_util.get("context", player)
+    Factory.add(context.factory, subfactory)
+    ui_util.context.set_subfactory(player, subfactory)
+end
+
+
 -- ** EVENTS **
 subfactory_list.gui_events = {
     on_gui_click = {
@@ -353,10 +373,7 @@ subfactory_list.gui_events = {
         },
         {
             name = "fp_sprite-button_subfactory_add",
-            handler = (function(player, _, _)
-                local modal_data = generate_subfactory_dialog_modal_data("new", nil)
-                modal_dialog.enter(player, {type="options", modal_data=modal_data})
-            end)
+            handler = add_subfactory
         },
         {
             name = "fp_sprite-button_subfactory_edit",
