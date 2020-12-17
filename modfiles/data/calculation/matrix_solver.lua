@@ -27,6 +27,15 @@ If a recipe has loops, typically the user needs to make voids or free variables.
 
 matrix_solver = {}
 
+function matrix_solver.get_recipe_protos(recipe_ids)
+    local recipe_protos = {}
+    for i, recipe_id in ipairs(recipe_ids) do
+        local recipe_proto = global.all_recipes.recipes[recipe_id]
+        recipe_protos[i] = recipe_proto
+    end
+    return recipe_protos
+end
+
 function matrix_solver.get_item_protos(item_keys)
     local item_protos = {}
     for i, item_key in ipairs(item_keys) do
@@ -227,10 +236,12 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
         end
     end
     local result = {
-        linearly_dependent_recipes = linearly_dependent_recipes,
+        linearly_dependent_recipes = matrix_solver.get_recipe_protos(
+            matrix_solver.set_to_ordered_list(linearly_dependent_recipes)),
         linearly_dependent_items = matrix_solver.get_item_protos(
-          matrix_solver.set_to_ordered_list(linearly_dependent_items)),
-        allowed_free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(allowed_free_items))
+            matrix_solver.set_to_ordered_list(linearly_dependent_items)),
+        allowed_free_items = matrix_solver.get_item_protos(
+            matrix_solver.set_to_ordered_list(allowed_free_items))
     }
     return result
 end
