@@ -79,15 +79,11 @@ function main_dialog.rebuild(player, default_visibility)
 
     local dimensions = determine_main_dialog_dimensions(player)
     ui_state.main_dialog_dimensions = dimensions
-
     frame_main_dialog.style.size = dimensions
     ui_util.properly_center_frame(player, frame_main_dialog, dimensions)
 
-    if visible then player.opened = frame_main_dialog end
-    main_dialog.set_pause_state(player, frame_main_dialog)
-
     -- Create the actual dialog structure
-    view_state.rebuild_state(player)  -- actually initializes it
+    view_state.rebuild_state(player)  -- initializes it
     title_bar.build(player)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
@@ -108,6 +104,9 @@ function main_dialog.rebuild(player, default_visibility)
     production_table.build(player)
 
     title_bar.refresh_message(player)
+
+    if visible then player.opened = frame_main_dialog end
+    main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
 
@@ -116,6 +115,9 @@ local refreshable_elements = {subfactory_list=true, subfactory_info=true,
 
 function main_dialog.refresh(player, context_to_refresh)
     if context_to_refresh == nil then return end
+
+    local main_frame = data_util.get("main_elements", player).main_frame
+    if main_frame == nil then return end
 
     if refreshable_elements[context_to_refresh] ~= nil then
         -- If the given argument points to a specific element, only refresh that one
