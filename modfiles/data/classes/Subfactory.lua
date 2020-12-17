@@ -18,6 +18,7 @@ function Subfactory.init(name, icon)
         linearly_dependant = false,  -- determined by the solver
         selected_floor = nil,
         item_request_proxy = nil,
+        tick_of_deletion = nil,  -- ignored on export/import
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory"
@@ -43,18 +44,34 @@ function Subfactory.verify_icon(self)
     end
 end
 
-function Subfactory.tostring(self, indicate_invalidity)
-    local status, sprite_string = "", ""
-    if indicate_invalidity and not self.valid then
-        status = "[img=fp_sprite_warning_red]  "
+function Subfactory.tostring(self, export_format)
+    local status_string = ""
+    if not export_format then
+        if self.tick_of_deletion then status_string = status_string .. "[img=fp_sprite_trash_red] " end
+        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red]  " end
     end
 
+    local name_string = self.name
     if self.icon then
         local _, sprite_rich_text = Subfactory.verify_icon(self)
-        sprite_string = sprite_rich_text .. "  "
+        name_string = sprite_rich_text .. "  "
     end
 
-    return (status .. sprite_string .. self.name)
+    local tooltip = nil  -- don't return a tooltip for the export_format
+    if not export_format then
+        local trashed_string = ""
+        if self.tick_of_deletion then
+            local ticks_left_in_trash = self.tick_of_deletion - game.tick
+            local minutes_left_in_trash = math.ceil(ticks_left_in_trash / 3600)
+            trashed_string = {"fp.newline", {"fp.subfactory_trashed", minutes_left_in_trash}}
+        end
+
+        local invalid_string = (not self.valid) and {"fp.newline", {"fp.subfactory_invalid"}} or ""
+        tooltip = {"", name_string, trashed_string, invalid_string}
+    end
+
+    local caption = (status_string .. name_string)
+    return caption, tooltip
 end
 
 
