@@ -188,8 +188,8 @@ function matrix_solver.get_matrix_solver_metadata(subfactory_data)
         free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
         eliminated_items = matrix_solver.set_diff(intermediate_items, free_items)
     end
-    local num_rows = matrix_solver.num_elements(ingredients, byproducts, eliminated_items, free_items)
-    local num_cols = matrix_solver.num_elements(recipes, ingredients, byproducts, free_items)
+    local num_rows = matrix_solver.num_elements(raw_inputs, byproducts, eliminated_items, free_items)
+    local num_cols = matrix_solver.num_elements(recipes, raw_inputs, byproducts, free_items)
     local result = {
         recipes = subfactory_metadata.recipes,
         ingredients = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs)),
