@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.11
+Date: 19. 12. 2020
   Bugfixes:
     - Fixed machine count totals on lines with subfloors with the matrix solver
     - Fixed an issue with the matrix solver determining the number of rows and columns in its matrix
