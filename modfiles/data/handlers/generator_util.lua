@@ -376,39 +376,27 @@ end
 -- Adds the tooltip for the given recipe
 function generator_util.add_recipe_tooltip(recipe)
     local tooltip = {"", recipe.localised_name}
-    local current_table = tooltip
-    local current_depth = 1
+    local current_table, next_index = tooltip, 3
 
-    -- Inserts strings in a way to minimize depth ('nestedness') of the localised string
-    local function multi_insert(t)
-        for _, e in pairs(t) do
-            -- Nest localised string deeper if the limit of 20 elements per 'level' is reached
-            if table_size(current_table) == 20 then
-                -- If the depth is more than 8, the serpent deserializer will crash when loading the save
-                -- because the resulting global table will be 'too complex'
-                if current_depth == 8 then return tooltip end
-
-                table.insert(current_table, {""})
-                current_table = current_table[table_size(current_table)]
-                current_depth = current_depth + 1
-            end
-            table.insert(current_table, e)
-        end
+    if recipe.energy ~= nil then
+        current_table, next_index = data_util.build_localised_string({
+          "\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}}, current_table, next_index)
     end
 
-    if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}} end
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
-        multi_insert{"\n  ", {"fp.name_value", {locale_key, 2}, ""}}
+        current_table, next_index = data_util.build_localised_string({
+          "\n  ", {"fp.name_value", {locale_key, 2}, ""}}, current_table, next_index)
         if #recipe[item_type] == 0 then
-            multi_insert{"\n    ", {"fp.none"}}
+            current_table, next_index = data_util.build_localised_string({
+              "\n    ", {"fp.none"}}, current_table, next_index)
         else
             for _, item in ipairs(recipe[item_type]) do
                 local name = generator_util.format_temperature_name(item, item.name)
                 local proto = game[item.type .. "_prototypes"][name]
                 local localised_name = generator_util.format_temperature_localised_name(item, proto)
-                multi_insert{("\n    " .. "[" .. item.type .. "=" .. name .. "] " .. item.amount .. "x "),
-                  localised_name}
+                current_table, next_index = data_util.build_localised_string({("\n    " .. "[" .. item.type .. "="
+                  .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)
             end
         end
     end
