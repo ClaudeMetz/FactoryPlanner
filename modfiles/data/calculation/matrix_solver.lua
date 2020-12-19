@@ -326,9 +326,8 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
                 matrix_solver.consolidate(line_aggregate)
             end
 
-            -- this seems to be how the model sets the machine_count for subfloors - by the machine_count
-            -- of the subfloor's top line
-            if i==1 then floor_aggregate.machine_count = line_aggregate.machine_count end
+            -- lines with subfloors should show actual number of machines to build, so each machine count is rounded up when summed
+            floor_aggregate.machine_count = floor_aggregate.machine_count + math.ceil(line_aggregate.machine_count)
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 
