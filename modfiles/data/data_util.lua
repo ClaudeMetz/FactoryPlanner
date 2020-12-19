@@ -115,6 +115,27 @@ function data_util.register_subfactory_deletion(player_index, subfactory)
     end)
 end
 
+-- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
+-- To make it state-less, it needs its return values passed back as arguments
+-- Uses state to avoid needing to call table_size() because that function is slow
+function data_util.build_localised_string(strings_to_insert, current_table, next_index)
+    current_table = current_table or {""}
+    next_index = next_index or 2
+
+    for _, string_to_insert in ipairs(strings_to_insert) do
+        if next_index == 20 then  -- go a level deeper if this one is almost full
+            local new_table = {""}
+            current_table[next_index] = new_table
+            current_table = new_table
+            next_index = 2
+        end
+        current_table[next_index] = string_to_insert
+        next_index = next_index + 1
+    end
+
+    return current_table, next_index
+end
+
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string
@@ -195,26 +216,34 @@ function data_util.porter.format_modset_diff(old_modset)
         end
     end
 
-    local tooltip = {"", {"fp.subfactory_modset_changes"}}  -- Compose tooltip from all three types of changes
+    -- Compose tooltip from all three types of changes
+    local tooltip = {"", {"fp.subfactory_modset_changes"}}
+    local current_table, next_index = tooltip, 3
 
     if table_size(changes.added) > 0 then
-        table.insert(tooltip, {"fp.subfactory_mod_added"})
+        current_table, next_index = data_util.build_localised_string({
+          {"fp.subfactory_mod_added"}}, current_table, next_index)
         for name, version in pairs(changes.added) do
-            table.insert(tooltip, {"fp.subfactory_mod_and_version", name, version})
+            current_table, next_index = data_util.build_localised_string({
+              {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
         end
     end
 
     if table_size(changes.removed) > 0 then
-        table.insert(tooltip, {"fp.subfactory_mod_removed"})
+        current_table, next_index = data_util.build_localised_string({
+          {"fp.subfactory_mod_removed"}}, current_table, next_index)
         for name, version in pairs(changes.removed) do
-            table.insert(tooltip, {"fp.subfactory_mod_and_version", name, version})
+            current_table, next_index = data_util.build_localised_string({
+              {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
         end
     end
 
     if table_size(changes.updated) > 0 then
-        table.insert(tooltip, {"fp.subfactory_mod_updated"})
+        current_table, next_index = data_util.build_localised_string({
+          {"fp.subfactory_mod_updated"}}, current_table, next_index)
         for name, versions in pairs(changes.updated) do
-            table.insert(tooltip, {"fp.subfactory_mod_and_versions", name, versions.old, versions.current})
+            current_table, next_index = data_util.build_localised_string({
+              {"fp.subfactory_mod_and_versions", name, versions.old, versions.current}}, current_table, next_index)
         end
     end
 
