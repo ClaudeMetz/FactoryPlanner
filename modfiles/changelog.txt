@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed that you could enable/disable the matrix solver while a subfactory is in archive
+    - Fixed that the indicated timescale-view button would not update correctly when switching between subfactories
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.11
