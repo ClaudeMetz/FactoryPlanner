@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    - Fixed that you could enable/disable the matrix solver while a subfactory is in archive
+
+---------------------------------------------------------------------------------------------------
 Version: 1.1.11
 Date: 19. 12. 2020
   Bugfixes:

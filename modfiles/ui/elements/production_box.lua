@@ -87,7 +87,7 @@ function production_box.build(player)
     table_matrix_solver.style.right_margin = 12
 
     local button_solver_toggle = table_matrix_solver.add{type="button", name="fp_button_production_solver_toggle",
-      caption={"fp.matrix_solver"}, style="fp_button_push", mouse_button_filter={"left"}}
+      caption={"fp.matrix_solver"}, mouse_button_filter={"left"}}
     main_elements.production_box["solver_toggle_button"] = button_solver_toggle
     local button_solver_configure = table_matrix_solver.add{type="sprite-button", sprite="utility/change_recipe",
       name="fp_button_production_solver_configure", style="fp_button_push", mouse_button_filter={"left"}}
@@ -128,12 +128,13 @@ function production_box.refresh(player)
     production_box_elements.floor_top_button.enabled = (current_level > 2)
 
     production_box_elements.solver_toggle_button.visible = (subfactory_valid)
+    production_box_elements.solver_toggle_button.enabled = (not archive_open)
     production_box_elements.solver_toggle_button.style = (matrix_solver_active)
       and "fp_button_push_active" or "fp_button_push"
     production_box_elements.solver_toggle_button.style.padding = {0, 8}  -- needs to be re-set when changing the style
 
     production_box_elements.solver_configure_button.visible = (subfactory_valid)
-    production_box_elements.solver_configure_button.enabled = (matrix_solver_active)
+    production_box_elements.solver_configure_button.enabled = (matrix_solver_active and not archive_open)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
