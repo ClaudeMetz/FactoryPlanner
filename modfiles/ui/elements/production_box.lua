@@ -74,10 +74,12 @@ function production_box.build(player)
 
     local button_floor_up = subheader.add{type="button", name="fp_button_production_floor_up", caption={"fp.floor_up"},
       tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+    button_floor_up.style.disabled_font_color = {}
     main_elements.production_box["floor_up_button"] = button_floor_up
     local button_floor_top = subheader.add{type="button", name="fp_button_production_floor_top",
       caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"}, style="fp_button_rounded_mini",
       mouse_button_filter={"left"}}
+    button_floor_top.style.disabled_font_color = {}
     main_elements.production_box["floor_top_button"] = button_floor_top
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -88,6 +90,7 @@ function production_box.build(player)
 
     local button_solver_toggle = table_matrix_solver.add{type="button", name="fp_button_production_solver_toggle",
       caption={"fp.matrix_solver"}, mouse_button_filter={"left"}}
+    --button_solver_toggle.style.disabled_font_color = {}
     main_elements.production_box["solver_toggle_button"] = button_solver_toggle
     local button_solver_configure = table_matrix_solver.add{type="sprite-button", sprite="utility/change_recipe",
       name="fp_button_production_solver_configure", style="fp_button_push", mouse_button_filter={"left"}}

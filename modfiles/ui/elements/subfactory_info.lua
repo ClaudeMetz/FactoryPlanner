@@ -138,6 +138,7 @@ function subfactory_info.build(player)
 
     local button_override_prod_bonus = flow_mining_prod.add{type="button", name="fp_button_override_mining_prod",
       caption={"fp.override"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+    button_override_prod_bonus.style.disabled_font_color = {}
     main_elements.subfactory_info["override_prod_bonus_button"] = button_override_prod_bonus
 
     local textfield_prod_bonus = flow_mining_prod.add{type="textfield", name="fp_textfield_mining_prod_override"}

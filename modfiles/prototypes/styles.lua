@@ -163,7 +163,8 @@ styles["fp_button_push"] = {
     parent = "button",
     height = 26,
     minimal_width = 0,
-    padding = 0
+    padding = 0,
+    disabled_font_color = {}  -- black
 }
 
 styles["fp_button_push_active"] = {
@@ -171,7 +172,6 @@ styles["fp_button_push_active"] = {
     parent = "fp_button_push",
     default_graphical_set = styles.button_with_shadow.clicked_graphical_set,
     clicked_graphical_set = styles.button_with_shadow.default_graphical_set,
-    disabled_font_color = {},  -- black
     disabled_graphical_set = styles.button_with_shadow.clicked_graphical_set
 }
 
