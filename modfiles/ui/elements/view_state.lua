@@ -123,7 +123,8 @@ function view_state.rebuild_state(player)
             caption = {"fp.per_title", {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_second"}},
               "[img=fp_generic_assembler]"},
             tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
-        }
+        },
+        timescale = timescale  -- conserve the timescale used to know when to rebuild the state
     }
 
     -- Conserve the previous view selection if possible
@@ -150,10 +151,14 @@ function view_state.build(player, parent_element)
     return table_view_state
 end
 
-function view_state.refresh(player,  table_view_state)
-    local view_states = data_util.get("ui_state", player).view_states
+function view_state.refresh(player, table_view_state)
+    local ui_state = data_util.get("ui_state", player)
 
-    for _, view_state in ipairs(view_states) do
+    -- Automatically detects a timescale change and refreshes the state if necessary
+    local current_timescale = ui_state.context.subfactory.timescale
+    if current_timescale ~= ui_state.view_states.timescale then view_state.rebuild_state(player) end
+
+    for _, view_state in ipairs(ui_state.view_states) do
         local view_button = table_view_state["fp_button_view_state_" .. view_state.name]
         view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
         view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
