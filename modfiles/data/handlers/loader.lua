@@ -2,6 +2,15 @@
 loader = {}
 
 -- ** LOCAL UTIL **
+-- Registers all subfactory deletion events again
+local function register_subfactory_deletion_events()
+    for player_index, player_data in pairs(global.players) do
+        for _, subfactory in pairs(Factory.get_in_order(player_data.archive, "Subfactory")) do
+            if subfactory.tick_of_deletion then data_util.register_subfactory_deletion(player_index, subfactory) end
+        end
+    end
+end
+
 -- Returns a list of recipe groups in their proper order
 local function ordered_recipe_groups()
     local group_dict = {}
@@ -187,6 +196,8 @@ function loader.run()
         if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
+
+    register_subfactory_deletion_events()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {
