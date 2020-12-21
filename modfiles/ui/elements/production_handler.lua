@@ -17,13 +17,35 @@ local function set_cursor_blueprint(player, entity_name, module_list, recipe_nam
 end
 
 
-local function handle_toggle_change(player, checkbox)
+local function handle_toggle_click(player, checkbox, metadata)
     local line_id = tonumber(string.match(checkbox.name, "%d+"))
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", line_id)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.active = checkbox.state
+
+    -- Simple clicking just sets relevant line state and alt-clicking inverts states of all lines
+    if not metadata.alt then
+        relevant_line.active = checkbox.state
+    else
+        -- Check if there is an inactive line in the floor
+        local has_inactive_lines = false;
+        for _, current_line in ipairs(Floor.get_in_order(context.floor, "Line")) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            if not current_relevant_line.active then
+                has_inactive_lines = true
+                break
+            end
+        end
+
+        -- Set new checkbox states
+        local new_active_state = has_inactive_lines and relevant_line.active
+        for _, current_line in ipairs(Floor.get_in_order(context.floor, "Line")) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            current_relevant_line.active = new_active_state
+        end
+        relevant_line.active = true
+    end
 
     calculation.update(player, context.subfactory)
     main_dialog.refresh(player, "subfactory")
@@ -552,12 +574,10 @@ production_handler.gui_events = {
         {   -- This only the fuel button (no item id necessary)
             pattern = "^fp_sprite%-button_production_fuel_%d+$",
             handler = handle_fuel_click
-        }
-    },
-    on_gui_checked_state_changed = {
+        },
         {
             pattern = "^fp_checkbox_production_toggle_%d+$",
-            handler = handle_toggle_change
+            handler = handle_toggle_click
         }
     },
     on_gui_text_changed = {
