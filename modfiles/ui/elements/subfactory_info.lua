@@ -57,8 +57,10 @@ function subfactory_info.build(player)
     flow_repair.style.top_margin = 6
     main_elements.subfactory_info["repair_flow"] = flow_repair
 
-    local label = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}
-    label.style.single_line = false
+    local label_repair = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}
+    label_repair.style.single_line = false
+    main_elements.subfactory_info["repair_label"] = label_repair
+
     local button_repair = flow_repair.add{type="button", name="fp_button_subfactory_repair",
       caption={"fp.repair_subfactory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_repair.style.top_margin = 4
@@ -171,7 +173,10 @@ function subfactory_info.refresh(player)
     local valid_subfactory_selected = (subfactory and subfactory.valid)
     subfactory_info_elements.info_flow.visible = valid_subfactory_selected
 
-    if valid_subfactory_selected then  -- we need to refresh some stuff in this case
+    if invalid_subfactory_selected then
+        subfactory_info_elements.repair_label.tooltip = data_util.porter.format_modset_diff(subfactory.last_valid_modset)
+
+    elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
 
         -- Power + Pollution
