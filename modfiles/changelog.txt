@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Subfactories you delete will now remain in the archive for 15 minutes in case you change your mind about deleting them
     - Added a tooltip to invalid subfactories listing the modset changes that could have lead to it becoming invalid
+    - You can now alt-click the recipe line toggle switch (which is an optional column in preferences) to toggle all the other recipe lines, meaning all the ones you did not click on (thanks METAKOT!)
   Changes:
     -
   Bugfixes:
