@@ -155,8 +155,11 @@ function view_state.refresh(player, table_view_state)
     local ui_state = data_util.get("ui_state", player)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
-    local current_timescale = ui_state.context.subfactory.timescale
-    if current_timescale ~= ui_state.view_states.timescale then view_state.rebuild_state(player) end
+    local subfactory = ui_state.context.subfactory
+    if not subfactory then return
+    elseif subfactory.current_timescale ~= ui_state.view_states.timescale then
+        view_state.rebuild_state(player)
+    end
 
     for _, view_state in ipairs(ui_state.view_states) do
         local view_button = table_view_state["fp_button_view_state_" .. view_state.name]
