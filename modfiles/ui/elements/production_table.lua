@@ -37,6 +37,7 @@ local function generate_metadata(player)
         metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient" .. matrix_postfix,
           true, true, true)
         metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
+        metadata.production_toggle_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "production_toggle", false, false, true)
     end
 
     return metadata
@@ -48,7 +49,7 @@ local builders = {}
 function builders.toggle(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active,
-      enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
+      enabled=(not metadata.archive_open), mouse_button_filter={"left"}, tooltip=metadata.production_toggle_tutorial_tooltip}
 end
 
 function builders.recipe(line, parent_flow, metadata)
