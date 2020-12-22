@@ -19,11 +19,11 @@ local function handle_subfactory_submission(player, options, action)
     if action == "submit" then
         local name = options.subfactory_name
         local icon = options.subfactory_icon
+        -- Somehow, choosing the 'signal-unkown' icon spec has no icon name
+        icon = (icon and icon.name) and icon or nil
 
         if subfactory ~= nil then
-            subfactory.name = name
-            -- Don't save over the unknown signal to preserve what's saved behind it
-            if not icon or icon.name ~= "signal-unknown" then subfactory.icon = icon end
+            subfactory.name, subfactory.icon = name, icon
         else
             subfactory_list.add_subfactory(player, name, icon)
         end
@@ -44,7 +44,7 @@ local function handle_subfactory_data_change(modal_data, _)
     local icon_spec = modal_elements["fp_choose_elem_button_options_subfactory_icon"].elem_value
 
     local issue_message = nil
-    if name_text == "" and icon_spec == nil then
+    if name_text == "" and (icon_spec == nil or icon_spec.name == nil) then
         issue_message = {"fp.options_subfactory_issue_choose_either"}
     elseif string.len(name_text) > 256 then
         issue_message = {"fp.options_subfactory_issue_max_characters"}
@@ -57,7 +57,7 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
     local icon = nil
     if subfactory and subfactory.icon then
         local sprite_missing = Subfactory.verify_icon(subfactory)
-        icon = (sprite_missing) and {type="virtual", name="signal-unknown"} or subfactory.icon
+        icon = (not sprite_missing) and subfactory.icon or nil
     end
 
     local modal_data = {
