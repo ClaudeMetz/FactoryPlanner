@@ -98,7 +98,6 @@ local function archive_subfactory(player)
 
     local origin = archive_open and player_table.archive or player_table.factory
     local destination = archive_open and player_table.factory or player_table.archive
-    Factory.add(destination, subfactory)
 
     -- Reset deletion if a deleted subfactory is un-archived
     if archive_open and subfactory.tick_of_deletion then
@@ -107,6 +106,7 @@ local function archive_subfactory(player)
     end
 
     local removed_gui_position = Factory.remove(origin, subfactory)
+    Factory.add(destination, subfactory)  -- needs to be added after the removal else shit breaks
     subfactory_list.refresh_after_deletion(player, origin, removed_gui_position)
 end
 
