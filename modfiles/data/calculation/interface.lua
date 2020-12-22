@@ -276,6 +276,8 @@ end
 -- Updates the given line of the given floor of the active subfactory
 function calculation.interface.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
+    if subfactory == nil then return end
+
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
 
