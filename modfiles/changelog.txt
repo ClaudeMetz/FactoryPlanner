@@ -29,6 +29,7 @@ Date: 17. 12. 2020
     - Fixed that alt-adding a subfactory would crash if you had no other subfactories
     - Fixed that you couldn't view subfloors for subfactories that are in the archive
     - Fixed a crash when changing the window size while a modal dialog is open
+    - Tried fixing a crash with the matrix solver in rare circumstances
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.9
