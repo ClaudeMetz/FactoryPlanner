@@ -109,7 +109,7 @@ function data_util.register_subfactory_deletion(player_index, subfactory)
 
         if data_util.get("flags", player).archive_open then
             subfactory_list.refresh_after_deletion(player, archive, removed_gui_position)
-        else  -- doing this if is a bit dumb, but it works (I think)
+        else  -- doing this conditional is a bit dumb, but it works (I think)
             main_dialog.refresh(player, "all")
         end
     end)
