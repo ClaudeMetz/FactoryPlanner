@@ -55,7 +55,7 @@ function Subfactory.tostring(self, export_format)
     local name_string = self.name
     if self.icon then
         local _, sprite_rich_text = Subfactory.verify_icon(self)
-        name_string = sprite_rich_text .. "  "
+        name_string = sprite_rich_text .. "  " .. name_string
     end
 
     local tooltip = nil  -- don't return a tooltip for the export_format
