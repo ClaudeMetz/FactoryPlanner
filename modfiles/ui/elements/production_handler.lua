@@ -24,9 +24,9 @@ local function handle_toggle_click(player, checkbox, metadata)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
-    if not metadata.alt then  -- Right-click sets the relevant line state
+    if not metadata.alt then  -- Left-click sets the relevant line state
         relevant_line.active = checkbox.state
-    else  -- Alt-right-click inverts the state of all lines
+    else  -- Alt-left-click inverts the state of all lines
         local lines = Floor.get_in_order(context.floor, "Line")  -- this can be cached
 
         local has_inactive_lines = false
