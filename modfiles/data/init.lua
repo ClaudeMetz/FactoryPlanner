@@ -147,6 +147,13 @@ end
 
 
 local function global_init()
+    -- Set up a new save for development if necessary
+    local freeplay = remote.interfaces["freeplay"]
+    if DEVMODE and freeplay then  -- Disable freeplay popup-message
+        if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
+        if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
+    end
+
     -- Initiates all factorio-global variables
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}

@@ -189,14 +189,8 @@ end
 
 
 -- ** TOP LEVEL **
--- Creates some lua-global tables for convenience and performance
+-- Register on_nth_tick events and create some lua-global tables for convenience and performance
 function loader.run()
-    local freeplay = remote.interfaces["freeplay"]
-    if DEVMODE and freeplay then  -- Disable freeplay popup-message
-        if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
-        if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
-    end
-
     register_subfactory_deletion_events()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
