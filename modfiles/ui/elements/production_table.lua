@@ -23,6 +23,8 @@ local function generate_metadata(player)
         -- Choose the right type of tutorial text right here if possible
         local matrix_postfix = (metadata.matrix_solver_active) and "_matrix" or ""
 
+        metadata.production_toggle_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "production_toggle",
+          false, false, true)
         metadata.producing_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "producing_recipe",
           true, true, true)
         metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
@@ -48,7 +50,8 @@ local builders = {}
 function builders.toggle(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active,
-      enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
+      tooltip=metadata.production_toggle_tutorial_tooltip, enabled=(not metadata.archive_open),
+      mouse_button_filter={"left"}}
 end
 
 function builders.done(line, parent_flow, metadata)
@@ -213,7 +216,7 @@ function builders.beacon(line, parent_flow, metadata)
     end
 end
 
-function builders.energy(line, parent_flow, metadata)
+function builders.power(line, parent_flow, metadata)
     local pollution_line = (metadata.pollution_column) and ""
       or {"fp.newline", {"fp.name_value", {"fp.u_pollution"}, ui_util.format_SI_value(line.pollution, "P/m", 5)}}
     parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
@@ -360,7 +363,7 @@ local all_production_columns = {
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, tooltip=nil, minimal_width=0, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, tooltip=nil, minimal_width=0, alignment="left"},
-    {name="energy", caption={"fp.u_energy"}, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="power", caption={"fp.u_power"}, tooltip=nil, minimal_width=0, alignment="center"},
     {name="pollution", caption={"fp.u_pollution"}, tooltip=nil, minimal_width=0, alignment="center"},
     {name="products", caption={"fp.pu_product", 2}, tooltip=nil, minimal_width=0, alignment="left"},
     {name="byproducts", caption={"fp.pu_byproduct", 2}, tooltip=nil, minimal_width=0, alignment="left"},

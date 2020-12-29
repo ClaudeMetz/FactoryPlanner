@@ -29,7 +29,7 @@ local function change_timescale(player, new_timescale)
     end
 
     calculation.update(player, subfactory)
-    view_state.rebuild_state(player)
+    -- View state updates itself automatically if it detects a timescale change
     main_dialog.refresh(player, "subfactory")
 end
 
@@ -57,8 +57,10 @@ function subfactory_info.build(player)
     flow_repair.style.top_margin = 6
     main_elements.subfactory_info["repair_flow"] = flow_repair
 
-    local label = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}
-    label.style.single_line = false
+    local label_repair = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}
+    label_repair.style.single_line = false
+    main_elements.subfactory_info["repair_label"] = label_repair
+
     local button_repair = flow_repair.add{type="button", name="fp_button_subfactory_repair",
       caption={"fp.repair_subfactory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_repair.style.top_margin = 4
@@ -77,17 +79,17 @@ function subfactory_info.build(player)
     flow_info.style.vertical_spacing = 8
     main_elements.subfactory_info["info_flow"] = flow_info
 
-    -- Energy + Pollution
-    local table_energy_pollution = flow_info.add{type="table", column_count=2}
-    table_energy_pollution.draw_vertical_lines = true
-    table_energy_pollution.style.horizontal_spacing = 20
+    -- Power + Pollution
+    local table_power_pollution = flow_info.add{type="table", column_count=2}
+    table_power_pollution.draw_vertical_lines = true
+    table_power_pollution.style.horizontal_spacing = 20
 
-    local flow_energy = table_energy_pollution.add{type="flow", direction="horizontal"}
-    flow_energy.add{type="label", caption={"fp.key_title", {"fp.u_energy"}}}
-    local label_energy_value = flow_energy.add{type="label"}
-    main_elements.subfactory_info["energy_label"] = label_energy_value
+    local flow_power = table_power_pollution.add{type="flow", direction="horizontal"}
+    flow_power.add{type="label", caption={"fp.key_title", {"fp.u_power"}}}
+    local label_power_value = flow_power.add{type="label"}
+    main_elements.subfactory_info["power_label"] = label_power_value
 
-    local flow_pollution = table_energy_pollution.add{type="flow", direction="horizontal"}
+    local flow_pollution = table_power_pollution.add{type="flow", direction="horizontal"}
     flow_pollution.add{type="label", caption={"fp.key_title", {"fp.u_pollution"}}}
     local label_pollution_value = flow_pollution.add{type="label"}
     main_elements.subfactory_info["pollution_label"] = label_pollution_value
@@ -138,6 +140,7 @@ function subfactory_info.build(player)
 
     local button_override_prod_bonus = flow_mining_prod.add{type="button", name="fp_button_override_mining_prod",
       caption={"fp.override"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+    button_override_prod_bonus.style.disabled_font_color = {}
     main_elements.subfactory_info["override_prod_bonus_button"] = button_override_prod_bonus
 
     local textfield_prod_bonus = flow_mining_prod.add{type="textfield", name="fp_textfield_mining_prod_override"}
@@ -170,13 +173,16 @@ function subfactory_info.refresh(player)
     local valid_subfactory_selected = (subfactory and subfactory.valid)
     subfactory_info_elements.info_flow.visible = valid_subfactory_selected
 
-    if valid_subfactory_selected then  -- we need to refresh some stuff in this case
+    if invalid_subfactory_selected then
+        subfactory_info_elements.repair_label.tooltip = data_util.porter.format_modset_diff(subfactory.last_valid_modset)
+
+    elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
 
-        -- Energy + Pollution
-        local label_energy = subfactory_info_elements.energy_label
-        label_energy.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.energy_consumption, "W", 3)}
-        label_energy.tooltip = ui_util.format_SI_value(subfactory.energy_consumption, "W", 5)
+        -- Power + Pollution
+        local label_power = subfactory_info_elements.power_label
+        label_power.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.energy_consumption, "W", 3)}
+        label_power.tooltip = ui_util.format_SI_value(subfactory.energy_consumption, "W", 5)
 
         local label_pollution = subfactory_info_elements.pollution_label
         label_pollution.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.pollution, "P/m", 3)}
