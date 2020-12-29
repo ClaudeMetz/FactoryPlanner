@@ -66,7 +66,7 @@ function tab_definitions.pro_tips(_, tab, tab_pane)
     tab.caption = {"fp.pro_tips"}
 
     local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
-      "recursive_subfloors", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
+      "recursive_subfloors", "views", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
     for _, name in ipairs(protip_names) do
         local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
         local label = bordered_frame.add{type="label", caption={"fp.pro_" .. name}}

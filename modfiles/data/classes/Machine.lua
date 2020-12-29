@@ -204,7 +204,8 @@ end
 
 
 function Machine.pack(self)
-    return {
+    if self.empty then return self
+    else return {
         proto = prototyper.util.simplify_prototype(self.proto),
         limit = self.limit,
         hard_limit = self.hard_limit,
@@ -212,12 +213,14 @@ function Machine.pack(self)
         Module = Collection.pack(self.Module),
         module_count = self.module_count,
         class = self.class
-    }
+    } end
 end
 
 function Machine.unpack(packed_self)
-    local self = packed_self
+    if packed_self.empty then return packed_self end
 
+    local self = packed_self
+    self.count = 0  -- TODO hacky workaround
     self.fuel = (packed_self.fuel) and Fuel.unpack(packed_self.fuel) or nil
     if self.fuel then self.fuel.parent = self end
 

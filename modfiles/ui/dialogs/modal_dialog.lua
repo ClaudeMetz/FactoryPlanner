@@ -21,14 +21,13 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Title bar
     if dialog_settings.caption ~= nil then
-        local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
-        flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
-
-        local drag_handle = flow_title_bar.add{type="empty-widget", name="fp_empty-widget_modal_drag_handle",
-          style="flib_titlebar_drag_handle", mouse_button_filter={"middle"}}
-        drag_handle.drag_target = frame_modal_dialog
-
         if dialog_settings.search_function then  -- add a search field if requested
+            local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
+            flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
+
+            local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
+            drag_handle.drag_target = frame_modal_dialog
+
             local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_modal_search",
               style="search_popup_textfield"}
             searchfield.style.width = 180
@@ -41,6 +40,9 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
               tooltip={"fp.search_button_tt"}, style="frame_action_button", mouse_button_filter={"left"}}
 
             modal_data.search_function = dialog_settings.search_function
+
+        else  -- otherwise, let the frame handle the titlebar
+            frame_modal_dialog.caption = dialog_settings.caption or nil
         end
     end
 
@@ -162,7 +164,7 @@ function modal_dialog.enter(player, dialog_settings)
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
-function modal_dialog.exit(player, button_action, skip_player_opened)
+function modal_dialog.exit(player, button_action)
     local ui_state = data_util.get("ui_state", player)
     if ui_state.modal_dialog_type == nil then return end
 
@@ -188,7 +190,7 @@ function modal_dialog.exit(player, button_action, skip_player_opened)
     modal_elements.modal_frame.destroy()
     if modal_elements.interface_dimmer then modal_elements.interface_dimmer.destroy() end
 
-    if skip_player_opened ~= true then player.opened = ui_state.main_elements.main_frame end
+    player.opened = ui_state.main_elements.main_frame
     title_bar.refresh_message(player)
 
     if ui_state.queued_dialog_settings ~= nil then
@@ -241,12 +243,7 @@ function modal_dialog.leave_selection_mode(player)
 
     local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.visible = true
-
-    local paused = main_dialog.set_pause_state(player, frame_main_dialog)
-    if paused then  -- a bit hacky, but w/e
-        modal_elements.interface_dimmer.bring_to_front()
-        modal_elements.modal_frame.bring_to_front()
-    end
+    main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
 
@@ -257,13 +254,6 @@ modal_dialog.gui_events = {
             name = "fp_frame_interface_dimmer",
             handler = (function(player, _, _)
                 data_util.get("modal_elements", player).modal_frame.bring_to_front()
-            end)
-        },
-        {
-            name = "fp_empty-widget_modal_drag_handle",
-            handler = (function(player, _, _)
-                local modal_elements = data_util.get("modal_elements", player)
-                modal_elements.modal_frame.force_auto_center()
             end)
         },
         {

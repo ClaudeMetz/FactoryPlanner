@@ -42,8 +42,7 @@ function title_bar.build(player)
     label_hint.style.margin = {2, 0, 0, 8}
     main_elements.title_bar["hint_label"] = label_hint
 
-    local drag_handle = flow_title_bar.add{type="empty-widget", name="fp_empty-widget_main_drag_handle",
-      style="flib_titlebar_drag_handle", mouse_button_filter={"middle"}}
+    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
     drag_handle.drag_target = main_elements.main_frame
     drag_handle.style.top_margin = 1
 
@@ -130,14 +129,6 @@ end
 -- ** EVENTS **
 title_bar.gui_events = {
     on_gui_click = {
-        {
-            name = "fp_empty-widget_main_drag_handle",
-            handler = (function(player, _, _)
-                local ui_state = data_util.get("ui_state", player)
-                local main_frame = ui_state.main_elements.main_frame
-                ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
-            end)
-        },
         {
             name = "fp_sprite-button_title_bar_close_interface",
             handler = (function(player, _, _)

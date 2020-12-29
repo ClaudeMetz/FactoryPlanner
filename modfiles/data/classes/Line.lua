@@ -8,7 +8,7 @@ function Line.init(recipe)
         recipe = recipe,  -- can be nil
         active = (is_standalone_line) and true or nil,
         percentage = (is_standalone_line) and 100 or nil,
-        machine = nil,
+        machine = {count = 0, empty=true},  -- TODO this is hacky, should initialize to nil
         beacon = nil,
         total_effects = nil,  -- initialized after a machine is set
         energy_consumption = 0,
@@ -98,7 +98,7 @@ function Line.change_machine(self, player, machine_proto, direction)
             return Line.change_machine(self, player, machine_proto, "positive")
 
         else
-            if not self.machine then
+            if not self.machine or self.machine.empty then
                 self.machine = Machine.init_by_proto(machine_proto)
                 self.machine.parent = self
 
@@ -179,7 +179,7 @@ end
 
 -- Updates the line attribute containing the total module effects of this line (modules+beacons)
 function Line.summarize_effects(self, summarize_machine, summarize_beacon)
-    if self.subfloor ~= nil or self.machine == nil then return nil end
+    if self.subfloor ~= nil or self.machine == nil or self.machine.empty then return nil end
 
     if summarize_machine then Machine.summarize_effects(self.machine) end
     if summarize_beacon and self.beacon then Beacon.summarize_effects(self.beacon) end

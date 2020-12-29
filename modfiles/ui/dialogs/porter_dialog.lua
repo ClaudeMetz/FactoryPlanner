@@ -125,7 +125,7 @@ local function add_to_subfactories_table(modal_elements, subfactory, location_na
     local checkbox = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_subfactory_" .. identifier,
       state=false, enabled=(enable_checkbox or subfactory.valid)}
 
-    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, true)}
+    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, false)}
     label.style.maximal_width = 350
     label.style.right_margin = 4
 
@@ -173,20 +173,11 @@ local function import_subfactories(player)
         ui_util.select_all(textfield_export_string)
     else
         add_into_label({"fp.import_instruction_2"})
+        modal_data.import_factory = import_factory
 
-        local any_invalid_subfactories = true
         setup_subfactories_table(modal_elements, false)
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
-            any_invalid_subfactories = any_invalid_subfactories or (not subfactory.valid)
             add_to_subfactories_table(modal_elements, subfactory, nil, true)
-        end
-
-        if any_invalid_subfactories then
-            local diff_tooltip = data_util.porter.format_modset_diff(import_factory.export_modset)
-            if diff_tooltip ~= "" then
-                modal_elements.info_label.caption = {"fp.info_label", {"fp.import_instruction_2"}}
-                modal_elements.info_label.tooltip = diff_tooltip
-            end
         end
 
         modal_elements.master_checkbox.state = true

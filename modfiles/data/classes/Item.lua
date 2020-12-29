@@ -61,6 +61,7 @@ end
 
 -- This will only be called on top level items, so they can be treated as such
 function Item.unpack(packed_self)
+    packed_self.amount = 0  -- TODO hack
     return packed_self
 end
 

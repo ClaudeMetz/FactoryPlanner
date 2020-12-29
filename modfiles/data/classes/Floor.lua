@@ -105,41 +105,53 @@ end
 function Floor.get_component_data(self, component_table)
     local components = component_table or {machines={}, modules={}}
 
-    local function add_component(table, proto, amount)
-        local component = table[proto.name]
-        if component == nil then
-            table[proto.name] = {proto = proto, amount = amount}
+    local function add_to_count(table, object)
+        local entry = table[object.proto.name]
+        if entry == nil then
+            table[object.proto.name] = {
+                proto = object.proto,
+                amount = object.amount
+            }
         else
-            component.amount = component.amount + amount
+            entry.amount = entry.amount + object.amount
         end
     end
 
-    -- Reaching into global here is a bit annoying, could be done by the generator itself
-    -- Only items can place entities, not fluids
-    local item_prototypes = global.all_items.types[global.all_items.map["item"]]
-    local function add_machine(entity_proto, amount)
-        if not entity_proto.built_by_item then return end
-        local item_proto_id = item_prototypes.map[entity_proto.built_by_item]
-        add_component(components.machines, item_prototypes.items[item_proto_id], amount)
-    end
-
-    -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
-    -- would mean the subfactory machine total is equal to the floor total of the top floor
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
+        -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
+        -- would mean the subfactory machine total is equal to the floor total of the top floor
         if line.subfloor == nil then
-            local ceil_machine_count = math.ceil(line.machine.count)
+            local machine = line.machine
+            local ceil_machine_count = math.ceil(machine.count)
 
-            add_machine(line.machine.proto, ceil_machine_count)
-            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
-                add_component(components.modules, module.proto, ceil_machine_count * module.amount)
+            -- Machines
+            add_to_count(components.machines, {
+                proto = machine.proto,
+                amount = ceil_machine_count
+            })
+
+            -- Modules
+            for _, module in pairs(Machine.get_in_order(machine, "Module")) do
+                add_to_count(components.modules, {
+                    proto = module.proto,
+                    amount = ceil_machine_count * module.amount
+                })
             end
 
+            -- Beacons
             local beacon = line.beacon
             if beacon and beacon.total_amount then
                 local ceil_total_amount = math.ceil(beacon.total_amount)
 
-                add_machine(beacon.proto, ceil_total_amount)
-                add_component(components.modules, beacon.module.proto, ceil_total_amount * beacon.module.amount)
+                add_to_count(components.machines, {
+                    proto = beacon.proto,
+                    amount = ceil_total_amount
+                })
+
+                add_to_count(components.modules, {
+                    proto = beacon.module.proto,
+                    amount = ceil_total_amount * beacon.module.amount
+                })
             end
         end
     end

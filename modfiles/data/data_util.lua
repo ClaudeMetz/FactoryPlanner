@@ -96,46 +96,6 @@ function data_util.format_module_effects(effects, multiplier, limit_effects)
     if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
 end
 
--- Registers the event to delete a trashed subfactory on time and refresh the interface
--- It feels weird to store the relevant information in upvalues of the function, but it works
-function data_util.register_subfactory_deletion(player_index, subfactory)
-    script.on_nth_tick(subfactory.tick_of_deletion, function(_)
-        local archive = subfactory.parent
-        local removed_gui_position = Factory.remove(archive, subfactory)
-        script.on_nth_tick(subfactory.tick_of_deletion, nil)
-
-        local player = game.get_player(player_index)
-        if data_util.get("main_elements", player).main_frame == nil then return end
-
-        if data_util.get("flags", player).archive_open then
-            subfactory_list.refresh_after_deletion(player, archive, removed_gui_position)
-        else  -- doing this conditional is a bit dumb, but it works (I think)
-            main_dialog.refresh(player, "all")
-        end
-    end)
-end
-
--- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
--- To make it state-less, it needs its return values passed back as arguments
--- Uses state to avoid needing to call table_size() because that function is slow
-function data_util.build_localised_string(strings_to_insert, current_table, next_index)
-    current_table = current_table or {""}
-    next_index = next_index or 2
-
-    for _, string_to_insert in ipairs(strings_to_insert) do
-        if next_index == 20 then  -- go a level deeper if this one is almost full
-            local new_table = {""}
-            current_table[next_index] = new_table
-            current_table = new_table
-            next_index = 2
-        end
-        current_table[next_index] = string_to_insert
-        next_index = next_index + 1
-    end
-
-    return current_table, next_index
-end
-
 
 -- ** PORTER **
 -- Converts the given subfactories into a factory exchange string
@@ -143,7 +103,6 @@ function data_util.porter.get_export_string(subfactories)
     local export_table = {
         -- This can use the global mod_version since it's only called for migrated, valid subfactories
         mod_version = global.mod_version,
-        export_modset = global.installed_mods,
         subfactories = {}
     }
 
@@ -181,71 +140,10 @@ function data_util.porter.get_subfactories(export_string)
             -- and potentially un-simplify the prototypes that came in packed
             Subfactory.validate(unpacked_subfactory)
         end
-
-        -- Include the modset at export time to be displayed to the user if a subfactory is invalid
-        import_factory.export_modset = export_table.export_modset
-
     end) then return nil, "unpacking_failure" end
 
     -- This is not strictly a decoding failure, but close enough
     if import_factory.Subfactory.count == 0 then return nil, "decoding_failure" end
 
     return import_factory, nil
-end
-
--- Creates a nice tooltip laying out which mods were added, removed and updated since the subfactory became invalid
-function data_util.porter.format_modset_diff(old_modset)
-    if not old_modset then return "" end
-
-    local changes = {added={}, removed={}, updated={}}
-    local new_modset = game.active_mods
-
-    -- Determine changes by running through both sets of mods once each
-    for name, current_version in pairs(new_modset) do
-        local old_version = old_modset[name]
-        if not old_version then
-            changes.added[name] = current_version
-        elseif old_version ~= current_version then
-            changes.updated[name] = {old=old_version, current=current_version}
-        end
-    end
-
-    for name, old_version in pairs(old_modset) do
-        if not new_modset[name] then
-            changes.removed[name] = old_version
-        end
-    end
-
-    -- Compose tooltip from all three types of changes
-    local tooltip = {"", {"fp.subfactory_modset_changes"}}
-    local current_table, next_index = tooltip, 3
-
-    if table_size(changes.added) > 0 then
-        current_table, next_index = data_util.build_localised_string({
-          {"fp.subfactory_mod_added"}}, current_table, next_index)
-        for name, version in pairs(changes.added) do
-            current_table, next_index = data_util.build_localised_string({
-              {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
-        end
-    end
-
-    if table_size(changes.removed) > 0 then
-        current_table, next_index = data_util.build_localised_string({
-          {"fp.subfactory_mod_removed"}}, current_table, next_index)
-        for name, version in pairs(changes.removed) do
-            current_table, next_index = data_util.build_localised_string({
-              {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
-        end
-    end
-
-    if table_size(changes.updated) > 0 then
-        current_table, next_index = data_util.build_localised_string({
-          {"fp.subfactory_mod_updated"}}, current_table, next_index)
-        for name, versions in pairs(changes.updated) do
-            current_table, next_index = data_util.build_localised_string({
-              {"fp.subfactory_mod_and_versions", name, versions.old, versions.current}}, current_table, next_index)
-        end
-    end
-
-    return tooltip
 end
