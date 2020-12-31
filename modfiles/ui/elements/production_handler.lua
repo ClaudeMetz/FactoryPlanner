@@ -522,11 +522,11 @@ local function handle_fuel_click(player, button, metadata)
         -- Applicable fuels come from all categories that this burner supports
         for category_name, _ in pairs(line.machine.proto.burner.categories) do
             local category_id = global.all_fuels.map[category_name]
-			if category_id ~= nil then
+            if category_id ~= nil then
                 for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-            	    table.insert(applicable_prototypes, fuel_proto)
+                    table.insert(applicable_prototypes, fuel_proto)
                 end
-			end
+            end
         end
 
         local modal_data = {

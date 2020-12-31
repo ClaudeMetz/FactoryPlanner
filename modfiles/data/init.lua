@@ -54,9 +54,9 @@ local function reload_preferences(player)
     preferences.round_button_numbers = preferences.round_button_numbers or false
 
     preferences.toggle_column = preferences.toggle_column or false
+    preferences.done_column = preferences.done_column or false
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
-    preferences.done_column = preferences.done_column or false
 
     preferences.mb_defaults = preferences.mb_defaults or
       {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}

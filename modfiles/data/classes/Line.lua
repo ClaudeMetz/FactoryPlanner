@@ -7,6 +7,7 @@ function Line.init(recipe)
     return {
         recipe = recipe,  -- can be nil
         active = (is_standalone_line) and true or nil,
+        done = false,
         percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
@@ -22,7 +23,6 @@ function Line.init(recipe)
         uncapped_production_ratio = (is_standalone_line) and 0 or nil,
         subfloor = nil,
         valid = true,
-        done = false,
         class = "Line"
     }
 end
@@ -223,8 +223,8 @@ end
 
 function Line.pack(self)
     local packed_line = {
-        comment = self.comment,
         done = self.done,
+        comment = self.comment,
         class = self.class
     }
 
