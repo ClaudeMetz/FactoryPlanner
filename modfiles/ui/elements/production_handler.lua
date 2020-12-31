@@ -52,13 +52,11 @@ end
 
 local function handle_done_click(player, button)
     local line_id = tonumber(string.match(button.name, "%d+"))
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
-
+    local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
     line.done = not line.done
 
-    calculation.update(player, context.subfactory)
-    main_dialog.refresh(player, "subfactory")
+    -- Refreshing the whole table here is wasteful, but I don't have good selective refreshing yet
+    main_dialog.refresh(player, "production_table")
 end
 
 local function handle_recipe_click(player, button, metadata)
