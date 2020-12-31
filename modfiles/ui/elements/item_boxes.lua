@@ -195,7 +195,7 @@ item_boxes.gui_events = {
             pattern = "^fp_sprite%-button_add_top_level_[a-z]+$",
             handler = (function(player, element, _)
                 local item_category = string.gsub(element.name, "fp_sprite%-button_add_top_level_", "")
-                modal_dialog.enter(player, {type="picker", modal_data={item_category=item_category}})
+                modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=item_category}})
             end)
         },
         {

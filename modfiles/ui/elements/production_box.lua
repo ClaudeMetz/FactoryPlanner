@@ -20,10 +20,15 @@ local function handle_matrix_toggle(player)
         subfactory.linearly_dependant = false
 
         -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
+        local any_lines_removed = false
         local function remove_consuming_recipes(floor)
             for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-                if line.subfloor then remove_consuming_recipes(line.subfloor)
-                elseif line.recipe.production_type == "consume" then Floor.remove(floor, line) end
+                if line.subfloor then
+                    remove_consuming_recipes(line.subfloor)
+                elseif line.recipe.production_type == "consume" then
+                    Floor.remove(floor, line)
+                    any_lines_removed = true
+                end
             end
         end
 
@@ -31,8 +36,11 @@ local function handle_matrix_toggle(player)
         local top_floor = Subfactory.get(subfactory, "Floor", 1)
         remove_consuming_recipes(top_floor)
 
-        -- Recalculate with the sequential solver
-        refresh_production(player)
+        if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
+            title_bar.enqueue_message(player, {"fp.hint_byproducts_removed"}, "hint", 1, false)
+        end
+
+        refresh_production(player)  -- recalculate with the sequential solver
     end
 end
 
@@ -66,10 +74,12 @@ function production_box.build(player)
 
     local button_floor_up = subheader.add{type="button", name="fp_button_production_floor_up", caption={"fp.floor_up"},
       tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+    button_floor_up.style.disabled_font_color = {}
     main_elements.production_box["floor_up_button"] = button_floor_up
     local button_floor_top = subheader.add{type="button", name="fp_button_production_floor_top",
       caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"}, style="fp_button_rounded_mini",
       mouse_button_filter={"left"}}
+    button_floor_top.style.disabled_font_color = {}
     main_elements.production_box["floor_top_button"] = button_floor_top
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -79,7 +89,8 @@ function production_box.build(player)
     table_matrix_solver.style.right_margin = 12
 
     local button_solver_toggle = table_matrix_solver.add{type="button", name="fp_button_production_solver_toggle",
-      caption={"fp.matrix_solver"}, style="fp_button_push", mouse_button_filter={"left"}}
+      caption={"fp.matrix_solver"}, mouse_button_filter={"left"}}
+    --button_solver_toggle.style.disabled_font_color = {}
     main_elements.production_box["solver_toggle_button"] = button_solver_toggle
     local button_solver_configure = table_matrix_solver.add{type="sprite-button", sprite="utility/change_recipe",
       name="fp_button_production_solver_configure", style="fp_button_push", mouse_button_filter={"left"}}
@@ -120,12 +131,13 @@ function production_box.refresh(player)
     production_box_elements.floor_top_button.enabled = (current_level > 2)
 
     production_box_elements.solver_toggle_button.visible = (subfactory_valid)
+    production_box_elements.solver_toggle_button.enabled = (not archive_open)
     production_box_elements.solver_toggle_button.style = (matrix_solver_active)
       and "fp_button_push_active" or "fp_button_push"
     production_box_elements.solver_toggle_button.style.padding = {0, 8}  -- needs to be re-set when changing the style
 
     production_box_elements.solver_configure_button.visible = (subfactory_valid)
-    production_box_elements.solver_configure_button.enabled = (matrix_solver_active)
+    production_box_elements.solver_configure_button.enabled = (matrix_solver_active and not archive_open)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)

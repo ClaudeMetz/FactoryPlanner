@@ -18,6 +18,8 @@ function Subfactory.init(name, icon)
         linearly_dependant = false,  -- determined by the solver
         selected_floor = nil,
         item_request_proxy = nil,
+        tick_of_deletion = nil,  -- ignored on export/import
+        last_valid_modset = nil,  -- also ignored for import/export
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory"
@@ -43,18 +45,34 @@ function Subfactory.verify_icon(self)
     end
 end
 
-function Subfactory.tostring(self, indicate_invalidity)
-    local status, sprite_string = "", ""
-    if indicate_invalidity and not self.valid then
-        status = "[img=fp_sprite_warning_red]  "
+function Subfactory.tostring(self, export_format)
+    local status_string = ""
+    if not export_format then
+        if self.tick_of_deletion then status_string = status_string .. "[img=fp_sprite_trash_red] " end
+        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red]  " end
     end
 
+    local name_string = self.name
     if self.icon then
         local _, sprite_rich_text = Subfactory.verify_icon(self)
-        sprite_string = sprite_rich_text .. "  "
+        name_string = sprite_rich_text .. "  " .. name_string
     end
 
-    return (status .. sprite_string .. self.name)
+    local tooltip = nil  -- don't return a tooltip for the export_format
+    if not export_format then
+        local trashed_string = ""
+        if self.tick_of_deletion then
+            local ticks_left_in_trash = self.tick_of_deletion - game.tick
+            local minutes_left_in_trash = math.ceil(ticks_left_in_trash / 3600)
+            trashed_string = {"fp.newline", {"fp.subfactory_trashed", minutes_left_in_trash}}
+        end
+
+        local invalid_string = (not self.valid) and {"fp.newline", {"fp.subfactory_invalid"}} or ""
+        tooltip = {"", name_string, trashed_string, invalid_string}
+    end
+
+    local caption = (status_string .. name_string)
+    return caption, tooltip
 end
 
 
@@ -185,6 +203,8 @@ end
 
 -- Needs validation: Product, Floor
 function Subfactory.validate(self)
+    local previous_validity = self.valid
+
     self.valid = Collection.validate_datasets(self.Product)
 
     -- Validating matrix_free_items is a bit messy with the current functions,
@@ -199,6 +219,11 @@ function Subfactory.validate(self)
     self.valid = Floor.validate(top_floor) and self.valid
 
     Subfactory.validate_item_request_proxy(self)
+
+    if self.valid then self.last_valid_modset = nil
+    -- If this subfactory became invalid with the current configuration, retain the modset before the current one
+    -- The one in global is still the previous one as it's only updated after migrations
+    elseif previous_validity and not self.valid then self.last_valid_modset = global.installed_mods end
 
     -- return value is not needed here
 end
@@ -228,6 +253,7 @@ function Subfactory.repair(self, player)
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     Floor.repair(top_floor, player)
 
+    self.last_valid_modset = nil
     self.valid = true
     -- return value is not needed here
 end

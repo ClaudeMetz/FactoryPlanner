@@ -16,13 +16,35 @@ local function set_cursor_blueprint(player, entity_name, module_list, recipe_nam
     main_dialog.toggle(player)
 end
 
-local function handle_toggle_change(player, checkbox)
+
+local function handle_toggle_click(player, checkbox, metadata)
     local line_id = tonumber(string.match(checkbox.name, "%d+"))
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", line_id)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.active = checkbox.state
+
+    if not metadata.alt then  -- Left-click sets the relevant line state
+        relevant_line.active = checkbox.state
+    else  -- Alt-left-click inverts the state of all lines
+        local lines = Floor.get_in_order(context.floor, "Line")  -- this can be cached
+
+        local has_inactive_lines = false
+        for _, current_line in ipairs(lines) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            if not current_relevant_line.active then
+                has_inactive_lines = true
+                break
+            end
+        end
+
+        local new_active_state = has_inactive_lines and relevant_line.active
+        for _, current_line in ipairs(lines) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            current_relevant_line.active = new_active_state
+        end
+        relevant_line.active = true
+    end
 
     calculation.update(player, context.subfactory)
     main_dialog.refresh(player, "subfactory")
@@ -65,13 +87,14 @@ local function handle_recipe_click(player, button, metadata)
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
     elseif metadata.click == "left" then  -- Attaches a subfloor to this line
-        if not ui_util.check_archive_status(player) then return end
-
         local subfloor = line.subfloor
+
         if not subfloor and line.recipe.production_type == "consume" then
+            if not ui_util.check_archive_status(player) then return end
             title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
         else
             if subfloor == nil then
+                if not ui_util.check_archive_status(player) then return end
                 subfloor = Floor.init(line)  -- attaches itself to the given line automatically
                 Subfactory.add(context.subfactory, subfloor)
                 calculation.update(player, context.subfactory)
@@ -563,14 +586,12 @@ production_handler.gui_events = {
             handler = handle_fuel_click
         },
         {
+            pattern = "^fp_checkbox_production_toggle_%d+$",
+            handler = handle_toggle_click
+        },
+        {
             pattern = "^fp_button_production_done_%d+$",
             handler = handle_done_click
-        }
-    },
-    on_gui_checked_state_changed = {
-        {
-            pattern = "^fp_checkbox_production_toggle_%d+$",
-            handler = handle_toggle_change
         }
     },
     on_gui_text_changed = {
