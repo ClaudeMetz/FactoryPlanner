@@ -191,8 +191,15 @@ function calculation.update(player, subfactory)
         if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
             local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
 
+            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items>0 then
+                subfactory.matrix_free_items = {}
+                subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+                matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+            end
+
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
-                if matrix_metadata.num_rows == matrix_metadata.num_cols then
+                local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
+                if #linear_dependence_data.linearly_dependent_recipes == 0 then
                     matrix_solver.run_matrix_solver(subfactory_data, false)
                     subfactory.linearly_dependant = false
                 else
@@ -269,6 +276,8 @@ end
 -- Updates the given line of the given floor of the active subfactory
 function calculation.interface.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
+    if subfactory == nil then return end
+
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
 

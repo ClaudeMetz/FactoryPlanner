@@ -167,7 +167,8 @@ styles["fp_button_push"] = {
     parent = "button",
     height = 26,
     minimal_width = 0,
-    padding = 0
+    padding = 0,
+    disabled_font_color = {}  -- black
 }
 
 styles["fp_button_push_active"] = {
@@ -207,5 +208,5 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
         type = "button_style",
         parent = "flib_slot_button_" .. color,
         size = 36
-      }
+    }
 end

@@ -2,12 +2,49 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
   Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.13
+Date: 24. 12. 2020
+  Bugfixes:
+    - Fixed that the subfactory name would not be shown if there was both an icon and a name
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.12
+Date: 23. 12. 2020
+  Features:
+    - Subfactories you delete will now remain in the archive for 15 minutes in case you change your mind about deleting them
+    - Added a tooltip to invalid subfactories listing the modset changes that could have lead to it becoming invalid
+    - You can now alt-click the recipe line toggle switch (which is an optional column in preferences) to toggle all the other recipe lines, meaning all the ones you did not click on (thanks METAKOT!)
+  Bugfixes:
+    - Fixed that when in the items/s/machine-view, the values shown were totally wrong
+    - Fixed that you could enable/disable the matrix solver while a subfactory is in archive
+    - Fixed that the indicated timescale-view button would not update correctly when switching between subfactories
+    - Fixed that setting the subfactory icon to '?' would crash (you can't use the question mark as an icon now)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.11
+Date: 19. 12. 2020
+  Bugfixes:
+    - Fixed machine count totals on lines with subfloors with the matrix solver
+    - Fixed an issue with the matrix solver determining the number of rows and columns in its matrix
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.10
+Date: 17. 12. 2020
+  Changes:
+    - The matrix solver now tells you which recipes it has detected as linearly dependant, letting you know the ones that cause it to not be able to solve
+  Bugfixes:
+    - Fixed an issue with the matrix solver that would lead to an infinite loop. Whew, there's a first time for everything!
     - Fixed that alt-adding a subfactory would crash if you had no other subfactories
     - Fixed that you couldn't view subfloors for subfactories that are in the archive
+    - Fixed a crash when changing the window size while a modal dialog is open
+    - Tried fixing a crash with the matrix solver in rare circumstances
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.9
