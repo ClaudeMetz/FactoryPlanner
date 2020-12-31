@@ -266,7 +266,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local flow_amount = create_flow()
     flow_amount.add{type="label", caption={"fp.pu_" .. item_category, 1}}
 
-    local item_choice_button = flow_amount.add{type="sprite-button", style="flib_standalone_slot_button_default_tiny"}
+    local item_choice_button = flow_amount.add{type="sprite-button", style="fp_sprite-button_inset_tiny"}
     item_choice_button.style.right_margin = 12
     modal_elements["item_choice_button"] = item_choice_button
 
@@ -292,7 +292,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     flow_belts.add{type="label", caption="x"}
 
     local choose_belt_button = flow_belts.add{type="choose-elem-button", name="fp_choose-elem-button_picker_belt",
-      elem_type="entity", elem_filters={{filter="type", type="transport-belt"}}, style="flib_standalone_slot_button_default_tiny"}
+      elem_type="entity", elem_filters={{filter="type", type="transport-belt"}}, style="fp_sprite-button_inset_tiny"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
 
