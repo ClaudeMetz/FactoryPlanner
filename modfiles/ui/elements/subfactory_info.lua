@@ -60,7 +60,7 @@ function subfactory_info.build(player)
     local label = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}
     label.style.single_line = false
     local button_repair = flow_repair.add{type="button", name="fp_button_subfactory_repair",
-      caption={"fp.repair_subfactory"}, style="fp_button_push", mouse_button_filter={"left"}}
+      caption={"fp.repair_subfactory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_repair.style.top_margin = 4
 
 
@@ -102,7 +102,7 @@ function subfactory_info.build(player)
     flow_utility.style.horizontal_spacing = 8
     flow_utility.add{type="label", caption={"fp.key_title", {"fp.utility"}}}
     flow_utility.add{type="button", name="fp_button_view_utilities", caption={"fp.view_utilities"},
-      style="fp_button_push", mouse_button_filter={"left"}}
+      style="fp_button_rounded_mini", mouse_button_filter={"left"}}
 
     local label_notes = table_utility.add{type="label", caption={"fp.info_label", {"fp.notes"}}}
     main_elements.subfactory_info["notes_label"] = label_notes
@@ -122,7 +122,7 @@ function subfactory_info.build(player)
 
     for scale, name in pairs(TIMESCALE_MAP) do
         table_timescales.add{type="button", name=("fp_button_change_timescale_to_" .. scale), style="fp_button_push",
-          caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}.style.padding = 0
+          caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}
     end
 
     -- Mining productivity
@@ -137,7 +137,7 @@ function subfactory_info.build(player)
     main_elements.subfactory_info["prod_bonus_label"] = label_prod_bonus
 
     local button_override_prod_bonus = flow_mining_prod.add{type="button", name="fp_button_override_mining_prod",
-      caption={"fp.override"}, style="fp_button_push", mouse_button_filter={"left"}}
+      caption={"fp.override"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.subfactory_info["override_prod_bonus_button"] = button_override_prod_bonus
 
     local textfield_prod_bonus = flow_mining_prod.add{type="textfield", name="fp_textfield_mining_prod_override"}

@@ -152,12 +152,22 @@ styles["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
+styles["fp_button_rounded_mini"] = {
+    type = "button_style",
+    parent = "rounded_button",
+    height = 26,
+    minimal_width = 0,
+    left_padding = 4,
+    right_padding = 4
+}
+
 -- Push-button style used for timescale and view_state buttons
 styles["fp_button_push"] = {
     type = "button_style",
     parent = "button",
     height = 26,
-    minimal_width = 0
+    minimal_width = 0,
+    padding = 0
 }
 
 styles["fp_button_push_active"] = {
@@ -197,5 +207,5 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
         type = "button_style",
         parent = "flib_slot_button_" .. color,
         size = 36
-    }
+      }
 end

@@ -70,10 +70,10 @@ function production_box.build(player)
     main_elements.production_box["level_label"] = label_level
 
     local button_floor_up = subheader.add{type="button", name="fp_button_production_floor_up", caption={"fp.floor_up"},
-      tooltip={"fp.floor_up_tt"}, style="fp_button_push", mouse_button_filter={"left"}}
+      tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_up_button"] = button_floor_up
     local button_floor_top = subheader.add{type="button", name="fp_button_production_floor_top",
-      caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"}, style="fp_button_push",
+      caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"}, style="fp_button_rounded_mini",
       mouse_button_filter={"left"}}
     main_elements.production_box["floor_top_button"] = button_floor_top
 
