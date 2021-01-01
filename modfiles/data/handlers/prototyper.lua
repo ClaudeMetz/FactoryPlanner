@@ -12,7 +12,7 @@ prototyper = {
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
 -- (Load order is important here: machines->recipes->items->fuels)
-local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons", "wagons"}
+local data_types = {"machines", "recipes", "items", "fuels", "belts", "wagons", "modules", "beacons"}
 
 
 -- ** TOP LEVEL **

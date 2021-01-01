@@ -64,9 +64,9 @@ local function reload_preferences(player)
     preferences.default_prototypes = {
         belts = preferences.default_prototypes.belts or prototyper.defaults.get_fallback("belts"),
         beacons = preferences.default_prototypes.beacons or prototyper.defaults.get_fallback("beacons"),
+        wagons = preferences.default_prototypes.wagons or prototyper.defaults.get_fallback("wagons"),
         fuels = preferences.default_prototypes.fuels or prototyper.defaults.get_fallback("fuels"),
-        machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines"),
-        wagons = preferences.default_prototypes.wagons or prototyper.defaults.get_fallback("wagons")
+        machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines")
     }
 end
 

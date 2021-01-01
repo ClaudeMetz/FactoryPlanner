@@ -200,7 +200,6 @@ local function handle_default_prototype_change(player, element, metadata)
 
     local modal_data = data_util.get("modal_data", player)
     if type == "belts" then modal_data.refresh.view_state = true end
-    if type == "wagons" then modal_data.refresh.view_state = true end
 
     prototyper.defaults.set(player, type, prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
@@ -262,12 +261,12 @@ function preferences_dialog.open(player, modal_data)
 
     preference_structures.prototypes(player, left_content_frame, modal_elements, "belts")
     preference_structures.prototypes(player, left_content_frame, modal_elements, "beacons")
+    preference_structures.prototypes(player, left_content_frame, modal_elements, "wagons")
 
     local right_content_frame = add_content_frame()
 
     preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
-    preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
 end
 
 function preferences_dialog.close(player, _)
