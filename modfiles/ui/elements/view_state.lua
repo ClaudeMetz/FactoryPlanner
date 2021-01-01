@@ -35,8 +35,8 @@ end
 function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "entity" then return nil, nil end
 
-    local wagon_capacity = (item_proto.type == "fluid") and metadata.wagon_fluid_capacity
-      or metadata.wagon_solid_capacity_stacks * item_proto.stack_size
+    local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
+      or metadata.cargo_wagon_capactiy * item_proto.stack_size
     local wagon_count = raw_amount / wagon_capacity
     local number = ui_util.format_number(wagon_count, metadata.formatting_precision)
 
@@ -93,10 +93,9 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
     local round_button_numbers = player_table.preferences.round_button_numbers
     local throughput = prototyper.defaults.get(player, "belts").throughput
     local throughput_divisor = (belts_or_lanes == "belts") and throughput or (throughput / 2)
+    local cargo_wagon_capactiy = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"]).storage
+    local fluid_wagon_capacity = prototyper.defaults.get(player, "wagons", global.all_wagons.map["fluid-wagon"]).storage
 
-    local function get_wagon_capcity(category)
-        return prototyper.defaults.get(player, "wagons", global.all_wagons.map[category]).storage
-    end
     return {
         processor = processors[selected_view.name],
         timescale_inverse = 1 / subfactory.timescale,
@@ -106,8 +105,8 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
         throughput_multiplier = 1 / throughput_divisor,
         formatting_precision = formatting_precision,
         include_tooltip = include_tooltip,
-        wagon_fluid_capacity = get_wagon_capcity("fluid-wagon"),
-        wagon_solid_capacity_stacks = get_wagon_capcity("cargo-wagon")
+        cargo_wagon_capactiy = cargo_wagon_capactiy,
+        fluid_wagon_capacity = fluid_wagon_capacity
     }
 end
 
