@@ -53,7 +53,8 @@ end
 local function handle_done_click(player, button)
     local line_id = tonumber(string.match(button.name, "%d+"))
     local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
-    line.done = not line.done
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    relevant_line.done = not relevant_line.done
 
     -- Refreshing the whole table here is wasteful, but I don't have good selective refreshing yet
     main_dialog.refresh(player, "production_table")

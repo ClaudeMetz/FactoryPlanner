@@ -223,7 +223,6 @@ end
 
 function Line.pack(self)
     local packed_line = {
-        done = self.done,
         comment = self.comment,
         class = self.class
     }
@@ -235,6 +234,7 @@ function Line.pack(self)
         packed_line.recipe = Recipe.pack(self.recipe)
 
         packed_line.active = self.active
+        packed_line.done = self.done
         packed_line.percentage = self.percentage
 
         packed_line.machine = Machine.pack(self.machine)

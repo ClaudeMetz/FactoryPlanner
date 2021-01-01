@@ -55,8 +55,10 @@ function builders.toggle(line, parent_flow, metadata)
 end
 
 function builders.done(line, parent_flow, _)
-    local sprite = (line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
-    local style = (line.done) and "flib_tool_button_light_green" or "flib_slot_default"
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+
+    local sprite = (relevant_line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
+    local style = (relevant_line.done) and "flib_tool_button_light_green" or "flib_slot_default"
 
     local button = parent_flow.add{type="sprite-button", name="fp_button_production_done_" .. line.id,
       sprite=sprite, style=style, mouse_button_filter={"left"}}
