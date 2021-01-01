@@ -97,8 +97,6 @@ local function add_item_picker(parent_flow, player)
 
                 local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}
                 frame_subgroups.style.vertically_stretchable = true
-                -- dirty hack to fix weird extra bottom margin when the scroll pane is inactive
-                frame_subgroups.style.bottom_margin = -12
 
                 -- This flow is only really needed to set the correct vertical spacing
                 flow_subgroups = frame_subgroups.add{type="flow", name="flow_group", direction="vertical"}
@@ -161,7 +159,7 @@ local function add_item_picker(parent_flow, player)
     -- Catch up on addding the last item flow and groups row counts
     current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
     max_item_rows = math.max(current_item_rows, max_item_rows)
-    frame_filters.style.natural_height = max_item_rows * 40
+    frame_filters.style.natural_height = max_item_rows * 40 + (2*12)
 
     select_item_group(ui_state.modal_data, 1)
 end
