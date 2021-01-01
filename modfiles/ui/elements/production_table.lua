@@ -23,6 +23,8 @@ local function generate_metadata(player)
         -- Choose the right type of tutorial text right here if possible
         local matrix_postfix = (metadata.matrix_solver_active) and "_matrix" or ""
 
+        metadata.production_toggle_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "production_toggle",
+          false, false, true)
         metadata.producing_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "producing_recipe",
           true, true, true)
         metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
@@ -48,7 +50,8 @@ local builders = {}
 function builders.toggle(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     parent_flow.add{type="checkbox", name="fp_checkbox_production_toggle_" .. line.id, state=relevant_line.active,
-      enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
+      tooltip=metadata.production_toggle_tutorial_tooltip, enabled=(not metadata.archive_open),
+      mouse_button_filter={"left"}}
 end
 
 function builders.recipe(line, parent_flow, metadata)

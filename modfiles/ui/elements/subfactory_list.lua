@@ -12,31 +12,6 @@ local function toggle_archive(player)
     main_dialog.refresh(player, "all")
 end
 
--- Resets the selected subfactory to a valid position after one has been removed
-local function reset_subfactory_selection(player, factory, removed_gui_position)
-    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
-    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
-    ui_util.context.set_subfactory(player, subfactory)
-end
-
--- Refresh the dialog, quitting archive view if it has become empty
-local function refresh_with_archive_open(player, factory)
-    local archive_open = data_util.get("flags", player).archive_open
-
-    if archive_open and Factory.count(factory, "Subfactory") == 0 then
-        -- Make sure the just-unarchived subfactory is the selected one in factory; It'll always be the last one
-        local main_factory = data_util.get("table", player).factory
-        local last_position = Factory.count(main_factory, "Subfactory")
-        -- It's okay to set selected_subfactory directly here, as toggle_archive calls the proper context util function
-        main_factory.selected_subfactory = Factory.get_by_gui_position(main_factory, "Subfactory", last_position)
-
-        toggle_archive(player)  -- does refreshing on its own
-    else
-        main_dialog.refresh(player, "all")
-    end
-end
-
-
 local function handle_subfactory_submission(player, options, action)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.modal_data.object
@@ -44,11 +19,11 @@ local function handle_subfactory_submission(player, options, action)
     if action == "submit" then
         local name = options.subfactory_name
         local icon = options.subfactory_icon
+        -- Somehow, choosing the 'signal-unkown' icon spec has no icon name
+        icon = (icon and icon.name) and icon or nil
 
         if subfactory ~= nil then
-            subfactory.name = name
-            -- Don't save over the unknown signal to preserve what's saved behind it
-            if not icon or icon.name ~= "signal-unknown" then subfactory.icon = icon end
+            subfactory.name, subfactory.icon = name, icon
         else
             subfactory_list.add_subfactory(player, name, icon)
         end
@@ -57,9 +32,7 @@ local function handle_subfactory_submission(player, options, action)
     elseif action == "delete" then
         local factory = ui_state.context.factory
         local removed_gui_position = Factory.remove(factory, subfactory)
-        reset_subfactory_selection(player, factory, removed_gui_position)
-
-        refresh_with_archive_open(player, factory)
+        subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
     end
 end
 
@@ -71,7 +44,7 @@ local function handle_subfactory_data_change(modal_data, _)
     local icon_spec = modal_elements["fp_choose_elem_button_options_subfactory_icon"].elem_value
 
     local issue_message = nil
-    if name_text == "" and icon_spec == nil then
+    if name_text == "" and (icon_spec == nil or icon_spec.name == nil) then
         issue_message = {"fp.options_subfactory_issue_choose_either"}
     elseif string.len(name_text) > 256 then
         issue_message = {"fp.options_subfactory_issue_max_characters"}
@@ -84,7 +57,7 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
     local icon = nil
     if subfactory and subfactory.icon then
         local sprite_missing = Subfactory.verify_icon(subfactory)
-        icon = (sprite_missing) and {type="virtual", name="signal-unknown"} or subfactory.icon
+        icon = (not sprite_missing) and subfactory.icon or nil
     end
 
     local modal_data = {
@@ -126,11 +99,15 @@ local function archive_subfactory(player)
     local origin = archive_open and player_table.archive or player_table.factory
     local destination = archive_open and player_table.factory or player_table.archive
 
-    local removed_gui_position = Factory.remove(origin, subfactory)
-    reset_subfactory_selection(player, origin, removed_gui_position)
-    Factory.add(destination, subfactory)
+    -- Reset deletion if a deleted subfactory is un-archived
+    if archive_open and subfactory.tick_of_deletion then
+        script.on_nth_tick(subfactory.tick_of_deletion, nil)
+        subfactory.tick_of_deletion = nil
+    end
 
-    refresh_with_archive_open(player, origin)
+    local removed_gui_position = Factory.remove(origin, subfactory)
+    Factory.add(destination, subfactory)  -- needs to be added after the removal else shit breaks
+    subfactory_list.refresh_after_deletion(player, origin, removed_gui_position)
 end
 
 local function add_subfactory(player, _, metadata)
@@ -152,10 +129,22 @@ local function edit_subfactory(player)
 end
 
 local function delete_subfactory(player)
-    local context = data_util.get("context", player)
-    local removed_gui_position = Factory.remove(context.factory, context.subfactory)
-    reset_subfactory_selection(player, context.factory, removed_gui_position)
-    refresh_with_archive_open(player, context.factory)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+
+    if ui_state.flags.archive_open then
+        script.on_nth_tick(subfactory.tick_of_deletion, nil)
+
+        local factory = ui_state.context.factory
+        local removed_gui_position = Factory.remove(factory, subfactory)
+        subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
+    else
+        local tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
+        subfactory.tick_of_deletion = tick_of_deletion
+        data_util.register_subfactory_deletion(player.index, subfactory)
+
+        archive_subfactory(player)
+    end
 end
 
 
@@ -253,8 +242,7 @@ function subfactory_list.build(player)
     main_elements.subfactory_list["edit_button"] = button_edit
 
     local button_delete = subheader.add{type="sprite-button", name="fp_sprite-button_subfactory_delete",
-      sprite="utility/trash", tooltip={"fp.action_delete_subfactory"}, style="tool_button_red",
-      mouse_button_filter={"left"}}
+      sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
     main_elements.subfactory_list["delete_button"] = button_delete
 
     -- This is not really a list-box, but it imitates one and allows additional features
@@ -279,8 +267,8 @@ function subfactory_list.refresh(player)
         for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
             local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
-            local caption = Subfactory.tostring(subfactory, true)
-            local tooltip = {"", caption, tutorial_tooltip}
+            local caption, info_tooltip = Subfactory.tostring(subfactory, false)
+            local tooltip = {"", info_tooltip, tutorial_tooltip}
 
             listbox.add{type="button", name="fp_button_subfactory_" .. subfactory.id, caption=caption,
               tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
@@ -318,9 +306,32 @@ function subfactory_list.refresh(player)
 
     subfactory_list_elements.add_button.enabled = (not archive_open)
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
+
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
+    local delay_in_minutes = math.floor(SUBFACTORY_DELETION_DELAY / 3600)
+    subfactory_list_elements.delete_button.tooltip = (archive_open) and
+      {"fp.action_delete_subfactory"} or {"fp.action_trash_subfactory", delay_in_minutes}
 end
 
+-- Refresh the dialog, quitting archive view if it has become empty
+function subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
+    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
+    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
+    ui_util.context.set_subfactory(player, subfactory)
+
+    local archive_open = data_util.get("flags", player).archive_open
+    if archive_open and Factory.count(factory, "Subfactory") == 0 then
+        -- Make sure the just-unarchived subfactory is the selected one in factory; It'll always be the last one
+        local main_factory = data_util.get("table", player).factory
+        local last_position = Factory.count(main_factory, "Subfactory")
+        -- It's okay to set selected_subfactory directly here, as toggle_archive calls the proper context util function
+        main_factory.selected_subfactory = Factory.get_by_gui_position(main_factory, "Subfactory", last_position)
+
+        toggle_archive(player)  -- does refreshing on its own
+    else
+        main_dialog.refresh(player, "all")
+    end
+end
 
 -- Utility function to centralize subfactory creation behavior
 function subfactory_list.add_subfactory(player, name, icon)
@@ -333,8 +344,6 @@ function subfactory_list.add_subfactory(player, name, icon)
     local context = data_util.get("context", player)
     Factory.add(context.factory, subfactory)
     ui_util.context.set_subfactory(player, subfactory)
-
-    return subfactory
 end
 
 
