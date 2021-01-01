@@ -41,10 +41,12 @@ function title_bar.build(player)
     local label_hint = flow_title_bar.add{type="label", ignored_by_interaction=true}
     label_hint.style.font = "heading-2"
     label_hint.style.margin = {0, 0, 0, 8}
+    label_hint.style.horizontally_squashable = true
     main_elements.title_bar["hint_label"] = label_hint
 
-    flow_title_bar.add{type="empty-widget", name="fp_empty-widget_main_drag_handle",
+    local drag_handle = flow_title_bar.add{type="empty-widget", name="fp_empty-widget_main_drag_handle",
       style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+    drag_handle.style.minimal_width = 80
 
     -- Buttons
     flow_title_bar.add{type="button", name="fp_button_title_bar_tutorial", caption={"fp.tutorial"},
