@@ -171,7 +171,8 @@ function Floor.unpack(packed_self, self)
 
             -- Use that line to create the subfloor, which moves it to the newly created floor
             local subfloor = Floor.init(subfloor_line)  -- sets origin_ and defining_line
-            subfloor.origin_line.comment = packed_line.comment  -- carry over the origin_line's comment
+            subfloor.origin_line.comment = packed_line.comment  -- carry over line comment
+
             Subfactory.add(self.parent, subfloor)
 
             -- Remove the first subfloor line as it has already been created by initializing the subfloor with it

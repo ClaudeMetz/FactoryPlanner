@@ -68,5 +68,12 @@ data:extend({
         filename = "__factoryplanner__/graphics/archive_dark.png",
         size = 32, icon_mipmaps = 2,
         flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_check_mark_green",
+        filename = "__factoryplanner__/graphics/check_mark_green.png",
+        size = 32, icon_mipmaps = 2,
+        flags = {"gui-icon"}
     }
 })

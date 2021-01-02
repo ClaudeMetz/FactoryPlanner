@@ -50,6 +50,16 @@ local function handle_toggle_click(player, checkbox, metadata)
     main_dialog.refresh(player, "subfactory")
 end
 
+local function handle_done_click(player, button)
+    local line_id = tonumber(string.match(button.name, "%d+"))
+    local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    relevant_line.done = not relevant_line.done
+
+    -- Refreshing the whole table here is wasteful, but I don't have good selective refreshing yet
+    main_dialog.refresh(player, "production_table")
+end
+
 local function handle_recipe_click(player, button, metadata)
     local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
@@ -511,11 +521,11 @@ local function handle_fuel_click(player, button, metadata)
         -- Applicable fuels come from all categories that this burner supports
         for category_name, _ in pairs(line.machine.proto.burner.categories) do
             local category_id = global.all_fuels.map[category_name]
-			if category_id ~= nil then
+            if category_id ~= nil then
                 for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-            	    table.insert(applicable_prototypes, fuel_proto)
+                    table.insert(applicable_prototypes, fuel_proto)
                 end
-			end
+            end
         end
 
         local modal_data = {
@@ -577,6 +587,10 @@ production_handler.gui_events = {
         {
             pattern = "^fp_checkbox_production_toggle_%d+$",
             handler = handle_toggle_click
+        },
+        {
+            pattern = "^fp_button_production_done_%d+$",
+            handler = handle_done_click
         }
     },
     on_gui_text_changed = {
