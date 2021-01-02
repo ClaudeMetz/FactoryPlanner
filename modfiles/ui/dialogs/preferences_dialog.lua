@@ -160,7 +160,7 @@ local function handle_checkbox_preference_change(player, element)
     local refresh = data_util.get("modal_data", player).refresh
 
     if type == "production" or preference_name == "round_button_numbers" then
-        refresh.production_table = true
+        refresh.production = true
     end
 
     if preference_name == "toggle_column" then
@@ -170,7 +170,7 @@ local function handle_checkbox_preference_change(player, element)
     if preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
         refresh.update_ingredient_satisfaction = (element.state)
-        refresh.production_table = true  -- always refresh the production_table
+        refresh.production = true  -- always refresh production
     end
 end
 
@@ -200,6 +200,7 @@ local function handle_default_prototype_change(player, element, metadata)
 
     local modal_data = data_util.get("modal_data", player)
     if type == "belts" then modal_data.refresh.view_state = true end
+    if type == "wagons" then modal_data.refresh.production = true end
 
     prototyper.defaults.set(player, type, prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
@@ -261,6 +262,7 @@ function preferences_dialog.open(player, modal_data)
 
     preference_structures.prototypes(player, left_content_frame, modal_elements, "belts")
     preference_structures.prototypes(player, left_content_frame, modal_elements, "beacons")
+    preference_structures.prototypes(player, left_content_frame, modal_elements, "wagons")
 
     local right_content_frame = add_content_frame()
 
@@ -281,8 +283,8 @@ function preferences_dialog.close(player, _)
     local context_to_refresh = nil  -- don't refresh by default
 
     -- The order of these matters, they go from smallest context to biggest
-    if refresh.production_table then
-        context_to_refresh = "production_table"
+    if refresh.production then
+        context_to_refresh = "production"
     end
 
     if refresh.view_state then
