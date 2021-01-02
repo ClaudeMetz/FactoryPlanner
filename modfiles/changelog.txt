@@ -2,11 +2,12 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash when deleting subfactories in your archive
+    - Fixed that the fuel picker would sometimes show more than one kind of fuel as the currently selected one
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.13
