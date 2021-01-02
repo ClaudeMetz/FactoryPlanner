@@ -3,13 +3,11 @@ title_bar = {}
 -- ** LOCAL UTIL **
 local function configure_pause_button_style(button, pause_on_interface)
     if pause_on_interface then
-        button.style = "fp_sprite-button_tool_active"
+        button.style = "flib_selected_frame_action_button"
         button.sprite = "utility/pause"
-        button.clicked_sprite = "fp_sprite_pause_light"
     else
         button.style = "frame_action_button"
         button.sprite = "fp_sprite_pause_light"
-        button.clicked_sprite = "utility/pause"
     end
 end
 
@@ -30,22 +28,25 @@ function title_bar.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.title_bar = {}
 
-    local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal"}
-    flow_title_bar.style.height = 30
-    flow_title_bar.style.top_margin = 2
+    local flow_title_bar = main_elements.main_frame.add{type="flow", name="fp_flow_main_titlebar",
+      direction="horizontal"}
     flow_title_bar.style.horizontal_spacing = 8
+    flow_title_bar.drag_target = main_elements.main_frame
+    -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
+    flow_title_bar.style.height = TITLE_BAR_HEIGHT
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="heading_1_label"}
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
+      ignored_by_interaction=true}
 
-    local label_hint = flow_title_bar.add{type="label"}
+    local label_hint = flow_title_bar.add{type="label", ignored_by_interaction=true}
     label_hint.style.font = "heading-2"
-    label_hint.style.margin = {2, 0, 0, 8}
+    label_hint.style.margin = {0, 0, 0, 8}
+    label_hint.style.horizontally_squashable = true
     main_elements.title_bar["hint_label"] = label_hint
 
     local drag_handle = flow_title_bar.add{type="empty-widget", name="fp_empty-widget_main_drag_handle",
-      style="flib_titlebar_drag_handle", mouse_button_filter={"middle"}}
-    drag_handle.drag_target = main_elements.main_frame
-    drag_handle.style.top_margin = 1
+      style="flib_titlebar_drag_handle", ignored_by_interaction=true}
+    drag_handle.style.minimal_width = 80
 
     -- Buttons
     flow_title_bar.add{type="button", name="fp_button_title_bar_tutorial", caption={"fp.tutorial"},
@@ -59,6 +60,7 @@ function title_bar.build(player)
     local button_pause = flow_title_bar.add{type="sprite-button", name="fp_sprite-button_title_bar_pause_game",
       tooltip={"fp.pause_on_interface"}, enabled=(not game.is_multiplayer()), mouse_button_filter={"left"}}
     button_pause.hovered_sprite = "utility/pause"
+    button_pause.clicked_sprite = "utility/pause"
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = data_util.get("preferences", player)
@@ -131,11 +133,13 @@ end
 title_bar.gui_events = {
     on_gui_click = {
         {
-            name = "fp_empty-widget_main_drag_handle",
-            handler = (function(player, _, _)
-                local ui_state = data_util.get("ui_state", player)
-                local main_frame = ui_state.main_elements.main_frame
-                ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+            name = "fp_flow_main_titlebar",
+            handler = (function(player, _, metadata)
+                if metadata.click == "middle" then
+                    local ui_state = data_util.get("ui_state", player)
+                    local main_frame = ui_state.main_elements.main_frame
+                    ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+                end
             end)
         },
         {
