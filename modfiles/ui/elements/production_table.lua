@@ -123,9 +123,9 @@ function builders.machine(line, parent_flow, metadata)
 
         local style, indication, machine_limit = "flib_slot_button_default_small", "", line.machine.limit
         if not metadata.matrix_solver_active and machine_limit ~= nil then
-            if line.machine.hard_limit then
+            if line.machine.force_limit then
                 style = "flib_slot_button_pink_small"
-                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_hard", machine_limit}}}
+                indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_force", machine_limit}}}
             elseif line.production_ratio < line.uncapped_production_ratio then
                 style = "flib_slot_button_orange_small"
                 indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_enforced", machine_limit}}}
