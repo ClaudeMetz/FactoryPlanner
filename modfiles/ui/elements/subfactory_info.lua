@@ -42,8 +42,7 @@ function subfactory_info.build(player)
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical",
       style="inside_shallow_frame_with_padding"}
-    frame_vertical.style.height = SUBFACTORY_INFO_HEIGHT
-    frame_vertical.style.horizontally_stretchable = true
+    frame_vertical.style.size = {SUBFACTORY_LIST_WIDTH, SUBFACTORY_INFO_HEIGHT}
     frame_vertical.style.bottom_padding = 4  -- this makes the vertical pushers align stuff nicely
 
     local title = frame_vertical.add{type="label", caption={"fp.subfactory_info"}, style="caption_label"}
