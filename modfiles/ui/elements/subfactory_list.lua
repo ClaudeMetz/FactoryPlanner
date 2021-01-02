@@ -133,7 +133,9 @@ local function delete_subfactory(player)
     local subfactory = ui_state.context.subfactory
 
     if ui_state.flags.archive_open then
-        script.on_nth_tick(subfactory.tick_of_deletion, nil)
+        if subfactory.tick_of_deletion then  -- unregister deletion event if there is one
+            script.on_nth_tick(subfactory.tick_of_deletion, nil)
+        end
 
         local factory = ui_state.context.factory
         local removed_gui_position = Factory.remove(factory, subfactory)
