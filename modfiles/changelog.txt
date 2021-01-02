@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.14
+Date: 03. 01. 2021
   Features:
     - Added an optional production column that allows you to check off a recipe line after you're done with it, in the style of a to-do list (Thanks Fiona!)
     - Added an additional production view 'Wagons/timescale', allowing you to see how many cargo or fluid wagons are being filled up by your production (Thanks talshorer!)
