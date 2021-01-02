@@ -86,7 +86,7 @@ local function generate_floor_data(player, subfactory, floor)
                 line_data.timescale = subfactory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
-                line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
+                line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
                 line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product_proto  -- reference
                 line_data.machine_proto = line.machine.proto  -- reference

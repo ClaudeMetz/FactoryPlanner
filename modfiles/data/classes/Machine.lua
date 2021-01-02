@@ -7,7 +7,7 @@ function Machine.init_by_proto(proto)
         proto = proto,
         count = 0,
         limit = nil,  -- will be set by the user
-        hard_limit = false,
+        force_limit = false,
         fuel = nil,  -- updated by Line.change_machine()
         Module = Collection.init("Module"),
         module_count = 0,  -- updated automatically
@@ -207,7 +207,7 @@ function Machine.pack(self)
     return {
         proto = prototyper.util.simplify_prototype(self.proto),
         limit = self.limit,
-        hard_limit = self.hard_limit,
+        force_limit = self.force_limit,
         fuel = (self.fuel) and Fuel.pack(self.fuel) or nil,
         Module = Collection.pack(self.Module),
         module_count = self.module_count,

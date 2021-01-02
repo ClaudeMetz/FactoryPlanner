@@ -193,7 +193,7 @@ local function apply_machine_choice(player, machine_id, metadata)
 end
 
 local function machine_limit_change(modal_data, textfield)
-    local switch = modal_data.modal_elements["fp_switch_on_off_options_hard_limit"]
+    local switch = modal_data.modal_elements["fp_switch_on_off_options_force_limit"]
     local machine_limit = tonumber(textfield.text)
 
     -- If it goes from empty to filled, reset a possible previous switch state
@@ -214,8 +214,8 @@ local function apply_machine_options(player, options, action)
         local ui_state = data_util.get("ui_state", player)
         local machine = ui_state.modal_data.object
 
-        if options.machine_limit == nil then options.hard_limit = false end
-        machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+        if options.machine_limit == nil then options.force_limit = false end
+        machine.limit, machine.force_limit = options.machine_limit, options.force_limit
 
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
@@ -278,7 +278,7 @@ local function handle_machine_click(player, button, metadata)
         if metadata.control then  -- reset this machine to its default state
             Line.change_machine(line, player, nil, nil)
             line.machine.limit = nil
-            line.machine.hard_limit = false
+            line.machine.force_limit = false
 
             calculation.update(player, context.subfactory)
             main_dialog.refresh(player, "subfactory")
@@ -301,10 +301,10 @@ local function handle_machine_click(player, button, metadata)
                     },
                     {
                         type = "on_off_switch",
-                        name = "hard_limit",
-                        caption = {"fp.options_machine_hard_limit"},
-                        tooltip = {"fp.options_machine_hard_limit_tt"},
-                        state = line.machine.hard_limit or false
+                        name = "force_limit",
+                        caption = {"fp.options_machine_force_limit"},
+                        tooltip = {"fp.options_machine_force_limit_tt"},
+                        state = line.machine.force_limit or false
                     }
                 }
             }
