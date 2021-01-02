@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Added an optional production column that allows you to check off a recipe line after you're done with it, in the style of a to-do list (Thanks Fiona!)
     - Added an additional production view 'Wagons/timescale', allowing you to see how many cargo or fluid wagons are being filled up by your production (Thanks talshorer!)
   Changes:
+    - Fixed various inconsistencies with the UI (thanks Raiguard!)
     - Updated the Russian translation (thanks METAKOT!)
     - Updated the Chinese translation (thanks Ph.X!)
   Bugfixes:
