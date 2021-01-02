@@ -3,21 +3,21 @@ view_state = {}
 
 -- ** LOCAL UTIL **
 local processors = {}  -- individual functions for each kind of view state
-function processors.items_per_timescale(metadata, raw_amount, item_type, _)
+function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     local number = ui_util.format_number(raw_amount, metadata.formatting_precision)
 
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        local type_string = (item_type == "fluid") and {"fp.pl_fluid", 1} or {"fp.pl_item", plural_parameter}
+        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
         tooltip = {"fp.two_word_title", number, {"fp.per_title", type_string, metadata.timescale_string}}
     end
 
     return number, tooltip
 end
 
-function processors.belts_or_lanes(metadata, raw_amount, item_type, _)
-    if item_type == "fluid" then return nil, nil end
+function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
+    if item_proto.type == "fluid" then return nil, nil end
 
     local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
@@ -32,16 +32,34 @@ function processors.belts_or_lanes(metadata, raw_amount, item_type, _)
     return return_number, tooltip
 end
 
-function processors.items_per_second_per_machine(metadata, raw_amount, item_type, machine_count)
+function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
+    if item_proto.type == "entity" then return nil, nil end
+
+    local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
+      or metadata.cargo_wagon_capactiy * item_proto.stack_size
+    local wagon_count = raw_amount / wagon_capacity
+    local number = ui_util.format_number(wagon_count, metadata.formatting_precision)
+
+    local tooltip = nil
+    if metadata.include_tooltip then
+        local plural_parameter = (number == "1") and 1 or 2
+        tooltip = {"fp.two_word_title", number, {"fp.per_title", {"fp.pl_wagon", plural_parameter},
+          metadata.timescale_string}}
+    end
+
+    return number, tooltip
+end
+
+function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
     local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil(machine_count or 1))
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        local type_string = (item_type == "fluid") and {"fp.pl_fluid", 1} or {"fp.pl_item", plural_parameter}
+        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
         local item_per_second =  {"fp.per_title", type_string, {"fp.second"}}
-        -- If machine_count is nil, this is a top level item and shouldn't show /machine
+        -- If machine_count is nil, this shouldn't show /machine
         local per_machine = (machine_count ~= nil) and {"fp.per_title", "", {"fp.pl_machine", 1}} or ""
         tooltip = {"fp.two_word_title", number, {"", item_per_second, per_machine}}
     end
@@ -75,6 +93,8 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
     local round_button_numbers = player_table.preferences.round_button_numbers
     local throughput = prototyper.defaults.get(player, "belts").throughput
     local throughput_divisor = (belts_or_lanes == "belts") and throughput or (throughput / 2)
+    local cargo_wagon_capactiy = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"]).storage
+    local fluid_wagon_capacity = prototyper.defaults.get(player, "wagons", global.all_wagons.map["fluid-wagon"]).storage
 
     return {
         processor = processors[selected_view.name],
@@ -84,7 +104,9 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
         formatting_precision = formatting_precision,
-        include_tooltip = include_tooltip
+        include_tooltip = include_tooltip,
+        cargo_wagon_capactiy = cargo_wagon_capactiy,
+        fluid_wagon_capacity = fluid_wagon_capacity
     }
 end
 
@@ -94,7 +116,7 @@ function view_state.process_item(metadata, item, item_amount, machine_count)
         return -1, nil
     end
 
-    return metadata.processor(metadata, raw_amount, item.proto.type, machine_count)
+    return metadata.processor(metadata, raw_amount, item.proto, machine_count)
 end
 
 
@@ -119,6 +141,11 @@ function view_state.rebuild_state(player)
             tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2}}}
         },
         [3] = {
+            name = "wagons_per_timescale",
+            caption = {"fp.per_title", {"fp.pu_wagon", 2}, {"fp.unit_" .. timescale}},
+            tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale}}}
+        },
+        [4] = {
             name = "items_per_second_per_machine",
             caption = {"fp.per_title", {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_second"}},
               "[img=fp_generic_assembler]"},

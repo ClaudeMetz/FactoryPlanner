@@ -272,6 +272,7 @@ function generator.all_items()
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
             local proto = game[type .. "_prototypes"][proto_name]
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
+            local stack_size = (type == "item") and proto.stack_size or nil
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
             local hidden = false  -- "entity" types are never hidden
@@ -284,6 +285,7 @@ function generator.all_items()
                 sprite = type .. "/" .. proto.name,
                 localised_name = localised_name,
                 hidden = hidden,
+                stack_size = stack_size,
                 ingredient_only = not item_details.is_product,
                 temperature = item_details.temperature,
                 order = order,
@@ -525,6 +527,7 @@ function generator.all_fuels()
                 sprite = "item/" .. proto.name,
                 category = proto.fuel_category,
                 fuel_value = proto.fuel_value,
+                stack_size = proto.stack_size,
                 emissions_multiplier = proto.fuel_emissions_multiplier
             }
         end
@@ -620,6 +623,45 @@ function generator.all_beacons()
         elseif a.effectivity > b.effectivity then return false
         elseif a.energy_usage < b.energy_usage then return true
         elseif a.energy_usage > b.energy_usage then return false end
+    end
+
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
+end
+
+
+-- Generates a table containing all available cargo and fluid wagons
+function generator.all_wagons()
+    generator_util.data_structure.init("complex", "categories", "wagons", "category")
+
+    -- Add cargo wagons
+    local cargo_wagon_filter = {{filter="type", type="cargo-wagon"}}
+    for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
+        generator_util.data_structure.insert{
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = generator_util.determine_entity_sprite(proto),
+            category = "cargo-wagon",
+            storage = proto.get_inventory_size(1)
+        }
+    end
+
+    -- Add fluid wagons
+    local fluid_wagon_filter = {{filter="type", type="fluid-wagon"}}
+    for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
+        generator_util.data_structure.insert{
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = generator_util.determine_entity_sprite(proto),
+            category = "fluid-wagon",
+            storage = proto.fluid_capacity
+        }
+    end
+
+    local function sorting_function(a, b)
+        if a.storage < b.storage then return true
+        elseif a.storage > b.storage then return false end
     end
 
     generator_util.data_structure.sort(sorting_function)
