@@ -458,9 +458,9 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
 
     for _, fuel_proto in pairs(applicable_prototypes) do
         local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
-        fuel_proto.fuel_value, timescale)
+          fuel_proto.fuel_value, timescale)
         local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-        fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
+          fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
 
         local category_id = global.all_fuels.map[fuel_proto.category]
         local definition = {
@@ -470,7 +470,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
             localised_name = fuel_proto.localised_name,
             amount_line = number_tooltip or "",
             tooltip_appendage = data_util.get_attributes("fuels", fuel_proto),
-            selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
+            selected = (current_proto.category == fuel_proto.category and current_proto.id == fuel_proto.id)
         }
         table.insert(button_definitions, definition)
     end
