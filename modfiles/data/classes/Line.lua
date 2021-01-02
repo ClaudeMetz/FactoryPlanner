@@ -7,6 +7,7 @@ function Line.init(recipe)
     return {
         recipe = recipe,  -- can be nil
         active = (is_standalone_line) and true or nil,
+        done = false,
         percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
@@ -233,6 +234,7 @@ function Line.pack(self)
         packed_line.recipe = Recipe.pack(self.recipe)
 
         packed_line.active = self.active
+        packed_line.done = self.done
         packed_line.percentage = self.percentage
 
         packed_line.machine = Machine.pack(self.machine)
@@ -250,6 +252,7 @@ function Line.unpack(packed_self)
     local self = Line.init(packed_self.recipe)
 
     self.active = packed_self.active
+    self.done = packed_self.done
     self.percentage = packed_self.percentage
 
     self.machine = Machine.unpack(packed_self.machine)

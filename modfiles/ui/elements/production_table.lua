@@ -54,6 +54,18 @@ function builders.toggle(line, parent_flow, metadata)
       mouse_button_filter={"left"}}
 end
 
+function builders.done(line, parent_flow, _)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+
+    local sprite = (relevant_line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
+    local style = (relevant_line.done) and "flib_tool_button_light_green" or "flib_slot_default"
+
+    local button = parent_flow.add{type="sprite-button", name="fp_button_production_done_" .. line.id,
+      sprite=sprite, style=style, mouse_button_filter={"left"}}
+    button.style.size = 24
+    button.style.padding = 0
+end
+
 function builders.recipe(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe_proto = relevant_line.recipe.proto
@@ -348,7 +360,8 @@ end
 
 -- ** TOP LEVEL **
 local all_production_columns = {
-    {name="toggle", caption=nil, tooltip=nil, minimal_width=0, alignment="center"},
+    {name="toggle", caption="", tooltip={"fp.column_toggle_tt"}, minimal_width=0, alignment="center"},
+    {name="done", caption="", tooltip={"fp.column_done_tt"}, minimal_width=0, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, tooltip=nil, minimal_width=0, alignment="center"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, tooltip=nil, minimal_width=0, alignment="left"},
