@@ -240,8 +240,42 @@ local function handle_machine_click(player, button, metadata)
             main_dialog.refresh(player, "subfactory")
         end
 
-    elseif metadata.alt then
-        if metadata.click == "right" then  -- resets this machine to its default state
+    elseif metadata.click == "left" then
+        if metadata.alt then  -- set cursor to the current machine
+            local module_list = {}
+            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+                module_list[module.proto.name] = module.amount
+            end
+            set_cursor_blueprint(player, line.machine.proto.name, module_list, line.recipe.proto.name)
+
+        else  -- open the machine chooser
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            local category_prototypes = global.all_machines.categories[machine_category_id].machines
+
+            local applicable_prototypes = {}  -- determine whether there's more than one machine for this recipe
+            for _, machine_proto in ipairs(category_prototypes) do
+                if Line.is_machine_applicable(line, machine_proto) then
+                    table.insert(applicable_prototypes, machine_proto)
+                end
+            end
+
+            if #applicable_prototypes <= 1 then  -- changing machines only makes sense if there is something to change to
+                title_bar.enqueue_message(player, {"fp.warning_no_other_machine_choice"}, "warning", 1, true)
+            else
+                local modal_data = {
+                    title = {"fp.pl_machine", 1},
+                    text = {"fp.chooser_machine", line.recipe.proto.localised_name},
+                    text_tooltip = {"fp.chooser_machine_tt"},
+                    click_handler = apply_machine_choice,
+                    button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
+                    object = line.machine
+                }
+                modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
+            end
+        end
+
+    elseif metadata.click == "right" then
+        if metadata.control then  -- reset this machine to its default state
             Line.change_machine(line, player, nil, nil)
             line.machine.limit = nil
             line.machine.hard_limit = false
@@ -249,66 +283,33 @@ local function handle_machine_click(player, button, metadata)
             calculation.update(player, context.subfactory)
             main_dialog.refresh(player, "subfactory")
 
-        elseif metadata.click == "left" then
-            local module_list = {}
-            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
-                module_list[module.proto.name] = module.amount
-            end
-
-            set_cursor_blueprint(player, line.machine.proto.name, module_list, line.recipe.proto.name)
-        end
-
-    elseif metadata.click == "left" then
-        local machine_category_id = global.all_machines.map[line.machine.proto.category]
-        local category_prototypes = global.all_machines.categories[machine_category_id].machines
-
-        local applicable_prototypes = {}  -- determine whether there's more than one machine for this recipe
-        for _, machine_proto in ipairs(category_prototypes) do
-            if Line.is_machine_applicable(line, machine_proto) then
-                table.insert(applicable_prototypes, machine_proto)
-            end
-        end
-
-        if #applicable_prototypes <= 1 then  -- changing machines only makes sense if there is something to change to
-            title_bar.enqueue_message(player, {"fp.warning_no_other_machine_choice"}, "warning", 1, true)
-        else
+        elseif context.subfactory.matrix_free_items == nil then  -- open the machine options
             local modal_data = {
-                title = {"fp.pl_machine", 1},
-                text = {"fp.chooser_machine", line.recipe.proto.localised_name},
-                text_tooltip = {"fp.chooser_machine_tt"},
-                click_handler = apply_machine_choice,
-                button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
-                object = line.machine
-            }
-            modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
-        end
-
-    elseif metadata.click == "right" and context.subfactory.matrix_free_items == nil then
-        local modal_data = {
-            title = {"fp.options_machine_title"},
-            text = {"fp.options_machine_text", line.machine.proto.localised_name},
-            submission_handler = apply_machine_options,
-            object = line.machine,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "machine_limit",
-                    change_handler = machine_limit_change,
-                    caption = {"fp.options_machine_limit"},
-                    tooltip = {"fp.options_machine_limit_tt"},
-                    text = line.machine.limit,  -- can be nil
-                    focus = true
-                },
-                {
-                    type = "on_off_switch",
-                    name = "hard_limit",
-                    caption = {"fp.options_machine_hard_limit"},
-                    tooltip = {"fp.options_machine_hard_limit_tt"},
-                    state = line.machine.hard_limit or false
+                title = {"fp.options_machine_title"},
+                text = {"fp.options_machine_text", line.machine.proto.localised_name},
+                submission_handler = apply_machine_options,
+                object = line.machine,
+                fields = {
+                    {
+                        type = "numeric_textfield",
+                        name = "machine_limit",
+                        change_handler = machine_limit_change,
+                        caption = {"fp.options_machine_limit"},
+                        tooltip = {"fp.options_machine_limit_tt"},
+                        text = line.machine.limit,  -- can be nil
+                        focus = true
+                    },
+                    {
+                        type = "on_off_switch",
+                        name = "hard_limit",
+                        caption = {"fp.options_machine_hard_limit"},
+                        tooltip = {"fp.options_machine_hard_limit_tt"},
+                        state = line.machine.hard_limit or false
+                    }
                 }
             }
-        }
-        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+            modal_dialog.enter(player, {type="options", modal_data=modal_data})
+        end
     end
 end
 

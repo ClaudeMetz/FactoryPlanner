@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Fixed various inconsistencies with the UI (thanks Raiguard!)
     - Updated the Russian translation (thanks METAKOT!)
     - Updated the Chinese translation (thanks Ph.X!)
+    - Changed the hotkey to reset a machine from alt-right-click to control-right-click, as this is more consistent with the control-right-click action deleting things
   Bugfixes:
     - Fixed a crash when deleting subfactories in your archive
     - Fixed that the fuel picker would sometimes show more than one kind of fuel as the currently selected one
