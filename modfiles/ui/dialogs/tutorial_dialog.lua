@@ -89,7 +89,7 @@ function tutorial_dialog.open(player, modal_data)
 
     for _, tab_name in ipairs(tab_definitions) do
         local tab = tabbed_pane.add{type="tab"}
-        local tab_pane = tabbed_pane.add{type="scroll-pane", style="flib_naked_scroll_pane"}
+        local tab_pane = tabbed_pane.add{type="scroll-pane", style="flib_naked_scroll_pane_under_tabs"}
         tab_pane.style.width = 555
 
         tab_definitions[tab_name](player, tab, tab_pane)

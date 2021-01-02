@@ -23,6 +23,27 @@ styles["fp_scroll-pane_fake_listbox"] = {
     }
 }
 
+styles["fp_scroll-pane_slot_table"] = {
+    type = "scroll_pane_style",
+    parent = "filter_scroll_pane",
+    bottom_margin = 0,
+    bottom_padding = 0,
+    extra_bottom_padding_when_activated = 0,
+    graphical_set =
+    {
+        base = {position = {85, 0}, corner_size = 8, draw_type = "outer"},
+        shadow = default_inner_shadow
+    }
+}
+
+styles["fp_frame_slot_table"] = {
+    type = "frame_style",
+    parent = "filter_frame",
+    top_padding = 4,
+    bottom_padding = 12,
+    graphical_set = table.deepcopy(styles.filter_frame.graphical_set)
+}
+styles["fp_frame_slot_table"].graphical_set.base.bottom = nil
 
 -- Intended for buttons of size 36
 styles["fp_frame_deep_slots_small"] = {
@@ -110,30 +131,13 @@ styles["fp_sprite-button_inset_production"] = {
     padding = 5  -- makes it so the plus doesn't look so stupid
 }
 
--- Cribs from 'dark_rounded_button', but without the stupid shadows
-styles["fp_sprite-button_rounded_dark"] = {
+styles["fp_sprite-button_group_tab"] = {
     type = "button_style",
-    default_graphical_set = {
-        base = {border = 4, position = {2, 738}, size = 76}
-    },
-    hovered_graphical_set = {
-        base = {border = 4, position = {82, 738}, size = 76},
-        glow = offset_by_2_rounded_corners_glow(default_glow_color)
-    },
-    clicked_graphical_set = {
-        base = {border = 4, position = {162, 738}, size = 76}
-    },
-    disabled_graphical_set = {
-        base = {border = 4, position = {2, 738}, size = 76}
-    }
-}
-
--- A tool button that has the clicked-graphical set as its default one
-styles["fp_sprite-button_tool_active"] = {
-    type = "button_style",
-    parent = "frame_action_button",
-    default_graphical_set = styles.frame_button.clicked_graphical_set,
-    clicked_graphical_set = styles.frame_button.default_graphical_set
+    parent = "filter_group_button_tab",
+    horizontally_stretchable = "on",
+    width = 0,
+    natural_width = 71,
+    disabled_graphical_set = styles.button.selected_graphical_set
 }
 
 -- Text button in the style of icon tool buttons, for use in the title bar
@@ -170,9 +174,11 @@ styles["fp_button_push"] = {
 styles["fp_button_push_active"] = {
     type = "button_style",
     parent = "fp_button_push",
-    default_graphical_set = styles.button_with_shadow.clicked_graphical_set,
-    clicked_graphical_set = styles.button_with_shadow.default_graphical_set,
-    disabled_graphical_set = styles.button_with_shadow.clicked_graphical_set
+    default_graphical_set = styles.button.selected_graphical_set,
+    hovered_graphical_set = styles.button.selected_hovered_graphical_set,
+    clicked_graphical_set = styles.button.selected_clicked_graphical_set,
+    disabled_font_color = {},  -- black
+    disabled_graphical_set = styles.button.selected_graphical_set
 }
 
 -- A button that can be used in a fake listbox, but looks identical to the real thing
@@ -190,7 +196,8 @@ styles["fp_button_fake_listbox_item_active"] = {
     type = "button_style",
     parent = "fp_button_fake_listbox_item",
     default_graphical_set = styles.button.selected_graphical_set,
-    hovered_graphical_set = styles.button.selected_graphical_set,
+    hovered_graphical_set = styles.button.selected_hovered_graphical_set,
+    clicked_graphical_set = styles.button.selected_clicked_graphical_set,
     default_font_color = styles.button.selected_font_color,
     default_vertical_offset = styles.button.selected_vertical_offset
 }
@@ -201,5 +208,5 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
         type = "button_style",
         parent = "flib_slot_button_" .. color,
         size = 36
-      }
+    }
 end

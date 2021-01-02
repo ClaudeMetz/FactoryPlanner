@@ -21,12 +21,13 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Title bar
     if dialog_settings.caption ~= nil then
-        local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal"}
-        flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title"}
+        local flow_title_bar = frame_modal_dialog.add{type="flow", name="fp_flow_modal_titlebar",
+          direction="horizontal"}
+        flow_title_bar.drag_target = frame_modal_dialog
+        flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title",
+          ignored_by_interaction=true}
 
-        local drag_handle = flow_title_bar.add{type="empty-widget", name="fp_empty-widget_modal_drag_handle",
-          style="flib_titlebar_drag_handle", mouse_button_filter={"middle"}}
-        drag_handle.drag_target = frame_modal_dialog
+        flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
 
         if dialog_settings.search_function then  -- add a search field if requested
             local searchfield = flow_title_bar.add{type="textfield", name="fp_textfield_modal_search",
@@ -90,7 +91,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Delete button and spacers
     if dialog_settings.show_delete_button then
-        button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+        button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}.drag_target = frame_modal_dialog
 
         local button_delete = button_bar.add{type="button", name="fp_button_modal_action_delete",
           caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
@@ -103,7 +104,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         frame_modal_dialog.style.minimal_width = 340
     end
     -- One 'drag handle' should always be visible
-    button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+    button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}.drag_target = frame_modal_dialog
 
     -- Submit button
     if dialog_settings.show_submit_button then
@@ -260,10 +261,12 @@ modal_dialog.gui_events = {
             end)
         },
         {
-            name = "fp_empty-widget_modal_drag_handle",
-            handler = (function(player, _, _)
-                local modal_elements = data_util.get("modal_elements", player)
-                modal_elements.modal_frame.force_auto_center()
+            name = "fp_flow_modal_titlebar",
+            handler = (function(player, _, metadata)
+                if metadata.click == "middle" then
+                    local modal_elements = data_util.get("modal_elements", player)
+                    modal_elements.modal_frame.force_auto_center()
+                end
             end)
         },
         {
