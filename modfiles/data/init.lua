@@ -86,7 +86,6 @@ local function reset_ui_state(player)
     ui_state_table.queued_dialog_settings = nil  -- Info on dialog to open after the current one closes
 
     ui_state_table.flags = {
-        floor_total = false,  -- Whether the floor or subfactory totals are displayed
         archive_open = false,  -- Wether the players subfactory archive is currently open
         selection_mode = false,  -- Whether the player is currently using a selector
         recalculate_on_subfactory_change = false  -- Whether calculations should re-run
