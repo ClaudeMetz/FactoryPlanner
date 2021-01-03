@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that removing the last line in a subfactory with the matrix solver active would leave some top level products behind
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.14

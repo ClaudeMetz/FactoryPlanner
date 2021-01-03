@@ -210,6 +210,8 @@ function calculation.update(player, subfactory)
                         modal_dialog.enter(player, {type="matrix", allow_queueing=true})
                     end
                 end
+            else  -- reset top level items
+                set_blank_subfactory(player, subfactory)
             end
         else
             sequential_solver.update_subfactory(subfactory_data)
