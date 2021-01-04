@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed an issue where the matrix solver wouldn't always show its dialog when it should have
     - Fixed that removing the last line in a subfactory with the matrix solver active would leave some top level products behind
 
 ---------------------------------------------------------------------------------------------------
