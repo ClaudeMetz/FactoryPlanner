@@ -12,16 +12,14 @@ local function add_preference_box(content_frame, type)
 end
 
 local function refresh_defaults_table(player, modal_elements, type, category_id)
-    local table_prototypes, all_prototypes, category_addendum
+    local table_prototypes, all_prototypes
 
     if not category_id then
         table_prototypes = modal_elements[type]
         all_prototypes = global["all_" .. type][type]
-        category_addendum = ""
     else
         table_prototypes = modal_elements[type][category_id]
         all_prototypes = global["all_" .. type].categories[category_id][type]
-        category_addendum = ("_" .. category_id)
     end
 
     table_prototypes.clear()
@@ -34,9 +32,9 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
             or prototype.localised_name
         local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
 
-        table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip,
-          name="fp_sprite-button_preference_default_" .. type .. "_" .. prototype_id .. category_addendum,
-          style=style, mouse_button_filter={"left"}}
+        table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
+          tags={on_gui_click="select_preference_default", type=type, prototype_id=prototype_id, category_id=category_id},
+          mouse_button_filter={"left"}}
     end
 end
 
@@ -51,8 +49,8 @@ function preference_structures.checkboxes(preferences, content_frame, type, pref
         local identifier = type .. "_" .. pref_name
         local caption = {"fp.info_label", {"fp.preference_" .. identifier}}
         local tooltip ={"fp.preference_" .. identifier .. "_tt"}
-        flow_checkboxes.add{type="checkbox", name=("fp_checkbox_preference_" .. identifier),
-          state=preferences[pref_name], caption=caption, tooltip=tooltip}
+        flow_checkboxes.add{type="checkbox", state=preferences[pref_name], caption=caption, tooltip=tooltip,
+          tags={on_gui_checked_state_changed="toggle_preference", type=type, name=pref_name}}
     end
 end
 
@@ -68,9 +66,9 @@ function preference_structures.mb_defaults(preferences, content_frame)
         flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_" .. type}},
           tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
         local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
-        flow.add{type="choose-elem-button", elem_type="item", item=item,
-          name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset_tiny",
-          elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
+        flow.add{type="choose-elem-button", elem_type="item", item=item, style="fp_sprite-button_inset_tiny",
+          elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}},
+          tags={on_gui_elem_changed="change_mb_default", type=type}}
     end
 
     local table_mb_defaults = preference_box.add{type="table", column_count=3}
@@ -94,8 +92,8 @@ function preference_structures.mb_defaults(preferences, content_frame)
     beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
       tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
 
-    local textfield_amount = beacon_amount_flow.add{type="textfield", name="fp_textfield_mb_default_beacon_amount",
-      text=tostring(mb_defaults.beacon_count or "")}
+    local textfield_amount = beacon_amount_flow.add{type="textfield", text=tostring(mb_defaults.beacon_count or ""),
+      tags={on_gui_text_changed="mb_default_beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 42
 end
@@ -152,14 +150,13 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 end
 
 
-local function handle_checkbox_preference_change(player, element)
-    local type = split_string(element.name, "_")[4]
-    local preference_name = string.gsub(element.name, "fp_checkbox_preference_" .. type .. "_", "")
+local function handle_checkbox_preference_change(player, tags, metadata)
+    local preference_name = tags.name
+    data_util.get("preferences", player)[preference_name] = metadata.state
 
-    data_util.get("preferences", player)[preference_name] = element.state
     local refresh = data_util.get("modal_data", player).refresh
 
-    if type == "production" or preference_name == "round_button_numbers" then
+    if tags.type == "production" or preference_name == "round_button_numbers" then
         refresh.production = true
     end
 
@@ -169,24 +166,23 @@ local function handle_checkbox_preference_change(player, element)
 
     if preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
-        refresh.update_ingredient_satisfaction = (element.state)
+        refresh.update_ingredient_satisfaction = (metadata.state)
         refresh.production = true  -- always refresh production
     end
 end
 
-local function handle_mb_default_change(player, element)
+local function handle_mb_default_change(player, tags, metadata)
     local mb_defaults = data_util.get("preferences", player).mb_defaults
-    local type = string.gsub(element.name, "fp_choose%-elem%-button_mb_default_", "")
-    local module_name = element.elem_value
+    local module_name = metadata.elem_value
 
     if module_name == nil then
-        mb_defaults[type] = nil
+        mb_defaults[tags.type] = nil
     else
         -- Find the appropriate prototype from the list by its name
         for _, category in pairs(global.all_modules.categories) do
             for _, module_proto in pairs(category.modules) do
                 if module_proto.name == module_name then
-                    mb_defaults[type] = module_proto
+                    mb_defaults[tags.type] = module_proto
                     return
                 end
             end
@@ -194,15 +190,15 @@ local function handle_mb_default_change(player, element)
     end
 end
 
-local function handle_default_prototype_change(player, element, metadata)
-    local split_name = split_string(element.name, "_")
-    local type, prototype_id, category_id = split_name[5], split_name[6], split_name[7]
+local function handle_default_prototype_change(player, tags, metadata)
+    local type = tags.type
+    local category_id = tags.category_id
 
     local modal_data = data_util.get("modal_data", player)
     if type == "belts" then modal_data.refresh.view_state = true end
     if type == "wagons" then modal_data.refresh.production = true end
 
-    prototyper.defaults.set(player, type, prototype_id, category_id)
+    prototyper.defaults.set(player, type, tags.prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
 
     -- If this was an alt-click, set this prototype on every category that also has it
@@ -307,28 +303,28 @@ end
 preferences_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_preference_default_[a-z]+_%d+_?%d*$",
+            name = "select_preference_default",
             handler = handle_default_prototype_change
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_mb_default_beacon_amount",
-            handler = (function(player, element)
+            name = "mb_default_beacon_amount",
+            handler = (function(player, _, metadata)
                 local mb_defaults = data_util.get("preferences", player).mb_defaults
-                mb_defaults.beacon_count = tonumber(element.text)
+                mb_defaults.beacon_count = tonumber(metadata.text)
             end)
         }
     },
     on_gui_checked_state_changed = {
         {
-            pattern = "^fp_checkbox_preference_[a-z]+_[a-z_]+$",
+            name = "toggle_preference",
             handler = handle_checkbox_preference_change
         }
     },
     on_gui_elem_changed = {
         {
-            pattern = "^fp_choose%-elem%-button_mb_default_[a-z_]+$",
+            name = "change_mb_default",
             handler = handle_mb_default_change
         }
     }

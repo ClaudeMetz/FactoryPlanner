@@ -27,13 +27,15 @@ function tab_definitions.interface(player, tab, tab_pane)
     -- If the tutorial subfactory is valid, it can be imported regardless of the current modset
     local subfactory_compatible = global.tutorial_subfactory_validity
     local button_tooltip = (not subfactory_compatible) and {"fp.warning_message", {"fp.create_example_error"}} or nil
-    flow_interactive.add{type="button", name="fp_button_tutorial_add_example", caption={"fp.create_example"},
+    flow_interactive.add{type="button", tags={on_gui_click="add_example_subfactory"}, caption={"fp.create_example"},
       tooltip=button_tooltip, enabled=subfactory_compatible, mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local tutorial_mode = data_util.get("preferences", player).tutorial_mode
-    ui_util.switch.add_on_off(flow_interactive, "tutorial_mode", tutorial_mode, {"fp.tutorial_mode"}, nil, true)
+    ui_util.switch.add_on_off(flow_interactive, "toggle_tutorial_mode", {}, tutorial_mode,
+      {"fp.tutorial_mode"}, nil, true)
+
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Interface tutorial
@@ -102,7 +104,7 @@ end
 tutorial_dialog.gui_events = {
     on_gui_click = {
         {
-            name = "fp_button_tutorial_add_example",
+            name = "add_example_subfactory",
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
@@ -113,10 +115,10 @@ tutorial_dialog.gui_events = {
     },
     on_gui_switch_state_changed = {
         {
-            name = "fp_switch_tutorial_mode",
-            handler = (function(player, element)
-                local new_state = ui_util.switch.convert_to_boolean(element.switch_state)
-                data_util.get("preferences", player).tutorial_mode = new_state
+            name = "toggle_tutorial_mode",
+            handler = (function(player, _, metadata)
+                local preferences = data_util.get("preferences", player)
+                preferences.tutorial_mode = ui_util.switch.convert_to_boolean(metadata.switch_state)
                 main_dialog.refresh(player, "all")
             end)
         }

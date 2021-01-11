@@ -1,36 +1,33 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
-local elements_that_need_handling = {main_dialog, title_bar, subfactory_list, subfactory_info, item_boxes,
+local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_info, item_boxes,
   production_box, production_handler, view_state, modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
   modules_dialog, picker_dialog, recipe_dialog, matrix_dialog}
 
-
 -- ** RATE LIMITING **
--- Returns whether the given event is allowed to take place
+-- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
-local function rate_limit_action(player, event_name, tick, element_name, timeout)
+local function rate_limiting_active(player, tick, action_name, timeout)
     local ui_state = data_util.get("ui_state", player)
-    local last_action = ui_state.last_action
 
     -- If this action has no timeout, reset the last action and allow it
     if timeout == nil or game.tick_paused then
         ui_state.last_action = nil
-        return true
+        return false
     end
 
+    local last_action = ui_state.last_action
     -- Only disallow action under these specific circumstances
-    if last_action ~= nil and last_action.event_name == event_name and (not element_name
-      or last_action.element_name == element_name) and (tick - last_action.tick) < timeout then
-        return false
+    if last_action and last_action.action_name == action_name and (tick - last_action.tick) < timeout then
+        return true
 
     else  -- set the last action if this action will actually be carried out
         ui_state.last_action = {
-            tick = tick,
-            event_name = event_name,
-            element_name = element_name
+            action_name = action_name,
+            tick = tick
         }
-        return true
+        return false
     end
 end
 
@@ -55,46 +52,20 @@ local gui_timeouts = {
 }
 
 
-local function standard_gui_handler(player, event, event_handlers, metadata)
-    local element_name = event.element.name
-
-    -- Try finding the appropriate handler_table by name first
-    local handler_table = event_handlers.names[element_name]
-
-    -- If it can't be found, go through the patterns
-    if handler_table == nil then
-        for pattern, potential_handler_table in pairs(event_handlers.patterns) do
-            if string.find(element_name, pattern) then
-                handler_table = potential_handler_table
-                break
-            end
-        end
-    end
-
-    -- If a handler_table has been found, run its handler, if it's not rate limited
-    if handler_table ~= nil then
-        if rate_limit_action(player, event.name, event.tick, element_name, handler_table.timeout) then
-            handler_table.handler(player, event.element, metadata)
-        end
-    end
-
-    -- Return whether a handler was found or not
-    return (handler_table ~= nil)
-end
-
-
 -- ** SPECIAL HANDLERS **
 local special_gui_handlers = {}
 
-special_gui_handlers.on_gui_click = (function(player, event, event_handlers)
-    local click, direction, action
+local mouse_click_map = {
+    [defines.mouse_button_type.left] = "left",
+    [defines.mouse_button_type.right] = "right",
+    [defines.mouse_button_type.middle] = "middle"
+}
+special_gui_handlers.on_gui_click = (function(event, _, _)
+    local click = mouse_click_map[event.button]
 
-    if event.button == defines.mouse_button_type.left then click = "left"
-    elseif event.button == defines.mouse_button_type.right then click = "right"
-    elseif event.button == defines.mouse_button_type.middle then click = "middle" end
-
+    local direction, action
     if click == "left" then
-        if not event.control and event.shift then direction = "positive"
+        if not event.control and event.shift then direction = "positive"  -- TODO check whether all this crap is needed
         elseif event.control and not event.shift then direction = "negative" end
     elseif click == "right" and not event.alt then
         if event.control and not event.shift then action = "delete"
@@ -103,78 +74,111 @@ special_gui_handlers.on_gui_click = (function(player, event, event_handlers)
 
     local metadata = {shift=event.shift, control=event.control, alt=event.alt,
       click=click, direction=direction, action=action}
-    standard_gui_handler(player, event, event_handlers, metadata)
+
+    return true, metadata
 end)
 
-special_gui_handlers.on_gui_closed = (function(player, event, event_handlers)
+
+special_gui_handlers.on_gui_text_changed = (function(event, _, _)
+    return true, {text = event.element.text}
+end)
+
+special_gui_handlers.on_gui_checked_state_changed = (function(event, _, _)
+    return true, {state = event.element.state}
+end)
+
+special_gui_handlers.on_gui_switch_state_changed = (function(event, _, _)
+    return true, {switch_state = event.element.switch_state}
+end)
+
+special_gui_handlers.on_gui_elem_changed = (function(event, _, _)
+    return true, {elem_value = event.element.elem_value}
+end)
+
+special_gui_handlers.on_gui_value_changed = (function(event, _, _)
+    return true, {slider_value = event.element.slider_value}
+end)
+
+special_gui_handlers.on_gui_closed = (function(event, _, _)
     if event.gui_type == defines.gui_type.custom and event.element.visible then
-        standard_gui_handler(player, event, event_handlers)
+        return true, nil
     end
+    return false
 end)
 
-special_gui_handlers.on_gui_confirmed = (function(player, event, event_handlers)
-    -- Try the normal handler, if it returns true, an event_handler was found
-    if standard_gui_handler(player, event, event_handlers) then
-        return
+special_gui_handlers.on_gui_confirmed = (function(event, player, action)
+    if action ~= nil then  -- Run the standard handler if one is found
+        return true, {text = event.element.text}
 
     -- Otherwise, close the currently open modal dialog, if possible
+    -- (doesn't need rate limiting because of the modal_dialog_type check)
     elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
-        -- Doesn't need rate limiting because of the check above (I think)
         modal_dialog.exit(player, "submit")
+        return false
     end
 end)
 
 
 local gui_event_cache = {}
--- Actually compile the list of GUI handlers
-for _, object in pairs(elements_that_need_handling) do
+-- Create tables for all events that are being registered
+for _, event_name in pairs(gui_identifier_map) do
+    gui_event_cache[event_name] = {
+        actions = {},
+        special_handler = special_gui_handlers[event_name]
+    }
+end
+
+-- Compile the list of GUI actions
+for _, object in pairs(gui_objects) do
     if object.gui_events then
-        for event_name, elements in pairs(object.gui_events) do
-            gui_event_cache[event_name] = gui_event_cache[event_name] or {
-                names = {},
-                patterns = {},
-                special_handler = special_gui_handlers[event_name]
-            }
+        for event_name, actions in pairs(object.gui_events) do
+            local event_table = gui_event_cache[event_name]
 
-            for _, element in pairs(elements) do
-                local handler_table = {handler = element.handler, timeout = nil}
-
-                local element_timeout = element.timeout
-                if not element_timeout then handler_table.timeout = gui_timeouts[event_name]
-                elseif element_timeout ~= 0 then handler_table.timeout = element_timeout end
-
-                if element.name then
-                    gui_event_cache[event_name].names[element.name] = handler_table
-                elseif element.pattern then
-                    gui_event_cache[event_name].patterns[element.pattern] = handler_table
-                end
+            for _, action in pairs(actions) do
+                local timeout = (action.timeout) and action.timeout or gui_timeouts[event_name]  -- could be nil
+                event_table.actions[action.name] = {handler = action.handler, timeout = timeout}
             end
         end
     end
 end
 
+
 local function handle_gui_event(event)
-    if event.element and event.element.get_mod() == "factoryplanner" then
-        -- The event table actually contains its identifier, not its name
-        local event_name = gui_identifier_map[event.name]
-        local event_handlers = gui_event_cache[event_name]
+    if not event.element then return end
 
-        if event_handlers then  -- make sure the given event is even handled
-            local player = game.get_player(event.player_index)
+    if event.element.get_mod() ~= "factoryplanner" then return end
 
-            if event_handlers.special_handler then
-                event_handlers.special_handler(player, event, event_handlers)
-            else
-                standard_gui_handler(player, event, event_handlers)
-            end
-        end
+    -- The event table actually contains its identifier, not its name
+    local event_name = gui_identifier_map[event.name]
+    local event_table = gui_event_cache[event_name]
+
+    local tags = event.element.tags
+    local action_name = tags[event_name]  -- could be nil
+
+    local player, metadata = game.get_player(event.player_index), nil
+    -- Run the event through the special handler, if one exists; it can stop the event from proceeding
+    if event_table.special_handler then
+        local run_event, md = event_table.special_handler(event, player, action_name)
+        if not run_event then return end
+        metadata = md  -- this is stupid
+    end
+
+    -- Special handlers need to run even without an action handler, so we wait
+    -- for this point to check whether there is an associated action
+    if not action_name then return end  -- meaning this event type has no action on this element
+    local action = event_table.actions[action_name]
+
+    -- Don't allow unhandled actions to avoid oversights in development
+    if not action then error("\nNo handler for the '" .. action_name .. "'-action!"); end
+
+    -- Check if rate limiting allows this action to proceed
+    if not rate_limiting_active(player, event.tick, action_name, action.timeout) then
+        action.handler(player, tags, metadata)
     end
 end
 
 -- Register all the GUI events from the identifier map
-for event_id, _ in pairs(gui_identifier_map) do
-    script.on_event(event_id, handle_gui_event)
-end
+for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle_gui_event) end
 
 
 
@@ -210,15 +214,15 @@ local misc_timeouts = {
 local special_misc_handlers = {}
 
 special_misc_handlers.on_gui_opened = (function(_, event)
-    -- This should only fire when a UI not associated with FP is opened to properly close FP's stuff
+    -- This should only fire when a UI not associated with FP is opened, so FP's dialogs can close properly
     return (event.gui_type ~= defines.gui_type.custom or not event.element
       or event.element.get_mod() ~= "factoryplanner")
 end)
 
 
 local misc_event_cache = {}
--- Actually compile the list of misc handlers
-for _, object in pairs(elements_that_need_handling) do
+-- Compile the list of misc handlers
+for _, object in pairs(gui_objects) do
     if object.misc_events then
         for event_name, handler in pairs(object.misc_events) do
             misc_event_cache[event_name] = misc_event_cache[event_name] or {
@@ -236,23 +240,20 @@ end
 local function handle_misc_event(event)
     local event_name = event.input_name or event.name -- also handles keyboard shortcuts
     local event_handlers = misc_event_cache[misc_identifier_map[event_name]]
+    if not event_handlers then return end  -- make sure the given event is even handled
 
-    if event_handlers then  -- make sure the given event is even handled
-        -- I will assume every one of the events has a player attached
-        local player = game.get_player(event.player_index)
+    -- We'll assume every one of the events has a player attached
+    local player = game.get_player(event.player_index)
 
-        -- Check if the action is allowed to be carried out by rate limiting
-        if not rate_limit_action(player, event_name, event.tick, nil, event_handlers.timeout) then return end
+    -- Check if the action is allowed to be carried out by rate limiting
+    if rate_limiting_active(player, event.tick, event_name, event_handlers.timeout) then return end
 
-        -- If a special handler is set, it needs to return true before proceeding with the registered handlers
-        local special_handler = event_handlers.special_handler
-        if special_handler and not event_handlers.special_handler(player, event) then return end
+    -- If a special handler is set, it needs to return true before proceeding with the registered handlers
+    local special_handler = event_handlers.special_handler
+    if special_handler and not event_handlers.special_handler(player, event) then return end
 
-        for _, registered_handler in pairs(event_handlers.registered_handlers) do registered_handler(player, event) end
-    end
+    for _, registered_handler in pairs(event_handlers.registered_handlers) do registered_handler(player, event) end
 end
 
 -- Register all the misc events from the identifier map
-for event_id, _ in pairs(misc_identifier_map) do
-    script.on_event(event_id, handle_misc_event)
-end
+for event_id, _ in pairs(misc_identifier_map) do script.on_event(event_id, handle_misc_event) end

@@ -127,7 +127,8 @@ function ui_util.mod_gui.create(player)
     local frame_flow = mod_gui.get_button_flow(player)
     if not frame_flow["fp_button_toggle_interface"] then
         frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-          tooltip={"fp.toggle_interface_tt"}, style=mod_gui.button_style, mouse_button_filter={"left"}}
+          tooltip={"fp.toggle_interface_tt"}, tags={on_gui_click="mod_gui_toggle_interface"},
+          style=mod_gui.button_style, mouse_button_filter={"left"}}
     end
 
     frame_flow["fp_button_toggle_interface"].visible = data_util.get("settings", player).show_gui_button
@@ -178,21 +179,24 @@ end
 -- **** Switch utility ****
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
-function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip, label_first)
+function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)
     if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
 
-    local flow = parent_flow.add{type="flow", name="flow_" .. name, direction="horizontal"}
+    local flow = parent_flow.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
     local switch, label
 
+
     local function add_switch()
-        switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
+        local tags = {on_gui_switch_state_changed=action}
+        for key, value in pairs(additional_tags) do tags[key] = value end
+        switch = flow.add{type="switch", tags=tags, switch_state=state,
           left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
     end
 
     local function add_label()
         caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
-        label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
+        label = flow.add{type="label", caption=caption, tooltip=tooltip}
         label.style.font = "default-semibold"
     end
 
@@ -200,19 +204,6 @@ function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip, l
     else add_switch(); add_label(); label.style.left_margin = 8 end
 
     return switch
-end
-
--- Returns the switch_state of the switch by the given name in the given flow (optionally as a boolean)
-function ui_util.switch.get_state(flow, name, boolean)
-    local state = flow["flow_" .. name]["fp_switch_" .. name].switch_state
-    if boolean then return ui_util.switch.convert_to_boolean(state)
-    else return state end
-end
-
--- Sets the switch_state of the switch by the given name in the given flow (state given as switch_state or boolean)
-function ui_util.switch.set_state(flow, name, state)
-    if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
-    flow["flow_" .. name]["fp_switch_" .. name].switch_state = state
 end
 
 function ui_util.switch.convert_to_boolean(state)

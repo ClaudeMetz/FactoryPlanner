@@ -33,7 +33,7 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     end
 
     local module_name = (module) and module.proto.name or nil
-    local button_module = flow_module.add{type="choose-elem-button", name="fp_choose-elem-button_module_choice",
+    local button_module = flow_module.add{type="choose-elem-button", tags={on_gui_elem_changed="select_module_type"},
       elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
     button_module.style.right_margin = 12
@@ -44,18 +44,18 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     local slider_value = (module) and module.amount or empty_slots
     local maximum_value = (module) and (module.amount + empty_slots) or empty_slots
 
-    -- Sliders with max_value-min_value == 1 don't work correctly. This is the workaround:
+    -- Sliders where max_value - min_value == 1 don't work correctly. This is the workaround:
     --if maximum_value == 2 then maximum_value = 2.0000001 end
     -- I'm not sure if I want sliders to start at 1 though, starting at 0 might be fine
 
-    local slider = flow_module.add{type="slider", name="fp_slider_module_amount", minimum_value=0,
+    local slider = flow_module.add{type="slider", tags={on_gui_value_changed="module_amount"}, minimum_value=0,
       maximum_value=maximum_value, value=slider_value, value_step=1, style="notched_slider"}
     slider.style.width = 130
     slider.style.margin = {0, 6}
     modal_elements["module_slider"] = slider
 
-    local textfield_slider = flow_module.add{type="textfield", name="fp_textfield_module_amount",
-      text=tostring(slider_value)}
+    local textfield_slider = flow_module.add{type="textfield", text=tostring(slider_value),
+      tags={on_gui_text_changed="module_amount"}}
     ui_util.setup_numeric_textfield(textfield_slider, false, false)
     textfield_slider.style.width = 40
     modal_elements["module_textfield"] = textfield_slider
@@ -76,7 +76,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}}
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
-    local button_beacon = flow_beacon.add{type="choose-elem-button", name="fp_choose-elem-button_beacon_choice",
+    local button_beacon = flow_beacon.add{type="choose-elem-button", tags={on_gui_elem_changed="select_beacon_type"},
       elem_type="entity", entity=beacon.proto.name, elem_filters=beacon_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
     button_beacon.style.right_margin = 12
@@ -85,7 +85,8 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
 
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
-    local textfield_amount = flow_beacon.add{type="textfield", name="fp_textfield_beacon_amount", text=beacon_amount}
+    local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
+      tags={on_gui_text_changed="beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     ui_util.select_all(textfield_amount)
     textfield_amount.style.width = 40
@@ -100,7 +101,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     textfield_total.style.width = 40
     modal_elements["beacon_total_textfield"] = textfield_total
 
-    local button_total = flow_beacon.add{type="sprite-button", name="fp_sprite-button_beacon_total_amount",
+    local button_total = flow_beacon.add{type="sprite-button", tags={on_gui_click="use_beacon_selector"},
       tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
     button_total.style.padding = 2
     button_total.style.size = 26
@@ -129,31 +130,32 @@ local function update_dialog_submit_button(modal_elements)
     modal_dialog.set_submit_button_state(modal_elements, (message == nil), message)
 end
 
-local function handle_module_textfield_change(player, element)
+local function handle_module_textfield_change(player, _, metadata)
     local modal_elements = data_util.get("modal_elements", player)
     local module_slider = modal_elements.module_slider
 
     local slider_maximum = module_slider.get_slider_maximum()
-    local new_number = math.min((tonumber(element.text) or 0), slider_maximum)
+    local new_number = math.min((tonumber(metadata.text) or 0), slider_maximum)
 
-    element.text = tostring(new_number)
+    metadata.text = tostring(new_number)
     module_slider.slider_value = new_number
 
     update_dialog_submit_button(modal_elements)
 end
 
-local function handle_beacon_change(player, element)
+local function handle_beacon_change(player, _, _)
     local modal_data = data_util.get("modal_data", player)
+    local chooser_beacon = modal_data.modal_elements.beacon_choice_button
 
     -- The beacon can't be set to nil, se re-set the current one if necessary
-    if element.elem_value == nil then
-        element.elem_value = modal_data.blank_beacon.proto.name
-        return  -- nothing changed in this case
+    if chooser_beacon.elem_value == nil then
+        chooser_beacon.elem_value = modal_data.blank_beacon.proto.name
+        return  -- 'nothing changed' in this case
     end
 
     -- Update the blank beacon with the new beacon proto
     local blank_beacon = modal_data.blank_beacon
-    local beacon_id = global.all_beacons.map[element.elem_value]
+    local beacon_id = global.all_beacons.map[chooser_beacon.elem_value]
     blank_beacon.proto = global.all_beacons.beacons[beacon_id]
 
     -- Recreate the module flow, retaining as much info as possible
@@ -311,14 +313,14 @@ end
 beacon_dialog.gui_events = {
     on_gui_elem_changed = {
         {
-            name = "fp_choose-elem-button_beacon_choice",
+            name = "select_beacon",
             handler = handle_beacon_change
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_beacon_amount",
-            handler = (function(player, _)
+            name = "beacon_amount",
+            handler = (function(player, _, _)
                 local modal_elements = data_util.get("modal_elements", player)
                 update_dialog_submit_button(modal_elements)
             end)
@@ -326,7 +328,7 @@ beacon_dialog.gui_events = {
     },
     on_gui_click = {
         {
-            name = "fp_sprite-button_beacon_total_amount",
+            name = "use_beacon_selector",
             timeout = 20,
             handler = (function(player, _, _)
                 modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
@@ -354,8 +356,8 @@ beacon_dialog.misc_events = {
 modules_dialog.gui_events = {
     on_gui_elem_changed = {
         {
-            name = "fp_choose-elem-button_module_choice",
-            handler = (function(player, _)
+            name = "select_module_type",
+            handler = (function(player, _, _)
                 local modal_elements = data_util.get("modal_elements", player)
                 update_dialog_submit_button(modal_elements)
             end)
@@ -363,17 +365,17 @@ modules_dialog.gui_events = {
     },
     on_gui_value_changed = {
         {
-            name = "fp_slider_module_amount",
-            handler = (function(player, element)
+            name = "module_amount",
+            handler = (function(player, _, metadata)
                 local modal_elements = data_util.get("modal_elements", player)
-                modal_elements.module_textfield.text = tostring(element.slider_value)
+                modal_elements.module_textfield.text = tostring(metadata.slider_value)
                 update_dialog_submit_button(modal_elements)
             end)
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_module_amount",
+            name = "module_amount",
             handler = handle_module_textfield_change
         }
     }
