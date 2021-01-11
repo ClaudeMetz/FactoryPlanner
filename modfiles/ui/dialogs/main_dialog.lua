@@ -44,7 +44,7 @@ local function handle_other_gui_opening(player)
     if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
 end
 
-local function handle_background_dimmer_click(player)
+local function handle_background_dimmer_click(player, _, _)
     local ui_state = data_util.get("ui_state", player)
     ui_state.main_elements.main_frame.bring_to_front()
 
@@ -73,8 +73,8 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements.flows = {}
 
     -- Create and configure the top-level frame
-    local frame_main_dialog = player.gui.screen.add{type="frame", name="fp_frame_main_dialog",
-      visible=visible, direction="vertical"}
+    local frame_main_dialog = player.gui.screen.add{type="frame", direction="vertical",
+      visible=visible, tags={on_gui_closed="close_main_dialog"}}
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = determine_main_dialog_dimensions(player)
@@ -151,8 +151,7 @@ function main_dialog.toggle(player, skip_player_opened)
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
         frame_main_dialog.visible = not frame_main_dialog.visible
-        -- Explicit check for 'true' needed because the event handler can call this with a table as the second argument
-        if skip_player_opened ~= true then player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil end
+        if not skip_player_opened then player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
         title_bar.refresh_message(player)
@@ -177,15 +176,16 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     end
     game.tick_paused = pause
 
-    local background_dimmer = player.gui.screen["fp_frame_background_dimmer"]
     -- Always destroy the dimmer to deal with screen resolution changes
     -- Not the most efficient solution, but the most practical one
-    if background_dimmer then background_dimmer.destroy() end
+    local main_elements = data_util.get("main_elements", player)
+    if main_elements.background_dimmer then main_elements.background_dimmer.destroy() end
 
     if pause then
-        background_dimmer = player.gui.screen.add{type="frame",
-          name="fp_frame_background_dimmer", style="fp_frame_semitransparent"}
+        local background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+          tags={on_gui_click="re-layer_background_dimmer"}}
         background_dimmer.style.size = player.display_resolution
+        main_elements["background_dimmer"] = background_dimmer
 
         frame_main_dialog.bring_to_front()
     end
@@ -198,17 +198,21 @@ end
 main_dialog.gui_events = {
     on_gui_closed = {
         {
-            name = "fp_frame_main_dialog",
-            handler = main_dialog.toggle
+            name = "close_main_dialog",
+            handler = (function(player, _)
+                main_dialog.toggle(player)
+            end)
         }
     },
     on_gui_click = {
         {
-            name = "fp_button_toggle_interface",
-            handler = main_dialog.toggle
+            name = "mod_gui_toggle_interface",
+            handler = (function(player, _, _)
+                main_dialog.toggle(player)
+            end)
         },
         {
-            name = "fp_frame_background_dimmer",
+            name = "re-layer_background_dimmer",
             handler = handle_background_dimmer_click
         }
     }
@@ -231,5 +235,7 @@ main_dialog.misc_events = {
         end
     end),
 
-    fp_toggle_main_dialog = main_dialog.toggle
+    fp_toggle_main_dialog = (function(player, _)
+        main_dialog.toggle(player)
+    end)
 }

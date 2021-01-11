@@ -6,7 +6,6 @@ options_dialog = {}
 
 -- ** CHOOSER **
 local function add_chooser_button(modal_elements, definition)
-    local element_name = "fp_sprite-button_chooser_element_" .. definition.element_id
     local style, indication = "flib_slot_button_default", ""
 
     if definition.selected then
@@ -20,16 +19,15 @@ local function add_chooser_button(modal_elements, definition)
     local first_line = {"fp.two_word_title", definition.localised_name, indication}
     local tooltip = {"", first_line, "\n", definition.amount_line, "\n\n", definition.tooltip_appendage}
 
-    modal_elements.choices_table.add{type="sprite-button", name=element_name, style=style, tooltip=tooltip,
+    modal_elements.choices_table.add{type="sprite-button", style=style, tooltip=tooltip,
+      tags={on_gui_click="make_chooser_choice", element_id=definition.element_id},
       sprite=definition.sprite, number=definition.button_number, mouse_button_filter={"left"}}
 end
 
-local function handler_chooser_button_click(player, element, metadata)
-    local element_id = string.gsub(element.name, "fp_sprite%-button_chooser_element_", "")
+local function handler_chooser_button_click(player, tags, metadata)
     local click_handler = data_util.get("modal_data", player).click_handler
-
     -- If no click handler is present, just abort mission
-    if click_handler then click_handler(player, element_id, metadata) end
+    if click_handler then click_handler(player, tags.element_id, metadata) end
 
     modal_dialog.exit(player, "cancel")
 end
@@ -60,7 +58,7 @@ end
 chooser_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_chooser_element_[0-9_]+$",
+            name = "make_chooser_choice",  -- great naming right there
             timeout = 20,
             handler = handler_chooser_button_click
         }
@@ -70,10 +68,10 @@ chooser_dialog.gui_events = {
 
 -- ** OPTIONS **
 -- ** LOCAL UTIL **
-local function call_change_handler(player, element)
+local function call_change_handler(player, tags, metadata)
     local modal_data = data_util.get("modal_data", player)
-    local change_handler = modal_data.field_handlers[element.name]
-    if change_handler then change_handler(modal_data, element) end
+    local change_handler = modal_data.field_handlers[tags.field_name]
+    if change_handler then change_handler(modal_data, metadata) end
 end
 
 -- ** ELEMENTS **
@@ -81,16 +79,15 @@ options_dialog.gui_events = {}
 local elements = {}
 
 -- ** TEXTFIELD **
-elements.textfield = {prefix = "fp_textfield_options_"}
+elements.textfield = {}
 
 function elements.textfield.create(table, field, modal_elements)
-    local element_name = elements.textfield.prefix .. field.name
-    local textfield = table.add{type="textfield", name=element_name, text=field.text}
+    local textfield = table.add{type="textfield", text=field.text,
+      tags={on_gui_text_changed="change_option", field_name=field.name}}
     textfield.style.width = (field.width or 180)
     if field.focus then ui_util.select_all(textfield) end
 
-    modal_elements[element_name] = textfield
-    return element_name
+    modal_elements[field.name] = textfield
 end
 
 function elements.textfield.read(textfield)
@@ -98,17 +95,16 @@ function elements.textfield.read(textfield)
 end
 
 -- ** NUMERIC TEXTFIELD **
-elements.numeric_textfield = {prefix = "fp_textfield_options_numberic_"}
+elements.numeric_textfield = {}
 
 function elements.numeric_textfield.create(table, field, modal_elements)
-    local element_name = elements.numeric_textfield.prefix .. field.name
-    local textfield = table.add{type="textfield", name=element_name, text=tostring(field.text or "")}
+    local textfield = table.add{type="textfield", text=tostring(field.text or ""),
+      tags={on_gui_text_changed="change_option", field_name=field.name}}
     textfield.style.width = (field.width or 75)
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then ui_util.select_all(textfield) end
 
-    modal_elements[element_name] = textfield
-    return element_name
+    modal_elements[field.name] = textfield
 end
 
 function elements.numeric_textfield.read(textfield)
@@ -118,29 +114,28 @@ end
 -- ** TEXTFIELD EVENT **
 options_dialog.gui_events.on_gui_text_changed = {
     {
-        pattern = "^fp_textfield_options_[a-z_]+$",
+        name = "change_option",
         handler = call_change_handler
     }
 }
 
 -- ** ON OFF SWITCH **
-elements.on_off_switch = {prefix = "fp_switch_on_off_options_"}
+elements.on_off_switch = {}
 
 options_dialog.gui_events.on_gui_switch_state_changed = {
     {
-        pattern = "^" .. elements.on_off_switch.prefix .. "[a-z_]+$",
+        name = "change_option",
         handler = call_change_handler
     }
 }
 
 function elements.on_off_switch.create(table, field, modal_elements)
-    local element_name = elements.on_off_switch.prefix .. field.name
     local state = ui_util.switch.convert_to_state(field.state)
-    local switch = table.add{type="switch", name=element_name, switch_state=state,
+    local switch = table.add{type="switch", switch_state=state,
+      tags={on_gui_switch_state_changed="change_option", field_name=field.name},
       left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
 
-    modal_elements[element_name] = switch
-    return element_name
+    modal_elements[field.name] = switch
 end
 
 function elements.on_off_switch.read(switch)
@@ -148,23 +143,22 @@ function elements.on_off_switch.read(switch)
 end
 
 -- ** CHOOSE ELEM BUTTON **
-elements.choose_elem_button = {prefix = "fp_choose_elem_button_options_"}
+elements.choose_elem_button = {}
 
 options_dialog.gui_events.on_gui_elem_changed = {
     {
-        pattern = "^" .. elements.choose_elem_button.prefix .. "[a-z_]+$",
+        name = "change_option",
         handler = call_change_handler
     }
 }
 
 function elements.choose_elem_button.create(table, field, modal_elements)
-    local element_name = elements.choose_elem_button.prefix .. field.name
-    local choose_elem_button = table.add{type="choose-elem-button", name=element_name,
+    local choose_elem_button = table.add{type="choose-elem-button",
+      tags={on_gui_elem_changed="change_option", field_name=field.name},
       elem_type=field.elem_type, style="fp_sprite-button_inset"}
     choose_elem_button.elem_value = field.elem_value
 
-    modal_elements[element_name] = choose_elem_button
-    return element_name
+    modal_elements[field.name] = choose_elem_button
 end
 
 function elements.choose_elem_button.read(choose_elem_button)
@@ -195,23 +189,22 @@ function options_dialog.open(_, modal_data)
         local label = table_options.add{type="label", caption=caption, tooltip=field.tooltip}
         label.style.font = "heading-3"
 
-        local element_name = elements[field.type].create(table_options, field, modal_elements)
-        modal_data.field_handlers[element_name] = field.change_handler
+        elements[field.type].create(table_options, field, modal_elements)
+        modal_data.field_handlers[field.name] = field.change_handler
     end
 
     -- Call all the change handlers once to set the initial state correctly
-    for element_name, change_handler in pairs(modal_data.field_handlers) do
-        change_handler(modal_data, modal_elements[element_name])
+    for field_name, change_handler in pairs(modal_data.field_handlers) do
+        change_handler(modal_data, modal_elements[field_name])
     end
 end
 
 function options_dialog.close(player, action)
     local modal_data = data_util.get("modal_data", player)
-    local modal_elements = modal_data.modal_elements
 
     local options_data = {}
     for _, field in pairs(modal_data.fields) do
-        local element = modal_elements[elements[field.type].prefix .. field.name]
+        local element = modal_data.modal_elements[field.name]
         options_data[field.name] = elements[field.type].read(element)
     end
 

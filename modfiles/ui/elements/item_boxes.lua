@@ -18,7 +18,7 @@ local function add_recipe(player, context, type, item)
     modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type}})
 end
 
-local function build_item_box(player, name, column_count)
+local function build_item_box(player, category, column_count)
     local item_boxes_elements = data_util.get("main_elements", player).item_boxes
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
@@ -26,7 +26,7 @@ local function build_item_box(player, name, column_count)
     window_frame.style.top_padding = 6
     window_frame.style.bottom_padding = ITEM_BOX_PADDING
 
-    local label = window_frame.add{type="label", caption={"fp.pu_" .. name, 2}, style="caption_label"}
+    local label = window_frame.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
     label.style.left_padding = ITEM_BOX_PADDING
     label.style.bottom_margin = 4
 
@@ -39,15 +39,15 @@ local function build_item_box(player, name, column_count)
     item_frame.style.width = column_count * ITEM_BOX_BUTTON_SIZE
 
     local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
-    item_boxes_elements[name .. "_item_table"] = table_items
+    item_boxes_elements[category .. "_item_table"] = table_items
 end
 
-local function refresh_item_box(player, name, subfactory, allow_addition)
+local function refresh_item_box(player, category, subfactory, allow_addition)
     local ui_state = data_util.get("ui_state", player)
     local item_boxes_elements = ui_state.main_elements.item_boxes
-    local class_name = (name:gsub("^%l", string.upper))
+    local class = (category:gsub("^%l", string.upper))
 
-    local table_items = item_boxes_elements[name .. "_item_table"]
+    local table_items = item_boxes_elements[category .. "_item_table"]
     table_items.clear()
 
     if not subfactory or not subfactory.valid then return 0 end
@@ -56,23 +56,23 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
     local default_style, tut_mode_tooltip = "flib_slot_button_default", ""
 
-    if name == "product" then
+    if class == "Product" then
         default_style = "flib_slot_button_red"
         tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true)
-    elseif name == "byproduct" then
+    elseif class == "Byproduct" then
         default_style = "flib_slot_button_red"
         if subfactory.matrix_free_items ~= nil then
             tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_byproduct", true, true, true)
         end
     end
 
-    for _, item in ipairs(Subfactory.get_in_order(subfactory, class_name)) do
-        local required_amount = (name == "product") and Item.required_amount(item) or nil
+    for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
+        local required_amount = (class == "Product") and Item.required_amount(item) or nil
         local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local style, satisfaction_line = default_style, ""
-        if name == "product" and amount ~= nil and amount ~= "0" then
+        if class == "Product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
             local percentage_string = ui_util.format_number(satisfied_percentage, 3)
             satisfaction_line = {"fp.newline", {"fp.two_word_title", (percentage_string .. "%"), {"fp.satisfied"}}}
@@ -87,17 +87,19 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, tut_mode_tooltip}
 
-        table_items.add{type="sprite-button", name="fp_sprite-button_top_level_" .. name .. "_" .. item.id,
-          sprite=item.proto.sprite, tooltip=tooltip, number=amount, style=style, mouse_button_filter={"left-and-right"}}
+        table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
+          tags={on_gui_click="act_on_top_level_item", category=category, item_id=item.id},
+          mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
         ::skip_item::  -- goto for fun, wooohoo
     end
 
     if allow_addition then  -- meaning allow the user to add items of this type
-        local button_add = table_items.add{type="sprite-button", name="fp_sprite-button_add_top_level_" .. name,
-          sprite="utility/add", tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. name, 1}},
-          enabled=(not ui_state.flags.archive_open), style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
+        local button_add = table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
+          tags={on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
+          tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. category, 1}},
+          style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
         button_add.style.padding = 3
         button_add.style.margin = 3
         table_item_count = table_item_count + 1
@@ -108,14 +110,12 @@ local function refresh_item_box(player, name, subfactory, allow_addition)
 end
 
 
-local function handle_item_button_click(player, button, metadata)
-    local sstring = split_string(button.name, "_")
-    local item_class = sstring[5]:gsub("^%l", string.upper)
-    local item_id = sstring[6]
-
+local function handle_item_button_click(player, tags, metadata)
     local context = data_util.get("context", player)
     local subfactory = context.subfactory
-    local item = Subfactory.get(subfactory, item_class, item_id)
+
+    local class = (tags.category:gsub("^%l", string.upper))
+    local item = Subfactory.get(subfactory, class, tags.item_id)
 
     if metadata.alt then
         data_util.execute_alt_action(player, "show_item", {item=item.proto, click=metadata.click})
@@ -124,7 +124,7 @@ local function handle_item_button_click(player, button, metadata)
         return
 
     else  -- individual handlers
-        if item_class == "Product" then
+        if class == "Product" then
             if metadata.direction ~= nil then  -- Shift product in the given direction
                 if Subfactory.shift(subfactory, item, metadata.direction) then
                     -- Row count doesn't change, so we can refresh directly
@@ -150,7 +150,7 @@ local function handle_item_button_click(player, button, metadata)
                 end
             end
 
-        elseif item_class == "Byproduct" then
+        elseif class == "Byproduct" then
             add_recipe(player, context, "byproduct", item)
         end
     end
@@ -201,14 +201,13 @@ end
 item_boxes.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_add_top_level_[a-z]+$",
-            handler = (function(player, element, _)
-                local item_category = string.gsub(element.name, "fp_sprite%-button_add_top_level_", "")
-                modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=item_category}})
+            name = "add_top_level_item",
+            handler = (function(player, tags, _)
+                modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=tags.category}})
             end)
         },
         {
-            pattern = "^fp_sprite%-button_top_level_[a-z]+_%d+$",
+            name = "act_on_top_level_item",
             handler = handle_item_button_click
         }
     }

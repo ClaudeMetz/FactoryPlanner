@@ -37,7 +37,7 @@ local function set_all_checkboxes(player, checkbox_state)
 end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
-local function adjust_after_checkbox_click(player)
+local function adjust_after_checkbox_click(player, _, _)
     local ui_state = data_util.get("ui_state", player)
     local modal_elements = ui_state.modal_data.modal_elements
 
@@ -58,7 +58,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
     flow.style.vertical_align = "center"
 
     local function add_button()
-        local button = flow.add{type="sprite-button", name="fp_button_porter_subfactory_" .. dialog_type,
+        local button = flow.add{type="sprite-button", tags={on_gui_click=(dialog_type .. "_subfactories")},
           style="flib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
           mouse_button_filter={"left"}}
         set_tool_button_state(button, dialog_type, button_enabled)
@@ -66,7 +66,8 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
     end
 
     local function add_textfield()
-        local textfield = flow.add{type="textfield", name="fp_textfield_porter_string_" .. dialog_type}
+        local textfield = flow.add{type="textfield", tags={on_gui_text_changed=(dialog_type .. "_string"),
+          on_gui_confirmed=(dialog_type .. "_string")}}
         ui_util.setup_textfield(textfield)
         textfield.style.width = 0  -- needs to be set to 0 so stretching works
         textfield.style.minimal_width = 280
@@ -105,7 +106,8 @@ local function setup_subfactories_table(modal_elements, add_location)
     modal_elements.subfactories_table = table_subfactories
 
     -- Add master checkbox in any case
-    local checkbox_master = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_master", state=false}
+    local checkbox_master = table_subfactories.add{type="checkbox", state=false,
+      tags={on_gui_checked_state_changed="toggle_porter_master_checkbox"}}
     modal_elements.master_checkbox = checkbox_master
 
     for column_nr, table_column in pairs(table_columns) do
@@ -121,9 +123,8 @@ end
 local function add_to_subfactories_table(modal_elements, subfactory, location_name, enable_checkbox)
     local table_subfactories = modal_elements.subfactories_table
 
-    local identifier = (location_name or "tmp") .. "_" .. subfactory.id
-    local checkbox = table_subfactories.add{type="checkbox", name="fp_checkbox_porter_subfactory_" .. identifier,
-      state=false, enabled=(enable_checkbox or subfactory.valid)}
+    local checkbox = table_subfactories.add{type="checkbox", state=false, enabled=(enable_checkbox or subfactory.valid),
+      tags={on_gui_checked_state_changed="toggle_porter_checkbox"}}
 
     local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, true)}
     label.style.maximal_width = 350
@@ -134,6 +135,7 @@ local function add_to_subfactories_table(modal_elements, subfactory, location_na
 
     if location_name then table_subfactories.add{type="label", caption={"fp." .. location_name}} end
 
+    local identifier = (location_name or "tmp") .. "_" .. subfactory.id
     modal_elements.table_rows[identifier] = {
         checkbox = checkbox,
         subfactory = subfactory
@@ -142,7 +144,7 @@ end
 
 
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
-local function import_subfactories(player)
+local function import_subfactories(player, _, _)
     local modal_data = data_util.get("modal_data", player)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
@@ -198,7 +200,7 @@ local function import_subfactories(player)
 end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
-local function export_subfactories(player)
+local function export_subfactories(player, _, _)
     local modal_elements = data_util.get("modal_elements", player)
     local subfactories_to_export = {}
 
@@ -254,25 +256,25 @@ end
 import_dialog.gui_events = {
     on_gui_click = {
         {
-            name = "fp_button_porter_subfactory_import",
+            name = "import_subfactories",
             timeout = 20,
             handler = import_subfactories
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_porter_string_import",
-            handler = (function(player, element)
+            name = "import_string",
+            handler = (function(player, _, metadata)
                 local button_import = data_util.get("modal_elements", player).import_button
-                set_tool_button_state(button_import, "import", (string.len(element.text) > 0))
+                set_tool_button_state(button_import, "import", (string.len(metadata.text) > 0))
             end)
         }
     },
     on_gui_confirmed = {
         {
-            name = "fp_textfield_porter_string_import",
-            handler = (function(player, element)
-                if element.text ~= "" then import_subfactories(player) end
+            name = "import_string",
+            handler = (function(player, _, metadata)
+                if metadata.text ~= "" then import_subfactories(player) end
             end)
         }
     }
@@ -310,7 +312,7 @@ end
 export_dialog.gui_events = {
     on_gui_click = {
         {
-            name = "fp_button_porter_subfactory_export",
+            name = "export_subfactories",
             timeout = 20,
             handler = export_subfactories
         }
@@ -322,13 +324,13 @@ export_dialog.gui_events = {
 porter_dialog.gui_events = {
     on_gui_checked_state_changed = {
         {
-            name = "fp_checkbox_porter_master",
-            handler = (function(player, element)
-                set_all_checkboxes(player, element.state)
+            name = "toggle_porter_master_checkbox",
+            handler = (function(player, _, metadata)
+                set_all_checkboxes(player, metadata.state)
             end)
         },
         {
-            pattern = "^fp_checkbox_porter_subfactory_[a-z]+_%d+$",
+            name = "toggle_porter_checkbox",
             handler = adjust_after_checkbox_click
         }
     }

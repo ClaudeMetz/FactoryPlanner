@@ -9,8 +9,7 @@ local function show_linearly_dependent_recipes(modal_data, recipe_protos)
     local frame_recipes = flow_recipes.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
     local table_recipes = frame_recipes.add{type="table", column_count=8, style="filter_slot_table"}
     for _, recipe_proto in ipairs(recipe_protos) do
-        table_recipes.add{type="sprite", name="fp_sprite-matrix_recipe_" .. recipe_proto.id,
-          sprite=recipe_proto.sprite, tooltip=recipe_proto.localised_name}
+        table_recipes.add{type="sprite", sprite=recipe_proto.sprite, tooltip=recipe_proto.localised_name}
     end
 end
 
@@ -30,7 +29,7 @@ local function refresh_item_category(modal_data, type)
     table_items.clear()
 
     for index, proto in ipairs(modal_data[type .. "_items"]) do
-        table_items.add{type="sprite-button", name="fp_sprite-button_matrix_" .. type .. "_" .. index,
+        table_items.add{type="sprite-button", tags={on_gui_click="swap_item_category", type=type, index=index},
           sprite=proto.sprite, tooltip=proto.localised_name, style="flib_slot_button_default",
           mouse_button_filter={"left"}}
     end
@@ -51,21 +50,17 @@ local function create_item_category(modal_data, type, label_arg)
     refresh_item_category(modal_data, type)
 end
 
-local function swap_item_category(player, element)
+local function swap_item_category(player, tags, _)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
-
-    local split_string = split_string(element.name, "_")
-    local type, proto_index = split_string[4], tonumber(split_string[5])
-
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = ui_state.modal_data
 
     -- update the free items here, set the constrained items based on linear dependence data
-    if type == "free" then
+    if tags.type == "free" then
         -- note this assumes the gui's list has the same order as the subfactory
-        table.remove(subfactory.matrix_free_items, proto_index)
+        table.remove(subfactory.matrix_free_items, tags.index)
     else -- "constrained"
-        local item_proto = modal_data["constrained_items"][proto_index]
+        local item_proto = modal_data["constrained_items"][tags.index]
         table.insert(subfactory.matrix_free_items, item_proto)
     end
 
@@ -148,7 +143,7 @@ end
 matrix_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_matrix_[a-z]+_%d+$",
+            name = "swap_item_category",
             handler = swap_item_category
         }
     }

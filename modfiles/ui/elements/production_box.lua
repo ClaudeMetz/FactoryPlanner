@@ -1,7 +1,7 @@
 production_box = {}
 
 -- ** LOCAL UTIL **
-local function refresh_production(player)
+local function refresh_production(player, _, _)
     local subfactory = data_util.get("context", player).subfactory
     if subfactory and subfactory.valid and main_dialog.is_in_focus(player) then
         calculation.update(player, subfactory)
@@ -9,7 +9,7 @@ local function refresh_production(player)
     end
 end
 
-local function handle_matrix_toggle(player)
+local function handle_matrix_toggle(player, _, _)
     local subfactory = data_util.get("context", player).subfactory
 
     if subfactory.matrix_free_items == nil then
@@ -60,7 +60,7 @@ function production_box.build(player)
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height
     subheader.style.padding = {8, 8, 6, 8}
 
-    local button_refresh = subheader.add{type="sprite-button", name="fp_sprite-button_production_refresh",
+    local button_refresh = subheader.add{type="sprite-button", tags={on_gui_click="refresh_production"},
       sprite="utility/refresh", style="tool_button", tooltip={"fp.refresh_production"}, mouse_button_filter={"left"}}
     main_elements.production_box["refresh_button"] = button_refresh
 
@@ -72,11 +72,11 @@ function production_box.build(player)
     label_level.style.margin = {0, 12, 0, 6}
     main_elements.production_box["level_label"] = label_level
 
-    local button_floor_up = subheader.add{type="button", name="fp_button_production_floor_up", caption={"fp.floor_up"},
-      tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+    local button_floor_up = subheader.add{type="button", tags={on_gui_click="change_floor", destination="up"},
+      caption={"fp.floor_up"}, tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_floor_up.style.disabled_font_color = {}
     main_elements.production_box["floor_up_button"] = button_floor_up
-    local button_floor_top = subheader.add{type="button", name="fp_button_production_floor_top",
+    local button_floor_top = subheader.add{type="button", tags={on_gui_click="change_floor", destination="top"},
       caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"}, style="fp_button_rounded_mini",
       mouse_button_filter={"left"}}
     button_floor_top.style.disabled_font_color = {}
@@ -88,12 +88,12 @@ function production_box.build(player)
     table_matrix_solver.style.horizontal_spacing = 0
     table_matrix_solver.style.right_margin = 12
 
-    local button_solver_toggle = table_matrix_solver.add{type="button", name="fp_button_production_solver_toggle",
+    local button_solver_toggle = table_matrix_solver.add{type="button", tags={on_gui_click="toggle_matrix_solver"},
       caption={"fp.matrix_solver"}, mouse_button_filter={"left"}}
     --button_solver_toggle.style.disabled_font_color = {}
     main_elements.production_box["solver_toggle_button"] = button_solver_toggle
     local button_solver_configure = table_matrix_solver.add{type="sprite-button", sprite="utility/change_recipe",
-      name="fp_button_production_solver_configure", style="fp_button_push", mouse_button_filter={"left"}}
+      tags={on_gui_click="configure_matrix_solver"}, style="fp_button_push", mouse_button_filter={"left"}}
     button_solver_configure.style.size = 26
     button_solver_configure.style.padding = -2
     main_elements.production_box["solver_configure_button"] = button_solver_configure
@@ -193,23 +193,22 @@ end
 production_box.gui_events = {
     on_gui_click = {
         {
-            name = "fp_sprite-button_production_refresh",
+            name = "refresh_production",
             timeout = 20,
             handler = refresh_production
         },
         {
-            pattern = "^fp_button_production_floor_[a-z]+$",
-            handler = (function(player, element, _)
-                local destination = string.gsub(element.name, "fp_button_production_floor_", "")
-                production_box.change_floor(player, destination)
+            name = "change_floor",
+            handler = (function(player, tags, _)
+                production_box.change_floor(player, tags.destination)
             end)
         },
         {
-            name = "fp_button_production_solver_toggle",
+            name = "toggle_matrix_solver",
             handler = handle_matrix_toggle
         },
         {
-            name = "fp_button_production_solver_configure",
+            name = "configure_matrix_solver",
             handler = (function(player, _, _)
                 modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
             end)

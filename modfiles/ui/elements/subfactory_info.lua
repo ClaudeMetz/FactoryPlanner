@@ -1,7 +1,7 @@
 subfactory_info = {}
 
 -- ** LOCAL UTIL **
-local function repair_subfactory(player)
+local function repair_subfactory(player, _, _)
     -- This function can only run is a subfactory is selected and invalid
     local subfactory = data_util.get("context", player).subfactory
 
@@ -60,7 +60,7 @@ function subfactory_info.build(player)
     label_repair.style.single_line = false
     main_elements.subfactory_info["repair_label"] = label_repair
 
-    local button_repair = flow_repair.add{type="button", name="fp_button_subfactory_repair",
+    local button_repair = flow_repair.add{type="button", tags={on_gui_click="repair_subfactory"},
       caption={"fp.repair_subfactory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_repair.style.top_margin = 4
 
@@ -102,7 +102,7 @@ function subfactory_info.build(player)
     flow_utility.style.vertical_align = "center"
     flow_utility.style.horizontal_spacing = 8
     flow_utility.add{type="label", caption={"fp.key_title", {"fp.utility"}}}
-    flow_utility.add{type="button", name="fp_button_view_utilities", caption={"fp.view_utilities"},
+    flow_utility.add{type="button", tags={on_gui_click="open_utility_dialog"}, caption={"fp.view_utilities"},
       style="fp_button_rounded_mini", mouse_button_filter={"left"}}
 
     local label_notes = table_utility.add{type="label", caption={"fp.info_label", {"fp.notes"}}}
@@ -122,8 +122,8 @@ function subfactory_info.build(player)
     main_elements.subfactory_info["timescales_table"] = table_timescales
 
     for scale, name in pairs(TIMESCALE_MAP) do
-        table_timescales.add{type="button", name=("fp_button_change_timescale_to_" .. scale), style="fp_button_push",
-          caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}
+        table_timescales.add{type="button", tags={on_gui_click="change_timescale", timescale=scale},
+          style="fp_button_push", caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}
     end
 
     -- Mining productivity
@@ -137,12 +137,13 @@ function subfactory_info.build(player)
     local label_prod_bonus = flow_mining_prod.add{type="label"}
     main_elements.subfactory_info["prod_bonus_label"] = label_prod_bonus
 
-    local button_override_prod_bonus = flow_mining_prod.add{type="button", name="fp_button_override_mining_prod",
+    local button_override_prod_bonus = flow_mining_prod.add{type="button", tags={on_gui_click="override_mining_prod"},
       caption={"fp.override"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_override_prod_bonus.style.disabled_font_color = {}
     main_elements.subfactory_info["override_prod_bonus_button"] = button_override_prod_bonus
 
-    local textfield_prod_bonus = flow_mining_prod.add{type="textfield", name="fp_textfield_mining_prod_override"}
+    local textfield_prod_bonus = flow_mining_prod.add{type="textfield",
+      tags={on_gui_text_changed="mining_prod_override", on_gui_confirmed="mining_prod_override"}}
     textfield_prod_bonus.style.size = {60, 26}
     ui_util.setup_numeric_textfield(textfield_prod_bonus, true, true)
     main_elements.subfactory_info["prod_bonus_override_textfield"] = textfield_prod_bonus
@@ -200,8 +201,7 @@ function subfactory_info.refresh(player)
 
         -- Timescale
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
-            local timescale = tonumber(string.match(button.name, "%d+"))
-            local selected = (subfactory.timescale == timescale)
+            local selected = (subfactory.timescale == button.tags.timescale)
             button.style = (selected) and "fp_button_push_active" or "fp_button_push"
             button.style.width = 42  -- needs to be re-set when changing the style
             button.enabled = not (selected or archive_open)
@@ -233,25 +233,24 @@ end
 subfactory_info.gui_events = {
     on_gui_click = {
         {
-            name = "fp_button_subfactory_repair",
+            name = "repair_subfactory",
             timeout = 20,
             handler = repair_subfactory
         },
         {
-            name = "fp_button_view_utilities",
+            name = "open_utility_dialog",
             handler = (function(player, _, _)
                 modal_dialog.enter(player, {type="utility"})
             end)
         },
         {
-            pattern = "^fp_button_change_timescale_to_%d+$",
-            handler = (function(player, element, _)
-                local new_timescale = tonumber(string.match(element.name, "%d+"))
-                change_timescale(player, new_timescale)
+            name = "change_timescale",
+            handler = (function(player, tags, _)
+                change_timescale(player, tags.timescale)
             end)
         },
         {
-            name = "fp_button_override_mining_prod",
+            name = "override_mining_prod",
             handler = (function(player, _, _)
                 local subfactory = data_util.get("context", player).subfactory
                 subfactory.mining_productivity = 0
@@ -262,20 +261,20 @@ subfactory_info.gui_events = {
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_mining_prod_override",
-            handler = (function(player, element)
+            name = "mining_prod_override",
+            handler = (function(player, _, metadata)
                 local ui_state = data_util.get("ui_state", player)
-                ui_state.context.subfactory.mining_productivity = tonumber(element.text)
+                ui_state.context.subfactory.mining_productivity = tonumber(metadata.text)
                 ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
             end)
         }
     },
     on_gui_confirmed = {
         {
-            name = "fp_textfield_mining_prod_override",
-            handler = (function(player, _)
+            name = "mining_prod_override",
+            handler = (function(player, _, _)
                 local ui_state = data_util.get("ui_state", player)
-                ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh
+                ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
                 calculation.update(player, ui_state.context.subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)

@@ -86,9 +86,9 @@ local function add_item_picker(parent_flow, player)
                 group_id_cache[group_name] = cache_count
                 group_id = cache_count
 
-                local button_group = table_item_groups.add{type="sprite-button", name="fp_sprite-button_item_group_"
-                  .. group_id, sprite=("item-group/" .. group_name), tooltip=item_proto.group.localised_name,
-                  mouse_button_filter={"left"}, style="fp_sprite-button_group_tab"}
+                local button_group = table_item_groups.add{type="sprite-button", sprite=("item-group/" .. group_name),
+                  tags={on_gui_click="select_picker_item_group", group_id=group_id}, style="fp_sprite-button_group_tab",
+                  tooltip=item_proto.group.localised_name, mouse_button_filter={"left"}}
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
@@ -146,9 +146,9 @@ local function add_item_picker(parent_flow, player)
             local existing_product = existing_products[item_proto.name]
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
 
-            local button_item = table_subgroup.add{type="sprite-button", name="fp_button_item_pick_"
-              .. item_proto.identifier, sprite=item_proto.sprite, enabled=(existing_product == nil),
-              tooltip=item_proto.localised_name, style=button_style, mouse_button_filter={"left"}}
+            local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
+              tags={on_gui_click="select_picker_item", identifier=item_proto.identifier},
+              enabled=(existing_product == nil), tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
 
             -- Ignores item types, so if one subgroup has both a fluid and an item of the same name,
             -- it'll only catch one. Let's see how long it takes until someone runs into this.
@@ -271,7 +271,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     flow_amount.add{type="label", caption={"fp.amount"}}
 
     local item_amount = (item and defined_by == "amount") and tostring(item.required_amount.amount) or ""
-    local textfield_amount = flow_amount.add{type="textfield", name="fp_textfield_picker_item_amount", text=item_amount}
+    local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
+      tags={on_gui_text_changed="picker_item_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 90
     modal_elements["item_amount_textfield"] = textfield_amount
@@ -281,7 +282,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
 
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount.amount) or ""
-    local textfield_belts = flow_belts.add{type="textfield", name="fp_textfield_picker_belt_amount", text=belt_amount}
+    local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
+      tags={on_gui_text_changed="picker_belt_amount"}}
     ui_util.setup_numeric_textfield(textfield_belts, true, false)
     textfield_belts.style.width = 85
     textfield_belts.style.left_margin = 4
@@ -289,7 +291,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local choose_belt_button = flow_belts.add{type="choose-elem-button", name="fp_choose-elem-button_picker_belt",
+    local choose_belt_button = flow_belts.add{type="choose-elem-button", tags={on_gui_elem_changed="picker_choose_belt"},
       elem_type="entity", elem_filters={{filter="type", type="transport-belt"}}, style="fp_sprite-button_inset_tiny"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
@@ -306,19 +308,18 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 end
 
 
-local function handle_item_pick(player, element)
-    local item_identifier = string.gsub(element.name, "fp_button_item_pick_", "")
-    local item_proto = IDENTIFIER_ITEM_MAP[item_identifier]
-
+local function handle_item_pick(player, tags, _)
     local modal_data = data_util.get("modal_data", player)
+
+    local item_proto = IDENTIFIER_ITEM_MAP[tags.identifier]
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
 
     set_appropriate_focus(modal_data)
     update_dialog_submit_button(modal_data.modal_elements)
 end
 
-local function handle_belt_pick(player, element)
-    local belt_name = element.elem_value
+local function handle_belt_pick(player, _, metadata)
+    local belt_name = metadata.elem_value
     local belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
 
     local modal_data = data_util.get("modal_data", player)
@@ -407,35 +408,34 @@ end
 picker_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_item_group_%d+$",
-            handler = (function(player, element, _)
+            name = "select_picker_item_group",
+            handler = (function(player, tags, _)
                 local modal_data = data_util.get("modal_data", player)
-                local group_id = tonumber(string.match(element.name, "%d+"))
-                select_item_group(modal_data, group_id)
+                select_item_group(modal_data, tags.group_id)
             end)
         },
         {
-            pattern = "^fp_button_item_pick_%d+_%d+$",
+            name = "select_picker_item",
             handler = handle_item_pick
         }
     },
     on_gui_elem_changed = {
         {
-            name = "fp_choose-elem-button_picker_belt",
+            name = "picker_choose_belt",
             handler = handle_belt_pick
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_picker_item_amount",
-            handler = (function(player, _)
+            name = "picker_item_amount",
+            handler = (function(player, _, _)
                 local modal_data = data_util.get("modal_data", player)
                 update_dialog_submit_button(modal_data.modal_elements)
             end)
         },
         {
-            name = "fp_textfield_picker_belt_amount",
-            handler = (function(player, _)
+            name = "picker_belt_amount",
+            handler = (function(player, _, _)
                 local modal_data = data_util.get("modal_data", player)
                 sync_amounts(modal_data)  -- defined_by ~= "amount"
                 update_dialog_submit_button(modal_data.modal_elements)

@@ -173,10 +173,10 @@ local function create_filter_box(modal_data)
     label_filters.style.left_margin = 4
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
-    ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_disabled", modal_data.filters.disabled,
-      {"fp.unresearched_recipes"}, nil, false)
-    ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_hidden", modal_data.filters.hidden,
-      {"fp.hidden_recipes"}, nil, false)
+    ui_util.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
+      modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
+    ui_util.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
+      modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
 end
 
 local function create_recipe_group_box(modal_data, relevant_group)
@@ -206,14 +206,14 @@ local function create_recipe_group_box(modal_data, relevant_group)
         if not recipe.enabled then style = "flib_slot_button_yellow_small"
         elseif recipe_proto.hidden then style = "flib_slot_button_default_small" end
 
-        local button_name = "fp_button_recipe_pick_" .. recipe_proto.id
-        local button_recipe
+        local button_tags = {on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
+        local button_recipe = nil
 
         if recipe_proto.custom then  -- can't use choose-elem-buttons for custom recipes
-            button_recipe = table_recipes.add{type="sprite-button", name=button_name, style=style,
+            button_recipe = table_recipes.add{type="sprite-button", tags=button_tags, style=style,
               sprite=recipe_proto.sprite, tooltip=recipe_proto.tooltip, mouse_button_filter={"left"}}
         else
-            button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", name=button_name,
+            button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", tags=button_tags,
               style=style, recipe=recipe_proto.name, mouse_button_filter={"left"}}
             button_recipe.locked = true
         end
@@ -277,12 +277,10 @@ local function apply_recipe_filter(player, search_term)
 end
 
 
-local function handle_filter_change(player, element)
-    local filter_name = string.gsub(element.name, "fp_switch_recipe_filter_", "")
-    local boolean_state = ui_util.switch.convert_to_boolean(element.switch_state)
-
-    data_util.get("modal_data", player).filters[filter_name] = boolean_state
-    data_util.get("preferences", player).recipe_filters[filter_name] = boolean_state
+local function handle_filter_change(player, tags, metadata)
+    local boolean_state = ui_util.switch.convert_to_boolean(metadata.switch_state)
+    data_util.get("modal_data", player).filters[tags.filter_name] = boolean_state
+    data_util.get("preferences", player).recipe_filters[tags.filter_name] = boolean_state
 
     apply_recipe_filter(player, "")
 end
@@ -339,17 +337,16 @@ end
 recipe_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_button_recipe_pick_%d+$",
+            name = "pick_recipe",
             timeout = 20,
-            handler = (function(player, element, _)
-                local recipe_id = tonumber(string.match(element.name, "%d+"))
-                attempt_adding_line(player, recipe_id)
+            handler = (function(player, tags, _)
+                attempt_adding_line(player, tags.recipe_proto_id)
             end)
         }
     },
     on_gui_switch_state_changed = {
         {
-            pattern = "^fp_switch_recipe_filter_[a-z]+$",
+            name = "toggle_recipe_filter",
             handler = handle_filter_change
         }
     }
