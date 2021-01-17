@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    -
+    - Potentially fixed a crash with certain mods that add custom beacons
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.15
