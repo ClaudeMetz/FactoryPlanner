@@ -32,7 +32,7 @@ function Fuel.validate(self)
     -- Make sure the fuel categories are still compatible
     if self.valid and self.parent.valid then
         local burner = self.parent.proto.burner
-        self.valid = not (burner and burner.categories[self.proto.category] == nil)
+        self.valid = burner and burner.categories[self.proto.category] ~= nil
     end
 
     return self.valid
