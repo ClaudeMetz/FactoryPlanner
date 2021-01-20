@@ -130,6 +130,7 @@ end
 local function delete_subfactory(player, _, _)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
+    if subfactory == nil then return end  -- prevent crashes due to multiplayer latency
 
     if ui_state.flags.archive_open then
         if subfactory.tick_of_deletion then  -- unregister deletion event if there is one
