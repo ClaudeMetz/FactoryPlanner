@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a crash with fuel migration
     - Potentially fixed a crash with certain mods that add custom beacons
     - Potentially fixed a crash when deleting subfactories on a multiplayer server with high latency
 
