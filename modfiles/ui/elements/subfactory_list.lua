@@ -209,15 +209,15 @@ function subfactory_list.build(player)
 
     subheader.add{type="line", direction="vertical"}
 
-    local button_export = subheader.add{type="sprite-button", sprite="utility/export",
-      tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-      tags={on_gui_click="subfactory_list_open_dialog", type="export"}}
-    main_elements.subfactory_list["export_button"] = button_export
-
     local button_import = subheader.add{type="sprite-button", sprite="utility/import",
       tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
       tags={on_gui_click="subfactory_list_open_dialog", type="import"}}
     main_elements.subfactory_list["import_button"] = button_import
+
+    local button_export = subheader.add{type="sprite-button", sprite="utility/export",
+      tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
+      tags={on_gui_click="subfactory_list_open_dialog", type="export"}}
+    main_elements.subfactory_list["export_button"] = button_export
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -294,8 +294,8 @@ function subfactory_list.refresh(player)
         subfactory_list_elements.toggle_archive_button.tooltip = {"fp.action_close_archive_tt"}
     end
 
-    subfactory_list_elements.export_button.enabled = (subfactory_exists)
     subfactory_list_elements.import_button.enabled = (not archive_open)
+    subfactory_list_elements.export_button.enabled = (subfactory_exists)
 
     subfactory_list_elements.archive_button.enabled = (subfactory_exists)
     subfactory_list_elements.archive_button.sprite = (archive_open) and
