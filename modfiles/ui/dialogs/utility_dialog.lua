@@ -119,21 +119,22 @@ function utility_structures.components(player, modal_data)
 
         for _, component in pairs(component_data[type .. "s"]) do
             if component.amount > 0 then
-                local amount_in_inventory = inventory_contents[component.proto.name] or 0
-                local amount_missing = component.amount - amount_in_inventory
+                local proto, required_amount = component.proto, component.amount
+                local amount_in_inventory = inventory_contents[proto.name] or 0
+                local missing_amount = required_amount - amount_in_inventory
 
-                if amount_missing > 0 then modal_data.missing_items[component.proto.name] = amount_missing end
+                if missing_amount > 0 then modal_data.missing_items[proto.name] = missing_amount end
 
                 local button_style = nil
                 if amount_in_inventory == 0 then button_style = "flib_slot_button_red"
-                elseif amount_missing > 0 then button_style = "flib_slot_button_yellow"
+                elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local second_line = {"fp.components_needed_tt", amount_in_inventory, component.amount}
-                local tooltip = {"", component.proto.localised_name, "\n", second_line}
+                local tooltip = {"fp.components_needed_tt", proto.localised_name, amount_in_inventory, required_amount}
 
-                table_components.add{type="sprite-button", sprite=component.proto.sprite, number=component.amount,
-                  tooltip=tooltip, style=button_style, mouse_button_filter={"middle"}}
+                table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
+                  tags={on_gui_click="utility_craft_items", type=proto.type, name=proto.name,
+                  missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
 
@@ -192,6 +193,28 @@ local function handle_item_request(player, _, _)
     update_request_button(player, ui_state.modal_data, subfactory)
 end
 
+local function handle_item_handcraft(player, tags, metadata)
+    local recipes = RECIPE_MAPS["produce"][tags.type][tags.name]
+    if not recipes then return end  -- no recipes craft this item
+
+    local desired_amount = (metadata.click == "left") and 1 or 5
+    local amount_to_craft = math.min(desired_amount, tags.missing_amount)
+
+    for recipe_id, _ in pairs(recipes) do
+        if amount_to_craft == 0 then break end
+
+        local recipe_name = global.all_recipes.recipes[recipe_id].name
+        local craftable_amount = player.get_craftable_count(recipe_name)
+
+        if craftable_amount > 0 then
+            local crafted_amount = math.min(amount_to_craft, craftable_amount)
+            player.begin_crafting{count=crafted_amount, recipe=recipe_name}
+
+            amount_to_craft = amount_to_craft - crafted_amount
+        end
+    end
+end
+
 local function handle_inventory_change(player)
     local ui_state = data_util.get("ui_state", player)
 
@@ -228,6 +251,10 @@ utility_dialog.gui_events = {
             name = "utility_request_items",
             timeout = 20,
             handler = handle_item_request
+        },
+        {
+            name = "utility_craft_items",
+            handler = handle_item_handcraft
         }
     },
     on_gui_switch_state_changed = {
