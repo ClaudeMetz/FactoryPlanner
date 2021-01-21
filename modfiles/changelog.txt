@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - You can now queue handcrafting machines and modules from the utility dialog
   Changes:
-    -
+    - Made the utility dialog more consistent when checking whether logistic robotics are researched in modded situations
   Bugfixes:
     -
 

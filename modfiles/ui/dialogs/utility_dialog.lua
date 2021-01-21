@@ -52,13 +52,10 @@ local function update_request_button(player, modal_data, subfactory)
     else
         local scope = data_util.get("preferences", player).utility_scopes.components
         local scope_string = {"fp.pl_" .. scope:lower(), 1}
-
         caption, tooltip = {"fp.request_items"}, {"fp.request_items_tt", scope_string}
-        local logistics_research = player.force.technologies["logistic-robotics"]
 
-        if not logistics_research.researched then
-            tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched",
-              logistics_research.localised_name}}
+        if not player.force.character_logistic_requests then
+            tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched"}}
             button_enabled = false
         elseif table_size(modal_data.missing_items) == 0 then
             tooltip = {"fp.warning_with_icon", {"fp.request_no_items_necessary", scope_string}}
