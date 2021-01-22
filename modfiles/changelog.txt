@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Made the utility dialog more consistent when checking whether logistic robotics are researched in modded situations
   Bugfixes:
-    -
+    - Fixed a crash when changing beacon types in the beacon dialog
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.16
