@@ -33,7 +33,7 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     end
 
     local module_name = (module) and module.proto.name or nil
-    local button_module = flow_module.add{type="choose-elem-button", tags={on_gui_elem_changed="select_module_type"},
+    local button_module = flow_module.add{type="choose-elem-button", tags={on_gui_elem_changed="select_module"},
       elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
     button_module.style.right_margin = 12
@@ -76,7 +76,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}}
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
-    local button_beacon = flow_beacon.add{type="choose-elem-button", tags={on_gui_elem_changed="select_beacon_type"},
+    local button_beacon = flow_beacon.add{type="choose-elem-button", tags={on_gui_elem_changed="select_beacon"},
       elem_type="entity", entity=beacon.proto.name, elem_filters=beacon_filter, style="fp_sprite-button_inset_tiny",
       mouse_button_filter={"left"}}
     button_beacon.style.right_margin = 12
@@ -356,7 +356,7 @@ beacon_dialog.misc_events = {
 modules_dialog.gui_events = {
     on_gui_elem_changed = {
         {
-            name = "select_module_type",
+            name = "select_module",
             handler = (function(player, _, _)
                 local modal_elements = data_util.get("modal_elements", player)
                 update_dialog_submit_button(modal_elements)
