@@ -33,6 +33,42 @@ local function change_timescale(player, new_timescale)
     main_dialog.refresh(player, "subfactory")
 end
 
+local function handle_solver_change(player, _, metadata)
+    local subfactory = data_util.get("context", player).subfactory
+    local new_solver = (metadata.switch_state == "left") and "traditional" or "matrix"
+
+    if new_solver == "matrix" then
+        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
+    else
+        subfactory.matrix_free_items = nil  -- disable the matrix solver
+        subfactory.linearly_dependant = false
+
+        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
+        local any_lines_removed = false
+        local function remove_consuming_recipes(floor)
+            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+                if line.subfloor then
+                    remove_consuming_recipes(line.subfloor)
+                elseif line.recipe.production_type == "consume" then
+                    Floor.remove(floor, line)
+                    any_lines_removed = true
+                end
+            end
+        end
+
+        -- The sequential solver doesn't like byproducts yet, so remove those lines
+        local top_floor = Subfactory.get(subfactory, "Floor", 1)
+        remove_consuming_recipes(top_floor)
+
+        if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
+            title_bar.enqueue_message(player, {"fp.hint_byproducts_removed"}, "hint", 1, false)
+        end
+    end
+
+    calculation.update(player, subfactory)
+    main_dialog.refresh(player, "subfactory")
+end
+
 
 -- ** TOP LEVEL **
 function subfactory_info.build(player)
@@ -53,7 +89,6 @@ function subfactory_info.build(player)
 
     -- Repair flow
     local flow_repair = frame_vertical.add{type="flow", direction="vertical"}
-    flow_repair.style.top_margin = 6
     main_elements.subfactory_info["repair_flow"] = flow_repair
 
     local label_repair = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}
@@ -151,6 +186,25 @@ function subfactory_info.build(player)
     local label_percentage = flow_mining_prod.add{type="label", caption={"fp.bold_label", "%"}}
     main_elements.subfactory_info["percentage_label"] = label_percentage
 
+    -- Solver Choice
+    local flow_solver_choice = flow_info.add{type="flow", direction="horizontal"}
+    flow_solver_choice.style.horizontal_spacing = 10
+    flow_solver_choice.style.vertical_align = "center"
+
+    flow_solver_choice.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.solver_choice"}}},
+      tooltip={"fp.solver_choice_tt"}}
+
+    local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
+      left_label_caption={"fp.solver_choice_traditional"}, tags={on_gui_switch_state_changed="solver_choice_changed"}}
+    main_elements.subfactory_info["solver_choice_switch"] = switch_solver_choice
+
+    local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
+      tooltip={"fp.solver_choice_configure"}, tags={on_gui_click="configure_matrix_solver"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+    button_configure_solver.style.size = 26
+    button_configure_solver.style.padding = 0
+    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver
+
     local second_pusher = frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
     main_elements.subfactory_info["second_pusher"] = second_pusher
 
@@ -164,11 +218,8 @@ function subfactory_info.refresh(player)
 
     subfactory_info_elements.no_subfactory_flow.visible = (not subfactory)
 
-    -- Because single_line is bugged, we need to hide the pushers when repair is shown
     local invalid_subfactory_selected = (subfactory and not subfactory.valid)
     subfactory_info_elements.repair_flow.visible = invalid_subfactory_selected
-    subfactory_info_elements.first_pusher.visible = not invalid_subfactory_selected
-    subfactory_info_elements.second_pusher.visible = not invalid_subfactory_selected
 
     local valid_subfactory_selected = (subfactory and subfactory.valid)
     subfactory_info_elements.info_flow.visible = valid_subfactory_selected
@@ -178,6 +229,7 @@ function subfactory_info.refresh(player)
 
     elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
+        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
 
         -- Power + Pollution
         local label_power = subfactory_info_elements.power_label
@@ -225,6 +277,12 @@ function subfactory_info.refresh(player)
         subfactory_info_elements.prod_bonus_override_textfield.enabled = (not archive_open)
         subfactory_info_elements.prod_bonus_override_textfield.visible = custom_prod_set
         subfactory_info_elements.percentage_label.visible = custom_prod_set
+
+        -- Solver Choice
+        local switch_state = (matrix_solver_active) and "right" or "left"
+        subfactory_info_elements.solver_choice_switch.switch_state = switch_state
+        subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
+        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
     end
 end
 
@@ -258,6 +316,12 @@ subfactory_info.gui_events = {
                 main_dialog.refresh(player, "subfactory")
             end)
         },
+        {
+            name = "configure_matrix_solver",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
+            end)
+        }
     },
     on_gui_text_changed = {
         {
@@ -267,6 +331,12 @@ subfactory_info.gui_events = {
                 ui_state.context.subfactory.mining_productivity = tonumber(metadata.text)
                 ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
             end)
+        }
+    },
+    on_gui_switch_state_changed = {
+        {
+            name = "solver_choice_changed",
+            handler = handle_solver_change
         }
     },
     on_gui_confirmed = {

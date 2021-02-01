@@ -161,6 +161,13 @@ styles["fp_button_rounded_mini"] = {
     right_padding = 4
 }
 
+styles["fp_sprite-button_rounded_mini"] = {
+    type = "button_style",
+    parent = "rounded_button",
+    size = 26,
+    padding = 0
+}
+
 -- Push-button style used for timescale and view_state buttons
 styles["fp_button_push"] = {
     type = "button_style",
