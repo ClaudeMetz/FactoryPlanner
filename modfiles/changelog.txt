@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Reworded some of the mod setting names as they were awful
   Bugfixes:
     - Fixed a crash when typing into or confirming the export dialog textfield
 
