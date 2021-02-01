@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Moved the matrix solver toggle to the subfactory info box
+    - Added proper error messages to handcrafting machines and modules in the utility dialog
     - Reworded some of the mod setting names as they were awful
   Bugfixes:
     - Fixed a crash when typing into or confirming the export dialog textfield
