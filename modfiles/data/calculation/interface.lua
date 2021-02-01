@@ -139,7 +139,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
 
         if product_amount ~= nil then
-            if product_amount >= ingredient.amount then
+            if product_amount >= (ingredient.amount or 0) then  -- TODO dirty fix
                 ingredient.satisfied_amount = ingredient.amount
                 structures.class.subtract(product_class, ingredient)
 
