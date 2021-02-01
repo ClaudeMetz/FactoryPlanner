@@ -186,7 +186,6 @@ function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, 
     flow.style.vertical_align = "center"
     local switch, label
 
-
     local function add_switch()
         local tags = {on_gui_switch_state_changed=action}
         for key, value in pairs(additional_tags) do tags[key] = value end

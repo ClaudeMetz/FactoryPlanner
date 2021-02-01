@@ -9,42 +9,6 @@ local function refresh_production(player, _, _)
     end
 end
 
-local function handle_matrix_toggle(player, _, _)
-    local subfactory = data_util.get("context", player).subfactory
-
-    if subfactory.matrix_free_items == nil then
-        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-        refresh_production(player)
-    else
-        subfactory.matrix_free_items = nil  -- disable the matrix solver
-        subfactory.linearly_dependant = false
-
-        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
-        local any_lines_removed = false
-        local function remove_consuming_recipes(floor)
-            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-                if line.subfloor then
-                    remove_consuming_recipes(line.subfloor)
-                elseif line.recipe.production_type == "consume" then
-                    Floor.remove(floor, line)
-                    any_lines_removed = true
-                end
-            end
-        end
-
-        -- The sequential solver doesn't like byproducts yet, so remove those lines
-        local top_floor = Subfactory.get(subfactory, "Floor", 1)
-        remove_consuming_recipes(top_floor)
-
-        if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
-            title_bar.enqueue_message(player, {"fp.hint_byproducts_removed"}, "hint", 1, false)
-        end
-
-        refresh_production(player)  -- recalculate with the sequential solver
-    end
-end
-
-
 -- ** TOP LEVEL **
 function production_box.build(player)
     local main_elements = data_util.get("main_elements", player)
@@ -84,20 +48,6 @@ function production_box.build(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local table_matrix_solver = subheader.add{type="table", column_count=2}
-    table_matrix_solver.style.horizontal_spacing = 0
-    table_matrix_solver.style.right_margin = 12
-
-    local button_solver_toggle = table_matrix_solver.add{type="button", tags={on_gui_click="toggle_matrix_solver"},
-      caption={"fp.matrix_solver"}, mouse_button_filter={"left"}}
-    --button_solver_toggle.style.disabled_font_color = {}
-    main_elements.production_box["solver_toggle_button"] = button_solver_toggle
-    local button_solver_configure = table_matrix_solver.add{type="sprite-button", sprite="utility/change_recipe",
-      tags={on_gui_click="configure_matrix_solver"}, style="fp_button_push", mouse_button_filter={"left"}}
-    button_solver_configure.style.size = 26
-    button_solver_configure.style.padding = -2
-    main_elements.production_box["solver_configure_button"] = button_solver_configure
-
     local table_view_state = view_state.build(player, subheader)
     main_elements.production_box["view_state_table"] = table_view_state
 
@@ -117,7 +67,6 @@ function production_box.refresh(player)
 
     local current_level = (subfactory_valid) and subfactory.selected_floor.level or 1
     local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
-    local matrix_solver_active = (subfactory_valid and subfactory.matrix_free_items ~= nil)
     local archive_open = (ui_state.flags.archive_open)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
@@ -129,15 +78,6 @@ function production_box.refresh(player)
 
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 2)
-
-    production_box_elements.solver_toggle_button.visible = (subfactory_valid)
-    production_box_elements.solver_toggle_button.enabled = (not archive_open)
-    production_box_elements.solver_toggle_button.style = (matrix_solver_active)
-      and "fp_button_push_active" or "fp_button_push"
-    production_box_elements.solver_toggle_button.style.padding = {0, 8}  -- needs to be re-set when changing the style
-
-    production_box_elements.solver_configure_button.visible = (subfactory_valid)
-    production_box_elements.solver_configure_button.enabled = (matrix_solver_active and not archive_open)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
@@ -201,16 +141,6 @@ production_box.gui_events = {
             name = "change_floor",
             handler = (function(player, tags, _)
                 production_box.change_floor(player, tags.destination)
-            end)
-        },
-        {
-            name = "toggle_matrix_solver",
-            handler = handle_matrix_toggle
-        },
-        {
-            name = "configure_matrix_solver",
-            handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
             end)
         }
     }
