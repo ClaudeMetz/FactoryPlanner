@@ -60,6 +60,9 @@ local function update_request_button(player, modal_data, subfactory)
         elseif table_size(modal_data.missing_items) == 0 then
             tooltip = {"fp.warning_with_icon", {"fp.request_no_items_necessary", scope_string}}
             button_enabled = false
+        elseif player.character == nil then  -- happens when the editor is active for example
+            tooltip = {"fp.warning_with_icon", {"fp.request_no_character"}}
+            button_enabled = false
         end
     end
 

@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Reworded some of the mod setting names as they were awful
   Bugfixes:
     - Fixed a crash when typing into or confirming the export dialog textfield
+    - Fixed a crash when using the utility dialog to request items while having no character associated to oneself
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.17
