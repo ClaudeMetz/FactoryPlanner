@@ -2,15 +2,6 @@
 loader = {}
 
 -- ** LOCAL UTIL **
--- Registers all subfactory deletion events again
-local function register_subfactory_deletion_events()
-    for player_index, player_data in pairs(global.players) do
-        for _, subfactory in pairs(Factory.get_in_order(player_data.archive, "Subfactory")) do
-            if subfactory.tick_of_deletion then data_util.register_subfactory_deletion(player_index, subfactory) end
-        end
-    end
-end
-
 -- Returns a list of recipe groups in their proper order
 local function ordered_recipe_groups()
     local group_dict = {}
@@ -196,7 +187,7 @@ end
 -- ** TOP LEVEL **
 -- Register on_nth_tick events and create some lua-global tables for convenience and performance
 function loader.run()
-    register_subfactory_deletion_events()
+    data_util.nth_tick.register_all()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {

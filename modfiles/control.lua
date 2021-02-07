@@ -1,3 +1,5 @@
+NTH_TICK_HANDLERS = {}  -- safe space to store references to handlers to be indexed by name
+
 require("util")  -- core.lualib
 table = require('__flib__.table')  -- replaces the lua table module
 

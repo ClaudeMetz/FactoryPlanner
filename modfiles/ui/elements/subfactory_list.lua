@@ -100,7 +100,7 @@ local function archive_subfactory(player, _, _)
 
     -- Reset deletion if a deleted subfactory is un-archived
     if archive_open and subfactory.tick_of_deletion then
-        script.on_nth_tick(subfactory.tick_of_deletion, nil)
+        data_util.nth_tick.remove(subfactory.tick_of_deletion)
         subfactory.tick_of_deletion = nil
     end
 
@@ -133,17 +133,16 @@ local function delete_subfactory(player, _, _)
     if subfactory == nil then return end  -- prevent crashes due to multiplayer latency
 
     if ui_state.flags.archive_open then
-        if subfactory.tick_of_deletion then  -- unregister deletion event if there is one
-            script.on_nth_tick(subfactory.tick_of_deletion, nil)
-        end
+        if subfactory.tick_of_deletion then data_util.nth_tick.remove(subfactory.tick_of_deletion) end
 
         local factory = ui_state.context.factory
         local removed_gui_position = Factory.remove(factory, subfactory)
         subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
     else
-        local tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
-        subfactory.tick_of_deletion = tick_of_deletion
-        data_util.register_subfactory_deletion(player.index, subfactory)
+        local desired_tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
+        local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
+          "delete_subfactory", {player_index=player.index, subfactory=subfactory})
+        subfactory.tick_of_deletion = actual_tick_of_deletion
 
         archive_subfactory(player)
     end
@@ -345,6 +344,23 @@ function subfactory_list.add_subfactory(player, name, icon)
     local context = data_util.get("context", player)
     Factory.add(context.factory, subfactory)
     ui_util.context.set_subfactory(player, subfactory)
+end
+
+
+-- Add nth_tick deletion function to global variable
+function NTH_TICK_HANDLERS.delete_subfactory(metadata)
+    local archive = metadata.subfactory.parent
+    local removed_gui_position = Factory.remove(archive, metadata.subfactory)
+    script.on_nth_tick(metadata.subfactory.tick_of_deletion, nil)
+
+    local player = game.get_player(metadata.player_index)
+    if data_util.get("main_elements", player).main_frame == nil then return end
+
+    if data_util.get("flags", player).archive_open then
+        subfactory_list.refresh_after_deletion(player, archive, removed_gui_position)
+    else  -- doing this conditional is a bit dumb, but it works (I think)
+        main_dialog.refresh(player, "all")
+    end
 end
 
 
