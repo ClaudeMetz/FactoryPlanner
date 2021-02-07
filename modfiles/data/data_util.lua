@@ -1,4 +1,5 @@
 data_util = {
+    nth_tick = {},
     porter = {}
 }
 
@@ -96,25 +97,6 @@ function data_util.format_module_effects(effects, multiplier, limit_effects)
     if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
 end
 
--- Registers the event to delete a trashed subfactory on time and refresh the interface
--- It feels weird to store the relevant information in upvalues of the function, but it works
-function data_util.register_subfactory_deletion(player_index, subfactory)
-    script.on_nth_tick(subfactory.tick_of_deletion, function(_)
-        local archive = subfactory.parent
-        local removed_gui_position = Factory.remove(archive, subfactory)
-        script.on_nth_tick(subfactory.tick_of_deletion, nil)
-
-        local player = game.get_player(player_index)
-        if data_util.get("main_elements", player).main_frame == nil then return end
-
-        if data_util.get("flags", player).archive_open then
-            subfactory_list.refresh_after_deletion(player, archive, removed_gui_position)
-        else  -- doing this conditional is a bit dumb, but it works (I think)
-            main_dialog.refresh(player, "all")
-        end
-    end)
-end
-
 -- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
 -- To make it state-less, it needs its return values passed back as arguments
 -- Uses state to avoid needing to call table_size() because that function is slow
@@ -134,6 +116,41 @@ function data_util.build_localised_string(strings_to_insert, current_table, next
     end
 
     return current_table, next_index
+end
+
+
+-- ** NTH_TICK **
+local function register_nth_tick_handler(tick)
+    script.on_nth_tick(tick, function(nth_tick_data)
+        local event_data = global.nth_tick_events[nth_tick_data.nth_tick]
+        local handler = NTH_TICK_HANDLERS[event_data.handler_name]
+        handler(event_data.metadata)
+    end)
+end
+
+function data_util.nth_tick.add(desired_tick, handler_name, metadata)
+    local actual_tick = desired_tick
+    -- Search until the next free nth_tick is found
+    while (global.nth_tick_events[actual_tick] ~= nil) do
+        actual_tick = actual_tick + 1
+    end
+
+    global.nth_tick_events[actual_tick] = {handler_name=handler_name, metadata=metadata}
+    register_nth_tick_handler(actual_tick)
+
+    return actual_tick  -- let caller know which tick they actually got
+end
+
+function data_util.nth_tick.remove(tick)
+    script.on_nth_tick(tick, nil)
+    global.nth_tick_events[tick] = nil
+end
+
+function data_util.nth_tick.register_all()
+    if not global.nth_tick_events then return end
+    for tick, _ in pairs(global.nth_tick_events) do
+        register_nth_tick_handler(tick)
+    end
 end
 
 

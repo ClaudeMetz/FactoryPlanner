@@ -159,6 +159,9 @@ local function global_init()
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
 
+    -- Save metadata about currently registered on_nth_tick events
+    global.nth_tick_events = {}
+
     -- Run through the prototyper without the need to apply (run) it on any player
     prototyper.setup()
     prototyper.finish()
