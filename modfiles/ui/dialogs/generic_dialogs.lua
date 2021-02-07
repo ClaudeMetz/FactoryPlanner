@@ -25,9 +25,8 @@ local function add_chooser_button(modal_elements, definition)
 end
 
 local function handler_chooser_button_click(player, tags, metadata)
-    local click_handler = data_util.get("modal_data", player).click_handler
-    -- If no click handler is present, just abort mission
-    if click_handler then click_handler(player, tags.element_id, metadata) end
+    local handler_name = data_util.get("modal_data", player).click_handler_name
+    GENERIC_HANDLERS[handler_name](player, tags.element_id, metadata)
 
     modal_dialog.exit(player, "cancel")
 end
@@ -70,8 +69,8 @@ chooser_dialog.gui_events = {
 -- ** LOCAL UTIL **
 local function call_change_handler(player, tags, metadata)
     local modal_data = data_util.get("modal_data", player)
-    local change_handler = modal_data.field_handlers[tags.field_name]
-    if change_handler then change_handler(modal_data, metadata) end
+    local handler_name = modal_data.field_handlers[tags.field_name]
+    if handler_name then GENERIC_HANDLERS[handler_name](modal_data, metadata) end
 end
 
 -- ** ELEMENTS **
@@ -190,12 +189,12 @@ function options_dialog.open(_, modal_data)
         label.style.font = "heading-3"
 
         elements[field.type].create(table_options, field, modal_elements)
-        modal_data.field_handlers[field.name] = field.change_handler
+        modal_data.field_handlers[field.name] = field.change_handler_name
     end
 
     -- Call all the change handlers once to set the initial state correctly
-    for field_name, change_handler in pairs(modal_data.field_handlers) do
-        change_handler(modal_data, modal_elements[field_name])
+    for field_name, handler_name in pairs(modal_data.field_handlers) do
+        GENERIC_HANDLERS[handler_name](modal_data, modal_elements[field_name])
     end
 end
 
@@ -208,7 +207,6 @@ function options_dialog.close(player, action)
         options_data[field.name] = elements[field.type].read(element)
     end
 
-    local submission_handler = modal_data.submission_handler
-    -- If no submission handler is present, just abort mission
-    if submission_handler then submission_handler(player, options_data, action) end
+    local handler_name = modal_data.submission_handler_name
+    GENERIC_HANDLERS[handler_name](player, options_data, action)
 end

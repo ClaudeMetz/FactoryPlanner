@@ -167,7 +167,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
     return button_definitions
 end
 
-local function apply_machine_choice(player, machine_id, metadata)
+function GENERIC_HANDLERS.apply_machine_choice(player, machine_id, metadata)
     local ui_state = data_util.get("ui_state", player)
     local machine = ui_state.modal_data.object
 
@@ -182,7 +182,7 @@ local function apply_machine_choice(player, machine_id, metadata)
     main_dialog.refresh(player, "subfactory")
 end
 
-local function handle_machine_limit_change(modal_data, metadata)
+function GENERIC_HANDLERS.handle_machine_limit_change(modal_data, metadata)
     local switch = modal_data.modal_elements["force_limit"]
     local machine_limit = tonumber(metadata.text)
 
@@ -199,7 +199,7 @@ local function handle_machine_limit_change(modal_data, metadata)
     modal_data.previous_limit = machine_limit  -- Record the previous limit to know how it changes
 end
 
-local function apply_machine_options(player, options, action)
+function GENERIC_HANDLERS.apply_machine_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local machine = ui_state.modal_data.object
@@ -255,7 +255,7 @@ local function handle_machine_click(player, tags, metadata)
                     title = {"fp.pl_machine", 1},
                     text = {"fp.chooser_machine", line.recipe.proto.localised_name},
                     text_tooltip = {"fp.chooser_machine_tt"},
-                    click_handler = apply_machine_choice,
+                    click_handler_name = "apply_machine_choice",
                     button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
                     object = line.machine
                 }
@@ -276,13 +276,13 @@ local function handle_machine_click(player, tags, metadata)
             local modal_data = {
                 title = {"fp.options_machine_title"},
                 text = {"fp.options_machine_text", line.machine.proto.localised_name},
-                submission_handler = apply_machine_options,
+                submission_handler_name = "apply_machine_options",
                 object = line.machine,
                 fields = {
                     {
                         type = "numeric_textfield",
                         name = "machine_limit",
-                        change_handler = handle_machine_limit_change,
+                        change_handler_name = "handle_machine_limit_change",
                         caption = {"fp.options_machine_limit"},
                         tooltip = {"fp.options_machine_limit_tt"},
                         text = line.machine.limit,  -- can be nil
@@ -346,7 +346,7 @@ local function handle_beacon_click(player, tags, metadata)
 end
 
 
-local function apply_item_options(player, options, action)
+function GENERIC_HANDLERS.apply_item_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local item = ui_state.modal_data.object
@@ -419,7 +419,7 @@ local function handle_item_click(player, tags, metadata)
         local modal_data = {
             title = {"fp.options_item_title", type_localised_string},
             text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler = apply_item_options,
+            submission_handler_name = "apply_item_options",
             object = item,
             fields = {
                 {
@@ -471,7 +471,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
     return button_definitions
 end
 
-local function apply_fuel_choice(player, new_fuel_id_string, _)
+function GENERIC_HANDLERS.apply_fuel_choice(player, new_fuel_id_string, _)
     local ui_state = data_util.get("ui_state", player)
 
     local split_string = split_string(new_fuel_id_string, "_")
@@ -513,7 +513,7 @@ local function handle_fuel_click(player, tags, metadata)
         local modal_data = {
             title = {"fp.pl_fuel", 1},
             text = {"fp.chooser_fuel", line.machine.proto.localised_name},
-            click_handler = apply_fuel_choice,
+            click_handler_name = "apply_fuel_choice",
             button_definitions = compile_fuel_chooser_buttons(player, line, applicable_prototypes),
             object = fuel
         }
