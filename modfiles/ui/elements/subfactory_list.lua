@@ -11,7 +11,7 @@ local function toggle_archive(player, _, _)
     main_dialog.refresh(player, "all")
 end
 
-local function handle_subfactory_submission(player, options, action)
+function GENERIC_HANDLERS.handle_subfactory_submission(player, options, action)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.modal_data.object
 
@@ -35,7 +35,7 @@ local function handle_subfactory_submission(player, options, action)
     end
 end
 
-local function handle_subfactory_data_change(modal_data, _)
+function GENERIC_HANDLERS.handle_subfactory_data_change(modal_data, _)
     local modal_elements = modal_data.modal_elements
 
     -- Remove whitespace from the subfactory name. No cheating!
@@ -62,14 +62,14 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
     local modal_data = {
         title = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_subfactory", 1}},
         text = {"fp.options_subfactory_text"},
-        submission_handler = handle_subfactory_submission,
+        submission_handler_name = "handle_subfactory_submission",
         allow_deletion = (action == "edit"),
         object = subfactory,
         fields = {
             {
                 type = "textfield",
                 name = "subfactory_name",
-                change_handler = handle_subfactory_data_change,
+                change_handler_name = "handle_subfactory_data_change",
                 caption = {"fp.options_subfactory_name"},
                 text = (subfactory) and subfactory.name or "",
                 width = 200,
@@ -78,7 +78,7 @@ local function generate_subfactory_dialog_modal_data(action, subfactory)
             {
                 type = "choose_elem_button",
                 name = "subfactory_icon",
-                change_handler = handle_subfactory_data_change,
+                change_handler_name = "handle_subfactory_data_change",
                 caption = {"fp.options_subfactory_icon"},
                 elem_type = "signal",
                 elem_value = icon
