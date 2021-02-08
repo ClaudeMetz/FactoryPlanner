@@ -29,8 +29,8 @@ local function set_all_checkboxes(player, checkbox_state)
     local ui_state = data_util.get("ui_state", player)
     local modal_elements = ui_state.modal_data.modal_elements
 
-    for _, table_row in pairs(modal_elements.table_rows) do
-        if table_row.checkbox.enabled then table_row.checkbox.state = checkbox_state end
+    for _, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+        if checkbox.enabled then checkbox.state = checkbox_state end
     end
 
     set_relevant_submit_button(modal_elements, ui_state.modal_dialog_type, checkbox_state)
@@ -42,9 +42,9 @@ local function adjust_after_checkbox_click(player, _, _)
     local modal_elements = ui_state.modal_data.modal_elements
 
     local checked_element_count, unchecked_element_count = 0, 0
-    for _, table_row in pairs(modal_elements.table_rows) do
-        if table_row.checkbox.state == true then checked_element_count = checked_element_count + 1
-        elseif table_row.checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
+    for _, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+        if checkbox.state == true then checked_element_count = checked_element_count + 1
+        elseif checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
     end
 
     modal_elements.master_checkbox.state = (unchecked_element_count == 0)
@@ -87,7 +87,7 @@ end
 
 -- Initializes the subfactories table by adding it and its header
 local function setup_subfactories_table(modal_elements, add_location)
-    modal_elements.table_rows = {}
+    modal_elements.subfactory_checkboxes = {}  -- setup for later use in add_to_subfactories_table
 
     local scroll_pane = modal_elements.content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
@@ -137,10 +137,7 @@ local function add_to_subfactories_table(modal_elements, subfactory, location_na
     if location_name then table_subfactories.add{type="label", caption={"fp." .. location_name}} end
 
     local identifier = (location_name or "tmp") .. "_" .. subfactory.id
-    modal_elements.table_rows[identifier] = {
-        checkbox = checkbox,
-        subfactory = subfactory
-    }
+    modal_elements.subfactory_checkboxes[identifier] = checkbox
 end
 
 
@@ -177,14 +174,19 @@ local function import_subfactories(player, _, _)
     else
         add_into_label({"fp.import_instruction_2"})
 
-        local any_invalid_subfactories = true
         setup_subfactories_table(modal_elements, false)
+        modal_data.subfactories = {}
+
+        local any_invalid_subfactories = true
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
-            any_invalid_subfactories = any_invalid_subfactories or (not subfactory.valid)
             add_to_subfactories_table(modal_elements, subfactory, nil, true)
+            modal_data.subfactories["tmp_" .. subfactory.id] = subfactory
+            any_invalid_subfactories = any_invalid_subfactories or (not subfactory.valid)
         end
 
         if any_invalid_subfactories then
+            modal_data.export_modset = import_factory.export_modset
+
             local diff_tooltip = data_util.porter.format_modset_diff(import_factory.export_modset)
             if diff_tooltip ~= "" then
                 modal_elements.info_label.caption = {"fp.info_label", {"fp.import_instruction_2"}}
@@ -202,12 +204,14 @@ end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
 local function export_subfactories(player, _, _)
-    local modal_elements = data_util.get("modal_elements", player)
+    local modal_data = data_util.get("modal_data", player)
+    local modal_elements = modal_data.modal_elements
     local subfactories_to_export = {}
 
-    for _, table_row in pairs(modal_elements.table_rows) do
-        if table_row.checkbox.state == true then
-            table.insert(subfactories_to_export, table_row.subfactory)
+    for subfactory_identifier, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+        if checkbox.state == true then
+            local subfactory = modal_data.subfactories[subfactory_identifier]
+            table.insert(subfactories_to_export, subfactory)
         end
     end
     local export_string = data_util.porter.get_export_string(subfactories_to_export)
@@ -238,12 +242,19 @@ end
 function import_dialog.close(player, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
+        local modal_data = ui_state.modal_data
         local factory = ui_state.context.factory
 
         local first_subfactory = nil
-        for _, table_row in pairs(ui_state.modal_data.modal_elements.table_rows) do
-            if table_row.checkbox.state == true then
-                local imported_subfactory = Factory.add(factory, table_row.subfactory)
+        for subfactory_identifier, checkbox in pairs(modal_data.modal_elements.subfactory_checkboxes) do
+            if checkbox.state == true then
+                local subfactory = modal_data.subfactories[subfactory_identifier]
+                local imported_subfactory = Factory.add(factory, subfactory)
+
+                if not imported_subfactory.valid then  -- carry over modset if need be
+                    imported_subfactory.last_valid_modset = modal_data.export_modset
+                end
+
                 calculation.update(player, imported_subfactory)
                 first_subfactory = first_subfactory or imported_subfactory
             end
@@ -296,11 +307,13 @@ function export_dialog.open(player, modal_data)
     local modal_elements = modal_data.modal_elements
 
     setup_subfactories_table(modal_elements, true)
+    modal_data.subfactories = {}
 
     local valid_subfactory_found = false
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
             add_to_subfactories_table(modal_elements, subfactory, factory_name, false)
+            modal_data.subfactories[factory_name .. "_" .. subfactory.id] = subfactory
             valid_subfactory_found = valid_subfactory_found or subfactory.valid
         end
     end

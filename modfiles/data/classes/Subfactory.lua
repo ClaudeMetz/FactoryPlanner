@@ -19,7 +19,7 @@ function Subfactory.init(name, icon)
         selected_floor = nil,
         item_request_proxy = nil,
         tick_of_deletion = nil,  -- ignored on export/import
-        last_valid_modset = nil,  -- also ignored for import/export
+        last_valid_modset = nil,
         valid = true,
         mod_version = global.mod_version,
         class = "Subfactory"
