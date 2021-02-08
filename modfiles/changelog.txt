@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed a couple of issues where the mod would not properly select a machine for a recipe in some situations
     - Fixed an issue where some modal dialogs might not work correctly after reloading a save
     - Fixed that the last valid modset data would not be retained when importing an invalid subfactory
     - Fixed that alt-clicking a default machine in preferences could crash in certain cases

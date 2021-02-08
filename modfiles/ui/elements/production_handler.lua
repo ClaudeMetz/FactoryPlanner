@@ -220,10 +220,10 @@ local function handle_machine_click(player, tags, metadata)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.direction then
-        local success = Line.change_machine(line, player, nil, metadata.direction)
-
-        if not success then
-            title_bar.refresh_message(player)
+        if Line.change_machine(line, player, nil, metadata.direction) == false then
+            local direction_string = (metadata.direction == "positive") and {"fp.upgraded"} or {"fp.downgraded"}
+            local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, direction_string}
+            title_bar.enqueue_message(player, message, "error", 1, true)
         else
             calculation.update(player, context.subfactory)
             main_dialog.refresh(player, "subfactory")
@@ -265,7 +265,7 @@ local function handle_machine_click(player, tags, metadata)
 
     elseif metadata.click == "right" then
         if metadata.control then  -- reset this machine to its default state
-            Line.change_machine(line, player, nil, nil)
+            Line.change_machine(line, player, nil, nil)  -- guaranteed to find something
             line.machine.limit = nil
             line.machine.force_limit = false
 

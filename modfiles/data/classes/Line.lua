@@ -78,88 +78,97 @@ function Line.is_machine_applicable(self, machine_proto)
     return (valid_ingredient_count and valid_input_channels and valid_output_channels)
 end
 
+
 -- Changes the machine either to the given machine or moves it in the given direction
--- Returns false if no machine is applied because none can be found, true otherwise
+-- Returns false if no compatible machine can be found, true otherwise
 function Line.change_machine(self, player, machine_proto, direction)
-    -- Set the machine to the default one
-    if machine_proto == nil and direction == nil then
-        local machine_category_id = global.all_machines.map[self.recipe.proto.category]
-        local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
+    -- Set machine directly; assumes it is applicable to this line
+    if machine_proto ~= nil and direction == nil then
+        if not self.machine then
+            self.machine = Machine.init_by_proto(machine_proto)
+            self.machine.parent = self
 
-        -- If no default machine is found, this category has no machines
-        if default_machine_proto == nil then return false end
-        return Line.change_machine(self, player, default_machine_proto, nil)
-
-    -- Set machine directly
-    elseif machine_proto ~= nil and direction == nil then
-        -- Try setting a higher tier machine until it sticks or nothing happens
-        -- Returns false if no machine fits at all, so an appropriate error can be displayed
-        if not Line.is_machine_applicable(self, machine_proto) then
-            return Line.change_machine(self, player, machine_proto, "positive")
-
+            -- Initialize total_effects, now that the line has a machine
+            Line.summarize_effects(self, false, false)
         else
-            if not self.machine then
-                self.machine = Machine.init_by_proto(machine_proto)
-                self.machine.parent = self
+            self.machine.proto = machine_proto
 
-                -- Initialize total_effects, now that the line has a machine
-                Line.summarize_effects(self, false, false)
-
-            else
-                self.machine.proto = machine_proto
-
-                -- Check if the fuel is still compatible, remove it otherwise
-                local fuel = self.machine.fuel
-                if fuel ~= nil and (not fuel.valid or not (machine_proto.energy_type == "burner"
-                  and machine_proto.burner.categories[fuel.proto.category])) then
-                    self.machine.fuel = nil
-                end
-
-                -- Adjust modules (ie. trim them if needed)
-                Machine.normalize_modules(self.machine, false, true)
-
-                -- Adjust beacon (ie. remove if machine does not allow beacons)
-                if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
+            -- Check if the fuel is still compatible, remove it otherwise
+            local fuel = self.machine.fuel
+            if fuel ~= nil and (not fuel.valid or not (machine_proto.energy_type == "burner"
+              and machine_proto.burner.categories[fuel.proto.category])) then
+                self.machine.fuel = nil
             end
 
-            -- Set the machine-fuel, if appropriate
-            Machine.find_fuel(self.machine, player)
+            -- Adjust modules (ie. trim them if needed)
+            Machine.normalize_modules(self.machine, false, true)
 
-            return machine_proto.id
+            -- Adjust beacon (ie. remove if machine does not allow beacons)
+            if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
         end
 
-    -- Bump machine in the given direction
-    elseif direction ~= nil then
-        -- Uses the given machine proto, if given, otherwise bumps the line's existing machine
+        -- Set the machine-fuel, if appropriate
+        Machine.find_fuel(self.machine, player)
+
+        return true
+
+    -- Bump machine in given direction
+    elseif direction ~= nil then  -- machine_proto can be nil or not
         machine_proto = machine_proto or self.machine.proto
 
         local machine_category_id = global.all_machines.map[machine_proto.category]
         local category_machines = global.all_machines.categories[machine_category_id].machines
 
-        local grading_direction = nil
         if direction == "positive" then
-            if machine_proto.id < #category_machines then
-                local new_machine = category_machines[machine_proto.id + 1]
-                return Line.change_machine(self, player, new_machine, nil)
-            end
-            grading_direction = {"fp.upgraded"}
+            local max_machine_id = #category_machines
+            local current_machine_proto = machine_proto
 
+            while current_machine_proto.id < max_machine_id do
+                current_machine_proto = category_machines[current_machine_proto.id + 1]
+
+                if Line.is_machine_applicable(self, current_machine_proto) then
+                    Line.change_machine(self, player, current_machine_proto, nil)
+                    return true
+                end
+            end
         else  -- direction == "negative"
-            if machine_proto.id > 1 then
-                local new_machine = category_machines[machine_proto.id - 1]
-                local new_machine_id = Line.change_machine(self, player, new_machine, nil)
+            local current_machine_proto = machine_proto
 
-                -- If the new_machine is not applicable to this line, change_machine will bump it back up,
-                -- effectively setting it to the current one, with the net result being no change in machine.
-                -- If this happens, the error should still appear, so we do this check
-                if new_machine_id == new_machine.id then return new_machine_id end
+            while current_machine_proto.id > 1 do
+                current_machine_proto = category_machines[current_machine_proto.id - 1]
+
+                if Line.is_machine_applicable(self, current_machine_proto) then
+                    Line.change_machine(self, player, current_machine_proto, nil)
+                    return true
+                end
             end
-            grading_direction = {"fp.downgraded"}
         end
 
-        local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, grading_direction}
-        title_bar.enqueue_message(player, message, "error", 1, false)
+        -- If the above loops didn't return, no machine could be found, so we return false
         return false
+
+    -- Set machine to the preferred default one
+    elseif machine_proto == nil and direction == nil then
+        local machine_category_id = global.all_machines.map[self.recipe.proto.category]
+        local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
+        -- If no default machine is found, this category has no machines
+        -- TODO filter this case out in the generator stage ?
+        if default_machine_proto == nil then return false end
+
+        -- If the default is applicable, just set it straight away
+        if Line.is_machine_applicable(self, default_machine_proto) then
+            Line.change_machine(self, player, default_machine_proto, nil)
+            return true
+
+        -- Otherwise, go up then down the category to find an alternative
+        elseif Line.change_machine(self, player, default_machine_proto, "positive") then
+            return true
+        elseif Line.change_machine(self, player, default_machine_proto, "negative") then
+            return true
+
+        else  -- if no machine in the whole category is applicable, return false
+            return false
+        end
     end
 end
 
