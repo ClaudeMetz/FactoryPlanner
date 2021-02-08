@@ -206,11 +206,13 @@ local function handle_default_prototype_change(player, tags, metadata)
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for secondary_category_id, category in pairs(global["all_" .. type].categories) do
-            local secondary_prototype_id = category.map[new_default_prototype.name]
+            if #category[type] > 1 then  -- don't attempt to change categories with only one machine
+                local secondary_prototype_id = category.map[new_default_prototype.name]
 
-            if secondary_prototype_id ~= nil then
-                prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
-                refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category_id)
+                if secondary_prototype_id ~= nil then
+                    prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
+                    refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category_id)
+                end
             end
         end
     end
@@ -232,7 +234,7 @@ function preferences_dialog.open(player, modal_data)
     local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
     flow_content.style.horizontal_spacing = 12
     local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
-    flow_content.style.maximal_height = main_dialog_dimensions.height * 0.75
+    flow_content.style.maximal_height = main_dialog_dimensions.height * 0.85
 
     local function add_content_frame()
         local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
