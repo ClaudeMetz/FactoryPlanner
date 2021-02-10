@@ -11,6 +11,8 @@ Date: 00. 00. 0000
     - Fixed that the last valid modset data would not be retained when importing an invalid subfactory
     - Fixed that alt-clicking a default machine in preferences could crash in certain cases
     - Fixed that trying to handcraft a module or beacon in the utilities dialog would crash
+    - Fixed a crash when attempting to craft using the utility dialog while not having a character associated to yourself
+    - Fixed that attempting to handcraft in the utility dialog would sometimes incorrectly show a warning about there not being enough resources while simultaneously queueing some crafting
     - Fixed that the background dimming when the game is paused would duplicate itself when alt-tabbing or resizing the window
 
 ---------------------------------------------------------------------------------------------------
