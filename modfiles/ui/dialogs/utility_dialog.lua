@@ -195,32 +195,27 @@ local function handle_item_request(player, _, _)
 end
 
 local function handle_item_handcraft(player, tags, metadata)
-    local recipes = RECIPE_MAPS["produce"][tags.type][tags.name]
-    if not recipes then
-        player.create_local_flying_text{text={"fp.utility_no_recipe"}, create_at_cursor=true}
-        return
-    end
+    local function fly_text(string) player.create_local_flying_text{text=string, create_at_cursor=true} end
+
+    if not player.character then fly_text({"fp.utility_no_character"}); return end
 
     local desired_amount = (metadata.click == "left") and 1 or 5
     local amount_to_craft = math.min(desired_amount, tags.missing_amount)
 
-    if amount_to_craft <= 0 then
-        player.create_local_flying_text{text={"fp.utility_no_demand"}, create_at_cursor=true}
-        return
-    end
+    if amount_to_craft <= 0 then fly_text({"fp.utility_no_demand"}); return end
+
+    local recipes = RECIPE_MAPS["produce"][tags.type][tags.name]
+    if not recipes then fly_text({"fp.utility_no_recipe"}); return end
 
     for recipe_id, _ in pairs(recipes) do
         local recipe_name = global.all_recipes.recipes[recipe_id].name
         local craftable_amount = player.get_craftable_count(recipe_name)
 
-        if craftable_amount > 0 then
-            local crafted_amount = math.min(amount_to_craft, craftable_amount)
-            player.begin_crafting{count=crafted_amount, recipe=recipe_name}
+        if craftable_amount <= 0 then fly_text({"fp.utility_no_resources"}); end
 
-            amount_to_craft = amount_to_craft - crafted_amount
-        else
-            player.create_local_flying_text{text={"fp.utility_no_resources"}, create_at_cursor=true}
-        end
+        local crafted_amount = math.min(amount_to_craft, craftable_amount)
+        player.begin_crafting{count=crafted_amount, recipe=recipe_name, silent=true}
+        amount_to_craft = amount_to_craft - crafted_amount
     end
 end
 
