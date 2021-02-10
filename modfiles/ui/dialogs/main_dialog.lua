@@ -64,7 +64,9 @@ function main_dialog.rebuild(player, default_visibility)
     local visible = default_visibility
     if main_elements.main_frame ~= nil then
         visible = main_elements.main_frame.visible
+
         main_elements.main_frame.destroy()
+        main_elements.background_dimmer.destroy()
 
         -- Reset all main element references
         ui_state.main_elements = {}
@@ -176,19 +178,19 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     end
     game.tick_paused = pause
 
-    -- Always destroy the dimmer to deal with screen resolution changes
-    -- Not the most efficient solution, but the most practical one
     local main_elements = data_util.get("main_elements", player)
-    if main_elements.background_dimmer then main_elements.background_dimmer.destroy() end
+    local background_dimmer = main_elements.background_dimmer
 
-    if pause then
-        local background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+    if not main_elements.background_dimmer then
+        background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
           tags={on_gui_click="re-layer_background_dimmer"}}
-        background_dimmer.style.size = player.display_resolution
         main_elements["background_dimmer"] = background_dimmer
-
         frame_main_dialog.bring_to_front()
-    end
+     end
+
+    -- Reset the size because the resolution could have changed
+    background_dimmer.style.size = player.display_resolution
+    background_dimmer.visible = pause
 
     return pause
 end
