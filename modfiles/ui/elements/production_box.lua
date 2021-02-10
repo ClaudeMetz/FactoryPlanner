@@ -77,7 +77,7 @@ function production_box.refresh(player)
     production_box_elements.floor_up_button.enabled = (current_level > 1)
 
     production_box_elements.floor_top_button.visible = (subfactory_valid)
-    production_box_elements.floor_top_button.enabled = (current_level > 2)
+    production_box_elements.floor_top_button.enabled = (current_level > 1)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)

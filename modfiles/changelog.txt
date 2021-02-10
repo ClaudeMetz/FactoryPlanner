@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Made it so the 'to the top' button can be used starting at level 2 floors, instead of level 3
   Bugfixes:
     - Fixed a couple of issues where the mod would not properly select a machine for a recipe in some situations
     - Fixed an issue where some modal dialogs might not work correctly after reloading a save
