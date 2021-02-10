@@ -132,8 +132,9 @@ function utility_structures.components(player, modal_data)
 
                 local tooltip = {"fp.components_needed_tt", proto.localised_name, amount_in_inventory, required_amount}
 
+                local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
-                  tags={on_gui_click="utility_craft_items", type=proto.type, name=proto.name,
+                  tags={on_gui_click="utility_craft_items", type=item_type, name=proto.name,
                   missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
