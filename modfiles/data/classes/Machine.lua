@@ -23,6 +23,18 @@ function Machine.init_by_proto(proto)
     return machine
 end
 
+-- lookup exists for internal purposes
+function Machine.clone(self, lookup)
+    lookup = lookup or {}
+    local new = {}
+    lookup[self] = new
+    for k, v in pairs(self) do
+        new[k] = lookup[v] or v
+    end
+    new.Module = Collection.clone(new.Module, lookup)
+    return new
+end
+
 
 function Machine.add(self, object)
     object.parent = self
@@ -54,8 +66,18 @@ function Machine.replace(self, dataset, object)
     return new_dataset
 end
 
+function Machine.clear(self, class)
+    self.Module = Collection.clear(self[class]) -- bug workaround
+    self.module_count = 0
+    Machine.normalize_modules(self, false, false) -- no modules to sort or trim at this point
+end
+
 function Machine.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
+end
+
+function Machine.get_all(self, class)
+    return Collection.get_all(self[class])
 end
 
 function Machine.get_in_order(self, class, reverse)
@@ -126,11 +148,6 @@ function Machine.check_module_compatibility(self, module_proto)
 end
 
 function Machine.compile_module_filter(self)
-    local existing_names = {}
-    for _, module in ipairs(Machine.get_in_order(self, "Module")) do
-        existing_names[module.proto.name] = true
-    end
-
     local compatible_modules = {}
     for module_name, module_proto in pairs(MODULE_NAME_MAP) do
         if Machine.check_module_compatibility(self, module_proto) and not existing_names[module_name] then
@@ -173,7 +190,7 @@ function Machine.sort_modules(self)
     end
 end
 
--- Trims superflous modules off the end (might be needed when the machine is downgraded)
+-- Trims superfluous modules off the end (might be needed when the machine is downgraded)
 function Machine.trim_modules(self)
     local module_count = self.module_count
     local module_limit = self.proto.module_limit or 0

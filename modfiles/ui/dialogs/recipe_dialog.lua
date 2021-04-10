@@ -143,7 +143,7 @@ local function attempt_adding_line(player, recipe_id)
 
             if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
                 local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
-                Beacon.set_module(blank_beacon, module)
+                Beacon.add(blank_beacon, module)
 
                 Line.set_beacon(line, blank_beacon)
 

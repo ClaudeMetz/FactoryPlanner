@@ -211,15 +211,18 @@ function builders.beacon(line, parent_flow, metadata)
         local separator = parent_flow.add{type="line", direction="vertical"}
         separator.style.padding = {2, 0}
         separator.style.margin = {0, -2}
-        local module_proto, module_amount = beacon.module.proto, beacon.module.amount
 
-        -- Can use simplified number line because module amount is an integer
-        number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
-        tooltip = {"", module_proto.localised_name, number_line}
-        -- The above variables don't need to be-initialized
+        for _, module in ipairs(Beacon.get_in_order(beacon, "Module")) do
+            local module_proto, module_amount = module.proto, module.amount
 
-        parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
-          number=module_amount, style="flib_slot_button_default_small"}
+            -- Can use simplified number line because module amount is an integer
+            number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
+            tooltip = {"", module_proto.localised_name, number_line, module.effects_tooltip}
+            -- The above variables don't need to be initialized
+
+            parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
+              number=module_amount, style="flib_slot_button_default_small"}
+        end
     end
 end
 
