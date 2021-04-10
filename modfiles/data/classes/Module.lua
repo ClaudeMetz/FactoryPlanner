@@ -12,6 +12,17 @@ function Module.init_by_proto(proto, amount)
     }
 end
 
+-- lookup exists for internal purposes
+function Module.clone(self, lookup)
+    lookup = lookup or {}
+    local new = {}
+    lookup[self] = new
+    for k, v in pairs(self) do
+        new[k] = lookup[v] or v
+    end
+    return new
+end
+
 
 function Module.change_amount(self, new_amount)
     local amount_difference = new_amount - self.amount
