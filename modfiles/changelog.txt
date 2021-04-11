@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that the dimming overlay would be stuck in front of the main window, blocking any interaction with it (at least I hope it's fixed)
     - Fixed that the background dimmer would be incorrectly sized on display scales other than 100%
+    - Fixed that disabling the mod-gui button in the top left corner could leave behind an empty border if no other buttons are up there
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.19
