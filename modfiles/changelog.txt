@@ -1,10 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
-  Features:
-    -
-  Changes:
-    -
+Version: 1.1.20
+Date: 11. 04. 2021
   Bugfixes:
     - Fixed frequent desync on loading saves. I'm truly sorry about me taking to long to fix this.
     - Fixed that the dimming overlay would be stuck in front of the main window, blocking any interaction with it
