@@ -351,7 +351,7 @@ end
 function NTH_TICK_HANDLERS.delete_subfactory(metadata)
     local archive = metadata.subfactory.parent
     local removed_gui_position = Factory.remove(archive, metadata.subfactory)
-    script.on_nth_tick(metadata.subfactory.tick_of_deletion, nil)
+    data_util.nth_tick.remove(metadata.subfactory.tick_of_deletion)
 
     local player = game.get_player(metadata.player_index)
     if data_util.get("main_elements", player).main_frame == nil then return end
