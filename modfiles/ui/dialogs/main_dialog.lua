@@ -185,9 +185,9 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
         background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
           tags={on_gui_click="re-layer_background_dimmer"}}
         main_elements["background_dimmer"] = background_dimmer
-        frame_main_dialog.bring_to_front()
-     end
+    end
 
+    frame_main_dialog.bring_to_front()
     -- Reset the size because the resolution could have changed
     background_dimmer.style.size = player.display_resolution
     background_dimmer.visible = pause
