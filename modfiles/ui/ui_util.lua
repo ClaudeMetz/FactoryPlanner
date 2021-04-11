@@ -1,7 +1,6 @@
 mod_gui = require("mod-gui")
 
 ui_util = {
-    mod_gui = {},
     context = {},
     switch = {}
 }
@@ -31,6 +30,24 @@ end
 function ui_util.select_all(textfield)
     textfield.focus()
     textfield.select_all()
+end
+
+-- Toggles the visibility of the toggle-main-dialog-button
+function ui_util.toggle_mod_gui(player)
+    local enable = data_util.get("settings", player).show_gui_button
+
+    local frame_flow = mod_gui.get_button_flow(player)
+    local mod_gui_button = frame_flow["fp_button_toggle_interface"]
+
+    if enable then
+        if not mod_gui_button then
+            frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
+              tooltip={"fp.toggle_interface_tt"}, tags={on_gui_click="mod_gui_toggle_interface"},
+              style=mod_gui.button_style, mouse_button_filter={"left"}}
+        end
+    else
+        if mod_gui_button then mod_gui_button.destroy() end
+    end
 end
 
 
@@ -120,25 +137,6 @@ function ui_util.format_SI_value(value, unit, precision)
     return {"", sign .. ui_util.format_number(value, precision) .. " ", prefix, units[unit]}
 end
 
-
--- **** Mod-GUI ****
--- Create the always-present GUI button to open the main dialog
-function ui_util.mod_gui.create(player)
-    local frame_flow = mod_gui.get_button_flow(player)
-    if not frame_flow["fp_button_toggle_interface"] then
-        frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-          tooltip={"fp.toggle_interface_tt"}, tags={on_gui_click="mod_gui_toggle_interface"},
-          style=mod_gui.button_style, mouse_button_filter={"left"}}
-    end
-
-    frame_flow["fp_button_toggle_interface"].visible = data_util.get("settings", player).show_gui_button
-end
-
--- Toggles the visibility of the toggle-main-dialog-button
-function ui_util.mod_gui.toggle(player)
-    local enable = data_util.get("settings", player).show_gui_button
-    mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
-end
 
 
 -- **** Context ****

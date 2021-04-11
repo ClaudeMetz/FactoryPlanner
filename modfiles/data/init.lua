@@ -193,7 +193,7 @@ local function handle_configuration_change()
         Collection.validate_datasets(player_table.archive.Subfactory)
 
         reset_player_gui(player)  -- Destroys all existing GUI's
-        ui_util.mod_gui.create(player)  -- Recreates the mod-GUI
+        ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
     end
 
     -- Complete prototyper process by saving new data to global
@@ -226,8 +226,8 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the player_table for the new player
     update_player_table(player)
 
-    -- Sets up the mod-GUI for the new player
-    ui_util.mod_gui.create(player)
+    -- Sets up the mod-GUI for the new player if necessary
+    ui_util.toggle_mod_gui(player)
 
     -- Add the subfactories that are handy for development
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
@@ -245,7 +245,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         reload_settings(player)
 
         if event.setting == "fp_display_gui_button" then
-            ui_util.mod_gui.toggle(player)
+            ui_util.toggle_mod_gui(player)
 
         elseif event.setting == "fp_products_per_row" or
           event.setting == "fp_subfactory_list_rows" or
