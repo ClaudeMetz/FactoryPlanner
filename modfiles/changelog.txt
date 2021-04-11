@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the dimming overlay would be stuck in front of the main window, blocking any interaction with it (at least I hope it's fixed)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.19
