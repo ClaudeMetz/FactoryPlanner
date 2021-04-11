@@ -187,10 +187,12 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
         main_elements["background_dimmer"] = background_dimmer
     end
 
-    frame_main_dialog.bring_to_front()
-    -- Reset the size because the resolution could have changed
-    background_dimmer.style.size = player.display_resolution
     background_dimmer.visible = pause
+    -- Make sure the layering is correct because the game does not seem to remember when saving
+    frame_main_dialog.bring_to_front()
+    -- Reset the size because the resolution could have changed (math.ceil to catch rounding issues)
+    local resolution, scale = player.display_resolution, player.display_scale
+    background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
 
     return pause
 end
