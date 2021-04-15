@@ -2,17 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.20
 Date: 11. 04. 2021
   Bugfixes:
-    - Fixed frequent desync on loading saves. I'm truly sorry about me taking to long to fix this.
+    - Fixed frequent desync on loading saves. I'm truly sorry about me taking so long to fix this.
     - Fixed that the dimming overlay would be stuck in front of the main window, blocking any interaction with it
     - Fixed that the background dimmer would be incorrectly sized on display scales other than 100%
     - Fixed that disabling the mod-gui button in the top left corner could leave behind an empty border if no other buttons are up there
