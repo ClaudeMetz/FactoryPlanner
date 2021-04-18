@@ -218,17 +218,17 @@ function matrix_solver.run_matrix_solver(subfactory_data)
         local item_key = matrix_solver.get_item_key(v.type, v.name)
         free_variables["item_"..item_key] = true
     end
-    llog("\n\n\n\n\n\n\nNEW THING:")
+    --llog("\n\n\n\n\n\n\nNEW THING:")
     local col_set = matrix_solver.union_sets(line_names, free_variables)
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
-    matrix_solver.print_rows(rows)
-    matrix_solver.print_columns(columns)
+    --matrix_solver.print_rows(rows)
+    --matrix_solver.print_columns(columns)
 
     local simplex = matrix_solver.do_simplex_algo(matrix, rows, columns)
 
-    matrix_solver.print_matrix(matrix)
+    --matrix_solver.print_matrix(matrix)
 
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
@@ -574,9 +574,15 @@ function matrix_solver.print_matrix(m)
     for i,row in ipairs(m) do
         s = s.."  {"
         for j,col in ipairs(row) do
-            s = s..(col)
+            s = s..tostring(col)
             if j<#row then
-                s = s.." "
+                local longest_in_row = 0
+                for _,row2 in ipairs(m) do
+                    if(string.len(tostring(row2[j])) > longest_in_row) then
+                        longest_in_row = string.len(tostring(row2[j]))
+                    end
+                end
+                s = s..string.rep(" ", longest_in_row - string.len(tostring(col)) + 1)
             end
         end
         s = s.."}\n"
@@ -730,83 +736,7 @@ end
 
 --Simplex Algo starts here
 
----@class int_pair
----@field public index integer
----@field public one_index integer
-
----@class SimplexTableau
----@field public internal number[][]
----@field public basic_variables int_pair[]
----@field public is_basic_variable table<integer, integer>
----@field public raw_variable_count integer
----@field public variable_count integer
----@field public equation_count integer
-
----@param matrix number[][]
----@return SimplexTableau
-function matrix_solver.convert_matrix_to_simplex_table(matrix)
-    ---@type SimplexTableau
-    local result = {}
-
-    local EquationCount = #matrix
-    if EquationCount == 0 then
-        return {}
-    end
-    local VariableCount = #(matrix[1]) - 1
-    if VariableCount == 0 then
-        return {}
-    end
-
-    result.raw_variable_count = VariableCount
-    result.variable_count = VariableCount + EquationCount
-    result.equation_count = EquationCount
-
-    --rows are equations/items, columns are variables/recipies, list of lists, first list is rows
-    ---@type number[][]
-    local internal = {}
-    for equation = 1, result.equation_count do
-        internal[equation] = {}
-        for variable = 1, result.raw_variable_count do
-            internal[equation][variable] = matrix[equation][variable]
-        end
-        for slack = 1, result.equation_count do
-            if equation == slack then
-                internal[equation][slack+result.raw_variable_count] = -1
-            else
-                internal[equation][slack+result.raw_variable_count] = 0
-            end
-        end
-        internal[equation][result.variable_count+1] = 0
-    end
-    result.internal = internal
-
-    result.basic_variables = {}
-    result.is_basic_variable = {}
-    for slack = 1, result.equation_count + 1 do
-        result.basic_variables[slack] = {index = slack + result.raw_variable_count, int_index = slack}
-        result.is_basic_variable[slack + result.raw_variable_count] = slack
-    end
-
-    result.constraints = {}
-    for constraint = 1, result.equation_count do
-        result.constraints[constraint] = matrix[constraint][result.raw_variable_count+1]
-    end
-    result.constraints[result.equation_count+1] = 0
-    
-    internal[result.equation_count+1] = {}
-    for i = 1, result.raw_variable_count do
-        internal[result.equation_count+1][i] = 1
-    end
-    for i = result.raw_variable_count + 1, result.variable_count do
-        internal[result.equation_count+1][i] = 0
-    end
-    internal[result.equation_count+1][result.variable_count+1] = 1
-    
-    result.equation_count = result.equation_count + 1
-    result.variable_count = result.variable_count + 1
-
-    return result
-end
+local epsilon = require("epsilon_numbers")
 
 ---@param matrix number[][]
 ---@return number[][]
@@ -815,251 +745,357 @@ local function CopyMatrix(matrix)
     for k,v in pairs(matrix) do
         copy[k] = {}
         for kk,vv in pairs(v) do
-            copy[k][kk] = vv
+            if kk == #v then
+                copy[k][kk] = epsilon.convert(vv)
+            else
+                copy[k][kk] = vv
+            end
         end
     end
     return copy
 end
 
 ---@param matrix number[][]
+---@param tax number[]
 ---@param objectives number[]
-local function InjectObjectivesInMatrix(matrix, objectives)
-    matrix[#matrix+1] = objectives
-end
-
----@param matrix number[][]
----@return number[][]
-local function TransposeMatrix(matrix)
-    local Transpose = {}
-    for i = 1, #matrix[1] do
-        Transpose[i] = {}
-        for j=1, #matrix do
-            Transpose[i][j] = matrix[j][i]
+local function InjectTaxInMatrix(matrix, tax, objectives)
+    matrix[#matrix+1] = tax
+    for x=1,#matrix do
+        if x ~= #matrix then
+            matrix[x][#matrix[x]+1] = matrix[x][#matrix[x]]
+            matrix[x][#matrix[x]-1] = 0
+        else
+            matrix[x][#matrix[x]+1] = 0
+            matrix[x][#matrix[x]-1] = 1
         end
     end
-    return Transpose
+    objectives[#objectives+1] = objectives[#objectives]
+    objectives[#objectives-1] = epsilon.convert(1)
 end
 
----@param matrix number[][]
----@return SimplexTableau
-function WrapIntoSimplex(matrix)
-    ---@type SimplexTableau
-    local Simplex = {}
-
-    if #matrix == 0 then
-        Simplex.raw_variable_count = 0
-    else
-        Simplex.raw_variable_count = #matrix[1] - 1
-    end
-    Simplex.equation_count = #matrix
-    Simplex.variable_count = Simplex.raw_variable_count + Simplex.equation_count
-
-    Simplex.internal = matrix
-
-    for i = 1, Simplex.raw_variable_count do
-        Simplex.internal[#Simplex.internal][i] = -Simplex.internal[#Simplex.internal][i]
-    end
-
-    --adding slacks
-    for equation = 1, Simplex.equation_count do
-        local old_constraint = matrix[equation][Simplex.raw_variable_count + 1]
-        for slack = 1, Simplex.equation_count do
-            if slack == equation then
-                Simplex.internal[equation][slack + Simplex.raw_variable_count] = 1
-            else
-                Simplex.internal[equation][slack + Simplex.raw_variable_count] = 0
-            end
-        end
-        Simplex.internal[equation][Simplex.variable_count + 1] = old_constraint
-    end
-
-    Simplex.basic_variables = {}
-    Simplex.is_basic_variable = {}
-    for i = 1, Simplex.equation_count do
-        Simplex.basic_variables[i] = i + Simplex.raw_variable_count
-        Simplex.is_basic_variable[i + Simplex.raw_variable_count] = i
-    end
-    
-    return Simplex
-end
-
----@param simplex SimplexTableau
----@param column integer
----@return number
 function matrix_solver.find_result_from_column(recipe_matrix, simplex, column, col_set, row_set)
-    if #simplex.internal == 0 then
-        return 0
-    end
-    local value = simplex.internal[simplex.equation_count][simplex.raw_variable_count+column]
-    if value > 0 then
-        return value
+    if simplex.is_basic[column] then
+        return simplex.internal[simplex.is_basic[column]][simplex.variable_count+1][0] or 0
     else
-        local name = split_string(col_set.values[column], "_")
-        if name[1] == "line" then
-            return 0
-        end
-        local row_index = row_set.map[name[2].."_"..name[3]]
-        return matrix_solver.find_result_from_row(recipe_matrix, simplex, row_index, col_set, row_set)
+        return 0
     end
 end
 
 function matrix_solver.find_result_from_row(recipe_matrix, simplex, row, col_set, skip_count)
     local accumulated = 0
-    for i=skip_count+1,#col_set.values do
-        accumulated = accumulated + recipe_matrix[row][i] * simplex.internal[simplex.equation_count][simplex.raw_variable_count+i]
+    for i=1 + skip_count, #recipe_matrix[row]-1 do
+        accumulated = accumulated + recipe_matrix[row][i]
+                                    * matrix_solver.find_result_from_column(
+                                        recipe_matrix,
+                                        simplex,
+                                        i,
+                                        col_set,
+                                        skip_count)
     end
     return -accumulated
 end
 
 ---@param matrix number[][]
----@return SimplexTableau
+local function FindSlackData(matrix)
+    local slack_type, slack_pos, counter = {}, {}, 1
+    for constraint = 1, #matrix do
+        if matrix[constraint][#matrix[constraint]] < 0 then
+            slack_type[constraint] = -1
+            slack_pos[constraint] = counter
+            counter = counter + 1
+        else
+            slack_type[constraint] = 1
+            slack_pos[constraint] = counter
+            counter = counter + 2
+        end
+    end
+    return slack_type, slack_pos, counter - 1
+end
+
+---@param matrix number[][]
+---@param slack_type integer
+local function FixNegativeAndZeroConstraints(matrix, slack_type)
+    for constraint=1,#slack_type do
+        for variable = 1, #matrix[constraint] do
+            matrix[constraint][variable] = slack_type[constraint] * matrix[constraint][variable]
+        end
+    end
+end
+
+local function InsertSlacksIntoRecipe(recipe, recipe_index, slack_type, M)
+    local old_constraint = recipe[#recipe]
+    recipe[#recipe] = nil
+    for slack=1, #slack_type do
+        if slack_type[slack] == -1 then
+            if not recipe_index or recipe_index == slack then
+                if recipe_index == nil then
+                    table.insert(recipe, epsilon.convert(0))
+                else
+                    table.insert(recipe, 1)
+                end
+            else
+                table.insert(recipe, 0)
+            end
+        else
+            if not recipe_index or recipe_index == slack then
+                if recipe_index == nil then
+                    table.insert(recipe, epsilon.convert(0))
+                else
+                    table.insert(recipe, -1)
+                end
+                table.insert(recipe, M)
+            else
+                table.insert(recipe, 0)
+                table.insert(recipe, 0)
+            end
+        end
+    end
+    table.insert(recipe, old_constraint)
+end
+
+local function InsertSlacks(matrix, slack_type, objectives, M)
+    local variable_count
+    for recipe = 1, #slack_type do
+        variable_count = #matrix[recipe]
+        InsertSlacksIntoRecipe(matrix[recipe], recipe, slack_type, 1)
+    end
+    InsertSlacksIntoRecipe(objectives, nil, slack_type, M)
+    return variable_count
+end
+
+local function WrapInSimplex(matrix, objectives, slack_type, slack_pos, raw_variable_count)
+    local simplex = {}
+    simplex.internal = matrix
+
+    
+    simplex.equation_count = #simplex.internal
+    simplex.variable_count = #simplex.internal[1] - 1
+    
+    table.insert(simplex.internal, objectives)
+    
+    for equation = 1, simplex.equation_count do
+        simplex.internal[equation][simplex.variable_count+1] = epsilon.convert(1, equation) + simplex.internal[equation][simplex.variable_count+1]
+    end
+
+    raw_variable_count = raw_variable_count - 1
+    simplex.basic_variables = {}
+    simplex.is_basic = {}
+    simplex.artificials = {}
+    for basic = 1, #slack_pos do
+        if slack_type[basic] == -1 then
+            simplex.basic_variables[basic] = slack_pos[basic] + raw_variable_count
+            simplex.is_basic[slack_pos[basic] + raw_variable_count] = basic
+        else
+            simplex.basic_variables[basic] = slack_pos[basic] + 1 + raw_variable_count
+            simplex.artificials[slack_pos[basic] + 1 + raw_variable_count] = true
+            simplex.is_basic[slack_pos[basic] + 1 + raw_variable_count] = basic
+        end
+    end
+
+
+    return simplex
+end
+
+local function FindZj(simplex, variable)
+    local Sum = epsilon.convert(0)
+    for equation = 1, simplex.equation_count do
+        local Value = epsilon.convert(simplex.internal[equation][variable])
+        local Multiplier = simplex.internal[simplex.equation_count+1][simplex.basic_variables[equation]]
+        Sum = Sum + Value * Multiplier
+    end
+    return Sum
+end
+
+local function FindVariableEnterScore(simplex, variable)
+    local Cj = FindZj(simplex, variable) - simplex.internal[simplex.equation_count+1][variable]
+
+    -- STEEPEST SLOPE THING, dunno, the math people say this is faster
+    local Sum = 1
+    for i = 1, simplex.equation_count do
+        local Val = simplex.internal[i][variable]
+        Sum = Sum + Val * Val
+    end
+    Cj = Cj / epsilon.convert(Sum)
+    -- END STEEPEST SLOPE THING]]
+    return Cj
+end
+
+local function FindEntering(simplex)
+    local possible_entering = {}
+    for variable = 1,simplex.variable_count do
+        if not simplex.is_basic[variable] then
+            local Cj = FindVariableEnterScore(simplex, variable)
+            if Cj > epsilon.convert(0) then
+                possible_entering[variable] = Cj
+            end
+        end
+    end
+    local largest, found_variable
+    for variable, Cj in pairs(possible_entering) do
+        if largest == nil or Cj > largest then
+            largest = Cj
+            found_variable = variable
+        end
+    end
+    return found_variable
+end
+
+local function FindLeaving(simplex, entering)
+    local possible_leaving = {}
+    for equation = 1, simplex.equation_count do
+        local constraint = simplex.internal[equation][simplex.variable_count+1]
+        local value = simplex.internal[equation][entering]
+        if value ~= 0 then
+            local ratio = constraint / epsilon.convert(value)
+            if ratio >= epsilon.convert(0) and not (constraint == epsilon.convert(0) and value < 0) then
+                possible_leaving[equation] = ratio
+            end
+        end
+    end
+    local leaving, lowest
+    for equation, ratio in pairs(possible_leaving) do
+        if lowest == nil or ratio < lowest then
+            leaving = equation
+            lowest = ratio
+        end
+    end
+    return leaving
+end
+
+local function GaussianElimination(simplex, row, column)
+    local new_internal = {}
+    for row = 1, simplex.equation_count do
+        new_internal[row] = {}
+    end
+    local value = simplex.internal[row][column]
+    new_internal[row][column] = 1
+    for variable = 1, simplex.variable_count do
+        new_internal[row][variable] = simplex.internal[row][variable] / value
+        if math.abs(new_internal[row][variable]) < 1e-5 then
+            new_internal[row][variable] = 0
+        end
+    end
+    new_internal[row][simplex.variable_count+1] = simplex.internal[row][simplex.variable_count+1] / epsilon.convert(value)
+    epsilon.reduce_to_zero(new_internal[row][simplex.variable_count+1])
+    for equation = 1, simplex.equation_count do
+        if equation ~= row then
+            new_internal[equation][column] = 0
+        end
+    end
+    for equation = 1, simplex.equation_count do repeat
+        if equation == row then
+            break
+        end
+        for variable = 1, simplex.variable_count do repeat
+            if variable == column then
+                break
+            end
+            new_internal[equation][variable] = ((simplex.internal[equation][variable] 
+                                                   * simplex.internal[row][column]) 
+                                               - ( simplex.internal[row][variable] 
+                                                   * simplex.internal[equation][column])) 
+                                               / simplex.internal[row][column]
+            if math.abs(new_internal[equation][variable]) < 1e-5 then
+                new_internal[equation][variable] = 0
+            end
+        until true end
+        local variable = simplex.variable_count+1
+        new_internal[equation][variable] = ((simplex.internal[equation][variable] 
+                                               * epsilon.convert(simplex.internal[row][column])) 
+                                           - ( simplex.internal[row][variable] 
+                                               * epsilon.convert(simplex.internal[equation][column]))) 
+                                           / epsilon.convert(simplex.internal[row][column])
+        epsilon.reduce_to_zero(new_internal[equation][variable])
+    until true end
+    table.insert(new_internal, simplex.internal[simplex.equation_count+1])
+    simplex.internal = new_internal
+end
+
+local function DoSimplexAlgo(simplex)
+    repeat
+        --[[
+        matrix_solver.print_matrix(simplex.internal)
+        local s = "{"
+        for i = 1,simplex.equation_count do
+            s = s..tostring(simplex.basic_variables[i]).." "
+        end
+        llog(s.."}")
+        s = "{"
+        for i = 1,simplex.variable_count do
+            s = s..tostring(FindVariableEnterScore(simplex, i)).." "
+        end
+        llog(s.."}")--]]
+        local entering = FindEntering(simplex)
+        if entering == nil then
+            return
+        end
+        --llog(entering)
+
+        local leaving = FindLeaving(simplex, entering)
+        --llog(leaving)
+        if not leaving then
+            llog("Simplex is unbounded :(")
+            return
+        end
+        GaussianElimination(simplex, leaving, entering)
+        local basic_index = simplex.basic_variables[leaving]
+        simplex.is_basic[basic_index] = nil
+        simplex.basic_variables[leaving] = entering
+        simplex.is_basic[entering] = leaving
+        local Sum = epsilon.convert(0)
+        for equation=1, simplex.equation_count do
+            Sum = Sum + simplex.internal[equation][simplex.variable_count+1] * simplex.internal[simplex.equation_count+1][simplex.basic_variables[equation]]
+        end
+        simplex.internal[simplex.equation_count+1][simplex.variable_count+1] = Sum
+    until false
+end
+
 function matrix_solver.do_simplex_algo(matrix, rows, columns)
     if #matrix == 0 then
-        return WrapIntoSimplex(matrix)
+        return
     end
     local copy = CopyMatrix(matrix)
     local objectives = {}
-    local is_psuedo = true
+    local recipe_tax = {}
     for i = 1, #matrix[1] do
         local name = columns.values[i] or "line_AA"
         local split_name = split_string(name, "_")
         if split_name[1] == "fluid" or split_name[1] == "item" then
             local item_name = matrix_solver.get_item_name(split_name[2].."_"..split_name[3])
             if item_name == "fluid_water" then
-                objectives[i] = 1
+                objectives[i] = epsilon.convert(100)
             else
-                objectives[i] = 100
+                objectives[i] = epsilon.convert(10000)
             end
+            recipe_tax[i] = 0
         else
-            objectives[i] = 0
+            objectives[i] = epsilon.convert(0)
+            recipe_tax[i] = 1
         end
     end
-    InjectObjectivesInMatrix(copy, objectives)
-    local transpose = TransposeMatrix(copy)
-    local simplex = WrapIntoSimplex(transpose)
-    local keep_going = true
-    while keep_going do
-        local stop, error = matrix_solver.do_simplex_iteration(simplex)
-        keep_going = not stop
-        if error then
-            llog(error)
-        end
-    end
-    return simplex
-end
+    --matrix_solver.print_matrix(copy)
+    InjectTaxInMatrix(copy, recipe_tax, objectives)
 
----@param simplex SimplexTableau
----@return boolean, nil|string
-function matrix_solver.do_simplex_iteration(simplex)
-    matrix_solver.print_simplex(simplex)
-    local entering_variable = matrix_solver.find_entering_variable(simplex)
-    if entering_variable == nil then
-        --optimal solution found, leaving
-        return true
-    end
-    local leaving_variable = matrix_solver.find_leaving_variable(simplex, entering_variable)
-    if leaving_variable == nil then
-        --problem is unbounded
-        return true, "simplex is unbounded"
-    end
-    matrix_solver.gaussian_elimination(simplex, leaving_variable, entering_variable)
-    
-    local basic_index = simplex.basic_variables[leaving_variable]
-    simplex.is_basic_variable[basic_index] = nil
-    simplex.basic_variables[leaving_variable] = entering_variable
-    simplex.is_basic_variable[entering_variable] = leaving_variable
-    
-    return false
-end
+    -- multiply all things that are <= 0 constraint by -1, they will now be <= instead of >=
+    -- anything that was multiplied by -1 gets a slack variable
+    -- anything with constraint > 0 gets an artificial variable and a surplus variable
 
----@param simplex SimplexTableau
----@param row_index integer
----@param column_index integer
-function matrix_solver.gaussian_elimination(simplex, row_index, column_index)
-    if simplex.internal[row_index][column_index] == 0 then
-        llog("HELP! division by zero in gaussion elimination")
-    end
-    for equation,_ in pairs(simplex.internal) do repeat
-        if equation == row_index then
-            break
-        end
-        local Factor = -1 * matrix_solver.access_simplex(simplex, equation, column_index) / matrix_solver.access_simplex(simplex, row_index, column_index)
-        matrix_solver.guassian_step(simplex, row_index, Factor, equation, column_index)
-    until true end
-    local pivot = simplex.internal[row_index][column_index]
-    for column,value in pairs(simplex.internal[row_index]) do
-        simplex.internal[row_index][column] = value / pivot
-    end
-end
+    local slack_type, slack_pos = FindSlackData(copy)
+    FixNegativeAndZeroConstraints(copy, slack_type)
 
-local abs = math.abs
+    -- M = very large positive number
+    local raw_variable_count = InsertSlacks(copy, slack_type, objectives, epsilon.convert(1,-1))
+    local simplex = WrapInSimplex(copy, objectives, slack_type, slack_pos, raw_variable_count)
 
----@param simplex SimplexTableau
----@param row integer
----@param multiplier number
----@param replace_row integer
----@param orig_column integer
-function matrix_solver.guassian_step(simplex, row, multiplier, replace_row, orig_column)
-    local from = simplex.internal[row]
-    local to = simplex.internal[replace_row]
-    for column = 1, simplex.variable_count+1 do
-        if column == orig_column or simplex.is_basic_variable[column] then
-            --do nothing
-        else
-            local result = to[column] + from[column] * multiplier
-            if abs(result) < 1e-5 then
-                result = 0
-            end
-            to[column] = result
-        end
-    end
-end
+    DoSimplexAlgo(simplex)
+    -- entering variable is the largest positive Zj - Cj
+    -- leaving variable is the smallest positive ratio constraint / entering
 
----@param simplex SimplexTableau
----@return integer|nil
-function matrix_solver.find_entering_variable(simplex)
-    local entering_variable = nil
-    local most_negative_found_objective = math.huge
-    for variable = 1, simplex.variable_count do
-        local Cj = matrix_solver.access_simplex(simplex, simplex.equation_count, variable)
-        if Cj < most_negative_found_objective and Cj < 0 then
-            most_negative_found_objective = Cj
-            entering_variable = variable
-        end
-    end
-    return entering_variable
-end
+    -- gaussian_elimination
 
----@param simplex SimplexTableau
----@param entering_variable integer
----@return integer|nil
-function matrix_solver.find_leaving_variable(simplex, entering_variable)
-    local smallest_found_ratio = math.huge
-    local leaving_variable = nil
-    for basic_variable = 1, simplex.equation_count - 1 do repeat
-        local entering_column = matrix_solver.access_simplex(simplex, basic_variable, entering_variable)
-        if entering_column <= 0 then
-            break -- works as a continue due to repeat until loop
-        end
-        local ratio = matrix_solver.access_simplex(simplex, basic_variable, simplex.variable_count+1) / entering_column
-        if ratio < smallest_found_ratio then
-            smallest_found_ratio = ratio
-            leaving_variable = basic_variable
-        end
-    until true end
-    return leaving_variable
-end
+    -- repeat until all objectives are negative, or a leaving variable cannot be found
 
----@param simplex SimplexTableau
----@param variable integer
----@return number
-function matrix_solver.find_zj_value(simplex, variable)
-    local Accumulated = 0
-    for basic_variable = 1, simplex.equation_count-1 do
-        local basic_coefficient = simplex.internal[simplex.equation_count][simplex.basic_variables[basic_variable]]
-        Accumulated = Accumulated + simplex.internal[basic_variable][variable] * basic_coefficient
-    end
-    return Accumulated
+    return simplex, slack_type, slack_pos
 end
 
 ---@param simplex SimplexTableau
@@ -1069,9 +1105,9 @@ function matrix_solver.print_simplex(simplex)
     for equation,row in ipairs(simplex.internal) do
         s = s.."  {"
         for variable,col in ipairs(row) do
-            local value = matrix_solver.access_simplex(simplex, equation, variable)
-            s = s..value
-            s = s..string.rep(" ", matrix_solver.longest_in_column(simplex, variable) - string.len(tostring(col)) + 1)
+            local value = simplex.internal[equation][variable]
+            s = s..tostring(value)
+            s = s..string.rep(" ", matrix_solver.longest_in_column(simplex, variable) - string.len(tostring(value)) + 1)
         end
         s = s.."}\n"
     end
@@ -1087,23 +1123,4 @@ function matrix_solver.longest_in_column(simplex, column)
         longest = math.max(longest, string.len(tostring(value)))
     end
     return longest
-end
-
----@param simplex SimplexTableau
----@param row integer
----@param column integer
----@return number
-function matrix_solver.access_simplex(simplex, row, column)
-    local value
-    local is_basic = simplex.is_basic_variable[column]
-    if is_basic then
-        if row == is_basic then
-            value = 1
-        else
-            value = 0
-        end
-    else
-        value = simplex.internal[row][column]
-    end
-    return value
 end

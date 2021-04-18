@@ -91,7 +91,7 @@ function production_box.refresh(player)
 
     local current_level = (subfactory_valid) and subfactory.selected_floor.level or 1
     local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
-    local matrix_solver_active = subfactory.matrix_free_items ~= nil
+    local matrix_solver_active = (subfactory_valid) and subfactory.matrix_free_items ~= nil
     local archive_open = (ui_state.flags.archive_open)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
