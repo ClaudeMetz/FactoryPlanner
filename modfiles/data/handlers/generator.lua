@@ -320,7 +320,7 @@ function generator.all_machines()
         local energy_usage, energy_drain = (proto.energy_usage or proto.max_energy_usage or 0), 0
 
         -- Determine the name of the item that actually builds this machine for the item requester
-        -- There can technically be more than one, but I just use the first one
+        -- There can technically be more than one, but bots use the first one, so I do too
         local items_to_place_this, built_by_item = proto.items_to_place_this, nil
         if items_to_place_this then built_by_item = items_to_place_this[1].name end
 
