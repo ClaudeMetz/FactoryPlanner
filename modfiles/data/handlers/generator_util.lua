@@ -287,27 +287,27 @@ function generator_util.is_barreling_recipe(proto)
     end
 end
 
--- A table of mods and the recipe categories in them that are annoying
-local annoying_recipe_categories = {
+-- A table of mods and the recipe categories in them that are irrelevant
+local irrelevant_recipe_categories = {
     ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
     ["Mining_Drones"] = {"mining-depot"}
 }
 
 -- Precompute the lookup by recipe category for performance
-local annoying_recipe_categories_precompute_lookup = {}
-for mod, categories in pairs(annoying_recipe_categories) do
+local irrelevant_recipe_categories_precompute_lookup = {}
+for mod, categories in pairs(irrelevant_recipe_categories) do
     for _, category in pairs(categories) do
         if script.active_mods[mod] then
-            annoying_recipe_categories_precompute_lookup[category] = true
+            irrelevant_recipe_categories_precompute_lookup[category] = true
         end
     end
 end
 
--- Determines whether this recipe is annoying or not, and thus should be excluded
+-- Determines whether this recipe is irrelevant or not, and thus should be excluded
 -- from Factory Planner
 -- Compatible with: Klonan's Transport/Mining Drones
-function generator_util.is_annoying_recipe(recipe)
-    return annoying_recipe_categories_precompute_lookup[recipe.category]
+function generator_util.is_irrelevant_recipe(recipe)
+    return irrelevant_recipe_categories_precompute_lookup[recipe.category]
 end
 
 -- Finds a sprite for the given entity prototype
