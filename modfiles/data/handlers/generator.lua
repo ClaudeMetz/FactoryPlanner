@@ -40,8 +40,8 @@ function generator.all_recipes()
       {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
         local category_id = NEW.all_machines.map[proto.category]
-        -- Avoid any recipes that have no machine to produce them, or are annoying
-        if category_id ~= nil and not generator_util.is_annoying_recipe(proto) then
+        -- Avoid any recipes that have no machine to produce them, or are irrelevant
+        if category_id ~= nil and not generator_util.is_irrelevant_recipe(proto) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
