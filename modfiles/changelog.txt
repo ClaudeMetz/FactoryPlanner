@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    -
+    - Fixed an issue where Request Depots from Klonan's Transport Drones could not be selected a product (Thanks MCP!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.20

@@ -293,19 +293,19 @@ local irrelevant_recipe_categories = {
     ["Mining_Drones"] = {"mining-depot"}
 }
 
--- Precompute the lookup by recipe category for performance
+-- Precompute the lookup table by recipe category for performance
 local irrelevant_recipe_categories_precompute_lookup = {}
+local active_mods = script.active_mods
 for mod, categories in pairs(irrelevant_recipe_categories) do
     for _, category in pairs(categories) do
-        if script.active_mods[mod] then
+        if active_mods[mod] then
             irrelevant_recipe_categories_precompute_lookup[category] = true
         end
     end
 end
 
--- Determines whether this recipe is irrelevant or not, and thus should be excluded
--- from Factory Planner
--- Compatible with: Klonan's Transport/Mining Drones
+-- Determines whether this recipe is irrelevant or not and should thus be excluded
+-- Compatible with: Klonan's Transport+Mining Drones
 function generator_util.is_irrelevant_recipe(recipe)
     return irrelevant_recipe_categories_precompute_lookup[recipe.category]
 end
