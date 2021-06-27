@@ -290,7 +290,10 @@ end
 -- A table of mods and the recipe categories in them that are irrelevant
 local irrelevant_recipe_categories = {
     ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
-    ["Mining_Drones"] = {"mining-depot"}
+    ["Mining_Drones"] = {"mining-depot"},
+    ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
+      "deep-storage-item-big", "deep-storage-fluid-big",
+      "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"}
 }
 
 -- Precompute the lookup table by recipe category for performance
