@@ -38,6 +38,8 @@ local function generate_metadata(player)
          true, true, true)
         metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient" .. matrix_postfix,
           true, true, true)
+        metadata.ingredient_entity_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient_entity",
+          true, true, true)
         metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
     end
 
@@ -291,12 +293,15 @@ function builders.ingredients(line, parent_flow, metadata)
           ingredient, nil, machine_count)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
-        local style = "flib_slot_button_green_small"
+        local style, enabled = "flib_slot_button_green_small", true
         local satisfaction_line, indication_string = "", ""
+        local tutorial_tooltip = metadata.ingredient_tutorial_tooltip
 
         if ingredient.proto.type == "entity" then
             style = "flib_slot_button_default_small"
+            enabled = (not metadata.matrix_solver_active)
             indication_string = {"fp.indication", {"fp.raw_ore"}}
+            tutorial_tooltip = (metadata.matrix_solver_active) and "" or metadata.ingredient_entity_tutorial_tooltip
 
         elseif metadata.ingredient_satisfaction then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
@@ -315,11 +320,11 @@ function builders.ingredients(line, parent_flow, metadata)
 
         local name_line = {"fp.two_word_title", ingredient.proto.localised_name, indication_string}
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tooltip}
+        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", tags={on_gui_click="act_on_line_item", line_id=line.id, class="Ingredient",
           item_id=ingredient.id}, sprite=ingredient.proto.sprite, style=style, number=amount,
-          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+          tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
 
         ::skip_ingredient::
     end
