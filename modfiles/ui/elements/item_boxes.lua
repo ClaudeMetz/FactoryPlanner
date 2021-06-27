@@ -14,7 +14,7 @@ local function add_recipe(player, context, type, item)
         title_bar.enqueue_message(player, message, "warning", 2, false)
     end
 
-    local production_type = (type == "product") and "produce" or "consume"
+    local production_type = (type == "byproduct") and "consume" or "produce"
     modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type}})
 end
 
@@ -54,7 +54,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
-    local default_style, tut_mode_tooltip = "flib_slot_button_default", ""
+    local default_style, tut_mode_tooltip, global_enable = "flib_slot_button_default", "", true
 
     if class == "Product" then
         default_style = "flib_slot_button_red"
@@ -63,7 +63,11 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
         default_style = "flib_slot_button_red"
         if subfactory.matrix_free_items ~= nil then
             tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_byproduct", true, true, true)
+        else
+            global_enable = false
         end
+    elseif class == "Ingredient" then
+        tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_ingredient", true, true, true)
     end
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
@@ -82,14 +86,20 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
             else style = "flib_slot_button_green" end
         end
 
-        local indication = (item.proto.type == "entity") and {"fp.indication", {"fp.indication_raw_ore"}} or ""
+        local indication, tut_tooltip, enabled = "", tut_mode_tooltip, global_enable
+        if item.proto.type == "entity" then  -- only relevant to ingredients
+            indication = {"fp.indication", {"fp.indication_raw_ore"}}
+            tut_tooltip = ""
+            enabled = false
+        end
+
         local name_line = {"fp.two_word_title", item.proto.localised_name, indication}
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, tut_mode_tooltip}
+        local tooltip = {"", name_line, number_line, satisfaction_line, tut_tooltip}
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
           tags={on_gui_click="act_on_top_level_item", category=category, item_id=item.id},
-          mouse_button_filter={"left-and-right"}}
+          enabled=enabled, mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
         ::skip_item::  -- goto for fun, wooohoo
@@ -152,6 +162,9 @@ local function handle_item_button_click(player, tags, metadata)
 
         elseif class == "Byproduct" then
             add_recipe(player, context, "byproduct", item)
+
+        elseif class == "Ingredient" then
+            add_recipe(player, context, "ingredient", item)
         end
     end
 end

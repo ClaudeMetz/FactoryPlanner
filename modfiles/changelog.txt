@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added the ability to add recipes from top level ingredients
   Changes:
     -
   Bugfixes:
