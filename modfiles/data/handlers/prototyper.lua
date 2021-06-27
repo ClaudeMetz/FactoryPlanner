@@ -22,6 +22,9 @@ function prototyper.setup()
     for _, data_type in ipairs(data_types) do
         NEW["all_" .. data_type] = generator["all_" .. data_type]()
     end
+
+
+    llog(NEW.all_recipes.map)
 end
 
 -- Migrates the default prototypes of the given player
