@@ -404,8 +404,8 @@ local function handle_item_click(player, tags, metadata)
             if production_type == "consume" and context.subfactory.matrix_free_items == nil then
                 title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
             else
-                modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type,
-                  add_after_position=((metadata.shift) and line.gui_position or nil)}})
+                modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto,
+                  production_type=production_type, add_after_position=((metadata.shift) and line.gui_position or nil)}})
             end
         end
 
@@ -495,7 +495,7 @@ local function handle_fuel_click(player, tags, metadata)
         return
 
     elseif metadata.click == "left" then
-        modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce",
+        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, production_type="produce",
           add_after_position=((metadata.shift) and line.gui_position or nil)}})
 
     elseif metadata.click == "right" then
