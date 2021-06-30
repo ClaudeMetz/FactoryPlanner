@@ -5,7 +5,7 @@ local recipes_per_row = 6
 -- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
-local function run_preliminary_checks(player, product, production_type)
+local function run_preliminary_checks(player, product_proto, production_type)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
     local preferences = data_util.get("preferences", player)
 
@@ -13,7 +13,7 @@ local function run_preliminary_checks(player, product, production_type)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = RECIPE_MAPS[production_type][product.proto.type][product.proto.name]
+    local map = RECIPE_MAPS[production_type][product_proto.type][product_proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = global.all_recipes.recipes[recipe_id]
@@ -290,7 +290,7 @@ end
 recipe_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
     subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
-      modal_data.product.proto.localised_name},
+      modal_data.product_proto.localised_name},
     search_function = apply_recipe_filter,
     create_content_frame = true,
     force_auto_center = true
@@ -298,10 +298,8 @@ recipe_dialog.dialog_settings = (function(modal_data) return {
 
 -- Handles populating the recipe dialog
 function recipe_dialog.open(player, modal_data)
-    local product = modal_data.product
-
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
+    local result, error, show = run_preliminary_checks(player, modal_data.product_proto, modal_data.production_type)
 
     if error ~= nil then
         title_bar.enqueue_message(player, error, "error", 1, false)

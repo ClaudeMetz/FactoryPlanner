@@ -1,7 +1,7 @@
 item_boxes = {}
 
 --- ** LOCAL UTIL **
-local function add_recipe(player, context, type, item)
+local function add_recipe(player, context, type, item_proto)
     if type == "byproduct" and context.subfactory.matrix_free_items == nil then
         title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
         return
@@ -15,7 +15,7 @@ local function add_recipe(player, context, type, item)
     end
 
     local production_type = (type == "byproduct") and "consume" or "produce"
-    modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type=production_type}})
+    modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto, production_type=production_type}})
 end
 
 local function build_item_box(player, category, column_count)
@@ -146,7 +146,7 @@ local function handle_item_button_click(player, tags, metadata)
                 end
 
             elseif metadata.click == "left" then
-                add_recipe(player, context, "product", item)
+                add_recipe(player, context, "product", item.proto)
 
             elseif metadata.click == "right" then
                 if metadata.action == "edit" then
@@ -161,10 +161,10 @@ local function handle_item_button_click(player, tags, metadata)
             end
 
         elseif class == "Byproduct" then
-            add_recipe(player, context, "byproduct", item)
+            add_recipe(player, context, "byproduct", item.proto)
 
         elseif class == "Ingredient" then
-            add_recipe(player, context, "ingredient", item)
+            add_recipe(player, context, "ingredient", item.proto)
         end
     end
 end
