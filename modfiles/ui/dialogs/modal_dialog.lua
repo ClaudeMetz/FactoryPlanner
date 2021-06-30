@@ -149,12 +149,14 @@ function modal_dialog.enter(player, dialog_settings)
     local immediately_closed = dialog_object.open(player, ui_state.modal_data)
 
     if not immediately_closed then
-        local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-          tags={on_gui_click="re-layer_interface_dimmer"}}
-        ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
+        if not dialog_settings.skip_dimmer then
+            local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+            tags={on_gui_click="re-layer_interface_dimmer"}}
+            ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
 
-        interface_dimmer.style.size = ui_state.main_dialog_dimensions
-        interface_dimmer.location = ui_state.main_elements.main_frame.location
+            interface_dimmer.style.size = ui_state.main_dialog_dimensions
+            interface_dimmer.location = ui_state.main_elements.main_frame.location
+        end
 
         frame_modal_dialog.bring_to_front()
         player.opened = frame_modal_dialog

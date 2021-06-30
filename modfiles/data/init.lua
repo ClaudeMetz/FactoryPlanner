@@ -15,6 +15,7 @@ require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.remote")
+require("data.handlers.screenshotter")
 
 require("data.calculation.interface")
 
