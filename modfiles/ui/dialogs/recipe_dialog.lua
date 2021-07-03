@@ -243,7 +243,7 @@ local function create_dialog_structure(modal_data)
     end
 end
 
-local function apply_recipe_filter(player, search_term)
+function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
@@ -282,7 +282,7 @@ local function handle_filter_change(player, tags, metadata)
     data_util.get("modal_data", player).filters[tags.filter_name] = boolean_state
     data_util.get("preferences", player).recipe_filters[tags.filter_name] = boolean_state
 
-    apply_recipe_filter(player, "")
+    SEARCH_HANDLERS.apply_recipe_filter(player, "")
 end
 
 
@@ -291,7 +291,7 @@ recipe_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
     subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
       modal_data.product_proto.localised_name},
-    search_function = apply_recipe_filter,
+    search_handler_name = "apply_recipe_filter",
     create_content_frame = true,
     force_auto_center = true
 } end)
@@ -324,7 +324,7 @@ function recipe_dialog.open(player, modal_data)
             modal_data.filters = show.filters
 
             create_dialog_structure(modal_data)
-            apply_recipe_filter(player, "")
+            SEARCH_HANDLERS.apply_recipe_filter(player, "")
             modal_data.modal_elements.search_textfield.focus()
         end
     end

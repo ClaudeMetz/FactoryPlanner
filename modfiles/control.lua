@@ -1,5 +1,9 @@
-NTH_TICK_HANDLERS = {}  -- safe space to store references to handlers to be indexed by name
-GENERIC_HANDLERS = {}  -- safe space to store references to handlers used by generic dialogs
+-- As functions can't be stored in global, references to them can't be stored in modal_data
+-- for some of the mod's generic interfaces. Instead, a name needs to be passed, and the
+-- function needs to be stored (on file parse) in one of these tables.
+NTH_TICK_HANDLERS = {}
+GENERIC_HANDLERS = {}
+SEARCH_HANDLERS = {}
 
 require("util")  -- core.lualib
 table = require('__flib__.table')  -- replaces the lua table module

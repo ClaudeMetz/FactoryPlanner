@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed an issue where Request Depots from Klonan's Transport Drones could not be selected a product (Thanks MCP!)
     - Fixed that the Deep Storage Unit mod's internal recipes were not being hidden
+    - Fixed a rare crash when searching recipes or items
     - Fixed a few minor graphical inconsistencies
 
 ---------------------------------------------------------------------------------------------------
