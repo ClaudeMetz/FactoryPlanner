@@ -107,7 +107,6 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 
     local function add_defaults_table(column_count, category_id)
         local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
-        frame.style.right_margin = 6
         local table = frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
         if category_id then
@@ -248,6 +247,7 @@ function preferences_dialog.open(player, modal_data)
     local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
+    label_preferences_info.style.width = 330
 
     local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
       "ingredient_satisfaction", "round_button_numbers"}

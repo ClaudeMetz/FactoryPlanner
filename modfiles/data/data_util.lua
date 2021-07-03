@@ -264,5 +264,6 @@ function data_util.porter.format_modset_diff(old_modset)
         end
     end
 
-    return tooltip
+    -- Return an empty string if no changes were found, ie. the tooltip is still only the header
+    return (table_size(tooltip) == 2) and "" or tooltip
 end

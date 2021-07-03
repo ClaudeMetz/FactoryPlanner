@@ -80,6 +80,7 @@ styles["fp_frame_deep_slots_crafting_groups"] = {
 styles["fp_frame_bordered_stretch"] = {
     type = "frame_style",
     parent = "bordered_frame",
+    right_padding = 8,
     horizontally_stretchable = "on"
 }
 
