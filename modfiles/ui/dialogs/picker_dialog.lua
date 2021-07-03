@@ -12,7 +12,7 @@ local function select_item_group(modal_data, new_group_id)
     end
 end
 
-local function search_items(player, search_term)
+function SEARCH_HANDLERS.search_picker_items(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local modal_elements = modal_data.modal_elements
 
@@ -335,7 +335,7 @@ picker_dialog.dialog_settings = (function(modal_data)
     local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
     return {
         caption = {"fp.two_word_title", action, {"fp.pl_" .. modal_data.item_category, 1}},
-        search_function = (not modal_data.object) and search_items or nil,
+        search_handler_name = (not modal_data.object) and "search_picker_items" or nil,
         force_auto_center = true,
         show_submit_button = true,
         show_delete_button = (modal_data.object ~= nil)

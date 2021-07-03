@@ -30,7 +30,9 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
         flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}
 
-        if dialog_settings.search_function then  -- add a search field if requested
+        if dialog_settings.search_handler_name then  -- add a search field if requested
+            modal_data.search_handler_name = dialog_settings.search_handler_name
+
             local searchfield = flow_title_bar.add{type="textfield", style="search_popup_textfield",
               tags={on_gui_text_changed="modal_searchfield"}}
             searchfield.style.width = 180
@@ -42,8 +44,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
               sprite="utility/search_white", hovered_sprite="utility/search_black",
               clicked_sprite="utility/search_black", tooltip={"fp.search_button_tt"},
               style="frame_action_button", mouse_button_filter={"left"}}
-
-            modal_data.search_function = dialog_settings.search_function
         end
     end
 
@@ -292,7 +292,8 @@ modal_dialog.gui_events = {
             name = "modal_searchfield",
             handler = (function(player, _, metadata)
                 local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-                data_util.get("modal_data", player).search_function(player, search_term)
+                local handler_name = data_util.get("modal_data", player).search_handler_name
+                SEARCH_HANDLERS[handler_name](player, search_term)
             end)
         }
     },
