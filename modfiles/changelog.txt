@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Implemented the ability to add recipes from top level ingredients
   Changes:
+    - The name and icon of the cargo and fluid wagons are now shown on the 'Wagons/m' view state button tooltip
     - Line percentages now default to 100 instead of 0 when left blank
   Bugfixes:
     - Fixed an issue where Request Depots from Klonan's Transport Drones could not be selected a product (Thanks MCP!)

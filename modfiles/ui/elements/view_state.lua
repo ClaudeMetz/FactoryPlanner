@@ -113,7 +113,9 @@ function view_state.rebuild_state(player)
     -- If no subfactory exists yet, choose a default timescale so the UI can build properly
     local timescale = (subfactory) and TIMESCALE_MAP[subfactory.timescale] or "second"
     local singular_bol = data_util.get("settings", player).belts_or_lanes:sub(1, -2)
-    local bl_sprite = prototyper.defaults.get(player, "belts").rich_text
+    local belt_proto = prototyper.defaults.get(player, "belts")
+    local cargo_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"])
+    local fluid_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["fluid-wagon"])
 
     local new_view_states = {
         [1] = {
@@ -123,13 +125,16 @@ function view_state.rebuild_state(player)
         },
         [2] = {
             name = "belts_or_lanes",
-            caption = {"fp.two_word_title", bl_sprite, {"fp.pu_" .. singular_bol, 2}},
-            tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2}}}
+            caption = {"fp.two_word_title", belt_proto.rich_text, {"fp.pu_" .. singular_bol, 2}},
+            tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2},
+              belt_proto.rich_text, belt_proto.localised_name}}
         },
         [3] = {
             name = "wagons_per_timescale",
             caption = {"fp.per_title", {"fp.pu_wagon", 2}, {"fp.unit_" .. timescale}},
-            tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale}}}
+            tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale},
+              cargo_train_proto.rich_text, cargo_train_proto.localised_name,
+              fluid_train_proto.rich_text, fluid_train_proto.localised_name}}
         },
         [4] = {
             name = "items_per_second_per_machine",

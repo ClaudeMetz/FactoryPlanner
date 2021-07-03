@@ -642,6 +642,7 @@ function generator.all_wagons()
             name = proto.name,
             localised_name = proto.localised_name,
             sprite = generator_util.determine_entity_sprite(proto),
+            rich_text = "[entity=" .. proto.name .. "]",
             category = "cargo-wagon",
             storage = proto.get_inventory_size(1)
         }
@@ -654,6 +655,7 @@ function generator.all_wagons()
             name = proto.name,
             localised_name = proto.localised_name,
             sprite = generator_util.determine_entity_sprite(proto),
+            rich_text = "[entity=" .. proto.name .. "]",
             category = "fluid-wagon",
             storage = proto.fluid_capacity
         }
