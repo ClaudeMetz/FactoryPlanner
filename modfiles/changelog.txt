@@ -2,12 +2,13 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added the ability to add recipes from top level ingredients
+    - Implemented the ability to add recipes from top level ingredients
   Changes:
     -
   Bugfixes:
     - Fixed an issue where Request Depots from Klonan's Transport Drones could not be selected a product (Thanks MCP!)
     - Fixed that the Deep Storage Unit mod's internal recipes were not being hidden
+    - Fixed a few minor graphical inconsistencies
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.20

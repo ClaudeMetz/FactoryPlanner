@@ -151,7 +151,7 @@ local function import_subfactories(player, _, _)
     -- The imported subfactories will be temporarily contained in a factory object
     local import_factory, error = data_util.porter.get_subfactories(textfield_export_string.text)
 
-    local function add_into_label(caption)
+    local function add_info_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
         label_info.style.single_line = false
         label_info.style.bottom_margin = 4
@@ -169,10 +169,10 @@ local function import_subfactories(player, _, _)
     if modal_elements.subfactories_scroll_pane then modal_elements.subfactories_scroll_pane.destroy() end
 
     if error ~= nil then
-        add_into_label({"fp.error_message", {"fp.importer_" .. error}})
+        add_info_label({"fp.error_message", {"fp.importer_" .. error}})
         ui_util.select_all(textfield_export_string)
     else
-        add_into_label({"fp.import_instruction_2"})
+        add_info_label({"fp.import_instruction_2"})
 
         setup_subfactories_table(modal_elements, false)
         modal_data.subfactories = {}

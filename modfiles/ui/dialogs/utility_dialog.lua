@@ -9,7 +9,7 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
 
     local flow_title_bar = bordered_frame.add{type="flow", direction="horizontal"}
     flow_title_bar.style.vertical_align = "center"
-    flow_title_bar.style.margin = {2, 8, 4, 0}
+    flow_title_bar.style.margin = {2, 0, 4, 0}
 
     -- Title
     local caption = (show_tooltip) and {"fp.info_label", {"fp.utility_title_".. type}} or {"fp.utility_title_".. type}
