@@ -114,7 +114,7 @@ local function handle_percentage_change(player, tags, metadata)
     local line = Floor.get(ui_state.context.floor, "Line", tags.line_id)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.percentage = tonumber(metadata.text) or 0
+    relevant_line.percentage = tonumber(metadata.text) or 100
 
     ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
 end
@@ -352,7 +352,7 @@ function GENERIC_HANDLERS.apply_item_options(player, options, action)
         local item = ui_state.modal_data.object
         local relevant_line = (item.parent.subfloor) and item.parent.subfloor.defining_line or item.parent
 
-        local current_amount, item_amount = item.amount, options.item_amount or 0
+        local current_amount, item_amount = item.amount, options.item_amount or item.amount
         if item.class ~= "Ingredient" then
             local other_class = (item.class == "Product") and "Byproduct" or "Product"
             local corresponding_item = Line.get_by_type_and_name(relevant_line, other_class,
