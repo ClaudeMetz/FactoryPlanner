@@ -205,7 +205,7 @@ function data_util.porter.get_subfactories(export_string)
     end) then return nil, "unpacking_failure" end
 
     -- This is not strictly a decoding failure, but close enough
-    if import_factory.Subfactory.count == 0 then return nil, "decoding_failure" end
+    if Factory.count(import_factory, "Subfactory") == 0 then return nil, "decoding_failure" end
 
     return import_factory, nil
 end
