@@ -170,13 +170,18 @@ end
 
 -- Sets the game.paused-state as is appropriate
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
-    local pause = false
-    if not game.is_multiplayer() and player.controller_type ~= defines.controllers.editor then
-        if data_util.get("preferences", player).pause_on_interface and not force_false then
-            pause = frame_main_dialog.visible  -- only pause when the main dialog is open
-        end
+    if player.controller_type == defines.controllers.editor then
+        return game.tick_paused  -- don't change paused-state if the editor is active
     end
-    game.tick_paused = pause
+
+    local paused = false
+    if not data_util.get("preferences", player).pause_on_interface
+      or game.is_multiplayer() or force_false then
+        paused = false
+    else
+        paused = frame_main_dialog.visible
+    end
+    game.tick_paused = paused
 
     local main_elements = data_util.get("main_elements", player)
     local background_dimmer = main_elements.background_dimmer
@@ -187,14 +192,14 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
         main_elements["background_dimmer"] = background_dimmer
     end
 
-    background_dimmer.visible = pause
+    background_dimmer.visible = paused
     -- Make sure the layering is correct because the game does not seem to remember when saving
     frame_main_dialog.bring_to_front()
     -- Reset the size because the resolution could have changed (math.ceil to catch rounding issues)
     local resolution, scale = player.display_resolution, player.display_scale
     background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
 
-    return pause
+    return paused
 end
 
 
