@@ -35,15 +35,25 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
             local searchfield = flow_title_bar.add{type="textfield", style="search_popup_textfield",
               tags={on_gui_text_changed="modal_searchfield"}}
-            searchfield.style.width = 180
-            searchfield.style.margin = {-3, 4, 0, 0}
+            searchfield.style.width = 140
+            searchfield.style.top_margin = -3
             ui_util.setup_textfield(searchfield)
             modal_elements.search_textfield = searchfield
 
-            flow_title_bar.add{type="sprite-button", tags={on_gui_click="focus_modal_searchfield"},
+            local search_button = flow_title_bar.add{type="sprite-button", tags={on_gui_click="focus_modal_searchfield"},
               sprite="utility/search_white", hovered_sprite="utility/search_black",
               clicked_sprite="utility/search_black", tooltip={"fp.search_button_tt"},
               style="frame_action_button", mouse_button_filter={"left"}}
+            search_button.style.left_margin = 4
+        end
+
+        if not dialog_settings.show_submit_button then  -- add X-to-close button if this is not a submit dialog
+            local close_button = flow_title_bar.add{type="sprite-button", tags={on_gui_click="close_modal_dialog",
+              action="cancel"}, sprite="utility/close_white", hovered_sprite="utility/close_black",
+              clicked_sprite="utility/close_black", tooltip={"fp.close_button_tt"},
+              style="frame_action_button", mouse_button_filter={"left"}}
+            close_button.style.left_margin = 4
+            close_button.style.padding = 1
         end
     end
 
@@ -79,42 +89,41 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     modal_data.dialog_maximal_height = dialog_max_height
     main_content_element.style.maximal_height = dialog_max_height
 
-    -- Button bar
-    local button_bar = frame_modal_dialog.add{type="flow", direction="horizontal",
-      style="dialog_buttons_horizontal_flow"}
-    button_bar.style.horizontal_spacing = 0
+    if dialog_settings.show_submit_button then  -- if there is a submit button, there should be a button bar
+        -- Button bar
+        local button_bar = frame_modal_dialog.add{type="flow", direction="horizontal",
+        style="dialog_buttons_horizontal_flow"}
+        button_bar.style.horizontal_spacing = 0
 
-    -- Cancel/Back button
-    local action = dialog_settings.show_submit_button and "cancel" or "back"
-    local button_cancel = button_bar.add{type="button", tags={on_gui_click="close_modal_dialog", action="cancel"},
-      style="back_button", caption={"fp." .. action}, tooltip={"fp." .. action .. "_dialog"},
-      mouse_button_filter={"left"}}
-    button_cancel.style.minimal_width = 0
-    button_cancel.style.padding = {1, 12, 0, 12}
+        -- Cancel button
+        local button_cancel = button_bar.add{type="button", tags={on_gui_click="close_modal_dialog", action="cancel"},
+        style="back_button", caption={"fp.cancel"}, tooltip={"fp.cancel_dialog_tt"}, mouse_button_filter={"left"}}
+        button_cancel.style.minimal_width = 0
+        button_cancel.style.padding = {1, 12, 0, 12}
 
-    -- Delete button and spacers
-    if dialog_settings.show_delete_button then
-        local left_drag_handle = button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
-        left_drag_handle.drag_target = frame_modal_dialog
+        -- Delete button and spacers
+        if dialog_settings.show_delete_button then
+            local left_drag_handle = button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+            left_drag_handle.drag_target = frame_modal_dialog
 
-        local button_delete = button_bar.add{type="button", tags={on_gui_click="close_modal_dialog", action="delete"},
-          caption={"fp.delete"}, style="red_button", mouse_button_filter={"left"}}
-        button_delete.style.font = "default-dialog-button"
-        button_delete.style.height = 32
-        button_delete.style.minimal_width = 0
-        button_delete.style.padding = {0, 8}
+            local button_delete = button_bar.add{type="button", caption={"fp.delete"}, style="red_button",
+              tags={on_gui_click="close_modal_dialog", action="delete"}, mouse_button_filter={"left"}}
+            button_delete.style.font = "default-dialog-button"
+            button_delete.style.height = 32
+            button_delete.style.minimal_width = 0
+            button_delete.style.padding = {0, 8}
 
-        -- If there is a delete button present, we need to set a minimum dialog width for it to look good
-        frame_modal_dialog.style.minimal_width = 340
-    end
-    -- One 'drag handle' should always be visible
-    local right_drag_handle = button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
-    right_drag_handle.drag_target = frame_modal_dialog
+            -- If there is a delete button present, we need to set a minimum dialog width for it to look good
+            frame_modal_dialog.style.minimal_width = 340
+        end
 
-    -- Submit button
-    if dialog_settings.show_submit_button then
+        -- One 'drag handle' should always be visible
+        local right_drag_handle = button_bar.add{type="empty-widget", style="flib_dialog_footer_drag_handle"}
+        right_drag_handle.drag_target = frame_modal_dialog
+
+        -- Submit button
         local button_submit = button_bar.add{type="button", tags={on_gui_click="close_modal_dialog", action="submit"},
-          caption={"fp.submit"}, tooltip={"fp.confirm_dialog"}, style="confirm_button", mouse_button_filter={"left"}}
+        caption={"fp.submit"}, tooltip={"fp.confirm_dialog_tt"}, style="confirm_button", mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
         button_submit.style.padding = {1, 8, 0, 12}
         modal_elements.dialog_submit_button = button_submit
