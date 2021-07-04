@@ -306,8 +306,7 @@ modal_dialog.gui_events = {
                 if ui_state.flags.selection_mode then
                     modal_dialog.leave_selection_mode(player)
                 else
-                    -- Calling this without an action will make it choose the appropriate one
-                    modal_dialog.exit(player, nil)
+                    modal_dialog.exit(player, "cancel")
                 end
             end)
         }
