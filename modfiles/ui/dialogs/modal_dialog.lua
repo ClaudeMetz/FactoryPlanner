@@ -215,7 +215,7 @@ end
 
 function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
-    local tooltip = (enabled) and {"fp.confirm_dialog"} or {"fp.warning_with_icon", message}
+    local tooltip = (enabled) and {"fp.confirm_dialog_tt"} or {"fp.warning_with_icon", message}
 
     local button = modal_elements.dialog_submit_button
     button.style.left_padding = (enabled) and 12 or 6
