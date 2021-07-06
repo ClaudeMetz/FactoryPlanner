@@ -147,7 +147,7 @@ local function handle_gui_event(event)
     if not event.element then return end
 
     -- Rai says this is very slow, but it isn't really if called it once per event
-    if event.element.get_mod() ~= "factoryplanner" then return end
+    if event.element.tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
@@ -217,7 +217,7 @@ local special_misc_handlers = {}
 special_misc_handlers.on_gui_opened = (function(_, event)
     -- This should only fire when a UI not associated with FP is opened, so FP's dialogs can close properly
     return (event.gui_type ~= defines.gui_type.custom or not event.element
-      or event.element.get_mod() ~= "factoryplanner")
+      or event.element.tags.mod ~= "fp")
 end)
 
 

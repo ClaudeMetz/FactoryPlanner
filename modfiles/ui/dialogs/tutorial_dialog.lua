@@ -27,8 +27,8 @@ function tab_definitions.interface(player, tab, tab_pane)
     -- If the tutorial subfactory is valid, it can be imported regardless of the current modset
     local subfactory_compatible = global.tutorial_subfactory_validity
     local button_tooltip = (not subfactory_compatible) and {"fp.warning_message", {"fp.create_example_error"}} or nil
-    flow_interactive.add{type="button", tags={on_gui_click="add_example_subfactory"}, caption={"fp.create_example"},
-      tooltip=button_tooltip, enabled=subfactory_compatible, mouse_button_filter={"left"}}
+    flow_interactive.add{type="button", tags={mod="fp", on_gui_click="add_example_subfactory"},
+      caption={"fp.create_example"}, tooltip=button_tooltip, enabled=subfactory_compatible, mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 

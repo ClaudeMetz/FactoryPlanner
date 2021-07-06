@@ -58,7 +58,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
     flow.style.vertical_align = "center"
 
     local function add_button()
-        local button = flow.add{type="sprite-button", tags={on_gui_click=(dialog_type .. "_subfactories")},
+        local button = flow.add{type="sprite-button", tags={mod="fp", on_gui_click=(dialog_type .. "_subfactories")},
           style="flib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
           mouse_button_filter={"left"}}
         set_tool_button_state(button, dialog_type, button_enabled)
@@ -108,7 +108,7 @@ local function setup_subfactories_table(modal_elements, add_location)
 
     -- Add master checkbox in any case
     local checkbox_master = table_subfactories.add{type="checkbox", state=false,
-      tags={on_gui_checked_state_changed="toggle_porter_master_checkbox"}}
+      tags={mod="fp", on_gui_checked_state_changed="toggle_porter_master_checkbox"}}
     modal_elements.master_checkbox = checkbox_master
 
     for column_nr, table_column in pairs(table_columns) do
@@ -125,7 +125,7 @@ local function add_to_subfactories_table(modal_elements, subfactory, location_na
     local table_subfactories = modal_elements.subfactories_table
 
     local checkbox = table_subfactories.add{type="checkbox", state=false, enabled=(enable_checkbox or subfactory.valid),
-      tags={on_gui_checked_state_changed="toggle_porter_checkbox"}}
+      tags={mod="fp", on_gui_checked_state_changed="toggle_porter_checkbox"}}
 
     local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, true)}
     label.style.maximal_width = 350

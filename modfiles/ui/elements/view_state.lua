@@ -162,7 +162,7 @@ function view_state.build(player, parent_element)
 
     -- Using ipairs is important as we only want to iterate the array-part
     for view_id, _ in ipairs(view_states) do
-        table_view_state.add{type="button", tags={on_gui_click="change_view_state", view_id=view_id},
+        table_view_state.add{type="button", tags={mod="fp", on_gui_click="change_view_state", view_id=view_id},
           style="fp_button_push", mouse_button_filter={"left"}}
     end
 

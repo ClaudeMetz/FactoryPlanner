@@ -33,9 +33,9 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     end
 
     local module_name = (module) and module.proto.name or nil
-    local button_module = flow_module.add{type="choose-elem-button", tags={on_gui_elem_changed="select_module"},
-      elem_type="item", item=module_name, elem_filters=module_filter, style="fp_sprite-button_inset_tiny",
-      mouse_button_filter={"left"}}
+    local button_module = flow_module.add{type="choose-elem-button", elem_type="item", item=module_name,
+      elem_filters=module_filter, tags={mod="fp", on_gui_elem_changed="select_module"},
+      style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
     button_module.style.right_margin = 12
     modal_elements["module_choice_button"] = button_module
 
@@ -48,14 +48,14 @@ local function add_module_line(parent_flow, modal_elements, module, empty_slots,
     --if maximum_value == 2 then maximum_value = 2.0000001 end
     -- I'm not sure if I want sliders to start at 1 though, starting at 0 might be fine
 
-    local slider = flow_module.add{type="slider", tags={on_gui_value_changed="module_amount"}, minimum_value=0,
+    local slider = flow_module.add{type="slider", tags={mod="fp", on_gui_value_changed="module_amount"}, minimum_value=0,
       maximum_value=maximum_value, value=slider_value, value_step=1, style="notched_slider"}
     slider.style.width = 130
     slider.style.margin = {0, 6}
     modal_elements["module_slider"] = slider
 
     local textfield_slider = flow_module.add{type="textfield", text=tostring(slider_value),
-      tags={on_gui_text_changed="module_amount"}}
+      tags={mod="fp", on_gui_text_changed="module_amount"}}
     ui_util.setup_numeric_textfield(textfield_slider, false, false)
     textfield_slider.style.width = 40
     modal_elements["module_textfield"] = textfield_slider
@@ -76,9 +76,9 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}}
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
-    local button_beacon = flow_beacon.add{type="choose-elem-button", tags={on_gui_elem_changed="select_beacon"},
-      elem_type="entity", entity=beacon.proto.name, elem_filters=beacon_filter, style="fp_sprite-button_inset_tiny",
-      mouse_button_filter={"left"}}
+    local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
+      elem_filters=beacon_filter, tags={mod="fp", on_gui_elem_changed="select_beacon"},
+      style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
     button_beacon.style.right_margin = 12
     modal_elements["beacon_choice_button"] = button_beacon
 
@@ -86,7 +86,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
 
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
-      tags={on_gui_text_changed="beacon_amount"}}
+      tags={mod="fp", on_gui_text_changed="beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     ui_util.select_all(textfield_amount)
     textfield_amount.style.width = 40
@@ -101,7 +101,7 @@ local function add_beacon_line(parent_flow, modal_elements, beacon)
     textfield_total.style.width = 40
     modal_elements["beacon_total_textfield"] = textfield_total
 
-    local button_total = flow_beacon.add{type="sprite-button", tags={on_gui_click="use_beacon_selector"},
+    local button_total = flow_beacon.add{type="sprite-button", tags={mod="fp", on_gui_click="use_beacon_selector"},
       tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
     button_total.style.padding = 2
     button_total.style.size = 26

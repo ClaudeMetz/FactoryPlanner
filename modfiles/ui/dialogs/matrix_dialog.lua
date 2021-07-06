@@ -29,7 +29,7 @@ local function refresh_item_category(modal_data, type)
     table_items.clear()
 
     for index, proto in ipairs(modal_data[type .. "_items"]) do
-        table_items.add{type="sprite-button", tags={on_gui_click="swap_item_category", type=type, index=index},
+        table_items.add{type="sprite-button", tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index},
           sprite=proto.sprite, tooltip=proto.localised_name, style="flib_slot_button_default",
           mouse_button_filter={"left"}}
     end
