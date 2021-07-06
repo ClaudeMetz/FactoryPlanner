@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - The mod now makes sure that the main interface fits onto the player's screen when first creating or joining a game
   Bugfixes:
     - Fixed a missing tooltip string on the dialog submit button
 

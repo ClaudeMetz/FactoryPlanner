@@ -10,23 +10,6 @@ require("ui.elements.production_handler")
 main_dialog = {}
 
 -- ** LOCAL UTIL **
-local function determine_main_dialog_dimensions(player)
-    local settings = data_util.get("settings", player)
-    local products_per_row = settings.products_per_row
-    local subfactory_list_rows = settings.subfactory_list_rows
-
-    -- Width of the larger ingredients-box, which has twice the buttons per row
-    local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
-    -- Width of the two smaller product+byproduct-boxes
-    local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
-    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
-
-    local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
-    local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
-
-    return {width=width, height=height}
-end
-
 -- Makes sure that another GUI can open properly while a modal dialog is open.
 -- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
 -- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
@@ -79,7 +62,7 @@ function main_dialog.rebuild(player, default_visibility)
       visible=visible, tags={mod="fp", on_gui_closed="close_main_dialog"}}
     main_elements["main_frame"] = frame_main_dialog
 
-    local dimensions = determine_main_dialog_dimensions(player)
+    local dimensions = main_dialog.determine_main_dialog_dimensions(player)
     ui_state.main_dialog_dimensions = dimensions
     frame_main_dialog.style.size = dimensions
     ui_util.properly_center_frame(player, frame_main_dialog, dimensions)
@@ -200,6 +183,24 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
 
     return paused
+end
+
+-- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
+function main_dialog.determine_main_dialog_dimensions(player, products_per_row, subfactory_list_rows)
+    local settings = data_util.get("settings", player)
+    products_per_row = products_per_row or settings.products_per_row
+    subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
+
+    -- Width of the larger ingredients-box, which has twice the buttons per row
+    local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
+    -- Width of the two smaller product+byproduct-boxes
+    local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
+    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
+
+    local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
+    local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
+
+    return {width=width, height=height}
 end
 
 
