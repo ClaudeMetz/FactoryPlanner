@@ -87,8 +87,9 @@ local function add_item_picker(parent_flow, player)
                 group_id = cache_count
 
                 local button_group = table_item_groups.add{type="sprite-button", sprite=("item-group/" .. group_name),
-                  tags={on_gui_click="select_picker_item_group", group_id=group_id}, style="fp_sprite-button_group_tab",
-                  tooltip=item_proto.group.localised_name, mouse_button_filter={"left"}}
+                  tags={mod="fp", on_gui_click="select_picker_item_group", group_id=group_id},
+                  style="fp_sprite-button_group_tab", tooltip=item_proto.group.localised_name,
+                  mouse_button_filter={"left"}}
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
@@ -147,7 +148,7 @@ local function add_item_picker(parent_flow, player)
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
-              tags={on_gui_click="select_picker_item", identifier=item_proto.identifier},
+              tags={mod="fp", on_gui_click="select_picker_item", identifier=item_proto.identifier},
               enabled=(existing_product == nil), tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
 
             -- Ignores item types, so if one subgroup has both a fluid and an item of the same name,
@@ -272,7 +273,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     local item_amount = (item and defined_by == "amount") and tostring(item.required_amount.amount) or ""
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
-      tags={on_gui_text_changed="picker_item_amount"}}
+      tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 90
     modal_elements["item_amount_textfield"] = textfield_amount
@@ -283,7 +284,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount.amount) or ""
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
-      tags={on_gui_text_changed="picker_belt_amount"}}
+      tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
     ui_util.setup_numeric_textfield(textfield_belts, true, false)
     textfield_belts.style.width = 85
     textfield_belts.style.left_margin = 4
@@ -291,8 +292,9 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local choose_belt_button = flow_belts.add{type="choose-elem-button", tags={on_gui_elem_changed="picker_choose_belt"},
-      elem_type="entity", elem_filters={{filter="type", type="transport-belt"}}, style="fp_sprite-button_inset_tiny"}
+    local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
+      tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters={{filter="type", type="transport-belt"}},
+      style="fp_sprite-button_inset_tiny"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
 

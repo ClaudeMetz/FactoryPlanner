@@ -202,7 +202,7 @@ function subfactory_list.build(player)
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 
-    local button_toggle_archive = subheader.add{type="sprite-button", tags={on_gui_click="toggle_archive"},
+    local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
       sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
     main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
 
@@ -210,38 +210,38 @@ function subfactory_list.build(player)
 
     local button_import = subheader.add{type="sprite-button", sprite="utility/import",
       tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-      tags={on_gui_click="subfactory_list_open_dialog", type="import"}}
+      tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="import"}}
     main_elements.subfactory_list["import_button"] = button_import
 
     local button_export = subheader.add{type="sprite-button", sprite="utility/export",
       tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-      tags={on_gui_click="subfactory_list_open_dialog", type="export"}}
+      tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="export"}}
     main_elements.subfactory_list["export_button"] = button_export
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local button_archive = subheader.add{type="sprite-button", tags={on_gui_click="archive_subfactory"},
+    local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_subfactory"},
       style="tool_button", mouse_button_filter={"left"}}
     main_elements.subfactory_list["archive_button"] = button_archive
 
-    local button_duplicate = subheader.add{type="sprite-button", tags={on_gui_click="duplicate_subfactory"},
+    local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_subfactory"},
       sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
       mouse_button_filter={"left"}}
     main_elements.subfactory_list["duplicate_button"] = button_duplicate
 
     subheader.add{type="line", direction="vertical"}
 
-    local button_add = subheader.add{type="sprite-button", tags={on_gui_click="add_subfactory"},
+    local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_subfactory"},
       sprite="utility/add", tooltip={"fp.action_add_subfactory"}, style="flib_tool_button_light_green",
       mouse_button_filter={"left"}}
     main_elements.subfactory_list["add_button"] = button_add
 
-    local button_edit = subheader.add{type="sprite-button", tags={on_gui_click="edit_subfactory"},
+    local button_edit = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="edit_subfactory"},
       sprite="utility/rename_icon_normal", tooltip={"fp.action_edit_subfactory"}, style="tool_button",
       mouse_button_filter={"left"}}
     main_elements.subfactory_list["edit_button"] = button_edit
 
-    local button_delete = subheader.add{type="sprite-button", tags={on_gui_click="delete_subfactory"},
+    local button_delete = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_subfactory"},
       sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
     main_elements.subfactory_list["delete_button"] = button_delete
 

@@ -98,7 +98,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
         local tooltip = {"", name_line, number_line, satisfaction_line, tut_tooltip}
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-          tags={on_gui_click="act_on_top_level_item", category=category, item_id=item.id},
+          tags={mod="fp", on_gui_click="act_on_top_level_item", category=category, item_id=item.id},
           enabled=enabled, mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
@@ -107,7 +107,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 
     if allow_addition then  -- meaning allow the user to add items of this type
         local button_add = table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
-          tags={on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
+          tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
           tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. category, 1}},
           style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
         button_add.style.padding = 3

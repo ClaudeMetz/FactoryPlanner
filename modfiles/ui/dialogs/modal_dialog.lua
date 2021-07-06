@@ -15,7 +15,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     local modal_elements = modal_data.modal_elements
 
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      tags={on_gui_closed="close_modal_dialog"}}
+      tags={mod="fp", on_gui_closed="close_modal_dialog"}}
     frame_modal_dialog.style.minimal_width = 240
     frame_modal_dialog.auto_center = true
     modal_elements.modal_frame = frame_modal_dialog
@@ -23,7 +23,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     -- Title bar
     if dialog_settings.caption ~= nil then
         local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal",
-          tags={on_gui_click="re-center_modal_dialog"}}
+          tags={mod="fp", on_gui_click="re-center_modal_dialog"}}
         flow_title_bar.drag_target = frame_modal_dialog
         flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title",
           ignored_by_interaction=true}
@@ -34,24 +34,24 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             modal_data.search_handler_name = dialog_settings.search_handler_name
 
             local searchfield = flow_title_bar.add{type="textfield", style="search_popup_textfield",
-              tags={on_gui_text_changed="modal_searchfield"}}
+              tags={mod="fp", on_gui_text_changed="modal_searchfield"}}
             searchfield.style.width = 140
             searchfield.style.top_margin = -3
             ui_util.setup_textfield(searchfield)
             modal_elements.search_textfield = searchfield
 
-            local search_button = flow_title_bar.add{type="sprite-button", tags={on_gui_click="focus_modal_searchfield"},
-              sprite="utility/search_white", hovered_sprite="utility/search_black",
-              clicked_sprite="utility/search_black", tooltip={"fp.search_button_tt"},
+            local search_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.search_button_tt"},
+              tags={mod="fp", on_gui_click="focus_modal_searchfield"}, sprite="utility/search_white",
+              hovered_sprite="utility/search_black", clicked_sprite="utility/search_black",
               style="frame_action_button", mouse_button_filter={"left"}}
             search_button.style.left_margin = 4
         end
 
         if not dialog_settings.show_submit_button then  -- add X-to-close button if this is not a submit dialog
-            local close_button = flow_title_bar.add{type="sprite-button", tags={on_gui_click="close_modal_dialog",
-              action="cancel"}, sprite="utility/close_white", hovered_sprite="utility/close_black",
-              clicked_sprite="utility/close_black", tooltip={"fp.close_button_tt"},
-              style="frame_action_button", mouse_button_filter={"left"}}
+            local close_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.close_button_tt"},
+              tags={mod="fp", on_gui_click="close_modal_dialog", action="cancel"}, sprite="utility/close_white",
+              hovered_sprite="utility/close_black", clicked_sprite="utility/close_black", style="frame_action_button",
+              mouse_button_filter={"left"}}
             close_button.style.left_margin = 4
             close_button.style.padding = 1
         end
@@ -96,8 +96,9 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         button_bar.style.horizontal_spacing = 0
 
         -- Cancel button
-        local button_cancel = button_bar.add{type="button", tags={on_gui_click="close_modal_dialog", action="cancel"},
-        style="back_button", caption={"fp.cancel"}, tooltip={"fp.cancel_dialog_tt"}, mouse_button_filter={"left"}}
+        local button_cancel = button_bar.add{type="button", tags={mod="fp", on_gui_click="close_modal_dialog",
+          action="cancel"}, style="back_button", caption={"fp.cancel"}, tooltip={"fp.cancel_dialog_tt"},
+          mouse_button_filter={"left"}}
         button_cancel.style.minimal_width = 0
         button_cancel.style.padding = {1, 12, 0, 12}
 
@@ -107,7 +108,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             left_drag_handle.drag_target = frame_modal_dialog
 
             local button_delete = button_bar.add{type="button", caption={"fp.delete"}, style="red_button",
-              tags={on_gui_click="close_modal_dialog", action="delete"}, mouse_button_filter={"left"}}
+              tags={mod="fp", on_gui_click="close_modal_dialog", action="delete"}, mouse_button_filter={"left"}}
             button_delete.style.font = "default-dialog-button"
             button_delete.style.height = 32
             button_delete.style.minimal_width = 0
@@ -122,8 +123,9 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
         right_drag_handle.drag_target = frame_modal_dialog
 
         -- Submit button
-        local button_submit = button_bar.add{type="button", tags={on_gui_click="close_modal_dialog", action="submit"},
-        caption={"fp.submit"}, tooltip={"fp.confirm_dialog_tt"}, style="confirm_button", mouse_button_filter={"left"}}
+        local button_submit = button_bar.add{type="button", tags={mod="fp", on_gui_click="close_modal_dialog",
+          action="submit"}, caption={"fp.submit"}, tooltip={"fp.confirm_dialog_tt"}, style="confirm_button",
+          mouse_button_filter={"left"}}
         button_submit.style.minimal_width = 0
         button_submit.style.padding = {1, 8, 0, 12}
         modal_elements.dialog_submit_button = button_submit
@@ -160,7 +162,7 @@ function modal_dialog.enter(player, dialog_settings)
     if not immediately_closed then
         if not dialog_settings.skip_dimmer then
             local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-            tags={on_gui_click="re-layer_interface_dimmer"}}
+              tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}}
             ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
 
             interface_dimmer.style.size = ui_state.main_dialog_dimensions

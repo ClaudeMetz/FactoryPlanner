@@ -24,7 +24,7 @@ function production_box.build(player)
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height
     subheader.style.padding = {8, 8, 6, 8}
 
-    local button_refresh = subheader.add{type="sprite-button", tags={on_gui_click="refresh_production"},
+    local button_refresh = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="refresh_production"},
       sprite="utility/refresh", style="tool_button", tooltip={"fp.refresh_production"}, mouse_button_filter={"left"}}
     main_elements.production_box["refresh_button"] = button_refresh
 
@@ -36,12 +36,12 @@ function production_box.build(player)
     label_level.style.margin = {0, 12, 0, 6}
     main_elements.production_box["level_label"] = label_level
 
-    local button_floor_up = subheader.add{type="button", tags={on_gui_click="change_floor", destination="up"},
+    local button_floor_up = subheader.add{type="button", tags={mod="fp", on_gui_click="change_floor", destination="up"},
       caption={"fp.floor_up"}, tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     button_floor_up.style.disabled_font_color = {}
     main_elements.production_box["floor_up_button"] = button_floor_up
-    local button_floor_top = subheader.add{type="button", tags={on_gui_click="change_floor", destination="top"},
-      caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"}, style="fp_button_rounded_mini",
+    local button_floor_top = subheader.add{type="button", caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"},
+      tags={mod="fp", on_gui_click="change_floor", destination="top"}, style="fp_button_rounded_mini",
       mouse_button_filter={"left"}}
     button_floor_top.style.disabled_font_color = {}
     main_elements.production_box["floor_top_button"] = button_floor_top

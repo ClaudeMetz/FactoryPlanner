@@ -42,7 +42,7 @@ function ui_util.toggle_mod_gui(player)
     if enable then
         if not mod_gui_button then
             frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-              tooltip={"fp.toggle_interface_tt"}, tags={on_gui_click="mod_gui_toggle_interface"},
+              tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
               style=mod_gui.button_style, mouse_button_filter={"left"}}
         end
     else

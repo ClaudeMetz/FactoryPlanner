@@ -76,7 +76,7 @@ function main_dialog.rebuild(player, default_visibility)
 
     -- Create and configure the top-level frame
     local frame_main_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      visible=visible, tags={on_gui_closed="close_main_dialog"}}
+      visible=visible, tags={mod="fp", on_gui_closed="close_main_dialog"}}
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = determine_main_dialog_dimensions(player)
@@ -188,7 +188,7 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
 
     if not main_elements.background_dimmer then
         background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-          tags={on_gui_click="re-layer_background_dimmer"}}
+          tags={mod="fp", on_gui_click="re-layer_background_dimmer"}}
         main_elements["background_dimmer"] = background_dimmer
     end
 

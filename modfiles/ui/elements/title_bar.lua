@@ -31,7 +31,7 @@ function title_bar.build(player)
     main_elements.title_bar = {}
 
     local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal",
-      tags={on_gui_click="re-center_main_dialog"}}
+      tags={mod="fp", on_gui_click="re-center_main_dialog"}}
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
     -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
@@ -52,14 +52,14 @@ function title_bar.build(player)
 
     -- Buttons
     flow_title_bar.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
-      tags={on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
+      tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
-      tags={on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
+      tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
 
     local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = 24
 
-    local button_pause = flow_title_bar.add{type="sprite-button", tags={on_gui_click="toggle_pause_game"},
+    local button_pause = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_pause_game"},
       tooltip={"fp.pause_on_interface"}, enabled=(not game.is_multiplayer()), mouse_button_filter={"left"}}
     button_pause.hovered_sprite = "utility/pause"
     button_pause.clicked_sprite = "utility/pause"
@@ -68,7 +68,7 @@ function title_bar.build(player)
     local preferences = data_util.get("preferences", player)
     configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
-    local button_close = flow_title_bar.add{type="sprite-button", tags={on_gui_click="close_main_dialog"},
+    local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
       sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
       tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1

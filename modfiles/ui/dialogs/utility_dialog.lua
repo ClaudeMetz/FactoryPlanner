@@ -27,9 +27,9 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
     if show_switch then
         local utility_scope = data_util.get("preferences", player).utility_scopes[type]
         local switch_state = (utility_scope == "Subfactory") and "left" or "right"
-        scope_switch = flow_title_bar.add{type="switch", tags={on_gui_switch_state_changed="utility_change_scope",
-          utility_type=type}, switch_state=switch_state, left_label_caption={"fp.pu_subfactory", 1},
-          right_label_caption={"fp.pu_floor", 1}}
+        scope_switch = flow_title_bar.add{type="switch", switch_state=switch_state,
+          tags={mod="fp", on_gui_switch_state_changed="utility_change_scope", utility_type=type},
+          left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
 
     return bordered_frame, flow_custom, scope_switch
@@ -85,7 +85,7 @@ function utility_structures.components(player, modal_data)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
-        local button_request = custom_flow.add{type="button", tags={on_gui_click="utility_request_items"},
+        local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
           style="rounded_button", mouse_button_filter={"left"}}
         button_request.style.size = {115, 26}
         modal_elements.request_button = button_request
@@ -134,7 +134,7 @@ function utility_structures.components(player, modal_data)
 
                 local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
-                  tags={on_gui_click="utility_craft_items", type=item_type, name=proto.name,
+                  tags={mod="fp", on_gui_click="utility_craft_items", type=item_type, name=proto.name,
                   missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
@@ -161,7 +161,8 @@ function utility_structures.notes(player, modal_data)
     local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
 
     local notes = data_util.get("context", player).subfactory.notes
-    local text_box = utility_box.add{type="text-box", tags={on_gui_text_changed="subfactory_notes"}, text=notes}
+    local text_box = utility_box.add{type="text-box", tags={mod="fp", on_gui_text_changed="subfactory_notes"},
+      text=notes}
     text_box.style.size = {500, 250}
     text_box.word_wrap = true
     text_box.style.top_margin = -2

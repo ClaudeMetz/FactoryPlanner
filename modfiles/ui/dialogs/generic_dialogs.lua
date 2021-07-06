@@ -20,7 +20,7 @@ local function add_chooser_button(modal_elements, definition)
     local tooltip = {"", first_line, "\n", definition.amount_line, "\n\n", definition.tooltip_appendage}
 
     modal_elements.choices_table.add{type="sprite-button", style=style, tooltip=tooltip,
-      tags={on_gui_click="make_chooser_choice", element_id=definition.element_id},
+      tags={mod="fp", on_gui_click="make_chooser_choice", element_id=definition.element_id},
       sprite=definition.sprite, number=definition.button_number, mouse_button_filter={"left"}}
 end
 
@@ -82,7 +82,7 @@ elements.textfield = {}
 
 function elements.textfield.create(table, field, modal_elements)
     local textfield = table.add{type="textfield", text=field.text,
-      tags={on_gui_text_changed="change_option", field_name=field.name}}
+      tags={mod="fp", on_gui_text_changed="change_option", field_name=field.name}}
     textfield.style.width = (field.width or 180)
     if field.focus then ui_util.select_all(textfield) end
 
@@ -98,7 +98,7 @@ elements.numeric_textfield = {}
 
 function elements.numeric_textfield.create(table, field, modal_elements)
     local textfield = table.add{type="textfield", text=tostring(field.text or ""),
-      tags={on_gui_text_changed="change_option", field_name=field.name}}
+      tags={mod="fp", on_gui_text_changed="change_option", field_name=field.name}}
     textfield.style.width = (field.width or 75)
     ui_util.setup_numeric_textfield(textfield, true, false)
     if field.focus then ui_util.select_all(textfield) end
@@ -131,7 +131,7 @@ options_dialog.gui_events.on_gui_switch_state_changed = {
 function elements.on_off_switch.create(table, field, modal_elements)
     local state = ui_util.switch.convert_to_state(field.state)
     local switch = table.add{type="switch", switch_state=state,
-      tags={on_gui_switch_state_changed="change_option", field_name=field.name},
+      tags={mod="fp", on_gui_switch_state_changed="change_option", field_name=field.name},
       left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
 
     modal_elements[field.name] = switch
@@ -153,7 +153,7 @@ options_dialog.gui_events.on_gui_elem_changed = {
 
 function elements.choose_elem_button.create(table, field, modal_elements)
     local choose_elem_button = table.add{type="choose-elem-button",
-      tags={on_gui_elem_changed="change_option", field_name=field.name},
+      tags={mod="fp", on_gui_elem_changed="change_option", field_name=field.name},
       elem_type=field.elem_type, style="fp_sprite-button_inset"}
     choose_elem_button.elem_value = field.elem_value
 
