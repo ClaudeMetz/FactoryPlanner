@@ -86,6 +86,7 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
         processor = processors[current_view_name],
         timescale_inverse = 1 / subfactory.timescale,
         timescale_string = {"fp." .. TIMESCALE_MAP[subfactory.timescale]},
+        adjusted_margin_of_error = MARGIN_OF_ERROR * subfactory.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
@@ -98,7 +99,7 @@ end
 
 function view_state.process_item(metadata, item, item_amount, machine_count)
     local raw_amount = item_amount or item.amount
-    if raw_amount == nil or (raw_amount < MARGIN_OF_ERROR and item.class ~= "Product") then
+    if raw_amount == nil or (raw_amount < metadata.adjusted_margin_of_error and item.class ~= "Product") then
         return -1, nil
     end
 
