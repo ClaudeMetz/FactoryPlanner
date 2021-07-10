@@ -44,22 +44,33 @@ function main_dialog.rebuild(player, default_visibility)
     local ui_state = data_util.get("ui_state", player)
     local main_elements = ui_state.main_elements
 
-    local visible = default_visibility
+    local interface_visible = default_visibility
+    -- Delete the existing interface if there is one
     if main_elements.main_frame ~= nil then
-        visible = main_elements.main_frame.visible
+        interface_visible = main_elements.main_frame.visible
 
-        main_elements.main_frame.destroy()
         main_elements.background_dimmer.destroy()
+        main_elements.main_frame.destroy()
 
         -- Reset all main element references
         ui_state.main_elements = {}
         main_elements = ui_state.main_elements
     end
-    main_elements.flows = {}
+
+
+    -- Background dimmer (created first so the layering is correct, visibility set afterwards)
+    local resolution, scale = player.display_resolution, player.display_scale
+    local display_size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
+
+    local background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+      tags={mod="fp", on_gui_click="re-layer_background_dimmer"}}
+    background_dimmer.style.size = display_size
+    main_elements["background_dimmer"] = background_dimmer
+
 
     -- Create and configure the top-level frame
     local frame_main_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      visible=visible, tags={mod="fp", on_gui_closed="close_main_dialog"}}
+      visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"}}
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = main_dialog.determine_main_dialog_dimensions(player)
@@ -67,8 +78,11 @@ function main_dialog.rebuild(player, default_visibility)
     frame_main_dialog.style.size = dimensions
     ui_util.properly_center_frame(player, frame_main_dialog, dimensions)
 
+
     -- Create the actual dialog structure
-    view_state.rebuild_state(player)  -- initializes it
+    main_elements.flows = {}
+
+    view_state.rebuild_state(player)  -- initializes the view_state
     title_bar.build(player)
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
@@ -90,7 +104,7 @@ function main_dialog.rebuild(player, default_visibility)
 
     title_bar.refresh_message(player)
 
-    if visible then player.opened = frame_main_dialog end
+    if interface_visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
@@ -153,8 +167,12 @@ end
 
 -- Sets the game.paused-state as is appropriate
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
+    local background_dimmer = data_util.get("main_elements", player).background_dimmer
+
+    -- Don't touch paused-state if the editor is active
     if player.controller_type == defines.controllers.editor then
-        return game.tick_paused  -- don't change paused-state if the editor is active
+        background_dimmer.visible = false
+        return game.tick_paused
     end
 
     local paused = false
@@ -164,23 +182,9 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     else
         paused = frame_main_dialog.visible
     end
+
     game.tick_paused = paused
-
-    local main_elements = data_util.get("main_elements", player)
-    local background_dimmer = main_elements.background_dimmer
-
-    if not main_elements.background_dimmer then
-        background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-          tags={mod="fp", on_gui_click="re-layer_background_dimmer"}}
-        main_elements["background_dimmer"] = background_dimmer
-    end
-
     background_dimmer.visible = paused
-    -- Make sure the layering is correct because the game does not seem to remember when saving
-    frame_main_dialog.bring_to_front()
-    -- Reset the size because the resolution could have changed (math.ceil to catch rounding issues)
-    local resolution, scale = player.display_resolution, player.display_scale
-    background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
 
     return paused
 end
