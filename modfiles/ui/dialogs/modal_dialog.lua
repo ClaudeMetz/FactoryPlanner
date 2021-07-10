@@ -139,6 +139,7 @@ end
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, dialog_settings)
     local ui_state = data_util.get("ui_state", player)
+    ui_state.modal_data = dialog_settings.modal_data or {}
 
     if ui_state.modal_dialog_type ~= nil then
         -- If a dialog is currently open, and this one wants to be queued, do so
@@ -146,36 +147,35 @@ function modal_dialog.enter(player, dialog_settings)
         return
     end
 
-    ui_state.modal_dialog_type = dialog_settings.type
-    ui_state.modal_data = dialog_settings.modal_data or {}
-    ui_state.modal_data.modal_elements = {}
-
-    local dialog_object = _G[ui_state.modal_dialog_type .. "_dialog"]
-    if dialog_object.dialog_settings then
+    local dialog_object = _G[dialog_settings.type .. "_dialog"]
+    if dialog_object.dialog_settings ~= nil then  -- collect additional settings
         local additional_settings = dialog_object.dialog_settings(ui_state.modal_data)
         dialog_settings = util.merge{dialog_settings, additional_settings}
     end
 
+    local early_abort = dialog_object.early_abort_check  -- abort early if necessary
+    if early_abort ~= nil and early_abort(player, ui_state.modal_data) then
+        ui_state.modal_data = nil  -- make sure to reset this
+        title_bar.refresh_message(player)  -- make sure eventual messages are shown
+        return
+    end
+
+    ui_state.modal_dialog_type = dialog_settings.type
+    ui_state.modal_data.modal_elements = {}
+
     -- Create interface_dimmer first so the layering works out correctly
     local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-      tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=false}
+      tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=(not dialog_settings.skip_dimmer)}
+    interface_dimmer.style.size = ui_state.main_dialog_dimensions
+    interface_dimmer.location = ui_state.main_elements.main_frame.location
     ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
 
+    -- Create modal dialog framework and let the dialog itself fill it out
     local frame_modal_dialog = create_base_modal_dialog(player, dialog_settings, ui_state.modal_data)
-    local immediately_closed = dialog_object.open(player, ui_state.modal_data)
+    dialog_object.open(player, ui_state.modal_data)
+    player.opened = frame_modal_dialog
 
-    if not immediately_closed then
-        -- Finish setting up the interface dimmer once it's clear that it is needed
-        interface_dimmer.visible = (not dialog_settings.skip_dimmer)
-        interface_dimmer.style.size = ui_state.main_dialog_dimensions
-        interface_dimmer.location = ui_state.main_elements.main_frame.location
-
-        player.opened = frame_modal_dialog
-
-        if dialog_settings.force_auto_center then
-            frame_modal_dialog.force_auto_center()
-        end
-    end
+    if dialog_settings.force_auto_center then frame_modal_dialog.force_auto_center() end
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
@@ -204,8 +204,9 @@ function modal_dialog.exit(player, button_action, skip_player_opened)
 
     modal_elements.interface_dimmer.destroy()
     modal_elements.modal_frame.destroy()
+    ui_state.modal_elements = nil
 
-    if skip_player_opened ~= true then player.opened = ui_state.main_elements.main_frame end
+    if not skip_player_opened then player.opened = ui_state.main_elements.main_frame end
     title_bar.refresh_message(player)
 
     if ui_state.queued_dialog_settings ~= nil then

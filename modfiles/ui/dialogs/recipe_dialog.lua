@@ -157,8 +157,6 @@ local function attempt_adding_line(player, recipe_id)
 
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
     end
-
-    modal_dialog.exit(player, "cancel")
 end
 
 
@@ -296,38 +294,49 @@ recipe_dialog.dialog_settings = (function(modal_data) return {
     force_auto_center = true
 } end)
 
--- Handles populating the recipe dialog
-function recipe_dialog.open(player, modal_data)
+-- Checks whether the dialog needs to be created at all
+function recipe_dialog.early_abort_check(player, modal_data)
     -- Result is either the single possible recipe_id, or a table of relevant recipes
     local result, error, show = run_preliminary_checks(player, modal_data.product_proto, modal_data.production_type)
 
     if error ~= nil then
         title_bar.enqueue_message(player, error, "error", 1, false)
-        modal_dialog.exit(player, "cancel")
-        return true  -- let the modal dialog know that it was closed immediately
+        return true  -- signal that the dialog does not need to actually be opened
 
     else
-        -- If 1 relevant recipe is found, add it immediately and exit dialog
+        -- If 1 relevant recipe is found, try it straight away
         if type(result) == "number" then  -- the given number being the recipe_id
             attempt_adding_line(player, result)
-            return true  -- idem above
+            return true  -- idem. above
 
-        else  -- Otherwise, show the appropriately filtered dialog
-            local recipe_groups = {}
-            for _, recipe in pairs(result) do
-                local group_name = recipe.proto.group.name
-                recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
-                recipe_groups[group_name].recipes[recipe.proto.name] = recipe
-            end
-
-            modal_data.recipe_groups = recipe_groups
-            modal_data.filters = show.filters
-
-            create_dialog_structure(modal_data)
-            SEARCH_HANDLERS.apply_recipe_filter(player, "")
-            modal_data.modal_elements.search_textfield.focus()
+        else  -- Otherwise, save the relevant data for the dialog opener
+            modal_data.result = result
+            modal_data.show = show
+            return false  -- signal that the dialog should be opened
         end
     end
+end
+
+-- Handles populating the recipe dialog
+function recipe_dialog.open(player, modal_data)
+    -- At this point, we're sure the dialog should be opened
+    local recipe_groups = {}
+    for _, recipe in pairs(modal_data.result) do
+        local group_name = recipe.proto.group.name
+        recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
+        recipe_groups[group_name].recipes[recipe.proto.name] = recipe
+    end
+
+    modal_data.recipe_groups = recipe_groups
+    modal_data.filters = modal_data.show.filters
+
+    create_dialog_structure(modal_data)
+    SEARCH_HANDLERS.apply_recipe_filter(player, "")
+    modal_data.modal_elements.search_textfield.focus()
+
+    -- Dispose of the temporary GUI-opening variables
+    modal_data.result = nil
+    modal_data.show = nil
 end
 
 
@@ -339,6 +348,7 @@ recipe_dialog.gui_events = {
             timeout = 20,
             handler = (function(player, tags, _)
                 attempt_adding_line(player, tags.recipe_proto_id)
+                modal_dialog.exit(player, "cancel")
             end)
         }
     },
