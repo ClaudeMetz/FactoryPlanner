@@ -483,6 +483,17 @@ function generator.machines_second_pass()
         NEW.all_machines.map[name] = nil
         table.remove(NEW.all_machines.categories, index)
     end
+
+    -- Replace built_by_item names with prototype references
+    local item_prototypes = NEW.all_items.types[NEW.all_items.map["item"]]
+    for _, category in pairs(NEW.all_machines.categories) do
+        for _, machine in pairs(category.machines) do
+            if machine.built_by_item then
+                local item_proto_id = item_prototypes.map[machine.built_by_item]
+                machine.built_by_item = item_prototypes.items[item_proto_id]
+            end
+        end
+    end
 end
 
 
@@ -615,12 +626,18 @@ end
 function generator.all_beacons()
     generator_util.data_structure.init("simple", "beacons")
 
+    local item_prototypes = NEW.all_items.types[NEW.all_items.map["item"]]
+
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite ~= nil and proto.module_inventory_size then
+            -- Beacons can refer to the actual item prototype right away because they are built after items are
             local items_to_place_this, built_by_item = proto.items_to_place_this, nil
-            if items_to_place_this then built_by_item = items_to_place_this[1].name end
+            if items_to_place_this then
+                local item_proto_id = item_prototypes.map[items_to_place_this[1].name]
+                built_by_item = item_prototypes.items[item_proto_id]
+            end
 
             generator_util.data_structure.insert{
                 name = proto.name,

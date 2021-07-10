@@ -114,13 +114,9 @@ function Floor.get_component_data(self, component_table)
         end
     end
 
-    -- Reaching into global here is a bit annoying, could be done by the generator itself
-    -- Only items can place entities, not fluids
-    local item_prototypes = global.all_items.types[global.all_items.map["item"]]
     local function add_machine(entity_proto, amount)
         if not entity_proto.built_by_item then return end
-        local item_proto_id = item_prototypes.map[entity_proto.built_by_item]
-        add_component(components.machines, item_prototypes.items[item_proto_id], amount)
+        add_component(components.machines, entity_proto.built_by_item, amount)
     end
 
     -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
