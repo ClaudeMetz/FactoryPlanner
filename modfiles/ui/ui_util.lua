@@ -185,7 +185,7 @@ function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, 
     local switch, label
 
     local function add_switch()
-        local tags = {on_gui_switch_state_changed=action}
+        local tags = {mod="fp", on_gui_switch_state_changed=action}
         for key, value in pairs(additional_tags) do tags[key] = value end
         switch = flow.add{type="switch", tags=tags, switch_state=state,
           left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}

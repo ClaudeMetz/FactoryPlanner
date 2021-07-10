@@ -206,7 +206,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
         if not recipe.enabled then style = "flib_slot_button_yellow_small"
         elseif recipe_proto.hidden then style = "flib_slot_button_default_small" end
 
-        local button_tags = {on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
+        local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
         local button_recipe = nil
 
         if recipe_proto.custom then  -- can't use choose-elem-buttons for custom recipes
