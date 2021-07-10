@@ -156,20 +156,20 @@ function modal_dialog.enter(player, dialog_settings)
         dialog_settings = util.merge{dialog_settings, additional_settings}
     end
 
+    -- Create interface_dimmer first so the layering works out correctly
+    local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+      tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=false}
+    ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
+
     local frame_modal_dialog = create_base_modal_dialog(player, dialog_settings, ui_state.modal_data)
     local immediately_closed = dialog_object.open(player, ui_state.modal_data)
 
     if not immediately_closed then
-        if not dialog_settings.skip_dimmer then
-            local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-              tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}}
-            ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
+        -- Finish setting up the interface dimmer once it's clear that it is needed
+        interface_dimmer.visible = (not dialog_settings.skip_dimmer)
+        interface_dimmer.style.size = ui_state.main_dialog_dimensions
+        interface_dimmer.location = ui_state.main_elements.main_frame.location
 
-            interface_dimmer.style.size = ui_state.main_dialog_dimensions
-            interface_dimmer.location = ui_state.main_elements.main_frame.location
-        end
-
-        frame_modal_dialog.bring_to_front()
         player.opened = frame_modal_dialog
 
         if dialog_settings.force_auto_center then
@@ -202,8 +202,8 @@ function modal_dialog.exit(player, button_action, skip_player_opened)
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
 
+    modal_elements.interface_dimmer.destroy()
     modal_elements.modal_frame.destroy()
-    if modal_elements.interface_dimmer then modal_elements.interface_dimmer.destroy() end
 
     if skip_player_opened ~= true then player.opened = ui_state.main_elements.main_frame end
     title_bar.refresh_message(player)
@@ -251,7 +251,7 @@ function modal_dialog.leave_selection_mode(player)
     local modal_elements = ui_state.modal_data.modal_elements
     modal_elements.interface_dimmer.visible = true
 
-    -- .opened needs to be set because on_gui_closed sets it to nil
+    -- player.opened needs to be set because on_gui_closed sets it to nil
     player.opened = modal_elements.modal_frame
     modal_elements.modal_frame.ignored_by_interaction = false
     modal_elements.modal_frame.force_auto_center()
@@ -259,11 +259,7 @@ function modal_dialog.leave_selection_mode(player)
     local frame_main_dialog = ui_state.main_elements.main_frame
     frame_main_dialog.visible = true
 
-    local paused = main_dialog.set_pause_state(player, frame_main_dialog)
-    if paused then  -- a bit hacky, but w/e
-        modal_elements.interface_dimmer.bring_to_front()
-        modal_elements.modal_frame.bring_to_front()
-    end
+    main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
 
