@@ -270,7 +270,7 @@ function subfactory_list.refresh(player)
             local caption, info_tooltip = Subfactory.tostring(subfactory, false)
             local tooltip = {"", info_tooltip, tutorial_tooltip}
 
-            listbox.add{type="button", tags={on_gui_click="act_on_subfactory", subfactory_id=subfactory.id},
+            listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory", subfactory_id=subfactory.id},
               caption=caption, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
         end
     end

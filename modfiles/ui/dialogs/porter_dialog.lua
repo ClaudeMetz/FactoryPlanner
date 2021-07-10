@@ -67,7 +67,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
 
     local function add_textfield()
         local tags = (dialog_type == "import") and
-          {on_gui_text_changed="import_string", on_gui_confirmed="import_string"} or nil
+          {mod="fp", on_gui_text_changed="import_string", on_gui_confirmed="import_string"} or nil
         local textfield = flow.add{type="textfield", tags=tags}
         ui_util.setup_textfield(textfield)
         textfield.style.width = 0  -- needs to be set to 0 so stretching works
