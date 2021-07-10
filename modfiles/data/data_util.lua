@@ -69,6 +69,18 @@ function data_util.execute_alt_action(player, action_type, data)
     end
 end
 
+-- Create a blueprint with the given entities and put it in the player's cursor
+function data_util.create_cursor_blueprint(player, blueprint_entities)
+    local script_inventory = game.create_inventory(1)
+    local blank_slot = script_inventory[1]
+
+    blank_slot.set_stack{name="fp_cursor_blueprint"}
+    blank_slot.set_blueprint_entities(blueprint_entities)
+    player.add_to_clipboard(blank_slot)
+    player.activate_paste()
+    script_inventory.destroy()
+end
+
 -- Formats the given effects for use in a tooltip
 function data_util.format_module_effects(effects, multiplier, limit_effects)
     local tooltip_lines, effect_applies = {""}, false

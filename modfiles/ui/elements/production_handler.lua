@@ -1,22 +1,6 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
--- Fills the cursor with a blueprint for the given entity, which is either a machine or a beacon
-local function set_cursor_blueprint(player, entity_name, module_list, recipe_name)
-    local script_inventory = game.create_inventory(1)
-    local blank_slot = script_inventory[1]
-
-    blank_slot.set_stack{name="fp_cursor_blueprint"}
-    blank_slot.set_blueprint_entities{{entity_number=1, name=entity_name, position={0, 0},
-      items=module_list, recipe=recipe_name}}
-    player.add_to_clipboard(blank_slot)
-    player.activate_paste()
-    script_inventory.destroy()
-
-    main_dialog.toggle(player)
-end
-
-
 local function handle_toggle_click(player, tags, metadata)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
@@ -235,7 +219,16 @@ local function handle_machine_click(player, tags, metadata)
             for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
                 module_list[module.proto.name] = module.amount
             end
-            set_cursor_blueprint(player, line.machine.proto.name, module_list, line.recipe.proto.name)
+
+            local blueprint_entity = {
+                entity_number = 1,
+                name = line.machine.proto.name,
+                position = {0, 0},
+                items = module_list,
+                recipe = line.recipe.proto.name
+            }
+            data_util.create_cursor_blueprint(player, {blueprint_entity})
+            main_dialog.toggle(player)
 
         else  -- open the machine chooser
             local machine_category_id = global.all_machines.map[line.machine.proto.category]
@@ -333,7 +326,14 @@ local function handle_beacon_click(player, tags, metadata)
     if metadata.alt and metadata.click == "left" then
         local beacon_module = line.beacon.module
         local module_list = {[beacon_module.proto.name] = beacon_module.amount}
-        set_cursor_blueprint(player, line.beacon.proto.name, module_list, nil)
+        local blueprint_entity = {
+            entity_number = 1,
+            name = line.beacon.proto.name,
+            position = {0, 0},
+            items = module_list
+        }
+        data_util.create_cursor_blueprint(player, {blueprint_entity})
+        main_dialog.toggle(player)
 
     elseif metadata.click == "left" or metadata.action == "edit" then
         modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
