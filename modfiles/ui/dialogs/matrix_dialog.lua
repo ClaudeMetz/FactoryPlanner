@@ -82,14 +82,11 @@ matrix_dialog.dialog_settings = (function(_) return {
     show_submit_button = true
 } end)
 
-function matrix_dialog.open(player, modal_data)
+function matrix_dialog.early_abort_check(player, modal_data)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
 
-    if subfactory.selected_floor.Line.count == 0 then  -- does this subfactory have any lines?
-        modal_dialog.exit(player, "cancel")
-        return true
-    end
+    if subfactory.selected_floor.Line.count == 0 then return true end
 
     local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
@@ -110,18 +107,27 @@ function matrix_dialog.open(player, modal_data)
     modal_data.free_items = matrix_metadata.free_items
 
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
-    -- user doesn't need select any free items, just run the matrix solver
-    if num_needed_free_items == 0 then
+    if num_needed_free_items == 0 then  -- User doesn't need to select any free items, just run the matrix solver
         if modal_data.configuration then
-            title_bar.enqueue_message(player, {"fp.warning_no_matrix_configuration_needed"}, "warning", 2, false)
+            title_bar.enqueue_message(player, {"fp.warning_no_matrix_configuration_needed"}, "warning", 1, false)
         end
-        modal_dialog.exit(player, "cancel")
         return true
     end
 
-    create_item_category(modal_data, "constrained", num_needed_free_items)
+    -- If it gets to here, the dialog should open normally
+    modal_data.num_needed_free_items = num_needed_free_items
+    modal_data.matrix_metadata = matrix_metadata
+    return false
+end
+
+function matrix_dialog.open(_, modal_data)
+    create_item_category(modal_data, "constrained", modal_data.num_needed_free_items)
     create_item_category(modal_data, "free")
-    update_dialog_submit_button(modal_data, matrix_metadata)
+    update_dialog_submit_button(modal_data, modal_data.matrix_metadata)
+
+    -- Dispose of the temporary GUI-opening variables
+    modal_data.num_needed_free_items = nil
+    modal_data.matrix_metadata = nil
 end
 
 function matrix_dialog.close(player, action)
