@@ -58,7 +58,7 @@ local function update_request_button(player, modal_data, subfactory)
             tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched"}}
             button_enabled = false
         elseif table_size(modal_data.missing_items) == 0 then
-            tooltip = {"fp.warning_with_icon", {"fp.request_no_items_necessary", scope_string}}
+            tooltip = {"fp.warning_with_icon", {"fp.utility_no_items_necessary", scope_string}}
             button_enabled = false
         elseif player.character == nil then  -- happens when the editor is active for example
             tooltip = {"fp.warning_with_icon", {"fp.request_no_character"}}
@@ -79,11 +79,16 @@ function utility_structures.components(player, modal_data)
     local context = data_util.get("context", player)
     local modal_elements = modal_data.modal_elements
 
+    local button_blueprint = nil  -- catch for use at the very end of this function
     if modal_elements.components_box == nil then
         local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
           "components", true, true)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
+
+        button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
+          caption={"fp.utility_blueprint"}, style="rounded_button", mouse_button_filter={"left"}}
+        button_blueprint.style.size = {85, 26}
 
         local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
           style="rounded_button", mouse_button_filter={"left"}}
@@ -154,6 +159,11 @@ function utility_structures.components(player, modal_data)
     local subfactory = data_util.get("context", player).subfactory
     Subfactory.validate_item_request_proxy(subfactory)
 
+    local any_missing_items = table_size(modal_data.missing_items) > 0
+    button_blueprint.enabled = any_missing_items
+    button_blueprint.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
+      or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}
+
     update_request_button(player, modal_data, subfactory)
 end
 
@@ -175,6 +185,66 @@ local function handle_scope_change(player, tags, metadata)
 
     local modal_data = data_util.get("modal_data", player)
     utility_structures.components(player, modal_data)
+end
+
+local function handle_item_blueprinting(player, _, _)
+    local combinator_proto = game.entity_prototypes["constant-combinator"]
+    if combinator_proto == nil then
+        player.create_local_flying_text{text={"fp.utility_blueprint_no_combinator"}, create_at_cursor=true}
+        return
+    end
+
+    local filter_limit = combinator_proto.filter_count or 100
+    local missing_items = data_util.get("modal_data", player).missing_items
+
+    local blueprint_entities = {}
+    local current_combinator, current_filter_count = nil, 0
+    local next_entity_number, next_position = 1, {0, 0}
+
+    for proto_name, missing_amount in pairs(missing_items) do
+        if not current_combinator or current_filter_count == filter_limit then
+            current_combinator = {
+                entity_number = next_entity_number,
+                name = "constant-combinator",
+                position = next_position,
+                control_behavior = {filters = {}},
+                connections = {{green = {}}}  -- filled in below
+            }
+            table.insert(blueprint_entities, current_combinator)
+
+            next_entity_number = next_entity_number + 1
+            next_position = {next_position[1] + 1, 0}
+            current_filter_count = 0
+        end
+
+        table.insert(current_combinator.control_behavior.filters, {
+            signal = {type = 'item', name = proto_name},
+            count = missing_amount,
+            index = current_filter_count + 1
+        })
+
+        current_filter_count = current_filter_count + 1
+    end
+
+
+    local function connect_if_entity_exists(main_entity, other_entity)
+        if other_entity ~= nil then
+            local entry = {entity_id = other_entity.entity_number}
+            table.insert(main_entity.connections[1].green, entry)
+        end
+    end
+
+    for index, entity in ipairs(blueprint_entities) do
+        connect_if_entity_exists(entity, blueprint_entities[index-1])
+        connect_if_entity_exists(entity, blueprint_entities[index+1])
+        if table_size(entity.connections[1].green) == 0 then entity.connections = nil end
+    end
+
+
+    data_util.create_cursor_blueprint(player, blueprint_entities)
+
+    modal_dialog.exit(player, "cancel")
+    main_dialog.toggle(player)
 end
 
 local function handle_item_request(player, _, _)
@@ -252,6 +322,11 @@ end
 -- ** EVENTS **
 utility_dialog.gui_events = {
     on_gui_click = {
+        {
+            name = "utility_blueprint_items",
+            timeout = 20,
+            handler = handle_item_blueprinting
+        },
         {
             name = "utility_request_items",
             timeout = 20,
