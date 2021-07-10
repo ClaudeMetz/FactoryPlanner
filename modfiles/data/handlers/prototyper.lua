@@ -22,6 +22,12 @@ function prototyper.setup()
     for _, data_type in ipairs(data_types) do
         NEW["all_" .. data_type] = generator["all_" .. data_type]()
     end
+
+    -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
+    for _, data_type in ipairs(data_types) do
+        local second_pass = generator[data_type .. "_second_pass"]
+        if second_pass ~= nil then second_pass() end
+    end
 end
 
 -- Migrates the default prototypes of the given player

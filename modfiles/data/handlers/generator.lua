@@ -465,6 +465,26 @@ function generator.all_machines()
     return generator_util.data_structure.get()
 end
 
+function generator.machines_second_pass()
+    -- Go over all recipes to find unused categories
+    local used_category_names = {}
+    for _, recipe_proto in pairs(NEW.all_recipes.recipes) do
+        used_category_names[recipe_proto.category] = true
+    end
+
+    local unused_categories = {}
+    for index, category in pairs(NEW.all_machines.categories) do
+        if not used_category_names[category.name] then
+            unused_categories[category.name] = index
+        end
+    end
+
+    for name, index in pairs(unused_categories) do
+        NEW.all_machines.map[name] = nil
+        table.remove(NEW.all_machines.categories, index)
+    end
+end
+
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
