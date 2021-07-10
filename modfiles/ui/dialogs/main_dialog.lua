@@ -58,13 +58,9 @@ function main_dialog.rebuild(player, default_visibility)
     end
 
 
-    -- Background dimmer (created first so the layering is correct, visibility set afterwards)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local display_size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
-
-    local background_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
+    -- Background dimmer (created first so the layering is correct, style set afterwards)
+    local background_dimmer = player.gui.screen.add{type="frame",
       tags={mod="fp", on_gui_click="re-layer_background_dimmer"}}
-    background_dimmer.style.size = display_size
     main_elements["background_dimmer"] = background_dimmer
 
 
@@ -149,11 +145,20 @@ function main_dialog.toggle(player, skip_player_opened)
         main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
-        frame_main_dialog.visible = not frame_main_dialog.visible
-        if not skip_player_opened then player.opened = (frame_main_dialog.visible) and frame_main_dialog or nil end
+        local dialog_visible = not frame_main_dialog.visible
+        frame_main_dialog.visible = dialog_visible
+        if not skip_player_opened then  -- flag used only for hacky internal reasons
+            player.opened = (dialog_visible) and frame_main_dialog or nil
+        end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
         title_bar.refresh_message(player)
+
+        -- Make sure FP is not behind some vanilla interfaces
+        if dialog_visible then
+            ui_state.main_elements.background_dimmer.bring_to_front()
+            frame_main_dialog.bring_to_front()
+        end
     end
 end
 
@@ -182,9 +187,15 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     else
         paused = frame_main_dialog.visible
     end
-
     game.tick_paused = paused
-    background_dimmer.visible = paused
+
+    -- Hide the dimmer completely when the main interface is not shown
+    background_dimmer.visible = frame_main_dialog.visible
+    -- Use the dimmer as click protection on vanilla GUIs even if it doesn't actually dim anything
+    background_dimmer.style = (paused) and "fp_frame_semitransparent" or "fp_frame_transparent"
+    -- Re-set the size because assigning a new style resets it (*grumble*)
+    local resolution, scale = player.display_resolution, player.display_scale
+    background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
 
     return paused
 end

@@ -96,6 +96,18 @@ styles["fp_frame_semitransparent"] = {
     }
 }
 
+styles["fp_frame_transparent"] = {
+    type = "frame_style",
+    graphical_set = {
+        base = {
+            type = "composition",
+            filename = "__factoryplanner__/graphics/transparent_pixel.png",
+            corner_size = 1,
+            position = {0, 0}
+        }
+    }
+}
+
 
 styles["fp_table_production"] = {
     type = "table_style",
