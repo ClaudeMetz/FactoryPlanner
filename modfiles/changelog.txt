@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - The mod now makes sure that the main interface fits onto the player's screen when first creating or joining a game
+    - The margin for showing items with very small amounts now scales with the subfactory timescale
   Bugfixes:
     - Fixed a crash and some other issues related to the background dimming when paused
     - Fixed an issue where the modal interface dimmer would not layer correctly when loading a save in some cases
