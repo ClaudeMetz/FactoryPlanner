@@ -473,16 +473,29 @@ function generator.machines_second_pass()
     end
 
     local unused_categories = {}
-    for index, category in pairs(NEW.all_machines.categories) do
+    for id, category in pairs(NEW.all_machines.categories) do
         if not used_category_names[category.name] then
-            unused_categories[category.name] = index
+            unused_categories[category.name] = id
         end
     end
 
-    for name, index in pairs(unused_categories) do
-        NEW.all_machines.map[name] = nil
-        table.remove(NEW.all_machines.categories, index)
+    local removed_category_count = 0  -- (this loop is incredibly stupid)
+    for category_name, category_id in pairs(unused_categories) do
+        local adjusted_category_id = category_id - removed_category_count
+        removed_category_count = removed_category_count + 1
+
+        table.remove(NEW.all_machines.categories, adjusted_category_id)  -- fixes gaps automatically
+        NEW.all_machines.map[category_name] = nil
+
+        -- Fix up category id map caused by the removed category
+        local machine_map = NEW.all_machines.map
+        for name, id in pairs(machine_map) do
+            if id >= adjusted_category_id then
+                machine_map[name] = machine_map[name] - 1
+            end
+        end
     end
+
 
     -- Replace built_by_item names with prototype references
     local item_prototypes = NEW.all_items.types[NEW.all_items.map["item"]]
