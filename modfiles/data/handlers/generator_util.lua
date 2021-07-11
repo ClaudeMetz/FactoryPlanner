@@ -254,64 +254,84 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
 end
 
 
+-- Active mods table needed for the funtions below
+local active_mods = script.active_mods
+
 -- Determines whether this recipe is a recycling one or not
--- Compatible with: 'Industrial Revolution', 'Reverse Factory', 'Recycling Machines'
-function generator_util.is_recycling_recipe(proto)
-    local active_mods = {
-        DIR = game.active_mods["IndustrialRevolution"],
-        RF = game.active_mods["reverse-factory"],
-        ZR = game.active_mods["ZRecycling"]
-    }
-
-    if active_mods.DIR and string.match(proto.name, "^scrap%-.*") then
-        return true
-    elseif active_mods.RF and string.match(proto.name, "^rf%-.*") then
-        return true
-    elseif active_mods.ZR and string.match(proto.name, "^dry411srev%-.*") then
-        return true
-    else
-        return false
-    end
-end
-
--- Determines whether the given recipe is a barreling or stacking one
--- Compatible with: 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions of it
-function generator_util.is_barreling_recipe(proto)
-    if proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel" then
-        return true
-    elseif string.match(proto.name, "^deadlock%-stacks%-.*") or string.match(proto.name, "^deadlock%-packrecipe%-.*")
-      or string.match(proto.name, "^deadlock%-unpackrecipe%-.*") then
-        return true
-    else
-        return false
-    end
-end
-
--- A table of mods and the recipe categories in them that are irrelevant
-local irrelevant_recipe_categories = {
-    ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
-    ["Mining_Drones"] = {"mining-depot"},
-    ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
-      "deep-storage-item-big", "deep-storage-fluid-big",
-      "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"}
+-- Compatible with: 'Industrial Revolution', 'Space Exploration', 'Reverse Factory', 'Recycling Machines'
+local recycling_recipe_mods = {
+    ["IndustrialRevolution"] = {"^scrap%-.*", "^incinerate%-.*"},
+    ["space-exploration"] = {"^se%-recycle%-.*"},
+    ["reverse-factory"] = {"^rf%-.*"},
+    ["ZRecycling"] = {"^dry411srev%-.*"}
 }
 
--- Precompute the lookup table by recipe category for performance
-local irrelevant_recipe_categories_precompute_lookup = {}
-local active_mods = script.active_mods
-for mod, categories in pairs(irrelevant_recipe_categories) do
-    for _, category in pairs(categories) do
-        if active_mods[mod] then
-            irrelevant_recipe_categories_precompute_lookup[category] = true
+local active_recycling_recipe_mods = {}
+for modname, patterns in pairs(recycling_recipe_mods) do
+    for _, pattern in pairs(patterns) do
+        if active_mods[modname] then
+            table.insert(active_recycling_recipe_mods, pattern)
         end
     end
 end
 
--- Determines whether this recipe is irrelevant or not and should thus be excluded
--- Compatible with: Klonan's Transport+Mining Drones
-function generator_util.is_irrelevant_recipe(recipe)
-    return irrelevant_recipe_categories_precompute_lookup[recipe.category]
+function generator_util.is_recycling_recipe(proto)
+    for _, pattern in pairs(active_recycling_recipe_mods) do
+        if string.match(proto.name, pattern) then return true end
+    end
+    return false
 end
+
+
+-- Determines whether the given recipe is a barreling or stacking one
+-- Compatible with: 'base', 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions, 'Space Exploration'
+local compacting_recipe_mods = {
+    ["base"] = {"^fill%-.*", "^empty%-.*"},
+    ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
+                                      "^deadlock%-unpackrecipe%-.*"},
+    ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"}
+}
+
+local active_compacting_recipe_mods = {}
+for modname, patterns in pairs(compacting_recipe_mods) do
+    for _, pattern in pairs(patterns) do
+        if active_mods[modname] then
+            table.insert(active_compacting_recipe_mods, pattern)
+        end
+    end
+end
+
+function generator_util.is_compacting_recipe(proto)
+    for _, pattern in pairs(active_compacting_recipe_mods) do
+        if string.match(proto.name, pattern) then return true end
+    end
+    return false
+end
+
+
+-- Determines whether this recipe is irrelevant or not and should thus be excluded
+-- Compatible with: 'Klonan's Transport+Mining Drones', 'Deep Storage Unit'
+local irrelevant_recipe_categories = {
+    ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
+    ["Mining_Drones"] = {"mining-depot"},
+    ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
+                             "deep-storage-item-big", "deep-storage-fluid-big",
+                             "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"}
+}
+
+local irrelevant_recipe_categories_lookup = {}
+for mod, categories in pairs(irrelevant_recipe_categories) do
+    for _, category in pairs(categories) do
+        if active_mods[mod] then
+            irrelevant_recipe_categories_lookup[category] = true
+        end
+    end
+end
+
+function generator_util.is_irrelevant_recipe(recipe)
+    return irrelevant_recipe_categories_lookup[recipe.category]
+end
+
 
 -- Finds a sprite for the given entity prototype
 function generator_util.determine_entity_sprite(proto)
