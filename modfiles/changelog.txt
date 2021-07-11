@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - The mod now filters out crafting categories in the preferences dialog that don't have any recipes using them (removes the 'basic-crafting' category from vanilla maps)
   Bugfixes:
-    -
+    - Fixed several matrix-solver related crashes (hopefully) that were introduced in the last version
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.22

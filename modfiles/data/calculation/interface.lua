@@ -199,7 +199,8 @@ function calculation.update(player, subfactory)
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
                 local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
-                if matrix_metadata.num_rows == matrix_metadata.num_cols and #linear_dependence_data.linearly_dependent_recipes == 0 then
+                if matrix_metadata.num_rows == matrix_metadata.num_cols and
+                  #linear_dependence_data.linearly_dependent_recipes == 0 then
                     matrix_solver.run_matrix_solver(subfactory_data, false)
                     subfactory.linearly_dependant = false
                 else

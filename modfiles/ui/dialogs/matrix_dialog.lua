@@ -96,10 +96,9 @@ function matrix_dialog.early_abort_check(player, modal_data)
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
     if #linear_dependence_data.linearly_dependent_recipes > 0 then  -- too many ways to create the products
-        show_linearly_dependent_recipes(modal_data, linear_dependence_data.linearly_dependent_recipes)
+        modal_data.linearly_dependent_recipes = linear_dependence_data.linearly_dependent_recipes
         subfactory.linearly_dependant = true
-        modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
-        return
+        return false
     end
     subfactory.linearly_dependant = false  -- TODO not the proper way to signal this, but it works
 
@@ -120,14 +119,22 @@ function matrix_dialog.early_abort_check(player, modal_data)
     return false
 end
 
-function matrix_dialog.open(_, modal_data)
-    create_item_category(modal_data, "constrained", modal_data.num_needed_free_items)
-    create_item_category(modal_data, "free")
-    update_dialog_submit_button(modal_data, modal_data.matrix_metadata)
+function matrix_dialog.open(player, modal_data)
+    if data_util.get("context", player).subfactory.linearly_dependant then
+        show_linearly_dependent_recipes(modal_data, modal_data.linearly_dependent_recipes)
+        modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
 
-    -- Dispose of the temporary GUI-opening variables
-    modal_data.num_needed_free_items = nil
-    modal_data.matrix_metadata = nil
+        -- Dispose of the temporary GUI-opening variables
+        modal_data.linearly_dependent_recipes = nil
+    else
+        create_item_category(modal_data, "constrained", modal_data.num_needed_free_items)
+        create_item_category(modal_data, "free")
+        update_dialog_submit_button(modal_data, modal_data.matrix_metadata)
+
+        -- Dispose of the temporary GUI-opening variables
+        modal_data.num_needed_free_items = nil
+        modal_data.matrix_metadata = nil
+    end
 end
 
 function matrix_dialog.close(player, action)

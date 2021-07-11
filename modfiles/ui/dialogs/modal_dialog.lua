@@ -139,13 +139,14 @@ end
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, dialog_settings)
     local ui_state = data_util.get("ui_state", player)
-    ui_state.modal_data = dialog_settings.modal_data or {}
 
     if ui_state.modal_dialog_type ~= nil then
         -- If a dialog is currently open, and this one wants to be queued, do so
         if dialog_settings.allow_queueing then ui_state.queued_dialog_settings = dialog_settings end
         return
     end
+
+    ui_state.modal_data = dialog_settings.modal_data or {}
 
     local dialog_object = _G[dialog_settings.type .. "_dialog"]
     if dialog_object.dialog_settings ~= nil then  -- collect additional settings
@@ -155,7 +156,7 @@ function modal_dialog.enter(player, dialog_settings)
 
     local early_abort = dialog_object.early_abort_check  -- abort early if necessary
     if early_abort ~= nil and early_abort(player, ui_state.modal_data) then
-        ui_state.modal_data = nil  -- make sure to reset this
+        --ui_state.modal_data = nil  -- TODO this should be reset, but that breaks the stupid queueing stuff .........
         title_bar.refresh_message(player)  -- make sure eventual messages are shown
         return
     end
