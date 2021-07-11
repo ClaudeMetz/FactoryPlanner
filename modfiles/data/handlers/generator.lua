@@ -54,7 +54,7 @@ function generator.all_recipes()
                 main_product = proto.main_product,
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
-                barreling = generator_util.is_barreling_recipe(proto),
+                barreling = generator_util.is_compacting_recipe(proto),
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
                 use_limitations = true,
                 custom = false,
