@@ -258,10 +258,12 @@ end
 local active_mods = script.active_mods
 
 -- Determines whether this recipe is a recycling one or not
--- Compatible with: 'Industrial Revolution', 'Space Exploration', 'Reverse Factory', 'Recycling Machines'
+-- Compatible with: 'Industrial Revolution', 'Space Exploration', 'Angel's Petrochem', 'Reverse Factory',
+--   'Recycling Machines'
 local recycling_recipe_mods = {
-    ["IndustrialRevolution"] = {"^scrap%-.*", "^incinerate%-.*"},
+    ["IndustrialRevolution"] = {"^scrap%-.*"},
     ["space-exploration"] = {"^se%-recycle%-.*"},
+    ["angelspetrochem"] = {"^converter%-.*"},
     ["reverse-factory"] = {"^rf%-.*"},
     ["ZRecycling"] = {"^dry411srev%-.*"}
 }
