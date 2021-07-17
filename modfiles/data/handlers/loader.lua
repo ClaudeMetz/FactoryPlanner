@@ -52,7 +52,7 @@ local function sorted_items()
     -- Combines item and fluid prototypes into an unsorted number-indexed array
     local items = {}
     local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
+    for _, type in pairs{"item", "fluid"} do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             -- Silly checks needed here for migration purposes
             if item.group.valid and item.subgroup.valid then table.insert(items, item) end
@@ -78,7 +78,7 @@ local function identifier_item_map()
     local map = {}
 
     local all_items = global.all_items
-    for _, type in pairs({"item", "fluid"}) do
+    for _, type in pairs{"item", "fluid"} do
         for _, item in pairs(all_items.types[all_items.map[type]].items) do
             -- Identifier existance-check for migration reasons
             if item.identifier ~= nil then map[item.identifier] = item end
@@ -121,10 +121,19 @@ end
 
 local attribute_generators = {}
 
+function attribute_generators.belts(belt)
+    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
+end
+
 function attribute_generators.beacons(beacon)
     return {"", {"fp.module_slots"}, ": " .. beacon.module_limit .. "\n",
            {"fp.effectivity"}, ": " .. (beacon.effectivity * 100) .. "%\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage, "W", 3)}
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(beacon.energy_usage * 60, "W", 3)}
+end
+
+function attribute_generators.wagons(wagon)
+    local storage_unit = (wagon.category == "cargo-wagon") and {"fp.pl_stack", wagon.storage} or {"fp.l_fluid"}
+    return {"", {"fp.storage"}, ": " .. ui_util.format_number(wagon.storage, 3) .. " ", storage_unit}
 end
 
 function attribute_generators.fuels(fuel)
@@ -132,21 +141,17 @@ function attribute_generators.fuels(fuel)
            {"fp.emissions_multiplier"}, ": " .. fuel.emissions_multiplier}
 end
 
-function attribute_generators.belts(belt)
-    return {"", {"fp.throughput"}, ": " .. belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
-end
-
 function attribute_generators.machines(machine)
-    local energy_usage = machine.energy_usage * 60
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
-           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(energy_usage, "W", 3), "\n",
-           {"fp.u_pollution"}, ": ", ui_util.format_SI_value(energy_usage * machine.emissions * 60, "P/m", 3), "\n",
+           {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage * 60, "W", 3), "\n",
+           {"fp.u_pollution"}, ": ", ui_util.format_SI_value((machine.energy_usage * (machine.emissions * 60)) * 60,
+             "P/m", 3), "\n",
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end
 
 -- Generates the attribute strings for some types of prototypes
 local function prototype_attributes()
-    local relevant_prototypes = {"belts", "beacons", "fuels", "machines"}
+    local relevant_prototypes = {"belts", "beacons", "wagons", "fuels", "machines"}
     local attributes = {}
 
     for _, type in pairs(relevant_prototypes) do
@@ -180,13 +185,9 @@ end
 
 
 -- ** TOP LEVEL **
--- Creates some lua-global tables for convenience and performance
+-- Register on_nth_tick events and create some lua-global tables for convenience and performance
 function loader.run()
-    local freeplay = remote.interfaces["freeplay"]
-    if DEVMODE and freeplay then  -- Disable freeplay popup-message
-        if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
-        if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
-    end
+    data_util.nth_tick.register_all()
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {

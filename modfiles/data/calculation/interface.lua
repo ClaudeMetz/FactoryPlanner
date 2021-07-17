@@ -8,6 +8,45 @@ calculation = {
 }
 
 -- ** LOCAL UTIL **
+local function set_blank_line(player, floor, line)
+    local blank_class = structures.class.init()
+    calculation.interface.set_line_result{
+        player_index = player.index,
+        floor_id = floor.id,
+        line_id = line.id,
+        machine_count = 0,
+        energy_consumption = 0,
+        pollution = 0,
+        production_ratio = (not line.subfloor) and 0 or nil,
+        uncapped_production_ratio = (not line.subfloor) and 0 or nil,
+        Product = blank_class,
+        Byproduct = blank_class,
+        Ingredient = blank_class,
+        fuel_amount = nil
+    }
+end
+
+local function set_blank_subfactory(player, subfactory)
+    local blank_class = structures.class.init()
+    calculation.interface.set_subfactory_result {
+        player_index = player.index,
+        energy_consumption = 0,
+        pollution = 0,
+        Product = blank_class,
+        Byproduct = blank_class,
+        Ingredient = blank_class,
+        matrix_free_items = subfactory.matrix_free_items
+    }
+
+    -- Subfactory structure does not matter as every line just needs to be blanked out
+    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
+        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+            set_blank_line(player, floor, line)
+        end
+    end
+end
+
+
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, subfactory, floor)
     local floor_data = {
@@ -22,7 +61,7 @@ local function generate_floor_data(player, subfactory, floor)
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
 
-        if line.subfloor ~= nil then  -- lines with subfloor need no further data than a reference to that subfloor
+        if line.subfloor ~= nil then
             line_data.recipe_proto = line.subfloor.defining_line.recipe.proto
             line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
             table.insert(floor_data.lines, line_data)
@@ -41,28 +80,13 @@ local function generate_floor_data(player, subfactory, floor)
             end
 
             if not line_is_useful then  -- any useless line doesn't need to go through the solver
-                local blank_class = structures.class.init()
-
-                calculation.interface.set_line_result{
-                    player_index = player.index,
-                    floor_id = floor.id,
-                    line_id = line.id,
-                    machine_count = 0,
-                    energy_consumption = 0,
-                    pollution = 0,
-                    production_ratio = 0,
-                    uncapped_production_ratio = 0,
-                    Product = blank_class,
-                    Byproduct = blank_class,
-                    Ingredient = blank_class,
-                    fuel_amount = nil
-                }
+                set_blank_line(player, floor, line)
             else
                 line_data.recipe_proto = line.recipe.proto  -- reference
                 line_data.timescale = subfactory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
-                line_data.machine_limit = {limit=line.machine.limit, hard_limit=line.machine.hard_limit}
+                line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
                 line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product_proto  -- reference
                 line_data.machine_proto = line.machine.proto  -- reference
@@ -94,6 +118,7 @@ local function generate_floor_data(player, subfactory, floor)
     return floor_data
 end
 
+
 -- Replaces the items of the given object (of given class) using the given result
 local function update_object_items(object, item_class, item_results)
     local object_class = _G[object.class]
@@ -114,7 +139,7 @@ local function update_ingredient_satisfaction(floor, product_class)
         local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
 
         if product_amount ~= nil then
-            if product_amount >= ingredient.amount then
+            if product_amount >= (ingredient.amount or 0) then  -- TODO dirty fix
                 ingredient.satisfied_amount = ingredient.amount
                 structures.class.subtract(product_class, ingredient)
 
@@ -161,34 +186,40 @@ function calculation.update(player, subfactory)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        --TODO: eventually revert to solver.update_subfactory
-        if subfactory.matrix_free_items then
-            calculation.start_matrix_solver(player, subfactory)
+        local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+
+        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+
+            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items>0 then
+                subfactory.matrix_free_items = {}
+                subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+                matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+            end
+
+            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
+                local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
+                if matrix_metadata.num_rows == matrix_metadata.num_cols and
+                  #linear_dependence_data.linearly_dependent_recipes == 0 then
+                    matrix_solver.run_matrix_solver(subfactory_data, false)
+                    subfactory.linearly_dependant = false
+                else
+                    set_blank_subfactory(player, subfactory)  -- reset subfactory by blanking everything
+
+                    -- Don't open the dialog if calculations are run during migration etc.
+                    if main_dialog.is_in_focus(player) or player_table.ui_state.modal_dialog_type ~= nil then
+                        modal_dialog.enter(player, {type="matrix", allow_queueing=true})
+                    end
+                end
+            else  -- reset top level items
+                set_blank_subfactory(player, subfactory)
+            end
         else
-            local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
             sequential_solver.update_subfactory(subfactory_data)
         end
-        --local solver = (subfactory.matrix_free_items) and matrix_solver or sequential_solver
 
-        --solver.update_subfactory(subfactory_data)
-        player_table.active_subfactory = nil
+        player_table.active_subfactory = nil  -- reset after calculations have been carried out
     end
-end
-
-function calculation.start_matrix_solver(player, subfactory)
-    local matrix_modal_data = matrix_solver.get_matrix_solver_modal_data(player, subfactory)
-    --if matrix_modal_data.num_rows ~= matrix_modal_data.num_cols then
-        -- INSTRUCTIONS TO THERENAS
-        -- 1. Create a subfactory with one output and multiple allowed input recipes (eg solid fuel)
-        -- 2. Add a recipe for this product (eg light oil -> solid fuel)
-        -- 3. Add another recipe for the same product (eg petroleum -> solid fuel)
-        -- This should open the matrix solver dialog because of a bad state (eg linearly dependent columns)
-        -- However nothing happens, probably because the recipe dialog is still open
-        --modal_dialog.enter(player, {type="matrix", submit=true, modal_data={first_open=false}})
-    --else
-        local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
-        matrix_solver.run_matrix_solver(subfactory_data, false)
-    --end
 end
 
 -- Updates the given subfactory's ingredient satisfactions
@@ -199,12 +230,12 @@ end
 
 -- ** INTERFACE **
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.get_subfactory_data(player, subfactory)
+function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
         top_floor = nil,
-        matrix_free_items = subfactory.matrix_free_items,
+        matrix_free_items = subfactory.matrix_free_items
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -228,6 +259,7 @@ function calculation.interface.set_subfactory_result(result)
 
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
+    subfactory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -247,6 +279,8 @@ end
 -- Updates the given line of the given floor of the active subfactory
 function calculation.interface.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
+    if subfactory == nil then return end
+
     local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
     local line = Floor.get(floor, "Line", result.line_id)
 
@@ -280,24 +314,17 @@ function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto,
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, is_rocket_silo)
-    local launch_delay = 0
-    if is_rocket_silo then  -- This calculation only works for unmodified rockets
-        local launch_sequence_time = 41.25 / timescale  -- in seconds
-        launch_delay = launch_sequence_time * production_ratio
-    end
-
-    return ((production_ratio / crafts_per_tick) / timescale) + launch_delay
+function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
+    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+    return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
 end
 
--- Calculates the production ratio from a given machine limit
-function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, is_rocket_silo)
-    -- Formulae derived from 'determine_machine_count', it includes the launch_delay if necessary
-    if is_rocket_silo then  -- Formula reduced by Wolfram Alpha
-        return (4 * machine_limit * timescale * crafts_per_tick) / (165 * crafts_per_tick + 4)
-    else
-        return machine_limit * timescale * crafts_per_tick
-    end
+-- Calculates the production ratio that the given amount of machines would result in
+-- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
+function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
+    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+    -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
+    return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
 end
 
 -- Calculates the product amount after applying productivity bonuses

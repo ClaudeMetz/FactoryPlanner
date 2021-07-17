@@ -7,7 +7,7 @@ function Machine.init_by_proto(proto)
         proto = proto,
         count = 0,
         limit = nil,  -- will be set by the user
-        hard_limit = false,
+        force_limit = false,
         fuel = nil,  -- updated by Line.change_machine()
         Module = Collection.init("Module"),
         module_count = 0,  -- updated automatically
@@ -102,28 +102,27 @@ function Machine.empty_slot_count(self)
 end
 
 function Machine.check_module_compatibility(self, module_proto)
-    local compatible = true
     local recipe = self.parent.recipe
+
+    if self.proto.module_limit == 0 then return false end
 
     if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
       and not module_proto.limitations[recipe.proto.name] then
-        compatible = false
+        return false
     end
 
-    if compatible then
-        local allowed_effects = self.proto.allowed_effects
-        if allowed_effects == nil then
-            compatible = false
-        else
-            for effect_name, _ in pairs(module_proto.effects) do
-                if allowed_effects[effect_name] == false then
-                    compatible = false
-                end
+    local allowed_effects = self.proto.allowed_effects
+    if allowed_effects == nil then
+        return false
+    else
+        for effect_name, _ in pairs(module_proto.effects) do
+            if allowed_effects[effect_name] == false then
+                return false
             end
         end
     end
 
-    return compatible
+    return true
 end
 
 function Machine.compile_module_filter(self)
@@ -208,7 +207,7 @@ function Machine.pack(self)
     return {
         proto = prototyper.util.simplify_prototype(self.proto),
         limit = self.limit,
-        hard_limit = self.hard_limit,
+        force_limit = self.force_limit,
         fuel = (self.fuel) and Fuel.pack(self.fuel) or nil,
         Module = Collection.pack(self.Module),
         module_count = self.module_count,
@@ -218,6 +217,7 @@ end
 
 function Machine.unpack(packed_self)
     local self = packed_self
+
     self.fuel = (packed_self.fuel) and Fuel.unpack(packed_self.fuel) or nil
     if self.fuel then self.fuel.parent = self end
 

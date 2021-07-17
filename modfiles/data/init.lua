@@ -15,6 +15,7 @@ require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.remote")
+require("data.handlers.screenshotter")
 
 require("data.calculation.interface")
 
@@ -26,11 +27,13 @@ local function reload_settings(player)
     local settings = settings.get_player_settings(player)
     local settings_table = {}
 
+    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
+
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
     settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
     settings_table.alt_action = settings["fp_alt_action"].value
-    settings_table.default_timescale = settings["fp_default_timescale"].value
+    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
 
@@ -52,16 +55,18 @@ local function reload_preferences(player)
     preferences.round_button_numbers = preferences.round_button_numbers or false
 
     preferences.toggle_column = preferences.toggle_column or false
+    preferences.done_column = preferences.done_column or false
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
 
     preferences.mb_defaults = preferences.mb_defaults or
-      {machine = nil, beacon = nil, beacon_count = nil}
+      {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}
 
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {
         belts = preferences.default_prototypes.belts or prototyper.defaults.get_fallback("belts"),
         beacons = preferences.default_prototypes.beacons or prototyper.defaults.get_fallback("beacons"),
+        wagons = preferences.default_prototypes.wagons or prototyper.defaults.get_fallback("wagons"),
         fuels = preferences.default_prototypes.fuels or prototyper.defaults.get_fallback("fuels"),
         machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines")
     }
@@ -79,9 +84,9 @@ local function reset_ui_state(player)
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
+    ui_state_table.queued_dialog_settings = nil  -- Info on dialog to open after the current one closes
 
     ui_state_table.flags = {
-        floor_total = false,  -- Whether the floor or subfactory totals are displayed
         archive_open = false,  -- Wether the players subfactory archive is currently open
         selection_mode = false,  -- Whether the player is currently using a selector
         recalculate_on_subfactory_change = false  -- Whether calculations should re-run
@@ -116,7 +121,7 @@ local function update_player_table(player)
         player_table.ui_state = {}
         reload_data()
 
-        title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5)
+        title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
 
     else  -- existing player, only need to update
         reload_data()
@@ -127,6 +132,37 @@ local function update_player_table(player)
     end
 
     return player_table
+end
+
+
+-- Downscale width and height mod settings until the main interface fits onto the player's screen
+function NTH_TICK_HANDLERS.adjust_interface_dimensions(metadata)
+    local player = game.get_player(metadata.player_index)
+    local resolution, scale = player.display_resolution, player.display_scale
+    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
+
+    local mod_settings = data_util.get("settings", player)
+    local products_per_row = mod_settings.products_per_row
+    local subfactory_list_rows = mod_settings.subfactory_list_rows
+
+    local function determine_dimensions()
+        return main_dialog.determine_main_dialog_dimensions(player, products_per_row, subfactory_list_rows)
+    end
+
+    while (actual_resolution.width * 0.95) < determine_dimensions().width do
+        products_per_row = products_per_row - 1
+    end
+    while (actual_resolution.height * 0.95) < determine_dimensions().height do
+        subfactory_list_rows = subfactory_list_rows - 2
+    end
+
+    local setting_prototypes = game.mod_setting_prototypes
+    local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1]
+    local height_minimum = setting_prototypes["fp_subfactory_list_rows"].allowed_values[1]
+
+    local live_settings = settings.get_player_settings(player)
+    live_settings["fp_products_per_row"] = {value = math.max(products_per_row, width_minimum)}
+    live_settings["fp_subfactory_list_rows"] = {value = math.max(subfactory_list_rows, height_minimum)}
 end
 
 -- Destroys all GUIs so they are loaded anew the next time they are shown
@@ -144,9 +180,19 @@ end
 
 
 local function global_init()
+    -- Set up a new save for development if necessary
+    local freeplay = remote.interfaces["freeplay"]
+    if DEVMODE and freeplay then  -- Disable freeplay popup-message
+        if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
+        if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
+    end
+
     -- Initiates all factorio-global variables
     global.mod_version = game.active_mods["factoryplanner"]
     global.players = {}
+
+    -- Save metadata about currently registered on_nth_tick events
+    global.nth_tick_events = {}
 
     -- Run through the prototyper without the need to apply (run) it on any player
     prototyper.setup()
@@ -171,11 +217,15 @@ local function handle_configuration_change()
         -- Create or update player_table
         local player_table = update_player_table(player)
 
-        -- Run the prototyper on the player
+        -- Migrate the default prototypes for the player
         prototyper.run(player_table)
 
+        -- Update the validity of the entire factory and archive
+        Collection.validate_datasets(player_table.factory.Subfactory)
+        Collection.validate_datasets(player_table.archive.Subfactory)
+
         reset_player_gui(player)  -- Destroys all existing GUI's
-        ui_util.mod_gui.create(player)  -- Recreates the mod-GUI
+        ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
     end
 
     -- Complete prototyper process by saving new data to global
@@ -208,8 +258,12 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the player_table for the new player
     update_player_table(player)
 
-    -- Sets up the mod-GUI for the new player
-    ui_util.mod_gui.create(player)
+    -- Sets up the mod-GUI for the new player if necessary
+    ui_util.toggle_mod_gui(player)
+
+    -- Make sure the width and height mod settings are appropriate
+    -- Resolution and scale are not loaded for the player at this point, so we need to delay this action a tick
+    data_util.nth_tick.add((game.tick + 1), "adjust_interface_dimensions", {player_index=player.index})
 
     -- Add the subfactories that are handy for development
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
@@ -227,7 +281,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         reload_settings(player)
 
         if event.setting == "fp_display_gui_button" then
-            ui_util.mod_gui.toggle(player)
+            ui_util.toggle_mod_gui(player)
 
         elseif event.setting == "fp_products_per_row" or
           event.setting == "fp_subfactory_list_rows" or

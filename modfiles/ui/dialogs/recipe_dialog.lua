@@ -5,7 +5,7 @@ local recipes_per_row = 6
 -- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
-local function run_preliminary_checks(player, product, production_type)
+local function run_preliminary_checks(player, product_proto, production_type)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
     local preferences = data_util.get("preferences", player)
 
@@ -13,7 +13,7 @@ local function run_preliminary_checks(player, product, production_type)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = RECIPE_MAPS[production_type][product.proto.type][product.proto.name]
+    local map = RECIPE_MAPS[production_type][product_proto.type][product_proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = global.all_recipes.recipes[recipe_id]
@@ -79,14 +79,11 @@ local function run_preliminary_checks(player, product, production_type)
     -- Return result, format: return recipe, error-message, show
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
-        return nil, error, show
+        return nil, error, nil
 
     elseif relevant_recipes_count == 1 then
         local chosen_recipe = relevant_recipes[1]
-        if not chosen_recipe.enabled then  -- Show warning if adding unresearched recipe
-            show.message={text={"fp.warning_disabled_recipe"}, type="warning"}
-        end
-        return chosen_recipe.proto.id, nil, show
+        return chosen_recipe.proto.id, nil, nil
 
     else  -- 2+ relevant recipes
         return relevant_recipes, nil, show
@@ -96,11 +93,12 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id)
     local ui_state = data_util.get("ui_state", player)
+    local recipe = Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type)
+    local line = Line.init(recipe)
 
-    local line = Line.init(Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type))
-    -- If changing the machine fails, this line is invalid
-    if Line.change_machine(line, player, nil, nil) == false then
-        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1)
+    -- If finding a machine fails, this line is invalid
+    if Line.change_machine(line, player, nil, nil) == false then  -- not sure this can even happen because generator
+        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
 
     else
         local add_after_position = ui_state.modal_data.add_after_position
@@ -111,20 +109,29 @@ local function attempt_adding_line(player, recipe_id)
             Floor.insert_at(ui_state.context.floor, (add_after_position + 1), line)
         end
 
-        local message = ui_state.modal_data.message
         local preferences = data_util.get("preferences", player)
         local mb_defaults = preferences.mb_defaults
+        local message = nil
+
+        if not (recipe.proto.custom or player.force.recipes[recipe.proto.name].enabled) then
+            message = {text={"fp.warning_recipe_disabled"}, type="warning"}
+        end
 
         -- Add default machine modules, if desired by the user
         local machine_module = mb_defaults.machine
-        if machine_module ~= nil then
-            if Machine.check_module_compatibility(line.machine, machine_module) then
-                local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
-                Machine.add(line.machine, new_module)
+        local secondary_module = mb_defaults.machine_secondary
 
-            elseif message == nil then  -- don't overwrite previous message, if it exists
-                message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
-            end
+        if machine_module and Machine.check_module_compatibility(line.machine, machine_module) then
+            local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
+            Machine.add(line.machine, new_module)
+
+        elseif secondary_module and Machine.check_module_compatibility(line.machine, secondary_module) then
+            local new_module = Module.init_by_proto(secondary_module, line.machine.proto.module_limit)
+            Machine.add(line.machine, new_module)
+
+        -- Only show an error if any module default is actually set
+        elseif machine_module and message == nil then  -- don't overwrite previous message, if it exists
+            message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
         end
 
         -- Add default beacon modules, if desired by the user
@@ -132,7 +139,7 @@ local function attempt_adding_line(player, recipe_id)
         local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
 
         if beacon_module_proto ~= nil and beacon_count ~= nil then
-            local blank_beacon = Beacon.init(beacon_proto, beacon_count, line)
+            local blank_beacon = Beacon.init(beacon_proto, beacon_count, nil, line)
 
             if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
                 local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
@@ -145,12 +152,11 @@ local function attempt_adding_line(player, recipe_id)
             end
         end
 
-        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 2) end
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
-    end
 
-    modal_dialog.exit(player, "cancel")
+        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
+    end
 end
 
 
@@ -165,10 +171,10 @@ local function create_filter_box(modal_data)
     label_filters.style.left_margin = 4
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
-    ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_disabled", modal_data.filters.disabled,
-      {"fp.unresearched_recipes"}, nil, false)
-    ui_util.switch.add_on_off(flow_filter_switches, "recipe_filter_hidden", modal_data.filters.hidden,
-      {"fp.hidden_recipes"}, nil, false)
+    ui_util.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
+      modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
+    ui_util.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
+      modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
 end
 
 local function create_recipe_group_box(modal_data, relevant_group)
@@ -185,8 +191,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
 
     local group_sprite = flow_group.add{type="sprite-button", sprite=("item-group/" .. relevant_group.proto.name),
       tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
-    group_sprite.style.height = 64
-    group_sprite.style.width = 64
+    group_sprite.style.size = 64
     group_sprite.style.right_margin = 12
 
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
@@ -199,14 +204,14 @@ local function create_recipe_group_box(modal_data, relevant_group)
         if not recipe.enabled then style = "flib_slot_button_yellow_small"
         elseif recipe_proto.hidden then style = "flib_slot_button_default_small" end
 
-        local button_name = "fp_button_recipe_pick_" .. recipe_proto.id
-        local button_recipe
+        local button_tags = {mod="fp", on_gui_click="pick_recipe", recipe_proto_id=recipe_proto.id}
+        local button_recipe = nil
 
         if recipe_proto.custom then  -- can't use choose-elem-buttons for custom recipes
-            button_recipe = table_recipes.add{type="sprite-button", name=button_name, style=style,
+            button_recipe = table_recipes.add{type="sprite-button", tags=button_tags, style=style,
               sprite=recipe_proto.sprite, tooltip=recipe_proto.tooltip, mouse_button_filter={"left"}}
         else
-            button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", name=button_name,
+            button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", tags=button_tags,
               style=style, recipe=recipe_proto.name, mouse_button_filter={"left"}}
             button_recipe.locked = true
         end
@@ -236,11 +241,11 @@ local function create_dialog_structure(modal_data)
     end
 end
 
-local function apply_recipe_filter(player, search_term)
+function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
     local modal_data = data_util.get("modal_data", player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
-    local any_recipe_visible, desired_scroll_pane_height = false, 72+24
+    local any_recipe_visible, desired_scroll_pane_height = false, 64+24
     for _, group in ipairs(modal_data.modal_elements.groups) do
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
@@ -270,59 +275,68 @@ local function apply_recipe_filter(player, search_term)
 end
 
 
-local function handle_filter_change(player, element)
-    local filter_name = string.gsub(element.name, "fp_switch_recipe_filter_", "")
-    local boolean_state = ui_util.switch.convert_to_boolean(element.switch_state)
+local function handle_filter_change(player, tags, metadata)
+    local boolean_state = ui_util.switch.convert_to_boolean(metadata.switch_state)
+    data_util.get("modal_data", player).filters[tags.filter_name] = boolean_state
+    data_util.get("preferences", player).recipe_filters[tags.filter_name] = boolean_state
 
-    data_util.get("modal_data", player).filters[filter_name] = boolean_state
-    data_util.get("preferences", player).recipe_filters[filter_name] = boolean_state
-
-    apply_recipe_filter(player, "")
+    SEARCH_HANDLERS.apply_recipe_filter(player, "")
 end
 
 
 -- ** TOP LEVEL **
-recipe_dialog.dialog_settings = (function(_) return {
+recipe_dialog.dialog_settings = (function(modal_data) return {
     caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
-    search_function = apply_recipe_filter,
+    subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
+      modal_data.product_proto.localised_name},
+    search_handler_name = "apply_recipe_filter",
     create_content_frame = true,
     force_auto_center = true
 } end)
 
--- Handles populating the recipe dialog
-function recipe_dialog.open(player, modal_data)
-    local product = modal_data.product
-
+-- Checks whether the dialog needs to be created at all
+function recipe_dialog.early_abort_check(player, modal_data)
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, product, modal_data.production_type)
+    local result, error, show = run_preliminary_checks(player, modal_data.product_proto, modal_data.production_type)
 
     if error ~= nil then
-        title_bar.enqueue_message(player, error, "error", 1)
-        modal_dialog.exit(player, "cancel")
-        return true  -- let the modal dialog know that it was closed immediately
+        title_bar.enqueue_message(player, error, "error", 1, false)
+        return true  -- signal that the dialog does not need to actually be opened
 
     else
-        -- If 1 relevant recipe is found, add it immediately and exit dialog
+        -- If 1 relevant recipe is found, try it straight away
         if type(result) == "number" then  -- the given number being the recipe_id
-            modal_data.message = show.message
             attempt_adding_line(player, result)
-            return true  -- idem above
+            return true  -- idem. above
 
-        else  -- Otherwise, show the appropriately filtered dialog
-            local recipe_groups = {}
-            for _, recipe in pairs(result) do
-                local group_name = recipe.proto.group.name
-                recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
-                recipe_groups[group_name].recipes[recipe.proto.name] = recipe
-            end
-
-            modal_data.recipe_groups = recipe_groups
-            modal_data.filters = show.filters
-
-            create_dialog_structure(modal_data)
-            apply_recipe_filter(player, "")
+        else  -- Otherwise, save the relevant data for the dialog opener
+            modal_data.result = result
+            modal_data.show = show
+            return false  -- signal that the dialog should be opened
         end
     end
+end
+
+-- Handles populating the recipe dialog
+function recipe_dialog.open(player, modal_data)
+    -- At this point, we're sure the dialog should be opened
+    local recipe_groups = {}
+    for _, recipe in pairs(modal_data.result) do
+        local group_name = recipe.proto.group.name
+        recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
+        recipe_groups[group_name].recipes[recipe.proto.name] = recipe
+    end
+
+    modal_data.recipe_groups = recipe_groups
+    modal_data.filters = modal_data.show.filters
+
+    create_dialog_structure(modal_data)
+    SEARCH_HANDLERS.apply_recipe_filter(player, "")
+    modal_data.modal_elements.search_textfield.focus()
+
+    -- Dispose of the temporary GUI-opening variables
+    modal_data.result = nil
+    modal_data.show = nil
 end
 
 
@@ -330,17 +344,17 @@ end
 recipe_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_button_recipe_pick_%d+$",
+            name = "pick_recipe",
             timeout = 20,
-            handler = (function(player, element, _)
-                local recipe_id = tonumber(string.match(element.name, "%d+"))
-                attempt_adding_line(player, recipe_id)
+            handler = (function(player, tags, _)
+                attempt_adding_line(player, tags.recipe_proto_id)
+                modal_dialog.exit(player, "cancel")
             end)
         }
     },
     on_gui_switch_state_changed = {
         {
-            pattern = "^fp_switch_recipe_filter_[a-z]+$",
+            name = "toggle_recipe_filter",
             handler = handle_filter_change
         }
     }
