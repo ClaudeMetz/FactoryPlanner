@@ -388,6 +388,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         Ingredient = main_aggregate.Ingredient,
         matrix_free_items = matrix_free_items
     }
+    return {}
 end
 
 -- If an aggregate has items that are both inputs and outputs, deletes whichever is smaller and saves the net amount.

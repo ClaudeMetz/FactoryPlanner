@@ -218,7 +218,7 @@ function calculation.update(player, subfactory)
             sequential_solver.update_subfactory(subfactory_data)
         end
 
-        player_table.active_subfactory = nil  -- reset after calculations have been carried out
+        --player_table.active_subfactory = nil  -- reset after calculations have been carried out
     end
 end
 
