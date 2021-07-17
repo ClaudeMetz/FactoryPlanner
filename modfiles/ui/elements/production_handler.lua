@@ -1,22 +1,49 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
-local function handle_toggle_change(player, checkbox)
-    local line_id = tonumber(string.match(checkbox.name, "%d+"))
+local function handle_toggle_click(player, tags, metadata)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
-
+    local line = Floor.get(context.floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.active = checkbox.state
+
+    if not metadata.alt then  -- Left-click sets the relevant line state
+        relevant_line.active = not relevant_line.active
+    else  -- Alt-left-click inverts the state of all lines
+        local lines = Floor.get_in_order(context.floor, "Line")  -- this can be cached
+
+        local has_inactive_lines = false
+        for _, current_line in ipairs(lines) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            if not current_relevant_line.active then
+                has_inactive_lines = true
+                break
+            end
+        end
+
+        local new_active_state = has_inactive_lines and relevant_line.active
+        for _, current_line in ipairs(lines) do
+            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
+            current_relevant_line.active = new_active_state
+        end
+        relevant_line.active = true
+    end
 
     calculation.update(player, context.subfactory)
     main_dialog.refresh(player, "subfactory")
 end
 
-local function handle_recipe_click(player, button, metadata)
-    local line_id = tonumber(string.match(button.name, "%d+"))
+local function handle_done_click(player, tags, _)
+    local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    relevant_line.done = not relevant_line.done
+
+    -- Refreshing the whole table here is wasteful, but I don't have good selective refreshing yet
+    main_dialog.refresh(player, "production_table")
+end
+
+local function handle_recipe_click(player, tags, metadata)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
 
     if metadata.direction then  -- Shifts line in the given direction
         if not ui_util.check_archive_status(player) then return end
@@ -41,16 +68,20 @@ local function handle_recipe_click(player, button, metadata)
     elseif metadata.click == "left" then  -- Attaches a subfloor to this line
         local subfloor = line.subfloor
 
-        if subfloor == nil then
+        if not subfloor and line.recipe.production_type == "consume" then
             if not ui_util.check_archive_status(player) then return end
+            title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
+        else
+            if subfloor == nil then
+                if not ui_util.check_archive_status(player) then return end
+                subfloor = Floor.init(line)  -- attaches itself to the given line automatically
+                Subfactory.add(context.subfactory, subfloor)
+                calculation.update(player, context.subfactory)
+            end
 
-            subfloor = Floor.init(line)  -- attaches itself to the given line automatically
-            Subfactory.add(context.subfactory, subfloor)
-            calculation.update(player, context.subfactory)
+            ui_util.context.set_floor(player, subfloor)
+            main_dialog.refresh(player, "production_detail")
         end
-
-        ui_util.context.set_floor(player, subfloor)
-        main_dialog.refresh(player, "subfactory")
 
     elseif metadata.action == "delete" then  -- removes this line, including subfloor(s)
         if not ui_util.check_archive_status(player) then return end
@@ -62,27 +93,21 @@ local function handle_recipe_click(player, button, metadata)
 end
 
 
-local function handle_percentage_change(player, textfield)
-    local line_id = tonumber(string.match(textfield.name, "%d+"))
+local function handle_percentage_change(player, tags, metadata)
     local ui_state = data_util.get("ui_state", player)
-    local line = Floor.get(ui_state.context.floor, "Line", line_id)
+    local line = Floor.get(ui_state.context.floor, "Line", tags.line_id)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.percentage = tonumber(textfield.text) or 0
+    relevant_line.percentage = tonumber(metadata.text) or 100
 
     ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
 end
 
-local function handle_percentage_confirmation(player, textfield)
-    local line_id = tonumber(string.match(textfield.name, "%d+"))
-    local textfield_name = textfield.name  -- get it here before it becomes invalid
+local function handle_percentage_confirmation(player, _, _)
     local ui_state = data_util.get("ui_state", player)
-
-    ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh
+    ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
     calculation.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
-
-    ui_state.main_elements.production_table.table["flow_percentage_" .. line_id][textfield_name].focus()
 end
 
 
@@ -90,14 +115,17 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
     local round_button_numbers = data_util.get("preferences", player).round_button_numbers
     local timescale = data_util.get("context", player).subfactory.timescale
 
+    local category_id = global.all_machines.map[line.recipe.proto.category]
+    local default_proto = prototyper.defaults.get(player, "machines", category_id)
     local current_proto = line.machine.proto
-    local button_definitions = {}
 
+    local button_definitions = {}
     for _, machine_proto in ipairs(applicable_prototypes) do
+        -- Need to get total effects here to include mining productivity
         local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
           line.recipe.proto, Line.get_total_effects(line, player))
         local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
-          line.uncapped_production_ratio, timescale, machine_proto.is_rocket_silo)
+          line.uncapped_production_ratio, timescale, machine_proto.launch_sequence_time)
 
         local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
 
@@ -113,7 +141,8 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
             localised_name = machine_proto.localised_name,
             amount_line = amount_line,
             tooltip_appendage = data_util.get_attributes("machines", machine_proto),
-            selected = (current_proto.id == machine_proto.id)
+            selected = (current_proto.id == machine_proto.id),
+            preferred = (default_proto.id == machine_proto.id)
         }
 
         table.insert(button_definitions, definition)
@@ -122,7 +151,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
     return button_definitions
 end
 
-local function apply_machine_choice(player, machine_id)
+function GENERIC_HANDLERS.apply_machine_choice(player, machine_id, metadata)
     local ui_state = data_util.get("ui_state", player)
     local machine = ui_state.modal_data.object
 
@@ -130,13 +159,16 @@ local function apply_machine_choice(player, machine_id)
     local machine_proto = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
     Line.change_machine(machine.parent, player, machine_proto, nil)
 
+    -- Optionally adjust the preferred prototype
+    if metadata.alt then prototyper.defaults.set(player, "machines", machine_proto.id, machine_category_id) end
+
     calculation.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
 end
 
-local function machine_limit_change(modal_data, textfield)
-    local switch = modal_data.modal_elements["fp_switch_on_off_options_hard_limit"]
-    local machine_limit = tonumber(textfield.text)
+function GENERIC_HANDLERS.handle_machine_limit_change(modal_data, metadata)
+    local switch = modal_data.modal_elements["force_limit"]
+    local machine_limit = tonumber(metadata.text)
 
     -- If it goes from empty to filled, reset a possible previous switch state
     if modal_data.previous_limit == nil and modal_data.previous_switch_state then
@@ -151,109 +183,130 @@ local function machine_limit_change(modal_data, textfield)
     modal_data.previous_limit = machine_limit  -- Record the previous limit to know how it changes
 end
 
-local function apply_machine_options(player, options, action)
+function GENERIC_HANDLERS.apply_machine_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local machine = ui_state.modal_data.object
 
-        if options.machine_limit == nil then options.hard_limit = false end
-        machine.limit, machine.hard_limit = options.machine_limit, options.hard_limit
+        if options.machine_limit == nil then options.force_limit = false end
+        machine.limit, machine.force_limit = options.machine_limit, options.force_limit
 
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end
 
-local function handle_machine_click(player, button, metadata)
+local function handle_machine_click(player, tags, metadata)
     if not ui_util.check_archive_status(player) then return end
 
-    local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if metadata.direction then  -- up/downgrades the machine
-        Line.change_machine(line, player, nil, metadata.direction)
+    if metadata.direction then
+        if Line.change_machine(line, player, nil, metadata.direction) == false then
+            local direction_string = (metadata.direction == "positive") and {"fp.upgraded"} or {"fp.downgraded"}
+            local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, direction_string}
+            title_bar.enqueue_message(player, message, "error", 1, true)
+        else
+            calculation.update(player, context.subfactory)
+            main_dialog.refresh(player, "subfactory")
+        end
 
-        calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+    elseif metadata.click == "left" then
+        if metadata.alt then  -- set cursor to the current machine
+            local module_list = {}
+            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+                module_list[module.proto.name] = module.amount
+            end
 
-    elseif metadata.alt then  -- resets this machine to its default state
-        Line.change_machine(line, player, nil, nil)
-        line.machine.limit = nil
-        line.machine.hard_limit = false
+            local blueprint_entity = {
+                entity_number = 1,
+                name = line.machine.proto.name,
+                position = {0, 0},
+                items = module_list,
+                recipe = line.recipe.proto.name
+            }
+            data_util.create_cursor_blueprint(player, {blueprint_entity})
+            main_dialog.toggle(player)
 
-        calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        else  -- open the machine chooser
+            local machine_category_id = global.all_machines.map[line.machine.proto.category]
+            local category_prototypes = global.all_machines.categories[machine_category_id].machines
 
-    elseif metadata.click == "left" then  -- opens the machine chooser
-        local machine_category_id = global.all_machines.map[line.machine.proto.category]
-        local category_prototypes = global.all_machines.categories[machine_category_id].machines
+            local applicable_prototypes = {}  -- determine whether there's more than one machine for this recipe
+            for _, machine_proto in ipairs(category_prototypes) do
+                if Line.is_machine_applicable(line, machine_proto) then
+                    table.insert(applicable_prototypes, machine_proto)
+                end
+            end
 
-        local applicable_prototypes = {}  -- determine whether there's more than one machine for this recipe
-        for _, machine_proto in ipairs(category_prototypes) do
-            if Line.is_machine_applicable(line, machine_proto) then
-                table.insert(applicable_prototypes, machine_proto)
+            if #applicable_prototypes <= 1 then  -- changing machines only makes sense if there is something to change to
+                title_bar.enqueue_message(player, {"fp.warning_no_other_machine_choice"}, "warning", 1, true)
+            else
+                local modal_data = {
+                    title = {"fp.pl_machine", 1},
+                    text = {"fp.chooser_machine", line.recipe.proto.localised_name},
+                    text_tooltip = {"fp.chooser_machine_tt"},
+                    click_handler_name = "apply_machine_choice",
+                    button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
+                    object = line.machine
+                }
+                modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
             end
         end
 
-        if #applicable_prototypes > 1 then  -- changing machines only makes sense if there is something to change to
-            local modal_data = {
-                title = {"fp.pl_machine", 1},
-                text = {"fp.chooser_machine", line.recipe.proto.localised_name},
-                click_handler = apply_machine_choice,
-                button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
-                object = line.machine
-            }
-            modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
-        else
-            title_bar.enqueue_message(player, {"fp.error_no_other_machine_choice"}, "error", 1, true)
-        end
+    elseif metadata.click == "right" then
+        if metadata.control then  -- reset this machine to its default state
+            Line.change_machine(line, player, nil, nil)  -- guaranteed to find something
+            line.machine.limit = nil
+            line.machine.force_limit = false
 
-    elseif metadata.click == "right" then  -- open the machine limit options
-        local modal_data = {
-            title = {"fp.options_machine_title"},
-            text = {"fp.options_machine_text", line.machine.proto.localised_name},
-            submission_handler = apply_machine_options,
-            object = line.machine,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "machine_limit",
-                    change_handler = machine_limit_change,
-                    caption = {"fp.options_machine_limit"},
-                    tooltip = {"fp.options_machine_limit_tt"},
-                    text = line.machine.limit or "",
-                    focus = true
-                },
-                {
-                    type = "on_off_switch",
-                    name = "hard_limit",
-                    caption = {"fp.options_machine_hard_limit"},
-                    tooltip = {"fp.options_machine_hard_limit_tt"},
-                    state = line.machine.hard_limit or false
+            calculation.update(player, context.subfactory)
+            main_dialog.refresh(player, "subfactory")
+
+        elseif context.subfactory.matrix_free_items == nil then  -- open the machine options
+            local modal_data = {
+                title = {"fp.options_machine_title"},
+                text = {"fp.options_machine_text", line.machine.proto.localised_name},
+                submission_handler_name = "apply_machine_options",
+                object = line.machine,
+                fields = {
+                    {
+                        type = "numeric_textfield",
+                        name = "machine_limit",
+                        change_handler_name = "handle_machine_limit_change",
+                        caption = {"fp.options_machine_limit"},
+                        tooltip = {"fp.options_machine_limit_tt"},
+                        text = line.machine.limit,  -- can be nil
+                        focus = true
+                    },
+                    {
+                        type = "on_off_switch",
+                        name = "force_limit",
+                        caption = {"fp.options_machine_force_limit"},
+                        tooltip = {"fp.options_machine_force_limit_tt"},
+                        state = line.machine.force_limit or false
+                    }
                 }
             }
-        }
-        modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+            modal_dialog.enter(player, {type="options", modal_data=modal_data})
+        end
     end
 end
 
 
-local function handle_module_click(player, button, metadata)
+local function handle_module_click(player, tags, metadata)
     if not ui_util.check_archive_status(player) then return end
     if metadata.alt then return end  -- not implemented for modules
 
-    local split_string = split_string(button.name, "_")
     local context = data_util.get("context", player)
-
-    local line = Floor.get(context.floor, "Line", split_string[6])
+    local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local module = Machine.get(line.machine, "Module", split_string[7])
+    local module = Machine.get(line.machine, "Module", tags.module_id)
 
     if metadata.click == "left" or metadata.action == "edit" then
-        modal_dialog.enter(player, {type="module", submit=true, delete=true,
-          modal_data={object=module, machine=line.machine}})
+        modal_dialog.enter(player, {type="module", modal_data={object=module, machine=line.machine}})
 
     elseif metadata.action == "delete" then
         Machine.remove(line.machine, module)
@@ -263,18 +316,27 @@ local function handle_module_click(player, button, metadata)
 end
 
 
-local function handle_beacon_click(player, button, metadata)
+local function handle_beacon_click(player, tags, metadata)
     if not ui_util.check_archive_status(player) then return end
-    if metadata.alt then return end  -- not implemented for beacons
 
-    local line_id = tonumber(string.match(button.name, "%d+"))
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if metadata.click == "left" or metadata.action == "edit" then
-        modal_dialog.enter(player, {type="beacon", submit=true, delete=true,
-          modal_data={object=line.beacon, line=line}})
+    if metadata.alt and metadata.click == "left" then
+        local beacon_module = line.beacon.module
+        local module_list = {[beacon_module.proto.name] = beacon_module.amount}
+        local blueprint_entity = {
+            entity_number = 1,
+            name = line.beacon.proto.name,
+            position = {0, 0},
+            items = module_list
+        }
+        data_util.create_cursor_blueprint(player, {blueprint_entity})
+        main_dialog.toggle(player)
+
+    elseif metadata.click == "left" or metadata.action == "edit" then
+        modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
 
     elseif metadata.action == "delete" then
         Line.set_beacon(line, nil)
@@ -284,13 +346,13 @@ local function handle_beacon_click(player, button, metadata)
 end
 
 
-local function apply_item_options(player, options, action)
+function GENERIC_HANDLERS.apply_item_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
         local item = ui_state.modal_data.object
         local relevant_line = (item.parent.subfloor) and item.parent.subfloor.defining_line or item.parent
 
-        local current_amount, item_amount = item.amount, options.item_amount or 0
+        local current_amount, item_amount = item.amount, options.item_amount or item.amount
         if item.class ~= "Ingredient" then
             local other_class = (item.class == "Product") and "Byproduct" or "Product"
             local corresponding_item = Line.get_by_type_and_name(relevant_line, other_class,
@@ -312,14 +374,11 @@ local function apply_item_options(player, options, action)
     end
 end
 
-local function handle_item_click(player, button, metadata)
-    local split_string = split_string(button.name, "_")
+local function handle_item_click(player, tags, metadata)
     local context = data_util.get("context", player)
-
-    local line = Floor.get(context.floor, "Line", split_string[6])
+    local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local class = split_string[5]
-    local item = Line.get(line, class, split_string[7])
+    local item = Line.get(line, tags.class, tags.item_id)
 
     if metadata.alt then
         data_util.execute_alt_action(player, "show_item", {item=item.proto, click=metadata.click})
@@ -328,10 +387,10 @@ local function handle_item_click(player, button, metadata)
         return
 
     elseif metadata.click == "left" and item.proto.type ~= "entity" then  -- Handles the specific type of item actions
-        if class == "Product" then -- Set the priority product
+        if tags.class == "Product" then -- Set the priority product
             if line.Product.count < 2 then
-                title_bar.enqueue_message(player, {"fp.error_no_prioritizing_single_product"}, "error", 1, true)
-            else
+                title_bar.enqueue_message(player, {"fp.warning_no_prioritizing_single_product"}, "warning", 1, true)
+            elseif context.subfactory.matrix_free_items == nil then
                 -- Remove the priority_product if the already selected one is clicked
                 line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
 
@@ -339,23 +398,28 @@ local function handle_item_click(player, button, metadata)
                 main_dialog.refresh(player, "subfactory")
             end
 
-        elseif class == "Ingredient" then
-            modal_dialog.enter(player, {type="recipe", modal_data={product=item, production_type="produce",
-              add_after_position=((metadata.shift) and line.gui_position or nil)}})
+        else  -- Byproduct or Ingredient
+            local production_type = (tags.class == "Byproduct") and "consume" or "produce"
+            -- The sequential solver does not support byproduct recipes at the moment
+            if production_type == "consume" and context.subfactory.matrix_free_items == nil then
+                title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
+            else
+                modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto,
+                  production_type=production_type, add_after_position=((metadata.shift) and line.gui_position or nil)}})
+            end
         end
 
-    elseif metadata.click == "right" then  -- Opens the percentage dialog for this item
+    elseif metadata.click == "right" and context.subfactory.matrix_free_items == nil then
         -- Set the view state so that the amount shown in the dialog makes sense
-        local view_actually_changed = view_state.select(player, "items_per_timescale")
-        if view_actually_changed then main_dialog.refresh(player, "subfactory") end
+        view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
 
-        local type_localised_string = {"fp.pl_" .. class:lower(), 1}
-        local produce_consume = (class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
+        local type_localised_string = {"fp.pl_" .. tags.class:lower(), 1}
+        local produce_consume = (tags.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
 
         local modal_data = {
             title = {"fp.options_item_title", type_localised_string},
             text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler = apply_item_options,
+            submission_handler_name = "apply_item_options",
             object = item,
             fields = {
                 {
@@ -369,7 +433,7 @@ local function handle_item_click(player, button, metadata)
                 }
             }
         }
-        modal_dialog.enter(player, {type="options", submit=true, modal_data=modal_data})
+        modal_dialog.enter(player, {type="options", modal_data=modal_data})
     end
 end
 
@@ -387,9 +451,9 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
 
     for _, fuel_proto in pairs(applicable_prototypes) do
         local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
-        fuel_proto.fuel_value, timescale)
+          fuel_proto.fuel_value, timescale)
         local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-        fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
+          fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
 
         local category_id = global.all_fuels.map[fuel_proto.category]
         local definition = {
@@ -399,7 +463,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
             localised_name = fuel_proto.localised_name,
             amount_line = number_tooltip or "",
             tooltip_appendage = data_util.get_attributes("fuels", fuel_proto),
-            selected = (current_proto.type == fuel_proto.type and current_proto.id == fuel_proto.id)
+            selected = (current_proto.category == fuel_proto.category and current_proto.id == fuel_proto.id)
         }
         table.insert(button_definitions, definition)
     end
@@ -407,7 +471,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
     return button_definitions
 end
 
-local function apply_fuel_choice(player, new_fuel_id_string)
+function GENERIC_HANDLERS.apply_fuel_choice(player, new_fuel_id_string, _)
     local ui_state = data_util.get("ui_state", player)
 
     local split_string = split_string(new_fuel_id_string, "_")
@@ -418,10 +482,9 @@ local function apply_fuel_choice(player, new_fuel_id_string)
     main_dialog.refresh(player, "subfactory")
 end
 
-local function handle_fuel_click(player, button, metadata)
-    local line_id = tonumber(string.match(button.name, "%d+"))
+local function handle_fuel_click(player, tags, metadata)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", line_id)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local fuel = line.machine.fuel  -- must exist to be able to get here
 
@@ -432,23 +495,25 @@ local function handle_fuel_click(player, button, metadata)
         return
 
     elseif metadata.click == "left" then
-        modal_dialog.enter(player, {type="recipe", modal_data={product=fuel, production_type="produce",
+        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, production_type="produce",
           add_after_position=((metadata.shift) and line.gui_position or nil)}})
 
     elseif metadata.click == "right" then
-        -- Applicable fuels come from all categories that this burner supports
         local applicable_prototypes = {}
+        -- Applicable fuels come from all categories that this burner supports
         for category_name, _ in pairs(line.machine.proto.burner.categories) do
             local category_id = global.all_fuels.map[category_name]
-            for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-                table.insert(applicable_prototypes, fuel_proto)
+            if category_id ~= nil then
+                for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
+                    table.insert(applicable_prototypes, fuel_proto)
+                end
             end
         end
 
         local modal_data = {
             title = {"fp.pl_fuel", 1},
             text = {"fp.chooser_fuel", line.machine.proto.localised_name},
-            click_handler = apply_fuel_choice,
+            click_handler_name = "apply_fuel_choice",
             button_definitions = compile_fuel_chooser_buttons(player, line, applicable_prototypes),
             object = fuel
         }
@@ -456,80 +521,74 @@ local function handle_fuel_click(player, button, metadata)
     end
 end
 
+
 -- ** EVENTS **
 production_handler.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_production_recipe_%d+$",
-            timeout = 20,
+            name = "toggle_line",
+            handler = handle_toggle_click
+        },
+        {
+            name = "checkmark_line",
+            handler = handle_done_click
+        },
+        {
+            name = "act_on_line_recipe",
+            timeout = 10,
             handler = handle_recipe_click
         },
         {
-            pattern = "^fp_sprite%-button_production_machine_%d+$",
+            name = "act_on_line_machine",
             handler = handle_machine_click
         },
         {
-            pattern = "^fp_sprite%-button_production_add_module_%d+$",
-            timeout = 20,
-            handler = (function(player, element, _)
-                local line_id = tonumber(string.match(element.name, "%d+"))
-                local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
-                modal_dialog.enter(player, {type="module", submit=true, modal_data={object=nil, machine=line.machine}})
+            name = "add_line_module",
+            handler = (function(player, tags, _)
+                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
+                modal_dialog.enter(player, {type="module", modal_data={object=nil, machine=line.machine}})
             end)
         },
         {
-            pattern = "^fp_sprite%-button_production_machine_Module_%d+_%d+$",
-            timeout = 20,
+            name = "act_on_line_module",
             handler = handle_module_click
         },
         {
-            pattern = "^fp_sprite%-button_production_add_beacon_%d+$",
-            timeout = 20,
-            handler = (function(player, element, _)
-                local line_id = tonumber(string.match(element.name, "%d+"))
-                local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
-                modal_dialog.enter(player, {type="beacon", submit=true, modal_data={object=nil, line=line}})
+            name = "add_line_beacon",
+            handler = (function(player, tags, _)
+                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
+                modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
             end)
         },
         {
-            pattern = "^fp_sprite%-button_production_beacon_%d+$",
-            timeout = 20,
+            name = "act_on_line_beacon",
             handler = handle_beacon_click
         },
-        {   -- This catches Product, Byproduct and Ingredient, but not fuel
-            pattern = "^fp_sprite%-button_production_item_[A-Z][a-z]+_%d+_%d+$",
-            timeout = 20,
+        {
+            name = "act_on_line_item",
             handler = handle_item_click
         },
-        {   -- This only the fuel button (no item id necessary)
-            pattern = "^fp_sprite%-button_production_fuel_%d+$",
-            timeout = 20,
-            handler = handle_fuel_click
-        }
-    },
-    on_gui_checked_state_changed = {
         {
-            pattern = "^fp_checkbox_production_toggle_%d+$",
-            handler = handle_toggle_change
+            name = "act_on_line_fuel",
+            handler = handle_fuel_click
         }
     },
     on_gui_text_changed = {
         {
-            pattern = "^fp_textfield_production_percentage_%d+$",
+            name = "line_percentage",
             handler = handle_percentage_change
         },
         {
-            pattern = "^fp_textfield_production_comment_%d+$",
-            handler = (function(player, element)
-                local line_id = tonumber(string.match(element.name, "%d+"))
-                local line = Floor.get(data_util.get("context", player).floor, "Line", line_id)
-                line.comment = element.text
+            name = "line_comment",
+            handler = (function(player, tags, metadata)
+                local floor = data_util.get("context", player).floor
+                Floor.get(floor, "Line", tags.line_id).comment = metadata.text
             end)
         }
     },
     on_gui_confirmed = {
         {
-            pattern = "^fp_textfield_production_percentage_%d+$",
+            name = "line_percentage",
             handler = handle_percentage_confirmation
         }
     }

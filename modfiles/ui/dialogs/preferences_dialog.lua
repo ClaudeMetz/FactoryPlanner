@@ -12,16 +12,14 @@ local function add_preference_box(content_frame, type)
 end
 
 local function refresh_defaults_table(player, modal_elements, type, category_id)
-    local table_prototypes, all_prototypes, category_addendum
+    local table_prototypes, all_prototypes
 
     if not category_id then
         table_prototypes = modal_elements[type]
         all_prototypes = global["all_" .. type][type]
-        category_addendum = ""
     else
         table_prototypes = modal_elements[type][category_id]
         all_prototypes = global["all_" .. type].categories[category_id][type]
-        category_addendum = ("_" .. category_id)
     end
 
     table_prototypes.clear()
@@ -34,9 +32,9 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
             or prototype.localised_name
         local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
 
-        table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip,
-          name="fp_sprite-button_preference_default_" .. type .. "_" .. prototype_id .. category_addendum,
-          style=style, mouse_button_filter={"left"}}
+        table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
+          tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_id=prototype_id,
+          category_id=category_id}, mouse_button_filter={"left"}}
     end
 end
 
@@ -51,40 +49,53 @@ function preference_structures.checkboxes(preferences, content_frame, type, pref
         local identifier = type .. "_" .. pref_name
         local caption = {"fp.info_label", {"fp.preference_" .. identifier}}
         local tooltip ={"fp.preference_" .. identifier .. "_tt"}
-        flow_checkboxes.add{type="checkbox", name=("fp_checkbox_preference_" .. identifier),
-          state=preferences[pref_name], caption=caption, tooltip=tooltip}
+        flow_checkboxes.add{type="checkbox", state=preferences[pref_name], caption=caption, tooltip=tooltip,
+          tags={mod="fp", on_gui_checked_state_changed="toggle_preference", type=type, name=pref_name}}
     end
 end
 
 function preference_structures.mb_defaults(preferences, content_frame)
     local mb_defaults = preferences.mb_defaults
-
     local preference_box = add_preference_box(content_frame, "mb_defaults")
-    local flow_mb_defaults = preference_box.add{type="flow", direction="horizontal"}
-    flow_mb_defaults.style.vertical_align = "center"
 
+    local function add_mb_default_button(parent_flow, type)
+        local flow = parent_flow.add{type="flow", direction="horizontal"}
+        flow.style.vertical_align = "center"
+        flow.style.horizontal_spacing = 8
 
-    local function add_mb_default(type)
-        flow_mb_defaults.add{type="label", caption={"fp.pu_" .. type, 1}}
-
-        local choose_elem_button = flow_mb_defaults.add{type="choose-elem-button", elem_type="item",
-          name="fp_choose-elem-button_mb_default_" .. type, style="fp_sprite-button_inset_tiny",
-          elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}}}
-        choose_elem_button.elem_value = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
-        choose_elem_button.style.margin = {0, 12, 0, 4}
+        flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_" .. type}},
+          tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
+        local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
+        flow.add{type="choose-elem-button", elem_type="item", item=item, style="fp_sprite-button_inset_tiny",
+          elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}},
+          tags={mod="fp", on_gui_elem_changed="change_mb_default", type=type}}
     end
 
-    add_mb_default("machine")
-    add_mb_default("beacon")
+    local table_mb_defaults = preference_box.add{type="table", column_count=3}
+    table_mb_defaults.style.horizontal_spacing = 18
+    -- Table alignment is so stupid
+    table_mb_defaults.style.column_alignments[1] = "left"
+    table_mb_defaults.style.column_alignments[2] = "right"
+    table_mb_defaults.style.column_alignments[3] = "right"
 
+    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_machine", 1}}}
+    add_mb_default_button(table_mb_defaults, "machine")
+    add_mb_default_button(table_mb_defaults, "machine_secondary")
 
-    flow_mb_defaults.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_amount"}},
-      tooltip={"fp.preference_mb_default_amount_tt"}}
-    local textfield_amount = flow_mb_defaults.add{type="textfield", name="fp_textfield_mb_default_ampimt",
-      text=mb_defaults.beacon_count}
+    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_beacon", 1}}}
+    add_mb_default_button(table_mb_defaults, "beacon")
+
+    local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
+    beacon_amount_flow.style.vertical_align = "center"
+    beacon_amount_flow.style.horizontal_spacing = 8
+
+    beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
+      tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
+
+    local textfield_amount = beacon_amount_flow.add{type="textfield", text=tostring(mb_defaults.beacon_count or ""),
+      tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
-    textfield_amount.style.width = 40
-    textfield_amount.style.margin = {0, 8}
+    textfield_amount.style.width = 42
 end
 
 function preference_structures.prototypes(player, content_frame, modal_elements, type)
@@ -96,7 +107,6 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 
     local function add_defaults_table(column_count, category_id)
         local frame = table_prototypes.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
-        frame.style.right_margin = 6
         local table = frame.add{type="table", column_count=column_count, style="filter_slot_table"}
 
         if category_id then
@@ -139,15 +149,14 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 end
 
 
-local function handle_checkbox_preference_change(player, element)
-    local type = split_string(element.name, "_")[4]
-    local preference_name = string.gsub(element.name, "fp_checkbox_preference_" .. type .. "_", "")
+local function handle_checkbox_preference_change(player, tags, metadata)
+    local preference_name = tags.name
+    data_util.get("preferences", player)[preference_name] = metadata.state
 
-    data_util.get("preferences", player)[preference_name] = element.state
     local refresh = data_util.get("modal_data", player).refresh
 
-    if type == "production" or preference_name == "round_button_numbers" then
-        refresh.production_table = true
+    if tags.type == "production" or preference_name == "round_button_numbers" then
+        refresh.production = true
     end
 
     if preference_name == "toggle_column" then
@@ -156,25 +165,23 @@ local function handle_checkbox_preference_change(player, element)
 
     if preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
-        refresh.ingredient_satisfaction = (element.state)
-
-        refresh.production_table = true
+        refresh.update_ingredient_satisfaction = (metadata.state)
+        refresh.production = true  -- always refresh production
     end
 end
 
-local function handle_mb_default_change(player, element)
+local function handle_mb_default_change(player, tags, metadata)
     local mb_defaults = data_util.get("preferences", player).mb_defaults
-    local type = string.gsub(element.name, "fp_choose%-elem%-button_mb_default_", "")
-    local module_name = element.elem_value
+    local module_name = metadata.elem_value
 
     if module_name == nil then
-        mb_defaults[type] = nil
+        mb_defaults[tags.type] = nil
     else
         -- Find the appropriate prototype from the list by its name
         for _, category in pairs(global.all_modules.categories) do
             for _, module_proto in pairs(category.modules) do
                 if module_proto.name == module_name then
-                    mb_defaults[type] = module_proto
+                    mb_defaults[tags.type] = module_proto
                     return
                 end
             end
@@ -182,14 +189,15 @@ local function handle_mb_default_change(player, element)
     end
 end
 
-local function handle_default_prototype_change(player, element, metadata)
-    local split_name = split_string(element.name, "_")
-    local type, prototype_id, category_id = split_name[5], split_name[6], split_name[7]
+local function handle_default_prototype_change(player, tags, metadata)
+    local type = tags.type
+    local category_id = tags.category_id
 
     local modal_data = data_util.get("modal_data", player)
     if type == "belts" then modal_data.refresh.view_state = true end
+    if type == "wagons" then modal_data.refresh.production = true end
 
-    prototyper.defaults.set(player, type, prototype_id, category_id)
+    prototyper.defaults.set(player, type, tags.prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
 
     -- If this was an alt-click, set this prototype on every category that also has it
@@ -197,11 +205,13 @@ local function handle_default_prototype_change(player, element, metadata)
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for secondary_category_id, category in pairs(global["all_" .. type].categories) do
-            local secondary_prototype_id = category.map[new_default_prototype.name]
+            if #category[type] > 1 then  -- don't attempt to change categories with only one machine
+                local secondary_prototype_id = category.map[new_default_prototype.name]
 
-            if secondary_prototype_id ~= nil then
-                prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
-                refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category_id)
+                if secondary_prototype_id ~= nil then
+                    prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
+                    refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category_id)
+                end
             end
         end
     end
@@ -223,7 +233,7 @@ function preferences_dialog.open(player, modal_data)
     local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
     flow_content.style.horizontal_spacing = 12
     local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
-    flow_content.style.maximal_height = main_dialog_dimensions.height * 0.75
+    flow_content.style.maximal_height = main_dialog_dimensions.height * 0.85
 
     local function add_content_frame()
         local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}
@@ -237,18 +247,20 @@ function preferences_dialog.open(player, modal_data)
     local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
+    label_preferences_info.style.width = 330
 
     local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
       "ingredient_satisfaction", "round_button_numbers"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
-    local production_preference_names = {"toggle_column", "pollution_column", "line_comment_column"}
+    local production_preference_names = {"toggle_column", "done_column", "pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
     preference_structures.mb_defaults(preferences, left_content_frame)
 
     preference_structures.prototypes(player, left_content_frame, modal_elements, "belts")
     preference_structures.prototypes(player, left_content_frame, modal_elements, "beacons")
+    preference_structures.prototypes(player, left_content_frame, modal_elements, "wagons")
 
     local right_content_frame = add_content_frame()
 
@@ -257,28 +269,35 @@ function preferences_dialog.open(player, modal_data)
 end
 
 function preferences_dialog.close(player, _)
+    -- We refresh all these things only when closing to avoid duplicate refreshes
     local refresh = data_util.get("modal_data", player).refresh
 
-    if refresh.ingredient_satisfaction then
+    if refresh.update_ingredient_satisfaction then
         local player_table = data_util.get("table", player)
         Factory.update_ingredient_satisfactions(player_table.factory)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
 
+    local context_to_refresh = nil  -- don't refresh by default
+
+    -- The order of these matters, they go from smallest context to biggest
+    if refresh.production then
+        context_to_refresh = "production"
+    end
+
     if refresh.view_state then
+        -- Rebuilding state requires every button that shows item amounts to refresh
         view_state.rebuild_state(player)
-        main_dialog.refresh(player, "subfactory")
+        context_to_refresh = "production"
     end
 
     if refresh.calculations then
         local context = data_util.get("context", player)
         calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        context_to_refresh = "subfactory"
     end
 
-    if refresh.production_table then
-        main_dialog.refresh(player, {"production_table"})
-    end
+    if context_to_refresh then main_dialog.refresh(player, context_to_refresh) end
 end
 
 
@@ -286,28 +305,28 @@ end
 preferences_dialog.gui_events = {
     on_gui_click = {
         {
-            pattern = "^fp_sprite%-button_preference_default_[a-z]+_%d+_?%d*$",
+            name = "select_preference_default",
             handler = handle_default_prototype_change
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_textfield_mb_default_amount",
-            handler = (function(player, element)
+            name = "mb_default_beacon_amount",
+            handler = (function(player, _, metadata)
                 local mb_defaults = data_util.get("preferences", player).mb_defaults
-                mb_defaults.beacon_count = tonumber(element.text)
+                mb_defaults.beacon_count = tonumber(metadata.text)
             end)
         }
     },
     on_gui_checked_state_changed = {
         {
-            pattern = "^fp_checkbox_preference_[a-z]+_[a-z_]+$",
+            name = "toggle_preference",
             handler = handle_checkbox_preference_change
         }
     },
     on_gui_elem_changed = {
         {
-            pattern = "^fp_choose%-elem%-button_mb_default_[a-z]+$",
+            name = "change_mb_default",
             handler = handle_mb_default_change
         }
     }

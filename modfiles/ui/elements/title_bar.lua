@@ -3,69 +3,75 @@ title_bar = {}
 -- ** LOCAL UTIL **
 local function configure_pause_button_style(button, pause_on_interface)
     if pause_on_interface then
-        button.style = "fp_sprite-button_tool_active"
+        button.style = "flib_selected_frame_action_button"
         button.sprite = "utility/pause"
-        button.clicked_sprite = "fp_sprite_pause_light"
     else
         button.style = "frame_action_button"
         button.sprite = "fp_sprite_pause_light"
-        button.clicked_sprite = "utility/pause"
     end
 end
 
-local function toggle_paused_state(player, button)
+local function toggle_paused_state(player, _, _)
     if not game.is_multiplayer() then
         local preferences = data_util.get("preferences", player)
         preferences.pause_on_interface = not preferences.pause_on_interface
 
-        configure_pause_button_style(button, preferences.pause_on_interface)
+        local main_elements = data_util.get("main_elements", player)
+        local button_pause = main_elements.title_bar.pause_button
+        configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
-        local frame_main_dialog = data_util.get("main_elements", player).main_frame
-        main_dialog.set_pause_state(player, frame_main_dialog)
+        main_dialog.set_pause_state(player, main_elements.main_frame)
     end
 end
+
 
 -- ** TOP LEVEL **
 function title_bar.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.title_bar = {}
 
-    local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal"}
-    flow_title_bar.style.height = 28
-    flow_title_bar.style.margin = {2, 0, 4, 4}
+    local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal",
+      tags={mod="fp", on_gui_click="re-center_main_dialog"}}
     flow_title_bar.style.horizontal_spacing = 8
+    flow_title_bar.drag_target = main_elements.main_frame
+    -- the separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
+    flow_title_bar.style.height = TITLE_BAR_HEIGHT
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title"}
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
+      ignored_by_interaction=true}
 
-    local label_hint = flow_title_bar.add{type="label"}
+    local label_hint = flow_title_bar.add{type="label", ignored_by_interaction=true}
     label_hint.style.font = "heading-2"
+    label_hint.style.margin = {0, 0, 0, 8}
+    label_hint.style.horizontally_squashable = true
     main_elements.title_bar["hint_label"] = label_hint
 
-    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle"}
-    drag_handle.drag_target = main_elements.main_frame
-    drag_handle.style.margin = {1, 2, 0, 2}
+    local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
+      ignored_by_interaction=true}
+    drag_handle.style.minimal_width = 80
 
     -- Buttons
-    flow_title_bar.add{type="button", name="fp_button_title_bar_tutorial", caption={"fp.tutorial"},
-      style="fp_button_frame_tool",  mouse_button_filter={"left"}}
-    flow_title_bar.add{type="button", name="fp_button_title_bar_preferences", caption={"fp.preferences"},
-      style="fp_button_frame_tool", mouse_button_filter={"left"}}
+    flow_title_bar.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
+      tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
+    flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
+      tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
 
     local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = 24
 
-    local button_pause = flow_title_bar.add{type="sprite-button", name="fp_sprite-button_title_bar_pause_game",
+    local button_pause = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_pause_game"},
       tooltip={"fp.pause_on_interface"}, enabled=(not game.is_multiplayer()), mouse_button_filter={"left"}}
     button_pause.hovered_sprite = "utility/pause"
+    button_pause.clicked_sprite = "utility/pause"
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = data_util.get("preferences", player)
     configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
-    local button_close = flow_title_bar.add{type="sprite-button", name="fp_sprite-button_title_bar_close_interface",
+    local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
       sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
       tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
-    button_close.style.padding = 2
+    button_close.style.padding = 1
 end
 
 
@@ -91,6 +97,12 @@ function title_bar.refresh_message(player)
     -- The message types are ordered by priority
     local types = {"error", "warning", "hint"}
 
+    -- TODO this is not the proper way to do this probably, but it works
+    local subfactory = ui_state.context.subfactory
+    if subfactory and subfactory.valid and subfactory.linearly_dependant then
+        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 1, false)
+    end
+
     local new_message = nil
     -- Go over the all types and messages, trying to find one that should be shown
     for _, type in ipairs(types) do
@@ -106,8 +118,10 @@ function title_bar.refresh_message(player)
         if new_message ~= nil then break end
     end
 
+    -- Set caption and hide if no message is shown so that the margins work out
     title_bar_elements.hint_label.caption = (new_message) and
       {"fp." .. new_message.type .. "_message", new_message.text} or ""
+    title_bar_elements.hint_label.visible = (new_message)
 
     -- Decrease the lifetime of every queued message
     for index, message in pairs(message_queue) do
@@ -121,20 +135,29 @@ end
 title_bar.gui_events = {
     on_gui_click = {
         {
-            name = "fp_sprite-button_title_bar_close_interface",
-            handler = (function(player, _, _)
-                main_dialog.toggle(player)  -- can't use simple form because main_dialog is not yet defined
+            name = "re-center_main_dialog",
+            handler = (function(player, _, metadata)
+                if metadata.click == "middle" then
+                    local ui_state = data_util.get("ui_state", player)
+                    local main_frame = ui_state.main_elements.main_frame
+                    ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+                end
             end)
         },
         {
-            name = "fp_sprite-button_title_bar_pause_game",
+            name = "close_main_dialog",
+            handler = (function(player, _, _)
+                main_dialog.toggle(player)
+            end)
+        },
+        {
+            name = "toggle_pause_game",
             handler = toggle_paused_state
         },
         {
-            pattern = "^fp_button_title_bar_[a-z]+$",
-            handler = (function(player, element, _)
-                local dialog_name = string.gsub(element.name, "fp_button_title_bar_", "")
-                modal_dialog.enter(player, {type=dialog_name})
+            name = "title_bar_open_dialog",
+            handler = (function(player, tags, _)
+                modal_dialog.enter(player, {type=tags.type})
             end)
         }
     }
@@ -142,9 +165,6 @@ title_bar.gui_events = {
 
 title_bar.misc_events = {
     fp_toggle_pause = (function(player, _)
-        local main_elements = data_util.get("main_elements", player)
-        if main_elements.main_frame and main_elements.main_frame.visible then
-            toggle_paused_state(player, main_elements.title_bar.pause_button)
-        end
+        if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
     end)
 }

@@ -43,6 +43,7 @@ function Floor.insert_at(self, gui_position, object)
     return Collection.insert_at(self[object.class], gui_position, object)
 end
 
+
 function Floor.remove(self, dataset)
     -- Remove the subfloor(s) associated to a line recursively, so they don't hang around
     if dataset.class == "Line" and dataset.subfloor ~= nil then
@@ -77,6 +78,7 @@ function Floor.remove_if_empty(self)
     return false  -- returns whether the floor was deleted or not
 end
 
+
 function Floor.replace(self, dataset, object)
     object.parent = self
     return Collection.replace(self[dataset.class], dataset, object)
@@ -103,53 +105,37 @@ end
 function Floor.get_component_data(self, component_table)
     local components = component_table or {machines={}, modules={}}
 
-    local function add_to_count(table, object)
-        local entry = table[object.proto.name]
-        if entry == nil then
-            table[object.proto.name] = {
-                proto = object.proto,
-                amount = object.amount
-            }
+    local function add_component(table, proto, amount)
+        local component = table[proto.name]
+        if component == nil then
+            table[proto.name] = {proto = proto, amount = amount}
         else
-            entry.amount = entry.amount + object.amount
+            component.amount = component.amount + amount
         end
     end
 
+    local function add_machine(entity_proto, amount)
+        if not entity_proto.built_by_item then return end
+        add_component(components.machines, entity_proto.built_by_item, amount)
+    end
+
+    -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
+    -- would mean the subfactory machine total is equal to the floor total of the top floor
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
-        -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
-        -- would mean the subfactory machine total is equal to the floor total of the top floor
         if line.subfloor == nil then
-            local machine = line.machine
-            local ceil_machine_count = math.ceil(machine.count)
+            local ceil_machine_count = math.ceil(line.machine.count)
 
-            -- Machines
-            add_to_count(components.machines, {
-                proto = machine.proto,
-                amount = ceil_machine_count
-            })
-
-            -- Modules
-            for _, module in pairs(Machine.get_in_order(machine, "Module")) do
-                add_to_count(components.modules, {
-                    proto = module.proto,
-                    amount = ceil_machine_count * module.amount
-                })
+            add_machine(line.machine.proto, ceil_machine_count)
+            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+                add_component(components.modules, module.proto, ceil_machine_count * module.amount)
             end
 
-            -- Beacons
             local beacon = line.beacon
             if beacon and beacon.total_amount then
                 local ceil_total_amount = math.ceil(beacon.total_amount)
 
-                add_to_count(components.machines, {
-                    proto = beacon.proto,
-                    amount = ceil_total_amount
-                })
-
-                add_to_count(components.modules, {
-                    proto = beacon.module.proto,
-                    amount = ceil_total_amount * beacon.module.amount
-                })
+                add_machine(beacon.proto, ceil_total_amount)
+                add_component(components.modules, beacon.module.proto, ceil_total_amount * beacon.module.amount)
             end
         end
     end
@@ -181,7 +167,8 @@ function Floor.unpack(packed_self, self)
 
             -- Use that line to create the subfloor, which moves it to the newly created floor
             local subfloor = Floor.init(subfloor_line)  -- sets origin_ and defining_line
-            subfloor.origin_line.comment = packed_line.comment  -- carry over the origin_line's comment
+            subfloor.origin_line.comment = packed_line.comment  -- carry over line comment
+
             Subfactory.add(self.parent, subfloor)
 
             -- Remove the first subfloor line as it has already been created by initializing the subfloor with it

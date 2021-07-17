@@ -89,8 +89,8 @@ function Item.repair(self, _)
     -- If the item-proto is still simplified, validate couldn't repair it, so it has to be removed
     if self.proto.simplified then return false end
 
-    -- If the item is fine, the belt_proto has to be simplified. Thus, we will repair this item
-    -- by converting it to be defined by amount, so the whole can be preserved
+    -- If the item is fine, the belt_proto has to be the things that is invalid. Thus, we will repair
+    -- this item by converting it to be defined by amount, so it can be preserved in some form
     self.required_amount = {
         defined_by = "amount",
         amount = Item.required_amount(self)

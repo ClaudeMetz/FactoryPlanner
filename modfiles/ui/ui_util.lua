@@ -1,27 +1,24 @@
-require("mod-gui")
+mod_gui = require("mod-gui")
 
 ui_util = {
-    mod_gui = {},
     context = {},
     switch = {}
 }
 
 -- ** GUI **
 -- Properly centers the given frame (need width/height parameters cause no API-read exists)
-function ui_util.properly_center_frame(player, frame, width, height)
+function ui_util.properly_center_frame(player, frame, dimensions)
     local resolution, scale = player.display_resolution, player.display_scale
-    local x_offset = ((resolution.width - (width * scale)) / 2)
-    local y_offset = ((resolution.height - (height * scale)) / 2)
+    local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
+    local y_offset = ((resolution.height - (dimensions.height * scale)) / 2)
     frame.location = {x_offset, y_offset}
 end
 
--- Sets basic attributes on the given textfield
 function ui_util.setup_textfield(textfield)
     textfield.lose_focus_on_confirm = true
     textfield.clear_and_focus_on_right_click = true
 end
 
--- Sets up the given textfield as a numeric one, with the specified options
 function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     textfield.lose_focus_on_confirm = true
     textfield.clear_and_focus_on_right_click = true
@@ -30,10 +27,27 @@ function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     textfield.allow_negative = (negative or false)
 end
 
--- Focuses and selects all the text of the given textfield
 function ui_util.select_all(textfield)
     textfield.focus()
     textfield.select_all()
+end
+
+-- Toggles the visibility of the toggle-main-dialog-button
+function ui_util.toggle_mod_gui(player)
+    local enable = data_util.get("settings", player).show_gui_button
+
+    local frame_flow = mod_gui.get_button_flow(player)
+    local mod_gui_button = frame_flow["fp_button_toggle_interface"]
+
+    if enable then
+        if not mod_gui_button then
+            frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
+              tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
+              style=mod_gui.button_style, mouse_button_filter={"left"}}
+        end
+    else
+        if mod_gui_button then mod_gui_button.destroy() end
+    end
 end
 
 
@@ -124,24 +138,6 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
--- **** Mod-GUI ****
--- Create the always-present GUI button to open the main dialog
-function ui_util.mod_gui.create(player)
-    local frame_flow = mod_gui.get_button_flow(player)
-    if not frame_flow["fp_button_toggle_interface"] then
-        frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-          tooltip={"fp.toggle_interface_tt"}, style=mod_gui.button_style, mouse_button_filter={"left"}}
-    end
-
-    frame_flow["fp_button_toggle_interface"].visible = data_util.get("settings", player).show_gui_button
-end
-
--- Toggles the visibility of the toggle-main-dialog-button
-function ui_util.mod_gui.toggle(player)
-    local enable = data_util.get("settings", player).show_gui_button
-    mod_gui.get_button_flow(player)["fp_button_toggle_interface"].visible = enable
-end
-
 
 -- **** Context ****
 -- Creates a blank context referencing which part of the Factory is currently displayed
@@ -181,21 +177,23 @@ end
 -- **** Switch utility ****
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
-function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip, label_first)
+function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)
     if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
 
-    local flow = parent_flow.add{type="flow", name="flow_" .. name, direction="horizontal"}
+    local flow = parent_flow.add{type="flow", direction="horizontal"}
     flow.style.vertical_align = "center"
     local switch, label
 
     local function add_switch()
-        switch = flow.add{type="switch", name="fp_switch_" .. name, switch_state=state,
+        local tags = {mod="fp", on_gui_switch_state_changed=action}
+        for key, value in pairs(additional_tags) do tags[key] = value end
+        switch = flow.add{type="switch", tags=tags, switch_state=state,
           left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
     end
 
     local function add_label()
         caption = (tooltip ~= nil) and {"", caption, " [img=info]"} or caption
-        label = flow.add{type="label", name="label_" .. name, caption=caption, tooltip=tooltip}
+        label = flow.add{type="label", caption=caption, tooltip=tooltip}
         label.style.font = "default-semibold"
     end
 
@@ -203,19 +201,6 @@ function ui_util.switch.add_on_off(parent_flow, name, state, caption, tooltip, l
     else add_switch(); add_label(); label.style.left_margin = 8 end
 
     return switch
-end
-
--- Returns the switch_state of the switch by the given name in the given flow (optionally as a boolean)
-function ui_util.switch.get_state(flow, name, boolean)
-    local state = flow["flow_" .. name]["fp_switch_" .. name].switch_state
-    if boolean then return ui_util.switch.convert_to_boolean(state)
-    else return state end
-end
-
--- Sets the switch_state of the switch by the given name in the given flow (state given as switch_state or boolean)
-function ui_util.switch.set_state(flow, name, state)
-    if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
-    flow["flow_" .. name]["fp_switch_" .. name].switch_state = state
 end
 
 function ui_util.switch.convert_to_boolean(state)

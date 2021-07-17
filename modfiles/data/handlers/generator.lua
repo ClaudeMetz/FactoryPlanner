@@ -40,8 +40,8 @@ function generator.all_recipes()
       {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
         local category_id = NEW.all_machines.map[proto.category]
-        -- Avoid any recipes that have no machine to produce them, or are annoying
-        if category_id ~= nil and not generator_util.is_annoying_recipe(proto) then
+        -- Avoid any recipes that have no machine to produce them, or are irrelevant
+        if category_id ~= nil and not generator_util.is_irrelevant_recipe(proto) then
             local recipe = {
                 name = proto.name,
                 category = proto.category,
@@ -54,7 +54,7 @@ function generator.all_recipes()
                 main_product = proto.main_product,
                 type_counts = {},  -- filled out by format_* below
                 recycling = generator_util.is_recycling_recipe(proto),
-                barreling = generator_util.is_barreling_recipe(proto),
+                barreling = generator_util.is_compacting_recipe(proto),
                 enabling_technologies = researchable_recipes[recipe_name],  -- can be nil
                 use_limitations = true,
                 custom = false,
@@ -72,8 +72,9 @@ function generator.all_recipes()
 
 
     -- Determine all the items that can be inserted usefully into a rocket silo
+    local launch_products_filter = {{filter="has-rocket-launch-products"}}
     local rocket_silo_inputs = {}
-    for _, item in pairs(game.item_prototypes) do  -- (no filter to detect this possible)
+    for _, item in pairs(game.get_filtered_item_prototypes(launch_products_filter)) do
         if table_size(item.rocket_launch_products) > 0 then
             table.insert(rocket_silo_inputs, item)
         end
@@ -86,11 +87,14 @@ function generator.all_recipes()
     for _, proto in pairs(game.entity_prototypes) do
         -- Adds all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
-            local produces_solid = false
             local products = proto.mineable_properties.products
+            if not products then goto incompatible_proto end
+
+            local produces_solid = false
             for _, product in pairs(products) do  -- detects all solid mining recipes
-                if product.type == "item" then produces_solid = true end
+                if product.type == "item" then produces_solid = true; break end
             end
+            if not produces_solid then goto incompatible_proto end
 
             if produces_solid then
                 local recipe = custom_recipe()
@@ -124,6 +128,8 @@ function generator.all_recipes()
             --else
                 -- crude-oil and angels-natural-gas go here (not interested atm)
             end
+
+            ::incompatible_proto::
 
         -- Add offshore-pump fluid recipes
         elseif proto.fluid then
@@ -266,6 +272,7 @@ function generator.all_items()
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
             local proto = game[type .. "_prototypes"][proto_name]
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
+            local stack_size = (type == "item") and proto.stack_size or nil
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
             local hidden = false  -- "entity" types are never hidden
@@ -278,6 +285,7 @@ function generator.all_items()
                 sprite = type .. "/" .. proto.name,
                 localised_name = localised_name,
                 hidden = hidden,
+                stack_size = stack_size,
                 ingredient_only = not item_details.is_product,
                 temperature = item_details.temperature,
                 order = order,
@@ -310,6 +318,11 @@ function generator.all_machines()
         -- Determine data related to the energy source
         local energy_type, emissions, burner = nil, 0, nil  -- emissions remain at 0 if no energy source is present
         local energy_usage, energy_drain = (proto.energy_usage or proto.max_energy_usage or 0), 0
+
+        -- Determine the name of the item that actually builds this machine for the item requester
+        -- There can technically be more than one, but bots use the first one, so I do too
+        local items_to_place_this, built_by_item = proto.items_to_place_this, nil
+        if items_to_place_this then built_by_item = items_to_place_this[1].name end
 
         -- Determine the details of this entities energy source
         local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
@@ -365,10 +378,11 @@ function generator.all_machines()
             energy_usage = energy_usage,
             energy_drain = energy_drain,
             emissions = emissions,
+            built_by_item = built_by_item,
             base_productivity = (proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
-            is_rocket_silo = (proto.rocket_parts_required ~= nil),
+            launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
             burner = burner
         }
 
@@ -451,6 +465,50 @@ function generator.all_machines()
     return generator_util.data_structure.get()
 end
 
+function generator.machines_second_pass()
+    -- Go over all recipes to find unused categories
+    local used_category_names = {}
+    for _, recipe_proto in pairs(NEW.all_recipes.recipes) do
+        used_category_names[recipe_proto.category] = true
+    end
+
+    local unused_categories = {}
+    for id, category in pairs(NEW.all_machines.categories) do
+        if not used_category_names[category.name] then
+            unused_categories[category.name] = id
+        end
+    end
+
+    local removed_category_count = 0  -- (this loop is incredibly stupid)
+    for category_name, category_id in pairs(unused_categories) do
+        local adjusted_category_id = category_id - removed_category_count
+        removed_category_count = removed_category_count + 1
+
+        table.remove(NEW.all_machines.categories, adjusted_category_id)  -- fixes gaps automatically
+        NEW.all_machines.map[category_name] = nil
+
+        -- Fix up category id map caused by the removed category
+        local machine_map = NEW.all_machines.map
+        for name, id in pairs(machine_map) do
+            if id >= adjusted_category_id then
+                machine_map[name] = machine_map[name] - 1
+            end
+        end
+    end
+
+
+    -- Replace built_by_item names with prototype references
+    local item_prototypes = NEW.all_items.types[NEW.all_items.map["item"]]
+    for _, category in pairs(NEW.all_machines.categories) do
+        for _, machine in pairs(category.machines) do
+            if machine.built_by_item then
+                local item_proto_id = item_prototypes.map[machine.built_by_item]
+                machine.built_by_item = item_prototypes.items[item_proto_id]
+            end
+        end
+    end
+end
+
 
 -- Generates a table containing all available transport belts
 function generator.all_belts()
@@ -513,6 +571,7 @@ function generator.all_fuels()
                 sprite = "item/" .. proto.name,
                 category = proto.fuel_category,
                 fuel_value = proto.fuel_value,
+                stack_size = proto.stack_size,
                 emissions_multiplier = proto.fuel_emissions_multiplier
             }
         end
@@ -580,15 +639,25 @@ end
 function generator.all_beacons()
     generator_util.data_structure.init("simple", "beacons")
 
+    local item_prototypes = NEW.all_items.types[NEW.all_items.map["item"]]
+
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
-        if sprite ~= nil then
+        if sprite ~= nil and proto.module_inventory_size then
+            -- Beacons can refer to the actual item prototype right away because they are built after items are
+            local items_to_place_this, built_by_item = proto.items_to_place_this, nil
+            if items_to_place_this then
+                local item_proto_id = item_prototypes.map[items_to_place_this[1].name]
+                built_by_item = item_prototypes.items[item_proto_id]
+            end
+
             generator_util.data_structure.insert{
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = sprite,
                 category = "fp_beacon",  -- custom category to be similar to machines
+                built_by_item = built_by_item,
                 allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
                 module_limit = proto.module_inventory_size,
                 effectivity = proto.distribution_effectivity,
@@ -604,6 +673,47 @@ function generator.all_beacons()
         elseif a.effectivity > b.effectivity then return false
         elseif a.energy_usage < b.energy_usage then return true
         elseif a.energy_usage > b.energy_usage then return false end
+    end
+
+    generator_util.data_structure.sort(sorting_function)
+    generator_util.data_structure.generate_map(false)
+    return generator_util.data_structure.get()
+end
+
+
+-- Generates a table containing all available cargo and fluid wagons
+function generator.all_wagons()
+    generator_util.data_structure.init("complex", "categories", "wagons", "category")
+
+    -- Add cargo wagons
+    local cargo_wagon_filter = {{filter="type", type="cargo-wagon"}}
+    for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
+        generator_util.data_structure.insert{
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = generator_util.determine_entity_sprite(proto),
+            rich_text = "[entity=" .. proto.name .. "]",
+            category = "cargo-wagon",
+            storage = proto.get_inventory_size(1)
+        }
+    end
+
+    -- Add fluid wagons
+    local fluid_wagon_filter = {{filter="type", type="fluid-wagon"}}
+    for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
+        generator_util.data_structure.insert{
+            name = proto.name,
+            localised_name = proto.localised_name,
+            sprite = generator_util.determine_entity_sprite(proto),
+            rich_text = "[entity=" .. proto.name .. "]",
+            category = "fluid-wagon",
+            storage = proto.fluid_capacity
+        }
+    end
+
+    local function sorting_function(a, b)
+        if a.storage < b.storage then return true
+        elseif a.storage > b.storage then return false end
     end
 
     generator_util.data_structure.sort(sorting_function)

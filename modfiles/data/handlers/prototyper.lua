@@ -12,7 +12,7 @@ prototyper = {
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
 -- (Load order is important here: machines->recipes->items->fuels)
-local data_types = {"machines", "recipes", "items", "fuels", "belts", "modules", "beacons"}
+local data_types = {"machines", "recipes", "items", "fuels", "belts", "wagons", "modules", "beacons"}
 
 
 -- ** TOP LEVEL **
@@ -22,20 +22,21 @@ function prototyper.setup()
     for _, data_type in ipairs(data_types) do
         NEW["all_" .. data_type] = generator["all_" .. data_type]()
     end
+
+    -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
+    for _, data_type in ipairs(data_types) do
+        local second_pass = generator[data_type .. "_second_pass"]
+        if second_pass ~= nil then second_pass() end
+    end
 end
 
--- Updates the relevant data of the given player to fit the new data
+-- Migrates the default prototypes of the given player
 function prototyper.run(player_table)
-    -- Then, update the default/preferred datasets
     for _, data_type in ipairs(data_types) do
         if player_table.preferences.default_prototypes[data_type] ~= nil then
             prototyper.defaults.migrate(player_table, data_type)
         end
     end
-
-    -- Update the validity of all elements of the factory and archive
-    Collection.validate_datasets(player_table.factory.Subfactory)
-    Collection.validate_datasets(player_table.archive.Subfactory)
 end
 
 -- Overwrites the factorio global data with the new data in lua-global
@@ -45,7 +46,16 @@ function prototyper.finish()
     end
     NEW = nil
 
+    -- Generate new lua-globals acting as a static cache for some important data
     loader.run()
+
+    -- Verify tutorial subfactory so we don't have to later on
+    -- This can't be done on_load since game is not available at that stage
+    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)
+    global.tutorial_subfactory_validity = (not error and Factory.get(imported_tutorial_factory, "Subfactory", 1).valid)
+
+    -- Retain current modset to detect mod changes for subfactories that became invalid
+    global.installed_mods = game.active_mods
 end
 
 

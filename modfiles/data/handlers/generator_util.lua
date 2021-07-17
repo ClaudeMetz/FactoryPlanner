@@ -182,14 +182,16 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     for _, base_ingredient in pairs(recipe_proto.ingredients) do
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
 
-        -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
-        -- Also add proddable_amount so productivity bonus can be un-applied later at the calculation step
-        if base_ingredient.ignore_productivity then
-            formatted_ingredient.ignore_productivity = true
-            formatted_ingredient.proddable_amount = formatted_ingredient.amount
-        end
+        if formatted_ingredient.amount > 0 then
+            -- Productivity applies to all ingredients by default, some exceptions apply (ex. satellite)
+            -- Also add proddable_amount so productivity bonus can be un-applied later in the model
+            if base_ingredient.ignore_productivity then
+                formatted_ingredient.ignore_productivity = true
+                formatted_ingredient.proddable_amount = formatted_ingredient.amount
+            end
 
-        table.insert(ingredients, formatted_ingredient)
+            table.insert(ingredients, formatted_ingredient)
+        end
     end
 
     local indexed_ingredients = create_type_indexed_list(ingredients)
@@ -199,13 +201,16 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     local products = {}
     for _, base_product in pairs(recipe_proto.products) do
         local formatted_product = generate_formatted_item(base_product, "product")
-        table.insert(products, formatted_product)
 
-        -- Update the main product as well, if present
-        if recipe_proto.main_product ~= nil and
-          formatted_product.type == recipe_proto.main_product.type and
-          formatted_product.name == recipe_proto.main_product.name then
-            recipe_proto.main_product = formatted_product
+        if formatted_product.amount > 0 then
+            table.insert(products, formatted_product)
+
+            -- Update the main product as well, if present
+            if recipe_proto.main_product ~= nil and
+            formatted_product.type == recipe_proto.main_product.type and
+            formatted_product.name == recipe_proto.main_product.name then
+                recipe_proto.main_product = formatted_product
+            end
         end
     end
 
@@ -249,47 +254,84 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
 end
 
 
--- Determines whether this recipe is a recycling one or not
--- Compatible with: 'Industrial Revolution', 'Reverse Factory', 'Recycling Machines'
-function generator_util.is_recycling_recipe(proto)
-    local active_mods = {
-        DIR = game.active_mods["IndustrialRevolution"],
-        RF = game.active_mods["reverse-factory"],
-        ZR = game.active_mods["ZRecycling"]
-    }
+-- Active mods table needed for the funtions below
+local active_mods = script.active_mods
 
-    if active_mods.DIR and string.match(proto.name, "^scrap%-.*") then
-        return true
-    elseif active_mods.RF and string.match(proto.name, "^rf%-.*") then
-        return true
-    elseif active_mods.ZR and string.match(proto.name, "^dry411srev%-.*") then
-        return true
-    else
-        return false
+-- Determines whether this recipe is a recycling one or not
+-- Compatible with: 'Industrial Revolution', 'Space Exploration', 'Angel's Petrochem', 'Reverse Factory',
+--   'Recycling Machines'
+local recycling_recipe_mods = {
+    ["IndustrialRevolution"] = {"^scrap%-.*"},
+    ["space-exploration"] = {"^se%-recycle%-.*"},
+    ["angelspetrochem"] = {"^converter%-.*"},
+    ["reverse-factory"] = {"^rf%-.*"},
+    ["ZRecycling"] = {"^dry411srev%-.*"}
+}
+
+local active_recycling_recipe_mods = {}
+for modname, patterns in pairs(recycling_recipe_mods) do
+    for _, pattern in pairs(patterns) do
+        if active_mods[modname] then
+            table.insert(active_recycling_recipe_mods, pattern)
+        end
     end
 end
+
+function generator_util.is_recycling_recipe(proto)
+    for _, pattern in pairs(active_recycling_recipe_mods) do
+        if string.match(proto.name, pattern) then return true end
+    end
+    return false
+end
+
 
 -- Determines whether the given recipe is a barreling or stacking one
--- Compatible with: 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions of it
-function generator_util.is_barreling_recipe(proto)
-    if proto.subgroup.name == "empty-barrel" or proto.subgroup.name == "fill-barrel" then
-        return true
-    elseif string.match(proto.name, "^deadlock%-stacks%-.*") or string.match(proto.name, "^deadlock%-packrecipe%-.*")
-      or string.match(proto.name, "^deadlock%-unpackrecipe%-.*") then
-        return true
-    else
-        return false
+-- Compatible with: 'base', 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions, 'Space Exploration'
+local compacting_recipe_mods = {
+    ["base"] = {"^fill%-.*", "^empty%-.*"},
+    ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
+                                      "^deadlock%-unpackrecipe%-.*"},
+    ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"}
+}
+
+local active_compacting_recipe_mods = {}
+for modname, patterns in pairs(compacting_recipe_mods) do
+    for _, pattern in pairs(patterns) do
+        if active_mods[modname] then
+            table.insert(active_compacting_recipe_mods, pattern)
+        end
     end
 end
 
--- Determines whether this recipe is annoying or not
--- Compatible with: Klonan's Transport/Mining Drones
-function generator_util.is_annoying_recipe(proto)
-    if string.match(proto.name, "^request%-.*") or string.match(proto.name, "^mine%-.*") then
-        return true
-    else
-        return false
+function generator_util.is_compacting_recipe(proto)
+    for _, pattern in pairs(active_compacting_recipe_mods) do
+        if string.match(proto.name, pattern) then return true end
     end
+    return false
+end
+
+
+-- Determines whether this recipe is irrelevant or not and should thus be excluded
+-- Compatible with: 'Klonan's Transport+Mining Drones', 'Deep Storage Unit'
+local irrelevant_recipe_categories = {
+    ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
+    ["Mining_Drones"] = {"mining-depot"},
+    ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
+                             "deep-storage-item-big", "deep-storage-fluid-big",
+                             "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"}
+}
+
+local irrelevant_recipe_categories_lookup = {}
+for mod, categories in pairs(irrelevant_recipe_categories) do
+    for _, category in pairs(categories) do
+        if active_mods[mod] then
+            irrelevant_recipe_categories_lookup[category] = true
+        end
+    end
+end
+
+function generator_util.is_irrelevant_recipe(recipe)
+    return irrelevant_recipe_categories_lookup[recipe.category]
 end
 
 
@@ -309,6 +351,38 @@ function generator_util.determine_entity_sprite(proto)
     end
 
     return nil
+end
+
+-- Determines how long a rocket takes to launch for the given rocket silo prototype
+-- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
+-- due to how the game code is written. If one stage is completed, you can only progress to the next one
+-- in the next tick. No stages can be skipped, meaning a minimal sequence time is around 10 ticks long.
+function generator_util.determine_launch_sequence_time(silo_proto)
+    local rocket_proto = silo_proto.rocket_entity_prototype
+    if not rocket_proto then return nil end  -- meaning this isn't a rocket silo proto
+
+    local rocket_flight_threshold = 0.5  -- hardcoded in the game files
+    local launch_steps = {
+        lights_blinking_open = (1 / silo_proto.light_blinking_speed) + 1,
+        doors_opening = (1 / silo_proto.door_opening_speed) + 1,
+        doors_opened = silo_proto.rocket_rising_delay + 1,
+        rocket_rising = (1 / rocket_proto.rising_speed) + 1,
+        rocket_ready = 14,  -- estimate for satellite insertion delay
+        launch_started = silo_proto.launch_wait_time + 1,
+        engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
+        -- This calculates a fractional amount of ticks. Also, math.log(x) calculates the natural logarithm
+        rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
+          / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
+        lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
+        doors_closing = (1 / silo_proto.door_opening_speed) + 1
+    }
+
+    local total_ticks = 0
+    for _, ticks_taken in pairs(launch_steps) do
+        total_ticks = total_ticks + ticks_taken
+    end
+
+    return (total_ticks / 60)  -- retured value is in seconds
 end
 
 
@@ -339,39 +413,27 @@ end
 -- Adds the tooltip for the given recipe
 function generator_util.add_recipe_tooltip(recipe)
     local tooltip = {"", recipe.localised_name}
-    local current_table = tooltip
-    local current_depth = 1
+    local current_table, next_index = tooltip, 3
 
-    -- Inserts strings in a way to minimize depth ('nestedness') of the localised string
-    local function multi_insert(t)
-        for _, e in pairs(t) do
-            -- Nest localised string deeper if the limit of 20 elements per 'level' is reached
-            if table_size(current_table) == 20 then
-                -- If the depth is more than 8, the serpent deserializer will crash when loading the save
-                -- because the resulting global table will be 'too complex'
-                if current_depth == 8 then return tooltip end
-
-                table.insert(current_table, {""})
-                current_table = current_table[table_size(current_table)]
-                current_depth = current_depth + 1
-            end
-            table.insert(current_table, e)
-        end
+    if recipe.energy ~= nil then
+        current_table, next_index = data_util.build_localised_string({
+          "\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}}, current_table, next_index)
     end
 
-    if recipe.energy ~= nil then multi_insert{"\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}} end
-    for _, item_type in ipairs({"ingredients", "products"}) do
+    for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
-        multi_insert{"\n  ", {"fp.name_value", {locale_key, 2}, ""}}
+        current_table, next_index = data_util.build_localised_string({
+          "\n  ", {"fp.name_value", {locale_key, 2}, ""}}, current_table, next_index)
         if #recipe[item_type] == 0 then
-            multi_insert{"\n    ", {"fp.none"}}
+            current_table, next_index = data_util.build_localised_string({
+              "\n    ", {"fp.none"}}, current_table, next_index)
         else
             for _, item in ipairs(recipe[item_type]) do
                 local name = generator_util.format_temperature_name(item, item.name)
                 local proto = game[item.type .. "_prototypes"][name]
                 local localised_name = generator_util.format_temperature_localised_name(item, proto)
-                multi_insert{("\n    " .. "[" .. item.type .. "=" .. name .. "] " .. item.amount .. "x "),
-                  localised_name}
+                current_table, next_index = data_util.build_localised_string({("\n    " .. "[" .. item.type .. "="
+                  .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)
             end
         end
     end

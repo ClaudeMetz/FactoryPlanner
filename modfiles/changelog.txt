@@ -2,18 +2,321 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    -
+  Changes:
+    - Updated the internal detection of recycling and barreling/stacking recipes to the current set of popular mods
+  Bugfixes:
+    -
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.23
+Date: 11. 07. 2021
+  Features:
+    - Added a button to the utility dialog to export the missing machines and modules as a series of constant combinators that can be hooked up to a requester chest
+  Changes:
+    - The mod now filters out crafting categories in the preferences dialog that don't have any recipes using them (removes the 'basic-crafting' category from vanilla maps)
+  Bugfixes:
+    - Fixed several matrix-solver related crashes (hopefully) that were introduced in the last version
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.22
+Date: 10. 07. 2021
+  Changes:
+    - The mod now makes sure that the main interface fits onto the player's screen when first creating or joining a game
+    - The margin for showing items with very small amounts now scales with the subfactory timescale
+    - Improved performance when adding a product with only one recipe a bit
+  Bugfixes:
+    - Fixed a crash and some other issues related to the background dimming when paused
+    - Fixed an issue where the modal interface dimmer would not layer correctly when loading a save in some cases
+    - Fixed a missing tooltip string on the dialog submit button
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.21
+Date: 04. 07. 2021
+  Features:
+    - Implemented the ability to add recipes from top level ingredients
+  Changes:
+    - Changed certain modal dialogs to use an 'X-to-close' button in the top right corner instead of a 'Back' button in the bottom left corner
+    - The name and icon of the cargo and fluid wagons are now shown on the 'Wagons/m' view state button tooltip
+    - Line percentages now default to 100 instead of 0 when left blank
+  Bugfixes:
+    - Fixed an issue where Request Depots from Klonan's Transport Drones could not be selected a product (Thanks MCP!)
+    - Fixed that the Deep Storage Unit mod's internal recipes were not being hidden
+    - Fixed an issue where the number of subfactories in the archive could have been reported incorrectly
+    - Fixed that the pause mode would not work correctly while using the in-game editor
+    - Fixed a rare crash when searching recipes or items
+    - Fixed a few minor graphical inconsistencies
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.20
+Date: 11. 04. 2021
+  Bugfixes:
+    - Fixed frequent desync on loading saves. I'm truly sorry about me taking so long to fix this.
+    - Fixed that the dimming overlay would be stuck in front of the main window, blocking any interaction with it
+    - Fixed that the background dimmer would be incorrectly sized on display scales other than 100%
+    - Fixed that disabling the mod-gui button in the top left corner could leave behind an empty border if no other buttons are up there
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.19
+Date: 10. 02. 2021
+  Changes:
+    - Made it so the 'to the top' button can be used starting at level 2 floors, instead of level 3
+  Bugfixes:
+    - Fixed a couple of issues where the mod would not properly select a machine for a recipe in some situations
+    - Fixed an issue where some modal dialogs might not work correctly after reloading a save
+    - Fixed that the last valid modset data would not be retained when importing an invalid subfactory
+    - Fixed that alt-clicking a default machine in preferences could crash in certain cases
+    - Fixed that trying to handcraft a module or beacon in the utilities dialog would crash
+    - Fixed a crash when attempting to craft using the utility dialog while not having a character associated to yourself
+    - Fixed that attempting to handcraft in the utility dialog would sometimes incorrectly show a warning about there not being enough resources while simultaneously queueing some crafting
+    - Fixed that the background dimming when the game is paused would duplicate itself when alt-tabbing or resizing the window
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.18
+Date: 01. 02. 2021
+  Changes:
+    - Moved the matrix solver toggle to the subfactory info box
+    - Added proper error messages to handcrafting machines and modules in the utility dialog
+    - Reworded some of the mod setting names as they were awful
+  Bugfixes:
+    - Fixed a crash when typing into or confirming the export dialog textfield
+    - Fixed a crash when using the utility dialog to request items while having no character associated to oneself
+    - Potentially fixed a crash related to the matrix solver and fuel
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.17
+Date: 22. 01. 2021
+  Features:
+    - You can now queue handcrafting machines and modules from the utility dialog
+  Changes:
+    - Made the utility dialog more consistent when checking whether logistic robotics are researched in modded situations
+  Bugfixes:
+    - Fixed a crash when changing beacon types in the beacon dialog
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.16
+Date: 20. 01. 2021
+  Changes:
+    - Swapped the import/export button around and made their tooltips clearer
+  Bugfixes:
+    - Fixed a crash with fuel migration
+    - Potentially fixed a crash with certain mods that add custom beacons
+    - Potentially fixed a crash when deleting subfactories on a multiplayer server with high latency
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.15
+Date: 04. 01. 2021
+  Bugfixes:
+    - Fixed an issue where the matrix solver wouldn't always show its dialog when it should have
+    - Fixed that removing the last line in a subfactory with the matrix solver active would leave some top level products behind
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.14
+Date: 03. 01. 2021
+  Features:
+    - Added an optional production column that allows you to check off a recipe line after you're done with it, in the style of a to-do list (Thanks Fiona!)
+    - Added an additional production view 'Wagons/timescale', allowing you to see how many cargo or fluid wagons are being filled up by your production (Thanks talshorer!)
+  Changes:
+    - Fixed various inconsistencies with the UI (Thanks Raiguard!)
+    - Updated the Russian translation (Thanks METAKOT!)
+    - Updated the Chinese translation (Thanks Ph.X!)
+    - Changed the hotkey to reset a machine from alt-right-click to control-right-click, as this is more consistent with the control-right-click action deleting things
+    - Renamed the 'hard limit' option on machines to 'force limit'
+  Bugfixes:
+    - Fixed a crash when deleting subfactories in your archive
+    - Fixed that the fuel picker would sometimes show more than one kind of fuel as the currently selected one
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.13
+Date: 24. 12. 2020
+  Bugfixes:
+    - Fixed that the subfactory name would not be shown if there was both an icon and a name
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.12
+Date: 23. 12. 2020
+  Features:
+    - Subfactories you delete will now remain in the archive for 15 minutes in case you change your mind about deleting them
+    - Added a tooltip to invalid subfactories listing the modset changes that could have lead to it becoming invalid
+    - You can now alt-click the recipe line toggle switch (which is an optional column in preferences) to toggle all the other recipe lines, meaning all the ones you did not click on (thanks METAKOT!)
+  Bugfixes:
+    - Fixed that when in the items/s/machine-view, the values shown were totally wrong
+    - Fixed that you could enable/disable the matrix solver while a subfactory is in archive
+    - Fixed that the indicated timescale-view button would not update correctly when switching between subfactories
+    - Fixed that setting the subfactory icon to '?' would crash (you can't use the question mark as an icon now)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.11
+Date: 19. 12. 2020
+  Bugfixes:
+    - Fixed machine count totals on lines with subfloors with the matrix solver
+    - Fixed an issue with the matrix solver determining the number of rows and columns in its matrix
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.10
+Date: 17. 12. 2020
+  Changes:
+    - The matrix solver now tells you which recipes it has detected as linearly dependant, letting you know the ones that cause it to not be able to solve
+  Bugfixes:
+    - Fixed an issue with the matrix solver that would lead to an infinite loop. Whew, there's a first time for everything!
+    - Fixed that alt-adding a subfactory would crash if you had no other subfactories
+    - Fixed that you couldn't view subfloors for subfactories that are in the archive
+    - Fixed a crash when changing the window size while a modal dialog is open
+    - Tried fixing a crash with the matrix solver in rare circumstances
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.9
+Date: 15. 12. 2020
+  Features:
+    - Alt-clicking the 'add subfactory'-button now takes you directly to the product picker
+    - Middle-clicking the grab handle on any dialog now re-centers it
+  Changes:
+    - The matrix solver now allows you to select products are free items as well, which comes in handy when you subfactory has very few recipes
+    - Added a message when deactivating the matrix solver informing you that byproduct recipes have been deleted
+  Bugfixes:
+    - Fixed that the matrix solver dialog would not pop up sometimes after adding a recipe
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.8
+Date: 15. 12. 2020
+  Changes:
+    - Removed a couple of mistakes with the tutorial writing; It's super old and due for a rewrite anyways
+    - Renamed 'Energy' to 'Power' where appropriate
+  Bugfixes:
+    - Fixed that opening another mod's interface while FP is open could crash
+    - Fixed that requesting machines and modules would crash in certain modded situations
+    - Fixed the beacon selector not working properly when the game is paused
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.7
+Date: 13. 12. 2020
+  Bugfixes:
+    - Fixed a crash when opening the interface with no subfactories that was introduced in the last version
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.6
+Date: 13. 12. 2020
+  Changes:
+    - The message that your current subfactory is linearly dependant is now shown more consistently
+  Bugfixes:
+    - Fixed a frequent crash when manipulating a subfactory that has linearly dependant recipes
+    - Fixed that the example subfactory was improperly cached, leading to several issues all over the UI
+    - Fixed that hitting certain Factory Planer hotkeys before opening the UI for the first time would crash
+    - Fixed that the matrix solver calculations would be incorrect when productivity modules were involved
+    - Fixed a crash on migration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.5
+Date: 11. 12. 2020
+  Features:
     - Redesigned the main interface. This means that some things are in different spots than they used to be, and some niche features got lost along the way. I'm sorry about those few that went missing, but I needed to get this done in a reasonable amount of time. If there is anything specific you're dearly missing, please let me know on the mod portal or on Discord.
+    - Added a matrix solver. It can be individually enabled for every subfactory and helps to automatically balance out certain advanced recipe setups like oil processing and cracking, with support for voiding byproducts. It can also solve looping recipe chains by asking you for some input from your side. This whole feature is a beta still, so if you run into any problems, please let us know. Huge thanks to scottmsul for taking the charge in implementing this one!
     - Added an optional production column to quickly disable certain recipes by checkbox
     - Added a search bar to the recipe picker
+    - You can now alt-click any machine or beacon in your production line to put it into your cursor as a blueprint for easy stamping
+    - You can now also alt-click a machine when changing it to implicitly set it to the preferred one for its category
   Changes:
     - The calculation model now considers the base energy drain that most electrical machines have
+    - The calculation model now also takes the different launch sequence times for modded rocket silos into account (thanks curiosity!)
     - Setting recipe item amounts directly now behaves more intuitively
-    - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth to keep it around.
+    - Hitting the 'E' keyboard shortcut now confirms the dialog that is open if possible, mirroring the vanilla behavior introduced with 1.1
+    - The tutorial subfactory can now be imported in a wider range of modded situations (as long as it is compatible)
+    - Removed the 'automatic cleanup' functionality that would delete lines that became useless after you removed a top level product. This functionality had been broken in several ways that are hard to fix, so I decided it was not worth keeping around.
     - Increased the maximum length of subfactory names to 256 characters, while accomodating for longer names in the UI
+    - Added some dimming to the interface to indicate that a modal dialog is open and/or the game is paused while the main interface is open
     - Various minor UI improvements unrelated to the main interface redesign
-    - Updated to a newer version of flib (v0.4.1)
+    - Removed migrations for versions before 0.18 since the game doesn't load those saves anymore
+    - Updated to a newer version of flib (v0.6.0)
   Bugfixes:
     - Fixed that changing the limit on a machine would reset the 'hard limit'-switch
+    - Finally found a workaround for the issue that clicks would go 'through' the main dialog if a modal one was open
+    - Fixed the beacon tooltip in preferences displaying incorrect energy consumption values
+    - Fixed that the tooltip on mining machines would not include mining productivity bonuses
+    - Fixed that opening another GUI while in beacon selection mode would leave the modal dialog stuck open
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.4
+Date: 01. 12. 2020
+  Bugfixes:
+    - Fixed a crash in certain modded situations
+    - Fixed a horrible styling issue that made the pro tips boxes not align properly
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.3
+Date: 27. 11. 2020
+  Bugfixes:
+    - Fixed a crash when trying to submit the beacon dialog
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.2
+Date: 26. 11. 2020
+  Bugfixes:
+    - Fixed various crashes caused by textbox behavior having changed with 1.1
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.1
+Date: 23. 11. 2020
+  Changes:
+    - Updated for Factorio 1.1
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.13
+Date: 16. 11. 2020
+  Bugfixes:
+    - Fixed a crash with Space Exploration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.12
+Date: 16. 11. 2020
+  Bugfixes:
+    - Added a couple missing locale strings
+    - Fixed an issue where the beacon total would not be shown when editing a beacon
+    - Fixed an issue where the total machine count for a subfloor would be incorrect if that subfloor had itself a subfloor
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.11
+Date: 09. 10. 2020
+  Bugfixes:
+    - Fixed a crash when trying to load a map with the 'Nauvis Melange' mod
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.10
+Date: 05. 10. 2020
+  Features:
+    - Added a secondary default module that will try to insert itself if the primary one is not compatible with the new machine/recipe (thanks scottmsul!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.9
+Date: 01. 10. 2020
+  Bugfixes:
+    - Fixed a crash related to the beacon dialog in certain modded situations
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.8
+Date: 28. 09. 2020
+  Bugfixes:
+    - Fixed that the preference for the default beacon amount would not be saved
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.7
+Date: 16. 09. 2020
+  Bugfixes:
+    - Hotfixed a crash on load with the newest version of Space Exploration
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.6
+Date: 07. 09. 2020
+  Bugfixes:
+    - Fixed some rare crashes that could occur after saving/loading while a modal dialog is open
+    - Fixed that having signal-type icons on your subfactories could lead to crashes
+    - Fixed that you couldn't remove subfactory icons
+    - Fixed that heavily beaconed machine amounts were not calculated accurately (thanks talshorer!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.0.5
+Date: 27. 08. 2020
+  Bugfixes:
+    - Fixed a crash when attempting to change fuels in certain modded situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.4
@@ -532,7 +835,7 @@ Date: 20. 02. 2020
 Version: 0.18.1
 Date: 21. 01. 2020
   Features:
-    - Update for 0.18. It also contains some smaller features and a lot of background optimizations. There are still quite a few bugs that have been reported and not fixed, I wanted to get the 0.18 patch out quickly. Thanks to everyone that reported things, it's very much appreciated. I kind of fell off the development-train in December because of exams and the festivities, and haven't gotten back on the horse really. I'll try to address the outstanding bugs soon, and hopefully get back to feature development at some point.
+    - Updated for 0.18. It also contains some smaller features and a lot of background optimizations. There are still quite a few bugs that have been reported and not fixed, I wanted to get the 0.18 patch out quickly. Thanks to everyone that reported things, it's very much appreciated. I kind of fell off the development-train in December because of exams and the festivities, and haven't gotten back on the horse really. I'll try to address the outstanding bugs soon, and hopefully get back to feature development at some point.
   Changes:
     - Reworked the recipe picker to be easier to use. Most recipes now use the fancy new tooltips.
     - Various graphical and performance improvements

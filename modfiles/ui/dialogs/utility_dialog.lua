@@ -3,12 +3,13 @@ utility_dialog = {}
 -- ** LOCAL UTIL **
 -- Adds a box with title and optional scope switch for the given type of utility
 local function add_utility_box(player, modal_elements, type, show_tooltip, show_switch)
-    local bordered_frame = modal_elements.content_frame.add{type="frame", direction="vertical", style="bordered_frame"}
+    local bordered_frame = modal_elements.content_frame.add{type="frame", direction="vertical",
+      style="fp_frame_bordered_stretch"}
     modal_elements[type .. "_box"] = bordered_frame
 
     local flow_title_bar = bordered_frame.add{type="flow", direction="horizontal"}
     flow_title_bar.style.vertical_align = "center"
-    flow_title_bar.style.margin = {2, 8, 4, 0}
+    flow_title_bar.style.margin = {2, 0, 4, 0}
 
     -- Title
     local caption = (show_tooltip) and {"fp.info_label", {"fp.utility_title_".. type}} or {"fp.utility_title_".. type}
@@ -26,8 +27,9 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
     if show_switch then
         local utility_scope = data_util.get("preferences", player).utility_scopes[type]
         local switch_state = (utility_scope == "Subfactory") and "left" or "right"
-        scope_switch = flow_title_bar.add{type="switch", name=("fp_switch_utility_scope_" .. type),
-          switch_state=switch_state, left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
+        scope_switch = flow_title_bar.add{type="switch", switch_state=switch_state,
+          tags={mod="fp", on_gui_switch_state_changed="utility_change_scope", utility_type=type},
+          left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
 
     return bordered_frame, flow_custom, scope_switch
@@ -50,16 +52,16 @@ local function update_request_button(player, modal_data, subfactory)
     else
         local scope = data_util.get("preferences", player).utility_scopes.components
         local scope_string = {"fp.pl_" .. scope:lower(), 1}
-
         caption, tooltip = {"fp.request_items"}, {"fp.request_items_tt", scope_string}
-        local logistics_research = player.force.technologies["logistic-robotics"]
 
-        if not logistics_research.researched then
-            tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched",
-              logistics_research.localised_name}}
+        if not player.force.character_logistic_requests then
+            tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched"}}
             button_enabled = false
         elseif table_size(modal_data.missing_items) == 0 then
-            tooltip = {"fp.warning_with_icon", {"fp.request_no_items_necessary", scope_string}}
+            tooltip = {"fp.warning_with_icon", {"fp.utility_no_items_necessary", scope_string}}
+            button_enabled = false
+        elseif player.character == nil then  -- happens when the editor is active for example
+            tooltip = {"fp.warning_with_icon", {"fp.request_no_character"}}
             button_enabled = false
         end
     end
@@ -77,15 +79,20 @@ function utility_structures.components(player, modal_data)
     local context = data_util.get("context", player)
     local modal_elements = modal_data.modal_elements
 
+    local button_blueprint = nil  -- catch for use at the very end of this function
     if modal_elements.components_box == nil then
         local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
           "components", true, true)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
-        local button_request = custom_flow.add{type="button", name="fp_button_utility_request_items",
-          style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-        button_request.style.width = 115  -- makes it so both possible captions fit in
+        button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
+          caption={"fp.utility_blueprint"}, style="rounded_button", mouse_button_filter={"left"}}
+        button_blueprint.style.size = {85, 26}
+
+        local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
+          style="rounded_button", mouse_button_filter={"left"}}
+        button_request.style.size = {115, 26}
         modal_elements.request_button = button_request
 
         local table_components = components_box.add{type="table", column_count=2}
@@ -117,21 +124,23 @@ function utility_structures.components(player, modal_data)
 
         for _, component in pairs(component_data[type .. "s"]) do
             if component.amount > 0 then
-                local amount_in_inventory = inventory_contents[component.proto.name] or 0
-                local amount_missing = component.amount - amount_in_inventory
+                local proto, required_amount = component.proto, component.amount
+                local amount_in_inventory = inventory_contents[proto.name] or 0
+                local missing_amount = required_amount - amount_in_inventory
 
-                if amount_missing > 0 then modal_data.missing_items[component.proto.name] = amount_missing end
+                if missing_amount > 0 then modal_data.missing_items[proto.name] = missing_amount end
 
                 local button_style = nil
                 if amount_in_inventory == 0 then button_style = "flib_slot_button_red"
-                elseif amount_missing > 0 then button_style = "flib_slot_button_yellow"
+                elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local second_line = {"fp.components_needed_tt", amount_in_inventory, component.amount}
-                local tooltip = {"", component.proto.localised_name, "\n", second_line}
+                local tooltip = {"fp.components_needed_tt", proto.localised_name, amount_in_inventory, required_amount}
 
-                table_components.add{type="sprite-button", sprite=component.proto.sprite, number=component.amount,
-                  tooltip=tooltip, style=button_style, mouse_button_filter={"middle"}}
+                local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
+                table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
+                  tags={mod="fp", on_gui_click="utility_craft_items", type=item_type, name=proto.name,
+                  missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
 
@@ -150,6 +159,11 @@ function utility_structures.components(player, modal_data)
     local subfactory = data_util.get("context", player).subfactory
     Subfactory.validate_item_request_proxy(subfactory)
 
+    local any_missing_items = table_size(modal_data.missing_items) > 0
+    button_blueprint.enabled = any_missing_items
+    button_blueprint.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
+      or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}
+
     update_request_button(player, modal_data, subfactory)
 end
 
@@ -157,22 +171,83 @@ function utility_structures.notes(player, modal_data)
     local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
 
     local notes = data_util.get("context", player).subfactory.notes
-    local text_box = utility_box.add{type="text-box", name="fp_text-box_subfactory_notes", text=notes}
-    text_box.style.width = 500
-    text_box.style.height = 250
+    local text_box = utility_box.add{type="text-box", tags={mod="fp", on_gui_text_changed="subfactory_notes"},
+      text=notes}
+    text_box.style.size = {500, 250}
     text_box.word_wrap = true
     text_box.style.top_margin = -2
 end
 
 
-local function handle_scope_change(player, element)
-    local scope_type = string.gsub(element.name, "fp_switch_utility_scope_", "")
-    local utility_scope = (element.switch_state == "left") and "Subfactory" or "Floor"
-    data_util.get("preferences", player).utility_scopes[scope_type] = utility_scope
-    utility_structures.components(player, data_util.get("modal_data", player))
+local function handle_scope_change(player, tags, metadata)
+    local utility_scope = (metadata.switch_state == "left") and "Subfactory" or "Floor"
+    data_util.get("preferences", player).utility_scopes[tags.utility_type] = utility_scope
+
+    local modal_data = data_util.get("modal_data", player)
+    utility_structures.components(player, modal_data)
 end
 
-local function handle_item_request(player)
+local function handle_item_blueprinting(player, _, _)
+    local combinator_proto = game.entity_prototypes["constant-combinator"]
+    if combinator_proto == nil then
+        player.create_local_flying_text{text={"fp.utility_blueprint_no_combinator"}, create_at_cursor=true}
+        return
+    end
+
+    local filter_limit = combinator_proto.filter_count or 100
+    local missing_items = data_util.get("modal_data", player).missing_items
+
+    local blueprint_entities = {}
+    local current_combinator, current_filter_count = nil, 0
+    local next_entity_number, next_position = 1, {0, 0}
+
+    for proto_name, missing_amount in pairs(missing_items) do
+        if not current_combinator or current_filter_count == filter_limit then
+            current_combinator = {
+                entity_number = next_entity_number,
+                name = "constant-combinator",
+                position = next_position,
+                control_behavior = {filters = {}},
+                connections = {{green = {}}}  -- filled in below
+            }
+            table.insert(blueprint_entities, current_combinator)
+
+            next_entity_number = next_entity_number + 1
+            next_position = {next_position[1] + 1, 0}
+            current_filter_count = 0
+        end
+
+        table.insert(current_combinator.control_behavior.filters, {
+            signal = {type = 'item', name = proto_name},
+            count = missing_amount,
+            index = current_filter_count + 1
+        })
+
+        current_filter_count = current_filter_count + 1
+    end
+
+
+    local function connect_if_entity_exists(main_entity, other_entity)
+        if other_entity ~= nil then
+            local entry = {entity_id = other_entity.entity_number}
+            table.insert(main_entity.connections[1].green, entry)
+        end
+    end
+
+    for index, entity in ipairs(blueprint_entities) do
+        connect_if_entity_exists(entity, blueprint_entities[index-1])
+        connect_if_entity_exists(entity, blueprint_entities[index+1])
+        if table_size(entity.connections[1].green) == 0 then entity.connections = nil end
+    end
+
+
+    data_util.create_cursor_blueprint(player, blueprint_entities)
+
+    modal_dialog.exit(player, "cancel")
+    main_dialog.toggle(player)
+end
+
+local function handle_item_request(player, _, _)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
 
@@ -188,6 +263,31 @@ local function handle_item_request(player)
     end
 
     update_request_button(player, ui_state.modal_data, subfactory)
+end
+
+local function handle_item_handcraft(player, tags, metadata)
+    local function fly_text(string) player.create_local_flying_text{text=string, create_at_cursor=true} end
+
+    if not player.character then fly_text({"fp.utility_no_character"}); return end
+
+    local desired_amount = (metadata.click == "left") and 1 or 5
+    local amount_to_craft = math.min(desired_amount, tags.missing_amount)
+
+    if amount_to_craft <= 0 then fly_text({"fp.utility_no_demand"}); return end
+
+    local recipes = RECIPE_MAPS["produce"][tags.type][tags.name]
+    if not recipes then fly_text({"fp.utility_no_recipe"}); return end
+
+    for recipe_id, _ in pairs(recipes) do
+        local recipe_name = global.all_recipes.recipes[recipe_id].name
+        local craftable_amount = player.get_craftable_count(recipe_name)
+
+        if craftable_amount <= 0 then fly_text({"fp.utility_no_resources"}); end
+
+        local crafted_amount = math.min(amount_to_craft, craftable_amount)
+        player.begin_crafting{count=crafted_amount, recipe=recipe_name, silent=true}
+        amount_to_craft = amount_to_craft - crafted_amount
+    end
 end
 
 local function handle_inventory_change(player)
@@ -215,7 +315,7 @@ function utility_dialog.open(player, modal_data)
 end
 
 function utility_dialog.close(player, _)
-    main_dialog.refresh(player, {"subfactory_info"})
+    main_dialog.refresh(player, "subfactory_info")
 end
 
 
@@ -223,22 +323,31 @@ end
 utility_dialog.gui_events = {
     on_gui_click = {
         {
-            name = "fp_button_utility_request_items",
+            name = "utility_blueprint_items",
+            timeout = 20,
+            handler = handle_item_blueprinting
+        },
+        {
+            name = "utility_request_items",
             timeout = 20,
             handler = handle_item_request
+        },
+        {
+            name = "utility_craft_items",
+            handler = handle_item_handcraft
         }
     },
     on_gui_switch_state_changed = {
         {
-            pattern = "^fp_switch_utility_scope_[a-z]+$",
+            name = "utility_change_scope",
             handler = handle_scope_change
         }
     },
     on_gui_text_changed = {
         {
-            name = "fp_text-box_subfactory_notes",
-            handler = (function(player, element)
-                data_util.get("context", player).subfactory.notes = element.text
+            name = "subfactory_notes",
+            handler = (function(player, _, metadata)
+                data_util.get("context", player).subfactory.notes = metadata.text
             end)
         }
     }

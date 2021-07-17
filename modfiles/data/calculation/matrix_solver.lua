@@ -6,17 +6,20 @@ Algorithm Overview
 ------------------
 The algorithm is based on the post here: https://kirkmcdonald.github.io/posts/calculation.html
 We solve the matrix equation Ax = b, where:
-    - A is a matrix whose entry in row i and col j is the output/timescale/building for item i and recipe j (negative is input, positive is output)
+    - A is a matrix whose entry in row i and col j is the output/timescale/building for item i and recipe j
+      (negative is input, positive is output)
     - x is the vector of unknowns that we're solving for, and whose jth entry will be the # buildings needed for recipe j
     - b is the vector whose ith entry is the desired output/timescale for item i
 Note the current implementation requires a square matrix.
 If there are more recipes than items, the problem is under-constrained and some recipes must be deleted. SpaceCatNote: Simplex algo i am working on might be able to do that automatically based on "costs" specified by the user
 If there are more items than recipes, the problem is over-constrained (this is more common).
     In this case we can construct "pseudo-recipes" for certrain items that produce 1/timescale/"building".
-    Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or output after solving.
+    Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or
+      output after solving.
     The solved "number of buildings" will be equal to the extra input or output needed for that item.
     Typically these pseudo-recipes will be for external inputs or non-fully-recycled byproducts.
-Currently the algorithm assumes any item which is part of at least one input and one output in any recipe is not a free variable,
+Currently the algorithm assumes any item which is part of at least one input and one output in any recipe
+  is not a free variable,
     though the user can click on constrained items in the matrix dialog to make them free variables.
     The dialog calls constrained intermediate items "eliminated" since their output is constrained to zero.
 If a recipe has loops, typically the user needs to make voids or free variables.
@@ -28,7 +31,17 @@ github: SpaceCat-Chan
 
 based on https://www.hec.ca/en/cams/help/topics/The_steps_of_the_simplex_algorithm.pdf
 --]]
+
 matrix_solver = {}
+
+function matrix_solver.get_recipe_protos(recipe_ids)
+    local recipe_protos = {}
+    for i, recipe_id in ipairs(recipe_ids) do
+        local recipe_proto = global.all_recipes.recipes[recipe_id]
+        recipe_protos[i] = recipe_proto
+    end
+    return recipe_protos
+end
 
 function matrix_solver.get_item_protos(item_keys)
     local item_protos = {}
@@ -117,7 +130,7 @@ end
 function matrix_solver.union_sets(...)
     local arg = {...}
     local result = {}
-    for _, set in ipairs(arg) do
+    for _, set in pairs(arg) do
         for val, _ in pairs(set) do
             result[val] = true
         end
@@ -129,7 +142,7 @@ function matrix_solver.intersect_sets(...)
     local arg = {...}
     local counts = {}
     local num_sets = #arg
-    for _, set in ipairs(arg) do
+    for _, set in pairs(arg) do
         for val, _ in pairs(set) do
             if not counts[val] then
                 counts[val] = 1
@@ -147,11 +160,22 @@ function matrix_solver.intersect_sets(...)
     return result
 end
 
-function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
+function matrix_solver.num_elements(...)
+    local arg = {...}
+    local count = 0
+    for _, set in pairs(arg) do
+        for e, _ in pairs(set) do
+            count = count + 1
+        end
+    end
+    return count
+end
+
+function matrix_solver.get_matrix_solver_metadata(subfactory_data)
     local eliminated_items = {}
     local free_items = {}
-    local subfactory_data = calculation.interface.get_subfactory_data(player, subfactory)
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local recipes = subfactory_metadata.recipes
     local all_items = subfactory_metadata.all_items
     local raw_inputs = subfactory_metadata.raw_inputs
     local byproducts = subfactory_metadata.byproducts
@@ -159,11 +183,11 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
     local produced_outputs = matrix_solver.set_diff(subfactory_metadata.desired_outputs, unproduced_outputs)
     local free_variables = matrix_solver.union_sets(raw_inputs, byproducts, unproduced_outputs)
     local intermediate_items = matrix_solver.set_diff(all_items, free_variables)
-    if subfactory.matrix_free_items == nil then
+    if subfactory_data.matrix_free_items == nil then
         eliminated_items = intermediate_items
     else
         -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
-        local free_items_list = subfactory.matrix_free_items
+        local free_items_list = subfactory_data.matrix_free_items
         for _, free_item in ipairs(free_items_list) do
             free_items[free_item["identifier"]] = true
         end
@@ -171,23 +195,70 @@ function matrix_solver.get_matrix_solver_modal_data(player, subfactory)
         free_items = matrix_solver.intersect_sets(free_items, intermediate_items)
         eliminated_items = matrix_solver.set_diff(intermediate_items, free_items)
     end
-    -- technically the produced outputs are eliminated variables but we don't want to double-count it in the UI
-    eliminated_items = matrix_solver.set_diff(eliminated_items, produced_outputs)
+    local num_rows = matrix_solver.num_elements(raw_inputs, byproducts, eliminated_items, free_items)
+    local num_cols = matrix_solver.num_elements(recipes, raw_inputs, byproducts, free_items)
     local result = {
         recipes = subfactory_metadata.recipes,
         ingredients = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.raw_inputs)),
         products = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(produced_outputs)),
         byproducts = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(subfactory_metadata.byproducts)),
         eliminated_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(eliminated_items)),
-        free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(free_items))
+        free_items = matrix_solver.get_item_protos(matrix_solver.set_to_ordered_list(free_items)),
+        num_rows = num_rows,
+        num_cols = num_cols
     }
-    result.num_rows = #result.ingredients + #result.products + #result.byproducts + #result.eliminated_items + #result.free_items
-    result.num_cols = #result.recipes + #result.ingredients + #result.byproducts + #result.free_items
     return result
 end
 
-function matrix_solver.run_matrix_solver(subfactory_data)
-    local matrix_free_items = subfactory_data.matrix_free_items
+function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
+    local num_rows = matrix_metadata.num_rows
+    local num_cols = matrix_metadata.num_cols
+
+    local linearly_dependent_recipes = {}
+    local linearly_dependent_items = {}
+    local allowed_free_items = {}
+
+    local linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
+    for col_name, _ in pairs(linearly_dependent_cols) do
+        local col_split_str = split_string(col_name, "_")
+        if col_split_str[1] == "recipe" then
+            local recipe_key = col_split_str[2]
+            linearly_dependent_recipes[recipe_key] = true
+        else -- "item"
+            local item_key = col_split_str[2].."_"..col_split_str[3]
+            linearly_dependent_items[item_key] = true
+        end
+    end
+    -- check which eliminated items could be made free while still retaining linear independence
+    if #linearly_dependent_cols == 0 and num_cols < num_rows then
+        local eliminated_items = matrix_metadata.eliminated_items
+        for _, eliminated_item in ipairs(eliminated_items) do
+            local curr_free_items = matrix_solver.shallowcopy(matrix_metadata.free_items)
+            table.insert(curr_free_items, eliminated_item)
+            linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
+            if next(linearly_dependent_cols) == nil then
+                local item_key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
+                allowed_free_items[item_key] = true
+            end
+        end
+    end
+    local result = {
+        linearly_dependent_recipes = matrix_solver.get_recipe_protos(
+            matrix_solver.set_to_ordered_list(linearly_dependent_recipes)),
+        linearly_dependent_items = matrix_solver.get_item_protos(
+            matrix_solver.set_to_ordered_list(linearly_dependent_items)),
+        allowed_free_items = matrix_solver.get_item_protos(
+            matrix_solver.set_to_ordered_list(allowed_free_items))
+    }
+    return result
+end
+
+
+function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
+    -- run through get_matrix_solver_metadata to check against recipe changes
+    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+    local matrix_free_items = matrix_metadata.free_items
+
     local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
     local all_items = subfactory_metadata.all_items
     local rows = matrix_solver.get_mapping_struct(all_items)
@@ -214,7 +285,7 @@ function matrix_solver.run_matrix_solver(subfactory_data)
     for k, _ in pairs(raw_free_variables) do
         free_variables["item_"..k] = true
     end
-    for i, v in ipairs(matrix_free_items) do
+    for _, v in ipairs(matrix_free_items) do
         local item_key = matrix_solver.get_item_key(v.type, v.name)
         free_variables["item_"..item_key] = true
     end
@@ -245,8 +316,8 @@ function matrix_solver.run_matrix_solver(subfactory_data)
                 matrix_solver.consolidate(line_aggregate)
             end
 
-            -- this seems to be how the model sets the machine_count for subfloors - by the machine_count of the subfloor's top line
-            if i==1 then floor_aggregate.machine_count = line_aggregate.machine_count end
+            -- lines with subfloors should show actual number of machines to build, so each machine count is rounded up when summed
+            floor_aggregate.machine_count = floor_aggregate.machine_count + math.ceil(line_aggregate.machine_count)
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 
@@ -291,13 +362,14 @@ function matrix_solver.run_matrix_solver(subfactory_data)
         end
         if amount < 0 then
             -- counterintuitively, a negative amount means we have a negative number of "pseudo-buildings",
-            -- implying the item must be consumed to balance the matrix, hence it is a byproduct. The opposite is true for ingredients.
+            -- implying the item must be consumed to balance the matrix, hence it is a byproduct.
+            -- The opposite is true for ingredients.
             structures.aggregate.add(main_aggregate, "Byproduct", item, -amount)
         else
             structures.aggregate.add(main_aggregate, "Ingredient", item, amount)
         end
     end
-    
+
     -- set products for unproduced items
     for _, product in pairs(subfactory_data.top_level_products) do
         local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
@@ -347,8 +419,6 @@ function matrix_solver.consolidate(aggregate)
             end
         end
     end
-    -- compare_classes("Fuel", "Product")
-    -- compare_classes("Fuel", "Byproduct")
     compare_classes("Ingredient", "Product")
     compare_classes("Ingredient", "Byproduct")
 end
@@ -361,14 +431,14 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
         local item_key = matrix_solver.get_item_key(product.proto.type, product.proto.name)
         desired_outputs[item_key] = product.amount
     end
-    local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines, subfactory_data.player_index)
+    local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines,
+      subfactory_data.player_index)
     local line_inputs = lines_metadata.line_inputs
     local line_outputs = lines_metadata.line_outputs
     local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
     local all_items = matrix_solver.union_sets(line_inputs, line_outputs)
     local raw_inputs = matrix_solver.set_diff(line_inputs, line_outputs)
     local byproducts = matrix_solver.set_diff(matrix_solver.set_diff(line_outputs, line_inputs), desired_outputs)
-
     return {
         recipes = lines_metadata.line_recipes,
         desired_outputs = desired_outputs,
@@ -386,7 +456,7 @@ function matrix_solver.get_lines_metadata(lines, player_index)
     for _, line in pairs(lines) do
         if line.subfloor ~= nil then
             local floor_metadata = matrix_solver.get_lines_metadata(line.subfloor.lines, player_index)
-            for i, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
+            for _, subfloor_line_recipe in pairs(floor_metadata.line_recipes) do
                 table.insert(line_recipes, subfloor_line_recipe)
             end
             line_inputs = matrix_solver.union_sets(line_inputs, floor_metadata.line_inputs)
@@ -399,12 +469,6 @@ function matrix_solver.get_lines_metadata(lines, player_index)
                     line_inputs[item_key] = true
                 end
             end
-            -- for item_type_name, item_data in pairs(line_aggregate.Fuel) do
-            --     for item_name, _ in pairs(item_data) do
-            --         local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-            --         line_inputs[item_key] = true
-            --     end
-            -- end
             for item_type_name, item_data in pairs(line_aggregate.Product) do
                 for item_name, _ in pairs(item_data) do
                     local item_key = matrix_solver.get_item_key(item_type_name, item_name)
@@ -456,7 +520,8 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
             local line = floor.lines[line_table_id]
 
             -- use amounts for 1 building as matrix entries
-            local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, 1, true)
+            local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index,
+              floor.id, 1, true)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -473,18 +538,11 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
                     matrix[row_num][col_num] = matrix[row_num][col_num] - amount
                 end
             end
-
-            -- for item_type_name, items in pairs(line_aggregate.Fuel) do
-            --     for item_name, amount in pairs(items) do
-            --         local item_key = matrix_solver.get_item_key(item_type_name, item_name)
-            --         local row_num = rows.map[item_key]
-            --         matrix[row_num][col_num] = matrix[row_num][col_num] - amount
-            --     end
-            -- end
         end
     end
 
-    -- final column for desired output. Don't have to explicitly set constrained vars to zero since matrix is initialized with zeros.
+    -- final column for desired output. Don't have to explicitly set constrained vars to zero
+    -- since matrix is initialized with zeros.
     for _, product in ipairs(subfactory_data.top_level_products) do
         local item_id = product.proto.identifier
         local row_num = rows.map[item_id]
@@ -504,34 +562,39 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     -- the index in the subfactory_data.top_floor.lines table can be different from the line_id!
     local recipe_proto = line_data.recipe_proto
     local timescale = line_data.timescale
+    local total_effects = line_data.total_effects
     local machine_speed = line_data.machine_proto.speed
     local speed_multiplier = (1 + math.max(line_data.total_effects.speed, -0.8))
-    local productivity_multiplier = (1 + math.max(line_data.total_effects.productivity, 0))
     local energy = recipe_proto.energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
     if energy==0 then energy=0.000000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
-    if recipe_proto.name == "rocket-part" then
-        -- extra time for launch sequence
-        -- the factorio wiki says 40.33, but I saw this elsewhere in the code (and this agrees with the online factorio calculator). Not sure which is correct.
-        time_per_craft = time_per_craft + 41.25/100
+    local launch_sequence_time = line_data.machine_proto.launch_sequence_time
+    if launch_sequence_time then
+        time_per_craft = time_per_craft + launch_sequence_time
     end
-    local amount_per_timescale = machine_count * timescale / time_per_craft
-    line_aggregate.production_ratio = amount_per_timescale
-    line_aggregate.uncapped_production_ratio = amount_per_timescale
+    local unmodified_crafts_per_second = 1 / time_per_craft
+    local in_game_crafts_per_second = math.min(unmodified_crafts_per_second, 60)
+    local total_crafts_per_timescale = timescale * machine_count * in_game_crafts_per_second
+    line_aggregate.production_ratio = total_crafts_per_timescale
+    line_aggregate.uncapped_production_ratio = total_crafts_per_timescale
     for _, product in pairs(recipe_proto.products) do
+        local prodded_amount = calculation.util.determine_prodded_amount(product, unmodified_crafts_per_second, total_effects)
         local item_key = matrix_solver.get_item_key(product.type, product.name)
         if subfactory_metadata~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
-            structures.aggregate.add(line_aggregate, "Byproduct", product, product.amount * amount_per_timescale * productivity_multiplier)
+            structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts_per_timescale)
         else
-            structures.aggregate.add(line_aggregate, "Product", product, product.amount * amount_per_timescale * productivity_multiplier)
+            structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts_per_timescale)
         end
     end
     for _, ingredient in pairs(recipe_proto.ingredients) do
-        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, ingredient.amount * amount_per_timescale)
+        local amount = ingredient.amount
+        if ingredient.ignore_productivity then
+            amount = calculation.util.determine_prodded_amount(ingredient, unmodified_crafts_per_second, total_effects)
+        end
+        structures.aggregate.add(line_aggregate, "Ingredient", ingredient, amount * total_crafts_per_timescale)
     end
 
-    -- some of this is copied from model.lua
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
     local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
@@ -555,8 +618,6 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
         energy_consumption = 0  -- set electrical consumption to 0 while still polluting
     end
 
-    -- TODO: (possibly) Include beacon energy consumption (?)
-
     line_aggregate.energy_consumption = energy_consumption
     line_aggregate.pollution = pollution
 
@@ -571,7 +632,7 @@ end
 function matrix_solver.print_matrix(m)
     local s = ""
     s = s.."{\n"
-    for i,row in ipairs(m) do
+    for _, row in ipairs(m) do
         s = s.."  {"
         for j,col in ipairs(row) do
             s = s..tostring(col)
@@ -650,7 +711,7 @@ function matrix_solver.to_reduced_row_echelon_form(m)
 
             -- subtract from the remaining rows so their first entries are zero
             for i = first_nonzero_row+1, num_rows do
-                local factor = m[i][curr_col]
+                factor = m[i][curr_col]
                 for j = curr_col, num_cols do
                     m[i][j] = m[i][j] - m[pivot_row][j] * factor
                     -- check rounding errors from floating point arthmetic
@@ -687,6 +748,41 @@ function matrix_solver.to_reduced_row_echelon_form(m)
         end
     end
     -- END REDUCED ROW ECHELON FORM PART
+end
+
+function matrix_solver.find_linearly_dependent_cols(matrix)
+    -- Returns linearly dependent columns from a row-reduced matrix
+    -- Algorithm works as follows:
+    -- For each column:
+    --      If this column has a leading 1, track which row maps to this column using the ones_map variable (eg cols 1, 2, 3, 5)
+    --      Otherwise, this column is linearly dependent (eg col 4)
+    --          For any non-zero rows in this col, the col which contains that row's leading 1 is also linearly dependent
+    --                    (eg for col 4, we have row 2 -> col 2 and row 3 -> col 3)
+    -- The example below would give cols 2, 3, 4 as being linearly dependent (x's are non-zeros)
+    -- 1 0 0 0 0
+    -- 0 1 x x 0
+    -- 0 0 1 x 0
+    -- 0 0 0 0 1
+    -- I haven't proven this is 100% correct, this is just something I came up with
+    local row_index = 1
+    local num_rows = #matrix
+    local num_cols = #matrix[1]-1
+    local ones_map = {}
+    local col_set = {}
+    for col_index=1, num_cols do
+        if (row_index <= num_rows) and (matrix[row_index][col_index]==1) then
+            ones_map[row_index] = col_index
+            row_index = row_index+1
+        else
+            col_set[col_index] = true
+            for i=1, row_index-1 do
+                if matrix[i][col_index] ~= 0 then
+                    col_set[ones_map[i]] = true
+                end
+            end
+        end
+    end
+    return col_set
 end
 
 -- utility function that removes from a sorted array in place

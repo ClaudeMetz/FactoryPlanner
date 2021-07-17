@@ -3,29 +3,27 @@
 
 migrator = {}
 
+-- Factory exchange strings from versions before this can no longer be imported
+local last_migratable_version = "0.18.0"
+
 -- Returns a table containing all existing migrations in order
 local migration_masterlist = {
-    [1] = {version="0.17.13", migration=require("data.migrations.migration_0_17_13")},
-    [2] = {version="0.17.21", migration=require("data.migrations.migration_0_17_21")},
-    [3] = {version="0.17.27", migration=require("data.migrations.migration_0_17_27")},
-    [4] = {version="0.17.29", migration=require("data.migrations.migration_0_17_29")},
-    [5] = {version="0.17.38", migration=require("data.migrations.migration_0_17_38")},
-    [6] = {version="0.17.51", migration=require("data.migrations.migration_0_17_51")},
-    [7] = {version="0.17.55", migration=require("data.migrations.migration_0_17_55")},
-    [8] = {version="0.17.56", migration=require("data.migrations.migration_0_17_56")},
-    [9] = {version="0.17.57", migration=require("data.migrations.migration_0_17_57")},
-    [10] = {version="0.17.61", migration=require("data.migrations.migration_0_17_61")},
-    [11] = {version="0.17.65", migration=require("data.migrations.migration_0_17_65")},
-    [12] = {version="0.18.20", migration=require("data.migrations.migration_0_18_20")},
-    [13] = {version="0.18.27", migration=require("data.migrations.migration_0_18_27")},
-    [14] = {version="0.18.29", migration=require("data.migrations.migration_0_18_29")},
-    [15] = {version="0.18.38", migration=require("data.migrations.migration_0_18_38")},
-    [16] = {version="0.18.42", migration=require("data.migrations.migration_0_18_42")},
-    [17] = {version="0.18.45", migration=require("data.migrations.migration_0_18_45")},
-    [18] = {version="0.18.48", migration=require("data.migrations.migration_0_18_48")},
-    [19] = {version="0.18.49", migration=require("data.migrations.migration_0_18_49")},
-    [20] = {version="0.18.51", migration=require("data.migrations.migration_0_18_51")},
-    [21] = {version="1.0.5", migration=require("data.migrations.migration_1_0_5")},
+    [1] = {version="0.18.20", migration=require("data.migrations.migration_0_18_20")},
+    [2] = {version="0.18.27", migration=require("data.migrations.migration_0_18_27")},
+    [3] = {version="0.18.29", migration=require("data.migrations.migration_0_18_29")},
+    [4] = {version="0.18.38", migration=require("data.migrations.migration_0_18_38")},
+    [5] = {version="0.18.42", migration=require("data.migrations.migration_0_18_42")},
+    [6] = {version="0.18.45", migration=require("data.migrations.migration_0_18_45")},
+    [7] = {version="0.18.48", migration=require("data.migrations.migration_0_18_48")},
+    [8] = {version="0.18.49", migration=require("data.migrations.migration_0_18_49")},
+    [9] = {version="0.18.51", migration=require("data.migrations.migration_0_18_51")},
+    [10] = {version="1.0.6", migration=require("data.migrations.migration_1_0_6")},
+    [11] = {version="1.1.5", migration=require("data.migrations.migration_1_1_5")},
+    [12] = {version="1.1.6", migration=require("data.migrations.migration_1_1_6")},
+    [13] = {version="1.1.8", migration=require("data.migrations.migration_1_1_8")},
+    [14] = {version="1.1.14", migration=require("data.migrations.migration_1_1_14")},
+    [15] = {version="1.1.19", migration=require("data.migrations.migration_1_1_19")},
+    [16] = {version="1.1.21", migration=require("data.migrations.migration_1_1_21")},
 }
 
 -- ** LOCAL UTIL **
@@ -107,11 +105,14 @@ function migrator.migrate_player_table(player)
 end
 
 -- Applies any appropriate migrations to the given export_table's subfactories
-function migrator.migrate_export_table(export_table, player)
-    local migrations = determine_migrations(export_table.mod_version)
+function migrator.migrate_export_table(export_table)
+    if not compare_versions(last_migratable_version, export_table.mod_version) then error() end
 
+    local migrations = determine_migrations(export_table.mod_version)
     for _, packed_subfactory in pairs(export_table.subfactories) do
-        apply_migrations(migrations, "packed_subfactory", packed_subfactory, player)
+        -- This migration type won't need the player argument, and removing it allows
+        -- us to run imports without having a player attached
+        apply_migrations(migrations, "packed_subfactory", packed_subfactory, nil)
     end
     export_table.mod_version = global.mod_version
 end
