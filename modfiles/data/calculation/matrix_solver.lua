@@ -228,7 +228,9 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
         for _, eliminated_item in ipairs(eliminated_items) do
             local curr_free_items = matrix_solver.shallowcopy(matrix_metadata.free_items)
             table.insert(curr_free_items, eliminated_item)
-            linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
+            local curr_subfactory_data = util.table.deepcopy(subfactory_data)
+            curr_subfactory_data.matrix_free_items = curr_free_items
+            linearly_dependent_cols = matrix_solver.run_matrix_solver(curr_subfactory_data, true)
             if next(linearly_dependent_cols) == nil then
                 local item_key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
                 allowed_free_items[item_key] = true
