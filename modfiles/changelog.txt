@@ -1,8 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
-  Features:
-    -
+Version: 1.1.24
+Date: 24. 07. 2021
   Changes:
     - Updated the internal detection of recycling and barreling/stacking recipes to the current set of popular mods
   Bugfixes:
