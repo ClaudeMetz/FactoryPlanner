@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Updated the internal detection of recycling and barreling/stacking recipes to the current set of popular mods
   Bugfixes:
+    - Fixed a crash with the utility dialog
     - Fixed a bug that prevent irrelevant free item choices being filtered out correctly
 
 ---------------------------------------------------------------------------------------------------
