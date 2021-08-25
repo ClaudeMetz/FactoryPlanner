@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Added better support for the Satisfactorio mod (thanks PFQNiet!)
   Bugfixes:
-    -
+    - Fixed a crash with temporarily archived subfactories being deleted
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.24
