@@ -1,8 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
-  Features:
-    -
+Version: 1.1.25
+Date: 25. 08. 2021
   Changes:
     - Added better support for the Satisfactorio mod (thanks PFQNiet!)
   Bugfixes:
