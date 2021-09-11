@@ -12,9 +12,18 @@ local function open_modal(player, type, modal_data)
     modal_dialog.enter(player, {type=type, modal_data=modal_data, skip_dimmer=true})
 end
 
-local function modal_teardown(player)
-    modal_dialog.exit(player, "cancel")
+local function return_dimensions(scene, frame)
+    local dimensions = {actual_size=frame.actual_size, location=frame.location}
+    -- We do this on teardown so the frame has time to adjust all its sizes
+    remote.call("screenshotter", "return_dimensions", scene, dimensions)
+end
+
+local function modal_teardown(player, scene)
     local ui_state = data_util.get("ui_state", player)
+
+    return_dimensions(scene, ui_state.modal_data.modal_elements.modal_frame)
+    modal_dialog.exit(player, "cancel")
+
     ui_util.properly_center_frame(player, ui_state.main_elements.main_frame, ui_state.main_dialog_dimensions)
     main_dialog.toggle(player)
 end
@@ -57,7 +66,6 @@ local actions = {
         set_machine_default(player, "electric-mining-drill", "basic-solid")
         set_machine_default(player, "steel-furnace", "smelting")
         set_machine_default(player, "assembling-machine-2", "crafting")
-        set_machine_default(player, "assembling-machine-2", "basic-crafting")
         set_machine_default(player, "assembling-machine-3", "advanced-crafting")
         set_machine_default(player, "assembling-machine-2", "crafting-with-fluid")
 
@@ -91,6 +99,8 @@ local actions = {
         main_dialog.toggle(player)
     end,
     teardown_01_main_interface = function(player)
+        local main_frame = data_util.get("main_elements", player).main_frame
+        return_dimensions("01_main_interface", main_frame)
         main_dialog.toggle(player)
     end,
 
@@ -114,14 +124,14 @@ local actions = {
 
         modal_elements.search_textfield.focus()
     end,
-    teardown_02_item_picker = modal_teardown,
+    teardown_02_item_picker = (function(player) modal_teardown(player, "02_item_picker") end),
 
     setup_03_recipe_picker = function(player)
         local product_proto = prototyper.util.get_new_prototype_by_name("items", "petroleum-gas", "fluid")
         local modal_data = {product_proto=product_proto, production_type="produce"}
         open_modal(player, "recipe", modal_data)
     end,
-    teardown_03_recipe_picker = modal_teardown,
+    teardown_03_recipe_picker = (function(player) modal_teardown(player, "03_recipe_picker") end),
 
     setup_04_beacon = function(player)
         local floor = data_util.get("context", player).floor
@@ -129,7 +139,7 @@ local actions = {
         local modal_data = {object=line.beacon, line=line}
         open_modal(player, "beacon", modal_data)
     end,
-    teardown_04_beacon = modal_teardown,
+    teardown_04_beacon = (function(player) modal_teardown(player, "04_beacon") end),
 
     setup_05_import = function(player)
         open_modal(player, "import", nil)
@@ -148,17 +158,17 @@ local actions = {
         modal_elements.subfactory_checkboxes["tmp_3"].state = false
         modal_elements.master_checkbox.state = false
     end,
-    teardown_05_import = modal_teardown,
+    teardown_05_import = (function(player) modal_teardown(player, "05_import") end),
 
     setup_06_utility = function(player)
         open_modal(player, "utility", nil)
     end,
-    teardown_06_utility = modal_teardown,
+    teardown_06_utility = (function(player) modal_teardown(player, "06_utility") end),
 
     setup_07_preferences = function(player)
         open_modal(player, "preferences", nil)
     end,
-    teardown_07_preferences = modal_teardown
+    teardown_07_preferences = (function(player) modal_teardown(player, "07_preferences") end)
 }
 
 local function initial_setup()
