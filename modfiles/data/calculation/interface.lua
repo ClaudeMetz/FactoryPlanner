@@ -220,7 +220,7 @@ function calculation.update(player, subfactory)
             local normalized_top_floor = solver_util.normalize(subfactory_data.top_floor)
             local flat_recipe_lines = solver_util.to_flat_recipe_lines(normalized_top_floor)
             local normalized_references = solver_util.normalize_references(subfactory_data.top_level_products, subfactory_data.timescale)
-            local problem = linear_optimization_solver.create_problem(flat_recipe_lines, normalized_references)
+            local problem = linear_optimization_solver.create_problem(subfactory_data.name, flat_recipe_lines, normalized_references)
             local machine_counts = linear_optimization_solver.primal_dual_interior_point(problem)
             solver_util.feedback(machine_counts, subfactory_data.player_index, subfactory_data.timescale, normalized_top_floor)
         -- else
@@ -242,6 +242,7 @@ end
 function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
+        name = subfactory.name,
         timescale = subfactory.timescale,
         top_level_products = {},
         top_floor = nil,

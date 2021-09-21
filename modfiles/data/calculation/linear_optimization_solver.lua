@@ -9,8 +9,8 @@ local ingredients_priority_penalty = 2 ^ 0
 local machine_count_penalty = 2 ^ 0
 local no_penalty = 0
 
-function M.create_problem(flat_recipe_lines, normalized_references)
-    local problem = Problem()
+function M.create_problem(name, flat_recipe_lines, normalized_references)
+    local problem = Problem(name)
 
     local function add_item_factor(constraint_map, name, factor)
         constraint_map["balance|" .. name] = factor
@@ -168,6 +168,8 @@ local tolerance = 0.000001
 local iterate_limit = 200
 
 function M.primal_dual_interior_point(problem)
+    local debug_print = log
+
     local A = problem:make_subject_matrix()
     local AT = A:T()
     local b = problem:make_dual_factors()
@@ -185,7 +187,7 @@ function M.primal_dual_interior_point(problem)
         return x_dir, y_dir, s_dir
     end
 
-    print("-- solve --")
+    debug_print(string.format("-- solve %s --", problem.name))
     for i = 0, iterate_limit do
         local dual = AT * y + s - c
         local primal = A * x - b
@@ -195,7 +197,7 @@ function M.primal_dual_interior_point(problem)
         local p_sat = primal:euclidean_norm()
         local dg_sat = duality_gap:sum()
         local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
-        print(string.format(
+        debug_print(string.format(
             "iterate = %i, dual = %f, primal = %f, duality_gap = %f, centering_factor = %f", 
             i, d_sat, p_sat, dg_sat, cf
         ))
@@ -234,6 +236,10 @@ function M.primal_dual_interior_point(problem)
         y = y + d_step * y_asd
         s = s + d_step * s_asd
     end
+    debug_print("-- complete solve --")
+    debug_print("variable x:\n" .. problem:dump_primal(x))
+    -- debug_print("variable y:\n" .. problem:dump_dual(y))
+    -- debug_print("variable s:\n" .. problem:dump_primal(s))
 
     return problem:convert_result(x)
 end

@@ -2,7 +2,8 @@ local P, S = {}, {}
 local C = require("data.calculation.class")
 local Matrix = require("data.calculation.Matrix")
 
-function P:__new()
+function P:__new(name)
+    self.name = name
     self.primal = {}
     self.primal_length = 0
     self.dual = {}
@@ -107,6 +108,22 @@ function P:convert_result(vector)
         if v.is_result then
             ret[k] = vector[v.index][1]
         end
+    end
+    return ret
+end
+
+function P:dump_primal(vector)
+    local ret = ""
+    for k, v in pairs(self.primal) do
+        ret = ret .. string.format("\"%s\" = %f\n", k, vector[v.index][1])
+    end
+    return ret
+end
+
+function P:dump_dual(vector)
+    local ret = ""
+    for k, v in pairs(self.dual) do
+        ret = ret .. string.format("\"%s\" = %f\n", k, vector[v.index][1])
     end
     return ret
 end
