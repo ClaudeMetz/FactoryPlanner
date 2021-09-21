@@ -2,8 +2,8 @@ local M = {}
 local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
 
-local insufficient_penalty = 2 ^ 12
-local redundant_penalty = 2 ^ 8
+local insufficient_penalty = 2 ^ 16
+local redundant_penalty = 2 ^ 12
 local products_priority_penalty = 2 ^ 0
 local ingredients_priority_penalty = 2 ^ 0
 local machine_count_penalty = 2 ^ 0
@@ -41,16 +41,11 @@ function M.create_problem(flat_recipe_lines, normalized_references)
             add_item_factor(constraint_map, name, amount)
 
             if #u.neighbor_recipe_lines >= 2 then
-                local balance_key = "products_priority|" .. id .. ":" .. name
+                local balance_key = string.format("products_priority|%s:%s", id, name)
                 problem:add_eq_constraint(balance_key, 0)
                 constraint_map[balance_key] = amount
-                local implicit_key = "implicit_transfer|".. id .. "=>(?):" .. name
-                problem:add_objective(implicit_key, redundant_penalty, false)
-                problem:add_subject_term(implicit_key, {
-                    [balance_key] = -1
-                })
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
-                    local transfer_key = "transfer|".. id .. "=>" .. neighbor.normalized_id .. ":" .. name
+                    local transfer_key = string.format("transfer|%s=>%s:%s", id, neighbor.normalized_id, name)
                     local penalty = (priority - 1) * products_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_penalty(transfer_key, penalty)
@@ -61,6 +56,12 @@ function M.create_problem(flat_recipe_lines, normalized_references)
                         [balance_key] = -1
                     })
                 end
+                local implicit_key = string.format("implicit_transfer|%s=>(?):%s", id, name)
+                local penalty = #u.neighbor_recipe_lines * products_priority_penalty
+                problem:add_objective(implicit_key, penalty, false)
+                problem:add_subject_term(implicit_key, {
+                    [balance_key] = -1
+                })
             end 
         end
 
@@ -69,16 +70,11 @@ function M.create_problem(flat_recipe_lines, normalized_references)
             add_item_factor(constraint_map, name, -amount)
 
             if #u.neighbor_recipe_lines >= 2 then
-                local balance_key = "ingredients_priority|" .. id .. ":" .. name
+                local balance_key = string.format("ingredients_priority|%s:%s", id, name)
                 problem:add_eq_constraint(balance_key, 0)
                 constraint_map[balance_key] = -amount
-                local implicit_key = "implicit_transfer|(?)=>" .. id .. ":" .. name
-                problem:add_objective(implicit_key, insufficient_penalty, false)
-                problem:add_subject_term(implicit_key, {
-                    [balance_key] = 1
-                })
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
-                    local transfer_key = "transfer|".. neighbor.normalized_id .. "=>" .. id .. ":" .. name
+                    local transfer_key = string.format("transfer|%s=>%s:%s", neighbor.normalized_id, id, name)
                     local penalty = (priority - 1) * ingredients_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_penalty(transfer_key, penalty)
@@ -89,6 +85,12 @@ function M.create_problem(flat_recipe_lines, normalized_references)
                         [balance_key] = 1
                     })
                 end
+                local implicit_key = string.format("implicit_transfer|(?)=>%s:%s", id, name)
+                local penalty = #u.neighbor_recipe_lines * ingredients_priority_penalty
+                problem:add_objective(implicit_key, penalty, false)
+                problem:add_subject_term(implicit_key, {
+                    [balance_key] = 1
+                })
             end 
         end
 
