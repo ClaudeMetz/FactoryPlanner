@@ -177,6 +177,8 @@ local function update_ingredient_satisfaction(floor, product_class)
     end
 end
 
+local solver_util = require("data.calculation.solver_util")
+local linear_optimization_solver = require("data.calculation.linear_optimization_solver")
 
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
@@ -215,7 +217,14 @@ function calculation.update(player, subfactory)
                 set_blank_subfactory(player, subfactory)
             end
         else
-            sequential_solver.update_subfactory(subfactory_data)
+            local normalized_top_floor = solver_util.normalize(subfactory_data.top_floor)
+            local flat_recipe_lines = solver_util.to_flat_recipe_lines(normalized_top_floor)
+            local normalized_references = solver_util.normalize_references(subfactory_data.top_level_products, subfactory_data.timescale)
+            local problem = linear_optimization_solver.create_problem(flat_recipe_lines, normalized_references)
+            local machine_counts = linear_optimization_solver.primal_dual_interior_point(problem)
+            solver_util.feedback(machine_counts, subfactory_data.player_index, subfactory_data.timescale, normalized_top_floor)
+        -- else
+            -- sequential_solver.update_subfactory(subfactory_data)
         end
 
         player_table.active_subfactory = nil  -- reset after calculations have been carried out
@@ -233,6 +242,7 @@ end
 function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
+        timescale = subfactory.timescale,
         top_level_products = {},
         top_floor = nil,
         matrix_free_items = subfactory.matrix_free_items
