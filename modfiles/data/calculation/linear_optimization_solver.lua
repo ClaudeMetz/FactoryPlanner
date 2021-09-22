@@ -2,9 +2,9 @@ local M = {}
 local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
 
-local insufficient_penalty = 2 ^ 16
-local redundant_penalty = 2 ^ 12
-local products_priority_penalty = 2 ^ 0
+local insufficient_penalty = 2 ^ 15
+local redundant_penalty = 2 ^ 10
+local products_priority_penalty = 0
 local ingredients_priority_penalty = 2 ^ 0
 local machine_count_penalty = 2 ^ 0
 local no_penalty = 0

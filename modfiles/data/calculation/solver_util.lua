@@ -312,35 +312,44 @@ end
 
 function M.visit_priority_order(start_floor)
     local floor_stack = {start_floor}
-    local index_stack = {0}
+    local index_stack = {1}
+    local mode_stack = {"recipe_line"}
     local function it()
-        if #floor_stack == 0 then
+        local top = #floor_stack
+        if top == 0 then
             return nil
         end
-        local t = #floor_stack
-        local floor, prev_floor, index = floor_stack[t], floor_stack[t - 1], index_stack[t] + 1
-        index_stack[t] = index
+        local floor, prev_floor = floor_stack[top], floor_stack[top - 1]
+        local index, mode = index_stack[top], mode_stack[top]
+        index_stack[top] = index + 1
         if index <= #floor.lines then
             local v = floor.lines[index]
-            if v.type == "floor" then
+            if v.type == "floor" and mode == "floor" then
                 if v ~= prev_floor then
                     table.insert(floor_stack, v)
-                    table.insert(index_stack, 0)
+                    table.insert(index_stack, 1)
+                    table.insert(mode_stack, "recipe_line")
                 end
-            elseif v.type == "recipe_line" then
+            elseif v.type == "recipe_line" and mode == "recipe_line"  then
                 return v.normalized_id, v
-            else
-                assert()
-            end
-        elseif index == #floor.lines + 1 then
-            local parent = floor.parent
-            if parent and parent ~= prev_floor then
-                table.insert(floor_stack, parent)
-                table.insert(index_stack, 0)
             end
         else
-            table.remove(floor_stack)
-            table.remove(index_stack)
+            if mode == "recipe_line" then
+                mode_stack[top] = "floor"
+                index_stack[top] = 1
+            elseif mode == "floor" then
+                mode_stack[top] = "parent"
+                local parent = floor.parent
+                if parent and parent ~= prev_floor then
+                    table.insert(floor_stack, parent)
+                    table.insert(index_stack, 1)
+                    table.insert(mode_stack, "recipe_line")
+                end
+            elseif mode == "parent" then
+                table.remove(floor_stack)
+                table.remove(index_stack)
+                table.remove(mode_stack)
+            end
         end
         return it()
     end
