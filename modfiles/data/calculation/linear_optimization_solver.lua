@@ -41,7 +41,7 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
             add_item_factor(constraint_map, name, amount)
 
             if #u.neighbor_recipe_lines >= 2 then
-                local balance_key = string.format("products_priority|%s:%s", id, name)
+                local balance_key = string.format("products_priority_balance|%s:%s", id, name)
                 problem:add_eq_constraint(balance_key, 0)
                 constraint_map[balance_key] = amount
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
@@ -70,7 +70,7 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
             add_item_factor(constraint_map, name, -amount)
 
             if #u.neighbor_recipe_lines >= 2 then
-                local balance_key = string.format("ingredients_priority|%s:%s", id, name)
+                local balance_key = string.format("ingredients_priority_balance|%s:%s", id, name)
                 problem:add_eq_constraint(balance_key, 0)
                 constraint_map[balance_key] = -amount
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
@@ -205,10 +205,11 @@ function M.primal_dual_interior_point(problem)
             break
         end
 
+        -- local x_nor, dg_nor = M.normalize_duality_gap_rows(s, x, duality_gap)
         local D = Matrix.join{
-            { 0,        AT,    1        },
-            { A,        0,     0        },
-            { s:diag(), 0,     x:diag() },
+            { 0,        AT, 1        },
+            { A,        0,  0        },
+            { s:diag(), 0,  x:diag() },
         }
 
         local cen = Matrix.new_vector(x_degree):fill(cf * dg_sat / x_degree)
@@ -255,5 +256,22 @@ function M.get_max_step(v, dir)
     end
     return ret
 end
+
+-- function M.normalize_duality_gap_rows(s, x, duality_gap)
+--     local height = s.height
+--     local ret_x, ret_dg = Matrix.new_vector(height), Matrix.new_vector(height)
+--     for y = 1, height do
+--         local b = s[y][1]
+--         if b == 0 then
+--             assert(duality_gap[y][1] == 0)
+--             ret_x[y][1] = 0
+--             ret_dg[y][1] = 0
+--         else
+--             ret_x[y][1] = x[y][1] / b
+--             ret_dg[y][1] = duality_gap[y][1] / b
+--         end
+--     end
+--     return ret_x, ret_dg
+-- end
 
 return M
