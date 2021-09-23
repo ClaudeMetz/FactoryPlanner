@@ -4,8 +4,8 @@ local Matrix = require("data.calculation.Matrix")
 
 local insufficient_penalty = 2 ^ 20
 local redundant_penalty = 2 ^ 10
-local products_priority_penalty = 0
-local ingredients_priority_penalty = 2 ^ 0
+local products_priority_penalty = 2 ^ 0
+local ingredients_priority_penalty = 2 ^ 5
 local machine_count_penalty = 2 ^ 0
 
 function M.create_problem(name, flat_recipe_lines, normalized_references)
@@ -203,11 +203,10 @@ function M.primal_dual_interior_point(problem)
         local d_sat = dual:euclidean_norm()
         local p_sat = primal:euclidean_norm()
         local dg_sat = duality_gap:sum()
-        local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
 
         debug_print(string.format(
-            "iterate = %i, dual = %f, primal = %f, duality_gap = %f, centering_factor = %f", 
-            i, d_sat, p_sat, dg_sat, cf
+            "iterate = %i, primal = %f, dual = %f, duality_gap = %f", 
+            i, p_sat, d_sat, dg_sat
         ))
         if math.max(d_sat, p_sat, dg_sat) <= tolerance then
             break
@@ -220,6 +219,7 @@ function M.primal_dual_interior_point(problem)
             { s:diag(), 0,  x:diag() },
         }
 
+        local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
         local cen = Matrix.new_vector(x_degree):fill(cf * dg_sat / x_degree)
         local r_asd = Matrix.join_vector{
             dual,
@@ -240,6 +240,10 @@ function M.primal_dual_interior_point(problem)
 
         local p_step = M.get_max_step(x, x_asd)
         local d_step = M.get_max_step(s, s_asd)
+        debug_print(string.format(
+            "iterate = %i, p_step = %f, d_step = %f, centering_factor = %f",
+            i + 1, p_step, d_step, cf
+        ))
 
         x = x + p_step * x_asd
         y = y + d_step * y_asd
@@ -258,8 +262,8 @@ function M.get_max_step(v, dir)
     local ret = 1
     for y = 1, height do
         local a, b = v[y][1], dir[y][1]
-        if b < 0 then
-            ret = math.min(ret, -a / b)
+        if b < -tolerance then
+            ret = math.min(ret, a / -b)
         end
     end
     return ret
