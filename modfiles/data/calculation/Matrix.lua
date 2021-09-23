@@ -212,13 +212,15 @@ function P:__unm()
     return ret
 end
 
-function S.dot(op1, op2)
+function S.hadamard_product(op1, op2)
     assert(S.is_matrix(op1) and S.is_matrix(op2))
-    assert(op1.height == op2.height and op1.width == 1 and op2.width == 1)
-    local height = op1.height
-    local ret = S.new_vector(height)
+    assert(op1.height == op2.height and op1.width == op2.width)
+    local height, width = op1.height, op1.width
+    local ret = S(height, width)
     for y = 1, height do
-        ret[y][1] = op1[y][1] * op2[y][1]
+        for x = 1, width do
+            ret[y][x] = op1[y][x] * op2[y][x]
+        end
     end
     return ret
 end

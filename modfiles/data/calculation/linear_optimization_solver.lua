@@ -166,7 +166,7 @@ function M.get_include_items(flat_recipe_lines, normalized_references)
     return set
 end
 
-local dot = Matrix.dot
+local had = Matrix.hadamard_product
 local tolerance = MARGIN_OF_ERROR
 local iterate_limit = 200
 
@@ -198,7 +198,7 @@ function M.primal_dual_interior_point(problem)
     for i = 0, iterate_limit do
         local dual = AT * y + s - c
         local primal = A * x - b
-        local duality_gap = dot(x, s)
+        local duality_gap = had(x, s)
 
         local d_sat = dual:euclidean_norm()
         local p_sat = primal:euclidean_norm()
