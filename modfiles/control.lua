@@ -5,17 +5,6 @@ NTH_TICK_HANDLERS = {}
 GENERIC_HANDLERS = {}
 SEARCH_HANDLERS = {}
 
-require("util")  -- core.lualib
-table = require('__flib__.table')  -- replaces the lua table module
-
-require("data.init")
-require("data.data_util")
-
-require("ui.dialogs.main_dialog")
-require("ui.dialogs.modal_dialog")
-require("ui.ui_util")
-require("ui.event_handler")
-
 DEVMODE = true  -- Enables certain conveniences for development
 MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
@@ -45,6 +34,17 @@ if DEVMODE then
 
     DEV_EXPORT_STRING = "eNq1lFFr2zAQx7+Lnu3gpE0Zfh0bFFYY22MpRpbPyRXJ8uRzwQR/951kmaypN1a3fYvv/rn76X86nYSxVfEErkPbiFxkm+2nzfVOJKLry1oqsg6hE/n9STTSACs4hcprT4KG1keQwHA05tHZJm21JBBjIggNdEpqztxkrLHkq/ki352tekW+ji0fQdHUpXWWrA/GcqA5xSVRpQqd6pE8G5pWY41QiZxcD8kzFG7r4FePDqpCGts3oUkFNTYcKQfWxXAy/8ivs8zT2rbQ8AR6Lqu07DzvDDsmLwl7JxvsTbq72n8I2nY1WRiFdfAeWCVontCZKtvskxAsLrsS+9G11lHq0wu9x7Xn0Xg4UmpR/+tAte6xWmX0br/a6Y5Amo+h2mb/eTUfkrhIxZy6nRZz/vxstV8mv+ixYK2tdR7hGwNcbuL8t5Dz4ArbIFq5ooqfhIN1/pDKyZqwOXiOduJnqiJ6NUXgD/IfU29WG6mOkfUSg6VgSs1l06hKd68BOUpXFRoN4+e11B0r7xhEPzfmNL6wOar+ZrQJ6ULFvTnL7uJZvAngFDQkDxAG7l1BfnlpKKI985YFsIVRxyEtE8R7sz3nv4bBj+fAz/m1H8L9jpZ+MS0N4rWv+IJFb7iJC9Xe87AP428/DGfh"
 end
+
+require("util")  -- core.lualib
+table = require('__flib__.table')  -- replaces the lua table module
+
+require("data.init")
+require("data.data_util")
+
+require("ui.dialogs.main_dialog")
+require("ui.dialogs.modal_dialog")
+require("ui.ui_util")
+require("ui.event_handler")
 
 
 -- ** UTIL **

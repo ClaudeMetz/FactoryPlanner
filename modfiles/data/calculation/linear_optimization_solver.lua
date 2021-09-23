@@ -167,7 +167,7 @@ function M.get_include_items(flat_recipe_lines, normalized_references)
 end
 
 local dot = Matrix.dot
-local tolerance = 0.000001
+local tolerance = MARGIN_OF_ERROR
 local iterate_limit = 200
 
 function M.primal_dual_interior_point(problem)
@@ -181,7 +181,11 @@ function M.primal_dual_interior_point(problem)
     local y_degree = problem.dual_length
     local x = Matrix.new_vector(x_degree):fill(1)
     local y = Matrix.new_vector(y_degree):fill(0)
-    local s = Matrix.new_vector(x_degree):fill(1)
+    local s = Matrix.new_vector(x_degree):fill(0) + c
+
+    for y = 1, x_degree do
+        s[y][1] = math.max(0, s[y][1])
+    end
 
     local function split(dir)
         local x_dir = dir:submatrix(1, 1, x_degree, 1)
@@ -200,6 +204,7 @@ function M.primal_dual_interior_point(problem)
         local p_sat = primal:euclidean_norm()
         local dg_sat = duality_gap:sum()
         local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
+
         debug_print(string.format(
             "iterate = %i, dual = %f, primal = %f, duality_gap = %f, centering_factor = %f", 
             i, d_sat, p_sat, dg_sat, cf

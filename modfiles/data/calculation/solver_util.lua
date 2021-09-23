@@ -2,7 +2,7 @@ local calculation = calculation -- require "data.calculation.util"
 local structures = structures -- require "data.calculation.structures"
 local M = {}
 
-local tolerance = 0.00001
+local tolerance = MARGIN_OF_ERROR
 
 local function create_item_node(item_proto, amount)
     return {
