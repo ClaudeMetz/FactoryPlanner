@@ -91,11 +91,13 @@ end
 function P:make_subject_matrix()
     local ret = Matrix(self.dual_length, self.primal_length):fill(0)
     for p, t in pairs(self.subject_terms) do
-        local x = self.primal[p].index
-        for d, v in pairs(t) do
-            if self.dual[d] then
-                local y = self.dual[d].index
-                ret[y][x] = v
+        if self.primal[p] then
+            local x = self.primal[p].index
+            for d, v in pairs(t) do
+                if self.dual[d] then
+                    local y = self.dual[d].index
+                    ret[y][x] = v
+                end
             end
         end
     end

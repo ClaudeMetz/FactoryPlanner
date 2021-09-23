@@ -2,12 +2,11 @@ local M = {}
 local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
 
-local insufficient_penalty = 2 ^ 15
+local insufficient_penalty = 2 ^ 20
 local redundant_penalty = 2 ^ 10
 local products_priority_penalty = 0
 local ingredients_priority_penalty = 2 ^ 0
 local machine_count_penalty = 2 ^ 0
-local no_penalty = 0
 
 function M.create_problem(name, flat_recipe_lines, normalized_references)
     local problem = Problem(name)
@@ -50,7 +49,7 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_penalty(transfer_key, penalty)
                     else
-                        problem:add_objective(transfer_key, penalty, false)
+                        problem:add_objective(transfer_key, penalty)
                     end
                     problem:add_subject_term(transfer_key, {
                         [balance_key] = -1
@@ -58,7 +57,7 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
                 end
                 local implicit_key = string.format("implicit_transfer|%s=>(?):%s", id, name)
                 local penalty = #u.neighbor_recipe_lines * products_priority_penalty
-                problem:add_objective(implicit_key, penalty, false)
+                problem:add_objective(implicit_key, penalty)
                 problem:add_subject_term(implicit_key, {
                     [balance_key] = -1
                 })
@@ -79,7 +78,7 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_penalty(transfer_key, penalty)
                     else
-                        problem:add_objective(transfer_key, penalty, false)
+                        problem:add_objective(transfer_key, penalty)
                     end
                     problem:add_subject_term(transfer_key, {
                         [balance_key] = 1
@@ -87,7 +86,7 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
                 end
                 local implicit_key = string.format("implicit_transfer|(?)=>%s:%s", id, name)
                 local penalty = #u.neighbor_recipe_lines * ingredients_priority_penalty
-                problem:add_objective(implicit_key, penalty, false)
+                problem:add_objective(implicit_key, penalty)
                 problem:add_subject_term(implicit_key, {
                     [balance_key] = 1
                 })
@@ -99,13 +98,15 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
     
     local items = M.get_include_items(flat_recipe_lines, normalized_references)
     for name, v in pairs(items) do
-        if v.product or v.ingredient then
+        if v.product and v.ingredient then
             problem:add_eq_constraint("balance|" .. name, 0)
         end
         if v.product then
             local key = "implicit_ingredient|" .. name
-            local penalty = v.ingredient and redundant_penalty or no_penalty
-            problem:add_objective(key, penalty, false)
+            local penalty = redundant_penalty
+            if v.ingredient  then
+                problem:add_objective(key, penalty)
+            end
 
             local constraint_map = {}
             add_item_factor(constraint_map, name, -1)
@@ -113,8 +114,10 @@ function M.create_problem(name, flat_recipe_lines, normalized_references)
         end
         if v.ingredient then
             local key = "implicit_product|" .. name
-            local penalty = v.product and insufficient_penalty or no_penalty
-            problem:add_objective(key, penalty, false)
+            local penalty = insufficient_penalty
+            if v.product then
+                problem:add_objective(key, penalty)
+            end
 
             local constraint_map = {}
             add_item_factor(constraint_map, name, 1)
