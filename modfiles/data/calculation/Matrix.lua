@@ -306,6 +306,27 @@ function P:insert_column(vector, x)
     return self
 end
 
+function P:get(y, x)
+    return self[y][x]
+end
+
+function P:set(y, x, value)
+    self[y][x] = value
+end
+
+function P:iterate_row(y)
+    local x, width = 0, self.width
+    local function it()
+        x = x + 1
+        if x <= width then
+            return x, self[y][x]
+        else
+            return nil
+        end
+    end
+    return it
+end
+
 function P:row_swap(a, b)
     self[a], self[b] = self[b], self[a]
     return self
@@ -321,7 +342,7 @@ function P:row_mul(y, factor)
     return self
 end
 
-function P:row_sum(to, from, factor)
+function P:row_trans(to, from, factor)
     assert(to ~= from)
     if factor == 0 then
         return self
@@ -331,51 +352,6 @@ function P:row_sum(to, from, factor)
         self[to][x] = self[to][x] + v * factor
     end
     return self
-end
-
-function P:gaussian_elimination(flee_value)
-    flee_value = flee_value or 0
-    local height = self.height
-    local aug_index = self.width
-    assert(height + 1 == aug_index)
-
-    local function select_pivot(c)
-        local max_index, max_value = nil, 0
-        for y = c, height do
-            local v = math.abs(self[y][c])
-            if max_value < v then
-                max_value = v
-                max_index = y
-            end
-        end
-        return max_index
-    end
-
-    for i = 1, height do
-        local p = select_pivot(i)
-        if p then
-            self:row_swap(i, p)
-            local f = self[i][i]
-            self:row_mul(i, 1 / f)
-            for k = i + 1, height do
-                local g = self[k][i]
-                self:row_sum(k, i, -g)
-            end
-        end
-    end
-
-    for i = height, 1, -1 do
-        if self[i][i] == 0 then
-            self[i][i] = 1
-            self[i][aug_index] = flee_value
-        end
-        for k = 1, i - 1 do
-            local g = self[k][i]
-            self:row_sum(k, i, -g)
-        end
-    end
-
-    return self:submatrix(1, aug_index, height, aug_index)
 end
 
 return C.class("Matrix", P, S)

@@ -177,21 +177,42 @@ function M.primal_dual_interior_point(problem)
     local AT = A:T()
     local b = problem:make_dual_factors()
     local c = problem:make_primal_factors()
-    local x_degree = problem.primal_length
-    local y_degree = problem.dual_length
-    local x = Matrix.new_vector(x_degree):fill(1)
-    local y = Matrix.new_vector(y_degree):fill(0)
-    local s = Matrix.new_vector(x_degree):fill(0) + c
+    local p_degree = problem.primal_length
+    local d_degree = problem.dual_length
+    local x = Matrix.new_vector(p_degree):fill(1)
+    local y = Matrix.new_vector(d_degree):fill(0)
+    local s = c:clone()
 
-    for y = 1, x_degree do
+    for y = 1, p_degree do
         s[y][1] = math.max(0, s[y][1])
     end
 
     local function split(dir)
-        local x_dir = dir:submatrix(1, 1, x_degree, 1)
-        local y_dir = dir:submatrix(1 + x_degree, 1, x_degree + y_degree, 1)
-        local s_dir = dir:submatrix(1 + x_degree + y_degree, 1, x_degree * 2 + y_degree, 1)
+        local x_dir = dir:submatrix(1, 1, p_degree, 1)
+        local y_dir = dir:submatrix(1 + p_degree, 1, p_degree + d_degree, 1)
+        local s_dir = dir:submatrix(1 + p_degree + d_degree, 1, p_degree * 2 + d_degree, 1)
         return x_dir, y_dir, s_dir
+    end
+
+    local function fvg(...)
+        local currents = Matrix.join_vector{...}
+        return function(target, factors, indexes)
+            debug_print(string.format("generate flee values: target = %f", target))
+            local tf = 0
+            for _, v in ipairs(factors) do
+                tf = tf + math.abs(v)
+            end
+            local ret = {}
+            local sol = target / tf
+            for i, k in ipairs(indexes) do
+                ret[i] = sol * factors[i] / math.abs(factors[i])
+                debug_print(string.format(
+                    "index = %i, factor = %f, current = %f, solution = %f",
+                    k, factors[i], currents[k][1], sol
+                ))
+            end
+            return ret
+        end
     end
 
     debug_print(string.format("-- solve %s --", problem.name))
@@ -220,22 +241,23 @@ function M.primal_dual_interior_point(problem)
         }
 
         local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
-        local cen = Matrix.new_vector(x_degree):fill(cf * dg_sat / x_degree)
-        local r_asd = Matrix.join_vector{
+        -- local cf = 2 / (1 + math.exp(-(d_sat / d_degree + p_sat / p_degree))) - 1
+        local cen = Matrix.new_vector(p_degree):fill(cf * dg_sat / p_degree)
+        local r_asd = -Matrix.join_vector{
             dual,
             primal,
             duality_gap - cen,
         }
-        local asd = D:clone():insert_column(-r_asd):gaussian_elimination()
+        local asd = M.gaussian_elimination(D:clone():insert_column(r_asd), fvg(x, y, s))
         local x_asd, y_asd, s_asd = split(asd)
 
-        -- local cor = dot(x, s) + dot(x, s_asd) + dot(x_asd, s) + dot(x_asd, s_asd)
-        -- local r_agg = Matrix.join_vector{
+        -- local cor = had(x, s) + had(x, s_asd) + had(x_asd, s) + had(x_asd, s_asd)
+        -- local r_agg = -Matrix.join_vector{
         --     dual,
         --     primal,
         --     duality_gap + cor - cen,
         -- }
-        -- local agg = D:clone():insert_column(-r_agg):gaussian_elimination()
+        -- local agg = M.gaussian_elimination(D:clone():insert_column(r_agg), fvg(x, y, s))
         -- local x_agg, y_agg, s_agg = split(agg)
 
         local p_step = M.get_max_step(x, x_asd)
@@ -285,5 +307,62 @@ end
 --     end
 --     return ret_x, ret_dg
 -- end
+
+function M.gaussian_elimination(matrix, flee_value_generator)
+    local height, width = matrix.height, matrix.width
+
+    local function select_pivot(s, x)
+        local max_value, max_index, raw_max_value = 0, nil, nil
+        for y = s, height do
+            local r = matrix:get(y, x)
+            local a = math.abs(r)
+            if max_value < a then
+                max_value = a
+                max_index = y
+                raw_max_value = r
+            end
+        end
+        return max_index, raw_max_value
+    end
+
+    local i = 1
+    for x = 1, width do
+        local pi, pv = select_pivot(i, x)
+        if pi then
+            matrix:row_swap(i, pi)
+            for k = i + 1, height do
+                local f = -matrix:get(k, x) / pv
+                matrix:row_trans(k, i, f)
+            end
+            i = i + 1
+        end
+    end
+
+    local sol = {}
+    for y = height, 1, -1 do
+        local total, factors, indexes = 0, {}, {}
+        for x, v in matrix:iterate_row(y) do
+            if x == width then
+                total = total + v
+            elseif sol[x] then
+                total = total - sol[x] * v
+            elseif math.abs(v) > tolerance then
+                table.insert(factors, v)
+                table.insert(indexes, x)
+            end
+        end
+
+        local l = #indexes
+        if l == 1 then
+            sol[indexes[1]] = total / factors[1]
+        elseif l >= 2 then
+            local res = flee_value_generator(total, factors, indexes)
+            for k, x in ipairs(indexes) do
+                sol[x] = res[k]
+            end
+        end
+    end
+    return Matrix.list_to_vector(sol)
+end
 
 return M
