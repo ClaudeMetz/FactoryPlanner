@@ -8,8 +8,8 @@ local products_priority_penalty = 2 ^ 0
 local ingredients_priority_penalty = 2 ^ 5
 local machine_count_penalty = 2 ^ 0
 
-function M.create_problem(name, flat_recipe_lines, normalized_references)
-    local problem = Problem(name)
+function M.create_problem(subfactory_name, flat_recipe_lines, normalized_references)
+    local problem = Problem(subfactory_name)
 
     local function add_item_factor(constraint_map, name, factor)
         constraint_map["balance|" .. name] = factor
@@ -243,21 +243,21 @@ function M.primal_dual_interior_point(problem)
         local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
         -- local cf = 2 / (1 + math.exp(-(d_sat / d_degree + p_sat / p_degree))) - 1
         local cen = Matrix.new_vector(p_degree):fill(cf * dg_sat / p_degree)
-        local r_asd = -Matrix.join_vector{
+        local r_asd = Matrix.join_vector{
             dual,
             primal,
             duality_gap - cen,
         }
-        local asd = M.gaussian_elimination(D:clone():insert_column(r_asd), fvg(x, y, s))
+        local asd = M.gaussian_elimination(D:clone():insert_column(-r_asd), fvg(x, y, s))
         local x_asd, y_asd, s_asd = split(asd)
 
         -- local cor = had(x, s) + had(x, s_asd) + had(x_asd, s) + had(x_asd, s_asd)
-        -- local r_agg = -Matrix.join_vector{
+        -- local r_agg = Matrix.join_vector{
         --     dual,
         --     primal,
         --     duality_gap + cor - cen,
         -- }
-        -- local agg = M.gaussian_elimination(D:clone():insert_column(r_agg), fvg(x, y, s))
+        -- local agg = M.gaussian_elimination(D:clone():insert_column(-r_agg), fvg(x, y, s))
         -- local x_agg, y_agg, s_agg = split(agg)
 
         local p_step = M.get_max_step(x, x_asd)
