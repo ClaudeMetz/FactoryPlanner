@@ -1,6 +1,7 @@
 local M = {}
 local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
+local SparseMatrix = require("data.calculation.SparseMatrix")
 
 local insufficient_penalty = 2 ^ 20
 local redundant_penalty = 2 ^ 10
@@ -166,14 +167,14 @@ function M.get_include_items(flat_recipe_lines, normalized_references)
     return set
 end
 
-local had = Matrix.hadamard_product
+local had, diag = Matrix.hadamard_product, SparseMatrix.diag
 local tolerance = MARGIN_OF_ERROR
 local iterate_limit = 200
 
 function M.primal_dual_interior_point(problem)
     local debug_print = log
 
-    local A = problem:make_subject_matrix()
+    local A = problem:make_subject_sparse_matrix()
     local AT = A:T()
     local b = problem:make_dual_factors()
     local c = problem:make_primal_factors()
@@ -234,10 +235,10 @@ function M.primal_dual_interior_point(problem)
         end
 
         -- local x_nor, dg_nor = M.normalize_duality_gap_rows(s, x, duality_gap)
-        local D = Matrix.join{
-            { 0,        AT, 1        },
-            { A,        0,  0        },
-            { s:diag(), 0,  x:diag() },
+        local D = SparseMatrix.join{
+            { 0,       AT, 1       },
+            { A,       0,  0       },
+            { diag(s), 0,  diag(x) },
         }
 
         local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
@@ -248,7 +249,7 @@ function M.primal_dual_interior_point(problem)
             primal,
             duality_gap - cen,
         }
-        local asd = M.gaussian_elimination(D:clone():insert_column(-r_asd), fvg(x, y, s))
+        local asd = M.gaussian_elimination(D:insert_column(-r_asd), fvg(x, y, s))
         local x_asd, y_asd, s_asd = split(asd)
 
         -- local cor = had(x, s) + had(x, s_asd) + had(x_asd, s) + had(x_asd, s_asd)
@@ -342,10 +343,10 @@ function M.gaussian_elimination(matrix, flee_value_generator)
     for y = height, 1, -1 do
         local total, factors, indexes = 0, {}, {}
         for x, v in matrix:iterate_row(y) do
-            if x == width then
-                total = total + v
-            elseif sol[x] then
+            if sol[x] then
                 total = total - sol[x] * v
+            elseif x == width then
+                total = total + v
             elseif math.abs(v) > tolerance then
                 table.insert(factors, v)
                 table.insert(indexes, x)

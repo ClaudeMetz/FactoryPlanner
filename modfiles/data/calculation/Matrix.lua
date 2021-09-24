@@ -21,6 +21,16 @@ function S.list_to_vector(list)
     return ret
 end
 
+function S.diag(vector)
+    assert(vector.width == 1)
+    local size = vector.height
+    local ret = S(size, size):fill(0)
+    for i = 1, size do
+        ret[i][i] = vector[i][1]
+    end
+    return ret
+end
+
 function S.join(matrixes)
     local heights, widths = {}, {}
     for y, t in ipairs(matrixes) do
@@ -236,28 +246,6 @@ function P:T()
     return ret
 end
 
-function P:diag()
-    local height, width = self.height, self.width
-    assert(width == 1)
-    local size = height
-    local ret = S(size, size):fill(0)
-    for i = 1, size do
-        ret[i][i] = self[i][1]
-    end
-    return ret
-end
-
-function P:inv_diag()
-    local height, width = self.height, self.width
-    assert(width == 1)
-    local size = height
-    local ret = S(size, size):fill(0)
-    for i = 1, size do
-        ret[i][i] = 1 / self[i][1]
-    end
-    return ret
-end
-
 function P:sum()
     local height, width = self.height, self.width
     assert(width == 1)
@@ -293,9 +281,9 @@ function P:insert_column(vector, x)
     self.width = self.width + 1
     x = x or self.width
     if type(vector) == "number" then
-        local v = vector
+        local value = vector
         for y = 1, self.height do
-            table.insert(self[y], x, v)
+            table.insert(self[y], x, value)
         end
     else
         assert(S.is_matrix(vector) and vector.width == 1)
@@ -333,9 +321,6 @@ function P:row_swap(a, b)
 end
 
 function P:row_mul(y, factor)
-    if factor == 0 then
-        return self
-    end
     for x, v in ipairs(self[y]) do
         self[y][x] = v * factor
     end

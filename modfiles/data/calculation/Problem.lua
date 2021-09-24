@@ -1,6 +1,7 @@
 local P, S = {}, {}
 local C = require("data.calculation.class")
 local Matrix = require("data.calculation.Matrix")
+local SparseMatrix = require("data.calculation.SparseMatrix")
 
 function P:__new(name)
     self.name = name
@@ -88,20 +89,24 @@ function P:make_dual_factors()
     return ret
 end
 
-function P:make_subject_matrix()
-    local ret = Matrix(self.dual_length, self.primal_length):fill(0)
+function P:make_subject_sparse_matrix()
+    local ret = SparseMatrix(self.dual_length, self.primal_length)
     for p, t in pairs(self.subject_terms) do
         if self.primal[p] then
             local x = self.primal[p].index
             for d, v in pairs(t) do
                 if self.dual[d] then
                     local y = self.dual[d].index
-                    ret[y][x] = v
+                    ret:set(y, x, v)
                 end
             end
         end
     end
     return ret
+end
+
+function P:make_subject_matrix()
+    return self:make_subject_sparse_matrix():to_matrix()
 end
 
 function P:convert_result(vector)
