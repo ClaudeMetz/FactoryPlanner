@@ -13,10 +13,11 @@ function S.new_vector(degree)
     return S(degree, 1)
 end
 
-function S.list_to_vector(list)
-    local ret = S.new_vector(#list)
-    for i, v in ipairs(list) do
-        ret[i][1] = v
+function S.list_to_vector(list, degree)
+    degree = degree or #list
+    local ret = S.new_vector(degree)
+    for y = 1, degree do
+        ret[y][1] = list[y] or 0
     end
     return ret
 end
@@ -230,6 +231,20 @@ function S.hadamard_product(op1, op2)
     for y = 1, height do
         for x = 1, width do
             ret[y][x] = op1[y][x] * op2[y][x]
+        end
+    end
+    return ret
+end
+
+function S.hadamard_power(matrix, scalar)
+    assert(S.is_matrix(matrix) and type(scalar) == "number")
+    local height, width = matrix.height, matrix.width
+    local ret = S(height, width)
+    for y = 1, height do
+        for x = 1, width do
+            local v = matrix[y][x]
+            assert(v > 0)
+            ret[y][x] = v ^ scalar
         end
     end
     return ret

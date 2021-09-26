@@ -138,11 +138,64 @@ function P.__mul(op1, op2)
         local ret = Matrix(height, width)
         for y = 1, height do
             for x = 1, width do
+                local op1_row_indexes, op1_row_values = op1.indexes[y], op1.values[y]
                 local v = 0
-                for rx, r in ipairs(op1.indexes[y]) do
-                    v = v + op1.values[y][rx] * op2[r][x]
+                for rx, r in ipairs(op1_row_indexes) do
+                    v = v + op1_row_values[rx] * op2[r][x]
                 end
                 ret[y][x] = v
+            end
+        end
+        return ret
+    elseif Matrix.is_matrix(op1) and S.is_sparse_matrix(op2) then
+        assert(op1.width == op2.height)
+        local height, width = op1.height, op2.width
+        local op2_t = op2:T()
+        local ret = Matrix(height, width)
+        for y = 1, height do
+            for x = 1, width do
+                local op2_column_indexes, op2_column_values = op2_t.indexes[x], op2_t.values[x]
+                local v = 0
+                for ry, r in ipairs(op2_column_indexes) do
+                    v = v + op1[y][r] * op2_column_values[ry]
+                end
+                ret[y][x] = v
+            end
+        end
+        return ret
+    elseif S.is_sparse_matrix(op1) and S.is_sparse_matrix(op2) then
+        assert(op1.width == op2.height)
+        local height, width = op1.height, op2.width
+        local op2_t = op2:T()
+        local ret = S(height, width)
+        for y = 1, height do
+            local ret_indexes, ret_values = ret.indexes[y], ret.values[y]
+            for x = 1, width do
+                local op1_row_indexes, op1_row_values = op1.indexes[y], op1.values[y]
+                local op2_column_indexes, op2_column_values = op2_t.indexes[x], op2_t.values[x]
+                local ry, rx = 1, 1
+                local function get_x()
+                    return op1_row_indexes[rx] or math.huge, op2_column_indexes[ry] or math.huge
+                end
+
+                local v = 0
+                local op1_r, op2_r = get_x()
+                while not (op1_r == math.huge and op2_r == math.huge) do
+                    if op1_r < op2_r then
+                        rx = rx + 1
+                    elseif op1_r > op2_r then
+                        ry = ry + 1
+                    else -- op1_r == op2_r
+                        v = v + op1_row_values[rx] * op2_column_values[ry]
+                        rx = rx + 1
+                        ry = ry + 1
+                    end
+                    op1_r, op2_r = get_x()
+                end
+                if v ~= 0 then
+                    table.insert(ret_values, v)
+                    table.insert(ret_indexes, x)
+                end
             end
         end
         return ret

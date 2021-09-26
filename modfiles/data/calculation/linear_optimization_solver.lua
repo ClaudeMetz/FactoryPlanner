@@ -167,7 +167,7 @@ function M.get_include_items(flat_recipe_lines, normalized_references)
     return set
 end
 
-local had, diag = Matrix.hadamard_product, SparseMatrix.diag
+local had, had_pow, diag = Matrix.hadamard_product, Matrix.hadamard_power, SparseMatrix.diag
 local tolerance = MARGIN_OF_ERROR
 local iterate_limit = 200
 
@@ -185,14 +185,7 @@ function M.primal_dual_interior_point(problem)
     local s = c:clone()
 
     for y = 1, p_degree do
-        s[y][1] = math.max(0, s[y][1])
-    end
-
-    local function split(dir)
-        local x_dir = dir:submatrix(1, 1, p_degree, 1)
-        local y_dir = dir:submatrix(1 + p_degree, 1, p_degree + d_degree, 1)
-        local s_dir = dir:submatrix(1 + p_degree + d_degree, 1, p_degree * 2 + d_degree, 1)
-        return x_dir, y_dir, s_dir
+        s[y][1] = math.max(1, s[y][1])
     end
 
     local function fvg(...)
@@ -222,35 +215,31 @@ function M.primal_dual_interior_point(problem)
         local primal = A * x - b
         local duality_gap = had(x, s)
 
-        local d_sat = dual:euclidean_norm()
-        local p_sat = primal:euclidean_norm()
-        local dg_sat = duality_gap:sum()
+        local d_sat = dual:euclidean_norm() / d_degree
+        local p_sat = primal:euclidean_norm() / p_degree
+        local dg_sat = duality_gap:euclidean_norm() / p_degree
 
         debug_print(string.format(
-            "iterate = %i, primal = %f, dual = %f, duality_gap = %f", 
+            "i = %i, primal = %f, dual = %f, duality_gap = %f", 
             i, p_sat, d_sat, dg_sat
         ))
         if math.max(d_sat, p_sat, dg_sat) <= tolerance then
             break
         end
 
-        -- local x_nor, dg_nor = M.normalize_duality_gap_rows(s, x, duality_gap)
-        local D = SparseMatrix.join{
-            { 0,       AT, 1       },
-            { A,       0,  0       },
-            { diag(s), 0,  diag(x) },
-        }
+        local s_inv = had_pow(s, -1)
 
-        local cf = 2 / (1 + math.exp(-(d_sat + p_sat) / dg_sat)) - 1
-        -- local cf = 2 / (1 + math.exp(-(d_sat / d_degree + p_sat / p_degree))) - 1
-        local cen = Matrix.new_vector(p_degree):fill(cf * dg_sat / p_degree)
-        local r_asd = Matrix.join_vector{
-            dual,
-            primal,
-            duality_gap - cen,
-        }
-        local asd = M.gaussian_elimination(D:insert_column(-r_asd), fvg(x, y, s))
-        local x_asd, y_asd, s_asd = split(asd)
+        local u = M.sigmoid((d_sat + p_sat) * dg_sat, -1)
+        local ue = Matrix.new_vector(p_degree):fill(u)
+        local dg_aug = had(s_inv, duality_gap - ue)
+
+        local D = diag(had(s_inv, x))
+        local N = A * D * AT
+
+        local r_asd = A * (-D * dual + dg_aug) - primal
+        local y_asd = M.gaussian_elimination(N:insert_column(r_asd), fvg(y))
+        local s_asd = AT * -y_asd - dual
+        local x_asd = -D * s_asd - dg_aug
 
         -- local cor = had(x, s) + had(x, s_asd) + had(x_asd, s) + had(x_asd, s_asd)
         -- local r_agg = Matrix.join_vector{
@@ -264,8 +253,8 @@ function M.primal_dual_interior_point(problem)
         local p_step = M.get_max_step(x, x_asd)
         local d_step = M.get_max_step(s, s_asd)
         debug_print(string.format(
-            "iterate = %i, p_step = %f, d_step = %f, centering_factor = %f",
-            i + 1, p_step, d_step, cf
+            "p_step = %f, d_step = %f, barrier = %f",
+            p_step, d_step, u
         ))
 
         x = x + p_step * x_asd
@@ -280,34 +269,24 @@ function M.primal_dual_interior_point(problem)
     return problem:convert_result(x)
 end
 
+function M.sigmoid(value, min, max)
+    min = min or 0
+    max = max or 1
+    return (max - min) / (1 + math.exp(-value)) + min
+end
+
 function M.get_max_step(v, dir)
     local height = v.height
+    local f = 1 - tolerance
     local ret = 1
     for y = 1, height do
         local a, b = v[y][1], dir[y][1]
-        if b < -tolerance then
-            ret = math.min(ret, a / -b)
+        if b < 0 then
+            ret = math.min(ret, f * a / -b)
         end
     end
     return ret
 end
-
--- function M.normalize_duality_gap_rows(s, x, duality_gap)
---     local height = s.height
---     local ret_x, ret_dg = Matrix.new_vector(height), Matrix.new_vector(height)
---     for y = 1, height do
---         local b = s[y][1]
---         if b == 0 then
---             assert(duality_gap[y][1] == 0)
---             ret_x[y][1] = 0
---             ret_dg[y][1] = 0
---         else
---             ret_x[y][1] = x[y][1] / b
---             ret_dg[y][1] = duality_gap[y][1] / b
---         end
---     end
---     return ret_x, ret_dg
--- end
 
 function M.gaussian_elimination(matrix, flee_value_generator)
     local height, width = matrix.height, matrix.width
@@ -334,6 +313,7 @@ function M.gaussian_elimination(matrix, flee_value_generator)
             for k = i + 1, height do
                 local f = -matrix:get(k, x) / pv
                 matrix:row_trans(k, i, f)
+                matrix:set(k, x, 0)
             end
             i = i + 1
         end
@@ -347,7 +327,7 @@ function M.gaussian_elimination(matrix, flee_value_generator)
                 total = total - sol[x] * v
             elseif x == width then
                 total = total + v
-            elseif math.abs(v) > tolerance then
+            else
                 table.insert(factors, v)
                 table.insert(indexes, x)
             end
@@ -363,7 +343,7 @@ function M.gaussian_elimination(matrix, flee_value_generator)
             end
         end
     end
-    return Matrix.list_to_vector(sol)
+    return Matrix.list_to_vector(sol, width - 1)
 end
 
 return M
