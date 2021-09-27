@@ -168,12 +168,12 @@ function M.get_include_items(flat_recipe_lines, normalized_references)
 end
 
 local had, had_pow, diag = Matrix.hadamard_product, Matrix.hadamard_power, SparseMatrix.diag
+local debug_print = log
 local tolerance = MARGIN_OF_ERROR
 local iterate_limit = 200
 
+-- See also: http://www.cas.mcmaster.ca/~cs777/presentations/NumericalIssue.pdf
 function M.primal_dual_interior_point(problem)
-    local debug_print = log
-
     local A = problem:make_subject_sparse_matrix()
     local AT = A:T()
     local b = problem:make_dual_factors()
@@ -184,29 +184,8 @@ function M.primal_dual_interior_point(problem)
     local y = Matrix.new_vector(d_degree):fill(0)
     local s = c:clone()
 
-    for y = 1, p_degree do
-        s[y][1] = math.max(1, s[y][1])
-    end
-
-    local function fvg(...)
-        local currents = Matrix.join_vector{...}
-        return function(target, factors, indexes)
-            debug_print(string.format("generate flee values: target = %f", target))
-            local tf = 0
-            for _, v in ipairs(factors) do
-                tf = tf + math.abs(v)
-            end
-            local ret = {}
-            local sol = target / tf
-            for i, k in ipairs(indexes) do
-                ret[i] = sol * factors[i] / math.abs(factors[i])
-                debug_print(string.format(
-                    "index = %i, factor = %f, current = %f, solution = %f",
-                    k, factors[i], currents[k][1], sol
-                ))
-            end
-            return ret
-        end
+    for i = 1, p_degree do
+        s[i][1] = math.max(1, s[i][1])
     end
 
     debug_print(string.format("-- solve %s --", problem.name))
@@ -227,19 +206,22 @@ function M.primal_dual_interior_point(problem)
             break
         end
 
+        local fvg = M.create_default_flee_value_generator(y)
         local s_inv = had_pow(s, -1)
 
         local u = M.sigmoid((d_sat + p_sat) * dg_sat, -1)
         local ue = Matrix.new_vector(p_degree):fill(u)
         local dg_aug = had(s_inv, duality_gap - ue)
 
-        local D = diag(had(s_inv, x))
-        local N = A * D * AT
+        local ND = diag(had(s_inv, x))
+        local N = A * ND * AT
+        local L, FD, U = M.cholesky_factorization(N)
+        L = L * FD
 
-        local r_asd = A * (-D * dual + dg_aug) - primal
-        local y_asd = M.gaussian_elimination(N:insert_column(r_asd), fvg(y))
+        local r_asd = A * (-ND * dual + dg_aug) - primal
+        local y_asd = M.lu_solve_linear_equation(L, U, r_asd, fvg)
         local s_asd = AT * -y_asd - dual
-        local x_asd = -D * s_asd - dg_aug
+        local x_asd = -ND * s_asd - dg_aug
 
         -- local cor = had(x, s) + had(x, s_asd) + had(x_asd, s) + had(x_asd, s_asd)
         -- local r_agg = Matrix.join_vector{
@@ -277,24 +259,25 @@ end
 
 function M.get_max_step(v, dir)
     local height = v.height
-    local f = 1 - tolerance
+    local f = 1 - (2 ^ -10)
     local ret = 1
     for y = 1, height do
         local a, b = v[y][1], dir[y][1]
         if b < 0 then
-            ret = math.min(ret, f * a / -b)
+            ret = math.min(ret, f * (a / -b))
         end
     end
     return ret
 end
 
-function M.gaussian_elimination(matrix, flee_value_generator)
-    local height, width = matrix.height, matrix.width
+function M.gaussian_elimination(A, b)
+    local height, width = A.height, A.width
+    local ret_A = A:clone():insert_column(b)
 
     local function select_pivot(s, x)
         local max_value, max_index, raw_max_value = 0, nil, nil
         for y = s, height do
-            local r = matrix:get(y, x)
+            local r = ret_A:get(y, x)
             local a = math.abs(r)
             if max_value < a then
                 max_value = a
@@ -306,27 +289,87 @@ function M.gaussian_elimination(matrix, flee_value_generator)
     end
 
     local i = 1
-    for x = 1, width do
+    for x = 1, width + 1 do
         local pi, pv = select_pivot(i, x)
         if pi then
-            matrix:row_swap(i, pi)
+            ret_A:row_swap(i, pi)
             for k = i + 1, height do
-                local f = -matrix:get(k, x) / pv
-                matrix:row_trans(k, i, f)
-                matrix:set(k, x, 0)
+                local f = -ret_A:get(k, x) / pv
+                ret_A:row_trans(k, i, f)
+                ret_A:set(k, x, 0)
             end
             i = i + 1
         end
     end
 
+    local ret_b = ret_A:remove_column()
+    return ret_A, ret_b
+end
+
+function M.cholesky_factorization(A)
+    assert(A.height == A.width)
+    local size, sub = A.height, (2 ^ -52)
+    local L, D = SparseMatrix(size, size), SparseMatrix(size, size)
+    for i = 1, size do
+        local a_values = {}
+        for x, v in A:iterate_row(i) do
+            a_values[x] = v
+        end
+
+        for k = 1, i do
+            local i_it, k_it = L:iterate_row(i), L:iterate_row(k)
+            local i_r, i_v = i_it()
+            local k_r, k_v = k_it()
+
+            local sum = 0
+            while i_r and k_r do
+                if i_r < k_r then
+                    i_r, i_v = i_it()
+                elseif i_r > k_r then
+                    k_r, k_v = k_it()
+                else -- i_r == k_r
+                    local d = D:get(i_r, k_r)
+                    sum = sum + i_v * k_v * d
+                    i_r, i_v = i_it()
+                    k_r, k_v = k_it()
+                end
+            end
+
+            local a = a_values[k] or 0
+            local b = a - sum
+            if i == k then
+                D:set(k, k, math.max(b, a * sub))
+                L:set(i, k, 1)
+            else
+                local c = D:get(k, k)
+                local v = b / c
+                L:set(i, k, v)
+            end
+        end
+    end
+    return L, D, L:T()
+end
+
+function M.lu_solve_linear_equation(L, U, b, flee_value_generator)
+    local t = M.forward_substitution(L, b, flee_value_generator)
+    return M.backward_substitution(U, t, flee_value_generator)
+end
+
+function M.forward_substitution(A, b, flee_value_generator)
+    return M.substitution(1, A.height, 1, A, b, flee_value_generator)
+end
+
+function M.backward_substitution(A, b, flee_value_generator)
+    return M.substitution(A.height, 1, -1, A, b, flee_value_generator)
+end
+
+function M.substitution(s, e, m, A, b, flee_value_generator)
     local sol = {}
-    for y = height, 1, -1 do
-        local total, factors, indexes = 0, {}, {}
-        for x, v in matrix:iterate_row(y) do
+    for y = s, e, m do
+        local total, factors, indexes = b:get(y, 1), {}, {}
+        for x, v in A:iterate_row(y) do
             if sol[x] then
                 total = total - sol[x] * v
-            elseif x == width then
-                total = total + v
             else
                 table.insert(factors, v)
                 table.insert(indexes, x)
@@ -343,7 +386,28 @@ function M.gaussian_elimination(matrix, flee_value_generator)
             end
         end
     end
-    return Matrix.list_to_vector(sol, width - 1)
+    return Matrix.list_to_vector(sol, A.width)
+end
+
+function M.create_default_flee_value_generator(...)
+    local currents = Matrix.join_vector{...}
+    return function(target, factors, indexes)
+        debug_print(string.format("generate flee values: target = %f", target))
+        local tf = 0
+        for _, v in ipairs(factors) do
+            tf = tf + math.abs(v)
+        end
+        local ret = {}
+        local sol = target / tf
+        for i, k in ipairs(indexes) do
+            ret[i] = sol * factors[i] / math.abs(factors[i])
+            debug_print(string.format(
+                "index = %i, factor = %f, current = %f, solution = %f",
+                k, factors[i], currents[k][1], sol
+            ))
+        end
+        return ret
+    end
 end
 
 return M

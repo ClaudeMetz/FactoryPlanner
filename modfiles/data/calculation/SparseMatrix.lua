@@ -251,6 +251,24 @@ function P:insert_column(vector, x)
     return self
 end
 
+function P:remove_column(x)
+    x = x or self.width
+    local ret = {}
+    for y = 1, self.height do
+        local rx, e = self:get_raw_index(y, x)
+        if e then
+            local values, indexes = self.values[y], self.indexes[y]
+            ret[y] = values[rx]
+            table.remove(values, rx)
+            table.remove(indexes, rx)
+        else
+            ret[y] = 0
+        end
+    end
+    self.width = self.width - 1
+    return Matrix.list_to_vector(ret)
+end
+
 function P:get(y, x)
     local rx, e = self:get_raw_index(y, x)
     if e then

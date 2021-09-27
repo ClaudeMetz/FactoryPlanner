@@ -243,7 +243,7 @@ function S.hadamard_power(matrix, scalar)
     for y = 1, height do
         for x = 1, width do
             local v = matrix[y][x]
-            assert(v > 0)
+            assert(v > 0, v)
             ret[y][x] = v ^ scalar
         end
     end
@@ -307,6 +307,16 @@ function P:insert_column(vector, x)
         end
     end
     return self
+end
+
+function P:remove_column(x)
+    x = x or self.width
+    self.width = self.width - 1
+    local ret = {}
+    for y = 1, self.height do
+        ret[y] = table.remove(self[y], x)
+    end
+    return S.list_to_vector(ret)
 end
 
 function P:get(y, x)
