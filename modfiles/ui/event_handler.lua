@@ -147,7 +147,7 @@ local function handle_gui_event(event)
     if not event.element then return end
 
     local tags = event.element.tags
-    if tags and tags.mod ~= "fp" then return end
+    if tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
