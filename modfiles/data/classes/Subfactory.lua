@@ -14,6 +14,7 @@ function Subfactory.init(name, icon)
         Byproduct = Collection.init("Item"),
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
+        solver_type = nil,  -- needs to be set after init
         matrix_free_items = nil,
         linearly_dependant = false,  -- determined by the solver
         selected_floor = nil,
@@ -169,6 +170,7 @@ function Subfactory.pack(self)
         notes = self.notes,
         mining_productivity = self.mining_productivity,
         Product = Collection.pack(self.Product),
+        solver_type = self.solver_type,
         matrix_free_items = packed_free_items,
         -- Floors get packed by recursive nesting, which is necessary for a json-type data
         -- structure. It will need to be unpacked into the regular structure 'manually'.
@@ -184,6 +186,7 @@ function Subfactory.unpack(packed_self)
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
+    self.solver_type = packed_self.solver_type
 
     if packed_self.matrix_free_items then
         self.matrix_free_items = {}

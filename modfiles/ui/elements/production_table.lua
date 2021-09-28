@@ -11,7 +11,7 @@ local function generate_metadata(player)
 
     local metadata = {
         archive_open = (ui_state.flags.archive_open),
-        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
+        matrix_solver_active = (subfactory.solver_type == "matrix"),
         mining_productivity = mining_productivity,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,

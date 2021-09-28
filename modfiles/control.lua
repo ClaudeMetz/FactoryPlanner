@@ -8,6 +8,7 @@ SEARCH_HANDLERS = {}
 DEVMODE = true  -- Enables certain conveniences for development
 MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
+SOLVER_TYPE_MAP = {[1] = "traditional", [2] = "matrix", [3] = "interior_point"}
 SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
 NEW = nil  -- global variable used to store new prototype data temporarily for migration
 

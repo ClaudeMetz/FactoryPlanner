@@ -339,7 +339,7 @@ function subfactory_list.add_subfactory(player, name, icon)
 
     local settings = data_util.get("settings", player)
     subfactory.timescale = settings.default_timescale
-    if settings.prefer_matrix_solver then subfactory.matrix_free_items = {} end
+    subfactory.solver_type = settings.default_solver_type
 
     local context = data_util.get("context", player)
     Factory.add(context.factory, subfactory)
