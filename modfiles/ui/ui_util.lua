@@ -56,7 +56,7 @@ function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action,
     local player_table = data_util.get("table", player)
 
     local archive_check = (avoid_archive and player_table.ui_state.flags.archive_open)
-    if player_table.preferences.tutorial_mode and not archive_check then
+    if player_table.preferences.tutorial_mode and not archive_check and element_type then
         local action_tooltip = {"fp.tut_mode_" .. element_type}
 
         local alt_action_name, alt_action_tooltip = player_table.settings.alt_action, ""
