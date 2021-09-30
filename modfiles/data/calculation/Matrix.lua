@@ -243,7 +243,6 @@ function S.hadamard_power(matrix, scalar)
     for y = 1, height do
         for x = 1, width do
             local v = matrix[y][x]
-            assert(v > 0, v)
             ret[y][x] = v ^ scalar
         end
     end

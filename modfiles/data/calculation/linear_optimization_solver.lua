@@ -190,6 +190,9 @@ function M.primal_dual_interior_point(problem)
 
     debug_print(string.format("-- solve %s --", problem.name))
     for i = 0, iterate_limit do
+        M.check_variables_constraint("x", x)
+        M.check_variables_constraint("s", s)
+
         local dual = AT * y + s - c
         local primal = A * x - b
         local duality_gap = had(x, s)
@@ -251,6 +254,16 @@ function M.primal_dual_interior_point(problem)
     return problem:convert_result(x)
 end
 
+function M.check_variables_constraint(name, variables)
+    local height = variables.height
+    for y = 1, height do
+        local v = variables[y][1]
+        if not (v > 0) then
+            error(string.format("%s[%i] is 0 or less. value = %e", name, y, v))
+        end
+    end
+end
+
 function M.sigmoid(value, min, max)
     min = min or 0
     max = max or 1
@@ -259,7 +272,7 @@ end
 
 function M.get_max_step(v, dir)
     local height = v.height
-    local f = 1 - (2 ^ -10)
+    local f = 1 - (2 ^ -20)
     local ret = 1
     for y = 1, height do
         local a, b = v[y][1], dir[y][1]

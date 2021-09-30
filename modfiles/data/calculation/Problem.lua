@@ -122,7 +122,7 @@ end
 function P:dump_primal(vector)
     local ret = ""
     for k, v in pairs(self.primal) do
-        ret = ret .. string.format("\"%s\" = %f\n", k, vector[v.index][1])
+        ret = ret .. string.format("%q = %f\n", k, vector[v.index][1])
     end
     return ret
 end
@@ -130,7 +130,7 @@ end
 function P:dump_dual(vector)
     local ret = ""
     for k, v in pairs(self.dual) do
-        ret = ret .. string.format("\"%s\" = %f\n", k, vector[v.index][1])
+        ret = ret .. string.format("%q = %f\n", k, vector[v.index][1])
     end
     return ret
 end
