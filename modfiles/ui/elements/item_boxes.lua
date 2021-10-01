@@ -47,15 +47,6 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     local ui_state = data_util.get("ui_state", player)
     local item_boxes_elements = ui_state.main_elements.item_boxes
     local class = (category:gsub("^%l", string.upper))
-    local solver_type = subfactory.solver_type
-    
-    local label = item_boxes_elements[category .. "_category_name"]
-    if subfactory.solver_type == "interior_point" then
-        local conv = {["product"]="refarence", ["byproduct"]="product", ["ingredient"]="ingredient"}
-        label.caption = {"fp.pu_" .. conv[category], 2}
-    else
-        label.caption = {"fp.pu_" .. category, 2}
-    end
 
     local table_items = item_boxes_elements[category .. "_item_table"]
     table_items.clear()
@@ -65,6 +56,15 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
     local default_style, tut_mode_tooltip, global_enable = "flib_slot_button_default", "", true
+    local solver_type = subfactory.solver_type
+    
+    local label = item_boxes_elements[category .. "_category_name"]
+    if subfactory.solver_type == "interior_point" then
+        local conv = {["product"]="refarence", ["byproduct"]="product", ["ingredient"]="ingredient"}
+        label.caption = {"fp.pu_" .. conv[category], 2}
+    else
+        label.caption = {"fp.pu_" .. category, 2}
+    end
 
     if class == "Product" then
         default_style = "flib_slot_button_red"
