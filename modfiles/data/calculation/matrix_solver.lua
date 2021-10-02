@@ -708,11 +708,13 @@ function matrix_solver.to_reduced_row_echelon_form(m)
             -- subtract from the remaining rows so their first entries are zero
             for i = first_nonzero_row+1, num_rows do
                 factor = m[i][curr_col]
-                for j = curr_col, num_cols do
-                    m[i][j] = m[i][j] - m[pivot_row][j] * factor
-                    -- check rounding errors from floating point arthmetic
-                    if math.abs(m[i][j]) < 1e-10 then
-                        m[i][j] = 0
+                if factor ~=0 then
+                    for j = curr_col, num_cols do
+                        m[i][j] = m[i][j] - m[pivot_row][j] * factor
+                        -- check rounding errors from floating point arthmetic
+                        if math.abs(m[i][j]) < 1e-10 then
+                            m[i][j] = 0
+                        end
                     end
                 end
             end
@@ -737,11 +739,13 @@ function matrix_solver.to_reduced_row_echelon_form(m)
             -- subtract curr_row from previous rows to make leading entry a 0
             for i = 1, curr_row-1 do
                 local factor = m[i][first_nonzero_col]
-                for j = first_nonzero_col, num_cols do
-                    m[i][j] = m[i][j] - m[curr_row][j] * factor
-                    -- check rounding errors from floating point arthmetic
-                    if math.abs(m[i][j]) < 1e-10 then
-                        m[i][j] = 0
+                if factor ~= 0 then
+                    for j = first_nonzero_col, num_cols do
+                        m[i][j] = m[i][j] - m[curr_row][j] * factor
+                        -- check rounding errors from floating point arthmetic
+                        if math.abs(m[i][j]) < 1e-10 then
+                            m[i][j] = 0
+                        end
                     end
                 end
             end
