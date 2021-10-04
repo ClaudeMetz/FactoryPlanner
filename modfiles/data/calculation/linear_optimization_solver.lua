@@ -170,6 +170,9 @@ end
 local had, had_pow, diag = Matrix.hadamard_product, Matrix.hadamard_power, SparseMatrix.diag
 local debug_print = log
 local tolerance = MARGIN_OF_ERROR
+local step_limit = 1 - (2 ^ -20)
+local machine_epsilon = (2 ^ -52)
+local tiny_number = math.sqrt(2 ^ -970)
 local iterate_limit = 200
 
 -- See also: http://www.cas.mcmaster.ca/~cs777/presentations/NumericalIssue.pdf
@@ -183,15 +186,15 @@ function M.primal_dual_interior_point(problem)
     local x = Matrix.new_vector(p_degree):fill(1)
     local y = Matrix.new_vector(d_degree):fill(0)
     local s = c:clone()
-
+    
     for i = 1, p_degree do
         s[i][1] = math.max(1, s[i][1])
     end
 
     debug_print(string.format("-- solve %s --", problem.name))
     for i = 0, iterate_limit do
-        M.check_variables_constraint("x", x)
-        M.check_variables_constraint("s", s)
+        M.force_variables_constraint(x)
+        M.force_variables_constraint(s)
 
         local dual = AT * y + s - c
         local primal = A * x - b
@@ -256,13 +259,10 @@ function M.primal_dual_interior_point(problem)
     return problem:convert_result(x)
 end
 
-function M.check_variables_constraint(name, variables)
+function M.force_variables_constraint(variables)
     local height = variables.height
     for y = 1, height do
-        local v = variables[y][1]
-        if not (v > 0) then
-            error(string.format("%s[%i] is 0 or less. value = %e", name, y, v))
-        end
+        variables[y][1] = math.max(tiny_number, variables[y][1])
     end
 end
 
@@ -274,12 +274,11 @@ end
 
 function M.get_max_step(v, dir)
     local height = v.height
-    local f = 1 - (2 ^ -20)
     local ret = 1
     for y = 1, height do
         local a, b = v[y][1], dir[y][1]
         if b < 0 then
-            ret = math.min(ret, f * (a / -b))
+            ret = math.min(ret, step_limit * (a / -b))
         end
     end
     return ret
@@ -323,7 +322,7 @@ end
 
 function M.cholesky_factorization(A)
     assert(A.height == A.width)
-    local size, sub = A.height, (2 ^ -52)
+    local size = A.height
     local L, D = SparseMatrix(size, size), SparseMatrix(size, size)
     for i = 1, size do
         local a_values = {}
@@ -353,7 +352,7 @@ function M.cholesky_factorization(A)
             local a = a_values[k] or 0
             local b = a - sum
             if i == k then
-                D:set(k, k, math.max(b, a * sub))
+                D:set(k, k, math.max(b, a * machine_epsilon))
                 L:set(i, k, 1)
             else
                 local c = D:get(k, k)
