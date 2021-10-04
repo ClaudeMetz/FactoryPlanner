@@ -197,9 +197,9 @@ function M.primal_dual_interior_point(problem)
         local primal = A * x - b
         local duality_gap = had(x, s)
 
-        local d_sat = dual:euclidean_norm() / d_degree
-        local p_sat = primal:euclidean_norm() / p_degree
-        local dg_sat = duality_gap:euclidean_norm() / p_degree
+        local d_sat = (d_degree == 0) and 0 or dual:euclidean_norm() / d_degree
+        local p_sat = (p_degree == 0) and 0 or primal:euclidean_norm() / p_degree
+        local dg_sat = (p_degree == 0) and 0 or duality_gap:euclidean_norm() / p_degree
 
         debug_print(string.format(
             "i = %i, primal = %f, dual = %f, duality_gap = %f", 
