@@ -3,11 +3,11 @@ local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
 local SparseMatrix = require("data.calculation.SparseMatrix")
 
-local insufficient_penalty = 2 ^ 20
-local redundant_penalty = 2 ^ 10
-local products_priority_penalty = 2 ^ 0
-local ingredients_priority_penalty = 2 ^ 5
 local machine_count_penalty = 2 ^ 0
+local shortage_penalty = 2 ^ 25
+local surplusage_penalty = 2 ^ 15
+local products_priority_penalty = 2 ^ 5
+local ingredients_priority_penalty = 2 ^ 10
 
 function M.create_problem(subfactory_name, flat_recipe_lines, normalized_references)
     local problem = Problem(subfactory_name)
@@ -104,8 +104,8 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         end
         if v.product then
             local key = "implicit_ingredient|" .. name
-            local penalty = redundant_penalty
-            if v.ingredient  then
+            local penalty = surplusage_penalty
+            if v.ingredient or v.reference then
                 problem:add_objective(key, penalty)
             end
 
@@ -113,9 +113,9 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
             add_item_factor(constraint_map, name, -1)
             problem:add_subject_term(key, constraint_map)
         end
-        if v.ingredient then
+        if v.ingredient or v.reference then
             local key = "implicit_product|" .. name
-            local penalty = insufficient_penalty
+            local penalty = shortage_penalty
             if v.product then
                 problem:add_objective(key, penalty)
             end
@@ -246,10 +246,12 @@ function M.primal_dual_interior_point(problem)
         y = y + d_step * y_asd
         s = s + d_step * s_asd
     end
-    debug_print("-- complete solve --")
-    debug_print("variable x:\n" .. problem:dump_primal(x))
-    -- debug_print("variable y:\n" .. problem:dump_dual(y))
-    -- debug_print("variable s:\n" .. problem:dump_primal(s))
+    debug_print(string.format("-- complete solve %s --", problem.name))
+    debug_print("variables x:\n" .. problem:dump_primal(x))
+    debug_print("factors c:\n" .. problem:dump_primal(c))
+    -- debug_print("variables y:\n" .. problem:dump_dual(y))
+    debug_print("factors b:\n" .. problem:dump_dual(b))
+    -- debug_print("variables s:\n" .. problem:dump_primal(s))
 
     return problem:convert_result(x)
 end
