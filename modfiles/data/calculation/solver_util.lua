@@ -162,12 +162,18 @@ function M.normalize_references(references, timescale)
     return ret
 end
 
+local function class_add(class, item, amount)
+    item = (item.proto ~= nil) and item.proto or item
+    local t, n = item.type, item.name
+    class[t][n] = (class[t][n] or 0) + (amount or item.amount)
+end
+
 local function feedback_recipe_line(machine_counts, player_index, timescale, normalized_recipe_line)
     local nrl = normalized_recipe_line
     local machine_count = machine_counts[nrl.normalized_id]
     
-    local energy_consumption = nrl.energy_consumption_per_machine * machine_count -- todo: energy_consumption when idle
-    local pollution = nrl.pollution_per_machine * machine_count -- todo: pollution when idle
+    local energy_consumption = nrl.energy_consumption_per_machine * machine_count -- todo: Energy_consumption when idle
+    local pollution = nrl.pollution_per_machine * machine_count -- todo: Pollution when idle
     local production_ratio = nrl.production_ratio_per_machine_by_second * machine_count * timescale
     local fuel_amount = nrl.fuel_consumption_per_machine_by_second * machine_count * timescale
     if nrl.fuel_name then
@@ -177,7 +183,7 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
     local Product = structures.class.init()
     for _, v in pairs(nrl.products) do
         local amount = v.amount_per_machine_by_second * machine_count * timescale
-        structures.class.add(Product, v, amount)
+        class_add(Product, v, amount)
     end
     
     local Ingredient = structures.class.init()
@@ -186,7 +192,7 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
         if k == nrl.fuel_name then
             amount = amount - fuel_amount
         end
-        structures.class.add(Ingredient, v, amount)
+        class_add(Ingredient, v, amount)
     end
     
     return {
@@ -207,7 +213,7 @@ end
 
 local function class_add_all(to_class, from_class)
     for _, item in ipairs(structures.class.to_array(from_class)) do
-        structures.class.add(to_class, item)
+        class_add(to_class, item)
     end
 end
 
@@ -216,10 +222,17 @@ local function class_counterbalance(class_a, class_b)
         local t, n = item.type, item.name
         local depot_amount = class_a[t][n] or 0
         local counterbalance_amount = math.min(depot_amount, item.amount)
-        structures.class.subtract(class_a, item, counterbalance_amount)
-        if class_a[t][n] and class_a[t][n] <= tolerance then class_a[t][n] = nil end
-        structures.class.subtract(class_b, item, counterbalance_amount)
-        if class_b[t][n] and class_b[t][n] <= tolerance then class_b[t][n] = nil end
+        class_add(class_a, item, -counterbalance_amount)
+        class_add(class_b, item, -counterbalance_amount)
+    end
+end
+
+local function class_cleanup(class)
+    for _, item in ipairs(structures.class.to_array(class)) do
+        local t, n = item.type, item.name
+        if class[t][n] and class[t][n] <= tolerance then
+            class[t][n] = nil
+        end
     end
 end
 
@@ -228,7 +241,6 @@ local function feedback_floor(machine_counts, player_index, timescale, normalize
     local energy_consumption = 0
     local pollution = 0
     local Product = structures.class.init()
-    local Byproduct = structures.class.init()
     local Ingredient = structures.class.init()
     
     for _, l in ipairs(normalized_floor.lines) do
@@ -246,12 +258,12 @@ local function feedback_floor(machine_counts, player_index, timescale, normalize
         energy_consumption = energy_consumption + res.energy_consumption
         pollution = pollution + res.pollution
         class_add_all(Product, res.Product)
-        class_add_all(Byproduct, res.Byproduct)
         class_add_all(Ingredient, res.Ingredient)
     end
     
     class_counterbalance(Ingredient, Product)
-    class_counterbalance(Ingredient, Byproduct)
+    class_cleanup(Product)
+    class_cleanup(Ingredient)
     
     return {
         player_index = player_index,
@@ -261,14 +273,14 @@ local function feedback_floor(machine_counts, player_index, timescale, normalize
         energy_consumption = energy_consumption,
         pollution = pollution,
         Product = Product,
-        Byproduct = Byproduct,
+        Byproduct = structures.class.init(),
         Ingredient = Ingredient,
     }
 end
 
 function M.feedback(machine_counts, player_index, timescale, normalized_top_floor)
     local res = feedback_floor(machine_counts, player_index, timescale, normalized_top_floor)
-    local ReferencesMet = structures.class.init() -- todo
+    local ReferencesMet = structures.class.init() -- todo: Reflect on results.
     calculation.interface.set_subfactory_result{
         player_index = player_index,
         energy_consumption = res.energy_consumption,
