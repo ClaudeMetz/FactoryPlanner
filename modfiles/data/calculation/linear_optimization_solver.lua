@@ -10,8 +10,6 @@ local products_priority_penalty = 2 ^ 5
 local ingredients_priority_penalty = 2 ^ 10
 
 function M.create_problem(subfactory_name, flat_recipe_lines, normalized_references)
-    local problem = Problem(subfactory_name)
-
     local function add_item_factor(constraint_map, name, factor)
         constraint_map["balance|" .. name] = factor
         if factor > 0 then
@@ -21,14 +19,18 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         end
     end
 
+    local problem = Problem(subfactory_name)
+    local need_slack = M.detect_cycle_dilemma(flat_recipe_lines)
     for id, v in pairs(flat_recipe_lines) do
         problem:add_objective(id, machine_count_penalty, true)
         local constraint_map = {}
+        local is_maximum_limit = false
 
         if v.maximum_machine_count then
             local key = "maximum|" .. id
             problem:add_le_constraint(key, v.maximum_machine_count)
             constraint_map[key] = 1
+            is_maximum_limit = true
         end
         if v.minimum_machine_count then
             local key = "minimum|" .. id
@@ -39,6 +41,9 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         for name, u in pairs(v.products) do
             local amount = u.amount_per_machine_by_second
             add_item_factor(constraint_map, name, amount)
+            if is_maximum_limit then
+                need_slack[name].product = true
+            end
 
             if #u.neighbor_recipe_lines >= 2 then
                 local balance_key = string.format("products_priority_balance|%s:%s", id, name)
@@ -68,6 +73,9 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         for name, u in pairs(v.ingredients) do
             local amount = u.amount_per_machine_by_second
             add_item_factor(constraint_map, name, -amount)
+            if is_maximum_limit then
+                need_slack[name].ingredient = true
+            end
 
             if #u.neighbor_recipe_lines >= 2 then
                 local balance_key = string.format("ingredients_priority_balance|%s:%s", id, name)
@@ -102,24 +110,18 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         if v.product and v.ingredient then
             problem:add_eq_constraint("balance|" .. name, 0)
         end
-        if v.product then
+        if v.ingredient and need_slack[name].ingredient then
             local key = "implicit_ingredient|" .. name
             local penalty = surplusage_penalty
-            if v.ingredient or v.reference then
-                problem:add_objective(key, penalty)
-            end
-
+            problem:add_objective(key, penalty)
             local constraint_map = {}
             add_item_factor(constraint_map, name, -1)
             problem:add_subject_term(key, constraint_map)
         end
-        if v.ingredient or v.reference then
+        if v.product and need_slack[name].product then
             local key = "implicit_product|" .. name
             local penalty = shortage_penalty
-            if v.product then
-                problem:add_objective(key, penalty)
-            end
-
+            problem:add_objective(key, penalty)
             local constraint_map = {}
             add_item_factor(constraint_map, name, 1)
             problem:add_subject_term(key, constraint_map)
@@ -165,6 +167,76 @@ function M.get_include_items(flat_recipe_lines, normalized_references)
     end
 
     return set
+end
+
+local function create_item_flow_graph(flat_recipe_lines)
+    local ret = {}
+    local function add(a, type, b, ratio)
+        if not ret[a] then
+            ret[a] = {
+                from = {},
+                to = {},
+                visited = false,
+                cycled = false,
+            }
+        end
+        table.insert(ret[a][type], {id=b, ratio=ratio})
+    end
+
+    for _, l in pairs(flat_recipe_lines) do
+        for _, a in pairs(l.products) do
+            for _, b in pairs(l.ingredients) do
+                local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
+                add(a.name, "to", b.name, ratio)
+            end
+        end
+        for _, a in pairs(l.ingredients) do
+            for _, b in pairs(l.products) do
+                local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
+                add(a.name, "from", b.name, ratio)
+            end
+        end
+    end
+    return ret
+end
+
+local function detect_cycle_dilemma_impl(item_flow_graph, id, path)
+    local current = item_flow_graph[id]
+    if current.visited then
+        local included = false
+        for _, path_id in ipairs(path) do
+            if path_id == id then
+                included = true
+            end
+            if included then
+                item_flow_graph[path_id].cycled = true
+            end
+        end
+        return
+    end
+
+    current.visited = true
+    table.insert(path, id)
+    for _, n in ipairs(current.to) do
+        detect_cycle_dilemma_impl(item_flow_graph, n.id, path)
+    end
+    table.remove(path)
+end
+
+function M.detect_cycle_dilemma(flat_recipe_lines)
+    local item_flow_graph = create_item_flow_graph(flat_recipe_lines)
+    local path = {}
+    for id, _ in pairs(item_flow_graph) do
+        if not item_flow_graph[id].visited then
+            detect_cycle_dilemma_impl(item_flow_graph, id, path)
+        end
+    end
+
+    local ret = {}
+    for id, v in pairs(item_flow_graph) do
+        ret[id] = {product=v.cycled, ingredient=v.cycled}
+    end
+    return ret
 end
 
 local had, had_pow, diag = Matrix.hadamard_product, Matrix.hadamard_power, SparseMatrix.diag
