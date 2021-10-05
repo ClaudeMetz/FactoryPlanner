@@ -66,7 +66,8 @@ function main_dialog.rebuild(player, default_visibility)
 
     -- Create and configure the top-level frame
     local frame_main_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"}}
+      visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"},
+      name="fp_frame_main_dialog"}
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = main_dialog.determine_main_dialog_dimensions(player)
