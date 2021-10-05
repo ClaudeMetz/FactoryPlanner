@@ -335,7 +335,7 @@ function builders.ingredients(line, parent_flow, metadata)
             indication_string = {"fp.indication", {"fp.raw_ore"}}
             tutorial_tooltip = metadata.ingredient_entity_tutorial_tooltip
 
-        elseif metadata.ingredient_satisfaction then
+        elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
             local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
 

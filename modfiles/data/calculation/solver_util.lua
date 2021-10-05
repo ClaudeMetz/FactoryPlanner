@@ -191,8 +191,12 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
         local amount = v.amount_per_machine_by_second * machine_count * timescale
         if k == nrl.fuel_name then
             amount = amount - fuel_amount
+            if amount > tolerance then
+                class_add(Ingredient, v, amount)
+            end
+        else
+            class_add(Ingredient, v, amount)
         end
-        class_add(Ingredient, v, amount)
     end
     
     return {
