@@ -203,6 +203,23 @@ function matrix_solver.get_matrix_solver_metadata(subfactory_data)
     return result
 end
 
+function matrix_solver.transpose(m)
+    local transposed = {}
+
+    if #m == 0 then
+        return transposed
+    end
+
+    for i=1, #m[1] do
+        local row = {}
+        for j=1, #m do
+            table.insert(row, m[j][i])
+        end
+        table.insert(transposed, row)
+    end
+    return transposed
+end
+
 function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
     local num_rows = matrix_metadata.num_rows
     local num_cols = matrix_metadata.num_cols
@@ -224,16 +241,29 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
     end
     -- check which eliminated items could be made free while still retaining linear independence
     if #linearly_dependent_cols == 0 and num_cols < num_rows then
+        local matrix_data = matrix_solver.get_matrix_data(subfactory_data)
+        local items = matrix_data.rows
+        local col_to_item = {}
+        for k, v in pairs(items.map) do
+            col_to_item[v] = k
+        end
+
+        local t_matrix = matrix_solver.transpose(matrix_data.matrix)
+        table.remove(t_matrix)
+        matrix_solver.to_reduced_row_echelon_form(t_matrix)
+        local t_linearly_dependent = matrix_solver.find_linearly_dependent_cols(t_matrix, false)
+
         local eliminated_items = matrix_metadata.eliminated_items
+        local eliminated_keys = {}
         for _, eliminated_item in ipairs(eliminated_items) do
-            local curr_free_items = matrix_solver.shallowcopy(matrix_metadata.free_items)
-            table.insert(curr_free_items, eliminated_item)
-            local curr_subfactory_data = util.table.deepcopy(subfactory_data)
-            curr_subfactory_data.matrix_free_items = curr_free_items
-            linearly_dependent_cols = matrix_solver.run_matrix_solver(curr_subfactory_data, true)
-            if next(linearly_dependent_cols) == nil then
-                local item_key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
-                allowed_free_items[item_key] = true
+            local key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
+            eliminated_keys[key] = eliminated_item
+        end
+
+        for col, _ in pairs(t_linearly_dependent) do
+            local item = col_to_item[col]
+            if eliminated_keys[item] then
+                allowed_free_items[item] = true
             end
         end
     end
@@ -248,9 +278,7 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
     return result
 end
 
-
-function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
-    -- run through get_matrix_solver_metadata to check against recipe changes
+function matrix_solver.get_matrix_data(subfactory_data)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
     local matrix_free_items = matrix_metadata.free_items
 
@@ -288,9 +316,27 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
+    return {
+        matrix = matrix,
+        rows = rows,
+        columns = columns,
+        free_variables = free_variables,
+        matrix_free_items = matrix_free_items,
+    }
+end
+
+function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
+    -- run through get_matrix_solver_metadata to check against recipe changes
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local matrix_data = matrix_solver.get_matrix_data(subfactory_data)
+    local matrix = matrix_data.matrix
+    local columns = matrix_data.columns
+    local free_variables = matrix_data.free_variables
+    local matrix_free_items = matrix_data.matrix_free_items
+
     matrix_solver.to_reduced_row_echelon_form(matrix)
     if check_linear_dependence then
-        local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix)
+        local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix, true)
         local linearly_dependent_variables = {}
         for col, _ in pairs(linearly_dependent_cols) do
             local col_name = columns.values[col]
@@ -708,11 +754,13 @@ function matrix_solver.to_reduced_row_echelon_form(m)
             -- subtract from the remaining rows so their first entries are zero
             for i = first_nonzero_row+1, num_rows do
                 factor = m[i][curr_col]
-                for j = curr_col, num_cols do
-                    m[i][j] = m[i][j] - m[pivot_row][j] * factor
-                    -- check rounding errors from floating point arthmetic
-                    if math.abs(m[i][j]) < 1e-10 then
-                        m[i][j] = 0
+                if factor ~=0 then
+                    for j = curr_col, num_cols do
+                        m[i][j] = m[i][j] - m[pivot_row][j] * factor
+                        -- check rounding errors from floating point arthmetic
+                        if math.abs(m[i][j]) < 1e-10 then
+                            m[i][j] = 0
+                        end
                     end
                 end
             end
@@ -737,8 +785,14 @@ function matrix_solver.to_reduced_row_echelon_form(m)
             -- subtract curr_row from previous rows to make leading entry a 0
             for i = 1, curr_row-1 do
                 local factor = m[i][first_nonzero_col]
-                for j = first_nonzero_col, num_cols do
-                    m[i][j] = m[i][j] - m[curr_row][j] * factor
+                if factor ~= 0 then
+                    for j = first_nonzero_col, num_cols do
+                        m[i][j] = m[i][j] - m[curr_row][j] * factor
+                        -- check rounding errors from floating point arthmetic
+                        if math.abs(m[i][j]) < 1e-10 then
+                            m[i][j] = 0
+                        end
+                    end
                 end
             end
         end
@@ -746,7 +800,7 @@ function matrix_solver.to_reduced_row_echelon_form(m)
     -- END REDUCED ROW ECHELON FORM PART
 end
 
-function matrix_solver.find_linearly_dependent_cols(matrix)
+function matrix_solver.find_linearly_dependent_cols(matrix, ignore_last)
     -- Returns linearly dependent columns from a row-reduced matrix
     -- Algorithm works as follows:
     -- For each column:
@@ -762,7 +816,10 @@ function matrix_solver.find_linearly_dependent_cols(matrix)
     -- I haven't proven this is 100% correct, this is just something I came up with
     local row_index = 1
     local num_rows = #matrix
-    local num_cols = #matrix[1]-1
+    local num_cols = #matrix[1]
+    if ignore_last then
+        num_cols = num_cols - 1
+    end
     local ones_map = {}
     local col_set = {}
     for col_index=1, num_cols do
