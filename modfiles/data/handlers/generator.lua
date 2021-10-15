@@ -400,7 +400,7 @@ function generator.all_machines()
         elseif proto.resource_categories then
             for category, enabled in pairs(proto.resource_categories) do
                 -- Only supports solid mining recipes for now (no oil, etc.)
-                if enabled and category ~= "basic-fluid" then
+                if enabled and category ~= "basic-fluid" and proto.type ~= "character" then
                     local machine = generate_category_entry(category, proto)
                     machine.mining = true
                     generator_util.data_structure.insert(machine)
