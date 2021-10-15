@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that the player character would show up as a valid mining machine
     - Fixed a crash when using the utility dialog blueprint functionality with a large subfactory
+    - Fixed that the auto-pause logic would touch the pause state in multiplayer when it really shouldn't
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.25
