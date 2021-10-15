@@ -194,7 +194,7 @@ local function handle_item_blueprinting(player, _, _)
         return
     end
 
-    local filter_limit = combinator_proto.filter_count or 100
+    local filter_limit = combinator_proto.item_slot_count
     local missing_items = data_util.get("modal_data", player).missing_items
 
     local blueprint_entities = {}
@@ -217,13 +217,12 @@ local function handle_item_blueprinting(player, _, _)
             current_filter_count = 0
         end
 
+        current_filter_count = current_filter_count + 1
         table.insert(current_combinator.control_behavior.filters, {
             signal = {type = 'item', name = proto_name},
             count = missing_amount,
-            index = current_filter_count + 1
+            index = current_filter_count
         })
-
-        current_filter_count = current_filter_count + 1
     end
 
 
