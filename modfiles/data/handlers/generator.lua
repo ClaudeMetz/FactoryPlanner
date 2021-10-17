@@ -398,12 +398,14 @@ function generator.all_machines()
 
         -- Add mining machines
         elseif proto.resource_categories then
-            for category, enabled in pairs(proto.resource_categories) do
-                -- Only supports solid mining recipes for now (no oil, etc.)
-                if enabled and category ~= "basic-fluid" and proto.type ~= "character" then
-                    local machine = generate_category_entry(category, proto)
-                    machine.mining = true
-                    generator_util.data_structure.insert(machine)
+            if not proto.has_flag("hidden") and proto.type ~= "character" then
+                for category, enabled in pairs(proto.resource_categories) do
+                    -- Only supports solid mining recipes for now (no oil, etc.)
+                    if enabled and category ~= "basic-fluid" then
+                        local machine = generate_category_entry(category, proto)
+                        machine.mining = true
+                        generator_util.data_structure.insert(machine)
+                    end
                 end
             end
 
@@ -537,7 +539,7 @@ end
 function generator.all_belts()
     generator_util.data_structure.init("simple", "belts")
 
-    local belt_filter = {{filter="type", type="transport-belt"}}
+    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(belt_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite ~= nil then
@@ -584,7 +586,10 @@ function generator.all_fuels()
 
     -- Add solid fuels
     local item_map = new_item_types[NEW.all_items.map["item"]].map
-    for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
+    local item_fuel_filter = table.shallow_copy(fuel_filter)
+    table.insert(item_fuel_filter, {filter="flag", flag="hidden", invert=true, mode="and"})
+
+    for _, proto in pairs(game.get_filtered_item_prototypes(item_fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
         if item_map[proto.name] and used_fuel_categories[proto.fuel_category] ~= nil then
             generator_util.data_structure.insert{
@@ -602,7 +607,10 @@ function generator.all_fuels()
 
     -- Add liquid fuels
     local fluid_map = new_item_types[NEW.all_items.map["fluid"]].map
-    for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
+    local fluid_fuel_filter = table.shallow_copy(fuel_filter)
+    table.insert(fluid_fuel_filter, {filter="hidden", invert=true, mode="and"})
+
+    for _, proto in pairs(game.get_filtered_fluid_prototypes(fluid_fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
         if fluid_map[proto.name] then
             generator_util.data_structure.insert{
@@ -709,7 +717,8 @@ function generator.all_wagons()
     generator_util.data_structure.init("complex", "categories", "wagons", "category")
 
     -- Add cargo wagons
-    local cargo_wagon_filter = {{filter="type", type="cargo-wagon"}}
+    local cargo_wagon_filter = {{filter="type", type="cargo-wagon"},
+      {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
         generator_util.data_structure.insert{
             name = proto.name,
@@ -722,7 +731,8 @@ function generator.all_wagons()
     end
 
     -- Add fluid wagons
-    local fluid_wagon_filter = {{filter="type", type="fluid-wagon"}}
+    local fluid_wagon_filter = {{filter="type", type="fluid-wagon"},
+      {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
         generator_util.data_structure.insert{
             name = proto.name,
