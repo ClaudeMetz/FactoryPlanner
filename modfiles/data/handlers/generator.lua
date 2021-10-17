@@ -466,6 +466,19 @@ function generator.all_machines()
 end
 
 function generator.machines_second_pass()
+    -- Properly removes a prototype element without leaving any gaps in the name -> id map
+    local function remove_mapped_element(dataset, structure_name, id_to_remove, name_to_remove)
+        table.remove(dataset[structure_name], id_to_remove)  -- fixes gaps automatically
+        dataset.map[name_to_remove] = nil  -- does not fix gap, needs to be done manually below
+
+        for name, id in pairs(dataset.map) do
+            if id >= id_to_remove then
+                dataset.map[name] = dataset.map[name] - 1
+            end
+        end
+    end
+
+
     -- Go over all recipes to find unused categories
     local used_category_names = {}
     for _, recipe_proto in pairs(NEW.all_recipes.recipes) do
@@ -479,21 +492,31 @@ function generator.machines_second_pass()
         end
     end
 
-    local removed_category_count = 0  -- (this loop is incredibly stupid)
+    -- Filter out burner machines that don't have any valid fuel categories
+    for machine_category_id, machine_category in pairs(NEW.all_machines.categories) do
+        for machine_id, machine in pairs(machine_category.machines) do
+            if machine.energy_type == "burner" then
+                local category_found = false
+                for fuel_category in pairs(machine.burner.categories) do
+                    if NEW.all_fuels.map[fuel_category] then category_found = true; break end
+                end
+                if not category_found then
+                  remove_mapped_element(machine_category, "machines", machine_id, machine.name)
+                end
+            end
+        end
+        -- If the category ends up empty because of this, make sure to remove it
+        if table_size(machine_category.machines) == 0 then
+            unused_categories[machine_category.name] = machine_category_id
+        end
+    end
+
+    -- Actually remove unused categories
+    local removed_category_count = 0
     for category_name, category_id in pairs(unused_categories) do
         local adjusted_category_id = category_id - removed_category_count
         removed_category_count = removed_category_count + 1
-
-        table.remove(NEW.all_machines.categories, adjusted_category_id)  -- fixes gaps automatically
-        NEW.all_machines.map[category_name] = nil
-
-        -- Fix up category id map caused by the removed category
-        local machine_map = NEW.all_machines.map
-        for name, id in pairs(machine_map) do
-            if id >= adjusted_category_id then
-                machine_map[name] = machine_map[name] - 1
-            end
-        end
+        remove_mapped_element(NEW.all_machines, "categories", adjusted_category_id, category_name)
     end
 
 
