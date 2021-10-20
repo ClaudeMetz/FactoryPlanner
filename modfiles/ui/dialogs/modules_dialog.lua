@@ -258,8 +258,8 @@ end
 
 local function handle_beacon_selection(player, entities)
     local modal_elements = data_util.get("modal_elements", player)
-    modal_elements.beacon_total_textfield.text = tostring(table_size(entities))
-    modal_elements.beacon_total_textfield.focus()
+    modal_elements.beacon_controls.input_total.text = tostring(table_size(entities))
+    modal_elements.beacon_controls.input_total.focus()
 
     modal_dialog.leave_selection_mode(player)
 end
