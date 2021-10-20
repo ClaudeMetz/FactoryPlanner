@@ -66,7 +66,8 @@ function main_dialog.rebuild(player, default_visibility)
 
     -- Create and configure the top-level frame
     local frame_main_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"}}
+      visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"},
+      name="fp_frame_main_dialog"}
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = main_dialog.determine_main_dialog_dimensions(player)
@@ -174,15 +175,17 @@ end
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     local background_dimmer = data_util.get("main_elements", player).background_dimmer
 
+    -- Don't touch paused-state if this is a multiplayer session
+    if game.is_multiplayer() then return end
+
     -- Don't touch paused-state if the editor is active
     if player.controller_type == defines.controllers.editor then
         background_dimmer.visible = false
-        return game.tick_paused
+        return
     end
 
     local paused = false
-    if not data_util.get("preferences", player).pause_on_interface
-      or game.is_multiplayer() or force_false then
+    if not data_util.get("preferences", player).pause_on_interface or force_false then
         paused = false
     else
         paused = frame_main_dialog.visible
@@ -196,8 +199,6 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     -- Re-set the size because assigning a new style resets it (*grumble*)
     local resolution, scale = player.display_resolution, player.display_scale
     background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
-
-    return paused
 end
 
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings

@@ -16,9 +16,8 @@ local getter_functions = {
     flags = (function(index) return global.players[index].ui_state.flags end)
 }
 
-function data_util.get(name, player)  -- 'player' might be a player_index
-    local index = (type(player) == "number") and player or player.index
-    return getter_functions[name](index)
+function data_util.get(name, player)
+    return getter_functions[name](player.index)
 end
 
 
