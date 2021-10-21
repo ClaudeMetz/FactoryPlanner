@@ -122,8 +122,7 @@ end
 local function populate_dialog(content_frame, modal_data, entity)
     modal_data.entity = entity
     modal_data.errors = {}
-    local elements = modal_data.modal_elements
-    local module_controls = {}
+    local elements, module_controls = modal_data.modal_elements, {}
     elements.module_controls = module_controls
 
     local class = _G[entity.class]
@@ -157,9 +156,7 @@ local function populate_dialog(content_frame, modal_data, entity)
 end
 
 local function update_dialog_submit_button(modal_data)
-    local errors = modal_data.errors
-
-    local message = nil
+    local errors, message = modal_data.errors, nil
     if errors.no_compatible_modules then
         message = {"fp.module_issue_none_compatible"}
     elseif errors.zero_beacons then
@@ -167,14 +164,12 @@ local function update_dialog_submit_button(modal_data)
     elseif errors.no_module_selected then
         message = {"fp.module_issue_select_module"}
     end
-
     modal_dialog.set_submit_button_state(modal_data.modal_elements, (message == nil), message)
 end
 
 local function update_module_line(controls, amount, maximum, filters)
     -- (amount <= maximum) is assumed
-    local slider = controls.slider
-    local input = controls.input
+    local slider, input = controls.slider, controls.input
 
     local input_enabled = (maximum > 1)
     slider.set_slider_minimum_maximum(input_enabled and 1 or 0, maximum)
@@ -199,8 +194,7 @@ local function update_module_controls(modal_elements, entity)
     local filters, other_modules = prepare_module_filters(entity)
     for id, controls in pairs(modal_elements.module_controls) do
         local module = class.get(entity, "Module", id)
-        local amount = module.amount
-        local name = module.proto.name
+        local amount, name = module.amount, module.proto.name
         other_modules[name] = nil
         update_module_line(controls, amount, amount + empty_slots, filters)
         other_modules[name] = name
@@ -262,6 +256,90 @@ local function handle_beacon_selection(player, entities)
     modal_elements.beacon_controls.input_total.focus()
 
     modal_dialog.leave_selection_mode(player)
+end
+
+local function handle_module_selection(player, tags, metadata)
+    local modal_data = data_util.get("modal_data", player)
+    local entity, elements = modal_data.entity, modal_data.modal_elements
+    local id, class, new_name = tags.id, _G[entity.class], metadata.elem_value
+    if id then -- existing module changed
+        local module = class.get(entity, "Module", id)
+        if new_name then
+            -- changed to another module
+            module.proto = MODULE_NAME_MAP[new_name]
+        else
+            -- removed
+            elements.module_controls[id].parent.destroy()
+            elements.module_controls[id] = nil
+            class.remove(entity, module)
+            modal_data.errors.no_module_selected = not next(elements.module_controls)
+        end
+    elseif new_name then -- it can be nil when an empty button is reset
+        local amount = elements.empty_module_controls.slider.slider_value
+        local module = Module.init_by_proto(MODULE_NAME_MAP[new_name], amount)
+        class.add(entity, module)
+        -- just destroy the old elements instead of attempting to reuse them
+        -- as they would contain wrong information, like tags
+        elements.empty_module_controls.parent.destroy()
+        elements.empty_module_controls = nil
+        -- filters don't matter because they will be reset correctly in update_module_controls anyway
+        elements.module_controls[module.id] = add_module_line(elements.content_frame, module, 0, nil)
+        modal_data.errors.no_module_selected = false
+    end
+
+    update_module_controls(elements, entity)
+    update_dialog_submit_button(modal_data)
+end
+
+local function handle_module_slider_change(player, tags, metadata)
+    local modal_data = data_util.get("modal_data", player)
+    local entity, elements = modal_data.entity, modal_data.modal_elements
+    local id, class = tags.id, _G[entity.class]
+    if id then
+        -- existing module changed
+        Module.change_amount(class.get(entity, "Module", id), metadata.slider_value)
+        update_module_controls(elements, entity)
+    else
+        -- empty module changed, which doesn't impact anything else
+        elements.empty_module_controls.input.text = tostring(metadata.slider_value)
+    end
+
+    update_dialog_submit_button(modal_data)
+end
+
+local function handle_module_textfield_change(player, tags, metadata)
+    local modal_data = data_util.get("modal_data", player)
+    local id, elements = tags.id, modal_data.modal_elements
+    local controls = id and elements.module_controls[id] or elements.empty_module_controls
+    local slider = controls.slider
+    local set_text, amount, maximum = true, tonumber(metadata.text), slider.get_slider_maximum()
+    if not amount then
+        amount = slider.slider_value
+    elseif amount < 1 then
+        amount = 1
+    elseif amount > maximum then
+        amount = maximum
+    else
+        set_text = false
+    end
+    if set_text then
+        controls.input.text = tostring(amount)
+    end
+    -- amount still could have changed even if the value was wrong
+    -- but only update if it has actually changed
+    if amount ~= slider.slider_value then
+        if id then
+            local entity = modal_data.entity
+            local class = _G[entity.class]
+            Module.change_amount(class.get(entity, "Module", id), amount)
+            update_module_controls(elements, entity)
+        else
+            -- empty module changed, which doesn't impact anything else
+            slider.slider_value = amount
+        end
+    end
+
+    update_dialog_submit_button(modal_data)
 end
 
 
@@ -411,108 +489,19 @@ modules_dialog.gui_events = {
     on_gui_elem_changed = {
         {
             name = "select_module",
-            handler = (function(player, tags, metadata)
-                local modal_data = data_util.get("modal_data", player)
-                local id = tags.id
-                local entity = modal_data.entity
-                local class = _G[entity.class]
-                local elements = modal_data.modal_elements
-                local new_name = metadata.elem_value
-                if id then -- existing module changed
-                    local module = class.get(entity, "Module", id)
-                    if new_name then
-                        -- changed to another module
-                        module.proto = MODULE_NAME_MAP[new_name]
-                    else
-                        -- removed
-                        elements.module_controls[id].parent.destroy()
-                        elements.module_controls[id] = nil
-                        class.remove(entity, module)
-                        modal_data.errors.no_module_selected = not next(elements.module_controls)
-                    end
-                elseif new_name then -- it can be nil when an empty button is reset
-                    local amount = elements.empty_module_controls.slider.slider_value
-                    local module = Module.init_by_proto(MODULE_NAME_MAP[new_name], amount)
-                    class.add(entity, module)
-                    -- just destroy the old elements instead of attempting to reuse them
-                    -- as they would contain wrong information, like tags
-                    elements.empty_module_controls.parent.destroy()
-                    elements.empty_module_controls = nil
-                    -- filters don't matter because they will be reset correctly in update_module_controls anyway
-                    elements.module_controls[module.id] = add_module_line(elements.content_frame, module, 0, nil)
-                    modal_data.errors.no_module_selected = false
-                end
-
-                update_module_controls(elements, entity)
-                update_dialog_submit_button(modal_data)
-            end)
+            handler = handle_module_selection
         }
     },
     on_gui_value_changed = {
         {
-            -- when slider is changed
             name = "module_amount",
-            handler = (function(player, tags, metadata)
-                local modal_data = data_util.get("modal_data", player)
-                local id = tags.id
-                local entity = modal_data.entity
-                local class = _G[entity.class]
-                local elements = modal_data.modal_elements
-                if id then
-                    -- existing module changed
-                    Module.change_amount(class.get(entity, "Module", id), metadata.slider_value)
-                    update_module_controls(elements, entity)
-                else
-                    -- empty module changed, which doesn't impact anything else
-                    elements.empty_module_controls.input.text = tostring(metadata.slider_value)
-                end
-
-                update_dialog_submit_button(modal_data)
-            end)
+            handler = handle_module_slider_change
         }
     },
     on_gui_text_changed = {
         {
             name = "module_amount",
-            handler = (function(player, tags, metadata)
-                local modal_data = data_util.get("modal_data", player)
-                local id = tags.id
-
-                local elements = modal_data.modal_elements
-                local controls = id and elements.module_controls[id] or elements.empty_module_controls
-                local slider = controls.slider
-                local maximum = slider.get_slider_maximum()
-
-                local set_text = true
-                local amount = tonumber(metadata.text)
-                if not amount then
-                    amount = slider.slider_value
-                elseif amount < 1 then
-                    amount = 1
-                elseif amount > maximum then
-                    amount = maximum
-                else
-                    set_text = false
-                end
-                if set_text then
-                    controls.input.text = tostring(amount)
-                end
-                -- amount still could have changed even if the value was wrong
-                -- but only update if it has actually changed
-                if amount ~= slider.slider_value then
-                    if id then
-                        local entity = modal_data.entity
-                        local class = _G[entity.class]
-                        Module.change_amount(class.get(entity, "Module", id), amount)
-                        update_module_controls(elements, entity)
-                    else
-                        -- empty module changed, which doesn't impact anything else
-                        slider.slider_value = amount
-                    end
-                end
-
-                update_dialog_submit_button(modal_data)
-            end)
+            handler = handle_module_textfield_change
         }
     }
 }
