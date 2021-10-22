@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a crash related to ingredient satisfaction and disabled recipes
+    - Fixed a crash when trying to add beacons while having the Satisfactorio mod active
     - Fixed that the item picker would offer disabled/hidden belts
 
 ---------------------------------------------------------------------------------------------------
