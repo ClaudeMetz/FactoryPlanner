@@ -22,7 +22,7 @@ local function set_blank_line(player, floor, line)
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
-        fuel_amount = nil
+        fuel_amount = 0
     }
 end
 
@@ -191,7 +191,7 @@ function calculation.update(player, subfactory)
         if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
             local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
 
-            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items>0 then
+            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
                 subfactory.matrix_free_items = {}
                 subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
                 matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
