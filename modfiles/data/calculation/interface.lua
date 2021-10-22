@@ -135,7 +135,7 @@ end
 local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
-    local function deteremine_satisfaction(ingredient)
+    local function determine_satisfaction(ingredient)
         local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
 
         if product_amount ~= nil then
@@ -159,12 +159,12 @@ local function update_ingredient_satisfaction(floor, product_class)
             update_ingredient_satisfaction(line.subfloor, subfloor_product_class)
 
         elseif line.machine.fuel then
-            deteremine_satisfaction(line.machine.fuel)
+            determine_satisfaction(line.machine.fuel)
         end
 
         for _, ingredient in pairs(Line.get_in_order(line, "Ingredient")) do
             if ingredient.proto.type ~= "entity" then
-                deteremine_satisfaction(ingredient)
+                determine_satisfaction(ingredient)
             end
         end
 
