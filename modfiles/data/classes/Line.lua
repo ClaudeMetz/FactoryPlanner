@@ -324,7 +324,7 @@ function Line.repair(self, player)
         end
 
         if self.valid and self.beacon and not self.beacon.valid then
-            -- Repairing an invalid beacon will remove it, leading to a valid line
+            -- Repairing a beacon always either fixes or removes it, so no influence on validity
             Beacon.repair(self.beacon, nil)
         end
 
