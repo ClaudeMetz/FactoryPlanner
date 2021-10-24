@@ -1,10 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.00.00
-Date: 00. 00. 0000
+Version: 1.1.27
+Date: 24. 10. 2021
   Features:
     - Added the ability for beacons to have more than one type of module at once (huge thanks to curiosity!)
-  Changes:
-    -
   Bugfixes:
     - Fixed a crash related to ingredient satisfaction and disabled recipes
     - Fixed a crash when trying to add beacons while having the Satisfactorio mod active
