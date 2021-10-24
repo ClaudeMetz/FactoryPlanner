@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed a crash related to ingredient satisfaction and disabled recipes
     - Fixed a crash when trying to add beacons while having the Satisfactorio mod active
     - Fixed that the item picker would offer disabled/hidden belts
+    - Potentially fixed a crash on startup in certain modded situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.26
