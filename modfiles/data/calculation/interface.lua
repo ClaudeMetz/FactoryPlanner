@@ -22,7 +22,7 @@ local function set_blank_line(player, floor, line)
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
-        fuel_amount = nil
+        fuel_amount = 0
     }
 end
 
@@ -135,7 +135,7 @@ end
 local function update_ingredient_satisfaction(floor, product_class)
     product_class = product_class or structures.class.init()
 
-    local function deteremine_satisfaction(ingredient)
+    local function determine_satisfaction(ingredient)
         local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
 
         if product_amount ~= nil then
@@ -159,12 +159,12 @@ local function update_ingredient_satisfaction(floor, product_class)
             update_ingredient_satisfaction(line.subfloor, subfloor_product_class)
 
         elseif line.machine.fuel then
-            deteremine_satisfaction(line.machine.fuel)
+            determine_satisfaction(line.machine.fuel)
         end
 
         for _, ingredient in pairs(Line.get_in_order(line, "Ingredient")) do
             if ingredient.proto.type ~= "entity" then
-                deteremine_satisfaction(ingredient)
+                determine_satisfaction(ingredient)
             end
         end
 
@@ -191,7 +191,7 @@ function calculation.update(player, subfactory)
         if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
             local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
 
-            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items>0 then
+            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
                 subfactory.matrix_free_items = {}
                 subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
                 matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)

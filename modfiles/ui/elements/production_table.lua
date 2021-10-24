@@ -16,7 +16,8 @@ local function generate_metadata(player)
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
-        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
+        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true),
+        any_beacons_available = (table_size(global.all_beacons.map) > 0)
     }
 
     if preferences.tutorial_mode then
@@ -181,6 +182,8 @@ function builders.machine(line, parent_flow, metadata)
 end
 
 function builders.beacon(line, parent_flow, metadata)
+    -- Some mods might remove all beacons, in which case no beacon buttons should be added
+    if not metadata.any_beacons_available then return end
     -- Beacons only work on machines that have some allowed_effects
     if line.subfloor ~= nil or line.machine.proto.allowed_effects == nil then return end
 

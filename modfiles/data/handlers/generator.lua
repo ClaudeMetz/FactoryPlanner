@@ -456,10 +456,10 @@ function generator.all_machines()
     local function sorting_function(a, b)
         if a.speed < b.speed then return true
         elseif a.speed > b.speed then return false
-        elseif a.energy_usage < b.energy_usage then return true
-        elseif a.energy_usage > b.energy_usage then return false
         elseif a.module_limit < b.module_limit then return true
-        elseif a.module_limit > b.module_limit then return false end
+        elseif a.module_limit > b.module_limit then return false
+        elseif a.energy_usage < b.energy_usage then return true
+        elseif a.energy_usage > b.energy_usage then return false end
     end
 
     generator_util.data_structure.sort(sorting_function)
