@@ -271,6 +271,8 @@ function generator.all_items()
         for item_name, item_details in pairs(item_table) do
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
             local proto = game[type .. "_prototypes"][proto_name]
+            if proto == nil then goto skip_item end
+
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
             local stack_size = (type == "item") and proto.stack_size or nil
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
@@ -295,6 +297,8 @@ function generator.all_items()
 
             generator_util.add_item_tooltip(item)
             generator_util.data_structure.insert(item)
+
+            ::skip_item::
         end
     end
 
