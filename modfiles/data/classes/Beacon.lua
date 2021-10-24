@@ -232,9 +232,17 @@ end
 
 -- Needs repair:
 function Beacon.repair(self, _)
-    -- If the beacon is invalid at this point, meaning the prototypes are still simplified,
-    -- it couldn't be fixed by validate, so it has to be removed
-    self.parent.beacon = nil
+    if self.proto.simplified then -- if still simplified, the beacon can't be repaired and needs to be removed
+        self.parent.beacon = nil
+    else  -- otherwise, the modules need to be checked and removed if necessary
+        -- Remove invalid modules and normalize the remaining ones
+        Collection.repair_datasets(self.Module, nil)
+        Beacon.normalize_modules(self, true, true)
 
-    -- no return necessary
+        if self.module_count == 0 then   -- if the beacon would be empty, it needs to be removed
+            self.parent.beacon = nil
+        end
+    end
+
+    -- no return necessary as the beacon will either be valid or have removed itself after repair
 end

@@ -267,9 +267,10 @@ function Machine.repair(self, player)
     -- If the prototype is still simplified, it couldn't be fixed by validate
     -- A final possible fix is to replace this machine with the default for its category
     if self.proto.simplified and not Line.change_machine(self.parent, player, nil, nil) then
-        return false
+        return false  -- if this happens, the whole line is unsavable
     end
-    self.valid = true  -- the machine is valid from this point on
+    self.valid = true  -- if it gets to this, change_machine was successful and the machine is valid
+    -- It just might need to cleanup some fuel and/or modules
 
     if self.fuel and not self.fuel.valid then Fuel.repair(self.fuel, player) end
 
