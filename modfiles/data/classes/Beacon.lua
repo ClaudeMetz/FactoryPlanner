@@ -230,7 +230,7 @@ function Beacon.validate(self)
     return self.valid
 end
 
--- Needs repair:
+-- Needs repair: Module
 function Beacon.repair(self, _)
     if self.proto.simplified then -- if still simplified, the beacon can't be repaired and needs to be removed
         self.parent.beacon = nil
