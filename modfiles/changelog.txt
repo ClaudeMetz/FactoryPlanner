@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added the ability for beacons to have more than one type of module at once (huge thanks to curiosity!)
   Changes:
     -
   Bugfixes:
