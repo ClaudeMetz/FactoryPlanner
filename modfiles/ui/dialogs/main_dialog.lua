@@ -47,10 +47,11 @@ function main_dialog.rebuild(player, default_visibility)
     local interface_visible = default_visibility
     -- Delete the existing interface if there is one
     if main_elements.main_frame ~= nil then
-        interface_visible = main_elements.main_frame.visible
-
+        if main_elements.main_frame.valid then
+            interface_visible = main_elements.main_frame.visible
+            main_elements.main_frame.destroy()
+        end
         main_elements.background_dimmer.destroy()
-        main_elements.main_frame.destroy()
 
         -- Reset all main element references
         ui_state.main_elements = {}
@@ -142,7 +143,7 @@ function main_dialog.toggle(player, skip_player_opened)
     local ui_state = data_util.get("ui_state", player)
     local frame_main_dialog = ui_state.main_elements.main_frame
 
-    if frame_main_dialog == nil then
+    if frame_main_dialog == nil or not frame_main_dialog.valid then
         main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
@@ -167,7 +168,7 @@ end
 -- Returns true when the main dialog is open while no modal dialogs are
 function main_dialog.is_in_focus(player)
     local frame_main_dialog = data_util.get("main_elements", player).main_frame
-    return (frame_main_dialog ~= nil and frame_main_dialog.visible
+    return (frame_main_dialog ~= nil and frame_main_dialog.valid and frame_main_dialog.visible
       and data_util.get("ui_state", player).modal_dialog_type == nil)
 end
 
@@ -175,15 +176,17 @@ end
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     local background_dimmer = data_util.get("main_elements", player).background_dimmer
 
+    -- Don't touch paused-state if this is a multiplayer session
+    if game.is_multiplayer() then return end
+
     -- Don't touch paused-state if the editor is active
     if player.controller_type == defines.controllers.editor then
         background_dimmer.visible = false
-        return game.tick_paused
+        return
     end
 
     local paused = false
-    if not data_util.get("preferences", player).pause_on_interface
-      or game.is_multiplayer() or force_false then
+    if not data_util.get("preferences", player).pause_on_interface or force_false then
         paused = false
     else
         paused = frame_main_dialog.visible
@@ -197,8 +200,6 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     -- Re-set the size because assigning a new style resets it (*grumble*)
     local resolution, scale = player.display_resolution, player.display_scale
     background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
-
-    return paused
 end
 
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings

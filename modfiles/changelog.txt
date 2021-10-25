@@ -9,6 +9,30 @@ Date: 00. 00. 0000
     - 
 
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.27
+Date: 24. 10. 2021
+  Features:
+    - Added the ability for beacons to have more than one type of module at once (huge thanks to curiosity!)
+  Bugfixes:
+    - Fixed a crash related to ingredient satisfaction and disabled recipes
+    - Fixed a crash when trying to add beacons while having the Satisfactorio mod active
+    - Fixed that the item picker would offer disabled/hidden belts
+    - Fixed a crash when opening the main interface while using the comfy scenario
+    - Potentially fixed a crash on startup in certain modded situations
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.26
+Date: 17. 10. 2021
+  Changes:
+    - Improved performance of the matrix solver determining valid free items (thanks RSBat!)
+  Bugfixes:
+    - Fixed a persistent crash on save load with the Nullius mod, sorry about that one
+    - Fixed that certain machines, fuels, belts and train wagons that should be hidden were shown
+    - Fixed that the player character would show up as a valid mining machine
+    - Fixed a crash when using the utility dialog blueprint functionality with a large subfactory
+    - Fixed that the auto-pause logic would touch the pause state in multiplayer when it really shouldn't
+
+---------------------------------------------------------------------------------------------------
 Version: 1.1.25
 Date: 25. 08. 2021
   Changes:

@@ -271,6 +271,8 @@ function generator.all_items()
         for item_name, item_details in pairs(item_table) do
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
             local proto = game[type .. "_prototypes"][proto_name]
+            if proto == nil then goto skip_item end
+
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
             local stack_size = (type == "item") and proto.stack_size or nil
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
@@ -295,6 +297,8 @@ function generator.all_items()
 
             generator_util.add_item_tooltip(item)
             generator_util.data_structure.insert(item)
+
+            ::skip_item::
         end
     end
 
@@ -398,12 +402,14 @@ function generator.all_machines()
 
         -- Add mining machines
         elseif proto.resource_categories then
-            for category, enabled in pairs(proto.resource_categories) do
-                -- Only supports solid mining recipes for now (no oil, etc.)
-                if enabled and category ~= "basic-fluid" then
-                    local machine = generate_category_entry(category, proto)
-                    machine.mining = true
-                    generator_util.data_structure.insert(machine)
+            if not proto.has_flag("hidden") and proto.type ~= "character" then
+                for category, enabled in pairs(proto.resource_categories) do
+                    -- Only supports solid mining recipes for now (no oil, etc.)
+                    if enabled and category ~= "basic-fluid" then
+                        local machine = generate_category_entry(category, proto)
+                        machine.mining = true
+                        generator_util.data_structure.insert(machine)
+                    end
                 end
             end
 
@@ -454,10 +460,10 @@ function generator.all_machines()
     local function sorting_function(a, b)
         if a.speed < b.speed then return true
         elseif a.speed > b.speed then return false
-        elseif a.energy_usage < b.energy_usage then return true
-        elseif a.energy_usage > b.energy_usage then return false
         elseif a.module_limit < b.module_limit then return true
-        elseif a.module_limit > b.module_limit then return false end
+        elseif a.module_limit > b.module_limit then return false
+        elseif a.energy_usage < b.energy_usage then return true
+        elseif a.energy_usage > b.energy_usage then return false end
     end
 
     generator_util.data_structure.sort(sorting_function)
@@ -466,6 +472,19 @@ function generator.all_machines()
 end
 
 function generator.machines_second_pass()
+    -- Properly removes a prototype element without leaving any gaps in the name -> id map
+    local function remove_mapped_element(dataset, structure_name, id_to_remove, name_to_remove)
+        table.remove(dataset[structure_name], id_to_remove)  -- fixes gaps automatically
+        dataset.map[name_to_remove] = nil  -- does not fix gap, needs to be done manually below
+
+        for name, id in pairs(dataset.map) do
+            if id >= id_to_remove then
+                dataset.map[name] = dataset.map[name] - 1
+            end
+        end
+    end
+
+
     -- Go over all recipes to find unused categories
     local used_category_names = {}
     for _, recipe_proto in pairs(NEW.all_recipes.recipes) do
@@ -479,21 +498,31 @@ function generator.machines_second_pass()
         end
     end
 
-    local removed_category_count = 0  -- (this loop is incredibly stupid)
+    -- Filter out burner machines that don't have any valid fuel categories
+    for machine_category_id, machine_category in pairs(NEW.all_machines.categories) do
+        for machine_id, machine in pairs(machine_category.machines) do
+            if machine.energy_type == "burner" then
+                local category_found = false
+                for fuel_category in pairs(machine.burner.categories) do
+                    if NEW.all_fuels.map[fuel_category] then category_found = true; break end
+                end
+                if not category_found then
+                  remove_mapped_element(machine_category, "machines", machine_id, machine.name)
+                end
+            end
+        end
+        -- If the category ends up empty because of this, make sure to remove it
+        if table_size(machine_category.machines) == 0 then
+            unused_categories[machine_category.name] = machine_category_id
+        end
+    end
+
+    -- Actually remove unused categories
+    local removed_category_count = 0
     for category_name, category_id in pairs(unused_categories) do
         local adjusted_category_id = category_id - removed_category_count
         removed_category_count = removed_category_count + 1
-
-        table.remove(NEW.all_machines.categories, adjusted_category_id)  -- fixes gaps automatically
-        NEW.all_machines.map[category_name] = nil
-
-        -- Fix up category id map caused by the removed category
-        local machine_map = NEW.all_machines.map
-        for name, id in pairs(machine_map) do
-            if id >= adjusted_category_id then
-                machine_map[name] = machine_map[name] - 1
-            end
-        end
+        remove_mapped_element(NEW.all_machines, "categories", adjusted_category_id, category_name)
     end
 
 
@@ -514,7 +543,7 @@ end
 function generator.all_belts()
     generator_util.data_structure.init("simple", "belts")
 
-    local belt_filter = {{filter="type", type="transport-belt"}}
+    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(belt_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
         if sprite ~= nil then
@@ -561,7 +590,10 @@ function generator.all_fuels()
 
     -- Add solid fuels
     local item_map = new_item_types[NEW.all_items.map["item"]].map
-    for _, proto in pairs(game.get_filtered_item_prototypes(fuel_filter)) do
+    local item_fuel_filter = table.shallow_copy(fuel_filter)
+    table.insert(item_fuel_filter, {filter="flag", flag="hidden", invert=true, mode="and"})
+
+    for _, proto in pairs(game.get_filtered_item_prototypes(item_fuel_filter)) do
         -- Only use fuels that were actually detected/accepted to be items and find use in at least one machine
         if item_map[proto.name] and used_fuel_categories[proto.fuel_category] ~= nil then
             generator_util.data_structure.insert{
@@ -579,7 +611,10 @@ function generator.all_fuels()
 
     -- Add liquid fuels
     local fluid_map = new_item_types[NEW.all_items.map["fluid"]].map
-    for _, proto in pairs(game.get_filtered_fluid_prototypes(fuel_filter)) do
+    local fluid_fuel_filter = table.shallow_copy(fuel_filter)
+    table.insert(fluid_fuel_filter, {filter="hidden", invert=true, mode="and"})
+
+    for _, proto in pairs(game.get_filtered_fluid_prototypes(fluid_fuel_filter)) do
         -- Only use fuels that have actually been detected/accepted as fluids
         if fluid_map[proto.name] then
             generator_util.data_structure.insert{
@@ -686,7 +721,8 @@ function generator.all_wagons()
     generator_util.data_structure.init("complex", "categories", "wagons", "category")
 
     -- Add cargo wagons
-    local cargo_wagon_filter = {{filter="type", type="cargo-wagon"}}
+    local cargo_wagon_filter = {{filter="type", type="cargo-wagon"},
+      {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
         generator_util.data_structure.insert{
             name = proto.name,
@@ -699,7 +735,8 @@ function generator.all_wagons()
     end
 
     -- Add fluid wagons
-    local fluid_wagon_filter = {{filter="type", type="fluid-wagon"}}
+    local fluid_wagon_filter = {{filter="type", type="fluid-wagon"},
+      {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
         generator_util.data_structure.insert{
             name = proto.name,
