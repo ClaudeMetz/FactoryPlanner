@@ -1,16 +1,23 @@
+--- The utility for converting raw FP data into forms that can be easily processed by solvers.
+-- @module solver_util
+-- @license MIT
+-- @author B_head
+-- @todo Temperature support.
+
 local calculation = calculation -- require "data.calculation.util"
 local structures = structures -- require "data.calculation.structures"
 local M = {}
 
 local tolerance = MARGIN_OF_ERROR
 
-local function create_item_node(item_proto, amount)
-    return {
+local function create_item_node(item_proto, amount_per_machine_by_second)
+    local ret = {
         name = item_proto.name,
         type = item_proto.type,
-        amount_per_machine_by_second = amount,
-        neighbor_recipe_lines = {},
+        amount_per_machine_by_second = amount_per_machine_by_second,
+        neighbor_recipe_lines = {}, -- Used in @{make_prioritized_links}.
     }
+    return ret
 end
 
 local function normalize_recipe_line(recipe_line, parent)
@@ -144,11 +151,19 @@ local function make_prioritized_links(normalized_top_floor)
     return normalized_top_floor
 end
 
+--- Unify parameter units and add a true ID.
+-- Furthermore, determine the priority of item transfer.
+-- @param top_floor Input the value of top_floor in subfactory_data.
+-- @return Normalized data. This maintains the structure of original sub-floor.
 function M.normalize(top_floor)
     local ret = normalize_floor(top_floor, nil, nil)
     return make_prioritized_links(ret)
 end
 
+--- Unify parameter units of refarences.
+-- @param references Input the value of top_level_products in subfactory_data.
+-- @param timescale Input the value of timescale in subfactory_data.
+-- @return Normalized references data.
 function M.normalize_references(references, timescale)
     local ret = {}
     for _, v in ipairs(references) do
@@ -162,6 +177,7 @@ function M.normalize_references(references, timescale)
     return ret
 end
 
+-- Variants that do not remove the element if the value is 0.
 local function class_add(class, item, amount)
     item = (item.proto ~= nil) and item.proto or item
     local t, n = item.type, item.name
@@ -172,8 +188,8 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
     local nrl = normalized_recipe_line
     local machine_count = machine_counts[nrl.normalized_id]
     
-    local energy_consumption = nrl.energy_consumption_per_machine * machine_count -- todo: Energy_consumption when idle
-    local pollution = nrl.pollution_per_machine * machine_count -- todo: Pollution when idle
+    local energy_consumption = nrl.energy_consumption_per_machine * machine_count --- @todo Energy_consumption when idle.
+    local pollution = nrl.pollution_per_machine * machine_count --- @todo Pollution when idle.
     local production_ratio = nrl.production_ratio_per_machine_by_second * machine_count * timescale
     local fuel_amount = nrl.fuel_consumption_per_machine_by_second * machine_count * timescale
     if nrl.fuel_name then
@@ -207,7 +223,7 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
         energy_consumption = energy_consumption,
         pollution = pollution,
         production_ratio = production_ratio,
-        uncapped_production_ratio = production_ratio, -- todo...?
+        uncapped_production_ratio = production_ratio, --- @todo The UI code calculates and shows the change of machine count.
         Product = Product,
         Byproduct = structures.class.init(),
         Ingredient = Ingredient,
@@ -282,9 +298,14 @@ local function feedback_floor(machine_counts, player_index, timescale, normalize
     }
 end
 
+--- Reflect the solution in the UI.
+-- @tparam {[string]=number,...} machine_counts Subfactory solution.
+-- @param player_index Input the value of player_index in subfactory_data.
+-- @param timescale Input the value of timescale in subfactory_data.
+-- @param normalized_top_floor Input the result of @{normalize}.
 function M.feedback(machine_counts, player_index, timescale, normalized_top_floor)
     local res = feedback_floor(machine_counts, player_index, timescale, normalized_top_floor)
-    local ReferencesMet = structures.class.init() -- todo: Reflect on results.
+    local ReferencesMet = structures.class.init() --- @todo Reflect on results.
     calculation.interface.set_subfactory_result{
         player_index = player_index,
         energy_consumption = res.energy_consumption,
@@ -326,6 +347,18 @@ end
 --     end
 -- end
 
+--- Visit the recipe lines in the following order.
+--
+-- 1. Visit the recipe lines in start_floor from top to bottom.
+-- 2. Visit the sub-floor from top to bottom, recursively, depth-first.
+--    Within each sub-floor, visit the recipe lines from top to bottom.
+-- 3. Visit the super-floor, then visit the recipe lines and sub-floors in the same order as above.
+--    After that, recursively visit even higher level super-floor.
+--
+-- (I can't explain this well, sorry.)
+--
+-- @param start_floor Floor to start the visit.
+-- @return Iterator object that returns recipe lines.
 function M.visit_priority_order(start_floor)
     local floor_stack = {start_floor}
     local index_stack = {1}
@@ -372,6 +405,9 @@ function M.visit_priority_order(start_floor)
     return it
 end
 
+--- Returns an iterator depending on the container structure.
+-- @param recipe_lines Container for recipe line.
+-- @return Iterator object that returns recipe lines.
 function M.iterate_recipe_lines(recipe_lines)
     if recipe_lines.type == "floor" then
         return M.visit_priority_order(recipe_lines)
@@ -380,6 +416,9 @@ function M.iterate_recipe_lines(recipe_lines)
     end
 end
 
+--- Convert subfactories to list format.
+-- @param normalized_top_floor Input the result of @{normalize}.
+-- @return List of recipe lines.
 function M.to_flat_recipe_lines(normalized_top_floor)
     local ret = {}
     for k, v in M.visit_priority_order(normalized_top_floor) do
