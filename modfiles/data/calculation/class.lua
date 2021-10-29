@@ -62,4 +62,10 @@ function M.super(value)
     return mt and mt.__super_prototype
 end
 
+function M.resetup(plain_table, class_object)
+    local mt = getmetatable(class_object)
+    setmetatable(plain_table, mt)
+    return plain_table
+end
+
 return M
