@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed that the priority product selection would be dropped when disabling a recipe line
+    - Fixed that recipes would show products with amount equal to 0 when they have a subfloor
     - Fixed that the buttons to check off line recipes would show a tooltip when it shouldn't
 
 ---------------------------------------------------------------------------------------------------
