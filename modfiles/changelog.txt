@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed that the priority product selection would be dropped when disabling a recipe line
     - Fixed that the buttons to check off line recipes would show a tooltip when it shouldn't
 
 ---------------------------------------------------------------------------------------------------
