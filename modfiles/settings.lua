@@ -64,6 +64,6 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = "interior_point",
         allowed_values = {"traditional", "matrix", "interior_point"},
-        order = "e"
+        order = "g"
     }
 })
