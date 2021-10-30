@@ -233,11 +233,29 @@ styles["fp_button_fake_listbox_item_active"] = {
     default_vertical_offset = styles.button.selected_vertical_offset
 }
 
+-- Need custom style to get rid of the tooltip vanilla and thus flib includes
+styles["fp_button_slot_green"] = {
+    type = "button_style",
+    parent = "flib_tool_button_light_green",
+    tooltip = ""
+}
+
+-- Generate smaller versions of flib's slot buttons (size 36)
+for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
+    styles["flib_slot_button_" .. color .. "_small"] = {
+        type = "button_style",
+        parent = "flib_slot_button_" .. color,
+        size = 36
+    }
+end
+
+
 styles["fp_label_module_error"] = {
     type = "label_style",
     font = "heading-2",
     padding = 2
 }
+
 
 styles["fp_slider_module"] = {
     type = "slider_style",
@@ -305,12 +323,3 @@ styles["fp_slider_module_none"] = {
         },
     }
 }
-
--- Generate smaller versions of flib's slot buttons (size 36)
-for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
-    styles["flib_slot_button_" .. color .. "_small"] = {
-        type = "button_style",
-        parent = "flib_slot_button_" .. color,
-        size = 36
-    }
-end

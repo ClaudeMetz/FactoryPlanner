@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the buttons to check off line recipes would show a tooltip when it shouldn't
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.28
