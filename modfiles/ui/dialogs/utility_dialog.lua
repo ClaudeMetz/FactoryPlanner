@@ -194,7 +194,7 @@ local function handle_item_blueprinting(player, _, _)
         return
     end
 
-    local filter_limit = 2--combinator_proto.item_slot_count
+    local filter_limit = combinator_proto.item_slot_count
     local missing_items = data_util.get("modal_data", player).missing_items
 
     local blueprint_entities = {}
