@@ -9,7 +9,106 @@ local surplusage_penalty = 2 ^ 15
 local products_priority_penalty = 2 ^ 5
 local ingredients_priority_penalty = 2 ^ 10
 
-function M.create_problem(subfactory_name, flat_recipe_lines, normalized_references)
+local function get_include_items(flat_recipe_lines, normalized_references)
+    local set = {}
+    local function add_set(key, type)
+        if not set[key] then
+            set[key] = {
+                name = key,
+                product = false,
+                ingredient = false,
+                reference = false,
+            }
+        end
+        set[key][type] = true
+    end
+
+    for _, l in pairs(flat_recipe_lines) do
+        for k, _ in pairs(l.products) do
+            add_set(k, "product")
+        end
+        for k, _ in pairs(l.ingredients) do
+            add_set(k, "ingredient")
+        end
+    end
+    for k, _ in pairs(normalized_references) do
+        add_set(k, "reference")
+    end
+
+    return set
+end
+
+local function create_item_flow_graph(flat_recipe_lines)
+    local ret = {}
+    local function add(a, type, b, ratio)
+        if not ret[a] then
+            ret[a] = {
+                from = {},
+                to = {},
+                visited = false,
+                cycled = false,
+            }
+        end
+        table.insert(ret[a][type], {id=b, ratio=ratio})
+    end
+
+    for _, l in pairs(flat_recipe_lines) do
+        for _, a in pairs(l.products) do
+            for _, b in pairs(l.ingredients) do
+                local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
+                add(a.name, "to", b.name, ratio)
+            end
+        end
+        for _, a in pairs(l.ingredients) do
+            for _, b in pairs(l.products) do
+                local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
+                add(a.name, "from", b.name, ratio)
+            end
+        end
+    end
+    return ret
+end
+
+local function detect_cycle_dilemma_impl(item_flow_graph, id, path)
+    local current = item_flow_graph[id]
+    if current.visited then
+        local included = false
+        for _, path_id in ipairs(path) do
+            if path_id == id then
+                included = true
+            end
+            if included then
+                item_flow_graph[path_id].cycled = true
+            end
+        end
+        return
+    end
+
+    current.visited = true
+    table.insert(path, id)
+    for _, n in ipairs(current.to) do
+        detect_cycle_dilemma_impl(item_flow_graph, n.id, path)
+    end
+    table.remove(path)
+end
+
+local function detect_cycle_dilemma(flat_recipe_lines)
+    local item_flow_graph = create_item_flow_graph(flat_recipe_lines)
+    local path = {}
+    for id, _ in pairs(item_flow_graph) do
+        if not item_flow_graph[id].visited then
+            detect_cycle_dilemma_impl(item_flow_graph, id, path)
+        end
+    end
+
+    local ret = {}
+    for id, v in pairs(item_flow_graph) do
+        ret[id] = {product=v.cycled, ingredient=v.cycled}
+    end
+    return ret
+end
+
+function M.create_problem(problem_name, flat_recipe_lines, normalized_references)
     local function add_item_factor(constraint_map, name, factor)
         constraint_map["balance|" .. name] = factor
         if factor > 0 then
@@ -19,8 +118,8 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         end
     end
 
-    local problem = Problem(subfactory_name)
-    local need_slack = M.detect_cycle_dilemma(flat_recipe_lines)
+    local problem = Problem(problem_name)
+    local need_slack = detect_cycle_dilemma(flat_recipe_lines)
     for id, v in pairs(flat_recipe_lines) do
         problem:add_objective(id, machine_count_penalty, true)
         local constraint_map = {}
@@ -105,7 +204,7 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
         problem:add_subject_term(id, constraint_map)
     end
     
-    local items = M.get_include_items(flat_recipe_lines, normalized_references)
+    local items = get_include_items(flat_recipe_lines, normalized_references)
     for name, v in pairs(items) do
         if v.product and v.ingredient then
             problem:add_eq_constraint("balance|" .. name, 0)
@@ -140,112 +239,38 @@ function M.create_problem(subfactory_name, flat_recipe_lines, normalized_referen
     return problem
 end
 
-function M.get_include_items(flat_recipe_lines, normalized_references)
-    local set = {}
-    local function add_set(key, type)
-        if not set[key] then
-            set[key] = {
-                name = key,
-                product = false,
-                ingredient = false,
-                reference = false,
-            }
-        end
-        set[key][type] = true
-    end
-
-    for _, l in pairs(flat_recipe_lines) do
-        for k, _ in pairs(l.products) do
-            add_set(k, "product")
-        end
-        for k, _ in pairs(l.ingredients) do
-            add_set(k, "ingredient")
-        end
-    end
-    for k, _ in pairs(normalized_references) do
-        add_set(k, "reference")
-    end
-
-    return set
-end
-
-local function create_item_flow_graph(flat_recipe_lines)
-    local ret = {}
-    local function add(a, type, b, ratio)
-        if not ret[a] then
-            ret[a] = {
-                from = {},
-                to = {},
-                visited = false,
-                cycled = false,
-            }
-        end
-        table.insert(ret[a][type], {id=b, ratio=ratio})
-    end
-
-    for _, l in pairs(flat_recipe_lines) do
-        for _, a in pairs(l.products) do
-            for _, b in pairs(l.ingredients) do
-                local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
-                add(a.name, "to", b.name, ratio)
-            end
-        end
-        for _, a in pairs(l.ingredients) do
-            for _, b in pairs(l.products) do
-                local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
-                add(a.name, "from", b.name, ratio)
-            end
-        end
-    end
-    return ret
-end
-
-local function detect_cycle_dilemma_impl(item_flow_graph, id, path)
-    local current = item_flow_graph[id]
-    if current.visited then
-        local included = false
-        for _, path_id in ipairs(path) do
-            if path_id == id then
-                included = true
-            end
-            if included then
-                item_flow_graph[path_id].cycled = true
-            end
-        end
-        return
-    end
-
-    current.visited = true
-    table.insert(path, id)
-    for _, n in ipairs(current.to) do
-        detect_cycle_dilemma_impl(item_flow_graph, n.id, path)
-    end
-    table.remove(path)
-end
-
-function M.detect_cycle_dilemma(flat_recipe_lines)
-    local item_flow_graph = create_item_flow_graph(flat_recipe_lines)
-    local path = {}
-    for id, _ in pairs(item_flow_graph) do
-        if not item_flow_graph[id].visited then
-            detect_cycle_dilemma_impl(item_flow_graph, id, path)
-        end
-    end
-
-    local ret = {}
-    for id, v in pairs(item_flow_graph) do
-        ret[id] = {product=v.cycled, ingredient=v.cycled}
-    end
-    return ret
-end
-
-local had, had_pow, diag = Matrix.hadamard_product, Matrix.hadamard_power, SparseMatrix.diag
 local debug_print = log
+local had, had_pow, diag = Matrix.hadamard_product, Matrix.hadamard_power, SparseMatrix.diag
 local tolerance = MARGIN_OF_ERROR
 local step_limit = 1 - (2 ^ -20)
 local machine_epsilon = (2 ^ -52)
 local tiny_number = math.sqrt(2 ^ -970)
 local iterate_limit = 200
+
+local function force_variables_constraint(variables)
+    local height = variables.height
+    for y = 1, height do
+        variables[y][1] = math.max(tiny_number, variables[y][1])
+    end
+end
+
+local function sigmoid(value, min, max)
+    min = min or 0
+    max = max or 1
+    return (max - min) / (1 + math.exp(-value)) + min
+end
+
+local function get_max_step(v, dir)
+    local height = v.height
+    local ret = 1
+    for y = 1, height do
+        local a, b = v[y][1], dir[y][1]
+        if b < 0 then
+            ret = math.min(ret, step_limit * (a / -b))
+        end
+    end
+    return ret
+end
 
 -- See also: http://www.cas.mcmaster.ca/~cs777/presentations/NumericalIssue.pdf
 function M.primal_dual_interior_point(problem)
@@ -265,8 +290,8 @@ function M.primal_dual_interior_point(problem)
 
     debug_print(string.format("-- solve %s --", problem.name))
     for i = 0, iterate_limit do
-        M.force_variables_constraint(x)
-        M.force_variables_constraint(s)
+        force_variables_constraint(x)
+        force_variables_constraint(s)
 
         local dual = AT * y + s - c
         local primal = A * x - b
@@ -287,7 +312,7 @@ function M.primal_dual_interior_point(problem)
         local fvg = M.create_default_flee_value_generator(y)
         local s_inv = had_pow(s, -1)
 
-        local u = M.sigmoid((d_sat + p_sat) * dg_sat, -1)
+        local u = sigmoid((d_sat + p_sat) * dg_sat, -1)
         local ue = Matrix.new_vector(p_degree):fill(u)
         local dg_aug = had(s_inv, duality_gap - ue)
 
@@ -310,8 +335,8 @@ function M.primal_dual_interior_point(problem)
         -- local agg = M.gaussian_elimination(D:clone():insert_column(-r_agg), fvg(x, y, s))
         -- local x_agg, y_agg, s_agg = split(agg)
 
-        local p_step = M.get_max_step(x, x_asd)
-        local d_step = M.get_max_step(s, s_asd)
+        local p_step = get_max_step(x, x_asd)
+        local d_step = get_max_step(s, s_asd)
         debug_print(string.format(
             "p_step = %f, d_step = %f, barrier = %f",
             p_step, d_step, u
@@ -329,31 +354,6 @@ function M.primal_dual_interior_point(problem)
     -- debug_print("variables s:\n" .. problem:dump_primal(s))
 
     return problem:convert_result(x)
-end
-
-function M.force_variables_constraint(variables)
-    local height = variables.height
-    for y = 1, height do
-        variables[y][1] = math.max(tiny_number, variables[y][1])
-    end
-end
-
-function M.sigmoid(value, min, max)
-    min = min or 0
-    max = max or 1
-    return (max - min) / (1 + math.exp(-value)) + min
-end
-
-function M.get_max_step(v, dir)
-    local height = v.height
-    local ret = 1
-    for y = 1, height do
-        local a, b = v[y][1], dir[y][1]
-        if b < 0 then
-            ret = math.min(ret, step_limit * (a / -b))
-        end
-    end
-    return ret
 end
 
 function M.gaussian_elimination(A, b)
@@ -436,20 +436,7 @@ function M.cholesky_factorization(A)
     return L, D, L:T()
 end
 
-function M.lu_solve_linear_equation(L, U, b, flee_value_generator)
-    local t = M.forward_substitution(L, b, flee_value_generator)
-    return M.backward_substitution(U, t, flee_value_generator)
-end
-
-function M.forward_substitution(A, b, flee_value_generator)
-    return M.substitution(1, A.height, 1, A, b, flee_value_generator)
-end
-
-function M.backward_substitution(A, b, flee_value_generator)
-    return M.substitution(A.height, 1, -1, A, b, flee_value_generator)
-end
-
-function M.substitution(s, e, m, A, b, flee_value_generator)
+local function substitution(s, e, m, A, b, flee_value_generator)
     local sol = {}
     for y = s, e, m do
         local total, factors, indexes = b:get(y, 1), {}, {}
@@ -473,6 +460,19 @@ function M.substitution(s, e, m, A, b, flee_value_generator)
         end
     end
     return Matrix.list_to_vector(sol, A.width)
+end
+
+function M.lu_solve_linear_equation(L, U, b, flee_value_generator)
+    local t = M.forward_substitution(L, b, flee_value_generator)
+    return M.backward_substitution(U, t, flee_value_generator)
+end
+
+function M.forward_substitution(A, b, flee_value_generator)
+    return substitution(1, A.height, 1, A, b, flee_value_generator)
+end
+
+function M.backward_substitution(A, b, flee_value_generator)
+    return substitution(A.height, 1, -1, A, b, flee_value_generator)
 end
 
 function M.create_default_flee_value_generator(...)
