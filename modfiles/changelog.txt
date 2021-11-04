@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.29
+Date: 04. 11. 2021
   Bugfixes:
     - Fixed that the priority product selection would be dropped when disabling a recipe line
     - Fixed that recipes would show products with amount equal to 0 when they have a subfloor
