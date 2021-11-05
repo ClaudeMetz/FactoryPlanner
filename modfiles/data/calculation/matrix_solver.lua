@@ -719,85 +719,78 @@ function matrix_solver.set_to_ordered_list(s)
 end
 
 -- Contains the raw matrix solver. Converts an NxN+1 matrix to reduced row-echelon form.
+-- Based on the algorithm from octave: https://fossies.org/dox/FreeMat-4.2-Source/rref_8m_source.html
 function matrix_solver.to_reduced_row_echelon_form(m)
     local num_rows = #m
     if #m==0 then return m end
     local num_cols = #m[1]
 
-    -- BEGIN ECHELON FORM PART - this makes an upper triangular matrix with all leading 1s
+    -- set tolerance based on max value in matrix
+    local max_value = 0
+    for i = 1, num_rows do
+        for j = 1, num_cols do
+            if math.abs(m[i][j]) > max_value then
+                max_value = math.abs(m[i][j])
+            end
+        end
+    end
+    local tolerance = 1e-10 * max_value
+
     local pivot_row = 1
 
     for curr_col = 1, num_cols do
-        local first_nonzero_row = 0
-
-        -- check if curr_col has any zeros
-        for curr_row = pivot_row, num_rows do
-            if m[curr_row][curr_col] ~= 0 then
-                first_nonzero_row = curr_row
-                break
+        -- find row with highest value in curr col as next pivot
+        local max_pivot_index = pivot_row
+        local max_pivot_value = m[pivot_row][curr_col]
+        for curr_row = pivot_row+1, num_rows do -- does this need an if-wrapper?
+            local curr_pivot_value = math.abs(m[curr_row][curr_col])
+            if math.abs(m[curr_row][curr_col]) > math.abs(max_pivot_value) then
+                max_pivot_index = curr_row
+                max_pivot_value = curr_pivot_value
             end
         end
 
-        -- if all the cols are zero we do nothing
-        if first_nonzero_row ~= 0 then
-            -- swap pivot_row and first_nonzero_row
-            local temp = m[pivot_row]
-            m[pivot_row] = m[first_nonzero_row]
-            m[first_nonzero_row] = temp
+        if math.abs(max_pivot_value) < tolerance then
+            -- if highest value is approximately zero, set this row and all rows below to zero
+            for zero_row = pivot_row, num_rows do
+                m[zero_row][curr_col] = 0
+            end
+        else
+            -- swap current row with highest value row
+            for swap_col = curr_col, num_cols do
+                local temp = m[pivot_row][swap_col]
+                m[pivot_row][swap_col] = m[max_pivot_index][swap_col]
+                m[max_pivot_index][swap_col] = temp
+            end
 
-            -- divide the row so the first entry is 1
+            -- normalize pivot row
             local factor = m[pivot_row][curr_col]
-            for j = curr_col, num_cols do
-                m[pivot_row][j] = m[pivot_row][j] / factor
+            for normalize_col = curr_col, num_cols do
+                m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
             end
 
-            -- subtract from the remaining rows so their first entries are zero
-            for i = first_nonzero_row+1, num_rows do
-                factor = m[i][curr_col]
-                if factor ~=0 then
-                    for j = curr_col, num_cols do
-                        m[i][j] = m[i][j] - m[pivot_row][j] * factor
-                        -- check rounding errors from floating point arthmetic
-                        if math.abs(m[i][j]) < 1e-10 then
-                            m[i][j] = 0
-                        end
-                    end
+            -- eliminate current column from other rows
+            for update_row = 1, pivot_row - 1 do
+                for update_col = curr_col+1, num_cols do
+                    m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*m[pivot_row][update_col]
                 end
+                m[update_row][curr_col] = 0
+            end
+            for update_row = pivot_row+1, num_rows do
+                for update_col = curr_col+1, num_cols do
+                    m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*m[pivot_row][update_col]
+                end
+                m[update_row][curr_col] = 0
             end
 
-            -- only add 1 if get another leading 1 row
+            -- only add 1 if there is another leading 1 row
             pivot_row = pivot_row + 1
-        end
-    end
-    -- END ECHELON FORM PART
 
-    -- BEGIN REDUCED ROW ECHELON FORM PART - this fills out the rest of the zeros in the upper part of the upper triangular matrix
-    for curr_row = 1, num_rows do
-        local first_nonzero_col = 0
-        for curr_col = 1, num_cols do
-            if m[curr_row][curr_col] == 1 then
-                first_nonzero_col = curr_col
+            if pivot_row > num_rows then
                 break
             end
         end
-        -- if all the cols are zero we do nothing
-        if first_nonzero_col ~= 0 then
-            -- subtract curr_row from previous rows to make leading entry a 0
-            for i = 1, curr_row-1 do
-                local factor = m[i][first_nonzero_col]
-                if factor ~= 0 then
-                    for j = first_nonzero_col, num_cols do
-                        m[i][j] = m[i][j] - m[curr_row][j] * factor
-                        -- check rounding errors from floating point arthmetic
-                        if math.abs(m[i][j]) < 1e-10 then
-                            m[i][j] = 0
-                        end
-                    end
-                end
-            end
-        end
     end
-    -- END REDUCED ROW ECHELON FORM PART
 end
 
 function matrix_solver.find_linearly_dependent_cols(matrix, ignore_last)
