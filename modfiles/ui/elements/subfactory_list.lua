@@ -206,7 +206,11 @@ function subfactory_list.build(player)
       sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
     main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
 
-    subheader.add{type="line", direction="vertical"}
+    local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_subfactory"},
+      style="tool_button", mouse_button_filter={"left"}}
+    main_elements.subfactory_list["archive_button"] = button_archive
+
+    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local button_import = subheader.add{type="sprite-button", sprite="utility/import",
       tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
@@ -220,17 +224,6 @@ function subfactory_list.build(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_subfactory"},
-      style="tool_button", mouse_button_filter={"left"}}
-    main_elements.subfactory_list["archive_button"] = button_archive
-
-    local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_subfactory"},
-      sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
-      mouse_button_filter={"left"}}
-    main_elements.subfactory_list["duplicate_button"] = button_duplicate
-
-    subheader.add{type="line", direction="vertical"}
-
     local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_subfactory"},
       sprite="utility/add", tooltip={"fp.action_add_subfactory"}, style="flib_tool_button_light_green",
       mouse_button_filter={"left"}}
@@ -240,6 +233,11 @@ function subfactory_list.build(player)
       sprite="utility/rename_icon_normal", tooltip={"fp.action_edit_subfactory"}, style="tool_button",
       mouse_button_filter={"left"}}
     main_elements.subfactory_list["edit_button"] = button_edit
+
+    local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_subfactory"},
+      sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
+      mouse_button_filter={"left"}}
+    main_elements.subfactory_list["duplicate_button"] = button_duplicate
 
     local button_delete = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_subfactory"},
       sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
@@ -293,19 +291,19 @@ function subfactory_list.refresh(player)
         subfactory_list_elements.toggle_archive_button.tooltip = {"fp.action_close_archive_tt"}
     end
 
-    subfactory_list_elements.import_button.enabled = (not archive_open)
-    subfactory_list_elements.export_button.enabled = (subfactory_exists)
-
     subfactory_list_elements.archive_button.enabled = (subfactory_exists)
     subfactory_list_elements.archive_button.sprite = (archive_open) and
       "utility/export_slot" or "utility/import_slot"
     subfactory_list_elements.archive_button.tooltip = (archive_open) and
       {"fp.action_unarchive_subfactory"} or {"fp.action_archive_subfactory"}
-    subfactory_list_elements.duplicate_button.enabled =
-      (subfactory_exists and selected_subfactory.valid and not archive_open)
+
+    subfactory_list_elements.import_button.enabled = (not archive_open)
+    subfactory_list_elements.export_button.enabled = (subfactory_exists)
 
     subfactory_list_elements.add_button.enabled = (not archive_open)
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
+    subfactory_list_elements.duplicate_button.enabled =
+      (subfactory_exists and selected_subfactory.valid and not archive_open)
 
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
     local delay_in_minutes = math.floor(SUBFACTORY_DELETION_DELAY / 3600)
@@ -371,14 +369,22 @@ subfactory_list.gui_events = {
             handler = toggle_archive
         },
         {
+            name = "archive_subfactory",
+            handler = archive_subfactory
+        },
+        {  -- import/export buttons
             name = "subfactory_list_open_dialog",
             handler = (function(player, tags, _)
                 modal_dialog.enter(player, {type=tags.type})
             end)
         },
         {
-            name = "archive_subfactory",
-            handler = archive_subfactory
+            name = "add_subfactory",
+            handler = add_subfactory
+        },
+        {
+            name = "edit_subfactory",
+            handler = edit_subfactory
         },
         {
             name = "duplicate_subfactory",
@@ -391,14 +397,6 @@ subfactory_list.gui_events = {
                 local export_string = data_util.porter.get_export_string({subfactory})
                 data_util.add_subfactories_by_string(player, export_string, true)
             end)
-        },
-        {
-            name = "add_subfactory",
-            handler = add_subfactory
-        },
-        {
-            name = "edit_subfactory",
-            handler = edit_subfactory
         },
         {
             name = "delete_subfactory",
