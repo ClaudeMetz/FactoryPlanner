@@ -769,18 +769,31 @@ function matrix_solver.to_reduced_row_echelon_form(m)
                 m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
             end
 
+            -- find nonzero cols in this row for the elimination step
+            nonzero_pivot_cols = {}
+            for update_col = curr_col+1, num_cols do
+                curr_pivot_col_value = m[pivot_row][update_col]
+                if curr_pivot_col_value ~= 0 then
+                    nonzero_pivot_cols[update_col] = curr_pivot_col_value
+                end
+            end
+
             -- eliminate current column from other rows
             for update_row = 1, pivot_row - 1 do
-                for update_col = curr_col+1, num_cols do
-                    m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*m[pivot_row][update_col]
+                if m[update_row][curr_col] ~= 0 then
+                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
+                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*pivot_col_value
+                    end
+                    m[update_row][curr_col] = 0
                 end
-                m[update_row][curr_col] = 0
             end
             for update_row = pivot_row+1, num_rows do
-                for update_col = curr_col+1, num_cols do
-                    m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*m[pivot_row][update_col]
+                if m[update_row][curr_col] ~= 0 then
+                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
+                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*pivot_col_value
+                    end
+                    m[update_row][curr_col] = 0
                 end
-                m[update_row][curr_col] = 0
             end
 
             -- only add 1 if there is another leading 1 row
