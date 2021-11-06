@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Added dedicated buttons to move subfactories and recipe up and down, making the interaction more discoverable and easier to use
     - Reordered the subfactory list buttons to make more sense by grouping the archive-related ones
   Bugfixes:
     -

@@ -41,26 +41,29 @@ local function handle_done_click(player, tags, _)
     main_dialog.refresh(player, "production_table")
 end
 
+local function handle_line_move_click(player, tags, metadata)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+
+    local shifting_function = (metadata.shift) and Floor.shift_to_end or Floor.shift
+    local translated_direction = (tags.direction == "up") and "negative" or "positive"
+
+    -- Can't shift second line into the first position on subfloors. Top line is disabled, so no special handling
+    if (context.floor.level > 1 and tags.direction == "up" and (line.gui_position == 2 or metadata.shift)) or
+      not shifting_function(context.floor, line, translated_direction) then
+        local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_recipe", 1}, {"fp." .. tags.direction}}
+        title_bar.enqueue_message(player, message, "error", 1, true)
+      else
+        calculation.update(player, context.subfactory)
+        main_dialog.refresh(player, "subfactory")
+    end
+end
+
 local function handle_recipe_click(player, tags, metadata)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
 
-    if metadata.direction then  -- Shifts line in the given direction
-        if not ui_util.check_archive_status(player) then return end
-
-        local shifting_function = (metadata.alt) and Floor.shift_to_end or Floor.shift
-        -- Can't shift second line into the first position on subfloors. Top line is disabled, so no special handling
-        if not (metadata.direction == "negative" and context.floor.level > 1 and line.gui_position == 2)
-          and shifting_function(context.floor, line, metadata.direction) then
-            calculation.update(player, context.subfactory)
-            main_dialog.refresh(player, "subfactory")
-        else
-            local direction_string = (metadata.direction == "negative") and {"fp.up"} or {"fp.down"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_recipe", 1}, direction_string}
-            title_bar.enqueue_message(player, message, "error", 1, true)
-        end
-
-    elseif metadata.alt then
+    if metadata.alt then
         local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
         data_util.execute_alt_action(player, "show_recipe",
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
@@ -534,6 +537,10 @@ production_handler.gui_events = {
         {
             name = "checkmark_line",
             handler = handle_done_click
+        },
+        {
+            name = "move_line",
+            handler = handle_line_move_click
         },
         {
             name = "act_on_line_recipe",

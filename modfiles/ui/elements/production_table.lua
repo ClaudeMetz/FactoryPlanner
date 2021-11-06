@@ -64,29 +64,50 @@ function builders.done(line, parent_flow, _)
     local style = (relevant_line.done) and "fp_button_slot_green" or "flib_slot_default"
 
     local button = parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="checkmark_line", line_id=line.id},
-      sprite=sprite, style=style, mouse_button_filter={"left"}, tooltip=nil}
-    button.style.size = 24
-    button.style.padding = 0
+      sprite=sprite, style=style, mouse_button_filter={"left"}}
+    button.style.size = 20
+    button.style.padding = -1
 end
 
 function builders.recipe(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe_proto = relevant_line.recipe.proto
 
-    local style, enabled = "flib_slot_button_default_small", true
-    local indication, tutorial_tooltip = "", metadata.producing_recipe_tutorial_tooltip
-    -- Make the first line of every subfloor un-interactable, it stays constant
+    parent_flow.style.vertical_align = "center"
+    parent_flow.style.horizontal_spacing = 2
+
+    local function create_move_button(flow, direction)
+        local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
+        local move_tooltip = (metadata.archive_open) and "" or
+          {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. direction}, endpoint}
+        flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
+          tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id},
+          tooltip=move_tooltip, enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
+    end
+
+    local style, enabled, indication, tutorial_tooltip = nil, true, "", ""
+
     if line.parent.level > 1 and line.gui_position == 1 then
-        style = "flib_slot_button_grey_small"
-        enabled = false
-        tutorial_tooltip = ""
-    elseif line.subfloor then
-        style = "flib_slot_button_blue_small"
-        indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
-    elseif line.recipe.production_type == "consume" then
-        style = "flib_slot_button_red_small"
-        indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
-        tutorial_tooltip = metadata.consuming_recipe_tutorial_tooltip
+        style = "fp_sprite-button_disabled_recipe"
+        enabled = false  -- first subfloor line is static
+    else
+        local move_flow = parent_flow.add{type="flow", direction="vertical"}
+        move_flow.style.vertical_spacing = 0
+        create_move_button(move_flow, "up")
+        create_move_button(move_flow, "down")
+
+        style = "flib_slot_button_default_small"
+        tutorial_tooltip = metadata.producing_recipe_tutorial_tooltip
+
+        if line.subfloor then
+            style = "flib_slot_button_blue_small"
+            indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
+
+        elseif line.recipe.production_type == "consume" then
+            style = "flib_slot_button_red_small"
+            indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
+            tutorial_tooltip = metadata.consuming_recipe_tutorial_tooltip
+        end
     end
 
     local tooltip = {"", recipe_proto.localised_name, indication, tutorial_tooltip}
@@ -159,9 +180,6 @@ function builders.machine(line, parent_flow, metadata)
         -- Modules - can only be added to machines that have any module slots
         if machine_proto.module_limit == 0 then return end
 
-        local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.padding = {2, 0}
-
         for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
             number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
             tooltip = {"", module.proto.localised_name, number_line, module.effects_tooltip,
@@ -211,10 +229,6 @@ function builders.beacon(line, parent_flow, metadata)
         end
 
         -- Module
-        local separator = parent_flow.add{type="line", direction="vertical"}
-        separator.style.padding = {2, 0}
-        separator.style.margin = {0, -2}
-
         for _, module in ipairs(Beacon.get_in_order(beacon, "Module")) do
             local module_proto, module_amount = module.proto, module.amount
 
