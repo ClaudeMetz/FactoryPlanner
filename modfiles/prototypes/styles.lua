@@ -164,6 +164,19 @@ styles["fp_sprite-button_group_tab"] = {
     disabled_graphical_set = styles.button.selected_graphical_set
 }
 
+styles["fp_sprite-button_disabled_recipe"] = {
+    type = "button_style",
+    parent = "flib_slot_button_grey_small",
+    left_margin = 16
+}
+
+styles["fp_button_move_row"] = {
+    type = "button_style",
+    parent = "button",
+    size = 14,
+    padding = -1
+}
+
 -- Text button in the style of icon tool buttons, for use in the title bar
 styles["fp_button_frame_tool"] = {
     type = "button_style",

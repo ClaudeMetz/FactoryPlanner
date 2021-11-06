@@ -56,11 +56,11 @@ data:extend({
         flags = {"gui-icon"}
     },
     {
-      type = "sprite",
-      name = "fp_sprite_trash_red",
-      filename = "__factoryplanner__/graphics/trash_red.png",
-      size = 32, icon_mipmaps = 2,
-      flags = {"gui-icon"}
+        type = "sprite",
+        name = "fp_sprite_trash_red",
+        filename = "__factoryplanner__/graphics/trash_red.png",
+        size = 32, icon_mipmaps = 2,
+        flags = {"gui-icon"}
     },
     {
         type = "sprite",
@@ -73,6 +73,20 @@ data:extend({
         type = "sprite",
         name = "fp_sprite_check_mark_green",
         filename = "__factoryplanner__/graphics/check_mark_green.png",
+        size = 32, icon_mipmaps = 2,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_arrow_up",
+        filename = "__factoryplanner__/graphics/arrow_up.png",
+        size = 32, icon_mipmaps = 2,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_arrow_down",
+        filename = "__factoryplanner__/graphics/arrow_down.png",
         size = 32, icon_mipmaps = 2,
         flags = {"gui-icon"}
     }

@@ -149,42 +149,46 @@ local function delete_subfactory(player, _, _)
 end
 
 
-local function handle_subfactory_click(player, tags, metadata)
-    local ui_state = data_util.get("ui_state", player)
-    local context = ui_state.context
+local function handle_move_subfactory_click(player, tags, metadata)
+    local context = data_util.get("context", player)
     local subfactory = Factory.get(context.factory, "Subfactory", tags.subfactory_id)
 
-    if metadata.direction ~= nil then  -- shift subfactory in the given direction
-        local shifting_function = (metadata.alt) and Factory.shift_to_end or Factory.shift
-        if shifting_function(context.factory, subfactory, metadata.direction) then
-            main_dialog.refresh(player, "subfactory_list")
-        else
-            local direction_string = (metadata.direction == "negative") and {"fp.up"} or {"fp.down"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_subfactory", 1}, direction_string}
-            title_bar.enqueue_message(player, message, "error", 1, true)
-        end
+    local shifting_function = (metadata.alt) and Factory.shift_to_end or Factory.shift
+    local translated_direction = (tags.direction == "up") and "negative" or "positive"
+
+    if shifting_function(context.factory, subfactory, translated_direction) then
+        main_dialog.refresh(player, "subfactory_list")
     else
-        local old_subfactory = context.subfactory
-        ui_util.context.set_subfactory(player, subfactory)
+        local direction_string = (translated_direction == "negative") and {"fp.up"} or {"fp.down"}
+        local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_subfactory", 1}, direction_string}
+        title_bar.enqueue_message(player, message, "error", 1, true)
+    end
+end
 
-        if metadata.click == "left" then
-            if old_subfactory.id == subfactory.id then
-                -- Reset Floor when clicking on selected subfactory
-                production_box.change_floor(player, "top")
-            elseif ui_state.flags.recalculate_on_subfactory_change then
-                -- This flag is set when a textfield is changed but not confirmed
-                ui_state.flags.recalculate_on_subfactory_change = false
-                calculation.update(player, old_subfactory)
-            end
-            main_dialog.refresh(player, "all")
+local function handle_subfactory_click(player, tags, metadata)
+    local ui_state = data_util.get("ui_state", player)
+    local previous_subfactory = ui_state.context.subfactory
 
-        elseif metadata.click == "right" then
-            if metadata.action == "edit" then
-                main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
-                edit_subfactory(player)
-            elseif metadata.action == "delete" then
-                delete_subfactory(player)
-            end
+    local selected_subfactory = Factory.get(ui_state.context.factory, "Subfactory", tags.subfactory_id)
+    ui_util.context.set_subfactory(player, selected_subfactory)
+
+    if metadata.click == "left" then
+        if previous_subfactory.id == selected_subfactory.id then
+            -- Reset Floor when clicking on previously selected subfactory
+            production_box.change_floor(player, "top")
+        elseif ui_state.flags.recalculate_on_subfactory_change then
+            -- This flag is set when a textfield is changed but not confirmed
+            ui_state.flags.recalculate_on_subfactory_change = false
+            calculation.update(player, previous_subfactory)
+        end
+        main_dialog.refresh(player, "all")
+
+    elseif metadata.click == "right" then
+        if metadata.action == "edit" then
+            main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
+            edit_subfactory(player)
+        elseif metadata.action == "delete" then
+            delete_subfactory(player)
         end
     end
 end
@@ -268,8 +272,24 @@ function subfactory_list.refresh(player)
             local caption, info_tooltip = Subfactory.tostring(subfactory, false)
             local tooltip = {"", info_tooltip, tutorial_tooltip}
 
-            listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory", subfactory_id=subfactory.id},
-              caption=caption, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
+            -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
+            local subfactory_button = listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory",
+              subfactory_id=subfactory.id}, caption="             " .. caption, tooltip=tooltip, style=style,
+              mouse_button_filter={"left-and-right"}}
+
+            local function create_move_button(flow, direction)
+                local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
+                local move_tooltip = {"fp.move_row_tt", {"fp.pl_subfactory", 1}, {"fp." .. direction}, endpoint}
+                flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
+                  tags={mod="fp", on_gui_click="move_subfactory", direction=direction, subfactory_id=subfactory.id},
+                  tooltip=move_tooltip, mouse_button_filter={"left"}}
+            end
+
+            local move_flow = subfactory_button.add{type="flow", direction="horizontal"}
+            move_flow.style.top_padding = 3
+            move_flow.style.horizontal_spacing = 0
+            create_move_button(move_flow, "up")
+            create_move_button(move_flow, "down")
         end
     end
 
@@ -402,6 +422,10 @@ subfactory_list.gui_events = {
             name = "delete_subfactory",
             timeout = 20,
             handler = delete_subfactory
+        },
+        {
+            name = "move_subfactory",
+            handler = handle_move_subfactory_click
         },
         {
             name = "act_on_subfactory",
