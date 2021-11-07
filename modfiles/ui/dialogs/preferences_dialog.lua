@@ -244,6 +244,9 @@ function preferences_dialog.open(player, modal_data)
 
     local left_content_frame = add_content_frame()
 
+    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    support_frame.add{type="label", caption={"fp.preferences_support"}}
+
     local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
