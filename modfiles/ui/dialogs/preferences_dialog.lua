@@ -200,8 +200,8 @@ local function handle_default_prototype_change(player, tags, metadata)
     prototyper.defaults.set(player, type, tags.prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
 
-    -- If this was an alt-click, set this prototype on every category that also has it
-    if metadata.alt and type == "machines" then
+    -- If this was an shift-click, set this prototype on every category that also has it
+    if metadata.shift and type == "machines" then
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for secondary_category_id, category in pairs(global["all_" .. type].categories) do

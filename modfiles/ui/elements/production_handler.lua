@@ -163,7 +163,7 @@ function GENERIC_HANDLERS.apply_machine_choice(player, machine_id, metadata)
     Line.change_machine(machine.parent, player, machine_proto, nil)
 
     -- Optionally adjust the preferred prototype
-    if metadata.alt then prototyper.defaults.set(player, "machines", machine_proto.id, machine_category_id) end
+    if metadata.shift then prototyper.defaults.set(player, "machines", machine_proto.id, machine_category_id) end
 
     calculation.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
