@@ -150,10 +150,8 @@ function Line.change_machine(self, player, machine_proto, direction)
     -- Set machine to the preferred default one
     elseif machine_proto == nil and direction == nil then
         local machine_category_id = global.all_machines.map[self.recipe.proto.category]
+        -- All categories are guaranteed to have at least one machine, so this is never nil
         local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
-        -- If no default machine is found, this category has no machines
-        -- TODO filter this case out in the generator stage ?
-        if default_machine_proto == nil then return false end
 
         -- If the default is applicable, just set it straight away
         if Line.is_machine_applicable(self, default_machine_proto) then
