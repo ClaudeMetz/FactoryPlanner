@@ -56,7 +56,6 @@ local function generate_floor_data(player, subfactory, floor)
 
     local mining_productivity = (subfactory.mining_productivity ~= nil) and
       (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
-    local check_usefulness = data_util.get("preferences", player).toggle_column
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
@@ -67,20 +66,11 @@ local function generate_floor_data(player, subfactory, floor)
             table.insert(floor_data.lines, line_data)
 
         else
-            local line_is_useful = true
-            if check_usefulness then  -- only care about this if the toggle_column is visible
-                -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
-                if line.percentage == 0 or not line.active then line_is_useful = false end
-
-                -- If this line is on a subfloor and the top line of the floor is useless, the line is useless too
-                if line_is_useful and line.parent.level > 1 then
-                    local first_floor_line = line.parent.defining_line
-                    if first_floor_line.percentage == 0 or not first_floor_line.active then line_is_useful = false end
-                end
-            end
-
-            if not line_is_useful then  -- any useless line doesn't need to go through the solver
-                set_blank_line(player, floor, line)
+            local relevant_line = (line.parent.level > 1) and line.parent.defining_line or line
+            -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
+            -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
+            if relevant_line.percentage == 0 or not relevant_line.active then
+                set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 line_data.recipe_proto = line.recipe.proto  -- reference
                 line_data.timescale = subfactory.timescale
