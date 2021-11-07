@@ -6,8 +6,9 @@ Date: 00. 00. 0000
   Changes:
     - Added dedicated buttons to move subfactories and recipe up and down, making the interaction more discoverable and easier to use
     - Reordered the subfactory list buttons to make more sense by grouping the archive-related ones
+    - Added a ko-fi link to the preferences dialog
   Bugfixes:
-    -
+    - Fixed that the first recipe on subfloors could be moved down in certain circumstances
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.29
