@@ -24,8 +24,6 @@ local function generate_metadata(player)
         -- Choose the right type of tutorial text right here if possible
         local matrix_postfix = (metadata.matrix_solver_active) and "_matrix" or ""
 
-        metadata.production_toggle_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "production_toggle",
-          false, false, true)
         metadata.producing_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "producing_recipe",
           true, true, true)
         metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
@@ -49,13 +47,6 @@ end
 
 -- ** BUILDERS **
 local builders = {}
-
-function builders.toggle(line, parent_flow, metadata)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    parent_flow.add{type="checkbox", tags={mod="fp", on_gui_click="toggle_line", line_id=line.id},
-      state=relevant_line.active, tooltip=metadata.production_toggle_tutorial_tooltip,
-      enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
-end
 
 function builders.done(line, parent_flow, _)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -96,15 +87,16 @@ function builders.recipe(line, parent_flow, metadata)
         create_move_button(move_flow, "up")
         create_move_button(move_flow, "down")
 
-        style = "flib_slot_button_default_small"
+        style = (relevant_line.active) and "flib_slot_button_default_small" or "flib_slot_button_red_small"
+        indication = {"fp.newline", {"fp.notice", {"fp.recipe_inactive"}}}
         tutorial_tooltip = metadata.producing_recipe_tutorial_tooltip
 
         if line.subfloor then
-            style = "flib_slot_button_blue_small"
+            style = (relevant_line.active) and "flib_slot_button_blue_small" or "flib_slot_button_purple_small"
             indication = {"fp.newline", {"fp.notice", {"fp.recipe_subfloor_attached"}}}
 
         elseif line.recipe.production_type == "consume" then
-            style = "flib_slot_button_red_small"
+            style = (relevant_line.active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
             indication = {"fp.newline", {"fp.notice", {"fp.recipe_consumes_byproduct"}}}
             tutorial_tooltip = metadata.consuming_recipe_tutorial_tooltip
         end
@@ -387,7 +379,6 @@ end
 
 -- ** TOP LEVEL **
 local all_production_columns = {
-    {name="toggle", caption="", tooltip={"fp.column_toggle_tt"}, minimal_width=0, alignment="center"},
     {name="done", caption="", tooltip={"fp.column_done_tt"}, minimal_width=0, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, tooltip=nil, minimal_width=0, alignment="center"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, minimal_width=0, alignment="center"},

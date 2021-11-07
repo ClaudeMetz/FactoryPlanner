@@ -1,37 +1,6 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
-local function handle_toggle_click(player, tags, metadata)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-
-    if not metadata.alt then  -- Left-click sets the relevant line state
-        relevant_line.active = not relevant_line.active
-    else  -- Alt-left-click inverts the state of all lines
-        local lines = Floor.get_in_order(context.floor, "Line")  -- this can be cached
-
-        local has_inactive_lines = false
-        for _, current_line in ipairs(lines) do
-            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
-            if not current_relevant_line.active then
-                has_inactive_lines = true
-                break
-            end
-        end
-
-        local new_active_state = has_inactive_lines and relevant_line.active
-        for _, current_line in ipairs(lines) do
-            local current_relevant_line = (current_line.subfloor) and current_line.subfloor.defining_line or current_line
-            current_relevant_line.active = new_active_state
-        end
-        relevant_line.active = true
-    end
-
-    calculation.update(player, context.subfactory)
-    main_dialog.refresh(player, "subfactory")
-end
-
 local function handle_done_click(player, tags, _)
     local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -68,22 +37,30 @@ local function handle_recipe_click(player, tags, metadata)
         data_util.execute_alt_action(player, "show_recipe",
           {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
 
-    elseif metadata.click == "left" then  -- Attaches a subfloor to this line
-        local subfloor = line.subfloor
+    elseif metadata.click == "left" then
+        if metadata.control then  -- toggles this line
+            local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+            relevant_line.active = not relevant_line.active
+            calculation.update(player, context.subfactory)
+            main_dialog.refresh(player, "subfactory")
 
-        if not subfloor and line.recipe.production_type == "consume" then
-            if not ui_util.check_archive_status(player) then return end
-            title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
-        else
-            if subfloor == nil then
+        else  -- attaches a subfloor to this line
+            local subfloor = line.subfloor
+
+            if not subfloor and line.recipe.production_type == "consume" then
                 if not ui_util.check_archive_status(player) then return end
-                subfloor = Floor.init(line)  -- attaches itself to the given line automatically
-                Subfactory.add(context.subfactory, subfloor)
-                calculation.update(player, context.subfactory)
-            end
+                title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
+            else
+                if subfloor == nil then
+                    if not ui_util.check_archive_status(player) then return end
+                    subfloor = Floor.init(line)  -- attaches itself to the given line automatically
+                    Subfactory.add(context.subfactory, subfloor)
+                    calculation.update(player, context.subfactory)
+                end
 
-            ui_util.context.set_floor(player, subfloor)
-            main_dialog.refresh(player, "production_detail")
+                ui_util.context.set_floor(player, subfloor)
+                main_dialog.refresh(player, "production_detail")
+            end
         end
 
     elseif metadata.action == "delete" then  -- removes this line, including subfloor(s)
@@ -530,10 +507,6 @@ end
 -- ** EVENTS **
 production_handler.gui_events = {
     on_gui_click = {
-        {
-            name = "toggle_line",
-            handler = handle_toggle_click
-        },
         {
             name = "checkmark_line",
             handler = handle_done_click
