@@ -110,11 +110,14 @@ local function archive_subfactory(player, _, _)
 end
 
 local function add_subfactory(player, _, metadata)
-    if metadata.shift then  -- go right to the item picker with automatic subfactory naming
+    local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
+    function xor(a,b) return not a ~= not b end  -- fancy, first time I ever needed this
+
+    if xor(metadata.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
         modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
           create_subfactory=true}})
 
-    else  -- otherwise, go through the normal proceedure
+    else  -- otherwise, have the user pick a subfactory name first
         local modal_data = generate_subfactory_dialog_modal_data("new", nil)
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
     end
@@ -228,8 +231,7 @@ function subfactory_list.build(player)
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_subfactory"},
-      sprite="utility/add", tooltip={"fp.action_add_subfactory"}, style="flib_tool_button_light_green",
-      mouse_button_filter={"left"}}
+      sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
     main_elements.subfactory_list["add_button"] = button_add
 
     local button_edit = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="edit_subfactory"},
@@ -319,7 +321,11 @@ function subfactory_list.refresh(player)
     subfactory_list_elements.import_button.enabled = (not archive_open)
     subfactory_list_elements.export_button.enabled = (subfactory_exists)
 
+    local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
     subfactory_list_elements.add_button.enabled = (not archive_open)
+    subfactory_list_elements.add_button.tooltip = (prefer_product_picker) and
+      {"fp.action_add_subfactory_by_product"} or {"fp.action_add_subfactory_by_name"}
+
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
     subfactory_list_elements.duplicate_button.enabled =
       (subfactory_exists and selected_subfactory.valid and not archive_open)

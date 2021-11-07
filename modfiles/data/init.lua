@@ -35,6 +35,7 @@ local function reload_settings(player)
     settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
     settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
 
     global.players[player.index].settings = settings_table
@@ -285,7 +286,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         elseif event.setting == "fp_products_per_row" or
           event.setting == "fp_subfactory_list_rows" or
-          event.setting == "fp_alt_action" then
+          event.setting == "fp_alt_action" or
+          event.setting == "fp_prefer_product_picker" then
             main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then

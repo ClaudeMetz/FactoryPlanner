@@ -60,9 +60,16 @@ data:extend({
     },
     {
         type = "bool-setting",
-        name = "fp_prefer_matrix_solver",
+        name = "fp_prefer_product_picker",
         setting_type = "runtime-per-user",
         default_value = false,
         order = "g"
+    },
+    {
+        type = "bool-setting",
+        name = "fp_prefer_matrix_solver",
+        setting_type = "runtime-per-user",
+        default_value = false,
+        order = "h"
     },
 })
