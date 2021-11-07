@@ -110,8 +110,7 @@ local function archive_subfactory(player, _, _)
 end
 
 local function add_subfactory(player, _, metadata)
-    if metadata.alt then
-        -- If alt is pressed, go right to the item picker, which will determine the subfactory icon
+    if metadata.shift then  -- go right to the item picker with automatic subfactory naming
         modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
           create_subfactory=true}})
 
