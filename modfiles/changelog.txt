@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Added a ko-fi link to the preferences dialog
   Bugfixes:
     - Fixed that the first recipe on subfloors could be moved down in certain circumstances
+    - Fixed that shift-click adding a subfactory and cancelling the picker dialog would create an empty subfactory
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.29

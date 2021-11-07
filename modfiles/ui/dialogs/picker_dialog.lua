@@ -68,8 +68,10 @@ local function add_item_picker(parent_flow, player)
     modal_elements.groups = {}
 
     local existing_products = {}
-    for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
-        existing_products[product.proto.name] = true
+    if not ui_state.modal_data.create_subfactory then  -- check if this is for a new subfactory or not
+        for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
+            existing_products[product.proto.name] = true
+        end
     end
 
     local items_per_column = 10
@@ -347,11 +349,9 @@ end)
 
 function picker_dialog.open(player, modal_data)
     -- Create a blank subfactory if requested
-    local subfactory = (modal_data.create_subfactory) and subfactory_list.add_subfactory(player, "", nil)
-      or data_util.get("context", player).subfactory
-
-    modal_data.timescale = subfactory.timescale
-    modal_data.lob = data_util.get("settings", player).belts_or_lanes
+    local settings = data_util.get("settings", player)
+    modal_data.timescale = settings.default_timescale
+    modal_data.lob = settings.belts_or_lanes
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
@@ -369,9 +369,8 @@ function picker_dialog.open(player, modal_data)
 end
 
 function picker_dialog.close(player, action)
-    local modal_data = data_util.get("modal_data", player)
-    local subfactory = data_util.get("context", player).subfactory
-    local item = modal_data.object
+    local ui_state = data_util.get("ui_state", player)
+    local modal_data, context = ui_state.modal_data, ui_state.context
 
     local refresh_scope = "subfactory"
     if action == "submit" then
@@ -381,27 +380,28 @@ function picker_dialog.close(player, action)
 
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
-        if item ~= nil then  -- ie. this is an edit
-            item.required_amount = req_amount
+        if modal_data.object ~= nil then  -- ie. this is an edit
+            modal_data.object.required_amount = req_amount
         else
             local class_name = (modal_data.item_category:gsub("^%l", string.upper))
             local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
 
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
                 local split_sprite = split_string(top_level_item.proto.sprite, "/")
-                subfactory.icon = {type=split_sprite[1], name=split_sprite[2]}
+                local icon = {type=split_sprite[1], name=split_sprite[2]}
+                subfactory_list.add_subfactory(player, "", icon)  -- sets context to new subfactory
                 refresh_scope = "all"  -- need to refresh subfactory list too
             end
 
-            Subfactory.add(subfactory, top_level_item)  -- finally add the item to the subfactory
+            Subfactory.add(context.subfactory, top_level_item)
         end
 
     elseif action == "delete" then
-        Subfactory.remove(subfactory, item)
+        Subfactory.remove(context.subfactory, modal_data.object)
     end
 
     if action ~= "cancel" then
-        calculation.update(player, subfactory)
+        calculation.update(player, context.subfactory)
         main_dialog.refresh(player, refresh_scope)
     end
 end
