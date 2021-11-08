@@ -2,6 +2,7 @@
 -- @module linear_optimization_solver
 -- @license MIT
 -- @author B_head
+
 local M = {}
 local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
@@ -118,37 +119,37 @@ end
 -- @param normalized_references List returned by @{solver_util.normalize_references}.
 -- @treturn Problem Created problem object.
 function M.create_problem(problem_name, flat_recipe_lines, normalized_references)
-    local function add_item_factor(constraint_map, name, factor)
-        constraint_map["balance|" .. name] = factor
+    local function add_item_factor(subject_map, name, factor)
+        subject_map["balance|" .. name] = factor
         if factor > 0 then
-            constraint_map["product_reference|" .. name] = factor
+            subject_map["product_reference|" .. name] = factor
         elseif factor < 0 then
-            constraint_map["ingredient_reference|" .. name] = -factor
+            subject_map["ingredient_reference|" .. name] = -factor
         end
     end
 
     local problem = Problem(problem_name)
     local need_slack = detect_cycle_dilemma(flat_recipe_lines)
     for id, v in pairs(flat_recipe_lines) do
-        problem:add_objective(id, machine_count_penalty, true)
-        local constraint_map = {}
+        problem:add_objective_term(id, machine_count_penalty, true)
+        local subject_map = {}
         local is_maximum_limit = false
 
         if v.maximum_machine_count then
             local key = "maximum|" .. id
             problem:add_le_constraint(key, v.maximum_machine_count)
-            constraint_map[key] = 1
+            subject_map[key] = 1
             is_maximum_limit = true
         end
         if v.minimum_machine_count then
             local key = "minimum|" .. id
             problem:add_ge_constraint(key, v.minimum_machine_count)
-            constraint_map[key] = 1
+            subject_map[key] = 1
         end
 
         for name, u in pairs(v.products) do
             local amount = u.amount_per_machine_by_second
-            add_item_factor(constraint_map, name, amount)
+            add_item_factor(subject_map, name, amount)
             if is_maximum_limit then
                 need_slack[name].product = true
             end
@@ -156,23 +157,23 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
             if #u.neighbor_recipe_lines >= 2 then
                 local balance_key = string.format("products_priority_balance|%s:%s", id, name)
                 problem:add_eq_constraint(balance_key, 0)
-                constraint_map[balance_key] = amount
+                subject_map[balance_key] = amount
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
                     local transfer_key = string.format("transfer|%s=>%s:%s", id, neighbor.normalized_id, name)
                     local penalty = (priority - 1) * products_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_penalty(transfer_key, penalty)
                     else
-                        problem:add_objective(transfer_key, penalty)
+                        problem:add_objective_term(transfer_key, penalty)
                     end
-                    problem:add_subject_term(transfer_key, {
+                    problem:add_constraint_term(transfer_key, {
                         [balance_key] = -1
                     })
                 end
                 local implicit_key = string.format("implicit_transfer|%s=>(?):%s", id, name)
                 local penalty = #u.neighbor_recipe_lines * products_priority_penalty
-                problem:add_objective(implicit_key, penalty)
-                problem:add_subject_term(implicit_key, {
+                problem:add_objective_term(implicit_key, penalty)
+                problem:add_constraint_term(implicit_key, {
                     [balance_key] = -1
                 })
             end 
@@ -180,7 +181,7 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
 
         for name, u in pairs(v.ingredients) do
             local amount = u.amount_per_machine_by_second
-            add_item_factor(constraint_map, name, -amount)
+            add_item_factor(subject_map, name, -amount)
             if is_maximum_limit then
                 need_slack[name].ingredient = true
             end
@@ -188,29 +189,29 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
             if #u.neighbor_recipe_lines >= 2 then
                 local balance_key = string.format("ingredients_priority_balance|%s:%s", id, name)
                 problem:add_eq_constraint(balance_key, 0)
-                constraint_map[balance_key] = -amount
+                subject_map[balance_key] = -amount
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
                     local transfer_key = string.format("transfer|%s=>%s:%s", neighbor.normalized_id, id, name)
                     local penalty = (priority - 1) * ingredients_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_penalty(transfer_key, penalty)
                     else
-                        problem:add_objective(transfer_key, penalty)
+                        problem:add_objective_term(transfer_key, penalty)
                     end
-                    problem:add_subject_term(transfer_key, {
+                    problem:add_constraint_term(transfer_key, {
                         [balance_key] = 1
                     })
                 end
                 local implicit_key = string.format("implicit_transfer|(?)=>%s:%s", id, name)
                 local penalty = #u.neighbor_recipe_lines * ingredients_priority_penalty
-                problem:add_objective(implicit_key, penalty)
-                problem:add_subject_term(implicit_key, {
+                problem:add_objective_term(implicit_key, penalty)
+                problem:add_constraint_term(implicit_key, {
                     [balance_key] = 1
                 })
             end 
         end
 
-        problem:add_subject_term(id, constraint_map)
+        problem:add_constraint_term(id, subject_map)
     end
     
     local items = get_include_items(flat_recipe_lines, normalized_references)
@@ -221,18 +222,18 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
         if v.ingredient and need_slack[name].ingredient then
             local key = "implicit_ingredient|" .. name
             local penalty = surplusage_penalty
-            problem:add_objective(key, penalty)
-            local constraint_map = {}
-            add_item_factor(constraint_map, name, -1)
-            problem:add_subject_term(key, constraint_map)
+            problem:add_objective_term(key, penalty)
+            local subject_map = {}
+            add_item_factor(subject_map, name, -1)
+            problem:add_constraint_term(key, subject_map)
         end
         if v.product and need_slack[name].product then
             local key = "implicit_product|" .. name
             local penalty = shortage_penalty
-            problem:add_objective(key, penalty)
-            local constraint_map = {}
-            add_item_factor(constraint_map, name, 1)
-            problem:add_subject_term(key, constraint_map)
+            problem:add_objective_term(key, penalty)
+            local subject_map = {}
+            add_item_factor(subject_map, name, 1)
+            problem:add_constraint_term(key, subject_map)
         end
         if v.reference then
             local r = normalized_references[name]
@@ -288,8 +289,8 @@ end
 function M.primal_dual_interior_point(problem)
     local A = problem:make_subject_sparse_matrix()
     local AT = A:T()
-    local b = problem:make_dual_factors()
-    local c = problem:make_primal_factors()
+    local b = problem:make_dual_coefficients()
+    local c = problem:make_primal_coefficients()
     local p_degree = problem.primal_length
     local d_degree = problem.dual_length
     local x = Matrix.new_vector(p_degree):fill(1)
@@ -365,7 +366,7 @@ function M.primal_dual_interior_point(problem)
     debug_print("factors b:\n" .. problem:dump_dual(b))
     -- debug_print("variables s:\n" .. problem:dump_primal(s))
 
-    return problem:convert_result(x)
+    return problem:filter_solution_to_result(x)
 end
 
 --- Reduce an augmented matrix into row echelon form.
@@ -500,6 +501,8 @@ end
 -- @tparam Matrix b Column vector.
 -- @tparam function flee_value_generator Callback function that generates the value of free variable.
 -- @treturn Matrix Solution of linear equations.
+function M.forward_substitution(L, b, flee_value_generator)
+    return substitution(1, L.height, 1, L, b, flee_value_generator)
 end
 
 --- Use upper triangular matrix to solve linear equations.
@@ -507,6 +510,8 @@ end
 -- @tparam Matrix b Column vector.
 -- @tparam function flee_value_generator Callback function that generates the value of free variable.
 -- @treturn Matrix Solution of linear equations.
+function M.backward_substitution(U, b, flee_value_generator)
+    return substitution(U.height, 1, -1, U, b, flee_value_generator)
 end
 
 --- Create to callback function that generates the value of free variable.

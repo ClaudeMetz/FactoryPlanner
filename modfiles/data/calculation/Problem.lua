@@ -23,12 +23,13 @@ end
 -- @tparam string key Term key.
 -- @tparam number cost Coefficient of the term.
 -- @tparam bool is_result If ture, variables are included in the output of the solution.
+function P:add_objective_term(key, cost, is_result)
     assert(not self.primal[key])
     self.primal_length = self.primal_length + 1
     self.primal[key] = {
         key = key,
         index = self.primal_length,
-        value = penalty or 1,
+        value = cost or 1,
         is_result = is_result or false,
     }
 end
@@ -43,19 +44,21 @@ end
 --- Add to the coefficients of the terms of the objective function.
 -- @tparam string key Term key.
 -- @tparam number cost Value to be added.
+function P:add_objective_cost(key, cost)
     assert(self.primal[key])
-    self.primal[key].value = self.primal[key].value + penalty
+    self.primal[key].value = self.primal[key].value + cost
 end
 
 --- Add equality constraints.
 -- @tparam string key Constraint key.
 -- @tparam number target The value that needs to match the result of the constraint expression.
+function P:add_eq_constraint(key, target)
     assert(not self.dual[key])
     self.dual_length = self.dual_length + 1
     self.dual[key] = {
         key = key,
         index = self.dual_length,
-        value = limit or 0,
+        value = target or 0,
     }
 end
 
@@ -65,8 +68,8 @@ end
 function P:add_le_constraint(key, limit)
     local slack_key = "<slack>" .. key
     self:add_eq_constraint(key, limit)
-    self:add_objective(slack_key, 0, false)
-    self:add_subject_term(slack_key, {
+    self:add_objective_term(slack_key, 0, false)
+    self:add_constraint_term(slack_key, {
         [key] = 1,
     })
 end
@@ -77,8 +80,8 @@ end
 function P:add_ge_constraint(key, limit)
     local slack_key = "<slack>" .. key
     self:add_eq_constraint(key, limit)
-    self:add_objective(slack_key, 0, false)
-    self:add_subject_term(slack_key, {
+    self:add_objective_term(slack_key, 0, false)
+    self:add_constraint_term(slack_key, {
         [key] = -1,
     })
 end
@@ -93,8 +96,9 @@ end
 --- Add a term for the constraint equation.
 -- @tparam objective_key Objective term key.
 -- @tparam {[string]=number,...} subject_map Mapping of constraint keys to term coefficients.
+function P:add_constraint_term(objective_key, subject_map)
     local term = self.subject_terms[objective_key] or {}
-    for k, v in pairs(constraint_map) do
+    for k, v in pairs(subject_map) do
         assert(not term[k])
         term[k] = v
     end
@@ -103,6 +107,7 @@ end
 
 --- Make a vector of the coefficient of the primal problem.
 -- @treturn Matrix Coefficients in vector form.
+function P:make_primal_coefficients()
     local ret = Matrix.new_vector(self.primal_length)
     for _, v in pairs(self.primal) do
         ret[v.index][1] = v.value
@@ -112,6 +117,7 @@ end
 
 --- Make a vector of the coefficient of the dual problem.
 -- @treturn Matrix Coefficients in vector form.
+function P:make_dual_coefficients()
     local ret = Matrix.new_vector(self.dual_length)
     for _, v in pairs(self.dual) do
         ret[v.index][1] = v.value
@@ -146,6 +152,7 @@ end
 --- Remove unnecessary variables from the solution of the problem.
 -- @tparam Matrix vector Solution to the primal problem.
 -- @treturn table Filtered solution.
+function P:filter_solution_to_result(vector)
     local ret = {}
     for k, v in pairs(self.primal) do
         if v.is_result then

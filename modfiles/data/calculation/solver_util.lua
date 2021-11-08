@@ -4,9 +4,9 @@
 -- @author B_head
 -- @todo Temperature support.
 
+local M = {}
 local calculation = calculation -- require "data.calculation.util"
 local structures = structures -- require "data.calculation.structures"
-local M = {}
 
 local tolerance = MARGIN_OF_ERROR
 
