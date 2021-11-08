@@ -162,7 +162,7 @@ end
 
 --- Unify parameter units of refarences.
 -- @param references Input the value of top_level_products in subfactory_data.
--- @param timescale Input the value of timescale in subfactory_data.
+-- @tparam number timescale Input the value of timescale in subfactory_data.
 -- @return Normalized references data.
 function M.normalize_references(references, timescale)
     local ret = {}
@@ -299,9 +299,9 @@ local function feedback_floor(machine_counts, player_index, timescale, normalize
 end
 
 --- Reflect the solution in the UI.
--- @tparam {[string]=number,...} machine_counts Subfactory solution.
--- @param player_index Input the value of player_index in subfactory_data.
--- @param timescale Input the value of timescale in subfactory_data.
+-- @tparam {[string]=number,...} machine_counts Solution for amount of machines needed in a sub-factory.
+-- @tparam number player_index Input the value of player_index in subfactory_data.
+-- @tparam number timescale Input the value of timescale in subfactory_data.
 -- @param normalized_top_floor Input the result of @{normalize}.
 function M.feedback(machine_counts, player_index, timescale, normalized_top_floor)
     local res = feedback_floor(machine_counts, player_index, timescale, normalized_top_floor)

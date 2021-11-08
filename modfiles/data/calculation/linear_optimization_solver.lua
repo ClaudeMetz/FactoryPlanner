@@ -1,3 +1,7 @@
+--- Create and solve linear programming problems (a.k.a linear optimization).
+-- @module linear_optimization_solver
+-- @license MIT
+-- @author B_head
 local M = {}
 local Problem = require("data.calculation.Problem")
 local Matrix = require("data.calculation.Matrix")
@@ -108,6 +112,11 @@ local function detect_cycle_dilemma(flat_recipe_lines)
     return ret
 end
 
+--- Create linear programming problems.
+-- @tparam string problem_name Problem name.
+-- @param flat_recipe_lines List returned by @{solver_util.to_flat_recipe_lines}.
+-- @param normalized_references List returned by @{solver_util.normalize_references}.
+-- @treturn Problem Created problem object.
 function M.create_problem(problem_name, flat_recipe_lines, normalized_references)
     local function add_item_factor(constraint_map, name, factor)
         constraint_map["balance|" .. name] = factor
@@ -272,7 +281,10 @@ local function get_max_step(v, dir)
     return ret
 end
 
--- See also: http://www.cas.mcmaster.ca/~cs777/presentations/NumericalIssue.pdf
+--- Solve linear programming problems.
+-- @see http://www.cas.mcmaster.ca/~cs777/presentations/NumericalIssue.pdf
+-- @tparam Problem problem Problems to solve.
+-- @treturn {[string]=number,...} Solution to problem.
 function M.primal_dual_interior_point(problem)
     local A = problem:make_subject_sparse_matrix()
     local AT = A:T()
@@ -356,6 +368,11 @@ function M.primal_dual_interior_point(problem)
     return problem:convert_result(x)
 end
 
+--- Reduce an augmented matrix into row echelon form.
+-- @todo Refactoring for use in matrix solvers.
+-- @tparam Matrix A Matrix equation.
+-- @tparam Matrix b Column vector.
+-- @treturn Matrix Matrix of row echelon form.
 function M.gaussian_elimination(A, b)
     local height, width = A.height, A.width
     local ret_A = A:clone():insert_column(b)
@@ -392,6 +409,11 @@ function M.gaussian_elimination(A, b)
     return ret_A, ret_b
 end
 
+--- LU decomposition of the symmetric matrix.
+-- @tparam Matrix A Symmetric matrix.
+-- @treturn Matrix Lower triangular matrix.
+-- @treturn Matrix Diagonal matrix.
+-- @treturn Matrix Upper triangular matrix.
 function M.cholesky_factorization(A)
     assert(A.height == A.width)
     local size = A.height
@@ -462,19 +484,34 @@ local function substitution(s, e, m, A, b, flee_value_generator)
     return Matrix.list_to_vector(sol, A.width)
 end
 
+--- Use LU-decomposed matrices to solve linear equations.
+-- @tparam Matrix L Lower triangular matrix.
+-- @tparam Matrix U Upper triangular matrix.
+-- @tparam Matrix b Column vector.
+-- @tparam function flee_value_generator Callback function that generates the value of free variable.
+-- @treturn Matrix Solution of linear equations.
 function M.lu_solve_linear_equation(L, U, b, flee_value_generator)
     local t = M.forward_substitution(L, b, flee_value_generator)
     return M.backward_substitution(U, t, flee_value_generator)
 end
 
-function M.forward_substitution(A, b, flee_value_generator)
-    return substitution(1, A.height, 1, A, b, flee_value_generator)
+--- Use lower triangular matrix to solve linear equations.
+-- @tparam Matrix L Lower triangular matrix.
+-- @tparam Matrix b Column vector.
+-- @tparam function flee_value_generator Callback function that generates the value of free variable.
+-- @treturn Matrix Solution of linear equations.
 end
 
-function M.backward_substitution(A, b, flee_value_generator)
-    return substitution(A.height, 1, -1, A, b, flee_value_generator)
+--- Use upper triangular matrix to solve linear equations.
+-- @tparam Matrix U Upper triangular matrix.
+-- @tparam Matrix b Column vector.
+-- @tparam function flee_value_generator Callback function that generates the value of free variable.
+-- @treturn Matrix Solution of linear equations.
 end
 
+--- Create to callback function that generates the value of free variable.
+-- @tparam Matrix Vector to be referenced in debug output.
+-- @treturn function Callback function.
 function M.create_default_flee_value_generator(...)
     local currents = Matrix.join_vector{...}
     return function(target, factors, indexes)

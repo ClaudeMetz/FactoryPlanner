@@ -1,3 +1,8 @@
+--- Helper for generate OOP-style data structures.
+-- @module class
+-- @license MIT
+-- @author B_head
+
 local M = {}
 
 local function noop()
@@ -10,7 +15,7 @@ local function create_metatable(name, prototype, extend_class)
     setmetatable(prototype, {
         __index = super_prototype -- Constructing prototype chains.
     })
-    local ret = { 
+    local ret = {
         __new = noop
     }
     for k, v in pairs(super_metatable) do
@@ -37,6 +42,12 @@ local function create_instance(class_object, ...)
     return ret
 end
 
+--- Create class object.
+-- @tparam string name Name of the class type.
+-- @tparam table prototype A table that defines methods, meta-methods, and constants.
+-- @tparam table static A table that defines static functions.
+-- @param extend_class Class object to inherit from.
+-- @return Class object.
 function M.class(name, prototype, static, extend_class)
     static = static or {}
     setmetatable(static, {
@@ -47,21 +58,34 @@ function M.class(name, prototype, static, extend_class)
     return static -- Return as class_object.
 end
 
+--- Return name of the class type.
+-- @param value Class object.
+-- @return Class name.
 function M.class_type(value)
     local mt = getmetatable(value)
     return mt and mt.__type
 end
 
+--- Return a prototype table.
+-- @param value Class object.
+-- @return Prototype table.
 function M.prototype(value)
     local mt = getmetatable(value)
     return mt and mt.__prototype
 end
 
+--- Return a prototype table of the superclass.
+-- @param value Class object.
+-- @return Prototype table.
 function M.super(value)
     local mt = getmetatable(value)
     return mt and mt.__super_prototype
 end
 
+--- Restore methods, meta-methods, and constants in the instance table.
+-- @tparam table plain_table An instance table to restore.
+-- @param class_object Class object that defines methods, meta-methods, and constants.
+-- @return Instance table.
 function M.resetup(plain_table, class_object)
     local mt = getmetatable(class_object)
     setmetatable(plain_table, mt)
