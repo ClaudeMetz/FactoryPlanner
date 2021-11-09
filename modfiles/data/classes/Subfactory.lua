@@ -16,6 +16,7 @@ function Subfactory.init(name, icon)
         Floor = Collection.init("Floor"),
         solver_type = nil,  -- needs to be set after init
         matrix_free_items = nil,
+        prev_raw_solution = nil,
         linearly_dependant = false,  -- determined by the solver
         selected_floor = nil,
         item_request_proxy = nil,

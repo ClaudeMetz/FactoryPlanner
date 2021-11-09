@@ -150,6 +150,66 @@ function P:make_subject_matrix()
     return self:make_subject_sparse_matrix():to_matrix()
 end
 
+--- Make find variables for primal problem.
+-- @tparam table prev_raw_solution The value returned by @{pack_pdip_variables}.
+-- @treturn Matrix Variables in vector form.
+function P:make_primal_find_variables(prev_raw_solution)
+    local prev_x = prev_raw_solution and prev_raw_solution.x or {}
+    local ret = Matrix.new_vector(self.primal_length)
+    for k, v in pairs(self.primal) do
+        ret[v.index][1] = prev_x[k] or 1
+    end
+    return ret
+end
+
+--- Make find variables for dual problem.
+-- @tparam table prev_raw_solution The value returned by @{pack_pdip_variables}.
+-- @treturn Matrix Variables in vector form.
+function P:make_dual_find_variables(prev_raw_solution)
+    local prev_y = prev_raw_solution and prev_raw_solution.y or {}
+    local ret = Matrix.new_vector(self.dual_length)
+    for k, v in pairs(self.dual) do
+        ret[v.index][1] = prev_y[k] or 0
+    end
+    return ret
+end
+
+--- Make slack variables for dual problem.
+-- @tparam table prev_raw_solution The value returned by @{pack_pdip_variables}.
+-- @treturn Matrix Variables in vector form.
+function P:make_dual_slack_variables(prev_raw_solution)
+    local prev_s = prev_raw_solution and prev_raw_solution.s or {}
+    local ret = Matrix.new_vector(self.primal_length)
+    for k, v in pairs(self.primal) do
+        ret[v.index][1] = prev_s[k] or math.max(1, v.value)
+    end
+    return ret
+end
+
+--- Store the value of variables in a plain table.
+-- @tparam Matrix x Find variables for primal problem.
+-- @tparam Matrix y Find variables for dual problem.
+-- @tparam Matrix s Slack variables for dual problem.
+-- @treturn table Packed table.
+function P:pack_pdip_variables(x, y, s)
+    local ret_x, ret_s = {}, {}
+    for k, v in pairs(self.primal) do
+        ret_x[k] = x[v.index][1]
+        ret_s[k] = s[v.index][1]
+    end
+
+    local ret_y = {}
+    for k, v in pairs(self.dual) do
+        ret_y[k] = y[v.index][1]
+    end
+    
+    return {
+        x = ret_x,
+        y = ret_y,
+        s = ret_s,
+    }
+end
+
 --- Remove unnecessary variables from the solution of the problem.
 -- @tparam Matrix vector Solution to the primal problem.
 -- @treturn table Filtered solution.

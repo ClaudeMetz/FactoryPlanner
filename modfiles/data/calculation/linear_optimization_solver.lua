@@ -162,7 +162,7 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
                     local transfer_key = string.format("transfer|%s=>%s:%s", id, neighbor.normalized_id, name)
                     local penalty = (priority - 1) * products_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
-                        problem:add_objective_penalty(transfer_key, penalty)
+                        problem:add_objective_cost(transfer_key, penalty)
                     else
                         problem:add_objective_term(transfer_key, penalty)
                     end
@@ -194,7 +194,7 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
                     local transfer_key = string.format("transfer|%s=>%s:%s", neighbor.normalized_id, id, name)
                     local penalty = (priority - 1) * ingredients_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
-                        problem:add_objective_penalty(transfer_key, penalty)
+                        problem:add_objective_cost(transfer_key, penalty)
                     else
                         problem:add_objective_term(transfer_key, penalty)
                     end
@@ -285,21 +285,19 @@ end
 --- Solve linear programming problems.
 -- @see http://www.cas.mcmaster.ca/~cs777/presentations/NumericalIssue.pdf
 -- @tparam Problem problem Problems to solve.
+-- @tparam table prev_raw_solution The value returned by @{Problem:pack_pdip_variables}.
 -- @treturn {[string]=number,...} Solution to problem.
-function M.primal_dual_interior_point(problem)
+-- @treturn table Packed table of raw solution.
+function M.primal_dual_interior_point(problem, prev_raw_solution)
     local A = problem:make_subject_sparse_matrix()
     local AT = A:T()
     local b = problem:make_dual_coefficients()
     local c = problem:make_primal_coefficients()
     local p_degree = problem.primal_length
     local d_degree = problem.dual_length
-    local x = Matrix.new_vector(p_degree):fill(1)
-    local y = Matrix.new_vector(d_degree):fill(0)
-    local s = c:clone()
-    
-    for i = 1, p_degree do
-        s[i][1] = math.max(1, s[i][1])
-    end
+    local x = problem:make_primal_find_variables(prev_raw_solution)
+    local y = problem:make_dual_find_variables(prev_raw_solution)
+    local s = problem:make_dual_slack_variables(prev_raw_solution)
 
     debug_print(string.format("-- solve %s --", problem.name))
     for i = 0, iterate_limit do
@@ -366,7 +364,7 @@ function M.primal_dual_interior_point(problem)
     debug_print("factors b:\n" .. problem:dump_dual(b))
     -- debug_print("variables s:\n" .. problem:dump_primal(s))
 
-    return problem:filter_solution_to_result(x)
+    return problem:filter_solution_to_result(x), problem:pack_pdip_variables(x, y, s)
 end
 
 --- Reduce an augmented matrix into row echelon form.

@@ -221,8 +221,9 @@ function calculation.update(player, subfactory)
             local flat_recipe_lines = solver_util.to_flat_recipe_lines(normalized_top_floor)
             local normalized_references = solver_util.normalize_references(subfactory_data.top_level_products, subfactory_data.timescale)
             local problem = linear_optimization_solver.create_problem(subfactory_data.name, flat_recipe_lines, normalized_references)
-            local machine_counts = linear_optimization_solver.primal_dual_interior_point(problem)
+            local machine_counts, raw_solution = linear_optimization_solver.primal_dual_interior_point(problem, subfactory.prev_raw_solution)
             solver_util.feedback(machine_counts, subfactory_data.player_index, subfactory_data.timescale, normalized_top_floor)
+            subfactory.prev_raw_solution = raw_solution
         elseif subfactory.solver_type == "traditional" then
             sequential_solver.update_subfactory(subfactory_data)
         else

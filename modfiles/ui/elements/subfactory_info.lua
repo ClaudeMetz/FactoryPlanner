@@ -38,6 +38,7 @@ local function handle_solver_change(player, _, metadata)
     local new_solver = SOLVER_TYPE_MAP[metadata.selected_index]
 
     subfactory.solver_type = new_solver
+    subfactory.prev_raw_solution = nil
     subfactory.linearly_dependant = false
 
     if new_solver == "matrix" then
