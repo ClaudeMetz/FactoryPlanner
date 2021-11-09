@@ -153,7 +153,7 @@ end
 
 --- Unify parameter units and add a true ID.
 -- Furthermore, determine the priority of item transfer.
--- @param top_floor Input the value of top_floor in subfactory_data.
+-- @param top_floor The value of `top_floor` in `subfactory_data`.
 -- @return Normalized data. This maintains the structure of original sub-floor.
 function M.normalize(top_floor)
     local ret = normalize_floor(top_floor, nil, nil)
@@ -161,8 +161,8 @@ function M.normalize(top_floor)
 end
 
 --- Unify parameter units of refarences.
--- @param references Input the value of top_level_products in subfactory_data.
--- @tparam number timescale Input the value of timescale in subfactory_data.
+-- @param references The value of `top_level_products` in `subfactory_data`.
+-- @tparam number timescale The value of `timescale` in `subfactory_data`.
 -- @return Normalized references data.
 function M.normalize_references(references, timescale)
     local ret = {}
@@ -300,9 +300,9 @@ end
 
 --- Reflect the solution in the UI.
 -- @tparam {[string]=number,...} machine_counts Solution for amount of machines needed in a sub-factory.
--- @tparam number player_index Input the value of player_index in subfactory_data.
--- @tparam number timescale Input the value of timescale in subfactory_data.
--- @param normalized_top_floor Input the result of @{normalize}.
+-- @tparam number player_index The value of `player_index` in `subfactory_data`.
+-- @tparam number timescale The value of `timescale` in `subfactory_data`.
+-- @param normalized_top_floor The value returned by @{normalize}.
 function M.feedback(machine_counts, player_index, timescale, normalized_top_floor)
     local res = feedback_floor(machine_counts, player_index, timescale, normalized_top_floor)
     local ReferencesMet = structures.class.init() --- @todo Reflect on results.
@@ -417,7 +417,7 @@ function M.iterate_recipe_lines(recipe_lines)
 end
 
 --- Convert subfactories to list format.
--- @param normalized_top_floor Input the result of @{normalize}.
+-- @param normalized_top_floor The value returned by @{normalize}.
 -- @return List of recipe lines.
 function M.to_flat_recipe_lines(normalized_top_floor)
     local ret = {}
