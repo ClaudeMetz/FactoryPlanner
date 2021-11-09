@@ -9,7 +9,7 @@ local Matrix = require("data.calculation.Matrix")
 local SparseMatrix = require("data.calculation.SparseMatrix")
 
 --- Constructor.
--- @tparam string Name of the problem.
+-- @tparam string name Name of the problem.
 function P:__new(name)
     self.name = name
     self.primal = {}
@@ -64,7 +64,7 @@ end
 
 --- Add inequality constraints of equal or less.
 -- @tparam string key Constraint key.
--- @tparam The upper bound on the result of the constraint equation.
+-- @tparam number limit The upper bound on the result of the constraint equation.
 function P:add_le_constraint(key, limit)
     local slack_key = "<slack>" .. key
     self:add_eq_constraint(key, limit)
@@ -76,7 +76,7 @@ end
 
 --- Add inequality constraints of equal or greater.
 -- @tparam string key Constraint key.
--- @tparam The lower bound on the result of the constraint equation.
+-- @tparam number limit The lower bound on the result of the constraint equation.
 function P:add_ge_constraint(key, limit)
     local slack_key = "<slack>" .. key
     self:add_eq_constraint(key, limit)
@@ -94,7 +94,7 @@ function P:is_exist_constraint(key)
 end
 
 --- Add a term for the constraint equation.
--- @tparam objective_key Objective term key.
+-- @tparam string objective_key Objective term key.
 -- @tparam {[string]=number,...} subject_map Mapping of constraint keys to term coefficients.
 function P:add_constraint_term(objective_key, subject_map)
     local term = self.subject_terms[objective_key] or {}
