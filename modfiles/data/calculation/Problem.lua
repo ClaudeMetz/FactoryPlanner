@@ -1,5 +1,6 @@
 --- Helper for generating linear programming problems.
 -- @classmod Problem
+-- @alias P
 -- @license MIT
 -- @author B_head
 
