@@ -9,6 +9,21 @@ Date: 00. 00. 0000
     - 
 
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.29
+Date: 04. 11. 2021
+  Bugfixes:
+    - Fixed that the priority product selection would be dropped when disabling a recipe line
+    - Fixed that recipes would show products with amount equal to 0 when they have a subfloor
+    - Fixed that the utility dialog combinator blueprint was limited to two machines per combinator
+    - Fixed that the buttons to check off line recipes would show a tooltip when it shouldn't
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.28
+Date: 29. 10. 2021
+  Bugfixes:
+    - Fixed a crash when trying to pipette a beacon from the Factory Planner interface
+
+---------------------------------------------------------------------------------------------------
 Version: 1.1.27
 Date: 24. 10. 2021
   Features:

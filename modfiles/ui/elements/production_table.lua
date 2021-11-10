@@ -86,10 +86,10 @@ function builders.done(line, parent_flow, _)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     local sprite = (relevant_line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
-    local style = (relevant_line.done) and "flib_tool_button_light_green" or "flib_slot_default"
+    local style = (relevant_line.done) and "fp_button_slot_green" or "flib_slot_default"
 
     local button = parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="checkmark_line", line_id=line.id},
-      sprite=sprite, style=style, mouse_button_filter={"left"}}
+      sprite=sprite, style=style, mouse_button_filter={"left"}, tooltip=nil}
     button.style.size = 24
     button.style.padding = 0
 end
@@ -272,7 +272,7 @@ function builders.products(line, parent_flow, metadata)
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
           product, nil, machine_count, not line.subfloor)
-        if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
+        if amount == "0" and line.subfloor then goto skip_product end  -- amount can't be -1 for products
 
         local style, enabled = "flib_slot_button_default_small", false
         local indication_string, tutorial_tooltip = "", ""

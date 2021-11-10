@@ -307,8 +307,8 @@ function calculation.interface.set_line_result(result)
         line.production_ratio = result.production_ratio
         line.uncapped_production_ratio = result.uncapped_production_ratio
 
-        -- Reset the priority_product if there's <2 products
-        if structures.class.count(result.Product) < 2 then line.priority_product_proto = nil end
+        -- Reset the priority_product if there's only one product
+        if structures.class.count(result.Product) == 1 then line.priority_product_proto = nil end
     end
 
     line.energy_consumption = result.energy_consumption

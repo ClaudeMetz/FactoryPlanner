@@ -325,8 +325,10 @@ local function handle_beacon_click(player, tags, metadata)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.alt and metadata.click == "left" then
-        local beacon_module = line.beacon.module
-        local module_list = {[beacon_module.proto.name] = beacon_module.amount}
+        local module_list = {}
+        for _, module in pairs(Beacon.get_in_order(line.beacon, "Module")) do
+            module_list[module.proto.name] = module.amount
+        end
         local blueprint_entity = {
             entity_number = 1,
             name = line.beacon.proto.name,
