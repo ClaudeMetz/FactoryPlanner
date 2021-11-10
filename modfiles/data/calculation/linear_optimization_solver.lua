@@ -19,7 +19,7 @@ local function get_include_items(flat_recipe_lines, normalized_references)
     local function add_set(key, type)
         if not set[key] then
             set[key] = {
-                name = key,
+                id = key,
                 product = false,
                 ingredient = false,
                 reference = false,
@@ -61,13 +61,13 @@ local function create_item_flow_graph(flat_recipe_lines)
         for _, a in pairs(l.products) do
             for _, b in pairs(l.ingredients) do
                 local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
-                add(a.name, "to", b.name, ratio)
+                add(a.normalized_id, "to", b.normalized_id, ratio)
             end
         end
         for _, a in pairs(l.ingredients) do
             for _, b in pairs(l.products) do
                 local ratio = b.amount_per_machine_by_second / a.amount_per_machine_by_second
-                add(a.name, "from", b.name, ratio)
+                add(a.normalized_id, "from", b.normalized_id, ratio)
             end
         end
     end
@@ -130,36 +130,36 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
 
     local problem = Problem(problem_name)
     local need_slack = detect_cycle_dilemma(flat_recipe_lines)
-    for id, v in pairs(flat_recipe_lines) do
-        problem:add_objective_term(id, machine_count_penalty, true)
+    for recipe_id, v in pairs(flat_recipe_lines) do
+        problem:add_objective_term(recipe_id, machine_count_penalty, true)
         local subject_map = {}
         local is_maximum_limit = false
 
         if v.maximum_machine_count then
-            local key = "maximum|" .. id
+            local key = "maximum|" .. recipe_id
             problem:add_le_constraint(key, v.maximum_machine_count)
             subject_map[key] = 1
             is_maximum_limit = true
         end
         if v.minimum_machine_count then
-            local key = "minimum|" .. id
+            local key = "minimum|" .. recipe_id
             problem:add_ge_constraint(key, v.minimum_machine_count)
             subject_map[key] = 1
         end
 
-        for name, u in pairs(v.products) do
+        for item_id, u in pairs(v.products) do
             local amount = u.amount_per_machine_by_second
-            add_item_factor(subject_map, name, amount)
+            add_item_factor(subject_map, item_id, amount)
             if is_maximum_limit then
-                need_slack[name].product = true
+                need_slack[item_id].product = true
             end
 
             if #u.neighbor_recipe_lines >= 2 then
-                local balance_key = string.format("products_priority_balance|%s:%s", id, name)
+                local balance_key = string.format("products_priority_balance|%s:%s", recipe_id, item_id)
                 problem:add_eq_constraint(balance_key, 0)
                 subject_map[balance_key] = amount
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
-                    local transfer_key = string.format("transfer|%s=>%s:%s", id, neighbor.normalized_id, name)
+                    local transfer_key = string.format("transfer|%s=>%s:%s", recipe_id, neighbor.normalized_id, item_id)
                     local penalty = (priority - 1) * products_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_cost(transfer_key, penalty)
@@ -170,7 +170,7 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
                         [balance_key] = -1
                     })
                 end
-                local implicit_key = string.format("implicit_transfer|%s=>(?):%s", id, name)
+                local implicit_key = string.format("implicit_transfer|%s=>(?):%s", recipe_id, item_id)
                 local penalty = #u.neighbor_recipe_lines * products_priority_penalty
                 problem:add_objective_term(implicit_key, penalty)
                 problem:add_constraint_term(implicit_key, {
@@ -179,19 +179,19 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
             end 
         end
 
-        for name, u in pairs(v.ingredients) do
+        for item_id, u in pairs(v.ingredients) do
             local amount = u.amount_per_machine_by_second
-            add_item_factor(subject_map, name, -amount)
+            add_item_factor(subject_map, item_id, -amount)
             if is_maximum_limit then
-                need_slack[name].ingredient = true
+                need_slack[item_id].ingredient = true
             end
 
             if #u.neighbor_recipe_lines >= 2 then
-                local balance_key = string.format("ingredients_priority_balance|%s:%s", id, name)
+                local balance_key = string.format("ingredients_priority_balance|%s:%s", recipe_id, item_id)
                 problem:add_eq_constraint(balance_key, 0)
                 subject_map[balance_key] = -amount
                 for priority, neighbor in ipairs(u.neighbor_recipe_lines) do
-                    local transfer_key = string.format("transfer|%s=>%s:%s", neighbor.normalized_id, id, name)
+                    local transfer_key = string.format("transfer|%s=>%s:%s", neighbor.normalized_id, recipe_id, item_id)
                     local penalty = (priority - 1) * ingredients_priority_penalty
                     if problem:is_exist_objective(transfer_key) then
                         problem:add_objective_cost(transfer_key, penalty)
@@ -202,7 +202,7 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
                         [balance_key] = 1
                     })
                 end
-                local implicit_key = string.format("implicit_transfer|(?)=>%s:%s", id, name)
+                local implicit_key = string.format("implicit_transfer|(?)=>%s:%s", recipe_id, item_id)
                 local penalty = #u.neighbor_recipe_lines * ingredients_priority_penalty
                 problem:add_objective_term(implicit_key, penalty)
                 problem:add_constraint_term(implicit_key, {
@@ -211,37 +211,37 @@ function M.create_problem(problem_name, flat_recipe_lines, normalized_references
             end 
         end
 
-        problem:add_constraint_term(id, subject_map)
+        problem:add_constraint_term(recipe_id, subject_map)
     end
     
     local items = get_include_items(flat_recipe_lines, normalized_references)
-    for name, v in pairs(items) do
+    for item_id, v in pairs(items) do
         if v.product and v.ingredient then
-            problem:add_eq_constraint("balance|" .. name, 0)
+            problem:add_eq_constraint("balance|" .. item_id, 0)
         end
-        if v.ingredient and need_slack[name].ingredient then
-            local key = "implicit_ingredient|" .. name
+        if v.ingredient and need_slack[item_id].ingredient then
+            local key = "implicit_ingredient|" .. item_id
             local penalty = surplusage_penalty
             problem:add_objective_term(key, penalty)
             local subject_map = {}
-            add_item_factor(subject_map, name, -1)
+            add_item_factor(subject_map, item_id, -1)
             problem:add_constraint_term(key, subject_map)
         end
-        if v.product and need_slack[name].product then
-            local key = "implicit_product|" .. name
+        if v.product and need_slack[item_id].product then
+            local key = "implicit_product|" .. item_id
             local penalty = shortage_penalty
             problem:add_objective_term(key, penalty)
             local subject_map = {}
-            add_item_factor(subject_map, name, 1)
+            add_item_factor(subject_map, item_id, 1)
             problem:add_constraint_term(key, subject_map)
         end
         if v.reference then
-            local r = normalized_references[name]
+            local r = normalized_references[item_id]
             if v.product then
-                problem:add_ge_constraint("product_reference|" .. name, r.amount_per_second)
+                problem:add_ge_constraint("product_reference|" .. item_id, r.amount_per_second)
             end
             if v.ingredient then
-                problem:add_ge_constraint("ingredient_reference|" .. name, r.amount_per_second)
+                problem:add_ge_constraint("ingredient_reference|" .. item_id, r.amount_per_second)
             end
         end
     end

@@ -10,8 +10,13 @@ local structures = structures -- require "data.calculation.structures"
 
 local tolerance = MARGIN_OF_ERROR
 
+local function to_item_id(item_proto)
+    return item_proto.type.."@"..item_proto.name
+end
+
 local function create_item_node(item_proto, amount_per_machine_by_second)
     local ret = {
+        normalized_id = to_item_id(item_proto),
         name = item_proto.name,
         type = item_proto.type,
         amount_per_machine_by_second = amount_per_machine_by_second,
@@ -44,12 +49,14 @@ local function normalize_recipe_line(recipe_line, parent)
         local p_amount = calculation.util.determine_prodded_amount(
             v, crafts_per_second, total_effects
         )
-        products[v.name] = create_item_node(v, p_amount * crafts_per_second)
+        local n = create_item_node(v, p_amount * crafts_per_second)
+        products[n.normalized_id] = n
     end
     
     local ingredients = {}
     for _, v in pairs(recipe_proto.ingredients) do
-        ingredients[v.name] = create_item_node(v, v.amount * crafts_per_second)
+        local n = create_item_node(v, v.amount * crafts_per_second)
+        ingredients[n.normalized_id] = n
     end
     
     local fuel_consumption_per_machine_by_second = 0
@@ -57,11 +64,12 @@ local function normalize_recipe_line(recipe_line, parent)
         fuel_consumption_per_machine_by_second = calculation.util.determine_fuel_amount(
             energy_consumption_per_machine, machine_proto.burner, fuel_proto.fuel_value, 1
         )
-        local a = ingredients[fuel_proto.name]
+        local a = ingredients[to_item_id(fuel_proto)]
         if a then
             a.amount_per_machine_by_second = a.amount_per_machine_by_second + fuel_consumption_per_machine_by_second
         else
-            ingredients[fuel_proto.name] = create_item_node(fuel_proto, fuel_consumption_per_machine_by_second)
+            local n = create_item_node(fuel_proto, fuel_consumption_per_machine_by_second)
+            ingredients[n.normalized_id] = n
         end
     end
     if machine_proto.energy_type == "void" then
@@ -86,7 +94,7 @@ local function normalize_recipe_line(recipe_line, parent)
         
         products = products,
         ingredients = ingredients,
-        fuel_name = fuel_proto and fuel_proto.name,
+        fuel_id = fuel_proto and to_item_id(fuel_proto),
         
         energy_consumption_per_machine = energy_consumption_per_machine,
         pollution_per_machine = pollution_per_machine,
@@ -124,7 +132,7 @@ end
 local function link_products_to_ingredients(from, to)
     for _, a in pairs(from.products) do
         for _, b in pairs(to.ingredients) do
-            if a.name == b.name then
+            if a.normalized_id == b.normalized_id then
                 table.insert(a.neighbor_recipe_lines, to)
             end
         end
@@ -134,7 +142,7 @@ end
 local function link_ingredients_to_products(from, to)
     for _, a in pairs(from.ingredients) do
         for _, b in pairs(to.products) do
-            if a.name == b.name then
+            if a.normalized_id == b.normalized_id then
                 table.insert(a.neighbor_recipe_lines, to)
             end
         end
@@ -168,7 +176,7 @@ function M.normalize_references(references, timescale)
     local ret = {}
     for _, v in ipairs(references) do
         local proto = v.proto
-        ret[proto.name] = {
+        ret[to_item_id(proto)] = {
             name = proto.name,
             type = proto.type,
             amount_per_second = v.amount / timescale
@@ -192,7 +200,7 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
     local pollution = nrl.pollution_per_machine * machine_count --- @todo Pollution when idle.
     local production_ratio = nrl.production_ratio_per_machine_by_second * machine_count * timescale
     local fuel_amount = nrl.fuel_consumption_per_machine_by_second * machine_count * timescale
-    if nrl.fuel_name then
+    if nrl.fuel_id then
         energy_consumption = 0
     end
     
@@ -205,7 +213,7 @@ local function feedback_recipe_line(machine_counts, player_index, timescale, nor
     local Ingredient = structures.class.init()
     for k, v in pairs(nrl.ingredients) do
         local amount = v.amount_per_machine_by_second * machine_count * timescale
-        if k == nrl.fuel_name then
+        if k == nrl.fuel_id then
             amount = amount - fuel_amount
             if amount > tolerance then
                 class_add(Ingredient, v, amount)
