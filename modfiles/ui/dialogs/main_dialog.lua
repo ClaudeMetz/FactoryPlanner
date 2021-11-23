@@ -17,7 +17,7 @@ main_dialog = {}
 -- the game automtically closes the currently open GUI before calling this one. This means the top layer
 -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
 -- layer at this point and need to close the things below, if there are any.
-local function handle_other_gui_opening(player)
+local function handle_other_gui_opening(player, _)
     local ui_state = data_util.get("ui_state", player)
 
     -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
@@ -226,7 +226,7 @@ main_dialog.gui_events = {
     on_gui_closed = {
         {
             name = "close_main_dialog",
-            handler = (function(player, _)
+            handler = (function(player, _, _)
                 main_dialog.toggle(player)
             end)
         }
