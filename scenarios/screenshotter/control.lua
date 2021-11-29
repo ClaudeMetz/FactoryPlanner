@@ -81,6 +81,7 @@ script.on_event(defines.events.on_tick, function()
         if global.scene > table_size(scenes) then
             write_metadata_file()
             script.on_event(defines.events.on_tick, nil)
+            print("screenshotter_done")  -- let script know to kill Factorio
         end
     end
 end)
