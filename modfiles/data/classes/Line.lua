@@ -79,11 +79,11 @@ function Line.is_machine_applicable(self, machine_proto)
 end
 
 
--- Changes the machine either to the given machine or moves it in the given direction
+-- Changes the machine either to the given machine or up/downgrades it
 -- Returns false if no compatible machine can be found, true otherwise
-function Line.change_machine(self, player, machine_proto, direction)
+function Line.change_machine(self, player, machine_proto, action)
     -- Set machine directly; assumes it is applicable to this line
-    if machine_proto ~= nil and direction == nil then
+    if machine_proto ~= nil and action == nil then
         if not self.machine then
             self.machine = Machine.init_by_proto(machine_proto)
             self.machine.parent = self
@@ -112,14 +112,14 @@ function Line.change_machine(self, player, machine_proto, direction)
 
         return true
 
-    -- Bump machine in given direction
-    elseif direction ~= nil then  -- machine_proto can be nil or not
+    -- Upgrade or downgrade the machine
+    elseif action ~= nil then  -- machine_proto can be nil or not
         machine_proto = machine_proto or self.machine.proto
 
         local machine_category_id = global.all_machines.map[machine_proto.category]
         local category_machines = global.all_machines.categories[machine_category_id].machines
 
-        if direction == "positive" then
+        if action == "upgrade" then
             local max_machine_id = #category_machines
             local current_machine_proto = machine_proto
 
@@ -131,7 +131,7 @@ function Line.change_machine(self, player, machine_proto, direction)
                     return true
                 end
             end
-        else  -- direction == "negative"
+        else  -- action == "downgrade"
             local current_machine_proto = machine_proto
 
             while current_machine_proto.id > 1 do
@@ -144,11 +144,10 @@ function Line.change_machine(self, player, machine_proto, direction)
             end
         end
 
-        -- If the above loops didn't return, no machine could be found, so we return false
-        return false
+        return false  -- if the above loops didn't return, no machine could be found, so we return false
 
     -- Set machine to the preferred default one
-    elseif machine_proto == nil and direction == nil then
+    elseif machine_proto == nil and action == nil then
         local machine_category_id = global.all_machines.map[self.recipe.proto.category]
         -- All categories are guaranteed to have at least one machine, so this is never nil
         local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
@@ -158,10 +157,10 @@ function Line.change_machine(self, player, machine_proto, direction)
             Line.change_machine(self, player, default_machine_proto, nil)
             return true
 
-        -- Otherwise, go up then down the category to find an alternative
-        elseif Line.change_machine(self, player, default_machine_proto, "positive") then
+        -- Otherwise, go up, then down the category to find an alternative
+        elseif Line.change_machine(self, player, default_machine_proto, "upgrade") then
             return true
-        elseif Line.change_machine(self, player, default_machine_proto, "negative") then
+        elseif Line.change_machine(self, player, default_machine_proto, "downgrade") then
             return true
 
         else  -- if no machine in the whole category is applicable, return false

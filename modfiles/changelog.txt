@@ -8,7 +8,9 @@ Date: 00. 00. 0000
     - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
     - Reordered the subfactory list buttons to make more sense by grouping the archive-related ones
     - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
-    - Added a ko-fi link to the preferences dialog
+    - Re-architected the way button clicks are handled, making tutorial tooltips both more accurate and prettier
+    - Added a ko-fi patronage link to the preferences dialog
+    - Updated to flib 0.9.1
   Bugfixes:
     - Fixed that the first recipe on subfloors could be moved down in certain circumstances
     - Fixed that shift-click adding a subfactory and cancelling the picker dialog would create an empty subfactory

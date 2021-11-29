@@ -276,8 +276,8 @@ modal_dialog.gui_events = {
         },
         {
             name = "re-center_modal_dialog",
-            handler = (function(player, _, metadata)
-                if metadata.click == "middle" then
+            handler = (function(player, _, event)
+                if event.button == defines.mouse_button_type.middle then
                     local modal_elements = data_util.get("modal_elements", player)
                     modal_elements.modal_frame.force_auto_center()
                 end
@@ -299,8 +299,8 @@ modal_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "modal_searchfield",
-            handler = (function(player, _, metadata)
-                local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+            handler = (function(player, _, event)
+                local search_term = event.element.text:gsub("^%s*(.-)%s*$", "%1"):lower()
                 local handler_name = data_util.get("modal_data", player).search_handler_name
                 SEARCH_HANDLERS[handler_name](player, search_term)
             end)
@@ -309,7 +309,7 @@ modal_dialog.gui_events = {
     on_gui_closed = {
         {
             name = "close_modal_dialog",
-            handler = (function(player, _)
+            handler = (function(player, _, _)
                 local ui_state = data_util.get("ui_state", player)
 
                 if ui_state.flags.selection_mode then

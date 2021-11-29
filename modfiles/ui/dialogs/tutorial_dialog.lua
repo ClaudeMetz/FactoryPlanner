@@ -116,9 +116,9 @@ tutorial_dialog.gui_events = {
     on_gui_switch_state_changed = {
         {
             name = "toggle_tutorial_mode",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local preferences = data_util.get("preferences", player)
-                preferences.tutorial_mode = ui_util.switch.convert_to_boolean(metadata.switch_state)
+                preferences.tutorial_mode = ui_util.switch.convert_to_boolean(event.element.switch_state)
                 main_dialog.refresh(player, "all")
             end)
         }

@@ -51,36 +51,6 @@ function ui_util.toggle_mod_gui(player)
 end
 
 
--- ** MISC **
-function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action, add_padding, avoid_archive)
-    local player_table = data_util.get("table", player)
-
-    local archive_check = (avoid_archive and player_table.ui_state.flags.archive_open)
-    if player_table.preferences.tutorial_mode and not archive_check then
-        local action_tooltip = {"fp.tut_mode_" .. element_type}
-
-        local alt_action_name, alt_action_tooltip = player_table.settings.alt_action, ""
-        if has_alt_action and alt_action_name ~= "none" then
-            alt_action_tooltip = {"fp.tut_mode_alt_action", {"fp.alt_action_" .. alt_action_name}}
-        end
-
-        local padding = (add_padding) and {"fp.tut_mode_tooltip_padding"} or ""
-        return {"fp.tut_mode_tooltip", padding, action_tooltip, alt_action_tooltip}
-    else
-        return ""
-    end
-end
-
-function ui_util.check_archive_status(player)
-    if data_util.get("flags", player).archive_open then
-        title_bar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
-        return false
-    else
-        return true
-    end
-end
-
-
 -- ** Number formatting **
 -- Formats given number to given number of significant digits
 function ui_util.format_number(number, precision)

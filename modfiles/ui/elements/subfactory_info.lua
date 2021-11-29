@@ -33,9 +33,9 @@ local function change_timescale(player, new_timescale)
     main_dialog.refresh(player, "subfactory")
 end
 
-local function handle_solver_change(player, _, metadata)
+local function handle_solver_change(player, _, event)
     local subfactory = data_util.get("context", player).subfactory
-    local new_solver = (metadata.switch_state == "left") and "traditional" or "matrix"
+    local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
 
     if new_solver == "matrix" then
         subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
@@ -328,9 +328,9 @@ subfactory_info.gui_events = {
     on_gui_text_changed = {
         {
             name = "mining_prod_override",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local ui_state = data_util.get("ui_state", player)
-                ui_state.context.subfactory.mining_productivity = tonumber(metadata.text)
+                ui_state.context.subfactory.mining_productivity = tonumber(event.element.text)
                 ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
             end)
         }

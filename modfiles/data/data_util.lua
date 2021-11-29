@@ -130,6 +130,29 @@ function data_util.build_localised_string(strings_to_insert, current_table, next
 end
 
 
+function data_util.action_allowed(action_limitations, active_limitations)
+    -- If a particular limitation is nil, it indicates that the action is allowed regardless
+    -- If it is non-nil, it needs to match the current state of the limitation exactly
+    for limitation_name, limitation in pairs(action_limitations) do
+        if active_limitations[limitation_name] ~= limitation then return false end
+    end
+    return true
+end
+
+function data_util.generate_tutorial_tooltip(action_name, active_limitations, alt_action_string)
+    local tooltip = {""}
+    for _, action_line in pairs(TUTORIAL_TOOLTIPS[action_name]) do
+        if data_util.action_allowed(action_line.limitations, active_limitations) then
+            table.insert(tooltip, action_line.string)
+        end
+    end
+
+    if table_size(tooltip) > 1 then table.insert(tooltip, 2, "\n") end
+    if alt_action_string then table.insert(tooltip, alt_action_string) end
+    return tooltip
+end
+
+
 -- ** NTH_TICK **
 local function register_nth_tick_handler(tick)
     script.on_nth_tick(tick, function(nth_tick_data)

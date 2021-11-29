@@ -275,8 +275,8 @@ function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
 end
 
 
-local function handle_filter_change(player, tags, metadata)
-    local boolean_state = ui_util.switch.convert_to_boolean(metadata.switch_state)
+local function handle_filter_change(player, tags, event)
+    local boolean_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
     data_util.get("modal_data", player).filters[tags.filter_name] = boolean_state
     data_util.get("preferences", player).recipe_filters[tags.filter_name] = boolean_state
 

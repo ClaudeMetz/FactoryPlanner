@@ -179,8 +179,8 @@ function utility_structures.notes(player, modal_data)
 end
 
 
-local function handle_scope_change(player, tags, metadata)
-    local utility_scope = (metadata.switch_state == "left") and "Subfactory" or "Floor"
+local function handle_scope_change(player, tags, event)
+    local utility_scope = (event.element.switch_state == "left") and "Subfactory" or "Floor"
     data_util.get("preferences", player).utility_scopes[tags.utility_type] = utility_scope
 
     local modal_data = data_util.get("modal_data", player)
@@ -263,12 +263,12 @@ local function handle_item_request(player, _, _)
     update_request_button(player, ui_state.modal_data, subfactory)
 end
 
-local function handle_item_handcraft(player, tags, metadata)
+local function handle_item_handcraft(player, tags, event)
     local function fly_text(string) player.create_local_flying_text{text=string, create_at_cursor=true} end
 
     if not player.character then fly_text({"fp.utility_no_character"}); return end
 
-    local desired_amount = (metadata.click == "left") and 1 or 5
+    local desired_amount = (event.button == defines.mouse_button_type.right) and 5 or 1
     local amount_to_craft = math.min(desired_amount, tags.missing_amount)
 
     if amount_to_craft <= 0 then fly_text({"fp.utility_no_demand"}); return end
@@ -344,8 +344,8 @@ utility_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "subfactory_notes",
-            handler = (function(player, _, metadata)
-                data_util.get("context", player).subfactory.notes = metadata.text
+            handler = (function(player, _, event)
+                data_util.get("context", player).subfactory.notes = event.element.text
             end)
         }
     }

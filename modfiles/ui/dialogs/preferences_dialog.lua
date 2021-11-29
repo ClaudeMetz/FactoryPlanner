@@ -149,9 +149,9 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 end
 
 
-local function handle_checkbox_preference_change(player, tags, metadata)
+local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
-    data_util.get("preferences", player)[preference_name] = metadata.state
+    data_util.get("preferences", player)[preference_name] = event.element.state
 
     local refresh = data_util.get("modal_data", player).refresh
 
@@ -161,14 +161,14 @@ local function handle_checkbox_preference_change(player, tags, metadata)
 
     if preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
-        refresh.update_ingredient_satisfaction = (metadata.state)
+        refresh.update_ingredient_satisfaction = (event.element.state)
         refresh.production = true  -- always refresh production
     end
 end
 
-local function handle_mb_default_change(player, tags, metadata)
+local function handle_mb_default_change(player, tags, event)
     local mb_defaults = data_util.get("preferences", player).mb_defaults
-    local module_name = metadata.elem_value
+    local module_name = event.element.elem_value
 
     if module_name == nil then
         mb_defaults[tags.type] = nil
@@ -185,7 +185,7 @@ local function handle_mb_default_change(player, tags, metadata)
     end
 end
 
-local function handle_default_prototype_change(player, tags, metadata)
+local function handle_default_prototype_change(player, tags, event)
     local type = tags.type
     local category_id = tags.category_id
 
@@ -197,7 +197,7 @@ local function handle_default_prototype_change(player, tags, metadata)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
 
     -- If this was an shift-click, set this prototype on every category that also has it
-    if metadata.shift and type == "machines" then
+    if event.shift and type == "machines" then
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for secondary_category_id, category in pairs(global["all_" .. type].categories) do
@@ -311,9 +311,9 @@ preferences_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "mb_default_beacon_amount",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local mb_defaults = data_util.get("preferences", player).mb_defaults
-                mb_defaults.beacon_count = tonumber(metadata.text)
+                mb_defaults.beacon_count = tonumber(event.element.text)
             end)
         }
     },

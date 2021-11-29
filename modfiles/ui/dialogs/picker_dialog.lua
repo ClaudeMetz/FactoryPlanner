@@ -323,8 +323,8 @@ local function handle_item_pick(player, tags, _)
     update_dialog_submit_button(modal_data.modal_elements)
 end
 
-local function handle_belt_pick(player, _, metadata)
-    local belt_name = metadata.elem_value
+local function handle_belt_pick(player, _, event)
+    local belt_name = event.element.elem_value
     local belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
 
     local modal_data = data_util.get("modal_data", player)
