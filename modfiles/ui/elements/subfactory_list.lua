@@ -109,11 +109,11 @@ local function archive_subfactory(player, _, _)
     subfactory_list.refresh_after_deletion(player, origin, removed_gui_position)
 end
 
-local function add_subfactory(player, _, metadata)
+local function add_subfactory(player, _, event)
     local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
     function xor(a,b) return not a ~= not b end  -- fancy, first time I ever needed this
 
-    if xor(metadata.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
+    if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
         modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
           create_subfactory=true}})
 
@@ -151,11 +151,11 @@ local function delete_subfactory(player, _, _)
 end
 
 
-local function handle_move_subfactory_click(player, tags, metadata)
+local function handle_move_subfactory_click(player, tags, event)
     local context = data_util.get("context", player)
     local subfactory = Factory.get(context.factory, "Subfactory", tags.subfactory_id)
 
-    local shifting_function = (metadata.alt) and Factory.shift_to_end or Factory.shift
+    local shifting_function = (event.shift) and Factory.shift_to_end or Factory.shift
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
 
     if shifting_function(context.factory, subfactory, translated_direction) then
@@ -167,14 +167,14 @@ local function handle_move_subfactory_click(player, tags, metadata)
     end
 end
 
-local function handle_subfactory_click(player, tags, metadata)
+local function handle_subfactory_click(player, tags, action)
     local ui_state = data_util.get("ui_state", player)
     local previous_subfactory = ui_state.context.subfactory
 
     local selected_subfactory = Factory.get(ui_state.context.factory, "Subfactory", tags.subfactory_id)
     ui_util.context.set_subfactory(player, selected_subfactory)
 
-    if metadata.click == "left" then
+    if action == "select" then
         if previous_subfactory.id == selected_subfactory.id then
             -- Reset Floor when clicking on previously selected subfactory
             production_box.change_floor(player, "top")
@@ -185,13 +185,12 @@ local function handle_subfactory_click(player, tags, metadata)
         end
         main_dialog.refresh(player, "all")
 
-    elseif metadata.click == "right" then
-        if metadata.action == "edit" then
-            main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
-            edit_subfactory(player)
-        elseif metadata.action == "delete" then
-            delete_subfactory(player)
-        end
+    elseif action == "edit" then
+        main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
+        edit_subfactory(player)
+
+    elseif action == "delete" then
+        delete_subfactory(player)
     end
 end
 
@@ -265,13 +264,18 @@ function subfactory_list.refresh(player)
     local listbox = subfactory_list_elements.subfactory_listbox
     listbox.clear()
 
-    local tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "subfactory", false, true, false)
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
+        local settings = data_util.get("settings", player)
+        local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
+        local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
+        local alt_action_tt = (settings.alt_action ~= "none") and {"fp.tut_alt_action_" .. settings.alt_action} or ""
+        local tutorial_tt = data_util.generate_tutorial_tooltip("act_on_subfactory", limitations, alt_action_tt)
+
         for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
             local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
             local caption, info_tooltip = Subfactory.tostring(subfactory, false)
-            local tooltip = {"", info_tooltip, tutorial_tooltip}
+            local tooltip = {"", info_tooltip, tutorial_tt}
 
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
             local subfactory_button = listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory",
@@ -425,7 +429,7 @@ subfactory_list.gui_events = {
         },
         {
             name = "delete_subfactory",
-            timeout = 20,
+            timeout = 10,
             handler = delete_subfactory
         },
         {
@@ -434,6 +438,11 @@ subfactory_list.gui_events = {
         },
         {
             name = "act_on_subfactory",
+            modifier_actions = {
+                select = {"left"},
+                edit = {"right"},
+                delete = {"control-right"}
+            },
             handler = handle_subfactory_click
         }
     }

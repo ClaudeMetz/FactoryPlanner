@@ -218,7 +218,7 @@ local function update_module_controls(modal_elements, entity)
     end
 end
 
-local function handle_beacon_change(player, tags, metadata)
+local function handle_beacon_change(player, _, _)
     local modal_data = data_util.get("modal_data", player)
     local beacon = modal_data.entity
     local controls = modal_data.modal_elements.beacon_controls
@@ -258,10 +258,10 @@ local function handle_beacon_selection(player, entities)
     modal_dialog.leave_selection_mode(player)
 end
 
-local function handle_module_selection(player, tags, metadata)
+local function handle_module_selection(player, tags, event)
     local modal_data = data_util.get("modal_data", player)
     local entity, elements = modal_data.entity, modal_data.modal_elements
-    local id, class, new_name = tags.id, _G[entity.class], metadata.elem_value
+    local id, class, new_name = tags.id, _G[entity.class], event.element.elem_value
     if id then -- existing module changed
         local module = class.get(entity, "Module", id)
         if new_name then
@@ -291,28 +291,28 @@ local function handle_module_selection(player, tags, metadata)
     update_dialog_submit_button(modal_data)
 end
 
-local function handle_module_slider_change(player, tags, metadata)
+local function handle_module_slider_change(player, tags, event)
     local modal_data = data_util.get("modal_data", player)
     local entity, elements = modal_data.entity, modal_data.modal_elements
     local id, class = tags.id, _G[entity.class]
     if id then
         -- existing module changed
-        Module.change_amount(class.get(entity, "Module", id), metadata.slider_value)
+        Module.change_amount(class.get(entity, "Module", id), event.element.slider_value)
         update_module_controls(elements, entity)
     else
         -- empty module changed, which doesn't impact anything else
-        elements.empty_module_controls.input.text = tostring(metadata.slider_value)
+        elements.empty_module_controls.input.text = tostring(event.element.slider_value)
     end
 
     update_dialog_submit_button(modal_data)
 end
 
-local function handle_module_textfield_change(player, tags, metadata)
+local function handle_module_textfield_change(player, tags, event)
     local modal_data = data_util.get("modal_data", player)
     local id, elements = tags.id, modal_data.modal_elements
     local controls = id and elements.module_controls[id] or elements.empty_module_controls
     local slider = controls.slider
-    local set_text, amount, maximum = true, tonumber(metadata.text), slider.get_slider_maximum()
+    local set_text, amount, maximum = true, tonumber(event.element.text), slider.get_slider_maximum()
     if not amount then
         amount = slider.slider_value
     elseif amount < 1 then
@@ -357,7 +357,7 @@ module_dialog.dialog_settings = (function(modal_data)
     }
 end)
 
-function module_dialog.open(player, modal_data)
+function module_dialog.open(_, modal_data)
     local machine = Machine.clone(modal_data.machine)
     populate_dialog(modal_data.modal_elements.content_frame, modal_data, machine)
     update_dialog_submit_button(modal_data)
@@ -449,9 +449,9 @@ beacon_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "beacon_amount",
-            handler = (function(player, tags, metadata)
+            handler = (function(player, _, event)
                 local modal_data = data_util.get("modal_data", player)
-                local amount = tonumber(metadata.text) or 0
+                local amount = tonumber(event.element.text) or 0
                 modal_data.entity.amount = amount
                 modal_data.errors.zero_beacons = (amount <= 0)
                 update_dialog_submit_button(modal_data)
@@ -462,7 +462,7 @@ beacon_dialog.gui_events = {
         {
             name = "use_beacon_selector",
             timeout = 20,
-            handler = (function(player, tags, metadata)
+            handler = (function(player, _, _)
                 modal_dialog.enter_selection_mode(player, "fp_beacon_selector")
             end)
         }

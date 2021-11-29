@@ -4,6 +4,7 @@
 NTH_TICK_HANDLERS = {}
 GENERIC_HANDLERS = {}
 SEARCH_HANDLERS = {}
+TUTORIAL_TOOLTIPS = {}
 
 require("util")  -- core.lualib
 table = require('__flib__.table')  -- replaces the lua table module

@@ -54,21 +54,14 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
-    local default_style, tut_mode_tooltip, global_enable = "flib_slot_button_default", "", true
+    local default_style = (class == "Ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
 
-    if class == "Product" then
-        default_style = "flib_slot_button_red"
-        tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true)
-    elseif class == "Byproduct" then
-        default_style = "flib_slot_button_red"
-        if subfactory.matrix_free_items ~= nil then
-            tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_byproduct", true, true, true)
-        else
-            global_enable = false
-        end
-    elseif class == "Ingredient" then
-        tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_ingredient", true, true, true)
-    end
+    local action = "act_on_top_level_" .. category
+    local settings = data_util.get("settings", player)
+    local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
+    local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
+    local alt_action_tt = (settings.alt_action ~= "none") and {"fp.tut_alt_action_" .. settings.alt_action} or ""
+    local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, alt_action_tt)
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
         local required_amount = (class == "Product") and Item.required_amount(item) or nil
@@ -86,7 +79,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
             else style = "flib_slot_button_green" end
         end
 
-        local indication, tut_tooltip, enabled = "", tut_mode_tooltip, global_enable
+        local indication, tut_tooltip, enabled = "", tutorial_tt, true
         if item.proto.type == "entity" then  -- only relevant to ingredients
             indication = {"fp.indication", {"fp.indication_raw_ore"}}
             tut_tooltip = ""
@@ -98,8 +91,8 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
         local tooltip = {"", name_line, number_line, satisfaction_line, tut_tooltip}
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-          tags={mod="fp", on_gui_click="act_on_top_level_item", category=category, item_id=item.id},
-          enabled=enabled, mouse_button_filter={"left-and-right"}}
+          tags={mod="fp", on_gui_click=action, category=category, item_id=item.id}, enabled=enabled,
+          mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
         ::skip_item::  -- goto for fun, wooohoo
@@ -120,52 +113,38 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 end
 
 
-local function handle_item_button_click(player, tags, metadata)
+local function handle_item_button_click(player, tags, action)
     local context = data_util.get("context", player)
     local subfactory = context.subfactory
 
     local class = (tags.category:gsub("^%l", string.upper))
     local item = Subfactory.get(subfactory, class, tags.item_id)
 
-    if metadata.alt then
-        data_util.execute_alt_action(player, "show_item", {item=item.proto, click=metadata.click})
+    if action == "add_recipe" then
+        add_recipe(player, context, tags.category, item.proto)
 
-    elseif not ui_util.check_archive_status(player) then
-        return
+    elseif action == "edit" then
+        modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
 
-    else  -- individual handlers
-        if class == "Product" then
-            if metadata.direction ~= nil then  -- Shift product in the given direction
-                if Subfactory.shift(subfactory, item, metadata.direction) then
-                    -- Row count doesn't change, so we can refresh directly
-                    refresh_item_box(player, "product", subfactory, true)
-                else
-                    local direction_string = (metadata.direction == "negative") and {"fp.left"} or {"fp.right"}
-                    local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_product", 1}, direction_string}
-                    title_bar.enqueue_message(player, message, "error", 1, true)
-                end
+    elseif action == "delete" then
+        Subfactory.remove(subfactory, item)
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
 
-            elseif metadata.click == "left" then
-                add_recipe(player, context, "product", item.proto)
-
-            elseif metadata.click == "right" then
-                if metadata.action == "edit" then
-                    modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
-
-                elseif metadata.action == "delete" then
-                    Subfactory.remove(subfactory, item)
-
-                    calculation.update(player, subfactory)
-                    main_dialog.refresh(player, "subfactory")
-                end
-            end
-
-        elseif class == "Byproduct" then
-            add_recipe(player, context, "byproduct", item.proto)
-
-        elseif class == "Ingredient" then
-            add_recipe(player, context, "ingredient", item.proto)
+    elseif action == "move_left" or action == "move_right" then
+        local direction = (action == "move_left") and "positive" or "negative"
+        if Subfactory.shift(subfactory, item, direction) then
+            -- Row count doesn't change, so we can refresh directly
+            refresh_item_box(player, "product", subfactory, true)
+        else
+            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
+            local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_product", 1}, direction_string}
+            title_bar.enqueue_message(player, message, "error", 1, true)
         end
+
+    elseif action == "alt_action" then
+        -- TODO hard-coded "left" here as support for FNEI will be dropped soon
+        data_util.execute_alt_action(player, "show_item", {item=item.proto, click="left"})
     end
 end
 
@@ -220,7 +199,31 @@ item_boxes.gui_events = {
             end)
         },
         {
-            name = "act_on_top_level_item",
+            name = "act_on_top_level_product",
+            modifier_actions = {
+                add_recipe = {"left", {archive_open=false}},
+                edit = {"right", {archive_open=false}},
+                delete = {"control-right", {archive_open=false}},
+                move_left = {"shift-left", {archive_open=false}},
+                move_right = {"control-left", {archive_open=false}},
+                alt_action = {"alt-left", {alt_action=true}}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_top_level_byproduct",
+            modifier_actions = {
+                add_recipe = {"left", {archive_open=false, matrix_active=true}},
+                alt_action = {"alt-left", {alt_action=true}}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_top_level_ingredient",
+            modifier_actions = {
+                add_recipe = {"left", {archive_open=false}},
+                alt_action = {"alt-left", {alt_action=true}}
+            },
             handler = handle_item_button_click
         }
     }

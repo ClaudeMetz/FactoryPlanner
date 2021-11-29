@@ -136,8 +136,8 @@ title_bar.gui_events = {
     on_gui_click = {
         {
             name = "re-center_main_dialog",
-            handler = (function(player, _, metadata)
-                if metadata.click == "middle" then
+            handler = (function(player, _, event)
+                if event.button == defines.mouse_button_type.middle then
                     local ui_state = data_util.get("ui_state", player)
                     local main_frame = ui_state.main_elements.main_frame
                     ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)

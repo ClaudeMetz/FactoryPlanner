@@ -276,17 +276,17 @@ import_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "import_string",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local button_import = data_util.get("modal_elements", player).import_button
-                set_tool_button_state(button_import, "import", (string.len(metadata.text) > 0))
+                set_tool_button_state(button_import, "import", (string.len(event.element.text) > 0))
             end)
         }
     },
     on_gui_confirmed = {
         {
             name = "import_string",
-            handler = (function(player, _, metadata)
-                if metadata.text ~= "" then import_subfactories(player) end
+            handler = (function(player, _, event)
+                if event.element.text ~= "" then import_subfactories(player) end
             end)
         }
     }
@@ -339,8 +339,8 @@ porter_dialog.gui_events = {
     on_gui_checked_state_changed = {
         {
             name = "toggle_porter_master_checkbox",
-            handler = (function(player, _, metadata)
-                set_all_checkboxes(player, metadata.state)
+            handler = (function(player, _, event)
+                set_all_checkboxes(player, event.element.state)
             end)
         },
         {
