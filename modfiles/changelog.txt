@@ -2,11 +2,19 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.30
+Date: 09. 12. 2021
+  Features:
     - Added the ability to specify an exact amount for top level ingredients, which adjusts the configured products accordingly. This is a band-aid way of enabling calculations by input rather than output. (thanks curiosity!)
   Changes:
     - Improved matrix solver algorithm to provide more stable results (thanks scottmsul!)
-  Bugfixes:
-    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.29
