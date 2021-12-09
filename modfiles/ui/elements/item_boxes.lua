@@ -200,7 +200,7 @@ function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options,
         local subfactory = item.parent
 
         if options.item_amount then
-            -- division is not precalculated to avoid precision errors in some cases
+            -- The division is not pre-calculated to avoid precision errors in some cases
             local current_amount, target_amount = item.amount, options.item_amount
             for _, product in pairs(Subfactory.get_all(subfactory, "Product")) do
                 local requirement = product.required_amount
