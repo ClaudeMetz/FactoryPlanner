@@ -175,15 +175,10 @@ end
 -- Sets the game.paused-state as is appropriate
 function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     local background_dimmer = data_util.get("main_elements", player).background_dimmer
+    background_dimmer.visible = false
 
-    -- Don't touch paused-state if this is a multiplayer session
-    if game.is_multiplayer() then return end
-
-    -- Don't touch paused-state if the editor is active
-    if player.controller_type == defines.controllers.editor then
-        background_dimmer.visible = false
-        return
-    end
+    -- Don't touch paused-state if this is a multiplayer session or the editor is active
+    if game.is_multiplayer() or player.controller_type == defines.controllers.editor then return end
 
     local paused = false
     if not data_util.get("preferences", player).pause_on_interface or force_false then
