@@ -7,7 +7,7 @@ SEARCH_HANDLERS = {}
 TUTORIAL_TOOLTIPS = {}
 
 require("util")  -- core.lualib
-table = require('__flib__.table')  -- replaces the lua table module
+table = require('__flib__.table')  -- replaces the vanilla lua table module
 require("generic_util")
 
 require("data.init")
@@ -18,11 +18,12 @@ require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
 
-DEVMODE = true  -- Enables certain conveniences for development
-MARGIN_OF_ERROR = 1e-8  -- Margin of error for floating point calculations
+DEVMODE = true  -- enables certain conveniences for development
+MARGIN_OF_ERROR = 1e-8  -- the margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
 NEW = nil  -- global variable used to store new prototype data temporarily for migration
+RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 FRAME_SPACING = 12
@@ -35,8 +36,8 @@ SUBFACTORY_INFO_HEIGHT = 210
 SUBFACTORY_LIST_WIDTH = 300
 ITEM_BOX_BUTTON_SIZE = 40
 ITEM_BOX_MAX_ROWS = 5
--- this must remain as twelve, otherwise the scrollbar will not fit
--- the scroll pane style used for the item boxes is hardcoded at twelve for this reason
+-- The following must remain 12, otherwise the scrollbar will not fit
+-- The scroll pane style used for the item boxes is hardcoded at 12 for this reason
 ITEM_BOX_PADDING = 12
 
 TUTORIAL_EXPORT_STRING = "eNrtWU2L2zAQ/S8620uSLWXJsaWFQgulPS6LkeVxdlrJUmU5NIT8945smbiJi2MSNps0t2Q0evPmQ5oRXjOls2QJtkRdsDmb3k3vJixiZZXmXDhtEUo2f1yzgiug9Q+/uTISSAOF37BmbmX8AjpQJA1qxuqsEo4w41IgFAJiw8VPtomYQwWl4IQxfzuhDdp5C4z2fm02eVCd/gDhGsuE5bQXDmATaSRumCNkbO5sBdFf5Mi2hV8VWsgSrnRV1JYyyLEgSboivSCO2h/z6cPEU9YmkbAE2cIKyUtPumW8eYoC5aRd+tTEo/37XksJNWkWAHOptfUMPpP9XZ/bbfVak40R6hYEmlrpmNgJ7mChrY+LsDx3WCw89y1EEqLbSKDj7beGAGlTDeESWkgDVkDh+IIk0wllX3HxHPzZpUpIoFJJVuOgFd+P4fnMbZZIVEhpzLksSfML8ZRwaH0t0a1iVW8ZttzdVPsdCujNNijBek+thJV/VUvDIRH7iCF6pJMCD+dx152wMsA/N0lQ7JB/aG334ZYGIDs4PrV2F3u2H5it5F2gsolG1LblKC+kkGenL+T15riymvSU1ajwo/WXisOLuU2uMQngoS2KOK9sweso3lJxnlT0tJH/NxuPA/1jdor+cWRjnfVlfB8zJL4fMUyJHaiP9dw2rnR4tuQ0mmWxQCsqdLfx7DaeXfx41rQmXVBzuqyyvsbmJLShqMSCp/I2I5wvDaUDkLGR5MTgCVUgXzoLY6fJLsfXcb+/zJRwu9/rWtZ0SlN7wAPwOmv5/C9wZTRlwcZ1KoYcTHlJ0Si1xOwseVBY+Os9syjlSK7nenNMew7NYRfY7PVcYPene+ZM9545W8H39gMCufO0+QMKUmaf"

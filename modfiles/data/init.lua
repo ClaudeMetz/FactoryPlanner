@@ -14,7 +14,6 @@ require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
-require("data.handlers.remote")
 require("data.handlers.screenshotter")
 
 require("data.calculation.interface")
@@ -32,7 +31,6 @@ local function reload_settings(player)
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
     settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
-    settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
@@ -285,7 +283,6 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         elseif event.setting == "fp_products_per_row" or
           event.setting == "fp_subfactory_list_rows" or
-          event.setting == "fp_alt_action" or
           event.setting == "fp_prefer_product_picker" then
             main_dialog.rebuild(player, false)
 

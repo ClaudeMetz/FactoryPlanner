@@ -36,7 +36,7 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
     local action_lines = {}
 
     for modifier_click, modifier_action in pairs(modifier_actions) do
-        if modifier_action.name ~= "alt_action" then  -- alt actions need special handling
+        if modifier_action.name ~= "recipebook" then  -- needs dynamic handling
             local split_modifiers = split_string(modifier_click, "-")
 
             local modifier_string = {""}
@@ -181,7 +181,7 @@ local function handle_gui_event(event)
         local active_limitations = {
             archive_open = data_util.get("flags", player).archive_open,
             matrix_active = (data_util.get("context", player).subfactory.matrix_free_items ~= nil),
-            alt_action = (data_util.get("settings", player).alt_action ~= "none")
+            recipebook = (script.active_mods["RecipeBook"] ~= nil)
         }
         -- Check whether the selected action is allowed according to its limitations
         if not data_util.action_allowed(modifier_action.limitations, active_limitations) then return end
