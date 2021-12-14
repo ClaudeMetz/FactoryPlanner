@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that the mod would create a small box in the top left corner of the screen in certain multiplayer situations.
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.30
