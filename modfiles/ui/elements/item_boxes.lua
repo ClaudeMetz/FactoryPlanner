@@ -142,9 +142,52 @@ local function handle_item_button_click(player, tags, action)
             title_bar.enqueue_message(player, message, "error", 1, true)
         end
 
+    elseif action == "specify_amount" then
+        -- Set the view state so that the amount shown in the dialog makes sense
+        view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
+
+        local modal_data = {
+            title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
+            text = {"fp.options_item_text", item.proto.localised_name},
+            submission_handler_name = "scale_subfactory_by_ingredient_amount",
+            object = item,
+            fields = {
+                {
+                    type = "numeric_textfield",
+                    name = "item_amount",
+                    caption = {"fp.options_item_amount"},
+                    tooltip = {"fp.options_subfactory_ingredient_amount_tt"},
+                    text = item.amount,
+                    width = 140,
+                    focus = true
+                }
+            }
+        }
+        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+
     elseif action == "alt_action" then
         -- TODO hard-coded "left" here as support for FNEI will be dropped soon
         data_util.execute_alt_action(player, "show_item", {item=item.proto, click="left"})
+    end
+end
+
+function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local item = ui_state.modal_data.object
+        local subfactory = item.parent
+
+        if options.item_amount then
+            -- The division is not pre-calculated to avoid precision errors in some cases
+            local current_amount, target_amount = item.amount, options.item_amount
+            for _, product in pairs(Subfactory.get_all(subfactory, "Product")) do
+                local requirement = product.required_amount
+                requirement.amount = requirement.amount * target_amount / current_amount
+            end
+        end
+
+        calculation.update(player, ui_state.context.subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
@@ -222,6 +265,7 @@ item_boxes.gui_events = {
             name = "act_on_top_level_ingredient",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
+                specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 alt_action = {"alt-left", {alt_action=true}}
             },
             handler = handle_item_button_click
