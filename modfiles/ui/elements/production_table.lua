@@ -21,19 +21,17 @@ local function generate_metadata(player)
     }
 
     if preferences.tutorial_mode then
-        local limitations = {archive_open = metadata.archive_open, matrix_active = metadata.matrix_solver_active}
-        local alt_action = data_util.get("settings", player).alt_action
-        local alt_action_tt = (alt_action ~= "none") and {"fp.tut_alt_action_" .. alt_action} or ""
-
         local generate = data_util.generate_tutorial_tooltip
-        metadata.recipe_tutorial_tt = generate("act_on_line_recipe", limitations, alt_action_tt)
-        metadata.machine_tutorial_tt = generate("act_on_line_machine", limitations, nil)
-        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, nil)
-        metadata.beacon_tutorial_tt = generate("act_on_line_beacon", limitations, nil)
-        metadata.product_tutorial_tt = generate("act_on_line_product", limitations, alt_action_tt)
-        metadata.byproduct_tutorial_tt = generate("act_on_line_byproduct", limitations, alt_action_tt)
-        metadata.ingredient_tutorial_tt = generate("act_on_line_ingredient", limitations, alt_action_tt)
-        metadata.fuel_tutorial_tt = generate("act_on_line_fuel", limitations, alt_action_tt)
+        local limitations = {archive_open = metadata.archive_open, matrix_active = metadata.matrix_solver_active}
+
+        metadata.recipe_tutorial_tt = generate("act_on_line_recipe", limitations, true)
+        metadata.machine_tutorial_tt = generate("act_on_line_machine", limitations, false)
+        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, false)
+        metadata.beacon_tutorial_tt = generate("act_on_line_beacon", limitations, false)
+        metadata.product_tutorial_tt = generate("act_on_line_product", limitations, true)
+        metadata.byproduct_tutorial_tt = generate("act_on_line_byproduct", limitations, true)
+        metadata.ingredient_tutorial_tt = generate("act_on_line_ingredient", limitations, true)
+        metadata.fuel_tutorial_tt = generate("act_on_line_fuel", limitations, true)
     end
 
     return metadata

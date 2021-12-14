@@ -57,11 +57,9 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     local default_style = (class == "Ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
 
     local action = "act_on_top_level_" .. category
-    local settings = data_util.get("settings", player)
     local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
     local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
-    local alt_action_tt = (settings.alt_action ~= "none") and {"fp.tut_alt_action_" .. settings.alt_action} or ""
-    local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, alt_action_tt)
+    local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, true)
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
         local required_amount = (class == "Product") and Item.required_amount(item) or nil
@@ -165,9 +163,8 @@ local function handle_item_button_click(player, tags, action)
         }
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
 
-    elseif action == "alt_action" then
-        -- TODO hard-coded "left" here as support for FNEI will be dropped soon
-        data_util.execute_alt_action(player, "show_item", {item=item.proto, click="left"})
+    elseif action == "recipebook" then
+        data_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -249,7 +246,7 @@ item_boxes.gui_events = {
                 delete = {"control-right", {archive_open=false}},
                 move_left = {"shift-left", {archive_open=false}},
                 move_right = {"control-left", {archive_open=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
         },
@@ -257,7 +254,7 @@ item_boxes.gui_events = {
             name = "act_on_top_level_byproduct",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false, matrix_active=true}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
         },
@@ -266,7 +263,7 @@ item_boxes.gui_events = {
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
         }

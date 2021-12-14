@@ -7,8 +7,6 @@
     "dependencies": [
         "base >= 1.1.4",
         "flib >= 0.9.1",
-        "? FNEI",
-        "? what-is-it-really-used-for",
         "? RecipeBook"
     ]
 }

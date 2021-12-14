@@ -265,11 +265,9 @@ function subfactory_list.refresh(player)
     listbox.clear()
 
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
-        local settings = data_util.get("settings", player)
         local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
         local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
-        local alt_action_tt = (settings.alt_action ~= "none") and {"fp.tut_alt_action_" .. settings.alt_action} or ""
-        local tutorial_tt = data_util.generate_tutorial_tooltip("act_on_subfactory", limitations, alt_action_tt)
+        local tutorial_tt = data_util.generate_tutorial_tooltip("act_on_subfactory", limitations, false)
 
         for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)

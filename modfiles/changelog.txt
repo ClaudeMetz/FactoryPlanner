@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Reordered the subfactory list buttons to make more sense by grouping the archive-related ones
     - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
     - Re-architected the way button clicks are handled, making tutorial tooltips both more accurate and prettier
+    - Removed mod interactions with FNEI and WIIRUF, meaning alt-clicking items or recipes will now only open them in Recipe Book, if possible
     - Added a ko-fi patronage link to the preferences dialog
     - Updated to flib 0.9.1
   Bugfixes:

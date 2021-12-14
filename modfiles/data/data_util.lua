@@ -58,14 +58,19 @@ function data_util.get_attributes(type, prototype)
     end
 end
 
--- Executes an alt-action on the given action_type and data
-function data_util.execute_alt_action(player, action_type, data)
-    local alt_action = data_util.get("settings", player).alt_action
+-- Opens the given prototype in Recipe Book, if possible
+-- This function is only called when Recipe Book is active, so no need to check for the mod
+function data_util.open_in_recipebook(player, type, name)
+    local message = nil
 
-    local remote_action = remote_actions[alt_action]
-    if remote_action ~= nil and remote_action[action_type] then
-        remote_actions[action_type](player, alt_action, data)
+    if remote.call("RecipeBook", "version") ~= RECIPEBOOK_API_VERSION then
+        message = {"fp.error_recipebook_version_incompatible"}
+    else
+        local was_opened = remote.call("RecipeBook", "open_page", player.index, type, name)
+        if not was_opened then message = {"fp.error_recipebook_lookup_failed", {"fp.pl_" .. type, 1}} end
     end
+
+    if message then title_bar.enqueue_message(player, message, "error", 1, true) end
 end
 
 -- Create a blueprint with the given entities and put it in the player's cursor
@@ -139,7 +144,7 @@ function data_util.action_allowed(action_limitations, active_limitations)
     return true
 end
 
-function data_util.generate_tutorial_tooltip(action_name, active_limitations, alt_action_string)
+function data_util.generate_tutorial_tooltip(action_name, active_limitations, recipebook_enabled)
     local tooltip = {""}
     for _, action_line in pairs(TUTORIAL_TOOLTIPS[action_name]) do
         if data_util.action_allowed(action_line.limitations, active_limitations) then
@@ -148,7 +153,9 @@ function data_util.generate_tutorial_tooltip(action_name, active_limitations, al
     end
 
     if table_size(tooltip) > 1 then table.insert(tooltip, 2, "\n") end
-    if alt_action_string then table.insert(tooltip, alt_action_string) end
+    if recipebook_enabled and script.active_mods["RecipeBook"] ~= nil then
+        table.insert(tooltip, {"fp.tut_open_in_recipebook"})
+    end
     return tooltip
 end
 

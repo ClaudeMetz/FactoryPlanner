@@ -64,9 +64,8 @@ local function handle_recipe_click(player, tags, action)
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
-    elseif action == "alt_action" then
-        data_util.execute_alt_action(player, "show_recipe",
-          {recipe=relevant_line.recipe.proto, line_products=Line.get_in_order(line, "Product")})
+    elseif action == "recipebook" then
+        data_util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
     end
 end
 
@@ -394,9 +393,8 @@ local function handle_item_click(player, tags, action)
         }
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
 
-    elseif action == "alt_action" then
-        -- TODO hard-coded "left" here as support for FNEI will be dropped soon
-        data_util.execute_alt_action(player, "show_item", {item=item.proto, click="left"})
+    elseif action == "recipebook" then
+        data_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -476,9 +474,8 @@ local function handle_fuel_click(player, tags, action)
         }
         modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
 
-    elseif action == "alt_action" then
-        -- TODO hard-coded "left" here as support for FNEI will be dropped soon
-        data_util.execute_alt_action(player, "show_item", {item=fuel.proto, click="left"})
+    elseif action == "recipebook" then
+        data_util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
     end
 end
 
@@ -500,7 +497,7 @@ production_handler.gui_events = {
                 open_subfloor = {"left"},  -- does its own archive check
                 toggle = {"control-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             timeout = 10,
             handler = handle_recipe_click
@@ -553,7 +550,7 @@ production_handler.gui_events = {
             modifier_actions = {
                 prioritize = {"left", {archive_open=false, matrix_active=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
         },
@@ -563,7 +560,7 @@ production_handler.gui_events = {
                 add_recipe_to_end = {"left", {archive_open=false, matrix_active=true}},
                 add_recipe_below = {"shift-left", {archive_open=false, matrix_active=true}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
         },
@@ -573,7 +570,7 @@ production_handler.gui_events = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"shift-left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
         },
@@ -583,7 +580,7 @@ production_handler.gui_events = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"shift-left", {archive_open=false}},
                 change = {"right", {archive_open=false}},
-                alt_action = {"alt-left", {alt_action=true}}
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_fuel_click
         }
