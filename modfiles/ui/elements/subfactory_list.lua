@@ -1,5 +1,7 @@
 subfactory_list = {}
+subfactory_dialog = {}
 
+-- ** SUBFACTORY LIST **
 -- ** LOCAL UTIL **
 local function toggle_archive(player, _, _)
     local player_table = data_util.get("table", player)
@@ -11,81 +13,24 @@ local function toggle_archive(player, _, _)
     main_dialog.refresh(player, "all")
 end
 
-function GENERIC_HANDLERS.handle_subfactory_submission(player, options, action)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.modal_data.object
+-- Refresh the dialog, quitting archive view if it has become empty
+local function refresh_after_subfactory_deletion(player, factory, removed_gui_position)
+    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
+    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
+    ui_util.context.set_subfactory(player, subfactory)
 
-    if action == "submit" then
-        local name = options.subfactory_name
-        local icon = options.subfactory_icon
-        -- Somehow, choosing the 'signal-unkown' icon spec has no icon name
-        icon = (icon and icon.name) and icon or nil
+    local archive_open = data_util.get("flags", player).archive_open
+    if archive_open and Factory.count(factory, "Subfactory") == 0 then
+        -- Make sure the just-unarchived subfactory is the selected one in factory; It'll always be the last one
+        local main_factory = data_util.get("table", player).factory
+        local last_position = Factory.count(main_factory, "Subfactory")
+        -- It's okay to set selected_subfactory directly here, as toggle_archive calls the proper context util function
+        main_factory.selected_subfactory = Factory.get_by_gui_position(main_factory, "Subfactory", last_position)
 
-        if subfactory ~= nil then
-            subfactory.name, subfactory.icon = name, icon
-        else
-            subfactory_list.add_subfactory(player, name, icon)
-        end
+        toggle_archive(player)  -- does refreshing on its own
+    else
         main_dialog.refresh(player, "all")
-
-    elseif action == "delete" then
-        local factory = ui_state.context.factory
-        local removed_gui_position = Factory.remove(factory, subfactory)
-        subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
     end
-end
-
-function GENERIC_HANDLERS.handle_subfactory_data_change(modal_data, _)
-    local modal_elements = modal_data.modal_elements
-
-    -- Remove whitespace from the subfactory name. No cheating!
-    local name_text = modal_elements["subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1")
-    local icon_spec = modal_elements["subfactory_icon"].elem_value
-
-    local issue_message = nil
-    if name_text == "" and (icon_spec == nil or icon_spec.name == nil) then
-        issue_message = {"fp.options_subfactory_issue_choose_either"}
-    elseif string.len(name_text) > 256 then
-        issue_message = {"fp.options_subfactory_issue_max_characters"}
-    end
-
-    modal_dialog.set_submit_button_state(modal_elements, (issue_message == nil), issue_message)
-end
-
-local function generate_subfactory_dialog_modal_data(action, subfactory)
-    local icon = nil
-    if subfactory and subfactory.icon then
-        local sprite_missing = Subfactory.verify_icon(subfactory)
-        icon = (not sprite_missing) and subfactory.icon or nil
-    end
-
-    local modal_data = {
-        title = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_subfactory", 1}},
-        text = {"fp.options_subfactory_text"},
-        submission_handler_name = "handle_subfactory_submission",
-        allow_deletion = (action == "edit"),
-        object = subfactory,
-        fields = {
-            {
-                type = "textfield",
-                name = "subfactory_name",
-                change_handler_name = "handle_subfactory_data_change",
-                caption = {"fp.options_subfactory_name"},
-                text = (subfactory) and subfactory.name or "",
-                width = 200,
-                focus = true
-            },
-            {
-                type = "choose_elem_button",
-                name = "subfactory_icon",
-                change_handler_name = "handle_subfactory_data_change",
-                caption = {"fp.options_subfactory_icon"},
-                elem_type = "signal",
-                elem_value = icon
-            }
-        }
-    }
-    return modal_data
 end
 
 
@@ -106,7 +51,7 @@ local function archive_subfactory(player, _, _)
 
     local removed_gui_position = Factory.remove(origin, subfactory)
     Factory.add(destination, subfactory)  -- needs to be added after the removal else shit breaks
-    subfactory_list.refresh_after_deletion(player, origin, removed_gui_position)
+    refresh_after_subfactory_deletion(player, origin, removed_gui_position)
 end
 
 local function add_subfactory(player, _, event)
@@ -118,15 +63,8 @@ local function add_subfactory(player, _, event)
           create_subfactory=true}})
 
     else  -- otherwise, have the user pick a subfactory name first
-        local modal_data = generate_subfactory_dialog_modal_data("new", nil)
-        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+        modal_dialog.enter(player, {type="subfactory", modal_data={action="add", subfactory=nil}})
     end
-end
-
-local function edit_subfactory(player, _, _)
-    local subfactory = data_util.get("context", player).subfactory
-    local modal_data = generate_subfactory_dialog_modal_data("edit", subfactory)
-    modal_dialog.enter(player, {type="options", modal_data=modal_data})
 end
 
 local function delete_subfactory(player, _, _)
@@ -139,7 +77,7 @@ local function delete_subfactory(player, _, _)
 
         local factory = ui_state.context.factory
         local removed_gui_position = Factory.remove(factory, subfactory)
-        subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
+        refresh_after_subfactory_deletion(player, factory, removed_gui_position)
     else
         local desired_tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
         local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
@@ -187,7 +125,7 @@ local function handle_subfactory_click(player, tags, action)
 
     elseif action == "edit" then
         main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
-        edit_subfactory(player)
+        modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=selected_subfactory}})
 
     elseif action == "delete" then
         delete_subfactory(player)
@@ -338,29 +276,9 @@ function subfactory_list.refresh(player)
       {"fp.action_delete_subfactory"} or {"fp.action_trash_subfactory", delay_in_minutes}
 end
 
--- Refresh the dialog, quitting archive view if it has become empty
-function subfactory_list.refresh_after_deletion(player, factory, removed_gui_position)
-    if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
-    local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
-    ui_util.context.set_subfactory(player, subfactory)
-
-    local archive_open = data_util.get("flags", player).archive_open
-    if archive_open and Factory.count(factory, "Subfactory") == 0 then
-        -- Make sure the just-unarchived subfactory is the selected one in factory; It'll always be the last one
-        local main_factory = data_util.get("table", player).factory
-        local last_position = Factory.count(main_factory, "Subfactory")
-        -- It's okay to set selected_subfactory directly here, as toggle_archive calls the proper context util function
-        main_factory.selected_subfactory = Factory.get_by_gui_position(main_factory, "Subfactory", last_position)
-
-        toggle_archive(player)  -- does refreshing on its own
-    else
-        main_dialog.refresh(player, "all")
-    end
-end
-
 -- Utility function to centralize subfactory creation behavior
-function subfactory_list.add_subfactory(player, name, icon)
-    local subfactory = Subfactory.init(name, icon)
+function subfactory_list.add_subfactory(player, name)
+    local subfactory = Subfactory.init(name)
 
     local settings = data_util.get("settings", player)
     subfactory.timescale = settings.default_timescale
@@ -381,7 +299,7 @@ function NTH_TICK_HANDLERS.delete_subfactory_for_good(metadata)
     if data_util.get("main_elements", player).main_frame == nil then return end
 
     if data_util.get("flags", player).archive_open then
-        subfactory_list.refresh_after_deletion(player, archive, removed_gui_position)
+        refresh_after_subfactory_deletion(player, archive, removed_gui_position)
     else  -- doing this conditional is a bit dumb, but it works (I think)
         main_dialog.refresh(player, "all")
     end
@@ -411,7 +329,10 @@ subfactory_list.gui_events = {
         },
         {
             name = "edit_subfactory",
-            handler = edit_subfactory
+            handler = (function(player, _, _)
+                local subfactory = data_util.get("context", player).subfactory
+                modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=subfactory}})
+            end)
         },
         {
             name = "duplicate_subfactory",
@@ -442,6 +363,120 @@ subfactory_list.gui_events = {
                 delete = {"control-right"}
             },
             handler = handle_subfactory_click
+        }
+    }
+}
+
+
+
+-- ** SUBFACTORY DIALOG **
+-- ** LOCAL UTIL **
+local function update_submit_button(player, _, _)
+    local modal_elements = data_util.get("modal_elements", player)
+    local name_length = string.len(modal_elements["subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1"))
+    local issue_message = {"fp.subfactory_dialog_name_empty"}
+    modal_dialog.set_submit_button_state(modal_elements, (name_length > 0), issue_message)
+end
+
+local function add_rich_text(player, tags, event)
+    local modal_elements = data_util.get("modal_elements", player)
+    local subfactory_name = modal_elements.subfactory_name.text
+    local type, elem_value = tags.type, event.element.elem_value
+
+    if type == "signal" then
+        -- Signal types are insanely stupid
+        if not elem_value.name then event.element.elem_value = nil; return end
+        if elem_value.type == "virtual" then type = "virtual-signal"
+        else type = elem_value.type end
+        elem_value = elem_value.name
+    end
+
+    local rich_text = "[" .. type .. "=" .. elem_value .. "]"
+    modal_elements.subfactory_name.text = subfactory_name .. rich_text
+
+    event.element.elem_value = nil
+    update_submit_button(player)
+end
+
+
+-- ** TOP LEVEL **
+subfactory_dialog.dialog_settings = (function(modal_data)
+    return {
+        caption = {"fp.two_word_title", {"fp." .. modal_data.action}, {"fp.pl_subfactory", 1}},
+        subheader_text = {"fp.subfactory_dialog_description"},
+        create_content_frame = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.action == "edit")
+    }
+end)
+
+function subfactory_dialog.open(player, modal_data)
+    local modal_elements = modal_data.modal_elements
+    local content_frame = modal_elements.content_frame
+
+    local flow_name = content_frame.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
+    flow_name.add{type="label", caption={"fp.info_label", {"fp.subfactory_dialog_name"}},
+      tooltip={"fp.subfactory_dialog_name_tt"}}
+
+    local subfactory_name = (modal_data.action == "edit") and modal_data.subfactory.name or ""
+    local textfield_name = flow_name.add{type="textfield", text=subfactory_name,
+      tags={mod="fp", on_gui_text_changed="subfactory_name"}}
+    textfield_name.style.rich_text_setting = defines.rich_text_setting.enabled
+    textfield_name.style.width = 250
+    textfield_name.focus()
+    modal_elements["subfactory_name"] = textfield_name
+
+    local flow_rich_text = content_frame.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
+    flow_rich_text.style.top_margin = 8
+    flow_rich_text.add{type="label", caption={"fp.info_label", {"fp.subfactory_dialog_rich_text"}},
+    tooltip={"fp.subfactory_dialog_rich_text_tt"}}
+
+    local signal_flow = flow_rich_text.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
+    signal_flow.style.horizontal_spacing = 6
+    signal_flow.add{type="label", caption="Signals"}
+    signal_flow.add{type="choose-elem-button", elem_type="signal", style="fp_sprite-button_inset_tiny",
+      tags={mod="fp", on_gui_elem_changed="add_rich_text", type="signal"}}
+
+    local recipe_flow = flow_rich_text.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
+    recipe_flow.style.horizontal_spacing = 6
+    recipe_flow.add{type="label", caption="Recipes"}
+    recipe_flow.add{type="choose-elem-button", elem_type="recipe", style="fp_sprite-button_inset_tiny",
+      tags={mod="fp", on_gui_elem_changed="add_rich_text", type="recipe"}}
+
+    update_submit_button(player)
+end
+
+function subfactory_dialog.close(player, action)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.modal_data.subfactory
+
+    if action == "submit" then
+        local name_textfield = ui_state.modal_data.modal_elements.subfactory_name
+        local subfactory_name = name_textfield.text:gsub("^%s*(.-)%s*$", "%1")
+
+        if subfactory ~= nil then subfactory.name = subfactory_name
+        else subfactory_list.add_subfactory(player, subfactory_name) end
+
+        main_dialog.refresh(player, "all")
+
+    elseif action == "delete" then
+        delete_subfactory(player)  -- handles archiving
+    end
+end
+
+
+-- ** EVENTS **
+subfactory_dialog.gui_events = {
+    on_gui_text_changed = {
+        {
+            name = "subfactory_name",
+            handler = update_submit_button
+        }
+    },
+    on_gui_elem_changed = {
+        {
+            name = "add_rich_text",
+            handler = add_rich_text
         }
     }
 }

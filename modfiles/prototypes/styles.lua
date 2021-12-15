@@ -36,6 +36,12 @@ styles["fp_scroll-pane_slot_table"] = {
     }
 }
 
+styles["fp_flow_horizontal_centered"] = {
+    type = "horizontal_flow_style",
+    vertical_align = "center",
+    horizontal_spacing = 16
+}
+
 styles["fp_frame_slot_table"] = {
     type = "frame_style",
     parent = "filter_frame",
