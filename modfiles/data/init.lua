@@ -250,7 +250,7 @@ script.on_load(loader.run)
 
 
 -- ** PLAYER DATA EVENTS **
-script.on_event(defines.events.on_player_created, function(event)
+local function on_player_created(event)
     local player = game.get_player(event.player_index)
 
     -- Sets up the player_table for the new player
@@ -265,15 +265,17 @@ script.on_event(defines.events.on_player_created, function(event)
 
     -- Add the subfactories that are handy for development
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
-end)
+end
+script.on_event(defines.events.on_player_created, on_player_created)
 
-script.on_event(defines.events.on_player_removed, function(event)
+
+local function on_player_removed(event)
     global.players[event.player_index] = nil
-end)
+end
+script.on_event(defines.events.on_player_removed, on_player_removed)
 
 
--- Fires when mods settings change to incorporate them
-script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+local function on_runtime_mod_setting_changed(event)
     if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
         local player = game.get_player(event.player_index)
         reload_settings(player)
@@ -292,7 +294,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         end
     end
-end)
+end
+script.on_event(defines.events.on_runtime_mod_setting_changed, on_runtime_mod_setting_changed)
 
 
 -- ** COMMANDS **

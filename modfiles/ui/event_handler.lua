@@ -40,7 +40,7 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
             local split_modifiers = split_string(modifier_click, "-")
 
             local modifier_string = {""}
-            for _, modifier in pairs(table.slice(split_modifiers, 1, -1)) do
+            for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
                 table.insert(modifier_string, {"", {"fp.tut_" .. modifier}, " + "})
             end
             table.insert(modifier_string, {"fp.tut_" .. split_modifiers[#split_modifiers]})
