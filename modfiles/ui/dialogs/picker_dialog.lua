@@ -387,9 +387,8 @@ function picker_dialog.close(player, action)
             local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
 
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
-                local split_sprite = split_string(top_level_item.proto.sprite, "/")
-                local icon = {type=split_sprite[1], name=split_sprite[2]}
-                subfactory_list.add_subfactory(player, "", icon)  -- sets context to new subfactory
+                local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "]"
+                subfactory_list.add_subfactory(player, subfactory_name)  -- sets context to new subfactory
                 refresh_scope = "all"  -- need to refresh subfactory list too
             end
 

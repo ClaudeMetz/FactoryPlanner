@@ -1,10 +1,9 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon)
+function Subfactory.init(name)
     local subfactory = {
         name = name,
-        icon = icon,
         timescale = nil,  -- needs to be set after init
         energy_consumption = 0,
         pollution = 0,
@@ -33,33 +32,15 @@ function Subfactory.init(name, icon)
 end
 
 
--- Returns first whether the icon is missing, then the rich text for it
-function Subfactory.verify_icon(self)
-    local type = (self.icon.type == "virtual") and "virtual-signal" or self.icon.type
-    local subfactory_sprite = type .. "/" .. self.icon.name
-
-    if not game.is_valid_sprite_path(subfactory_sprite) then
-        return true, ("[img=utility/missing_icon]")
-    else
-        return false, ("[img=" .. subfactory_sprite .. "]")
-    end
-end
-
 function Subfactory.tostring(self, export_format)
-    local status_string = ""
+    local caption, tooltip = self.name, nil  -- don't return a tooltip for the export_format
+
     if not export_format then
+        local status_string = ""
         if self.tick_of_deletion then status_string = status_string .. "[img=fp_sprite_trash_red] " end
-        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red]  " end
-    end
+        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red] " end
+        caption = status_string .. caption
 
-    local name_string = self.name
-    if self.icon then
-        local _, sprite_rich_text = Subfactory.verify_icon(self)
-        name_string = sprite_rich_text .. "  " .. name_string
-    end
-
-    local tooltip = nil  -- don't return a tooltip for the export_format
-    if not export_format then
         local trashed_string = ""
         if self.tick_of_deletion then
             local ticks_left_in_trash = self.tick_of_deletion - game.tick
@@ -68,10 +49,9 @@ function Subfactory.tostring(self, export_format)
         end
 
         local invalid_string = (not self.valid) and {"fp.newline", {"fp.subfactory_invalid"}} or ""
-        tooltip = {"", name_string, trashed_string, invalid_string}
+        tooltip = {"", self.name, trashed_string, invalid_string}
     end
 
-    local caption = (status_string .. name_string)
     return caption, tooltip
 end
 
@@ -168,7 +148,6 @@ function Subfactory.pack(self)
 
     return {
         name = self.name,
-        icon = self.icon,
         timescale = self.timescale,
         notes = self.notes,
         mining_productivity = self.mining_productivity,
@@ -182,7 +161,7 @@ function Subfactory.pack(self)
 end
 
 function Subfactory.unpack(packed_self)
-    local self = Subfactory.init(packed_self.name, packed_self.icon)
+    local self = Subfactory.init(packed_self.name)
 
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes

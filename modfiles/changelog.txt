@@ -2,10 +2,10 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Subfactory names now support rich text, making them be not restricted to a single icon anymore if desired
+    - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
   Changes:
     - Added dedicated buttons to move subfactories and recipe up and down, making the interaction more discoverable and easier to use
-    - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
     - Reordered the subfactory list buttons to make more sense by grouping the archive-related ones
     - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
     - Re-architected the way button clicks are handled, making tutorial tooltips both more accurate and prettier
@@ -15,6 +15,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that the first recipe on subfloors could be moved down in certain circumstances
     - Fixed that shift-click adding a subfactory and cancelling the picker dialog would create an empty subfactory
+    - Fixed that deleting a subfactory through the 'edit subfactory'-dialog would not put it into the archive
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.30

@@ -11,7 +11,6 @@ function migration.subfactory(subfactory)
         for _, line in pairs(Floor.get_all(floor, "Line")) do
             local beacon = line.beacon
             if beacon and beacon.module then
-                local module = beacon.module
                 beacon.Module = Collection.init("Module")
                 beacon.module_count = 0
                 Beacon.add(beacon, beacon.module)
