@@ -209,7 +209,7 @@ end
 
 -- Returns the total effects influencing this line, including mining productivity
 function Line.get_total_effects(self, player)
-    local effects = table.shallow_copy(self.total_effects)
+    local effects = fancytable.shallow_copy(self.total_effects)
 
     -- Add mining productivity, if applicable
     local mining_productivity = 0

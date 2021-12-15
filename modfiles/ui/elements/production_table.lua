@@ -145,7 +145,7 @@ function builders.machine(line, parent_flow, metadata)
         local machine_proto = line.machine.proto
         local effects_tooltip = line.machine.effects_tooltip
         if machine_proto.mining then  -- Dynamically generate effects tooltip to include mining productivity
-            local module_effects = table.shallow_copy(line.total_effects)
+            local module_effects = fancytable.shallow_copy(line.total_effects)
             module_effects.productivity = module_effects.productivity + metadata.mining_productivity
             effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
         end

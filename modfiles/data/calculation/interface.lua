@@ -87,7 +87,7 @@ local function generate_floor_data(player, subfactory, floor)
                 -- Total effects
                 if line.machine.proto.mining then
                     -- If there is mining prod, a copy of the table is required
-                    local effects = table.shallow_copy(line.total_effects)
+                    local effects = fancytable.shallow_copy(line.total_effects)
                     effects.productivity = effects.productivity + mining_productivity
                     line_data.total_effects = effects
                 else

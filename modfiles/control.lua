@@ -7,8 +7,8 @@ SEARCH_HANDLERS = {}
 TUTORIAL_TOOLTIPS = {}
 
 require("util")  -- core.lualib
-table = require('__flib__.table')  -- replaces the vanilla lua table module
 require("generic_util")
+fancytable = require('__flib__.table')  -- has more methods than built-in table
 
 require("data.init")
 require("data.data_util")
