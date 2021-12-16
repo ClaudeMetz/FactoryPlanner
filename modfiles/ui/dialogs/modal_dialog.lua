@@ -7,6 +7,7 @@ require("recipe_dialog")
 require("matrix_dialog")
 require("modules_dialog")
 require("porter_dialog")
+require("subfactory_dialog")
 
 modal_dialog = {}
 
