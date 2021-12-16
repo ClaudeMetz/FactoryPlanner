@@ -143,9 +143,9 @@ function GENERIC_HANDLERS.apply_machine_choice(player, machine_id, event)
     main_dialog.refresh(player, "subfactory")
 end
 
-function GENERIC_HANDLERS.handle_machine_limit_change(modal_data, event)
+function GENERIC_HANDLERS.handle_machine_limit_change(modal_data, element)
     local switch = modal_data.modal_elements["force_limit"]
-    local machine_limit = tonumber(event.element.text)
+    local machine_limit = tonumber(element.text)
 
     -- If it goes from empty to filled, reset a possible previous switch state
     if modal_data.previous_limit == nil and modal_data.previous_switch_state then
