@@ -116,7 +116,9 @@ local function update_object_items(object, item_class, item_results)
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
         local required_amount = (object.class == "Subfactory") and 0 or nil
-        local item = Item.init_by_item(item_result, item_class, item_result.amount, required_amount)
+        local item_type = global.all_items.types[global.all_items.map[item_result.type]]
+        local item_proto = item_type.items[item_type.map[item_result.name]]
+        local item = Item.init(item_proto, item_class, item_result.amount, required_amount)
         object_class.add(object, item)
     end
 end

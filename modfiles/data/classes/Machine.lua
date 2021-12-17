@@ -2,7 +2,7 @@
 Machine = {}
 
 -- Initialised by passing a prototype from the all_machines global table
-function Machine.init_by_proto(proto)
+function Machine.init(proto)
     local machine = {
         proto = proto,
         count = 0,
@@ -94,7 +94,7 @@ function Machine.find_fuel(self, player)
         local fuel_category_id = global.all_fuels.map[fuel_category_name]
 
         local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
-        self.fuel = Fuel.init_by_proto(default_fuel_proto)
+        self.fuel = Fuel.init(default_fuel_proto)
         self.fuel.parent = self
     end
 end

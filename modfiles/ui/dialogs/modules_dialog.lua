@@ -276,7 +276,7 @@ local function handle_module_selection(player, tags, event)
         end
     elseif new_name then -- it can be nil when an empty button is reset
         local amount = elements.empty_module_controls.slider.slider_value
-        local module = Module.init_by_proto(MODULE_NAME_MAP[new_name], amount)
+        local module = Module.init(MODULE_NAME_MAP[new_name], amount)
         class.add(entity, module)
         -- just destroy the old elements instead of attempting to reuse them
         -- as they would contain wrong information, like tags
