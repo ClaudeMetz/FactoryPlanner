@@ -85,7 +85,7 @@ function Line.change_machine(self, player, machine_proto, action)
     -- Set machine directly; assumes it is applicable to this line
     if machine_proto ~= nil and action == nil then
         if not self.machine then
-            self.machine = Machine.init_by_proto(machine_proto)
+            self.machine = Machine.init(machine_proto)
             self.machine.parent = self
 
             -- Initialize total_effects, now that the line has a machine

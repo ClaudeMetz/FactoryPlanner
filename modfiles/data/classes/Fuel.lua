@@ -2,7 +2,7 @@
 Fuel = {}
 
 -- Initialised by passing a prototype from the all_fuels global table
-function Fuel.init_by_proto(proto)
+function Fuel.init(proto)
     return {
         proto = proto,
         amount = 0,  -- produced amount

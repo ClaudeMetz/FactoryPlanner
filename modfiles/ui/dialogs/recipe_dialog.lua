@@ -122,11 +122,11 @@ local function attempt_adding_line(player, recipe_id)
         local secondary_module = mb_defaults.machine_secondary
 
         if machine_module and Machine.check_module_compatibility(line.machine, machine_module) then
-            local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
+            local new_module = Module.init(machine_module, line.machine.proto.module_limit)
             Machine.add(line.machine, new_module)
 
         elseif secondary_module and Machine.check_module_compatibility(line.machine, secondary_module) then
-            local new_module = Module.init_by_proto(secondary_module, line.machine.proto.module_limit)
+            local new_module = Module.init(secondary_module, line.machine.proto.module_limit)
             Machine.add(line.machine, new_module)
 
         -- Only show an error if any module default is actually set
@@ -142,7 +142,7 @@ local function attempt_adding_line(player, recipe_id)
             local blank_beacon = Beacon.init(beacon_proto, beacon_count, nil, line)
 
             if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
-                local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
+                local module = Module.init(beacon_module_proto, beacon_proto.module_limit)
                 Beacon.add(blank_beacon, module)
 
                 Line.set_beacon(line, blank_beacon)

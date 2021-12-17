@@ -384,7 +384,7 @@ function picker_dialog.close(player, action)
             modal_data.object.required_amount = req_amount
         else
             local class_name = (modal_data.item_category:gsub("^%l", string.upper))
-            local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
+            local top_level_item = Item.init(modal_data.item_proto, class_name, 0, req_amount)
 
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
                 local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "]"

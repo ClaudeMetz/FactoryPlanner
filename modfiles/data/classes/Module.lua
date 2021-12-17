@@ -2,7 +2,7 @@
 Module = {}
 
 -- Initialised by passing a prototype from the all_moduless global table
-function Module.init_by_proto(proto, amount)
+function Module.init(proto, amount)
     return {
         proto = proto,
         amount = amount,
