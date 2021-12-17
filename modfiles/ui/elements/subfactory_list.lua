@@ -65,27 +65,6 @@ local function add_subfactory(player, _, event)
     end
 end
 
-local function delete_subfactory(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-    if subfactory == nil then return end  -- prevent crashes due to multiplayer latency
-
-    if ui_state.flags.archive_open then
-        if subfactory.tick_of_deletion then data_util.nth_tick.remove(subfactory.tick_of_deletion) end
-
-        local factory = ui_state.context.factory
-        local removed_gui_position = Factory.remove(factory, subfactory)
-        refresh_after_subfactory_deletion(player, factory, removed_gui_position)
-    else
-        local desired_tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
-        local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
-          "delete_subfactory_for_good", {player_index=player.index, subfactory=subfactory})
-        subfactory.tick_of_deletion = actual_tick_of_deletion
-
-        archive_subfactory(player)
-    end
-end
-
 
 local function handle_move_subfactory_click(player, tags, event)
     local context = data_util.get("context", player)
@@ -126,7 +105,7 @@ local function handle_subfactory_click(player, tags, action)
         modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=selected_subfactory}})
 
     elseif action == "delete" then
-        delete_subfactory(player)
+        subfactory_list.delete_subfactory(player)
     end
 end
 
@@ -287,6 +266,28 @@ function subfactory_list.add_subfactory(player, name)
     ui_util.context.set_subfactory(player, subfactory)
 end
 
+-- Utility function to centralize subfactory deletion behavior
+function subfactory_list.delete_subfactory(player)
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+    if subfactory == nil then return end  -- prevent crashes due to multiplayer latency
+
+    if ui_state.flags.archive_open then
+        if subfactory.tick_of_deletion then data_util.nth_tick.remove(subfactory.tick_of_deletion) end
+
+        local factory = ui_state.context.factory
+        local removed_gui_position = Factory.remove(factory, subfactory)
+        refresh_after_subfactory_deletion(player, factory, removed_gui_position)
+    else
+        local desired_tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
+        local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
+          "delete_subfactory_for_good", {player_index=player.index, subfactory=subfactory})
+        subfactory.tick_of_deletion = actual_tick_of_deletion
+
+        archive_subfactory(player)
+    end
+end
+
 
 -- Delete subfactory for good and refresh interface if necessary
 function NTH_TICK_HANDLERS.delete_subfactory_for_good(metadata)
@@ -347,7 +348,7 @@ subfactory_list.gui_events = {
         {
             name = "delete_subfactory",
             timeout = 10,
-            handler = delete_subfactory
+            handler = subfactory_list.delete_subfactory
         },
         {
             name = "move_subfactory",
