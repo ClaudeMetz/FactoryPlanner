@@ -90,7 +90,7 @@ function subfactory_dialog.close(player, action)
         main_dialog.refresh(player, "all")
 
     elseif action == "delete" then
-        delete_subfactory(player)  -- handles archiving
+        subfactory_list.delete_subfactory(player)  -- handles archiving if necessary
     end
 end
 
