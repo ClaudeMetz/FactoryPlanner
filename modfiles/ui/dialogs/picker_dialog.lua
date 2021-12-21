@@ -394,10 +394,10 @@ function picker_dialog.close(player, action)
             end
 
             Subfactory.add(subfactory, top_level_item)  -- finally add the item to the subfactory
-
-            calculation.update(player, subfactory)
-            main_dialog.refresh(player, refresh_scope)
         end
+
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, refresh_scope)
 
     elseif action == "delete" then
         Subfactory.remove(subfactory, item)
