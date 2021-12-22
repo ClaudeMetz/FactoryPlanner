@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.31
+Date: 22. 12. 2021
   Bugfixes:
     - Fixed an issue where the mod would sometimes offer the incorrect machines for a recipe
     - Fixed that the mod would create a small box in the top left corner of the screen in certain multiplayer situations
