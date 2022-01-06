@@ -215,6 +215,8 @@ local function handle_machine_click(player, tags, metadata)
 
     elseif metadata.click == "left" then
         if metadata.alt then  -- set cursor to the current machine
+            if not data_util.is_entity_blueprintable(line.machine.proto) then return end
+
             local module_list = {}
             for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
                 module_list[module.proto.name] = module.amount
@@ -324,10 +326,13 @@ local function handle_beacon_click(player, tags, metadata)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.alt and metadata.click == "left" then
+        if not data_util.is_entity_blueprintable(line.beacon.proto) then return end
+
         local module_list = {}
         for _, module in pairs(Beacon.get_in_order(line.beacon, "Module")) do
             module_list[module.proto.name] = module.amount
         end
+
         local blueprint_entity = {
             entity_number = 1,
             name = line.beacon.proto.name,
