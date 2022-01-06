@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Potentially fixed a crash when trying to put a machine into the cursor from Factory Planner
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.31

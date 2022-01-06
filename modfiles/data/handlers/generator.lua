@@ -325,8 +325,7 @@ function generator.all_machines()
 
         -- Determine the name of the item that actually builds this machine for the item requester
         -- There can technically be more than one, but bots use the first one, so I do too
-        local items_to_place_this, built_by_item = proto.items_to_place_this, nil
-        if items_to_place_this then built_by_item = items_to_place_this[1].name end
+        local built_by_item = (proto.items_to_place_this) and proto.items_to_place_this[1].name or nil
 
         -- Determine the details of this entities energy source
         local burner_prototype, fluid_burner_prototype = proto.burner_prototype, proto.fluid_energy_source_prototype
