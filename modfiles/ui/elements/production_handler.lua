@@ -249,6 +249,8 @@ local function handle_machine_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "put_into_cursor" then
+        if not data_util.is_entity_blueprintable(line.machine.proto) then return end
+
         local module_list = {}
         for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
             module_list[module.proto.name] = module.amount
@@ -299,6 +301,8 @@ local function handle_beacon_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "put_into_cursor" then
+        if not data_util.is_entity_blueprintable(line.beacon.proto) then return end
+
         local module_list = {}
         for _, module in pairs(Beacon.get_in_order(line.beacon, "Module")) do
             module_list[module.proto.name] = module.amount
