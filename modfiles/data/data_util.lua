@@ -73,6 +73,11 @@ function data_util.open_in_recipebook(player, type, name)
     if message then title_bar.enqueue_message(player, message, "error", 1, true) end
 end
 
+-- Checks whether the given (internal) prototype can be blueprinted, else throws an error
+function data_util.is_entity_blueprintable(proto)
+    return (not game.entity_prototypes[proto.name].has_flag("not-blueprintable"))
+end
+
 -- Create a blueprint with the given entities and put it in the player's cursor
 function data_util.create_cursor_blueprint(player, blueprint_entities)
     local script_inventory = game.create_inventory(1)

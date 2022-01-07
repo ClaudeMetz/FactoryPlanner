@@ -372,7 +372,6 @@ function picker_dialog.close(player, action)
     local ui_state = data_util.get("ui_state", player)
     local modal_data, context = ui_state.modal_data, ui_state.context
 
-    local refresh_scope = "subfactory"
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
@@ -380,6 +379,7 @@ function picker_dialog.close(player, action)
 
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
+        local refresh_scope = "subfactory"
         if modal_data.object ~= nil then  -- ie. this is an edit
             modal_data.object.required_amount = req_amount
         else
@@ -395,13 +395,13 @@ function picker_dialog.close(player, action)
             Subfactory.add(context.subfactory, top_level_item)
         end
 
-    elseif action == "delete" then
-        Subfactory.remove(context.subfactory, modal_data.object)
-    end
-
-    if action ~= "cancel" then
-        calculation.update(player, context.subfactory)
+        calculation.update(player, subfactory)
         main_dialog.refresh(player, refresh_scope)
+
+    elseif action == "delete" then
+        Subfactory.remove(subfactory, item)
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
