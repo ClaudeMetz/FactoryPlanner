@@ -97,7 +97,7 @@ local function attempt_adding_line(player, recipe_id)
     local line = Line.init(recipe)
 
     -- If finding a machine fails, this line is invalid
-    if Line.change_machine(line, player, nil, nil) == false then  -- not sure this can even happen because generator
+    if Line.change_machine_to_default(line, player) == false then  -- not sure this can even happen because generator
         title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
 
     else

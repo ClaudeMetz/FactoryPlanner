@@ -165,11 +165,9 @@ end
 
 -- Destroys all GUIs so they are loaded anew the next time they are shown
 local function reset_player_gui(player)
-    local mod_gui_button = mod_gui.get_button_flow(player)["fp_button_toggle_interface"]
-    if mod_gui_button then mod_gui_button.destroy() end
+    ui_util.destroy_mod_gui(player)  -- mod_gui button
 
-    -- All mod frames
-    for _, gui_element in pairs(player.gui.screen.children) do
+    for _, gui_element in pairs(player.gui.screen.children) do  -- all mod frames
         if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
             gui_element.destroy()
         end

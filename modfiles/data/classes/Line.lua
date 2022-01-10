@@ -79,93 +79,91 @@ function Line.is_machine_applicable(self, machine_proto)
 end
 
 
--- Changes the machine either to the given machine or up/downgrades it
--- Returns false if no compatible machine can be found, true otherwise
-function Line.change_machine(self, player, machine_proto, action)
-    -- Set machine directly; assumes it is applicable to this line
-    if machine_proto ~= nil and action == nil then
-        if not self.machine then
-            self.machine = Machine.init(machine_proto)
-            self.machine.parent = self
+-- Sets this line's machine to be the given prototype
+function Line.change_machine_to_proto(self, player, proto)
+    if not self.machine then
+        self.machine = Machine.init(proto)
+        self.machine.parent = self
 
-            -- Initialize total_effects, now that the line has a machine
-            Line.summarize_effects(self, false, false)
-        else
-            self.machine.proto = machine_proto
+        -- Initialize total_effects, now that the line has a machine
+        --Line.summarize_effects(self, false, false)
+    else
+        self.machine.proto = proto
 
-            -- Check if the fuel is still compatible, remove it otherwise
-            local fuel = self.machine.fuel
-            if fuel ~= nil and (not fuel.valid or not (machine_proto.energy_type == "burner"
-              and machine_proto.burner.categories[fuel.proto.category])) then
-                self.machine.fuel = nil
-            end
-
-            -- Adjust modules (ie. trim them if needed)
-            Machine.normalize_modules(self.machine, false, true)
-
-            -- Adjust beacon (ie. remove if machine does not allow beacons)
-            if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
+        -- Check if the fuel is still compatible, remove it otherwise
+        local fuel = self.machine.fuel
+        if fuel ~= nil and (not fuel.valid or not (proto.energy_type == "burner"
+          and proto.burner.categories[fuel.proto.category])) then
+            self.machine.fuel = nil
         end
 
-        -- Set the machine-fuel, if appropriate
-        Machine.find_fuel(self.machine, player)
+        -- Adjust modules (ie. trim them if needed)
+        --Machine.normalize_modules(self.machine, false, true)
 
+        -- Adjust beacon (ie. remove if machine does not allow beacons)
+        --if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
+    end
+
+    -- Set the machine-fuel, if appropriate
+    Machine.find_fuel(self.machine, player)
+
+    return true
+end
+
+-- Up- or downgrades this line's machine, if possible
+-- Returns false if no compatible machine can be found, true otherwise
+function Line.change_machine_by_action(self, player, action)
+    local machine_category_id = global.all_machines.map[self.machine.proto.category]
+    local category_machines = global.all_machines.categories[machine_category_id].machines
+
+    if action == "upgrade" then
+        local max_machine_id = #category_machines
+        local current_machine_proto = self.machine.proto
+
+        while current_machine_proto.id < max_machine_id do
+            current_machine_proto = category_machines[current_machine_proto.id + 1]
+
+            if Line.is_machine_applicable(self, current_machine_proto) then
+                Line.change_machine_to_proto(self, player, current_machine_proto)
+                return true
+            end
+        end
+    else  -- action == "downgrade"
+        local current_machine_proto = self.machine.proto
+
+        while current_machine_proto.id > 1 do
+            current_machine_proto = category_machines[current_machine_proto.id - 1]
+
+            if Line.is_machine_applicable(self, current_machine_proto) then
+                Line.change_machine_to_proto(self, player, current_machine_proto)
+                return true
+            end
+        end
+    end
+
+    return false  -- if the above loop didn't return, no machine could be found, so we return false
+end
+
+-- Changes this line's machine to its default, if possible
+-- Returns false if no compatible machine can be found, true otherwise
+function Line.change_machine_to_default(self, player)
+    local machine_category_id = global.all_machines.map[self.recipe.proto.category]
+    -- All categories are guaranteed to have at least one machine, so this is never nil
+    local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
+
+    -- If the default is applicable, just set it straight away
+    if Line.is_machine_applicable(self, default_machine_proto) then
+        Line.change_machine_to_proto(self, player, default_machine_proto)
         return true
 
-    -- Upgrade or downgrade the machine
-    elseif action ~= nil then  -- machine_proto can be nil or not
-        machine_proto = machine_proto or self.machine.proto
+    -- Otherwise, go up, then down the category to find an alternative
+    elseif Line.change_machine_by_action(self, player, "upgrade") then
+        return true
+    elseif Line.change_machine_by_action(self, player, "downgrade") then
+        return true
 
-        local machine_category_id = global.all_machines.map[machine_proto.category]
-        local category_machines = global.all_machines.categories[machine_category_id].machines
-
-        if action == "upgrade" then
-            local max_machine_id = #category_machines
-            local current_machine_proto = machine_proto
-
-            while current_machine_proto.id < max_machine_id do
-                current_machine_proto = category_machines[current_machine_proto.id + 1]
-
-                if Line.is_machine_applicable(self, current_machine_proto) then
-                    Line.change_machine(self, player, current_machine_proto, nil)
-                    return true
-                end
-            end
-        else  -- action == "downgrade"
-            local current_machine_proto = machine_proto
-
-            while current_machine_proto.id > 1 do
-                current_machine_proto = category_machines[current_machine_proto.id - 1]
-
-                if Line.is_machine_applicable(self, current_machine_proto) then
-                    Line.change_machine(self, player, current_machine_proto, nil)
-                    return true
-                end
-            end
-        end
-
-        return false  -- if the above loops didn't return, no machine could be found, so we return false
-
-    -- Set machine to the preferred default one
-    elseif machine_proto == nil and action == nil then
-        local machine_category_id = global.all_machines.map[self.recipe.proto.category]
-        -- All categories are guaranteed to have at least one machine, so this is never nil
-        local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
-
-        -- If the default is applicable, just set it straight away
-        if Line.is_machine_applicable(self, default_machine_proto) then
-            Line.change_machine(self, player, default_machine_proto, nil)
-            return true
-
-        -- Otherwise, go up, then down the category to find an alternative
-        elseif Line.change_machine(self, player, default_machine_proto, "upgrade") then
-            return true
-        elseif Line.change_machine(self, player, default_machine_proto, "downgrade") then
-            return true
-
-        else  -- if no machine in the whole category is applicable, return false
-            return false
-        end
+    else  -- if no machine in the whole category is applicable, return false
+        return false
     end
 end
 
