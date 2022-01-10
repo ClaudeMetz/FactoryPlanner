@@ -87,151 +87,16 @@ local function handle_percentage_confirmation(player, _, _)
     main_dialog.refresh(player, "subfactory")
 end
 
-
-local function compile_machine_chooser_buttons(player, line, applicable_prototypes)
-    local round_button_numbers = data_util.get("preferences", player).round_button_numbers
-    local timescale = data_util.get("context", player).subfactory.timescale
-
-    local category_id = global.all_machines.map[line.recipe.proto.category]
-    local default_proto = prototyper.defaults.get(player, "machines", category_id)
-    local current_proto = line.machine.proto
-
-    local button_definitions = {}
-    for _, machine_proto in ipairs(applicable_prototypes) do
-        -- Need to get total effects here to include mining productivity
-        local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
-          line.recipe.proto, Line.get_total_effects(line, player))
-        local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
-          line.uncapped_production_ratio, timescale, machine_proto.launch_sequence_time)
-
-        local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
-
-        -- Have to do this stupid crap because localisation plurals only work on integers
-        local formatted_number = ui_util.format_number(machine_count, 4)
-        local plural_parameter = (formatted_number == "1") and 1 or 2
-        local amount_line = {"fp.two_word_title", formatted_number, {"fp.pl_machine", plural_parameter}}
-
-        local definition = {
-            element_id = machine_proto.id,
-            sprite = machine_proto.sprite,
-            button_number = button_number,
-            localised_name = machine_proto.localised_name,
-            amount_line = amount_line,
-            tooltip_appendage = data_util.get_attributes("machines", machine_proto),
-            selected = (current_proto.id == machine_proto.id),
-            preferred = (default_proto.id == machine_proto.id)
-        }
-
-        table.insert(button_definitions, definition)
-    end
-
-    return button_definitions
-end
-
-function GENERIC_HANDLERS.apply_machine_choice(player, machine_id, event)
-    local ui_state = data_util.get("ui_state", player)
-    local machine = ui_state.modal_data.object
-
-    local machine_category_id = global.all_machines.map[machine.proto.category]
-    local machine_proto = global.all_machines.categories[machine_category_id].machines[tonumber(machine_id)]
-    Line.change_machine(machine.parent, player, machine_proto, nil)
-
-    -- Optionally adjust the preferred prototype
-    if event.shift then prototyper.defaults.set(player, "machines", machine_proto.id, machine_category_id) end
-
-    calculation.update(player, ui_state.context.subfactory)
-    main_dialog.refresh(player, "subfactory")
-end
-
-function GENERIC_HANDLERS.handle_machine_limit_change(modal_data, element)
-    local switch = modal_data.modal_elements["force_limit"]
-    local machine_limit = tonumber(element.text)
-
-    -- If it goes from empty to filled, reset a possible previous switch state
-    if modal_data.previous_limit == nil and modal_data.previous_switch_state then
-        switch.switch_state = modal_data.previous_switch_state
-    -- If it goes from filled to empty, save the switch state end set it to be disabled
-    elseif machine_limit == nil then
-        modal_data.previous_switch_state = switch.switch_state
-        switch.switch_state = "right"
-    end
-
-    switch.enabled = (machine_limit ~= nil)  -- The switch only makes sense if you have a machine limit
-    modal_data.previous_limit = machine_limit  -- Record the previous limit to know how it changes
-end
-
-function GENERIC_HANDLERS.apply_machine_options(player, options, action)
-    if action == "submit" then
-        local ui_state = data_util.get("ui_state", player)
-        local machine = ui_state.modal_data.object
-
-        if options.machine_limit == nil then options.force_limit = false end
-        machine.limit, machine.force_limit = options.machine_limit, options.force_limit
-
-        calculation.update(player, ui_state.context.subfactory)
-        main_dialog.refresh(player, "subfactory")
-    end
-end
-
 local function handle_machine_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "change" then
-        local machine_category_id = global.all_machines.map[line.machine.proto.category]
-        local category_prototypes = global.all_machines.categories[machine_category_id].machines
-
-        local applicable_prototypes = {}  -- determine whether there's more than one machine for this recipe
-        for _, machine_proto in ipairs(category_prototypes) do
-            if Line.is_machine_applicable(line, machine_proto) then
-                table.insert(applicable_prototypes, machine_proto)
-            end
-        end
-
-        if #applicable_prototypes <= 1 then  -- changing machines only makes sense if there is something to change to
-            title_bar.enqueue_message(player, {"fp.warning_no_other_machine_choice"}, "warning", 1, true)
-        else
-            local modal_data = {
-                title = {"fp.pl_machine", 1},
-                text = {"fp.chooser_machine", line.recipe.proto.localised_name},
-                text_tooltip = {"fp.chooser_machine_tt"},
-                click_handler_name = "apply_machine_choice",
-                button_definitions = compile_machine_chooser_buttons(player, line, applicable_prototypes),
-                object = line.machine
-            }
-            modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
-        end
-
-    elseif action == "set_limit" then
-        local modal_data = {
-            title = {"fp.options_machine_title"},
-            text = {"fp.options_machine_text", line.machine.proto.localised_name},
-            submission_handler_name = "apply_machine_options",
-            object = line.machine,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "machine_limit",
-                    change_handler_name = "handle_machine_limit_change",
-                    caption = {"fp.options_machine_limit"},
-                    tooltip = {"fp.options_machine_limit_tt"},
-                    text = line.machine.limit,  -- can be nil
-                    focus = true
-                },
-                {
-                    type = "on_off_switch",
-                    name = "force_limit",
-                    caption = {"fp.options_machine_force_limit"},
-                    tooltip = {"fp.options_machine_force_limit_tt"},
-                    state = line.machine.force_limit or false
-                }
-            }
-        }
-        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+    if action == "edit" then
+        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
 
     elseif action == "upgrade" or action == "downgrade" then
-        if Line.change_machine(line, player, nil, action) == false then
+        if Line.change_machine_by_action(line, player, action) == false then
             local direction_string = (action == "upgrade") and {"fp.upgraded"} or {"fp.downgraded"}
             local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, direction_string}
             title_bar.enqueue_message(player, message, "error", 1, true)
@@ -241,7 +106,7 @@ local function handle_machine_click(player, tags, action)
         end
 
     elseif action == "reset_to_default" then
-        Line.change_machine(line, player, nil, nil)  -- guaranteed to find something
+        Line.change_machine_to_default(line, player)  -- guaranteed to find something
         line.machine.limit = nil
         line.machine.force_limit = false
 
@@ -402,51 +267,6 @@ local function handle_item_click(player, tags, action)
     end
 end
 
-
-local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
-    local ui_state = data_util.get("ui_state", player)
-    local timescale = ui_state.context.subfactory.timescale
-
-    local view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory, 4, true)
-    local current_proto = line.machine.fuel.proto
-    local button_definitions = {}
-
-    local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
-      line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
-
-    for _, fuel_proto in pairs(applicable_prototypes) do
-        local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
-          fuel_proto.fuel_value, timescale)
-        local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-          fuel_proto, line.machine.count)  -- Raw processor call because we only have a prototype, no object
-
-        local category_id = global.all_fuels.map[fuel_proto.category]
-        local definition = {
-            element_id = category_id .. "_" .. fuel_proto.id,
-            sprite = fuel_proto.sprite,
-            button_number = amount,
-            localised_name = fuel_proto.localised_name,
-            amount_line = number_tooltip or "",
-            tooltip_appendage = data_util.get_attributes("fuels", fuel_proto),
-            selected = (current_proto.category == fuel_proto.category and current_proto.id == fuel_proto.id)
-        }
-        table.insert(button_definitions, definition)
-    end
-
-    return button_definitions
-end
-
-function GENERIC_HANDLERS.apply_fuel_choice(player, new_fuel_id_string, _)
-    local ui_state = data_util.get("ui_state", player)
-
-    local split_string = split_string(new_fuel_id_string, "_")
-    local new_fuel_proto = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
-
-    ui_state.modal_data.object.proto = new_fuel_proto
-    calculation.update(player, ui_state.context.subfactory)
-    main_dialog.refresh(player, "subfactory")
-end
-
 local function handle_fuel_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
@@ -457,26 +277,8 @@ local function handle_fuel_click(player, tags, action)
         modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, production_type="produce",
           add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
 
-    elseif action == "change" then
-        local applicable_prototypes = {}
-        -- Applicable fuels come from all categories that this burner supports
-        for category_name, _ in pairs(line.machine.proto.burner.categories) do
-            local category_id = global.all_fuels.map[category_name]
-            if category_id ~= nil then
-                for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-                    table.insert(applicable_prototypes, fuel_proto)
-                end
-            end
-        end
-
-        local modal_data = {
-            title = {"fp.pl_fuel", 1},
-            text = {"fp.chooser_fuel", line.machine.proto.localised_name},
-            click_handler_name = "apply_fuel_choice",
-            button_definitions = compile_fuel_chooser_buttons(player, line, applicable_prototypes),
-            object = fuel
-        }
-        modal_dialog.enter(player, {type="chooser", modal_data=modal_data})
+    elseif action == "change" then  -- fuel is changed through the machine dialog now
+        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
 
     elseif action == "recipebook" then
         data_util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
@@ -509,8 +311,7 @@ production_handler.gui_events = {
         {
             name = "act_on_line_machine",
             modifier_actions = {
-                change = {"left", {archive_open=false}},
-                set_limit = {"right", {archive_open=false, matrix_active=false}},
+                edit = {"right", {archive_open=false}},
                 upgrade = {"shift-left", {archive_open=false}},
                 downgrade = {"control-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},

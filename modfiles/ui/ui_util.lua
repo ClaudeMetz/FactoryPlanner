@@ -1,4 +1,4 @@
-mod_gui = require("mod-gui")
+local mod_gui = require("mod-gui")
 
 ui_util = {
     context = {},
@@ -48,6 +48,12 @@ function ui_util.toggle_mod_gui(player)
     else
         if mod_gui_button then mod_gui_button.destroy() end
     end
+end
+
+-- Destroys the toggle-main-dialog-button if present
+function ui_util.destroy_mod_gui(player)
+    local mod_gui_button = mod_gui.get_button_flow(player)["fp_button_toggle_interface"]
+    if mod_gui_button then mod_gui_button.destroy() end
 end
 
 
