@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - Refined the machine detection algorithm to pick up certain machines that should have been picked up
   Bugfixes:
     - Potentially fixed a crash when trying to put a machine into the cursor from Factory Planner
 
