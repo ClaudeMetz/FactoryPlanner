@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed some duplication with the Chinese localisation, which caused a crash on startup
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.33
