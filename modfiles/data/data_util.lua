@@ -16,9 +16,8 @@ local getter_functions = {
     flags = (function(index) return global.players[index].ui_state.flags end)
 }
 
-function data_util.get(name, player)  -- 'player' might be a player_index
-    local index = (type(player) == "number") and player or player.index
-    return getter_functions[name](index)
+function data_util.get(name, player)
+    return getter_functions[name](player.index)
 end
 
 
@@ -67,6 +66,11 @@ function data_util.execute_alt_action(player, action_type, data)
     if remote_action ~= nil and remote_action[action_type] then
         remote_actions[action_type](player, alt_action, data)
     end
+end
+
+-- Checks whether the given (internal) prototype can be blueprinted, else throws an error
+function data_util.is_entity_blueprintable(proto)
+    return (not game.entity_prototypes[proto.name].has_flag("not-blueprintable"))
 end
 
 -- Create a blueprint with the given entities and put it in the player's cursor

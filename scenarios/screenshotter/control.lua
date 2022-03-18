@@ -4,14 +4,37 @@ script.on_event(defines.events.on_game_created_from_scenario, function()
     game.autosave_enabled = false
 
     -- Excuse the stupid move naming, this has been a long process
+    -- (it totally doesn't correlate to the actual meanings in a sensible way)
     global.scene = 1
     global.shot = 1
     global.pause = 10
 
     global.setup = function() remote.call("factoryplanner", "execute_action", 1, "player_setup") end
+    global.dimensions = {}
 
     remote.call("factoryplanner", "initial_setup")  -- set up before the player is created
 end)
+
+
+remote.add_interface("screenshotter", {
+    return_dimensions = function(scene, dimensions)
+        global.dimensions[scene] = dimensions
+    end
+})
+
+local function write_metadata_file()
+    local frame_corners = {}
+
+    for scene, dimensions in pairs(global.dimensions) do
+        local location, size = dimensions.location, dimensions.actual_size
+        frame_corners[scene] = {
+            top_left = {x = location.x, y = location.y},
+            bottom_right = {x = location.x + size.width, y = location.y + size.height}
+        }
+    end
+
+    game.write_file("dimensions.json", game.table_to_json(frame_corners))
+end
 
 
 local scenes = {
@@ -56,7 +79,9 @@ script.on_event(defines.events.on_tick, function()
         end
 
         if global.scene > table_size(scenes) then
+            write_metadata_file()
             script.on_event(defines.events.on_tick, nil)
+            print("screenshotter_done")  -- let script know to kill Factorio
         end
     end
 end)

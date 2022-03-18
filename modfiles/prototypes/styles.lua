@@ -84,6 +84,17 @@ styles["fp_frame_bordered_stretch"] = {
     horizontally_stretchable = "on"
 }
 
+styles["fp_frame_module"] = {
+    type = "frame_style",
+    parent = "fp_frame_bordered_stretch",
+    padding = 8,
+    horizontal_flow_style = {
+        type = "horizontal_flow_style",
+        horizontal_spacing = 8,
+        vertical_align = "center"
+    }
+}
+
 styles["fp_frame_semitransparent"] = {
     type = "frame_style",
     graphical_set = {
@@ -222,6 +233,13 @@ styles["fp_button_fake_listbox_item_active"] = {
     default_vertical_offset = styles.button.selected_vertical_offset
 }
 
+-- Need custom style to get rid of the tooltip vanilla and thus flib includes
+styles["fp_button_slot_green"] = {
+    type = "button_style",
+    parent = "flib_tool_button_light_green",
+    tooltip = ""
+}
+
 -- Generate smaller versions of flib's slot buttons (size 36)
 for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink"} do
     styles["flib_slot_button_" .. color .. "_small"] = {
@@ -230,3 +248,78 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
         size = 36
     }
 end
+
+
+styles["fp_label_module_error"] = {
+    type = "label_style",
+    font = "heading-2",
+    padding = 2
+}
+
+
+styles["fp_slider_module"] = {
+    type = "slider_style",
+    parent = "notched_slider",
+    width = 130,
+    top_margin = 0,
+    right_margin = 6,
+    bottom_margin = 0,
+    left_margin = 6,
+}
+
+-- default_dirt is a global from __core__/prototypes/style.lua
+local thin_slider_shadow = util.merge{default_dirt, {top_outer_border_shift = 4, bottom_outer_border_shift = -4}}
+styles["fp_slider_module_none"] = {
+    type = "slider_style",
+    parent = "fp_slider_module",
+    notch = {
+        -- redirect it a bit to the right into transparent space
+        base = {position = {142, 200}, size = {4, 16}},
+    },
+    full_bar = {
+        base = {
+            left = {position = {56, 72}, size = {8, 8}},
+            right = {position = {65, 72}, size = {8, 8}},
+            center = {position = {64, 72}, size = {1, 8}},
+            left_top = {position = {112, 200}, size = {8, 8}},
+            top = {position = {142, 200}, size = {1, 8}},
+            right_top = {position = {112, 200}, size = {8, 8}},
+            left_bottom = {position = {112, 200}, size = {8, 8}},
+            bottom = {position = {142, 200}, size = {1, 8}},
+            right_bottom = {position = {112, 200}, size = {8, 8}},
+        },
+        shadow = thin_slider_shadow
+    },
+    full_bar_disabled = {
+        base = {
+            left = {position = {56, 80}, size = {8, 8}},
+            right = {position = {65, 80}, size = {8, 8}},
+            center = {position = {65, 80}, size = {1, 8}},
+            left_top = {position = {112, 200}, size = {8, 8}},
+            top = {position = {142, 200}, size = {1, 8}},
+            right_top = {position = {112, 200}, size = {8, 8}},
+            left_bottom = {position = {112, 200}, size = {8, 8}},
+            bottom = {position = {142, 200}, size = {1, 8}},
+            right_bottom = {position = {112, 200}, size = {8, 8}},
+        },
+        shadow = thin_slider_shadow
+    },
+    button = {
+        type = "button_style",
+        width = 12,
+        height = 17,
+        padding = 0,
+        default_graphical_set = {
+            base = {position = {142, 200}, size = {1, 1}},
+        },
+        hovered_graphical_set = {
+            base = {position = {142, 200}, size = {1, 1}},
+        },
+        clicked_graphical_set = {
+            base = {position = {142, 200}, size = {1, 1}},
+        },
+        disabled_graphical_set = {
+            base = {position = {142, 200}, size = {1, 1}},
+        },
+    }
+}

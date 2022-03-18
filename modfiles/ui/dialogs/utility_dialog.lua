@@ -79,16 +79,16 @@ function utility_structures.components(player, modal_data)
     local context = data_util.get("context", player)
     local modal_elements = modal_data.modal_elements
 
-    local button_blueprint = nil  -- catch for use at the very end of this function
     if modal_elements.components_box == nil then
         local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
           "components", true, true)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
-        button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
+        local button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
           caption={"fp.utility_blueprint"}, style="rounded_button", mouse_button_filter={"left"}}
         button_blueprint.style.size = {85, 26}
+        modal_elements.blueprint_button = button_blueprint
 
         local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
           style="rounded_button", mouse_button_filter={"left"}}
@@ -160,8 +160,8 @@ function utility_structures.components(player, modal_data)
     Subfactory.validate_item_request_proxy(subfactory)
 
     local any_missing_items = table_size(modal_data.missing_items) > 0
-    button_blueprint.enabled = any_missing_items
-    button_blueprint.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
+    modal_elements.blueprint_button.enabled = any_missing_items
+    modal_elements.blueprint_button.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
       or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}
 
     update_request_button(player, modal_data, subfactory)
@@ -194,7 +194,7 @@ local function handle_item_blueprinting(player, _, _)
         return
     end
 
-    local filter_limit = combinator_proto.filter_count or 100
+    local filter_limit = combinator_proto.item_slot_count
     local missing_items = data_util.get("modal_data", player).missing_items
 
     local blueprint_entities = {}
@@ -217,13 +217,12 @@ local function handle_item_blueprinting(player, _, _)
             current_filter_count = 0
         end
 
+        current_filter_count = current_filter_count + 1
         table.insert(current_combinator.control_behavior.filters, {
             signal = {type = 'item', name = proto_name},
             count = missing_amount,
-            index = current_filter_count + 1
+            index = current_filter_count
         })
-
-        current_filter_count = current_filter_count + 1
     end
 
 
@@ -236,7 +235,6 @@ local function handle_item_blueprinting(player, _, _)
 
     for index, entity in ipairs(blueprint_entities) do
         connect_if_entity_exists(entity, blueprint_entities[index-1])
-        connect_if_entity_exists(entity, blueprint_entities[index+1])
         if table_size(entity.connections[1].green) == 0 then entity.connections = nil end
     end
 

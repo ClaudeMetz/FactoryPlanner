@@ -88,6 +88,10 @@ function Floor.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end
 
+function Floor.get_all(self, class)
+    return Collection.get_all(self[class])
+end
+
 function Floor.get_in_order(self, class, reverse)
     return Collection.get_in_order(self[class], reverse)
 end
@@ -135,7 +139,9 @@ function Floor.get_component_data(self, component_table)
                 local ceil_total_amount = math.ceil(beacon.total_amount)
 
                 add_machine(beacon.proto, ceil_total_amount)
-                add_component(components.modules, beacon.module.proto, ceil_total_amount * beacon.module.amount)
+                for _, module in pairs(Beacon.get_all(beacon, "Module")) do
+                    add_component(components.modules, module.proto, ceil_total_amount * module.amount)
+                end
             end
         end
     end

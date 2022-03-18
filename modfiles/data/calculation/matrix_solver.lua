@@ -210,6 +210,23 @@ function matrix_solver.get_matrix_solver_metadata(subfactory_data)
     return result
 end
 
+function matrix_solver.transpose(m)
+    local transposed = {}
+
+    if #m == 0 then
+        return transposed
+    end
+
+    for i=1, #m[1] do
+        local row = {}
+        for j=1, #m do
+            table.insert(row, m[j][i])
+        end
+        table.insert(transposed, row)
+    end
+    return transposed
+end
+
 function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
     local num_rows = matrix_metadata.num_rows
     local num_cols = matrix_metadata.num_cols
@@ -231,14 +248,29 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
     end
     -- check which eliminated items could be made free while still retaining linear independence
     if #linearly_dependent_cols == 0 and num_cols < num_rows then
+        local matrix_data = matrix_solver.get_matrix_data(subfactory_data)
+        local items = matrix_data.rows
+        local col_to_item = {}
+        for k, v in pairs(items.map) do
+            col_to_item[v] = k
+        end
+
+        local t_matrix = matrix_solver.transpose(matrix_data.matrix)
+        table.remove(t_matrix)
+        matrix_solver.to_reduced_row_echelon_form(t_matrix)
+        local t_linearly_dependent = matrix_solver.find_linearly_dependent_cols(t_matrix, false)
+
         local eliminated_items = matrix_metadata.eliminated_items
+        local eliminated_keys = {}
         for _, eliminated_item in ipairs(eliminated_items) do
-            local curr_free_items = matrix_solver.shallowcopy(matrix_metadata.free_items)
-            table.insert(curr_free_items, eliminated_item)
-            linearly_dependent_cols = matrix_solver.run_matrix_solver(subfactory_data, true)
-            if next(linearly_dependent_cols) == nil then
-                local item_key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
-                allowed_free_items[item_key] = true
+            local key = matrix_solver.get_item_key(eliminated_item.type, eliminated_item.name)
+            eliminated_keys[key] = eliminated_item
+        end
+
+        for col, _ in pairs(t_linearly_dependent) do
+            local item = col_to_item[col]
+            if eliminated_keys[item] then
+                allowed_free_items[item] = true
             end
         end
     end
@@ -253,9 +285,7 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
     return result
 end
 
-
-function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
-    -- run through get_matrix_solver_metadata to check against recipe changes
+function matrix_solver.get_matrix_data(subfactory_data)
     local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
     local matrix_free_items = matrix_metadata.free_items
 
@@ -294,12 +324,60 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local columns = matrix_solver.get_mapping_struct(col_set)
     local matrix = matrix_solver.get_matrix(subfactory_data, rows, columns)
 
+    return {
+        matrix = matrix,
+        rows = rows,
+        columns = columns,
+        free_variables = free_variables,
+        matrix_free_items = matrix_free_items,
+    }
+end
+
+function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
+    -- run through get_matrix_solver_metadata to check against recipe changes
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local matrix_data = matrix_solver.get_matrix_data(subfactory_data)
+    local matrix = matrix_data.matrix
+    local columns = matrix_data.columns
+    local rows = matrix_data.rows
+    local free_variables = matrix_data.free_variables
+    local matrix_free_items = matrix_data.matrix_free_items
+
+    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
+    local all_items = subfactory_metadata.all_items
+
     --matrix_solver.print_rows(rows)
     --matrix_solver.print_columns(columns)
 
     local simplex = matrix_solver.do_simplex_algo(matrix, rows, columns)
 
     --matrix_solver.print_matrix(matrix)
+
+--[[ replaced by simplex solver
+    matrix_solver.to_reduced_row_echelon_form(matrix)
+    if check_linear_dependence then
+        local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix, true)
+        local linearly_dependent_variables = {}
+        for col, _ in pairs(linearly_dependent_cols) do
+            local col_name = columns.values[col]
+            local col_split_str = split_string(col_name, "_")
+            if col_split_str[1] == "line" then
+                local floor = subfactory_data.top_floor
+                for i=2, #col_split_str-1 do
+                    local line_table_id = col_split_str[i]
+                    floor = floor.lines[line_table_id].subfloor
+                end
+                local line_table_id = col_split_str[#col_split_str]
+                local line = floor.lines[line_table_id]
+                local recipe_id = line.recipe_proto.id
+                linearly_dependent_variables["recipe_"..recipe_id] = true
+            else -- item
+                linearly_dependent_variables[col_name] = true
+            end
+        end
+        return linearly_dependent_variables
+    end
+]]
 
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
@@ -678,80 +756,94 @@ function matrix_solver.set_to_ordered_list(s)
 end
 
 -- Contains the raw matrix solver. Converts an NxN+1 matrix to reduced row-echelon form.
+-- Based on the algorithm from octave: https://fossies.org/dox/FreeMat-4.2-Source/rref_8m_source.html
 function matrix_solver.to_reduced_row_echelon_form(m)
     local num_rows = #m
     if #m==0 then return m end
     local num_cols = #m[1]
 
-    -- BEGIN ECHELON FORM PART - this makes an upper triangular matrix with all leading 1s
+    -- set tolerance based on max value in matrix
+    local max_value = 0
+    for i = 1, num_rows do
+        for j = 1, num_cols do
+            if math.abs(m[i][j]) > max_value then
+                max_value = math.abs(m[i][j])
+            end
+        end
+    end
+    local tolerance = 1e-10 * max_value
+
     local pivot_row = 1
 
     for curr_col = 1, num_cols do
-        local first_nonzero_row = 0
-
-        -- check if curr_col has any zeros
-        for curr_row = pivot_row, num_rows do
-            if m[curr_row][curr_col] ~= 0 then
-                first_nonzero_row = curr_row
-                break
+        -- find row with highest value in curr col as next pivot
+        local max_pivot_index = pivot_row
+        local max_pivot_value = m[pivot_row][curr_col]
+        for curr_row = pivot_row+1, num_rows do -- does this need an if-wrapper?
+            local curr_pivot_value = math.abs(m[curr_row][curr_col])
+            if math.abs(m[curr_row][curr_col]) > math.abs(max_pivot_value) then
+                max_pivot_index = curr_row
+                max_pivot_value = curr_pivot_value
             end
         end
 
-        -- if all the cols are zero we do nothing
-        if first_nonzero_row ~= 0 then
-            -- swap pivot_row and first_nonzero_row
-            local temp = m[pivot_row]
-            m[pivot_row] = m[first_nonzero_row]
-            m[first_nonzero_row] = temp
+        if math.abs(max_pivot_value) < tolerance then
+            -- if highest value is approximately zero, set this row and all rows below to zero
+            for zero_row = pivot_row, num_rows do
+                m[zero_row][curr_col] = 0
+            end
+        else
+            -- swap current row with highest value row
+            for swap_col = curr_col, num_cols do
+                local temp = m[pivot_row][swap_col]
+                m[pivot_row][swap_col] = m[max_pivot_index][swap_col]
+                m[max_pivot_index][swap_col] = temp
+            end
 
-            -- divide the row so the first entry is 1
+            -- normalize pivot row
             local factor = m[pivot_row][curr_col]
-            for j = curr_col, num_cols do
-                m[pivot_row][j] = m[pivot_row][j] / factor
+            for normalize_col = curr_col, num_cols do
+                m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
             end
 
-            -- subtract from the remaining rows so their first entries are zero
-            for i = first_nonzero_row+1, num_rows do
-                factor = m[i][curr_col]
-                for j = curr_col, num_cols do
-                    m[i][j] = m[i][j] - m[pivot_row][j] * factor
-                    -- check rounding errors from floating point arthmetic
-                    if math.abs(m[i][j]) < 1e-10 then
-                        m[i][j] = 0
-                    end
+            -- find nonzero cols in this row for the elimination step
+            nonzero_pivot_cols = {}
+            for update_col = curr_col+1, num_cols do
+                curr_pivot_col_value = m[pivot_row][update_col]
+                if curr_pivot_col_value ~= 0 then
+                    nonzero_pivot_cols[update_col] = curr_pivot_col_value
                 end
             end
 
-            -- only add 1 if get another leading 1 row
-            pivot_row = pivot_row + 1
-        end
-    end
-    -- END ECHELON FORM PART
+            -- eliminate current column from other rows
+            for update_row = 1, pivot_row - 1 do
+                if m[update_row][curr_col] ~= 0 then
+                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
+                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*pivot_col_value
+                    end
+                    m[update_row][curr_col] = 0
+                end
+            end
+            for update_row = pivot_row+1, num_rows do
+                if m[update_row][curr_col] ~= 0 then
+                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
+                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*pivot_col_value
+                    end
+                    m[update_row][curr_col] = 0
+                end
+            end
 
-    -- BEGIN REDUCED ROW ECHELON FORM PART - this fills out the rest of the zeros in the upper part of the upper triangular matrix
-    for curr_row = 1, num_rows do
-        local first_nonzero_col = 0
-        for curr_col = 1, num_cols do
-            if m[curr_row][curr_col] == 1 then
-                first_nonzero_col = curr_col
+            -- only add 1 if there is another leading 1 row
+            pivot_row = pivot_row + 1
+
+            if pivot_row > num_rows then
                 break
             end
         end
-        -- if all the cols are zero we do nothing
-        if first_nonzero_col ~= 0 then
-            -- subtract curr_row from previous rows to make leading entry a 0
-            for i = 1, curr_row-1 do
-                local factor = m[i][first_nonzero_col]
-                for j = first_nonzero_col, num_cols do
-                    m[i][j] = m[i][j] - m[curr_row][j] * factor
-                end
-            end
-        end
     end
-    -- END REDUCED ROW ECHELON FORM PART
 end
 
-function matrix_solver.find_linearly_dependent_cols(matrix)
+function matrix_solver.find_linearly_dependent_cols(matrix, ignore_last)
     -- Returns linearly dependent columns from a row-reduced matrix
     -- Algorithm works as follows:
     -- For each column:
@@ -767,7 +859,10 @@ function matrix_solver.find_linearly_dependent_cols(matrix)
     -- I haven't proven this is 100% correct, this is just something I came up with
     local row_index = 1
     local num_rows = #matrix
-    local num_cols = #matrix[1]-1
+    local num_cols = #matrix[1]
+    if ignore_last then
+        num_cols = num_cols - 1
+    end
     local ones_map = {}
     local col_set = {}
     for col_index=1, num_cols do
@@ -1060,58 +1155,51 @@ local function FindLeaving(simplex, entering)
 end
 
 local function GaussianElimination(simplex, row, column)
-    local new_internal = {}
-    for row = 1, simplex.equation_count do
-        new_internal[row] = {}
-    end
-    local value = simplex.internal[row][column]
-    new_internal[row][column] = 1
-    for variable = 1, simplex.variable_count do
-        new_internal[row][variable] = simplex.internal[row][variable] / value
-        if math.abs(new_internal[row][variable]) < 1e-5 then
-            new_internal[row][variable] = 0
+    -- for [row, !column], divide by [row, column]
+    -- for [row, column], set = 1
+    -- for [!row, !column], subtract by [!row, column] * [row, !column]
+    -- for [!row, column], set = 0
+    -- NOTE:broken, skip rows that correspond to basic variables, except for the one that corresponds to "column"
+    -- skip columns where [row, X] is 0 (NEW)
+    local mat = simplex.internal
+    for c=1,simplex.variable_count+1 do
+        if c ~= column then
+            mat[row][c] = mat[row][c] / mat[row][column]
         end
     end
-    new_internal[row][simplex.variable_count+1] = simplex.internal[row][simplex.variable_count+1] / epsilon.convert(value)
-    epsilon.reduce_to_zero(new_internal[row][simplex.variable_count+1])
-    for equation = 1, simplex.equation_count do
-        if equation ~= row then
-            new_internal[equation][column] = 0
+    mat[row][column] = 1
+    local columns_to_loop_over = {}
+    for c = 1,simplex.variable_count do
+        if mat[row][c] ~= 0 and c ~= column then
+            table.insert(columns_to_loop_over, c)
         end
     end
-    for equation = 1, simplex.equation_count do repeat
-        if equation == row then
-            break
-        end
-        for variable = 1, simplex.variable_count do repeat
-            if variable == column then
-                break
+    for r=1,simplex.equation_count do
+        local t = mat[r] -- saves a bunch of table accesses
+        if r ~= row and t[column] ~= 0 then
+            for _,c in pairs(columns_to_loop_over) do
+                t[c] = (t[c] - (t[column] * mat[row][c]))
+                if math.abs(t[c]) < 1e-5 then
+                    t[c] = 0
+                end
             end
-            new_internal[equation][variable] = ((simplex.internal[equation][variable] 
-                                                   * simplex.internal[row][column]) 
-                                               - ( simplex.internal[row][variable] 
-                                                   * simplex.internal[equation][column])) 
-                                               / simplex.internal[row][column]
-            if math.abs(new_internal[equation][variable]) < 1e-5 then
-                new_internal[equation][variable] = 0
-            end
-        until true end
-        local variable = simplex.variable_count+1
-        new_internal[equation][variable] = ((simplex.internal[equation][variable] 
-                                               * epsilon.convert(simplex.internal[row][column])) 
-                                           - ( simplex.internal[row][variable] 
-                                               * epsilon.convert(simplex.internal[equation][column]))) 
-                                           / epsilon.convert(simplex.internal[row][column])
-        epsilon.reduce_to_zero(new_internal[equation][variable])
-    until true end
-    table.insert(new_internal, simplex.internal[simplex.equation_count+1])
-    simplex.internal = new_internal
+            local c = simplex.variable_count+1
+            t[c] = (t[c] - (t[column] * mat[row][c]))
+            epsilon.reduce_to_zero(t[c])
+        end
+    end
+    for r=1,simplex.equation_count do
+        if r~=row then
+            mat[r][column] = 0
+        end
+    end
 end
 
 local function DoSimplexAlgo(simplex)
     repeat
+        --matrix_solver.print_matrix(simplex.internal)
+        
         --[[
-        matrix_solver.print_matrix(simplex.internal)
         local s = "{"
         for i = 1,simplex.equation_count do
             s = s..tostring(simplex.basic_variables[i]).." "

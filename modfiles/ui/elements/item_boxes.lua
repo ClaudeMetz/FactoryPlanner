@@ -164,8 +164,52 @@ local function handle_item_button_click(player, tags, metadata)
             add_recipe(player, context, "byproduct", item.proto)
 
         elseif class == "Ingredient" then
-            add_recipe(player, context, "ingredient", item.proto)
+            if metadata.click == "left" then
+                add_recipe(player, context, "ingredient", item.proto)
+            elseif metadata.click == "right" then
+                -- Set the view state so that the amount shown in the dialog makes sense
+                view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
+
+                local modal_data = {
+                    title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
+                    text = {"fp.options_item_text", item.proto.localised_name},
+                    submission_handler_name = "scale_subfactory_by_ingredient_amount",
+                    object = item,
+                    fields = {
+                        {
+                            type = "numeric_textfield",
+                            name = "item_amount",
+                            caption = {"fp.options_item_amount"},
+                            tooltip = {"fp.options_subfactory_ingredient_amount_tt"},
+                            text = item.amount,
+                            width = 140,
+                            focus = true
+                        }
+                    }
+                }
+                modal_dialog.enter(player, {type="options", modal_data=modal_data})
+            end
         end
+    end
+end
+
+function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options, action)
+    if action == "submit" then
+        local ui_state = data_util.get("ui_state", player)
+        local item = ui_state.modal_data.object
+        local subfactory = item.parent
+
+        if options.item_amount then
+            -- The division is not pre-calculated to avoid precision errors in some cases
+            local current_amount, target_amount = item.amount, options.item_amount
+            for _, product in pairs(Subfactory.get_all(subfactory, "Product")) do
+                local requirement = product.required_amount
+                requirement.amount = requirement.amount * target_amount / current_amount
+            end
+        end
+
+        calculation.update(player, ui_state.context.subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 

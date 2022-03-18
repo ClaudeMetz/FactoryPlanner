@@ -146,14 +146,13 @@ end
 local function handle_gui_event(event)
     if not event.element then return end
 
-    -- Rai says this is very slow, but it isn't really if called it once per event
-    if event.element.tags.mod ~= "fp" then return end
+    local tags = event.element.tags
+    if tags.mod ~= "fp" then return end
 
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
     local event_table = gui_event_cache[event_name]
 
-    local tags = event.element.tags
     local action_name = tags[event_name]  -- could be nil
 
     local player, metadata = game.get_player(event.player_index), nil

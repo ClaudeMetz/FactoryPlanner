@@ -16,7 +16,8 @@ local function generate_metadata(player)
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
-        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
+        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true),
+        any_beacons_available = (table_size(global.all_beacons.map) > 0)
     }
 
     if preferences.tutorial_mode then
@@ -60,10 +61,10 @@ function builders.done(line, parent_flow, _)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     local sprite = (relevant_line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
-    local style = (relevant_line.done) and "flib_tool_button_light_green" or "flib_slot_default"
+    local style = (relevant_line.done) and "fp_button_slot_green" or "flib_slot_default"
 
     local button = parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="checkmark_line", line_id=line.id},
-      sprite=sprite, style=style, mouse_button_filter={"left"}}
+      sprite=sprite, style=style, mouse_button_filter={"left"}, tooltip=nil}
     button.style.size = 24
     button.style.padding = 0
 end
@@ -181,6 +182,8 @@ function builders.machine(line, parent_flow, metadata)
 end
 
 function builders.beacon(line, parent_flow, metadata)
+    -- Some mods might remove all beacons, in which case no beacon buttons should be added
+    if not metadata.any_beacons_available then return end
     -- Beacons only work on machines that have some allowed_effects
     if line.subfloor ~= nil or line.machine.proto.allowed_effects == nil then return end
 
@@ -211,15 +214,18 @@ function builders.beacon(line, parent_flow, metadata)
         local separator = parent_flow.add{type="line", direction="vertical"}
         separator.style.padding = {2, 0}
         separator.style.margin = {0, -2}
-        local module_proto, module_amount = beacon.module.proto, beacon.module.amount
 
-        -- Can use simplified number line because module amount is an integer
-        number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
-        tooltip = {"", module_proto.localised_name, number_line}
-        -- The above variables don't need to be-initialized
+        for _, module in ipairs(Beacon.get_in_order(beacon, "Module")) do
+            local module_proto, module_amount = module.proto, module.amount
 
-        parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
-          number=module_amount, style="flib_slot_button_default_small"}
+            -- Can use simplified number line because module amount is an integer
+            number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
+            tooltip = {"", module_proto.localised_name, number_line, module.effects_tooltip}
+            -- The above variables don't need to be initialized
+
+            parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
+              number=module_amount, style="flib_slot_button_default_small"}
+        end
     end
 end
 
@@ -241,7 +247,7 @@ function builders.products(line, parent_flow, metadata)
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
           product, nil, machine_count)
-        if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
+        if amount == "0" and line.subfloor then goto skip_product end  -- amount can't be -1 for products
 
         local style = "flib_slot_button_default_small"
         local indication_string, tutorial_tooltip = "", ""

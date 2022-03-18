@@ -2,11 +2,102 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.34
+Date: 16. 02. 2022
+  Bugfixes:
+    - Fixed some duplication with the Chinese localisation, which caused a crash on startup
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.33
+Date: 14. 02. 2022
+  Bugfixes:
+    - Fixed a crash on load with Nullius. Sorry about that!
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.32
+Date: 13. 02. 2022
+  Changes:
+    - Refined the machine detection algorithm to pick up certain machines that should have been picked up
+  Bugfixes:
+    - Potentially fixed a crash when trying to put a machine into the cursor from Factory Planner
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.31
+Date: 22. 12. 2021
+  Bugfixes:
+    - Fixed an issue where the mod would sometimes offer the incorrect machines for a recipe
+    - Fixed that the mod would create a small box in the top left corner of the screen in certain multiplayer situations
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.30
+Date: 09. 12. 2021
+  Features:
+    - Added the ability to specify an exact amount for top level ingredients, which adjusts the configured products accordingly. This is a band-aid way of enabling calculations by input rather than output. (thanks curiosity!)
+  Changes:
+    - Improved matrix solver algorithm to provide more stable results (thanks scottmsul!)
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.29
+Date: 04. 11. 2021
+  Bugfixes:
+    - Fixed that the priority product selection would be dropped when disabling a recipe line
+    - Fixed that recipes would show products with amount equal to 0 when they have a subfloor
+    - Fixed that the utility dialog combinator blueprint was limited to two machines per combinator
+    - Fixed that the buttons to check off line recipes would show a tooltip when it shouldn't
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.28
+Date: 29. 10. 2021
+  Bugfixes:
+    - Fixed a crash when trying to pipette a beacon from the Factory Planner interface
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.27
+Date: 24. 10. 2021
+  Features:
+    - Added the ability for beacons to have more than one type of module at once (huge thanks to curiosity!)
+  Bugfixes:
+    - Fixed a crash related to ingredient satisfaction and disabled recipes
+    - Fixed a crash when trying to add beacons while having the Satisfactorio mod active
+    - Fixed that the item picker would offer disabled/hidden belts
+    - Fixed a crash when opening the main interface while using the comfy scenario
+    - Potentially fixed a crash on startup in certain modded situations
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.26
+Date: 17. 10. 2021
+  Changes:
+    - Improved performance of the matrix solver determining valid free items (thanks RSBat!)
+  Bugfixes:
+    - Fixed a persistent crash on save load with the Nullius mod, sorry about that one
+    - Fixed that certain machines, fuels, belts and train wagons that should be hidden were shown
+    - Fixed that the player character would show up as a valid mining machine
+    - Fixed a crash when using the utility dialog blueprint functionality with a large subfactory
+    - Fixed that the auto-pause logic would touch the pause state in multiplayer when it really shouldn't
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.25
+Date: 25. 08. 2021
+  Changes:
+    - Added better support for the Satisfactorio mod (thanks PFQNiet!)
+  Bugfixes:
+    - Fixed a crash with temporarily archived subfactories being deleted
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.24
+Date: 24. 07. 2021
   Changes:
     - Updated the internal detection of recycling and barreling/stacking recipes to the current set of popular mods
   Bugfixes:
-    -
+    - Fixed a crash with the utility dialog
+    - Fixed a bug that prevent irrelevant free item choices being filtered out correctly
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.23

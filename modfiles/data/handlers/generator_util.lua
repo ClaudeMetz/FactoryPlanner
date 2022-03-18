@@ -286,12 +286,13 @@ end
 
 
 -- Determines whether the given recipe is a barreling or stacking one
--- Compatible with: 'base', 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions, 'Space Exploration'
+-- Compatible with: 'base', 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions, 'Space Exploration', 'Satisfactorio'
 local compacting_recipe_mods = {
     ["base"] = {"^fill%-.*", "^empty%-.*"},
     ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
-    ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"}
+    ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"},
+    ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"}
 }
 
 local active_compacting_recipe_mods = {}
@@ -312,13 +313,16 @@ end
 
 
 -- Determines whether this recipe is irrelevant or not and should thus be excluded
--- Compatible with: 'Klonan's Transport+Mining Drones', 'Deep Storage Unit'
+-- Compatible with: 'Klonan's Transport+Mining Drones', 'Deep Storage Unit', 'Satisfactorio'
 local irrelevant_recipe_categories = {
     ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
     ["Mining_Drones"] = {"mining-depot"},
     ["Deep_Storage_Unit"] = {"deep-storage-item", "deep-storage-fluid",
                              "deep-storage-item-big", "deep-storage-fluid-big",
-                             "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"}
+                             "deep-storage-item-mk2/3", "deep-storage-fluid-mk2/3"},
+    ["Satisfactorio"] = {"craft-bench", "equipment", "awesome-shop",
+                             "resource-scanner", "object-scanner", "building",
+                             "hub-progressing", "space-elevator", "mam"}
 }
 
 local irrelevant_recipe_categories_lookup = {}

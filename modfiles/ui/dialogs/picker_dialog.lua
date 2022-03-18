@@ -292,8 +292,9 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
+    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
-      tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters={{filter="type", type="transport-belt"}},
+      tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
       style="fp_sprite-button_inset_tiny"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
@@ -372,7 +373,6 @@ function picker_dialog.close(player, action)
     local subfactory = data_util.get("context", player).subfactory
     local item = modal_data.object
 
-    local refresh_scope = "subfactory"
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
@@ -380,6 +380,7 @@ function picker_dialog.close(player, action)
 
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
+        local refresh_scope = "subfactory"
         if item ~= nil then  -- ie. this is an edit
             item.required_amount = req_amount
         else
@@ -395,13 +396,13 @@ function picker_dialog.close(player, action)
             Subfactory.add(subfactory, top_level_item)  -- finally add the item to the subfactory
         end
 
-    elseif action == "delete" then
-        Subfactory.remove(subfactory, item)
-    end
-
-    if action ~= "cancel" then
         calculation.update(player, subfactory)
         main_dialog.refresh(player, refresh_scope)
+
+    elseif action == "delete" then
+        Subfactory.remove(subfactory, item)
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 

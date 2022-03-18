@@ -215,6 +215,8 @@ local function handle_machine_click(player, tags, metadata)
 
     elseif metadata.click == "left" then
         if metadata.alt then  -- set cursor to the current machine
+            if not data_util.is_entity_blueprintable(line.machine.proto) then return end
+
             local module_list = {}
             for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
                 module_list[module.proto.name] = module.amount
@@ -324,8 +326,13 @@ local function handle_beacon_click(player, tags, metadata)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if metadata.alt and metadata.click == "left" then
-        local beacon_module = line.beacon.module
-        local module_list = {[beacon_module.proto.name] = beacon_module.amount}
+        if not data_util.is_entity_blueprintable(line.beacon.proto) then return end
+
+        local module_list = {}
+        for _, module in pairs(Beacon.get_in_order(line.beacon, "Module")) do
+            module_list[module.proto.name] = module.amount
+        end
+
         local blueprint_entity = {
             entity_number = 1,
             name = line.beacon.proto.name,
@@ -453,7 +460,7 @@ local function compile_fuel_chooser_buttons(player, line, applicable_prototypes)
         local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine.proto.burner,
           fuel_proto.fuel_value, timescale)
         local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-          fuel_proto.type, line.machine.count)  -- Raw processor call because we only have a prototype, no object
+          fuel_proto, line.machine.count)  -- Raw processor call because we only have a prototype, no object
 
         local category_id = global.all_fuels.map[fuel_proto.category]
         local definition = {
