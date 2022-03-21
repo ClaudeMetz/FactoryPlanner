@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Potentially fixed an image scaling issue with the matrix solver dialog
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.34
