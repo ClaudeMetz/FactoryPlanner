@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.36
+Date: 21. 03. 2022
   Bugfixes:
     - Actually fixed the image scaling issue with the matrix solver, as the previous fix resulted in a crash instead
 
