@@ -32,7 +32,7 @@ local function refresh_item_category(modal_data, type)
         local button = table_items.add{type="sprite-button", sprite=proto.sprite, tooltip=proto.localised_name,
           tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index}, style="flib_slot_button_default",
           mouse_button_filter={"left"}}
-        button.style.stretch_image_to_widget_size = true
+        button.resize_to_sprite = false
     end
 end
 
