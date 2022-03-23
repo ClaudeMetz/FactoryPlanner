@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Actually actually fixed the stupid scaling issue, maybe
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.36
