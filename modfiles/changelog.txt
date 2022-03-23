@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.37
+Date: 23. 03. 2022
   Bugfixes:
     - Actually actually fixed the stupid scaling issue, maybe
 
