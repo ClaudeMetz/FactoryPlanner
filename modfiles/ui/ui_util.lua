@@ -109,6 +109,102 @@ function ui_util.format_number(number, precision)
     end
 end
 
+-- Formats given number to fixed number of significant digits based on icon size, using ceil rounding
+function ui_util.format_number_ceil(number)
+    if number == nil then return nil end
+
+    -- Set very small numbers to 0
+    if number < 0.0001 then
+        return 0
+    end
+
+    -- Figure out how many decimals we have
+    local base_decimals = math.floor(math.log10(number))
+    -- Example 1 for the sake of documentation: pretend our number is 23456.78912
+    -- base_decimals is math.floor(4.3702) = 4
+    -- Example 2 for the sake of documentation: pretend our number is 999.9
+    -- base_decimals is math.floor(2.99995656838) = 2
+
+    -- Visual example of the mapping we intend:
+    -- decimals = -2 ->  .0234567891  ->  0.1  (we just round up to 0.1)
+    -- decimals = -1 ->  .2345678912  ->  0.2  (one decimal of data)
+    -- decimals = 0  ->  2.345678912  ->  2.4  (two decimals of data)
+    -- decimals = 1  ->  23.45678912  ->  23.5 (three decimals of data)
+    -- decimals = 2  ->  234.5678912  ->  235  (three decimals of data)
+    -- decimals = 3  ->  2345.678912  ->  2.4k (two decimals of data)
+    -- decimals = 4  ->  23456.78912  ->  24k  (two decimals of data)
+    -- decimals = 5  ->  234567.8912  ->  235k (three decimals of data)
+    -- decimals = 6  ->  2345678.912  ->  2.4M (two decimals of data)
+    -- decimals = 7  ->  23456789.12  ->  24M  (two decimals of data)
+    -- decimals = 8  ->  234567891.2  ->  235M (three decimals of data)
+    -- tl;dr: hardcoded result if it's <-1, one decimal if it's <0, three decimals if it's in [1, 2) or if (it%3) is in [2, 3), otherwise two
+    local desired_decimals = 2
+    if base_decimals < -1 then
+        return "0.1"
+    elseif base_decimals < 0 then
+        desired_decimals = 1
+    elseif base_decimals == 1 or base_decimals % 3 == 2 then
+        desired_decimals = 3
+    end
+    -- Example 1: desired_decimals is 2
+    -- Example 2: desired_decimals is 3
+
+    -- Take the number, shove it down to our target, ceil it, and bring it back up
+    local shift = (10 ^ (math.floor(base_decimals) - desired_decimals + 1))
+    local shifted_number = number / shift
+    -- Example 1: shifted_number is 23456.78912 / (10 ^ (4 - 2 + 1)) = 23456.78912 / (10 ^ 3) =  23.45678912
+    -- Example 2: shifted_number is   999.9     / (10 ^ (2 - 3 + 1)) =   999.9     / (10 ^ 0) = 999.9
+
+    -- Add a slight magic number adjustment to compensate for floating-point inaccuracy
+    local ceiled_number = math.ceil(shifted_number - 0.00001)
+    -- Example 1: ceiled_number is   24
+    -- Example 2: ceiled_number is 1000
+
+    -- Uhoh, we have a problem! In `math.ceil()`, example 2 has now gained a digit.
+    -- But this is actually OK! It's gained a digit, but all digits aside from the first one are 0's.
+    -- Factorio's formatting code is going to just do the right thing here.
+
+    local returned_number = ceiled_number * shift
+    -- Example 1: returned_number is 24000
+    -- Example 2: returned_number is  1000
+
+    -- This is just to add a decimal at the end if it's not an actual perfect round (plus or minus an epsilon value)
+    if math.abs(number - returned_number) > 0.00001 then
+        returned_number = returned_number + 0.00001
+    end
+
+    return returned_number
+end
+
+local function format_number_tests()
+    local errlist = ""
+    local function check(input, expected)
+        local result = ui_util.format_number_ceil(input)
+        if math.abs(result - expected) > 0.000001 then -- less than the final adjustment value
+            errlist = errlist .. ("%f -> %f, should be %f\n"):format(input, result, expected)
+        end
+    end
+
+    check(0, 0)
+    check(0.1, 0.1)
+    check(0.08, 0.1)    -- doesn't get the added decimal addition because it drops out much earlier
+    check(0.002, 0.1)   -- doesn't get the added decimal addition because it drops out much earlier
+    check(23456.78912, 24000.00001)
+    check(1000, 1000)
+    check(3, 3)
+    check(2.99999, 3.00001)
+    check(3.5, 3.5)
+    check(3.56, 3.60001)
+    check(0.123, 0.20001)
+    check(999, 999)
+    check(999.9, 1000.00001)
+
+    if errlist ~= "" then
+        error(errlist)
+    end
+end
+format_number_tests()
+
 -- Returns string representing the given power
 function ui_util.format_SI_value(value, unit, precision)
     local prefixes = {"", "kilo", "mega", "giga", "tera", "peta", "exa", "zetta", "yotta"}
