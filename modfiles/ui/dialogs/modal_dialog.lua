@@ -5,10 +5,10 @@ require("utility_dialog")
 require("picker_dialog")
 require("recipe_dialog")
 require("matrix_dialog")
-require("modules_dialog")
 require("porter_dialog")
 require("subfactory_dialog")
 require("machine_dialog")
+require("beacon_dialog")
 
 modal_dialog = {}
 
@@ -177,8 +177,6 @@ function modal_dialog.enter(player, dialog_settings)
     local frame_modal_dialog = create_base_modal_dialog(player, dialog_settings, ui_state.modal_data)
     dialog_object.open(player, ui_state.modal_data)
     player.opened = frame_modal_dialog
-
-    if dialog_settings.force_auto_center then frame_modal_dialog.force_auto_center() end
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter

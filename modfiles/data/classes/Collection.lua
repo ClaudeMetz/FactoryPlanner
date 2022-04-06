@@ -12,30 +12,6 @@ function Collection.init(object_class)
     }
 end
 
--- lookup exists for internal purposes
-function Collection.clone(self, lookup)
-    lookup = lookup or {}
-    local new = {}
-    lookup[self] = new
-    for k, v in pairs(self) do
-        new[k] = lookup[v] or v
-    end
-    local datasets = new.datasets
-    local new_datasets = {}
-    local class_clone = _G[new.object_class].clone
-    if class_clone then
-        for k, v in pairs(datasets) do
-            new_datasets[k] = lookup[v] or class_clone(v, lookup)
-        end
-    else
-        for k, v in pairs(datasets) do
-            new_datasets[k] = lookup[v] or v
-        end
-    end
-    new.datasets = new_datasets
-    return new
-end
-
 
 -- Adds given object to the end of the collection
 function Collection.add(self, object)

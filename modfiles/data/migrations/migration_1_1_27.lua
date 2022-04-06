@@ -13,7 +13,9 @@ function migration.subfactory(subfactory)
             if beacon and beacon.module then
                 beacon.Module = Collection.init("Module")
                 beacon.module_count = 0
-                Beacon.add(beacon, beacon.module)
+                beacon.module.parent = beacon
+                Collection.add(beacon.Module, beacon.module)
+                beacon.module_count = beacon.module_count + beacon.module.amount
                 beacon.module = nil
             end
         end

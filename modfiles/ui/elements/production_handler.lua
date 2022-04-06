@@ -1,6 +1,11 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
+-- Checks whether the given (internal) prototype can be blueprinted
+local function is_entity_blueprintable(proto)
+    return (not game.entity_prototypes[proto.name].has_flag("not-blueprintable"))
+end
+
 local function handle_done_click(player, tags, _)
     local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -114,10 +119,10 @@ local function handle_machine_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "put_into_cursor" then
-        if not data_util.is_entity_blueprintable(line.machine.proto) then return end
+        if not is_entity_blueprintable(line.machine.proto) then return end
 
         local module_list = {}
-        for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+        for _, module in pairs(ModuleSet.get_in_order(line.machine.module_set)) do
             module_list[module.proto.name] = module.amount
         end
 
@@ -131,23 +136,6 @@ local function handle_machine_click(player, tags, action)
 
         data_util.create_cursor_blueprint(player, {blueprint_entity})
         main_dialog.toggle(player)
-    end
-end
-
-
-local function handle_module_click(player, tags, action)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local module = Machine.get(line.machine, "Module", tags.module_id)
-
-    if action == "edit" then
-        modal_dialog.enter(player, {type="module", modal_data={object=module, machine=line.machine}})
-
-    elseif action == "delete" then
-        Machine.remove(line.machine, module)
-        calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
     end
 end
 
@@ -166,10 +154,10 @@ local function handle_beacon_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "put_into_cursor" then
-        if not data_util.is_entity_blueprintable(line.beacon.proto) then return end
+        if not is_entity_blueprintable(line.beacon.proto) then return end
 
         local module_list = {}
-        for _, module in pairs(Beacon.get_in_order(line.beacon, "Module")) do
+        for _, module in pairs(ModuleSet.get_in_order(line.beacon.module_set)) do
             module_list[module.proto.name] = module.amount
         end
 
@@ -182,6 +170,30 @@ local function handle_beacon_click(player, tags, action)
 
         data_util.create_cursor_blueprint(player, {blueprint_entity})
         main_dialog.toggle(player)
+    end
+end
+
+
+local function handle_module_click(player, tags, action)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local parent_entity = line[tags.parent_type]
+
+    if action == "edit" then
+        modal_dialog.enter(player, {type=tags.parent_type, modal_data={object=parent_entity, line=line}})
+
+    elseif action == "delete" then
+        local module_set = parent_entity.module_set
+        local module = ModuleSet.get(module_set, tags.module_id)
+        ModuleSet.remove(module_set, module)
+
+        if parent_entity.class == "Beacon" and module_set.module_count == 0 then
+            Line.set_beacon(line, nil)
+        end
+
+        calculation.update(player, context.subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
@@ -320,21 +332,6 @@ production_handler.gui_events = {
             handler = handle_machine_click
         },
         {
-            name = "add_line_module",
-            handler = (function(player, tags, _)
-                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
-                modal_dialog.enter(player, {type="module", modal_data={object=nil, machine=line.machine}})
-            end)
-        },
-        {
-            name = "act_on_line_module",
-            modifier_actions = {
-                edit = {"right", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}}
-            },
-            handler = handle_module_click
-        },
-        {
             name = "add_line_beacon",
             handler = (function(player, tags, _)
                 local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
@@ -349,6 +346,14 @@ production_handler.gui_events = {
                 put_into_cursor = {"alt-left", {archive_open=false}}
             },
             handler = handle_beacon_click
+        },
+        {
+            name = "act_on_line_module",
+            modifier_actions = {
+                edit = {"right", {archive_open=false}},
+                delete = {"control-right", {archive_open=false}}
+            },
+            handler = handle_module_click
         },
         {
             name = "act_on_line_product",

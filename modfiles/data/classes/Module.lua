@@ -2,34 +2,34 @@
 Module = {}
 
 -- Initialised by passing a prototype from the all_moduless global table
-function Module.init(proto, amount)
-    return {
+function Module.init(proto, amount, parent)
+    local module = {
         proto = proto,
         amount = amount,
+        total_effects = nil,
         effects_tooltip = "",
         valid = true,
-        class = "Module"
+        class = "Module",
+        parent = parent
     }
-end
+    Module.summarize_effects(module)
 
--- lookup exists for internal purposes
-function Module.clone(self, lookup)
-    lookup = lookup or {}
-    local new = {}
-    lookup[self] = new
-    for k, v in pairs(self) do
-        new[k] = lookup[v] or v
-    end
-    return new
+    return module
 end
 
 
-function Module.change_amount(self, new_amount)
-    local amount_difference = new_amount - self.amount
+function Module.set_amount(self, new_amount)
     self.amount = new_amount
+    ModuleSet.normalize(self.parent, {})  -- adjust metadata
+end
 
-    self.parent.module_count = self.parent.module_count + amount_difference
-    Line.summarize_effects(self.parent.parent, true, false)
+function Module.summarize_effects(self)
+    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+    for name, effect in pairs(self.proto.effects) do
+        effects[name] = effect.bonus * self.amount
+    end
+    self.total_effects = effects
+    self.effects_tooltip = data_util.format_module_effects(effects, false)
 end
 
 
@@ -50,10 +50,12 @@ end
 function Module.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "modules", "category")
 
-    -- Check whether the module is still compatible with it's machine or beacon
+    -- Check whether the module is still compatible with its machine or beacon
     if self.valid and self.parent.valid then
-        _G[self.parent.class].check_module_compatibility(self.parent, self.proto)
+        self.valid = _G[self.parent.parent.class].check_module_compatibility(self.parent.parent, self.proto)
     end
+
+    if self.valid then Module.summarize_effects(self) end
 
     return self.valid
 end

@@ -22,6 +22,14 @@ end
 
 
 -- ** MISC **
+-- TODO This will be replaced with a non-stupid version
+function data_util.bad_beacon_clone(line)
+    local stupid_copy = Beacon.unpack(Beacon.pack(line.beacon))
+    stupid_copy.parent = line
+    Beacon.validate(stupid_copy)
+    return stupid_copy
+end
+
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string, refresh_interface)
     local context = data_util.get("context", player)
@@ -30,19 +38,6 @@ function data_util.add_subfactories_by_string(player, export_string, refresh_int
     ui_util.context.set_subfactory(player, first_subfactory)
     calculation.update(player, first_subfactory)
     if refresh_interface then main_dialog.refresh(player, "all") end
-end
-
--- Goes through every subfactory's top level products and updates their defined_by
-function data_util.update_all_product_definitions(player)
-    local player_table = data_util.get("table", player)
-
-    local defined_by = player_table.settings.belts_or_lanes
-    Factory.update_product_definitions(player_table.factory, defined_by)
-    Factory.update_product_definitions(player_table.archive, defined_by)
-
-    local subfactory = player_table.ui_state.context.subfactory
-    calculation.update(player, subfactory)
-    main_dialog.refresh(player, "subfactory")
 end
 
 -- Returns the attribute string for the given prototype
@@ -73,11 +68,6 @@ function data_util.open_in_recipebook(player, type, name)
     if message then title_bar.enqueue_message(player, message, "error", 1, true) end
 end
 
--- Checks whether the given (internal) prototype can be blueprinted, else throws an error
-function data_util.is_entity_blueprintable(proto)
-    return (not game.entity_prototypes[proto.name].has_flag("not-blueprintable"))
-end
-
 -- Create a blueprint with the given entities and put it in the player's cursor
 function data_util.create_cursor_blueprint(player, blueprint_entities)
     local script_inventory = game.create_inventory(1)
@@ -91,16 +81,14 @@ function data_util.create_cursor_blueprint(player, blueprint_entities)
 end
 
 -- Formats the given effects for use in a tooltip
-function data_util.format_module_effects(effects, multiplier, limit_effects)
+function data_util.format_module_effects(effects, limit_effects)
     local tooltip_lines, effect_applies = {""}, false
 
     for effect_name, effect_value in pairs(effects) do
-        if type(effect_value) == "table" then effect_value = effect_value.bonus end
-
         if effect_value ~= 0 then
             effect_applies = true
-
             local capped_indication = ""
+
             if limit_effects then
                 if effect_name == "productivity" and effect_value < 0 then
                     effect_value, capped_indication = 0, {"fp.effect_maxed"}
@@ -110,16 +98,16 @@ function data_util.format_module_effects(effects, multiplier, limit_effects)
             end
 
             -- Force display of either a '+' or '-', also round the result
-            local display_value = ("%+d"):format(math.floor((effect_value * multiplier * 100) + 0.5))
-            table.insert(tooltip_lines, {"fp.module_" .. effect_name, display_value, capped_indication})
+            local display_value = ("%+d"):format(math.floor((effect_value * 100) + 0.5))
+            table.insert(tooltip_lines, {"fp.effect_line", display_value, {"fp." .. effect_name}, capped_indication})
         end
     end
 
-    if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
+    if effect_applies then return {"fp.newline", tooltip_lines} else return "" end
 end
 
 -- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
--- To make it state-less, it needs its return values passed back as arguments
+-- To make it stateless, it needs its return values passed back as arguments
 -- Uses state to avoid needing to call table_size() because that function is slow
 function data_util.build_localised_string(strings_to_insert, current_table, next_index)
     current_table = current_table or {""}
@@ -138,7 +126,6 @@ function data_util.build_localised_string(strings_to_insert, current_table, next
 
     return current_table, next_index
 end
-
 
 function data_util.action_allowed(action_limitations, active_limitations)
     -- If a particular limitation is nil, it indicates that the action is allowed regardless
@@ -233,7 +220,7 @@ function data_util.porter.get_subfactories(export_string)
     end) then return nil, "migration_failure" end
 
     local import_factory = Factory.init()
-    if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that are too many slow pcalls
+    if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that's too many slow pcalls
         for _, packed_subfactory in pairs(export_table.subfactories) do
             local unpacked_subfactory = Subfactory.unpack(packed_subfactory)
 

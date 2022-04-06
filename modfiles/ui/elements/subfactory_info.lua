@@ -124,7 +124,7 @@ function subfactory_info.build(player)
     main_elements.subfactory_info["power_label"] = label_power_value
 
     local flow_pollution = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_pollution.add{type="label", caption={"fp.key_title", {"fp.u_pollution"}}}
+    flow_pollution.add{type="label", caption={"fp.key_title", {"fp.pollution"}}}
     local label_pollution_value = flow_pollution.add{type="label"}
     main_elements.subfactory_info["pollution_label"] = label_pollution_value
 

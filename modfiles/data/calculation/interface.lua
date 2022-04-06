@@ -54,9 +54,6 @@ local function generate_floor_data(player, subfactory, floor)
         lines = {}
     }
 
-    local mining_productivity = (subfactory.mining_productivity ~= nil) and
-      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
-
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
 
@@ -80,20 +77,10 @@ local function generate_floor_data(player, subfactory, floor)
                 line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product_proto  -- reference
                 line_data.machine_proto = line.machine.proto  -- reference
+                line_data.total_effects = line.total_effects  -- reference
 
                 -- Fuel prototype
                 if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
-
-                -- Total effects
-                if line.machine.proto.mining then
-                    -- If there is mining prod, a copy of the table is required
-                    local effects = fancytable.shallow_copy(line.total_effects)
-                    effects.productivity = effects.productivity + mining_productivity
-                    line_data.total_effects = effects
-                else
-                    -- If there's no mining prod, a reference will suffice
-                    line_data.total_effects = line.total_effects
-                end
 
                 -- Beacon total (can be calculated here, which is faster and simpler)
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then

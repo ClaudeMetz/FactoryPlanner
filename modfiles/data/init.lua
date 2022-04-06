@@ -1,14 +1,15 @@
 require("data.classes.Collection")
-require("data.classes.Item")
-require("data.classes.Fuel")
-require("data.classes.Recipe")
-require("data.classes.Machine")
-require("data.classes.Module")
-require("data.classes.Beacon")
 require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
+require("data.classes.Recipe")
+require("data.classes.Machine")
+require("data.classes.Beacon")
+require("data.classes.ModuleSet")
+require("data.classes.Module")
+require("data.classes.Item")
+require("data.classes.Fuel")
 
 require("data.handlers.generator")
 require("data.handlers.loader")
@@ -17,8 +18,6 @@ require("data.handlers.prototyper")
 require("data.handlers.screenshotter")
 
 require("data.calculation.interface")
-
-init = {}
 
 -- ** LOCAL UTIL **
 local function reload_settings(player)
@@ -191,6 +190,8 @@ local function global_init()
     global.nth_tick_events = {}
 
     -- Run through the prototyper without the need to apply (run) it on any player
+    global.tutorial_subfactory_validity = nil
+    global.installed_mods = nil
     prototyper.setup()
     prototyper.finish()
 
@@ -239,7 +240,7 @@ local function handle_configuration_change()
 end
 
 
--- ** TOP LEVEL EVENTS **
+-- ** TOP LEVEL **
 script.on_init(global_init)
 
 script.on_configuration_changed(handle_configuration_change)
@@ -247,7 +248,7 @@ script.on_configuration_changed(handle_configuration_change)
 script.on_load(loader.run)
 
 
--- ** PLAYER DATA EVENTS **
+-- ** PLAYER DATA **
 local function on_player_created(event)
     local player = game.get_player(event.player_index)
 
@@ -287,7 +288,15 @@ local function on_runtime_mod_setting_changed(event)
             main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
-            data_util.update_all_product_definitions(player)
+            local player_table = data_util.get("table", player)
+
+            -- Goes through every subfactory's top level products and updates their defined_by
+            local defined_by = player_table.settings.belts_or_lanes
+            Factory.update_product_definitions(player_table.factory, defined_by)
+            Factory.update_product_definitions(player_table.archive, defined_by)
+            local subfactory = player_table.ui_state.context.subfactory
+
+            calculation.update(player, subfactory)
             main_dialog.rebuild(player, false)
 
         end

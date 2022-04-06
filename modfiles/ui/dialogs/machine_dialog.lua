@@ -1,9 +1,9 @@
+require("ui.elements.module_configurator")
+
 machine_dialog = {}
 
 -- ** LOCAL UTIL **
-local choice_structures = {}
-
-function choice_structures.refresh_machine(player)
+local function refresh_machine_frame(player)
     local ui_state = data_util.get("ui_state", player)
     local line = ui_state.modal_data.line
 
@@ -45,7 +45,7 @@ function choice_structures.refresh_machine(player)
     end
 end
 
-function choice_structures.refresh_fuel(player)
+local function refresh_fuel_frame(player)
     local ui_state = data_util.get("ui_state", player)
     local line = ui_state.modal_data.line
 
@@ -99,31 +99,32 @@ local function refresh_limit_elements(player)
 end
 
 
-local function add_choices_row(player, type, table_choices)
-    local modal_elements = data_util.get("modal_elements", player)
+local function add_choices_frame(content_frame, modal_elements, type)
+    local frame_choices = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    local table_choices = frame_choices.add{type="table", column_count=3}
+    table_choices.style.horizontal_spacing = 20
+    table_choices.style.padding = {0, 0, -4, 0}
 
     local label = table_choices.add{type="label", caption={"fp.pu_" .. type, 1}}
     label.style.font = "heading-3"
 
     local flow = table_choices.add{type="flow", direction="horizontal"}
     local frame = flow.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
-    local table = frame.add{type="table", column_count=8, style="filter_slot_table"}
+    local table = frame.add{type="table", column_count=6, style="filter_slot_table"}
     modal_elements[type .. "_table"] = table
 
     if type == "fuel" then
         local label_info = flow.add{type="label", caption={"fp.machine_does_not_use_fuel"}}
-        label_info.style.padding = {10, -8}
+        label_info.style.padding = {10, -8}  -- make sure spacing stays the same when no fuel button is shown
         modal_elements["fuel_info_label"] = label_info
     end
-
-    choice_structures["refresh_" .. type](player)
 end
 
 local function add_limit_frame(content_frame, modal_elements)
     local frame_limit = content_frame.add{type="frame", direction="horizontal", style="fp_frame_bordered_stretch"}
     local table_limit = frame_limit.add{type="table", column_count=2}
     table_limit.style.horizontal_spacing = 20
-    table_limit.style.margin = {4, 0}
+    table_limit.style.padding = {6, 0, 2, 0}
     local flow_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
 
     local label_limit = flow_limit.add{type="label", caption={"fp.info_label", {"fp.machine_limit"}},
@@ -151,23 +152,24 @@ local function handle_machine_choice(player, tags, _)
     local machine_proto = global.all_machines.categories[machine_category_id].machines[tags.proto_id]
     Line.change_machine_to_proto(modal_data.line, player, machine_proto)
 
-    choice_structures.refresh_machine(player)
-    choice_structures.refresh_fuel(player)
+    refresh_machine_frame(player)
+    refresh_fuel_frame(player)
+    module_configurator.refresh_modules_flow(player)
     modal_data.refresh = true
 end
 
 local function handle_fuel_choice(player, tags, _)
     local modal_data = data_util.get("modal_data", player)
 
-    local split_string = split_string(tags.proto_id, "_")
-    local new_fuel_proto = global.all_fuels.categories[split_string[1]].fuels[split_string[2]]
+    local split_id = split_string(tags.proto_id, "_")
+    local new_fuel_proto = global.all_fuels.categories[split_id[1]].fuels[split_id[2]]
     modal_data.object.fuel.proto = new_fuel_proto
 
-    choice_structures.refresh_fuel(player)
+    refresh_fuel_frame(player)
     modal_data.refresh = true
 end
 
-local function machine_limit(player, _, event)
+local function change_machine_limit(player, _, event)
     local modal_data = data_util.get("modal_data", player)
     local machine = modal_data.object
 
@@ -178,7 +180,7 @@ local function machine_limit(player, _, event)
     modal_data.refresh = true
 end
 
-local function machine_force_limit(player, _, event)
+local function change_machine_force_limit(player, _, event)
     local modal_data = data_util.get("modal_data", player)
 
     local switch_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
@@ -191,9 +193,10 @@ end
 
 -- ** TOP LEVEL **
 machine_dialog.dialog_settings = (function(modal_data)
+    local recipe_name = modal_data.line.recipe.proto.localised_name
     return {
         caption = {"fp.two_word_title", {"fp.edit"}, {"fp.pl_machine", 1}},
-        subheader_text = {"fp.machine_dialog_description", modal_data.line.recipe.proto.localised_name},
+        subheader_text = {"fp.machine_dialog_description", recipe_name},
         create_content_frame = true
     }
 end)
@@ -201,28 +204,31 @@ end)
 function machine_dialog.open(player, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
+    content_frame.style.minimal_width = 400
 
-    modal_data.refresh = nil  -- set to true if anything about the machine is changed
+    modal_data.refresh = false  -- set to true if anything about the machine is changed
+    modal_data.module_set = modal_data.object.module_set
 
     -- Choices
-    local frame_choices = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    local table_choices = frame_choices.add{type="table", column_count=2}
-    table_choices.style.horizontal_spacing = 20
-    table_choices.style.vertical_spacing = 16
-    table_choices.style.top_margin = 4
-
-    add_choices_row(player, "machine", table_choices)
-    add_choices_row(player, "fuel", table_choices)
+    add_choices_frame(content_frame, modal_elements, "machine")
+    refresh_machine_frame(player)
+    add_choices_frame(content_frame, modal_elements, "fuel")
+    refresh_fuel_frame(player)
 
     -- Limit
     add_limit_frame(content_frame, modal_elements)
     refresh_limit_elements(player)
+
+    -- Modules
+    module_configurator.add_modules_flow(content_frame, modal_data)
+    module_configurator.refresh_modules_flow(player)
 end
 
 function machine_dialog.close(player, _)
     local ui_state = data_util.get("ui_state", player)
 
     if ui_state.modal_data.refresh then
+        ModuleSet.normalize(ui_state.modal_data.module_set, {sort=true, effects=true})
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "production")
     end
@@ -244,13 +250,13 @@ machine_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "machine_limit",
-            handler = machine_limit
+            handler = change_machine_limit
         }
     },
     on_gui_switch_state_changed = {
         {
             name = "machine_force_limit",
-            handler = machine_force_limit
+            handler = change_machine_force_limit
         }
     }
 }

@@ -11,7 +11,8 @@ function Line.init(recipe)
         percentage = (is_standalone_line) and 100 or nil,
         machine = nil,
         beacon = nil,
-        total_effects = nil,  -- initialized after a machine is set
+        total_effects = nil,
+        effects_tooltip = "",
         energy_consumption = 0,
         pollution = 0,
         Product = Collection.init("Item"),
@@ -78,15 +79,11 @@ function Line.is_machine_applicable(self, machine_proto)
     return (valid_ingredient_count and valid_input_channels and valid_output_channels)
 end
 
-
 -- Sets this line's machine to be the given prototype
 function Line.change_machine_to_proto(self, player, proto)
     if not self.machine then
-        self.machine = Machine.init(proto)
-        self.machine.parent = self
-
-        -- Initialize total_effects, now that the line has a machine
-        --Line.summarize_effects(self, false, false)
+        self.machine = Machine.init(proto, self)
+        ModuleSet.summarize_effects(self.machine.module_set)
     else
         self.machine.proto = proto
 
@@ -97,11 +94,8 @@ function Line.change_machine_to_proto(self, player, proto)
             self.machine.fuel = nil
         end
 
-        -- Adjust modules (ie. trim them if needed)
-        --Machine.normalize_modules(self.machine, false, true)
-
-        -- Adjust beacon (ie. remove if machine does not allow beacons)
-        --if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
+        ModuleSet.normalize(self.machine.module_set, {compatibility=true, trim=true, effects=true})
+        if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
     end
 
     -- Set the machine-fuel, if appropriate
@@ -168,60 +162,33 @@ function Line.change_machine_to_default(self, player)
 end
 
 
--- Sets the beacon appropriately, recalculating total_effects
 function Line.set_beacon(self, beacon)
     self.beacon = beacon  -- can be nil
 
-    if beacon then
+    if beacon ~= nil then
         self.beacon.parent = self
-        Beacon.trim_modules(self.beacon)
+        ModuleSet.normalize(self.beacon.module_set, {compatibility=true, trim=true, sort=true, effects=true})
+    else
+        Line.summarize_effects(self)
     end
-
-    Line.summarize_effects(self, false, true)
 end
 
 
--- Updates the line attribute containing the total module effects of this line (modules+beacons)
-function Line.summarize_effects(self, summarize_machine, summarize_beacon)
-    if self.subfloor ~= nil or self.machine == nil then return nil end
+function Line.summarize_effects(self)
+    local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
 
-    if summarize_machine then Machine.summarize_effects(self.machine) end
-    if summarize_beacon and self.beacon then Beacon.summarize_effects(self.beacon) end
-
-    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
-
-    local effects_table = {self.machine.total_effects}
-    if self.beacon then table.insert(effects_table, self.beacon.total_effects) end
-
-    for _, effect_table in pairs(effects_table) do
+    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+    for _, effect_table in pairs({self.machine.total_effects, beacon_effects}) do
         for name, effect in pairs(effect_table) do
-            module_effects[name] = module_effects[name] + effect
+            if name == "base_prod" then
+                effects["productivity"] = effects["productivity"] + effect
+            else
+                effects[name] = effects[name] + effect
+            end
         end
     end
-
-    self.total_effects = module_effects
-
-    -- The effects tooltip is saved on the machine, but includes all possible effects
-    self.machine.effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
-end
-
--- Returns the total effects influencing this line, including mining productivity
-function Line.get_total_effects(self, player)
-    local effects = fancytable.shallow_copy(self.total_effects)
-
-    -- Add mining productivity, if applicable
-    local mining_productivity = 0
-    if self.machine.proto.mining then
-        local subfactory = self.parent.parent
-        if subfactory.mining_productivity ~= nil then
-            mining_productivity = (subfactory.mining_productivity / 100)
-        else
-            mining_productivity = player.force.mining_drill_productivity_bonus
-        end
-    end
-    effects.productivity = effects.productivity + mining_productivity
-
-    return effects
+    self.total_effects = effects
+    self.effects_tooltip = data_util.format_module_effects(effects, true)
 end
 
 
@@ -264,7 +231,7 @@ function Line.unpack(packed_self)
 
     self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
     if self.beacon then self.beacon.parent = self end
-    -- Effects are summarized by the ensuing validation
+    -- Effects summarized by the ensuing validation
 
     -- The prototype will be automatically unpacked by the validation process
     self.priority_product_proto = packed_self.priority_product_proto
@@ -293,7 +260,7 @@ function Line.validate(self)
               and self.valid
         end
 
-        if self.valid then Line.summarize_effects(self, false, false) end
+        -- Effects summarized by machine/beacon validation
     end
 
     return self.valid
@@ -319,15 +286,15 @@ function Line.repair(self, player)
         end
 
         if self.valid and self.beacon and not self.beacon.valid then
-            -- Repairing a beacon always either fixes or removes it, so no influence on validity
-            Beacon.repair(self.beacon, nil)
+            -- Repairing a beacon always either fixes or gets it removed, so no influence on validity
+            if not Beacon.repair(self.beacon, nil) then self.beacon = nil end
         end
 
         if self.valid and self.priority_product_proto and self.priority_product_proto.simplified then
             self.priority_product_proto = nil
         end
 
-        if self.valid then Line.summarize_effects(self, false, false) end
+        -- effects summarized by machine/beacon repair
     end
 
     -- Clear item prototypes so we don't need to rely on the solver to remove them

@@ -4,7 +4,7 @@ Subfactory = {}
 function Subfactory.init(name)
     local subfactory = {
         name = name,
-        timescale = nil,  -- needs to be set after init
+        timescale = nil,  -- set after init
         energy_consumption = 0,
         pollution = 0,
         notes = "",
@@ -101,7 +101,7 @@ end
 function Subfactory.get_component_data(self)
     local components = {machines={}, modules={}}
 
-    for _, floor in pairs(Floor.get_in_order(self, "Floor")) do
+    for _, floor in pairs(Subfactory.get_in_order(self, "Floor")) do
         -- Relies on the floor-function to do the heavy lifting
         Floor.get_component_data(floor, components)
     end

@@ -5,9 +5,10 @@ Date: 00. 00. 0000
     - Subfactory names now support rich text, making them be not restricted to a single icon anymore if desired
     - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
   Changes:
-    - Added dedicated buttons to move subfactories and recipe up and down, making the interaction more discoverable and easier to use
+    - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
     - Combined the various machine dialogs (chooser, limits, modules, fuel) into one
-    - Reordered the subfactory list buttons to make more sense by grouping the archive-related ones
+    - Unified the interactions on machine and beacon modules
+    - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
     - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
     - Re-architected the way button clicks are handled, making tutorial tooltips both more accurate and prettier
     - Removed mod interactions with FNEI and WIIRUF, meaning alt-clicking items or recipes will now only open them in Recipe Book, if possible
