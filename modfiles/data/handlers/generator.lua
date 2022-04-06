@@ -393,7 +393,8 @@ function generator.all_machines()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil then
+        if (not proto.has_flag("hidden") or proto.has_flag("player-creation")) and
+          proto.crafting_categories and proto.energy_usage ~= nil then
             for category, _ in pairs(proto.crafting_categories) do
                 local machine = generate_category_entry(category, proto)
                 generator_util.data_structure.insert(machine)
@@ -495,10 +496,10 @@ function generator.machines_second_pass()
         used_category_names[recipe_proto.category] = true
     end
 
-    local unused_categories = {}
+    local unused_category_names = {}
     for _, category in pairs(NEW.all_machines.categories) do
         if not used_category_names[category.name] then
-            table.insert(unused_categories, category.name)
+            unused_category_names[category.name] = true
         end
     end
 
@@ -521,12 +522,12 @@ function generator.machines_second_pass()
 
         -- If the category ends up empty because of this, make sure to remove it
         if table_size(machine_category.machines) == 0 then
-            table.insert(unused_categories, machine_category.name)
+            unused_category_names[machine_category.name] = true
         end
     end
 
     -- Finally actually remove unused categories
-    for _, category_name in pairs(unused_categories) do
+    for category_name, _ in pairs(unused_category_names) do
         remove_mapped_element(NEW.all_machines, "categories", category_name)
     end
 
