@@ -217,8 +217,7 @@ end
 -- ** TOP LEVEL **
 preferences_dialog.dialog_settings = (function(_) return {
     caption = {"fp.preferences"},
-    create_content_frame = false,
-    force_auto_center = true
+    create_content_frame = false
 } end)
 
 function preferences_dialog.open(player, modal_data)

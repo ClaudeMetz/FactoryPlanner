@@ -144,7 +144,7 @@ end
 function attribute_generators.machines(machine)
     return {"", {"fp.crafting_speed"}, ": " .. ui_util.format_number(machine.speed, 4) .. "\n",
            {"fp.energy_consumption"}, ": ", ui_util.format_SI_value(machine.energy_usage * 60, "W", 3), "\n",
-           {"fp.u_pollution"}, ": ", ui_util.format_SI_value((machine.energy_usage * (machine.emissions * 60)) * 60,
+           {"fp.pollution"}, ": ", ui_util.format_SI_value((machine.energy_usage * (machine.emissions * 60)) * 60,
              "P/m", 3), "\n",
            {"fp.module_slots"}, ": " .. machine.module_limit}
 end

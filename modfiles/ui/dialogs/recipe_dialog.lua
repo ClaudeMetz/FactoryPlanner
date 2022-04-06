@@ -122,12 +122,10 @@ local function attempt_adding_line(player, recipe_id)
         local secondary_module = mb_defaults.machine_secondary
 
         if machine_module and Machine.check_module_compatibility(line.machine, machine_module) then
-            local new_module = Module.init(machine_module, line.machine.proto.module_limit)
-            Machine.add(line.machine, new_module)
+            ModuleSet.add(line.machine.module_set, machine_module, line.machine.proto.module_limit)
 
         elseif secondary_module and Machine.check_module_compatibility(line.machine, secondary_module) then
-            local new_module = Module.init(secondary_module, line.machine.proto.module_limit)
-            Machine.add(line.machine, new_module)
+            ModuleSet.add(line.machine.module_set, secondary_module, line.machine.proto.module_limit)
 
         -- Only show an error if any module default is actually set
         elseif machine_module and message == nil then  -- don't overwrite previous message, if it exists
@@ -142,9 +140,7 @@ local function attempt_adding_line(player, recipe_id)
             local blank_beacon = Beacon.init(beacon_proto, beacon_count, nil, line)
 
             if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
-                local module = Module.init(beacon_module_proto, beacon_proto.module_limit)
-                Beacon.add(blank_beacon, module)
-
+                ModuleSet.add(blank_beacon.module_set, beacon_module_proto, beacon_proto.module_limit)
                 Line.set_beacon(line, blank_beacon)
 
             elseif message == nil then  -- don't overwrite previous message, if it exists
@@ -290,8 +286,7 @@ recipe_dialog.dialog_settings = (function(modal_data) return {
     subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
       modal_data.product_proto.localised_name},
     search_handler_name = "apply_recipe_filter",
-    create_content_frame = true,
-    force_auto_center = true
+    create_content_frame = true
 } end)
 
 -- Checks whether the dialog needs to be created at all

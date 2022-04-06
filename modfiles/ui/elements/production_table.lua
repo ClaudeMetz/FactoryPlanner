@@ -6,13 +6,10 @@ local function generate_metadata(player)
     local preferences = data_util.get("preferences", player)
 
     local subfactory = ui_state.context.subfactory
-    local mining_productivity = (subfactory.mining_productivity ~= nil) and
-      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
     local metadata = {
         archive_open = (ui_state.flags.archive_open),
         matrix_solver_active = (subfactory.matrix_free_items ~= nil),
-        mining_productivity = mining_productivity,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
@@ -26,8 +23,8 @@ local function generate_metadata(player)
 
         metadata.recipe_tutorial_tt = generate("act_on_line_recipe", limitations, true)
         metadata.machine_tutorial_tt = generate("act_on_line_machine", limitations, false)
-        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, false)
         metadata.beacon_tutorial_tt = generate("act_on_line_beacon", limitations, false)
+        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, false)
         metadata.product_tutorial_tt = generate("act_on_line_product", limitations, true)
         metadata.byproduct_tutorial_tt = generate("act_on_line_byproduct", limitations, true)
         metadata.ingredient_tutorial_tt = generate("act_on_line_ingredient", limitations, true)
@@ -36,6 +33,19 @@ local function generate_metadata(player)
 
     return metadata
 end
+
+local function add_module_flow(parent_flow, line, parent_type, metadata)
+    for _, module in ipairs(ModuleSet.get_in_order(line[parent_type].module_set)) do
+        local number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
+        local tooltip = {"", module.proto.localised_name, number_line, module.effects_tooltip,
+          metadata.module_tutorial_tt}
+
+        parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_module", line_id=line.id,
+          parent_type=parent_type, module_id=module.id}, sprite=module.proto.sprite, tooltip=tooltip,
+          number=module.amount, style="flib_slot_button_default_small", mouse_button_filter={"left-and-right"}}
+    end
+end
+
 
 -- ** BUILDERS **
 local builders = {}
@@ -92,7 +102,7 @@ function builders.recipe(line, parent_flow, metadata)
         end
     end
 
-    local tooltip = {"", recipe_proto.localised_name, indication, tutorial_tooltip}
+    local tooltip = {"", recipe_proto.localised_name, indication, line.effects_tooltip, tutorial_tooltip}
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id},
       enabled=enabled, sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
@@ -143,41 +153,18 @@ function builders.machine(line, parent_flow, metadata)
         end
 
         local machine_proto = line.machine.proto
-        local effects_tooltip = line.machine.effects_tooltip
-        if machine_proto.mining then  -- Dynamically generate effects tooltip to include mining productivity
-            local module_effects = fancytable.shallow_copy(line.total_effects)
-            module_effects.productivity = module_effects.productivity + metadata.mining_productivity
-            effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
-        end
-
         local plural_parameter = (machine_count == "1") and 1 or 2
         local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
         local tutorial_tooltip = metadata.machine_tutorial_tt
-        local tooltip = {"", machine_proto.localised_name, number_line, indication, effects_tooltip, tutorial_tooltip}
+        local tooltip = {"", machine_proto.localised_name, number_line, indication, line.machine.effects_tooltip,
+          tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_machine", line_id=line.id},
           style=style, sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip,
           mouse_button_filter={"left-and-right"}}
 
-        -- Modules - can only be added to machines that have any module slots
-        if machine_proto.module_limit == 0 then return end
-
-        for _, module in ipairs(Machine.get_in_order(line.machine, "Module")) do
-            number_line = {"fp.newline", {"fp.two_word_title", module.amount, {"fp.pl_module", module.amount}}}
-            tooltip = {"", module.proto.localised_name, number_line, module.effects_tooltip,
-              metadata.module_tutorial_tt}
-            -- The above variables don't need to be-initialized
-
-            parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_module", line_id=line.id,
-              module_id=module.id}, sprite=module.proto.sprite, tooltip=tooltip, number=module.amount,
-              style="flib_slot_button_default_small", mouse_button_filter={"left-and-right"}}
-        end
-
-        if Machine.empty_slot_count(line.machine) > 0 then
-            parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="add_line_module", line_id=line.id},
-              sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_module"},
-              enabled=(not metadata.archive_open), mouse_button_filter={"left"}}
-        end
+        -- Modules
+        add_module_flow(parent_flow, line, "machine", metadata)
     end
 end
 
@@ -190,14 +177,14 @@ function builders.beacon(line, parent_flow, metadata)
     local beacon = line.beacon
     if beacon == nil then
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="add_line_beacon", line_id=line.id},
-            sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacon"},
-            mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+          sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacon"},
+          mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
     else
         -- Beacon
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"fp.newline", {"fp.two_word_title", beacon.amount, {"fp.pl_beacon", plural_parameter}}}
         local indication = (beacon.total_amount) and
-            {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
+          {"fp.newline", {"fp.notice", {"fp.beacon_total_indication", beacon.total_amount}}} or ""
         local tooltip = {"", beacon.proto.localised_name, number_line, indication, beacon.effects_tooltip,
           metadata.beacon_tutorial_tt}
 
@@ -210,24 +197,14 @@ function builders.beacon(line, parent_flow, metadata)
             sprite_overlay.ignored_by_interaction = true
         end
 
-        -- Module
-        for _, module in ipairs(Beacon.get_in_order(beacon, "Module")) do
-            local module_proto, module_amount = module.proto, module.amount
-
-            -- Can use simplified number line because module amount is an integer
-            number_line = {"fp.newline", {"fp.two_word_title", module_amount, {"fp.pl_module", module_amount}}}
-            tooltip = {"", module_proto.localised_name, number_line, module.effects_tooltip}
-            -- The above variables don't need to be initialized
-
-            parent_flow.add{type="sprite-button", sprite=module_proto.sprite, tooltip=tooltip, enabled=false,
-              number=module_amount, style="flib_slot_button_default_small"}
-        end
+        -- Modules
+        add_module_flow(parent_flow, line, "beacon", metadata)
     end
 end
 
 function builders.power(line, parent_flow, metadata)
     local pollution_line = (metadata.pollution_column) and ""
-      or {"fp.newline", {"fp.name_value", {"fp.u_pollution"}, ui_util.format_SI_value(line.pollution, "P/m", 5)}}
+      or {"fp.newline", {"fp.name_value", {"fp.pollution"}, ui_util.format_SI_value(line.pollution, "P/m", 5)}}
     parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
       tooltip={"", ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
 end
@@ -372,7 +349,7 @@ local all_production_columns = {
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
-    {name="pollution", caption={"fp.u_pollution"}, alignment="center"},
+    {name="pollution", caption={"fp.pollution"}, alignment="center"},
     {name="products", caption={"fp.pu_product", 2}, alignment="left"},
     {name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
     {name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},

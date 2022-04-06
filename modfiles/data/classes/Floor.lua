@@ -127,10 +127,11 @@ function Floor.get_component_data(self, component_table)
     -- would mean the subfactory machine total is equal to the floor total of the top floor
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
         if line.subfloor == nil then
-            local ceil_machine_count = math.ceil(line.machine.count)
+            local machine = line.machine
+            local ceil_machine_count = math.ceil(machine.count)
 
-            add_machine(line.machine.proto, ceil_machine_count)
-            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+            add_machine(machine.proto, ceil_machine_count)
+            for _, module in pairs(ModuleSet.get_in_order(machine.module_set)) do
                 add_component(components.modules, module.proto, ceil_machine_count * module.amount)
             end
 
@@ -139,7 +140,7 @@ function Floor.get_component_data(self, component_table)
                 local ceil_total_amount = math.ceil(beacon.total_amount)
 
                 add_machine(beacon.proto, ceil_total_amount)
-                for _, module in pairs(Beacon.get_all(beacon, "Module")) do
+                for _, module in pairs(ModuleSet.get_all(beacon.module_set)) do
                     add_component(components.modules, module.proto, ceil_total_amount * module.amount)
                 end
             end
