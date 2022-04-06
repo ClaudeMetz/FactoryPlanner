@@ -27,6 +27,11 @@ function ModuleSet.remove(self, dataset)
     ModuleSet.normalize(self, {})  -- adjust metadata
 end
 
+function ModuleSet.clear(self)
+    self.modules = Collection.clear(self.modules)
+    ModuleSet.normalize(self, {})  -- adjust metadata
+end
+
 
 function ModuleSet.get(self, dataset_id)
     return Collection.get(self.modules, dataset_id)
