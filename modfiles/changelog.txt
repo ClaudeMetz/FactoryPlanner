@@ -25,7 +25,45 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.37
+Date: 23. 03. 2022
+  Bugfixes:
+    - Actually actually fixed the stupid scaling issue, maybe
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.36
+Date: 21. 03. 2022
+  Bugfixes:
+    - Actually fixed the image scaling issue with the matrix solver, as the previous fix resulted in a crash instead
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.35
+Date: 21. 03. 2022
+  Bugfixes:
+    - Potentially fixed an image scaling issue with the matrix solver dialog
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.34
+Date: 16. 02. 2022
+  Bugfixes:
+    - Fixed some duplication with the Chinese localisation, which caused a crash on startup
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.33
+Date: 14. 02. 2022
+  Bugfixes:
+    - Fixed a crash on load with Nullius. Sorry about that!
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.32
+Date: 13. 02. 2022
+  Changes:
+    - Refined the machine detection algorithm to pick up certain machines that should have been picked up
   Bugfixes:
     - Potentially fixed a crash when trying to put a machine into the cursor from Factory Planner
 
