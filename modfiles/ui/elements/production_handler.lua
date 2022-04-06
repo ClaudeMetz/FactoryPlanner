@@ -114,9 +114,11 @@ local function handle_machine_click(player, tags, action)
         Line.change_machine_to_default(line, player)  -- guaranteed to find something
         line.machine.limit = nil
         line.machine.force_limit = false
+        local message = Line.apply_mb_defaults(line, player)
 
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
+        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, true) end
 
     elseif action == "put_into_cursor" then
         if not is_entity_blueprintable(line.machine.proto) then return end

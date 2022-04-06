@@ -167,10 +167,50 @@ function Line.set_beacon(self, beacon)
 
     if beacon ~= nil then
         self.beacon.parent = self
-        ModuleSet.normalize(self.beacon.module_set, {compatibility=true, trim=true, sort=true, effects=true})
+        ModuleSet.normalize(self.beacon.module_set, {sort=true, effects=true})
     else
         Line.summarize_effects(self)
     end
+end
+
+
+function Line.apply_mb_defaults(self, player)
+    ModuleSet.clear(self.machine.module_set)
+    Line.set_beacon(self, nil)
+
+    local mb_defaults = data_util.get("preferences", player).mb_defaults
+    local machine_module, secondary_module = mb_defaults.machine, mb_defaults.machine_secondary
+    local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
+    local message = nil
+
+    if machine_module and Machine.check_module_compatibility(self.machine, machine_module) then
+        ModuleSet.add(module_set, machine_module, module_limit)
+
+    elseif secondary_module and Machine.check_module_compatibility(self.machine, secondary_module) then
+        ModuleSet.add(module_set, secondary_module, module_limit)
+
+    elseif machine_module then  -- only show an error if any module default is actually set
+        message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
+    end
+    ModuleSet.summarize_effects(self.machine.module_set)
+
+    -- Add default beacon modules, if desired by the user
+    local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
+    local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
+
+    if beacon_module_proto ~= nil and beacon_count ~= nil then
+        local blank_beacon = Beacon.init(beacon_proto, beacon_count, nil, self)
+
+        if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
+            ModuleSet.add(blank_beacon.module_set, beacon_module_proto, beacon_proto.module_limit)
+            Line.set_beacon(self, blank_beacon)  -- summarizes effects on its own
+
+        elseif message == nil then  -- don't overwrite previous message, if it exists
+            message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, type="warning"}
+        end
+    end
+
+    return message
 end
 
 
