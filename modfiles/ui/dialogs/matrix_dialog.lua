@@ -43,6 +43,7 @@ local function create_item_category(modal_data, type, label_arg)
       {"fp.matrix_constrained_items", label_arg, {"fp.pl_item", label_arg}}
     local label_title = flow_category.add{type="label", caption=title_string}
     label_title.style.font = "heading-2"
+    label_title.style.single_line = false
 
     local frame_items = flow_category.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
     local table_items = frame_items.add{type="table", column_count=8, style="filter_slot_table"}
