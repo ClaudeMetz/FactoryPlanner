@@ -1,15 +1,3 @@
--- ** UTIL **
--- No better place for this too simple, yet too specific function anywhere else
-function split_string(s, separator)
-    local split_string = {}
-    for token in string.gmatch(s, "[^" .. separator .. "]+") do
-        table.insert(split_string, (tonumber(token) or token))
-    end
-    return split_string
-end
-
-
--- ** LLOG **
 -- Internally used logging function for a single table
 local function _llog(table_to_print)
     local excludes = LLOG_EXCLUDES or {}  -- Optional custom excludes defined by the parent mod

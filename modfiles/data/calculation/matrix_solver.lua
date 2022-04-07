@@ -27,6 +27,15 @@ If a recipe has loops, typically the user needs to make voids or free variables.
 
 matrix_solver = {}
 
+local function split_string(s, separator)
+    local result = {}
+    for token in string.gmatch(s, "[^" .. separator .. "]+") do
+        table.insert(result, (tonumber(token) or token))
+    end
+    return result
+end
+
+
 function matrix_solver.get_recipe_protos(recipe_ids)
     local recipe_protos = {}
     for i, recipe_id in ipairs(recipe_ids) do

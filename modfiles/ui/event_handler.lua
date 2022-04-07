@@ -37,7 +37,7 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
 
     for modifier_click, modifier_action in pairs(modifier_actions) do
         if modifier_action.name ~= "recipebook" then  -- needs dynamic handling
-            local split_modifiers = split_string(modifier_click, "-")
+            local split_modifiers = util.split(modifier_click, "-")
 
             local modifier_string = {""}
             for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
