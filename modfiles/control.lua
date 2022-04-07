@@ -7,7 +7,6 @@ SEARCH_HANDLERS = {}
 TUTORIAL_TOOLTIPS = {}
 
 require("util")  -- core.lualib
-require("generic_util")
 fancytable = require('__flib__.table')  -- has more methods than built-in table
 
 require("data.init")
@@ -43,6 +42,7 @@ ITEM_BOX_PADDING = 12
 TUTORIAL_EXPORT_STRING = "eNrtWU2L2zAQ/S8620uSLWXJsaWFQgulPS6LkeVxdlrJUmU5NIT8945smbiJi2MSNps0t2Q0evPmQ5oRXjOls2QJtkRdsDmb3k3vJixiZZXmXDhtEUo2f1yzgiug9Q+/uTISSAOF37BmbmX8AjpQJA1qxuqsEo4w41IgFAJiw8VPtomYQwWl4IQxfzuhDdp5C4z2fm02eVCd/gDhGsuE5bQXDmATaSRumCNkbO5sBdFf5Mi2hV8VWsgSrnRV1JYyyLEgSboivSCO2h/z6cPEU9YmkbAE2cIKyUtPumW8eYoC5aRd+tTEo/37XksJNWkWAHOptfUMPpP9XZ/bbfVak40R6hYEmlrpmNgJ7mChrY+LsDx3WCw89y1EEqLbSKDj7beGAGlTDeESWkgDVkDh+IIk0wllX3HxHPzZpUpIoFJJVuOgFd+P4fnMbZZIVEhpzLksSfML8ZRwaH0t0a1iVW8ZttzdVPsdCujNNijBek+thJV/VUvDIRH7iCF6pJMCD+dx152wMsA/N0lQ7JB/aG334ZYGIDs4PrV2F3u2H5it5F2gsolG1LblKC+kkGenL+T15riymvSU1ajwo/WXisOLuU2uMQngoS2KOK9sweso3lJxnlT0tJH/NxuPA/1jdor+cWRjnfVlfB8zJL4fMUyJHaiP9dw2rnR4tuQ0mmWxQCsqdLfx7DaeXfx41rQmXVBzuqyyvsbmJLShqMSCp/I2I5wvDaUDkLGR5MTgCVUgXzoLY6fJLsfXcb+/zJRwu9/rWtZ0SlN7wAPwOmv5/C9wZTRlwcZ1KoYcTHlJ0Si1xOwseVBY+Os9syjlSK7nenNMew7NYRfY7PVcYPene+ZM9545W8H39gMCufO0+QMKUmaf"
 
 if DEVMODE then
+    require("llog")
     LLOG_EXCLUDES = {parent=true, subfloor=true, origin_line=true, tooltip=true, localised_name=true,
       Product=true, Byproduct=true, Ingredient=true, Floor=true, Line=true}
 
