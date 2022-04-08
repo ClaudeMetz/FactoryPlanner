@@ -22,7 +22,6 @@ local function migrate_packed_modules(packed_object)
 end
 
 function migration.global()
-    data_util.update_mining_productivity()
 end
 
 function migration.player_table(player_table)
