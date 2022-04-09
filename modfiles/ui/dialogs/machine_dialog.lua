@@ -30,10 +30,10 @@ local function refresh_machine_frame(player)
             -- Have to do this stupid crap because localisation plurals only work on integers
             local formatted_number = ui_util.format_number(machine_count, 4)
             local plural_parameter = (formatted_number == "1") and 1 or 2
-            local amount_line = {"fp.two_word_title", formatted_number, {"fp.pl_machine", plural_parameter}}
+            local amount_line = {"", formatted_number, " ", {"fp.pl_machine", plural_parameter}}
 
             local attributes = data_util.get_attributes("machines", machine_proto)
-            local tooltip = {"", machine_proto.localised_name, "\n", amount_line, "\n\n", attributes}
+            local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", amount_line, "\n", attributes}
 
             local selected = (machine_proto.id == current_proto.id)
             local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
@@ -75,7 +75,7 @@ local function refresh_fuel_frame(player)
                   fuel_proto, line.machine.count)  -- Raw processor call because we only have a prototype, no object
 
                 local attributes = data_util.get_attributes("fuels", fuel_proto)
-                local tooltip = {"", fuel_proto.localised_name, "\n", number_tooltip, "\n\n", attributes}
+                local tooltip = {"", {"fp.tt_title", fuel_proto.localised_name}, "\n", number_tooltip, "\n", attributes}
 
                 local selected = (current_proto.category == fuel_proto.category and current_proto.id == fuel_proto.id)
                 local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
@@ -196,7 +196,7 @@ end
 machine_dialog.dialog_settings = (function(modal_data)
     local recipe_name = modal_data.line.recipe.proto.localised_name
     return {
-        caption = {"fp.two_word_title", {"fp.edit"}, {"fp.pl_machine", 1}},
+        caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
         subheader_text = {"fp.machine_dialog_description", recipe_name},
         create_content_frame = true
     }

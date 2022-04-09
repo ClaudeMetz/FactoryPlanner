@@ -70,23 +70,23 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
         if class == "Product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
             local percentage_string = ui_util.format_number(satisfied_percentage, 3)
-            satisfaction_line = {"fp.newline", {"fp.two_word_title", (percentage_string .. "%"), {"fp.satisfied"}}}
+            satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
 
             if satisfied_percentage <= 0 then style = "flib_slot_button_red"
             elseif satisfied_percentage < 100 then style = "flib_slot_button_yellow"
             else style = "flib_slot_button_green" end
         end
 
-        local indication, tut_tooltip, enabled = "", tutorial_tt, true
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local name_line, tooltip, enabled = nil, nil, true
         if item.proto.type == "entity" then  -- only relevant to ingredients
-            indication = {"fp.indication", {"fp.indication_raw_ore"}}
-            tut_tooltip = ""
+            name_line = {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}
+            tooltip = {"", name_line, number_line, satisfaction_line}
             enabled = false
+        else
+            name_line = {"fp.tt_title", item.proto.localised_name}
+            tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
         end
-
-        local name_line = {"fp.two_word_title", item.proto.localised_name, indication}
-        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, tut_tooltip}
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
           tags={mod="fp", on_gui_click=action, category=category, item_id=item.id}, enabled=enabled,
@@ -99,7 +99,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     if allow_addition then  -- meaning allow the user to add items of this type
         local button_add = table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
           tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
-          tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. category, 1}},
+          tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}},
           style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
         button_add.style.padding = 3
         button_add.style.margin = 3

@@ -249,7 +249,7 @@ end
 
 -- ** TOP LEVEL **
 recipe_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
+    caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
     subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
       modal_data.product_proto.localised_name},
     search_handler_name = "apply_recipe_filter",

@@ -45,11 +45,11 @@ function Subfactory.tostring(self, export_format)
         if self.tick_of_deletion then
             local ticks_left_in_trash = self.tick_of_deletion - game.tick
             local minutes_left_in_trash = math.ceil(ticks_left_in_trash / 3600)
-            trashed_string = {"fp.newline", {"fp.subfactory_trashed", minutes_left_in_trash}}
+            trashed_string = {"fp.subfactory_trashed", minutes_left_in_trash}
         end
 
-        local invalid_string = (not self.valid) and {"fp.newline", {"fp.subfactory_invalid"}} or ""
-        tooltip = {"", self.name, trashed_string, invalid_string}
+        local invalid_string = (not self.valid) and {"fp.subfactory_invalid"} or ""
+        tooltip = {"", {"fp.tt_title", self.name}, trashed_string, invalid_string}
     end
 
     return caption, tooltip

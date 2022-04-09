@@ -32,7 +32,7 @@ end
 -- ** TOP LEVEL **
 subfactory_dialog.dialog_settings = (function(modal_data)
     return {
-        caption = {"fp.two_word_title", {"fp." .. modal_data.action}, {"fp.pl_subfactory", 1}},
+        caption = {"", {"fp." .. modal_data.action}, " ", {"fp.pl_subfactory", 1}},
         subheader_text = {"fp.subfactory_dialog_description"},
         create_content_frame = true,
         show_submit_button = true,

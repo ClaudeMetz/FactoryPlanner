@@ -3,16 +3,17 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Subfactory names now support rich text, making them be not restricted to a single icon anymore if desired
+    - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
     - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
   Changes:
-    - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
     - Combined the various machine dialogs (chooser, limits, modules, fuel) into one
-    - Unified the interactions on machine and beacon modules
-    - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
     - Made the 'reset machine' action also set modules and beacons to their configured defaults if possible
+    - Unified the interactions and appearance of modules for machines and beacons
+    - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
     - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
     - Re-architected the way button clicks are handled, making tutorial tooltips both more accurate and prettier
     - Removed mod interactions with FNEI and WIIRUF, meaning alt-clicking items or recipes will now only open them in Recipe Book, if possible
+    - Improved consistency and visual appeal of various tooltips
     - Added a ko-fi patronage 'link' to the preferences pane
     - Updated to flib 0.9.1
   Bugfixes:

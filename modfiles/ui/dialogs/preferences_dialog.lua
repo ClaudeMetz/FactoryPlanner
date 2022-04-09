@@ -28,8 +28,8 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
     for prototype_id, prototype in ipairs(all_prototypes) do
         local selected = (default_proto.id == prototype_id)
         local style = (selected) and "flib_slot_button_green_small" or "flib_slot_button_default_small"
-        local first_line = (selected) and {"fp.annotated_title", prototype.localised_name, {"fp.selected"}}
-            or prototype.localised_name
+        local first_line = (selected) and {"fp.tt_title_with_note", prototype.localised_name, {"fp.selected"}}
+          or {"fp.tt_title", prototype.localised_name}
         local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
@@ -78,11 +78,11 @@ function preference_structures.mb_defaults(preferences, content_frame)
     table_mb_defaults.style.column_alignments[2] = "right"
     table_mb_defaults.style.column_alignments[3] = "right"
 
-    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_machine", 1}}}
+    table_mb_defaults.add{type="label", caption={"", {"fp.pu_machine", 1}, ":"}}
     add_mb_default_button(table_mb_defaults, "machine")
     add_mb_default_button(table_mb_defaults, "machine_secondary")
 
-    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_beacon", 1}}}
+    table_mb_defaults.add{type="label", caption={"", {"fp.pu_beacon", 1}, ":"}}
     add_mb_default_button(table_mb_defaults, "beacon")
 
     local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
@@ -137,7 +137,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
             if #all_prototypes > 1 then
                 any_category_visible = true
 
-                table_prototypes.add{type="label", caption={"fp.quoted_title", category.name}}
+                table_prototypes.add{type="label", caption=("'" .. category.name .. "'")}
                 table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
                 add_defaults_table(8, category_id)
