@@ -59,18 +59,21 @@ end
 local function handle_beacon_change(player, _, _)
     local modal_data = data_util.get("modal_data", player)
     local beacon_button = modal_data.modal_elements.beacon_button
-    local beacon = modal_data.dialog_beacon
 
+    local previous_beacon_name = modal_data.dialog_beacon.proto.name
     if not beacon_button.elem_value then
-        beacon_button.elem_value = beacon.proto.name  -- reset the beacon so it can't be nil
+        beacon_button.elem_value = previous_beacon_name  -- reset the beacon so it can't be nil
         return  -- nothing changed
-    elseif beacon_button.elem_value == beacon.proto.name then
+    elseif beacon_button.elem_value == previous_beacon_name then
         return  -- nothing changed
     end
 
     -- Change the beacon to the new type
     local beacon_id = global.all_beacons.map[beacon_button.elem_value]
-    beacon.proto = global.all_beacons.beacons[beacon_id]
+    modal_data.dialog_beacon.proto = global.all_beacons.beacons[beacon_id]
+    ModuleSet.normalize(modal_data.dialog_beacon.module_set, {compatibility=true, trim=true})
+
+    module_configurator.refresh_modules_flow(player)
 end
 
 local function handle_beacon_selection(player, entities)
