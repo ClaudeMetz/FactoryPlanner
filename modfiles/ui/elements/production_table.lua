@@ -20,15 +20,16 @@ local function generate_metadata(player)
     if preferences.tutorial_mode then
         local generate = data_util.generate_tutorial_tooltip
         local limitations = {archive_open = metadata.archive_open, matrix_active = metadata.matrix_solver_active}
+        local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
 
-        metadata.recipe_tutorial_tt = generate("act_on_line_recipe", limitations, true)
-        metadata.machine_tutorial_tt = generate("act_on_line_machine", limitations, false)
-        metadata.beacon_tutorial_tt = generate("act_on_line_beacon", limitations, false)
-        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, false)
-        metadata.product_tutorial_tt = generate("act_on_line_product", limitations, true)
-        metadata.byproduct_tutorial_tt = generate("act_on_line_byproduct", limitations, true)
-        metadata.ingredient_tutorial_tt = generate("act_on_line_ingredient", limitations, true)
-        metadata.fuel_tutorial_tt = generate("act_on_line_fuel", limitations, true)
+        metadata.recipe_tutorial_tt = generate("act_on_line_recipe", limitations, rb_enabled)
+        metadata.machine_tutorial_tt = generate("act_on_line_machine", limitations, rb_enabled)
+        metadata.beacon_tutorial_tt = generate("act_on_line_beacon", limitations, rb_enabled)
+        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, rb_enabled)
+        metadata.product_tutorial_tt = generate("act_on_line_product", limitations, rb_enabled)
+        metadata.byproduct_tutorial_tt = generate("act_on_line_byproduct", limitations, rb_enabled)
+        metadata.ingredient_tutorial_tt = generate("act_on_line_ingredient", limitations, rb_enabled)
+        metadata.fuel_tutorial_tt = generate("act_on_line_fuel", limitations, rb_enabled)
     end
 
     return metadata
