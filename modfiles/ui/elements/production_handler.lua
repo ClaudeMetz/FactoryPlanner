@@ -138,6 +138,9 @@ local function handle_machine_click(player, tags, action)
 
         data_util.create_cursor_blueprint(player, {blueprint_entity})
         main_dialog.toggle(player)
+
+    elseif action == "recipebook" then
+        data_util.open_in_recipebook(player, "entity", line.machine.proto.name)
     end
 end
 
@@ -172,6 +175,9 @@ local function handle_beacon_click(player, tags, action)
 
         data_util.create_cursor_blueprint(player, {blueprint_entity})
         main_dialog.toggle(player)
+
+    elseif action == "recipebook" then
+        data_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
     end
 end
 
@@ -196,6 +202,10 @@ local function handle_module_click(player, tags, action)
 
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
+
+    elseif action == "recipebook" then
+        local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
+        data_util.open_in_recipebook(player, "item", module.proto.name)
     end
 end
 
@@ -329,7 +339,8 @@ production_handler.gui_events = {
                 upgrade = {"shift-left", {archive_open=false}},
                 downgrade = {"control-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left", {archive_open=false}}
+                put_into_cursor = {"alt-left", {archive_open=false}},
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_machine_click
         },
@@ -345,7 +356,8 @@ production_handler.gui_events = {
             modifier_actions = {
                 edit = {"right", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left", {archive_open=false}}
+                put_into_cursor = {"alt-left", {archive_open=false}},
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_beacon_click
         },
@@ -353,7 +365,8 @@ production_handler.gui_events = {
             name = "act_on_line_module",
             modifier_actions = {
                 edit = {"right", {archive_open=false}},
-                delete = {"control-right", {archive_open=false}}
+                delete = {"control-right", {archive_open=false}},
+                recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_module_click
         },

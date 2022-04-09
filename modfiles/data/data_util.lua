@@ -145,9 +145,8 @@ function data_util.generate_tutorial_tooltip(action_name, active_limitations, re
     end
 
     if table_size(tooltip) > 1 then table.insert(tooltip, 2, "\n") end
-    if recipebook_enabled and script.active_mods["RecipeBook"] ~= nil then
-        table.insert(tooltip, {"fp.tut_open_in_recipebook"})
-    end
+    if recipebook_enabled then table.insert(tooltip, {"fp.tut_open_in_recipebook"}) end
+
     return tooltip
 end
 
