@@ -106,13 +106,13 @@ end
 
 -- Up- or downgrades this line's machine, if possible
 -- Returns false if no compatible machine can be found, true otherwise
-function Line.change_machine_by_action(self, player, action)
-    local machine_category_id = global.all_machines.map[self.machine.proto.category]
+function Line.change_machine_by_action(self, player, action, current_proto)
+    local current_machine_proto = current_proto or self.machine.proto
+    local machine_category_id = global.all_machines.map[current_machine_proto.category]
     local category_machines = global.all_machines.categories[machine_category_id].machines
 
     if action == "upgrade" then
         local max_machine_id = #category_machines
-        local current_machine_proto = self.machine.proto
 
         while current_machine_proto.id < max_machine_id do
             current_machine_proto = category_machines[current_machine_proto.id + 1]
@@ -123,8 +123,6 @@ function Line.change_machine_by_action(self, player, action)
             end
         end
     else  -- action == "downgrade"
-        local current_machine_proto = self.machine.proto
-
         while current_machine_proto.id > 1 do
             current_machine_proto = category_machines[current_machine_proto.id - 1]
 
@@ -151,9 +149,9 @@ function Line.change_machine_to_default(self, player)
         return true
 
     -- Otherwise, go up, then down the category to find an alternative
-    elseif Line.change_machine_by_action(self, player, "upgrade") then
+    elseif Line.change_machine_by_action(self, player, "upgrade", default_machine_proto) then
         return true
-    elseif Line.change_machine_by_action(self, player, "downgrade") then
+    elseif Line.change_machine_by_action(self, player, "downgrade", default_machine_proto) then
         return true
 
     else  -- if no machine in the whole category is applicable, return false
