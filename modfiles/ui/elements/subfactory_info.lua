@@ -119,12 +119,12 @@ function subfactory_info.build(player)
     table_power_pollution.style.horizontal_spacing = 20
 
     local flow_power = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_power.add{type="label", caption={"fp.key_title", {"fp.u_power"}}}
+    flow_power.add{type="label", caption={"fp.u_power"}}
     local label_power_value = flow_power.add{type="label"}
     main_elements.subfactory_info["power_label"] = label_power_value
 
     local flow_pollution = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_pollution.add{type="label", caption={"fp.key_title", {"fp.pollution"}}}
+    flow_pollution.add{type="label", caption={"fp.pollution"}}
     local label_pollution_value = flow_pollution.add{type="label"}
     main_elements.subfactory_info["pollution_label"] = label_pollution_value
 
@@ -136,7 +136,7 @@ function subfactory_info.build(player)
     local flow_utility = table_utility.add{type="flow", direction="horizontal"}
     flow_utility.style.vertical_align = "center"
     flow_utility.style.horizontal_spacing = 8
-    flow_utility.add{type="label", caption={"fp.key_title", {"fp.utility"}}}
+    flow_utility.add{type="label", caption={"fp.utility"}}
     flow_utility.add{type="button", tags={mod="fp", on_gui_click="open_utility_dialog"}, caption={"fp.view_utilities"},
       style="fp_button_rounded_mini", mouse_button_filter={"left"}}
 
@@ -149,8 +149,7 @@ function subfactory_info.build(player)
     flow_timescale.style.top_margin = 8
     flow_timescale.style.vertical_align = "center"
 
-    flow_timescale.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.timescale"}}},
-      tooltip={"fp.timescale_tt"}}
+    flow_timescale.add{type="label", caption={"fp.info_label", {"fp.timescale"}}, tooltip={"fp.timescale_tt"}}
 
     local table_timescales = flow_timescale.add{type="table", column_count=table_size(TIMESCALE_MAP)}
     table_timescales.style.horizontal_spacing = 0
@@ -166,7 +165,7 @@ function subfactory_info.build(player)
     flow_mining_prod.style.horizontal_spacing = 10
     flow_mining_prod.style.vertical_align = "center"
 
-    flow_mining_prod.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.mining_productivity"}}},
+    flow_mining_prod.add{type="label", caption={"fp.info_label", {"fp.mining_productivity"}},
       tooltip={"fp.mining_productivity_tt"}}
 
     local label_prod_bonus = flow_mining_prod.add{type="label"}
@@ -192,7 +191,7 @@ function subfactory_info.build(player)
     flow_solver_choice.style.horizontal_spacing = 10
     flow_solver_choice.style.vertical_align = "center"
 
-    flow_solver_choice.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.solver_choice"}}},
+    flow_solver_choice.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}},
       tooltip={"fp.solver_choice_tt"}}
 
     local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
@@ -266,7 +265,7 @@ function subfactory_info.refresh(player)
 
         if not custom_prod_set then  -- only do this calculation when it'll actually be shown
             local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
-            subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", {"fp.percentage_title", prod_bonus}}
+            subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", prod_bonus .. "%"}
         end
         subfactory_info_elements.prod_bonus_label.visible = not custom_prod_set
 

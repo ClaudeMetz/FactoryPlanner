@@ -71,7 +71,7 @@ function production_box.refresh(player)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
     production_box_elements.level_label.caption = (not subfactory_valid) and ""
-      or {"fp.bold_label", {"fp.two_word_title", {"fp.level"}, current_level}}
+      or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
     production_box_elements.floor_up_button.visible = (subfactory_valid)
     production_box_elements.floor_up_button.enabled = (current_level > 1)

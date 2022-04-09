@@ -10,7 +10,7 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        tooltip = {"fp.two_word_title", number, {"fp.per_title", type_string, metadata.timescale_string}}
+        tooltip = {"", number, " ", type_string, "/", metadata.timescale_string}
     end
 
     return number, tooltip
@@ -25,7 +25,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"fp.two_word_title", number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+        tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
     end
 
     local return_number = (metadata.round_button_numbers) and math.ceil(raw_number) or number
@@ -43,8 +43,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"fp.two_word_title", number, {"fp.per_title", {"fp.pl_wagon", plural_parameter},
-          metadata.timescale_string}}
+        tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
     end
 
     return number, tooltip
@@ -58,10 +57,9 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        local item_per_second =  {"fp.per_title", type_string, {"fp.second"}}
         -- If machine_count is nil, this shouldn't show /machine
-        local per_machine = (machine_count ~= nil) and {"fp.per_title", "", {"fp.pl_machine", 1}} or ""
-        tooltip = {"fp.two_word_title", number, {"", item_per_second, per_machine}}
+        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
+        tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
     end
 
     return number, tooltip
@@ -121,26 +119,25 @@ function view_state.rebuild_state(player)
     local new_view_states = {
         [1] = {
             name = "items_per_timescale",
-            caption = {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_" .. timescale}},
+            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale}},
             tooltip = {"fp.view_state_tt", {"fp.items_per_timescale", {"fp." .. timescale}}}
         },
         [2] = {
             name = "belts_or_lanes",
-            caption = {"fp.two_word_title", belt_proto.rich_text, {"fp.pu_" .. singular_bol, 2}},
+            caption = {"", belt_proto.rich_text, " ", {"fp.pu_" .. singular_bol, 2}},
             tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2},
               belt_proto.rich_text, belt_proto.localised_name}}
         },
         [3] = {
             name = "wagons_per_timescale",
-            caption = {"fp.per_title", {"fp.pu_wagon", 2}, {"fp.unit_" .. timescale}},
+            caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale}},
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale},
               cargo_train_proto.rich_text, cargo_train_proto.localised_name,
               fluid_train_proto.rich_text, fluid_train_proto.localised_name}}
         },
         [4] = {
             name = "items_per_second_per_machine",
-            caption = {"fp.per_title", {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_second"}},
-              "[img=fp_generic_assembler]"},
+            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
             tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
         },
         selected_view_id = nil,  -- set below

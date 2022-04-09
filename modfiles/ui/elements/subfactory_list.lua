@@ -188,11 +188,12 @@ function subfactory_list.refresh(player)
             local selected = (selected_subfactory.id == subfactory.id)
             local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
             local caption, info_tooltip = Subfactory.tostring(subfactory, false)
+            local padded_caption = {"", "             ", caption}
             local tooltip = {"", info_tooltip, tutorial_tt}
 
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
             local subfactory_button = listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory",
-              subfactory_id=subfactory.id}, caption="             " .. caption, tooltip=tooltip, style=style,
+              subfactory_id=subfactory.id}, caption=padded_caption, tooltip=tooltip, style=style,
               mouse_button_filter={"left-and-right"}}
 
             local function create_move_button(flow, direction)

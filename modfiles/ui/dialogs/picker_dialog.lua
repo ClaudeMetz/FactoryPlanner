@@ -339,7 +339,7 @@ end
 picker_dialog.dialog_settings = (function(modal_data)
     local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
     return {
-        caption = {"fp.two_word_title", action, {"fp.pl_" .. modal_data.item_category, 1}},
+        caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
         search_handler_name = (not modal_data.object) and "search_picker_items" or nil,
         show_submit_button = true,
         show_delete_button = (modal_data.object ~= nil)

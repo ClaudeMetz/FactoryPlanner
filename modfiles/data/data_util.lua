@@ -82,7 +82,7 @@ end
 
 -- Formats the given effects for use in a tooltip
 function data_util.format_module_effects(effects, limit_effects)
-    local tooltip_lines, effect_applies = {""}, false
+    local tooltip_lines, effect_applies = {"", "\n"}, false
 
     for effect_name, effect_value in pairs(effects) do
         if effect_value ~= 0 then
@@ -99,11 +99,11 @@ function data_util.format_module_effects(effects, limit_effects)
 
             -- Force display of either a '+' or '-', also round the result
             local display_value = ("%+d"):format(math.floor((effect_value * 100) + 0.5))
-            table.insert(tooltip_lines, {"fp.effect_line", display_value, {"fp." .. effect_name}, capped_indication})
+            table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, display_value, capped_indication})
         end
     end
 
-    if effect_applies then return {"fp.newline", tooltip_lines} else return "" end
+    return (effect_applies) and tooltip_lines or ""
 end
 
 -- Fills up the localised table in a smart way to avoid the limit of 20 strings per level

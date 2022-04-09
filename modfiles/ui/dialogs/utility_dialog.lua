@@ -135,7 +135,8 @@ function utility_structures.components(player, modal_data)
                 elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local tooltip = {"fp.components_needed_tt", proto.localised_name, amount_in_inventory, required_amount}
+                local tooltip = {"fp.components_needed_tt", {"fp.tt_title", proto.localised_name},
+                  amount_in_inventory, required_amount}
 
                 local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,

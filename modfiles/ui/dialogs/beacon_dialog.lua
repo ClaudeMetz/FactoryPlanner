@@ -87,7 +87,7 @@ beacon_dialog.dialog_settings = (function(modal_data)
     local action = (modal_data.object) and "edit" or "add"
     local machine_name = modal_data.line.machine.proto.localised_name
     return {
-        caption = {"fp.two_word_title", {"fp." .. action}, {"fp.pl_beacon", 1}},
+        caption = {"", {"fp." .. action}, " ", {"fp.pl_beacon", 1}},
         subheader_text = {("fp.beacon_dialog_description_" .. action), machine_name},
         create_content_frame = true,
         show_submit_button = true,

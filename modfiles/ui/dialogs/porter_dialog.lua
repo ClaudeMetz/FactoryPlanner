@@ -223,7 +223,7 @@ end
 
 -- ** IMPORT DIALOG **
 import_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
+    caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
     subheader_text = {"fp.import_instruction_1"},
     create_content_frame = true,
     disable_scroll_pane = true,
@@ -295,7 +295,7 @@ import_dialog.gui_events = {
 
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.two_word_title", {"fp.export"}, {"fp.pl_subfactory", 1}},
+    caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
     subheader_text = {"fp.export_instruction"},
     subheader_tooltip = {"fp.export_instruction_tt"},
     create_content_frame = true,

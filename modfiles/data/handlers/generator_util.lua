@@ -408,26 +408,28 @@ end
 
 -- Returns the appropriate localised string for the given item, incorporating temperature
 function generator_util.format_temperature_localised_name(item, proto)
-    local temperature_tt = {"fp.two_word_title", item.temperature, {"fp.unit_celsius"}}
-    return (item.temperature ~= nil) and {"fp.annotated_title", proto.localised_name,
-      temperature_tt} or proto.localised_name
+    if item.temperature then
+        return {"", proto.localised_name, " (", item.temperature, " ", {"fp.unit_celsius"}, ")"}
+    else
+        return proto.localised_name
+    end
 end
 
 
 -- Adds the tooltip for the given recipe
 function generator_util.add_recipe_tooltip(recipe)
-    local tooltip = {"", recipe.localised_name}
+    local tooltip = {"", {"fp.bold_title", recipe.localised_name}}
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
-        current_table, next_index = data_util.build_localised_string({
-          "\n  ", {"fp.name_value", {"fp.crafting_time"}, recipe.energy}}, current_table, next_index)
+        current_table, next_index = data_util.build_localised_string(
+          {"", "\n  ", {"fp.crafting_time"}, ": ", recipe.energy}, current_table, next_index)
     end
 
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
-        current_table, next_index = data_util.build_localised_string({
-          "\n  ", {"fp.name_value", {locale_key, 2}, ""}}, current_table, next_index)
+        current_table, next_index = data_util.build_localised_string(
+          {"", "\n  ", {locale_key, 2}, ":"}, current_table, next_index)
         if #recipe[item_type] == 0 then
             current_table, next_index = data_util.build_localised_string({
               "\n    ", {"fp.none"}}, current_table, next_index)
