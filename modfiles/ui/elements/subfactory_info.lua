@@ -97,10 +97,10 @@ function subfactory_info.build(player)
 
     local button_repair = flow_repair.add{type="button", tags={mod="fp", on_gui_click="repair_subfactory"},
       caption={"fp.repair_subfactory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-    button_repair.style.top_margin = 4
+    button_repair.style.top_margin = 2
 
 
-    -- 'No subfactory' flow - This is very stupid
+    -- 'No subfactory' flow - this is very stupid
     local flow_no_subfactory = frame_vertical.add{type="flow", direction="horizontal"}
     main_elements.subfactory_info["no_subfactory_flow"] = flow_no_subfactory
     flow_no_subfactory.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -128,25 +128,9 @@ function subfactory_info.build(player)
     local label_pollution_value = flow_pollution.add{type="label"}
     main_elements.subfactory_info["pollution_label"] = label_pollution_value
 
-    -- Utility
-    local table_utility = flow_info.add{type="table", column_count=2}
-    table_utility.style.horizontal_spacing = 24
-    main_elements.subfactory_info["utility_table"] = table_utility
-
-    local flow_utility = table_utility.add{type="flow", direction="horizontal"}
-    flow_utility.style.vertical_align = "center"
-    flow_utility.style.horizontal_spacing = 8
-    flow_utility.add{type="label", caption={"fp.utility"}}
-    flow_utility.add{type="button", tags={mod="fp", on_gui_click="open_utility_dialog"}, caption={"fp.view_utilities"},
-      style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-
-    local label_notes = table_utility.add{type="label", caption={"fp.info_label", {"fp.notes"}}}
-    main_elements.subfactory_info["notes_label"] = label_notes
-
     -- Timescale
     local flow_timescale = flow_info.add{type="flow", direction="horizontal"}
     flow_timescale.style.horizontal_spacing = 10
-    flow_timescale.style.top_margin = 8
     flow_timescale.style.vertical_align = "center"
 
     flow_timescale.add{type="label", caption={"fp.info_label", {"fp.timescale"}}, tooltip={"fp.timescale_tt"}}
@@ -241,17 +225,6 @@ function subfactory_info.refresh(player)
         label_pollution.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.pollution, "P/m", 3)}
         label_pollution.tooltip = ui_util.format_SI_value(subfactory.pollution, "P/m", 5)
 
-        -- Utility
-        local notes_present = (subfactory.notes ~= "")
-        subfactory_info_elements.utility_table.draw_vertical_lines = notes_present
-        subfactory_info_elements.notes_label.visible = notes_present
-
-        if notes_present then
-            local tooltip = (string.len(subfactory.notes) < 1000) and
-              subfactory.notes or string.sub(subfactory.notes, 1, 1000) .. "\n[...]"
-            subfactory_info_elements.notes_label.tooltip = tooltip
-        end
-
         -- Timescale
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
             local selected = (subfactory.timescale == button.tags.timescale)
@@ -295,12 +268,6 @@ subfactory_info.gui_events = {
             name = "repair_subfactory",
             timeout = 20,
             handler = repair_subfactory
-        },
-        {
-            name = "open_utility_dialog",
-            handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="utility"})
-            end)
         },
         {
             name = "change_timescale",

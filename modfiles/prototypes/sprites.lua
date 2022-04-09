@@ -89,5 +89,19 @@ data:extend({
         filename = "__factoryplanner__/graphics/arrow_down.png",
         size = 32, icon_mipmaps = 2,
         flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_arrow_line_up",
+        filename = "__factoryplanner__/graphics/arrow_line_up_dark.png",
+        size = 32, icon_mipmaps = 2,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
+        name = "fp_sprite_arrow_line_bar_up",
+        filename = "__factoryplanner__/graphics/arrow_line_bar_up_dark.png",
+        size = 32, icon_mipmaps = 2,
+        flags = {"gui-icon"}
     }
 })

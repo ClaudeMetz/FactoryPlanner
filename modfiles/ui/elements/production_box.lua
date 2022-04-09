@@ -29,22 +29,31 @@ function production_box.build(player)
     main_elements.production_box["refresh_button"] = button_refresh
 
     local label_title = subheader.add{type="label", caption={"fp.production"}, style="frame_title"}
-    label_title.style.padding = 0
-    label_title.style.left_margin = 6
+    label_title.style.padding = {0, 8}
 
     local label_level = subheader.add{type="label"}
-    label_level.style.margin = {0, 12, 0, 6}
+    label_level.style.margin = {0, 6, 0, 6}
     main_elements.production_box["level_label"] = label_level
 
-    local button_floor_up = subheader.add{type="button", tags={mod="fp", on_gui_click="change_floor", destination="up"},
-      caption={"fp.floor_up"}, tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-    button_floor_up.style.disabled_font_color = {}
+    local button_floor_up = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
+      tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_up_button"] = button_floor_up
-    local button_floor_top = subheader.add{type="button", caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"},
-      tags={mod="fp", on_gui_click="change_floor", destination="top"}, style="fp_button_rounded_mini",
-      mouse_button_filter={"left"}}
-    button_floor_top.style.disabled_font_color = {}
+
+    local button_floor_top = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_bar_up",
+      tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_top_button"] = button_floor_top
+
+    local separator = subheader.add{type="line", direction="vertical"}
+    separator.style.margin = {0, 12}
+    main_elements.production_box["separator_line"] = separator
+
+    local button_utility_dialog = subheader.add{type="sprite-button", sprite="utility/slot_icon_robot_material_black",
+      tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+    button_utility_dialog.style.padding = -4
+    main_elements.production_box["utility_dialog_button"] = button_utility_dialog
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -78,6 +87,9 @@ function production_box.refresh(player)
 
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 1)
+
+    production_box_elements.utility_dialog_button.visible = (subfactory_valid)
+    production_box_elements.separator_line.visible = (subfactory_valid)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
@@ -142,7 +154,13 @@ production_box.gui_events = {
             handler = (function(player, tags, _)
                 production_box.change_floor(player, tags.destination)
             end)
-        }
+        },
+        {
+            name = "open_utility_dialog",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="utility"})
+            end)
+        },
     }
 }
 
