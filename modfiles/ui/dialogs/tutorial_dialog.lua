@@ -108,7 +108,8 @@ tutorial_dialog.gui_events = {
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
-                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
+                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING)
+                main_dialog.refresh(player, "all")
                 modal_dialog.exit(player, "cancel")
             end)
         }

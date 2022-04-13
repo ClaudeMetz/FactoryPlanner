@@ -154,7 +154,7 @@ styles["fp_sprite-button_inset_tiny"] = {
     size = 32
 }
 
-styles["fp_sprite-button_inset_production"] = {
+styles["fp_sprite-button_inset_add"] = {
     type = "button_style",
     parent = "fp_sprite-button_inset_tiny",
     margin = 2,  -- used to offset the smaller size

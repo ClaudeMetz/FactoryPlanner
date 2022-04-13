@@ -25,6 +25,7 @@ function migration.global()
 end
 
 function migration.player_table(player_table)
+    player_table.clipboard = nil
 end
 
 function migration.subfactory(subfactory)

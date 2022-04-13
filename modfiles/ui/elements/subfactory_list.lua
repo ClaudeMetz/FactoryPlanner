@@ -337,18 +337,17 @@ subfactory_list.gui_events = {
         {
             name = "duplicate_subfactory",
             handler = (function(player, _, _)
-                local ui_state = data_util.get("ui_state", player)
-                local subfactory = ui_state.context.subfactory
+                local context = data_util.get("context", player)
+                local clone = data_util.clone_object(context.subfactory)
+                local inserted_clone = Factory.add(context.factory, clone)
 
-                -- This relies on the porting-functionality. It basically exports and
-                -- immediately imports the subfactory, effectively duplicating it
-                local export_string = data_util.porter.get_export_string({subfactory})
-                data_util.add_subfactories_by_string(player, export_string, true)
+                ui_util.context.set_subfactory(player, inserted_clone)
+                calculation.update(player, inserted_clone)
+                main_dialog.refresh(player, "all")
             end)
         },
         {
             name = "delete_subfactory",
-            timeout = 10,
             handler = subfactory_list.delete_subfactory
         },
         {

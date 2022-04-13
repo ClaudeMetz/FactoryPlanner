@@ -22,22 +22,13 @@ end
 
 
 -- ** MISC **
--- TODO This will be replaced with a non-stupid version
-function data_util.bad_beacon_clone(line)
-    local stupid_copy = Beacon.unpack(Beacon.pack(line.beacon))
-    stupid_copy.parent = line
-    Beacon.validate(stupid_copy)
-    return stupid_copy
-end
-
 -- Adds given export_string-subfactories to the current factory
-function data_util.add_subfactories_by_string(player, export_string, refresh_interface)
+function data_util.add_subfactories_by_string(player, export_string)
     local context = data_util.get("context", player)
     local first_subfactory = Factory.import_by_string(context.factory, export_string)
 
     ui_util.context.set_subfactory(player, first_subfactory)
     calculation.update(player, first_subfactory)
-    if refresh_interface then main_dialog.refresh(player, "all") end
 end
 
 -- Returns the attribute string for the given prototype
@@ -53,32 +44,35 @@ function data_util.get_attributes(type, prototype)
     end
 end
 
--- Opens the given prototype in Recipe Book, if possible
--- This function is only called when Recipe Book is active, so no need to check for the mod
-function data_util.open_in_recipebook(player, type, name)
-    local message = nil
-
-    if remote.call("RecipeBook", "version") ~= RECIPEBOOK_API_VERSION then
-        message = {"fp.error_recipebook_version_incompatible"}
-    else
-        local was_opened = remote.call("RecipeBook", "open_page", player.index, type, name)
-        if not was_opened then message = {"fp.error_recipebook_lookup_failed", {"fp.pl_" .. type, 1}} end
+-- Clones the given object using pack/unpacking, which is not ideal
+-- performance-wise, but good enough and simpler for its use-cases
+function data_util.clone_object(object)
+    -- Floors can't be cloned this was for technical reasons
+    -- Subfactories or Lines with subfloor should be cloned instead
+    if object.class ~= "Floor" then
+        local object_class = _G[object.class]
+        local cloned_object = object_class.unpack(object_class.pack(object))
+        cloned_object.parent = object.parent  -- necessary for validation
+        object_class.validate(cloned_object)
+        return cloned_object
     end
-
-    if message then title_bar.enqueue_message(player, message, "error", 1, true) end
 end
 
--- Create a blueprint with the given entities and put it in the player's cursor
-function data_util.create_cursor_blueprint(player, blueprint_entities)
-    local script_inventory = game.create_inventory(1)
-    local blank_slot = script_inventory[1]
-
-    blank_slot.set_stack{name="fp_cursor_blueprint"}
-    blank_slot.set_blueprint_entities(blueprint_entities)
-    player.add_to_clipboard(blank_slot)
-    player.activate_paste()
-    script_inventory.destroy()
+-- Checks whether the given recipe's products are used on the given floor
+-- The triple loop is crappy, but it's the simplest way to check
+function data_util.check_product_compatibiltiy(floor, recipe)
+    for _, product in pairs(recipe.proto.products) do
+        for _, line in pairs(Floor.get_all(floor, "Line")) do
+            for _, ingredient in pairs(Line.get_all(line, "Ingredient")) do
+                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
+                    return true
+                end
+            end
+        end
+    end
+    return false
 end
+
 
 -- Formats the given effects for use in a tooltip
 function data_util.format_module_effects(effects, limit_effects)
@@ -126,6 +120,7 @@ function data_util.build_localised_string(strings_to_insert, current_table, next
 
     return current_table, next_index
 end
+
 
 function data_util.action_allowed(action_limitations, active_limitations)
     -- If a particular limitation is nil, it indicates that the action is allowed regardless

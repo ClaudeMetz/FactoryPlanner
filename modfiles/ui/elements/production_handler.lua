@@ -59,6 +59,12 @@ local function handle_recipe_click(player, tags, action)
         ui_util.context.set_floor(player, subfloor)
         main_dialog.refresh(player, "production_detail")
 
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, line)  -- use actual line
+
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, line)  -- use actual line
+
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         calculation.update(player, context.subfactory)
@@ -70,7 +76,7 @@ local function handle_recipe_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "recipebook" then
-        data_util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
+        ui_util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
     end
 end
 
@@ -92,6 +98,7 @@ local function handle_percentage_confirmation(player, _, _)
     main_dialog.refresh(player, "subfactory")
 end
 
+
 local function handle_machine_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
@@ -100,15 +107,11 @@ local function handle_machine_click(player, tags, action)
     if action == "edit" then
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
 
-    elseif action == "upgrade" or action == "downgrade" then
-        if Line.change_machine_by_action(line, player, action) == false then
-            local direction_string = (action == "upgrade") and {"fp.upgraded"} or {"fp.downgraded"}
-            local message = {"fp.error_object_cant_be_up_downgraded", {"fp.pl_machine", 1}, direction_string}
-            title_bar.enqueue_message(player, message, "error", 1, true)
-        else
-            calculation.update(player, context.subfactory)
-            main_dialog.refresh(player, "subfactory")
-        end
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, line.machine)
+
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, line.machine)
 
     elseif action == "reset_to_default" then
         Line.change_machine_to_default(line, player)  -- guaranteed to find something
@@ -136,14 +139,27 @@ local function handle_machine_click(player, tags, action)
             recipe = line.recipe.proto.name
         }
 
-        data_util.create_cursor_blueprint(player, {blueprint_entity})
+        ui_util.create_cursor_blueprint(player, {blueprint_entity})
         main_dialog.toggle(player)
 
     elseif action == "recipebook" then
-        data_util.open_in_recipebook(player, "entity", line.machine.proto.name)
+        ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
     end
 end
 
+
+local function handle_beacon_add(player, tags, event)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+
+    if event.shift then  -- paste
+        -- Use a fake beacon to paste on top of
+        local fake_beacon = {parent=line, class="Beacon"}
+        ui_util.clipboard.paste(player, fake_beacon)
+    else
+        modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
+    end
+end
 
 local function handle_beacon_click(player, tags, action)
     local context = data_util.get("context", player)
@@ -152,6 +168,12 @@ local function handle_beacon_click(player, tags, action)
 
     if action == "edit" then
         modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
+
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, line.beacon)
+
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, line.beacon)
 
     elseif action == "delete" then
         Line.set_beacon(line, nil)
@@ -173,11 +195,11 @@ local function handle_beacon_click(player, tags, action)
             items = module_list
         }
 
-        data_util.create_cursor_blueprint(player, {blueprint_entity})
+        ui_util.create_cursor_blueprint(player, {blueprint_entity})
         main_dialog.toggle(player)
 
     elseif action == "recipebook" then
-        data_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+        ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
     end
 end
 
@@ -187,25 +209,31 @@ local function handle_module_click(player, tags, action)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local parent_entity = line[tags.parent_type]
+    local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
 
     if action == "edit" then
         modal_dialog.enter(player, {type=tags.parent_type, modal_data={object=parent_entity, line=line}})
 
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, module)
+
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, module)
+
     elseif action == "delete" then
         local module_set = parent_entity.module_set
-        local module = ModuleSet.get(module_set, tags.module_id)
         ModuleSet.remove(module_set, module)
 
         if parent_entity.class == "Beacon" and module_set.module_count == 0 then
             Line.set_beacon(line, nil)
         end
 
+        ModuleSet.normalize(module_set, {effects=true})
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "recipebook" then
-        local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
-        data_util.open_in_recipebook(player, "item", module.proto.name)
+        ui_util.open_in_recipebook(player, "item", module.proto.name)
     end
 end
 
@@ -286,8 +314,11 @@ local function handle_item_click(player, tags, action)
         }
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
 
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, item)
+
     elseif action == "recipebook" then
-        data_util.open_in_recipebook(player, item.proto.type, item.proto.name)
+        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -305,7 +336,7 @@ local function handle_fuel_click(player, tags, action)
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
 
     elseif action == "recipebook" then
-        data_util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
+        ui_util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
     end
 end
 
@@ -325,38 +356,38 @@ production_handler.gui_events = {
             name = "act_on_line_recipe",
             modifier_actions = {
                 open_subfloor = {"left"},  -- does its own archive check
+                copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
                 toggle = {"control-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
                 recipebook = {"alt-right", {recipebook=true}}
             },
-            timeout = 10,
             handler = handle_recipe_click
         },
         {
             name = "act_on_line_machine",
             modifier_actions = {
                 edit = {"right", {archive_open=false}},
-                upgrade = {"shift-left", {archive_open=false}},
-                downgrade = {"control-left", {archive_open=false}},
+                copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left", {archive_open=false}},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_machine_click
         },
         {
             name = "add_line_beacon",
-            handler = (function(player, tags, _)
-                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
-                modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
-            end)
+            handler = handle_beacon_add
         },
         {
             name = "act_on_line_beacon",
             modifier_actions = {
                 edit = {"right", {archive_open=false}},
+                copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left", {archive_open=false}},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_beacon_click
@@ -365,6 +396,8 @@ production_handler.gui_events = {
             name = "act_on_line_module",
             modifier_actions = {
                 edit = {"right", {archive_open=false}},
+                copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
                 recipebook = {"alt-right", {recipebook=true}}
             },
@@ -375,6 +408,7 @@ production_handler.gui_events = {
             modifier_actions = {
                 prioritize = {"left", {archive_open=false, matrix_active=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
@@ -385,6 +419,7 @@ production_handler.gui_events = {
                 add_recipe_to_end = {"left", {archive_open=false, matrix_active=true}},
                 add_recipe_below = {"shift-left", {archive_open=false, matrix_active=true}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
@@ -395,6 +430,7 @@ production_handler.gui_events = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"shift-left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click

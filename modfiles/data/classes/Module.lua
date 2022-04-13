@@ -21,6 +21,7 @@ end
 function Module.set_amount(self, new_amount)
     self.amount = new_amount
     ModuleSet.normalize(self.parent, {})  -- adjust metadata
+    Module.summarize_effects(self)
 end
 
 function Module.summarize_effects(self)
@@ -30,6 +31,21 @@ function Module.summarize_effects(self)
     end
     self.total_effects = effects
     self.effects_tooltip = data_util.format_module_effects(effects, false)
+end
+
+
+function Module.paste(self, object)
+    if object.class == "Module" then
+        if ModuleSet.check_compatibility(self.parent, object.proto) then
+            ModuleSet.replace(self.parent, self, object)
+            ModuleSet.summarize_effects(self.parent)
+            return true, nil
+        else
+            return false, "incompatible"
+        end
+    else
+        return false, "incompatible_class"
+    end
 end
 
 

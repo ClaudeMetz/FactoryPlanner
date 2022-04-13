@@ -71,6 +71,25 @@ function Machine.check_module_compatibility(self, module_proto)
 end
 
 
+function Machine.paste(self, object)
+    if object.class == "Machine" then
+        if self.proto.category == object.proto.category
+          and Line.is_machine_applicable(self.parent, object.proto) then
+            object.parent = self.parent
+            self.parent.machine = object
+            Line.summarize_effects(self.parent)
+            return true, nil
+        else
+            return false, "incompatible"
+        end
+    elseif object.class == "Module" then
+       return ModuleSet.paste(self.module_set, object)
+    else
+        return false, "incompatible_class"
+    end
+end
+
+
 function Machine.pack(self)
     return {
         proto = prototyper.util.simplify_prototype(self.proto),

@@ -65,6 +65,11 @@ function Subfactory.remove(self, dataset)
     return Collection.remove(self[dataset.class], dataset)
 end
 
+function Subfactory.replace(self, dataset, object)
+    object.parent = self
+    return Collection.replace(self[dataset.class], dataset, object)
+end
+
 function Subfactory.clear(self, class)
     self[class] = Collection.clear(self[class])
 end
@@ -89,11 +94,6 @@ end
 
 function Subfactory.get_by_name(self, class, name)
     return Collection.get_by_name(self[class], name)
-end
-
-
-function Subfactory.shift(self, dataset, direction)
-    return Collection.shift(self[dataset.class], dataset, direction)
 end
 
 
@@ -140,6 +140,15 @@ function Subfactory.destroy_item_request_proxy(self)
 end
 
 
+-- Given line has to have a subfloor; recursively adds references for all subfloors to list
+function Subfactory.add_subfloor_references(self, line)
+    Subfactory.add(self, line.subfloor)
+    for _, sub_line in pairs(Floor.get_all(line.subfloor, "Line")) do
+        if sub_line.subfloor then Subfactory.add_subfloor_references(self, sub_line) end
+    end
+end
+
+
 function Subfactory.pack(self)
     local packed_free_items = (self.matrix_free_items) and {} or nil
     for index, proto in pairs(self.matrix_free_items or {}) do
@@ -179,6 +188,10 @@ function Subfactory.unpack(packed_self)
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
     local top_floor = self.selected_floor
     Floor.unpack(packed_self.top_floor, top_floor)
+    -- Make sure to create references to all subfloors after unpacking
+    for _, line in pairs(Floor.get_all(top_floor, "Line")) do
+        if line.subfloor then Subfactory.add_subfloor_references(self, line) end
+    end
 
     return self
 end
