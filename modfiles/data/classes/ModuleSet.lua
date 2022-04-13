@@ -27,14 +27,24 @@ function ModuleSet.remove(self, dataset)
     ModuleSet.normalize(self, {})  -- adjust metadata
 end
 
+function ModuleSet.replace(self, dataset, object)
+    object.parent = self
+    local replacement = Collection.replace(self.modules, dataset, object)
+    ModuleSet.normalize(self, {})  -- adjust metadata
+    return replacement
+end
+
 function ModuleSet.clear(self)
     self.modules = Collection.clear(self.modules)
     ModuleSet.normalize(self, {})  -- adjust metadata
 end
 
-
 function ModuleSet.get(self, dataset_id)
     return Collection.get(self.modules, dataset_id)
+end
+
+function ModuleSet.get_by_name(self, name)
+    return Collection.get_by_name(self.modules, name)
 end
 
 function ModuleSet.get_all(self)
@@ -49,7 +59,7 @@ end
 function ModuleSet.normalize(self, features)
     self.module_limit = self.parent.proto.module_limit
 
-    if features.compatibility then ModuleSet.check_compatibility(self) end
+    if features.compatibility then ModuleSet.verify_compatibility(self) end
     if features.trim then ModuleSet.trim(self) end
     if features.sort then ModuleSet.sort(self) end
     if features.effects then ModuleSet.summarize_effects(self) end
@@ -58,12 +68,10 @@ function ModuleSet.normalize(self, features)
     self.empty_slots = self.module_limit - self.module_count
 end
 
-function ModuleSet.check_compatibility(self)
-    local compatibility_checker = _G[self.parent.class].check_module_compatibility
-
+function ModuleSet.verify_compatibility(self)
     local modules_to_remove = {}
     for _, module in ipairs(ModuleSet.get_in_order(self)) do
-        if not compatibility_checker(self.parent, module.proto) then
+        if not ModuleSet.check_compatibility(self, module.proto) then
             table.insert(modules_to_remove, module)
         end
     end
@@ -126,7 +134,6 @@ function ModuleSet.summarize_effects(self)
     _G[self.parent.class].summarize_effects(self.parent)
 end
 
-
 function ModuleSet.update_count(self)
     local count = 0
     for _, module in pairs(self.modules.datasets) do
@@ -135,12 +142,15 @@ function ModuleSet.update_count(self)
     self.module_count = count
 end
 
-function ModuleSet.compile_filter(self)
-    local compatibility_checker = _G[self.parent.class].check_module_compatibility
 
+function ModuleSet.check_compatibility(self, module_proto)
+    return _G[self.parent.class].check_module_compatibility(self.parent, module_proto)
+end
+
+function ModuleSet.compile_filter(self)
     local compatible_modules = {}
     for module_name, module_proto in pairs(MODULE_NAME_MAP) do
-        if compatibility_checker(self.parent, module_proto) then
+        if ModuleSet.check_compatibility(self, module_proto) then
             table.insert(compatible_modules, module_name)
         end
     end
@@ -152,6 +162,25 @@ function ModuleSet.compile_filter(self)
 
     return {{filter="name", name=compatible_modules},
       {filter="name", mode="and", invert=true, name=existing_modules}}
+end
+
+
+function ModuleSet.paste(self, module)
+    if not ModuleSet.check_compatibility(self, module.proto) then
+        return false, "incompatible"
+    elseif self.empty_slots == 0 then
+        return false, "no_empty_slots"
+    end
+
+    local desired_amount = math.min(module.amount, self.empty_slots)
+    local existing_module = ModuleSet.get_by_name(self, module.proto.name)
+    if existing_module then
+        Module.set_amount(existing_module, existing_module.amount + desired_amount)
+    else
+        ModuleSet.add(self, module.proto, desired_amount)
+    end
+    ModuleSet.normalize(self, {sort=true, effects=true})
+    return true, nil
 end
 
 

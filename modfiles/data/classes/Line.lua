@@ -52,6 +52,10 @@ function Line.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end
 
+function Line.get_all(self, class)
+    return Collection.get_all(self[class])
+end
+
 function Line.get_in_order(self, class, reverse)
     return Collection.get_in_order(self[class], reverse)
 end
@@ -230,6 +234,24 @@ function Line.summarize_effects(self)
 end
 
 
+function Line.paste(self, object)
+    if object.class == "Line" then
+        if self.parent.level > 1 then  -- make sure the recipe is allowed on this floor
+            local relevant_line = (object.subfloor) and object.subfloor.defining_line or object
+            if not data_util.check_product_compatibiltiy(self.parent, relevant_line.recipe) then
+                return false, "recipe_irrelevant"  -- found no use for the recipe's products
+            end
+        end
+
+        if object.subfloor then Subfactory.add_subfloor_references(self.parent.parent, object) end
+        Floor.insert_at(self.parent, self.gui_position + 1, object)
+        return true, nil
+    else
+        return false, "incompatible_class"
+    end
+end
+
+
 function Line.pack(self)
     local packed_line = {
         comment = self.comment,
@@ -238,7 +260,6 @@ function Line.pack(self)
 
     if self.subfloor ~= nil then
         packed_line.subfloor = Floor.pack(self.subfloor)
-
     else
         packed_line.recipe = Recipe.pack(self.recipe)
 
@@ -257,25 +278,48 @@ function Line.pack(self)
 end
 
 function Line.unpack(packed_self)
-    -- Only lines without subfloors are ever unpacked, so it can be treated as such
-    local self = Line.init(packed_self.recipe)
+    if packed_self.subfloor ~= nil then
+        -- TODO have a look at this mess. It works (I think), but the code is quite convoluted and annoying
+        -- The biggest issue stems from using Floor.init(subfloor_line), which is written to create a
+        -- subfloor from an exisitng line, not this unpacking operation. The better solution might be to
+        -- create the steps it does from scratch here as appropriate.
 
-    self.active = packed_self.active
-    self.done = packed_self.done
-    self.percentage = packed_self.percentage
+        -- Create a temporary floor so Floor.init() below can do its magic
+        local temporary_floor = Floor.init()
+        -- Add the first subfloor line as a line in this floor
+        local subfloor_line = Line.unpack(packed_self.subfloor.Line.objects[1])
+        Floor.add(temporary_floor, subfloor_line)
 
-    self.machine = Machine.unpack(packed_self.machine)
-    self.machine.parent = self
+        -- Use that line to create the subfloor, which moves it to the newly created floor
+        local subfloor = Floor.init(subfloor_line)  -- sets origin_line and defining_line
+        subfloor.origin_line.comment = packed_self.comment  -- carry over line comment
 
-    self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
-    if self.beacon then self.beacon.parent = self end
-    -- Effects summarized by the ensuing validation
+        -- Remove the first subfloor line as it has already been created by initializing the subfloor with it
+        table.remove(packed_self.subfloor.Line.objects, 1)
 
-    -- The prototype will be automatically unpacked by the validation process
-    self.priority_product_proto = packed_self.priority_product_proto
-    self.comment = packed_self.comment
+        Floor.unpack(packed_self.subfloor, subfloor)  -- recursive call
 
-    return self
+        return temporary_floor.Line.datasets[1]
+    else
+        local self = Line.init(packed_self.recipe)
+
+        self.active = packed_self.active
+        self.done = packed_self.done
+        self.percentage = packed_self.percentage
+
+        self.machine = Machine.unpack(packed_self.machine)
+        self.machine.parent = self
+
+        self.beacon = (packed_self.beacon) and Beacon.unpack(packed_self.beacon) or nil
+        if self.beacon then self.beacon.parent = self end
+        -- Effects summarized by the ensuing validation
+
+        -- The prototype will be automatically unpacked by the validation process
+        self.priority_product_proto = packed_self.priority_product_proto
+        self.comment = packed_self.comment
+
+        return self
+    end
 end
 
 

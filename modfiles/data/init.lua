@@ -110,6 +110,8 @@ local function update_player_table(player)
         player_table.mod_version = global.mod_version
         player_table.index = player.index
 
+        player_table.clipboard = nil
+
         player_table.factory = Factory.init()
         player_table.archive = Factory.init()
 
@@ -122,6 +124,8 @@ local function update_player_table(player)
 
     else  -- existing player, only need to update
         reload_data()
+
+        player_table.clipboard = nil  -- reset clipboard
 
         -- If any subfactories exist, select the first one
         local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
@@ -263,7 +267,7 @@ local function on_player_created(event)
     data_util.nth_tick.add((game.tick + 1), "adjust_interface_dimensions", {player_index=player.index})
 
     -- Add the subfactories that are handy for development
-    if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
+    if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
 end
 script.on_event(defines.events.on_player_created, on_player_created)
 

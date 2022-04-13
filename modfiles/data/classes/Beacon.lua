@@ -54,6 +54,21 @@ function Beacon.check_module_compatibility(self, module_proto)
 end
 
 
+function Beacon.paste(self, object)
+    if object.class == "Beacon" then
+        object.parent = self.parent
+        self.parent.beacon = object
+        Line.summarize_effects(self.parent)
+        return true, nil
+    elseif object.class == "Module" and self.module_set ~= nil then
+        -- Only allow modules to be pasted if this is a non-fake beacon
+       return ModuleSet.paste(self.module_set, object)
+    else
+        return false, "incompatible_class"
+    end
+end
+
+
 function Beacon.pack(self)
     return {
         proto = prototyper.util.simplify_prototype(self.proto),

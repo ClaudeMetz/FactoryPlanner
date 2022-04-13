@@ -71,7 +71,8 @@ local actions = {
 
         -- Subfactories
         local import_string = "eNrtWW1v2yAQ/isen+MqSfdS5ds2adKkTaraD9O0VRbG5+Y2DB7gaFHU/77DJk3apHPcpk1f8i2Gh+O5uwcOwowVOksmYCxqxUZscDA4GPZZj8HfUhuXUK8Fx0YzlnILAXD4hgA5F06baSm5UmCWh+YSU/ruH7w76LOLHrNV2oARLBv9mDHFC2/qRGtnCY/CTz1jblr6ZnRQUGsAobJgHE1AhhwWYAWX1P62TwjtvEFG4GOjs0rUPHX6CwTZHc1oRPORCMmtR35uTM8/P2opqdt77q3rMsml1sZb+YIK2qzVmJusSZiAZKPBov9Tbfti0XA6j8uUWi+jclqAJH+n7IX4+x34ODoVCErAqzY1lI3fNGdsmyFxycXv/4gjjo5JoZGuXGQJClEYFy1M/VRx9P5PhQYiHuVox5HTUVqhzKLTEjOSn2lA31BKPy7lqZxGCiCLCk2jkPojThPoguxqVO6GFJH2abjTvrHFI1o2WJQSc4SMjZypoHclJOSxgZp0lvBCV6qeKYOckpQl6ZRwobk3/zEaHPVD3kO2GrPz/MwZX5xtU0jk8zUB+f2gA9yAwLIG3SV2gjs499IbMWF47lCde+4LE0mIbtOyLPSThgChSb04gbnJTHvuOZeWPkowApTj59Q06JMACy7GwbnrvMksFKkkCnFAxYddSOea5kokFugu5/9KrCVsqrYJumlc1EPap14eVEchyOn1IkRh9jXKCT03aafhkIhViyF8hEmBhz3hujuhp4V/XiYBuET+aD73Oru2pLW9cXxq9LLt4WpgFi0fAhW/BW6sdMNRPkVZD+9B1msqUyeR9deIrFMy/HYfW4dPc6d5likBb9qgiPPKKF7HdJ+Yx5CYNQVnn5sby/OVujPcRt25Y0Eersv/2a1uBsOVm0EnIfFswumAl8UCjajQ7Q95+0PeMzvkNUVMKypjOxF583tfxVb9FLqksMSC7v2wz8lG1av7ghpsfacZ3DXv1gHIuJTEutUd/7fdLutN1yPwMuGnsg6to+jEqdng6rXPx0PchItSU05MXCemzcOUWwqH1RKz3WelQOW3yMyglB2J7+x8v2aH7G12/Bve9vi3/SvF4Z2vlAR0lI+Um9a6NoYCrasfHHZSjGsCgtc1RLlOdJ/KHtAsDo3ko9ECrPV7WIuj19A7So5nYeoHk/q1rSPjR3I/O3yQBbrz+9nwnu5nZw/0ytn2sGkvHxpfzEM3f94v3GcX/wDBKHAm"
-        data_util.add_subfactories_by_string(player, import_string, true)
+        data_util.add_subfactories_by_string(player, import_string)
+        main_dialog.refresh(player, "all")
 
         local trash = Factory.get_by_gui_position(player_table.factory, "Subfactory", 5)
         Factory.remove(player_table.factory, trash)

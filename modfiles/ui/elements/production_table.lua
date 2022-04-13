@@ -38,7 +38,7 @@ end
 local function add_module_flow(parent_flow, line, parent_type, metadata)
     for _, module in ipairs(ModuleSet.get_in_order(line[parent_type].module_set)) do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", module.proto.localised_name, number_line, module.effects_tooltip,
+        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, module.effects_tooltip,
           metadata.module_tutorial_tt}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_module", line_id=line.id,
@@ -68,7 +68,7 @@ function builders.recipe(line, parent_flow, metadata)
     local recipe_proto = relevant_line.recipe.proto
 
     parent_flow.style.vertical_align = "center"
-    parent_flow.style.horizontal_spacing = 2
+    parent_flow.style.horizontal_spacing = 3
 
     local function create_move_button(flow, direction)
         local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
@@ -179,8 +179,9 @@ function builders.beacon(line, parent_flow, metadata)
 
     local beacon = line.beacon
     if beacon == nil then
+        local tooltip = {"", {"fp.add_beacon"}, "\n", {"fp.shift_to_paste"}}
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="add_line_beacon", line_id=line.id},
-          sprite="utility/add", style="fp_sprite-button_inset_production", tooltip={"fp.add_beacon"},
+          sprite="utility/add", style="fp_sprite-button_inset_add", tooltip=tooltip,
           mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
     else
         -- Beacon

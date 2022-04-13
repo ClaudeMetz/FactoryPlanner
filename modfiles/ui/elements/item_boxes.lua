@@ -8,14 +8,13 @@ local function add_recipe(player, context, type, item_proto)
     end
 
     if context.floor.level > 1 then
-        production_box.change_floor(player, "top")
-        local message = {"fp.warning_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
-        -- This needs a lifetime of 2 to survive one additional refresh down the chain
-        title_bar.enqueue_message(player, message, "warning", 2, false)
+        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
+        title_bar.enqueue_message(player, message, "error", 1, true)
+    else
+        local production_type = (type == "byproduct") and "consume" or "produce"
+        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto,
+          production_type=production_type}})
     end
-
-    local production_type = (type == "byproduct") and "consume" or "produce"
-    modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto, production_type=production_type}})
 end
 
 local function build_item_box(player, category, column_count)
@@ -97,12 +96,10 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     end
 
     if allow_addition then  -- meaning allow the user to add items of this type
-        local button_add = table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
+        table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
           tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
-          tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}},
-          style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
-        button_add.style.padding = 3
-        button_add.style.margin = 3
+          tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
+          style="fp_sprite-button_inset_add", mouse_button_filter={"left"}}
         table_item_count = table_item_count + 1
     end
 
@@ -110,6 +107,19 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     return table_rows_required
 end
 
+
+local function handle_item_add(player, tags, event)
+    local context = data_util.get("context", player)
+
+    if event.shift then  -- paste
+        -- Use a fake item to paste on top of
+        local class = tags.category:gsub("^%l", string.upper)
+        local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
+        ui_util.clipboard.paste(player, fake_item)
+    else
+        modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=tags.category}})
+    end
+end
 
 local function handle_item_button_click(player, tags, action)
     local context = data_util.get("context", player)
@@ -124,21 +134,16 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "edit" then
         modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
 
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, item)
+
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, item)
+
     elseif action == "delete" then
         Subfactory.remove(subfactory, item)
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
-
-    elseif action == "move_left" or action == "move_right" then
-        local direction = (action == "move_left") and "positive" or "negative"
-        if Subfactory.shift(subfactory, item, direction) then
-            -- Row count doesn't change, so we can refresh directly
-            refresh_item_box(player, "product", subfactory, true)
-        else
-            local direction_string = (direction == "negative") and {"fp.left"} or {"fp.right"}
-            local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_product", 1}, direction_string}
-            title_bar.enqueue_message(player, message, "error", 1, true)
-        end
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
@@ -164,7 +169,7 @@ local function handle_item_button_click(player, tags, action)
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
 
     elseif action == "recipebook" then
-        data_util.open_in_recipebook(player, item.proto.type, item.proto.name)
+        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -234,18 +239,16 @@ item_boxes.gui_events = {
     on_gui_click = {
         {
             name = "add_top_level_item",
-            handler = (function(player, tags, _)
-                modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=tags.category}})
-            end)
+            handler = handle_item_add
         },
         {
             name = "act_on_top_level_product",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
                 edit = {"right", {archive_open=false}},
+                copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                move_left = {"shift-left", {archive_open=false}},
-                move_right = {"control-left", {archive_open=false}},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
@@ -254,6 +257,7 @@ item_boxes.gui_events = {
             name = "act_on_top_level_byproduct",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false, matrix_active=true}},
+                copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
@@ -263,6 +267,7 @@ item_boxes.gui_events = {
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
