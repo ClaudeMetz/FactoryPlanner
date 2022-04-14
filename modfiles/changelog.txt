@@ -2,11 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.38
+Date: 14. 04. 2022
   Changes:
     - Minor UI improvements, such as a better explanation of the matrix solver
-  Bugfixes:
-    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.37
