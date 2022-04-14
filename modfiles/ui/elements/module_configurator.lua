@@ -60,7 +60,6 @@ local function handle_module_selection(player, tags, event)
 
     module_configurator.refresh_modules_flow(player)
     -- Sorting and effects refresh is done when the dialog is submitted
-    modal_data.refresh = true
 end
 
 local function handle_module_slider_change(player, tags, event)
@@ -78,7 +77,6 @@ local function handle_module_slider_change(player, tags, event)
     end
 
     -- Sorting and effects refresh is done when the dialog is submitted
-    modal_data.refresh = true
 end
 
 local function handle_module_textfield_change(player, tags, event)
@@ -101,7 +99,6 @@ local function handle_module_textfield_change(player, tags, event)
     end
 
     -- Sorting and effects refresh is done when the dialog is submitted
-    modal_data.refresh = true
 end
 
 

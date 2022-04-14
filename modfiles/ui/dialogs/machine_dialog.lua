@@ -6,13 +6,14 @@ machine_dialog = {}
 local function refresh_machine_frame(player)
     local ui_state = data_util.get("ui_state", player)
     local line = ui_state.modal_data.line
+    local dialog_machine = ui_state.modal_data.dialog_machine
 
     local table_machine = ui_state.modal_data.modal_elements.machine_table
     table_machine.clear()
 
-    local machine_category_id = global.all_machines.map[line.machine.proto.category]
+    local machine_category_id = global.all_machines.map[dialog_machine.proto.category]
     local category_prototypes = global.all_machines.categories[machine_category_id].machines
-    local current_proto = line.machine.proto
+    local current_proto = dialog_machine.proto
 
     local round_button_numbers = data_util.get("preferences", player).round_button_numbers
     local timescale = ui_state.context.subfactory.timescale
@@ -48,31 +49,32 @@ end
 local function refresh_fuel_frame(player)
     local ui_state = data_util.get("ui_state", player)
     local line = ui_state.modal_data.line
+    local dialog_machine = ui_state.modal_data.dialog_machine
 
     local modal_elements = ui_state.modal_data.modal_elements
     modal_elements.fuel_table.clear()
 
-    local machine_burner = line.machine.proto.burner
+    local machine_burner = dialog_machine.proto.burner
     modal_elements.fuel_table.visible = (machine_burner ~= nil)
     modal_elements.fuel_info_label.visible = (machine_burner == nil)
     if machine_burner == nil then return end
 
     local view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory, 4, true)
     local timescale = ui_state.context.subfactory.timescale
-    local current_proto = line.machine.fuel.proto
+    local current_proto = dialog_machine.fuel.proto
 
-    local energy_consumption = calculation.util.determine_energy_consumption(line.machine.proto, line.machine.count,
+    local energy_consumption = calculation.util.determine_energy_consumption(dialog_machine.proto, dialog_machine.count,
       line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
 
     -- Applicable fuels come from all categories that this burner supports
-    for category_name, _ in pairs(line.machine.proto.burner.categories) do
+    for category_name, _ in pairs(dialog_machine.proto.burner.categories) do
         local category_id = global.all_fuels.map[category_name]
         if category_id ~= nil then
             for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
                 local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_burner,
                   fuel_proto.fuel_value, timescale)
                 local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-                  fuel_proto, line.machine.count)  -- Raw processor call because we only have a prototype, no object
+                  fuel_proto, dialog_machine.count)  -- Raw processor call because we only have a prototype, no object
 
                 local attributes = data_util.get_attributes("fuels", fuel_proto)
                 local tooltip = {"", {"fp.tt_title", fuel_proto.localised_name}, "\n", number_tooltip, "\n", attributes}
@@ -93,9 +95,10 @@ local function refresh_limit_elements(player)
     local textfield = modal_data.modal_elements.limit_textfield
     local switch = modal_data.modal_elements.force_limit_switch
 
-    textfield.text = tostring(modal_data.object.limit or "")
-    switch.switch_state = ui_util.switch.convert_to_state(modal_data.object.force_limit)
-    switch.enabled = (modal_data.object.limit ~= nil)
+    local machine = modal_data.dialog_machine
+    textfield.text = tostring(machine.limit or "")
+    switch.switch_state = ui_util.switch.convert_to_state(machine.force_limit)
+    switch.enabled = (machine.limit ~= nil)
 end
 
 
@@ -146,49 +149,50 @@ end
 
 local function handle_machine_choice(player, tags, _)
     local modal_data = data_util.get("modal_data", player)
-    local current_machine = modal_data.object
+    local dialog_machine = modal_data.dialog_machine
 
-    local machine_category_id = global.all_machines.map[current_machine.proto.category]
+    local machine_category_id = global.all_machines.map[dialog_machine.proto.category]
     local machine_proto = global.all_machines.categories[machine_category_id].machines[tags.proto_id]
-    Line.change_machine_to_proto(modal_data.line, player, machine_proto)
+
+    -- This can't use Line.change_machine_to_proto() as that modifies the line, which we can't do
+    dialog_machine.proto = machine_proto
+    if dialog_machine.fuel and dialog_machine.proto.energy_type ~= "burner" then dialog_machine.fuel = nil end
+    Machine.find_fuel(dialog_machine, player)
+    ModuleSet.normalize(dialog_machine.module_set, {compatibility=true, trim=true})
 
     refresh_machine_frame(player)
     refresh_fuel_frame(player)
     module_configurator.refresh_modules_flow(player)
-    modal_data.refresh = true
 end
 
 local function handle_fuel_choice(player, tags, _)
     local modal_data = data_util.get("modal_data", player)
 
     local split_id = util.split(tags.proto_id, "_")
-    local category_id, fuel_id = tonumber(split_id[1]), tonumber(split_id[1])
+    local category_id, fuel_id = tonumber(split_id[1]), tonumber(split_id[2])
     local new_fuel_proto = global.all_fuels.categories[category_id].fuels[fuel_id]
-    modal_data.object.fuel.proto = new_fuel_proto
+    modal_data.dialog_machine.fuel.proto = new_fuel_proto
 
     refresh_fuel_frame(player)
-    modal_data.refresh = true
 end
 
 local function change_machine_limit(player, _, event)
     local modal_data = data_util.get("modal_data", player)
-    local machine = modal_data.object
+    local machine = modal_data.dialog_machine
 
     machine.limit = tonumber(event.element.text)
     if machine.limit == nil then machine.force_limit = false end
 
     refresh_limit_elements(player)
-    modal_data.refresh = true
 end
 
 local function change_machine_force_limit(player, _, event)
     local modal_data = data_util.get("modal_data", player)
 
     local switch_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
-    modal_data.object.force_limit = switch_state
+    modal_data.dialog_machine.force_limit = switch_state
 
     refresh_limit_elements(player)
-    modal_data.refresh = true
 end
 
 
@@ -198,7 +202,8 @@ machine_dialog.dialog_settings = (function(modal_data)
     return {
         caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
         subheader_text = {"fp.machine_dialog_description", recipe_name},
-        create_content_frame = true
+        create_content_frame = true,
+        show_submit_button = true
     }
 end)
 
@@ -207,8 +212,9 @@ function machine_dialog.open(player, modal_data)
     local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = 400
 
-    modal_data.refresh = false  -- set to true if anything about the machine is changed
-    modal_data.module_set = modal_data.object.module_set
+    modal_data.dialog_machine = data_util.clone_object(modal_data.object)
+    modal_data.dialog_machine.count = modal_data.object.count  -- copy for fuel calculations
+    modal_data.module_set = modal_data.dialog_machine.module_set
 
     -- Choices
     add_choices_frame(content_frame, modal_elements, "machine")
@@ -225,13 +231,21 @@ function machine_dialog.open(player, modal_data)
     module_configurator.refresh_modules_flow(player)
 end
 
-function machine_dialog.close(player, _)
-    local ui_state = data_util.get("ui_state", player)
+function machine_dialog.close(player, action)
+    local modal_data = data_util.get("modal_data", player)
+    local dialog_machine, line = modal_data.dialog_machine, modal_data.line
 
-    if ui_state.modal_data.refresh then
-        ModuleSet.normalize(ui_state.modal_data.module_set, {sort=true, effects=true})
-        calculation.update(player, ui_state.context.subfactory)
-        main_dialog.refresh(player, "production")
+    if action == "submit" then
+        dialog_machine.parent = line
+        line.machine = dialog_machine
+
+        ModuleSet.normalize(dialog_machine.module_set, {sort=true, effects=true})
+        -- Make sure the line's beacon is removed if this machine no longer supports it
+        if dialog_machine.proto.allowed_effects == nil then Line.set_beacon(line, nil) end
+
+        local subfactory = data_util.get("context", player).subfactory
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
