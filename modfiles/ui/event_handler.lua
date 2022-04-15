@@ -214,6 +214,7 @@ local misc_identifier_map = {
     -- Keyboard shortcuts
     ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
+    ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
     ["fp_toggle_pause"] = "fp_toggle_pause",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",

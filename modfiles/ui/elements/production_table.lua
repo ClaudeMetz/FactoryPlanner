@@ -86,6 +86,7 @@ function builders.recipe(line, parent_flow, metadata)
     else
         local move_flow = parent_flow.add{type="flow", direction="vertical"}
         move_flow.style.vertical_spacing = 0
+        move_flow.style.top_padding = 2
         create_move_button(move_flow, "up")
         create_move_button(move_flow, "down")
 
