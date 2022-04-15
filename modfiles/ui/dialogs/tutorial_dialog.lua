@@ -1,7 +1,7 @@
 tutorial_dialog = {}
 
 -- ** LOCAL UTIL **
-local tab_definitions = {"interface", "usage", "matrix_solver", "pro_tips"}
+local tab_definitions = {"interface", "usage", "matrix_solver"}
 
 function tab_definitions.interface(player, tab, tab_pane)
     tab.caption = {"fp.interface"}
@@ -62,18 +62,6 @@ function tab_definitions.matrix_solver(_, tab, tab_pane)
     local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_matrix_solver_text"}}
     label_text.style.single_line = false
     label_text.style.padding = 2
-end
-
-function tab_definitions.pro_tips(_, tab, tab_pane)
-    tab.caption = {"fp.pro_tips"}
-
-    local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
-      "recursive_subfloors", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
-    for _, name in ipairs(protip_names) do
-        local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
-        local label = bordered_frame.add{type="label", caption={"fp.pro_" .. name}}
-        label.style.single_line = false
-    end
 end
 
 

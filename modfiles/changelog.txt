@@ -2,20 +2,21 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added copy/paste functionality, allowing you to copy machines, beacons, modules, recipes and items
+    - Added copy/paste functionality, allowing you to copy machines, beacons, modules, recipe lines and items
     - Subfactory names now support rich text, making them be not restricted to a single icon anymore if desired
     - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
     - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
   Changes:
     - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
-    - Combined the various machine dialogs (chooser, limits, modules, fuel) into one
+    - Combined the various machine dialogs (entity picker, limits, modules, fuel) into one
     - Unified the interactions and appearance of modules for machines and beacons
+    - Moved the utility dialog button to the production toolbar
+    - Streamlined the modifier-clicks for various actions to be more consistent across the mod
     - Made the 'reset machine' action also set modules and beacons to their configured defaults if possible
     - Pressing 'E' with an open dialog now tries to confirm instead of closing, mirroring vanilla behavior
     - Improved consistency and visual appeal of various tooltips
-    - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
     - Removed mod interactions with FNEI and WIIRUF, meaning only Recipe Book remains supported (with deeper integration than before)
-    - Moved the utility dialog button to the production toolbar
+    - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
     - Added a ko-fi patronage 'link' to the preferences pane
     - Updated to flib 0.9.1
   Bugfixes:

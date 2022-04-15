@@ -26,6 +26,7 @@ end
 
 function migration.player_table(player_table)
     player_table.clipboard = nil
+    player_table.preferences.tutorial_mode = true
 end
 
 function migration.subfactory(subfactory)
