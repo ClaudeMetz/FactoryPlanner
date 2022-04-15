@@ -417,7 +417,7 @@ production_handler.gui_events = {
             name = "act_on_line_byproduct",
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false, matrix_active=true}},
-                add_recipe_below = {"shift-left", {archive_open=false, matrix_active=true}},
+                add_recipe_below = {"control-left", {archive_open=false, matrix_active=true}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
@@ -428,7 +428,7 @@ production_handler.gui_events = {
             name = "act_on_line_ingredient",
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false}},
-                add_recipe_below = {"shift-left", {archive_open=false}},
+                add_recipe_below = {"control-left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
                 recipebook = {"alt-right", {recipebook=true}}
@@ -439,7 +439,7 @@ production_handler.gui_events = {
             name = "act_on_line_fuel",
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false}},
-                add_recipe_below = {"shift-left", {archive_open=false}},
+                add_recipe_below = {"control-left", {archive_open=false}},
                 change = {"right", {archive_open=false}},
                 recipebook = {"alt-right", {recipebook=true}}
             },
