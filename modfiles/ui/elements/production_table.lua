@@ -341,7 +341,7 @@ end
 function builders.line_comment(line, parent_flow, _)
     local textfield_comment = parent_flow.add{type="textfield", tags={mod="fp", on_gui_text_changed="line_comment",
       line_id=line.id}, text=(line.comment or "")}
-    textfield_comment.style.width = 160
+      textfield_comment.style.width = 250
     ui_util.setup_textfield(textfield_comment)
 end
 
