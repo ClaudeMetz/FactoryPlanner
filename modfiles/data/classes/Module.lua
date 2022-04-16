@@ -37,9 +37,13 @@ end
 function Module.paste(self, object)
     if object.class == "Module" then
         if ModuleSet.check_compatibility(self.parent, object.proto) then
-            ModuleSet.replace(self.parent, self, object)
-            ModuleSet.summarize_effects(self.parent)
-            return true, nil
+            if ModuleSet.get_by_name(self.parent, object.proto.name) and object.proto.name ~= self.proto.name then
+                return false, "already_exists"
+            else
+                ModuleSet.replace(self.parent, self, object)
+                ModuleSet.summarize_effects(self.parent)
+                return true, nil
+            end
         else
             return false, "incompatible"
         end
