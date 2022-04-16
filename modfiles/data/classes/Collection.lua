@@ -15,6 +15,8 @@ end
 
 -- Adds given object to the end of the collection
 function Collection.add(self, object)
+    if not object then error("Can't insert nil dataset") end
+
     self.index = self.index + 1
     object.id = self.index
     self.datasets[self.index] = object
@@ -27,6 +29,9 @@ end
 
 -- Inserts the given object at the given position, shifting other elements down
 function Collection.insert_at(self, gui_position, object)
+    if not object then error("Can't insert nil dataset")
+    elseif not gui_position then error("Can't insert at nil position") end
+
     self.index = self.index + 1
     object.id = self.index
 
@@ -44,6 +49,8 @@ function Collection.insert_at(self, gui_position, object)
 end
 
 function Collection.remove(self, dataset)
+    if not dataset then error("Can't remove nil dataset") end
+
     -- Move positions of datasets after the deleted one down by one
     for _, d in pairs(self.datasets) do
         if d.gui_position > dataset.gui_position then
@@ -60,6 +67,9 @@ end
 
 -- Replaces the dataset with the new object in-place
 function Collection.replace(self, dataset, object)
+    if not dataset then error("Can't replace nil dataset")
+    elseif not object then error("Can't replace with nil object") end
+
     object.id = dataset.id
     object.gui_position = dataset.gui_position
     self.datasets[dataset.id] = object
@@ -127,6 +137,9 @@ end
 
 -- Shifts given dataset in given direction
 function Collection.shift(self, main_dataset, direction)
+    if not main_dataset then error("Can't shift nil dataset")
+    elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
+
     local main_gui_position = main_dataset.gui_position
 
     -- Doesn't shift if outmost elements are being shifted further outward
@@ -145,6 +158,9 @@ end
 
 -- Shifts the given dataset to the end of the collection in the given direction
 function Collection.shift_to_end(self, main_dataset, direction)
+    if not main_dataset then error("Can't shift nil dataset")
+    elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
+
     local main_gui_position = main_dataset.gui_position
 
     -- Doesn't shift if outmost elements are being shifted further outward
