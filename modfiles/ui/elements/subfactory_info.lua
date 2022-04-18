@@ -36,15 +36,11 @@ end
 local function handle_solver_change(player, _, event)
     local subfactory = data_util.get("context", player).subfactory
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
+    subfactory.solver = new_solver
 
-    if new_solver == "matrix" then
-        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-    else
-        subfactory.matrix_free_items = nil  -- disable the matrix solver
-        subfactory.linearly_dependant = false
-
-        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
+    if new_solver == "traditional" then
         local any_lines_removed = false
+        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
         local function remove_consuming_recipes(floor)
             for _, line in pairs(Floor.get_in_order(floor, "Line")) do
                 if line.subfloor then
@@ -181,14 +177,15 @@ function subfactory_info.build(player)
     local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
       left_label_caption={"fp.solver_choice_traditional"},
       tags={mod="fp", on_gui_switch_state_changed="solver_choice_changed"}}
+      switch_solver_choice.style.margin = {0, 4, 0, 2}
     main_elements.subfactory_info["solver_choice_switch"] = switch_solver_choice
 
-    local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
+    --[[ local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
       tooltip={"fp.solver_choice_configure"}, tags={mod="fp", on_gui_click="configure_matrix_solver"},
       style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     button_configure_solver.style.size = 26
     button_configure_solver.style.padding = 0
-    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver
+    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver ]]
 
     local second_pusher = frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
     main_elements.subfactory_info["second_pusher"] = second_pusher
@@ -214,7 +211,7 @@ function subfactory_info.refresh(player)
 
     elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
-        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
+        local matrix_solver_active = (subfactory.solver == "matrix")
 
         -- Power + Pollution
         local label_power = subfactory_info_elements.power_label
@@ -256,7 +253,7 @@ function subfactory_info.refresh(player)
         local switch_state = (matrix_solver_active) and "right" or "left"
         subfactory_info_elements.solver_choice_switch.switch_state = switch_state
         subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
-        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
+        --subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
     end
 end
 
@@ -283,13 +280,13 @@ subfactory_info.gui_events = {
                 calculation.update(player, subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)
-        },
+        }--[[ ,
         {
             name = "configure_matrix_solver",
             handler = (function(player, _, _)
                 modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
             end)
-        }
+        } ]]
     },
     on_gui_text_changed = {
         {

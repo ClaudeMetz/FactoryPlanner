@@ -180,7 +180,7 @@ function subfactory_list.refresh(player)
     listbox.clear()
 
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
-        local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
+        local matrix_active = (ui_state.context.subfactory.solver == "matrix")
         local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
         local tutorial_tt = data_util.generate_tutorial_tooltip("act_on_subfactory", limitations, false)
 
@@ -260,7 +260,7 @@ function subfactory_list.add_subfactory(player, name)
 
     local settings = data_util.get("settings", player)
     subfactory.timescale = settings.default_timescale
-    if settings.prefer_matrix_solver then subfactory.matrix_free_items = {} end
+    subfactory.solver = (settings.prefer_matrix_solver) and "matrix" or "traditional"
 
     local context = data_util.get("context", player)
     Factory.add(context.factory, subfactory)

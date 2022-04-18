@@ -36,6 +36,10 @@ function migration.subfactory(subfactory)
         subfactory.icon = nil
     end
 
+    subfactory.solver = (subfactory.matrix_free_items) and "matrix" or "traditional"
+    subfactory.matrix_free_items = nil
+    subfactory.linearly_dependent = nil
+
     for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         for _, line in pairs(Floor.get_all(floor, "Line")) do
             line.effects_tooltip = ""
@@ -51,6 +55,9 @@ function migration.packed_subfactory(packed_subfactory)
         packed_subfactory.name = "[img=" .. icon_path .. "] " .. packed_subfactory.name
         packed_subfactory.icon = nil
     end
+
+    packed_subfactory.solver = (packed_subfactory.matrix_free_items) and "matrix" or "traditional"
+    packed_subfactory.matrix_free_items = nil
 
     local function update_lines(floor)
         for _, packed_line in ipairs(floor.Line.objects) do

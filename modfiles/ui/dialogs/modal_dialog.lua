@@ -4,7 +4,6 @@ require("preferences_dialog")
 require("utility_dialog")
 require("picker_dialog")
 require("recipe_dialog")
-require("matrix_dialog")
 require("porter_dialog")
 require("subfactory_dialog")
 require("machine_dialog")
@@ -141,13 +140,6 @@ end
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, dialog_settings)
     local ui_state = data_util.get("ui_state", player)
-
-    if ui_state.modal_dialog_type ~= nil then
-        -- If a dialog is currently open, and this one wants to be queued, do so
-        if dialog_settings.allow_queueing then ui_state.queued_dialog_settings = dialog_settings end
-        return
-    end
-
     ui_state.modal_data = dialog_settings.modal_data or {}
 
     local dialog_object = _G[dialog_settings.type .. "_dialog"]
@@ -158,7 +150,7 @@ function modal_dialog.enter(player, dialog_settings)
 
     local early_abort = dialog_object.early_abort_check  -- abort early if necessary
     if early_abort ~= nil and early_abort(player, ui_state.modal_data) then
-        --ui_state.modal_data = nil  -- TODO this should be reset, but that breaks the stupid queueing stuff .........
+        ui_state.modal_data = nil
         title_bar.refresh_message(player)  -- make sure eventual messages are shown
         return
     end
@@ -204,11 +196,6 @@ function modal_dialog.exit(player, action, skip_player_opened)
 
     if not skip_player_opened then player.opened = ui_state.main_elements.main_frame end
     title_bar.refresh_message(player)
-
-    if ui_state.queued_dialog_settings ~= nil then
-        modal_dialog.enter(player, ui_state.queued_dialog_settings)
-        ui_state.queued_dialog_settings = nil
-    end
 end
 
 

@@ -3,7 +3,7 @@
 local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_dialog, subfactory_info, item_boxes,
   production_box, production_handler, view_state, modal_dialog, porter_dialog, import_dialog, export_dialog,
   tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, picker_dialog, recipe_dialog,
-  matrix_dialog, module_configurator, machine_dialog, beacon_dialog}
+  module_configurator, machine_dialog, beacon_dialog}
 
 -- ** RATE LIMITING **
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
@@ -180,7 +180,7 @@ local function handle_gui_event(event)
 
         local active_limitations = {
             archive_open = data_util.get("flags", player).archive_open,
-            matrix_active = (data_util.get("context", player).subfactory.matrix_free_items ~= nil),
+            matrix_active = (data_util.get("context", player).subfactory.solver == "matrix"),
             recipebook = (script.active_mods["RecipeBook"] ~= nil)
         }
         -- Check whether the selected action is allowed according to its limitations

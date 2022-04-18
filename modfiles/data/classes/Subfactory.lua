@@ -13,8 +13,7 @@ function Subfactory.init(name)
         Byproduct = Collection.init("Item"),
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
-        matrix_free_items = nil,
-        linearly_dependant = false,  -- determined by the solver
+        solver = "traditional",
         selected_floor = nil,
         item_request_proxy = nil,
         tick_of_deletion = nil,  -- ignored on export/import
@@ -150,18 +149,13 @@ end
 
 
 function Subfactory.pack(self)
-    local packed_free_items = (self.matrix_free_items) and {} or nil
-    for index, proto in pairs(self.matrix_free_items or {}) do
-        packed_free_items[index] = prototyper.util.simplify_prototype(proto)
-    end
-
     return {
         name = self.name,
         timescale = self.timescale,
         notes = self.notes,
         mining_productivity = self.mining_productivity,
         Product = Collection.pack(self.Product),
-        matrix_free_items = packed_free_items,
+        solver = self.solver,
         -- Floors get packed by recursive nesting, which is necessary for a json-type data
         -- structure. It will need to be unpacked into the regular structure 'manually'.
         top_floor = Floor.pack(Subfactory.get(self, "Floor", 1)),
@@ -176,14 +170,7 @@ function Subfactory.unpack(packed_self)
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
-
-    if packed_self.matrix_free_items then
-        self.matrix_free_items = {}
-        for index, proto in pairs(packed_self.matrix_free_items) do
-            -- Prototypes will be automatically unpacked by the validation process
-            self.matrix_free_items[index] = proto
-        end
-    end
+    self.solver = packed_self.solver
 
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
     local top_floor = self.selected_floor
@@ -202,13 +189,6 @@ function Subfactory.validate(self)
     local previous_validity = self.valid
 
     self.valid = Collection.validate_datasets(self.Product)
-
-    -- Validating matrix_free_items is a bit messy with the current functions,
-    -- it might be worth it to change it into a Collection at some point
-    for index, _ in pairs(self.matrix_free_items or {}) do
-        self.valid = prototyper.util.validate_prototype_object(self.matrix_free_items, index, "items", "type")
-          and self.valid
-    end
 
     -- Floor validation is called on the top floor, which recursively goes through its subfloors
     local top_floor = Subfactory.get(self, "Floor", 1)
@@ -238,13 +218,6 @@ function Subfactory.repair(self, player)
     -- Clear item prototypes so we don't need to rely on the solver to remove them
     Subfactory.clear(self, "Byproduct")
     Subfactory.clear(self, "Ingredient")
-
-    -- Remove any unrepairable free item so the subfactory remains valid
-    -- (Not sure if this removing-while-iterating actually works)
-    local free_items = self.matrix_free_items
-    for index, item_proto in pairs(free_items or {}) do
-        if item_proto.simplified then table.remove(free_items, index) end
-    end
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors
     Floor.repair(top_floor, player)

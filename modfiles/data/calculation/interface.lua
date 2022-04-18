@@ -26,26 +26,6 @@ local function set_blank_line(player, floor, line)
     }
 end
 
-local function set_blank_subfactory(player, subfactory)
-    local blank_class = structures.class.init()
-    calculation.interface.set_subfactory_result {
-        player_index = player.index,
-        energy_consumption = 0,
-        pollution = 0,
-        Product = blank_class,
-        Byproduct = blank_class,
-        Ingredient = blank_class,
-        matrix_free_items = subfactory.matrix_free_items
-    }
-
-    -- Subfactory structure does not matter as every line just needs to be blanked out
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-            set_blank_line(player, floor, line)
-        end
-    end
-end
-
 
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, subfactory, floor)
@@ -166,38 +146,13 @@ function calculation.update(player, subfactory)
         player_table.active_subfactory = subfactory
 
         local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-
-        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
-            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
-
-            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
-                subfactory.matrix_free_items = {}
-                subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-                matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
-            end
-
-            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
-                local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
-                if matrix_metadata.num_rows == matrix_metadata.num_cols and
-                  #linear_dependence_data.linearly_dependent_recipes == 0 then
-                    matrix_solver.run_matrix_solver(subfactory_data, false)
-                    subfactory.linearly_dependant = false
-                else
-                    set_blank_subfactory(player, subfactory)  -- reset subfactory by blanking everything
-
-                    -- Don't open the dialog if calculations are run during migration etc.
-                    if main_dialog.is_in_focus(player) or player_table.ui_state.modal_dialog_type ~= nil then
-                        modal_dialog.enter(player, {type="matrix", allow_queueing=true})
-                    end
-                end
-            else  -- reset top level items
-                set_blank_subfactory(player, subfactory)
-            end
+        if subfactory.solver == "matrix" then
+            matrix_solver.run_matrix_solver(subfactory_data)
         else
             sequential_solver.update_subfactory(subfactory_data)
         end
 
-        --player_table.active_subfactory = nil  -- reset after calculations have been carried out
+        player_table.active_subfactory = nil  -- reset after calculations have been carried out
     end
 end
 
@@ -213,8 +168,7 @@ function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = nil,
-        matrix_free_items = subfactory.matrix_free_items
+        top_floor = nil
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -238,7 +192,6 @@ function calculation.interface.set_subfactory_result(result)
 
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
-    subfactory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do

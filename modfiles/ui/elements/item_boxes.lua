@@ -2,7 +2,7 @@ item_boxes = {}
 
 --- ** LOCAL UTIL **
 local function add_recipe(player, context, type, item_proto)
-    if type == "byproduct" and context.subfactory.matrix_free_items == nil then
+    if type == "byproduct" and context.subfactory.solver == "traditional" then
         title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
         return
     end
@@ -56,7 +56,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     local default_style = (class == "Ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
 
     local action = "act_on_top_level_" .. category
-    local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
+    local matrix_active = (ui_state.context.subfactory.solver == "matrix")
     local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
     local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, true)
 
