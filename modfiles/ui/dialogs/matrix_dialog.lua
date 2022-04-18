@@ -29,9 +29,10 @@ local function refresh_item_category(modal_data, type)
     table_items.clear()
 
     for index, proto in ipairs(modal_data[type .. "_items"]) do
-        table_items.add{type="sprite-button", tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index},
-          sprite=proto.sprite, tooltip=proto.localised_name, style="flib_slot_button_default",
+        local button = table_items.add{type="sprite-button", sprite=proto.sprite, tooltip=proto.localised_name,
+          tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index}, style="flib_slot_button_default",
           mouse_button_filter={"left"}}
+        button.style.size = 48
     end
 end
 
@@ -41,7 +42,7 @@ local function create_item_category(modal_data, type, label_arg)
     local title_string = (type == "free") and {"fp.matrix_free_items"} or
       {"fp.matrix_constrained_items", label_arg, {"fp.pl_item", label_arg}}
     local label_title = flow_category.add{type="label", caption=title_string}
-    label_title.style.font = "heading-2"
+    label_title.style.single_line = false
 
     local frame_items = flow_category.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
     local table_items = frame_items.add{type="table", column_count=8, style="filter_slot_table"}

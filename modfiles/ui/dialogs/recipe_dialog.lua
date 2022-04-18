@@ -97,7 +97,7 @@ local function attempt_adding_line(player, recipe_id)
     local line = Line.init(recipe)
 
     -- If finding a machine fails, this line is invalid
-    if Line.change_machine(line, player, nil, nil) == false then  -- not sure this can even happen because generator
+    if Line.change_machine_to_default(line, player) == false then  -- not sure this can even happen because generator
         title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
 
     else
@@ -109,52 +109,15 @@ local function attempt_adding_line(player, recipe_id)
             Floor.insert_at(ui_state.context.floor, (add_after_position + 1), line)
         end
 
-        local preferences = data_util.get("preferences", player)
-        local mb_defaults = preferences.mb_defaults
         local message = nil
-
         if not (recipe.proto.custom or player.force.recipes[recipe.proto.name].enabled) then
             message = {text={"fp.warning_recipe_disabled"}, type="warning"}
         end
-
-        -- Add default machine modules, if desired by the user
-        local machine_module = mb_defaults.machine
-        local secondary_module = mb_defaults.machine_secondary
-
-        if machine_module and Machine.check_module_compatibility(line.machine, machine_module) then
-            local new_module = Module.init_by_proto(machine_module, line.machine.proto.module_limit)
-            Machine.add(line.machine, new_module)
-
-        elseif secondary_module and Machine.check_module_compatibility(line.machine, secondary_module) then
-            local new_module = Module.init_by_proto(secondary_module, line.machine.proto.module_limit)
-            Machine.add(line.machine, new_module)
-
-        -- Only show an error if any module default is actually set
-        elseif machine_module and message == nil then  -- don't overwrite previous message, if it exists
-            message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
-        end
-
-        -- Add default beacon modules, if desired by the user
-        local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
-        local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
-
-        if beacon_module_proto ~= nil and beacon_count ~= nil then
-            local blank_beacon = Beacon.init(beacon_proto, beacon_count, nil, line)
-
-            if Beacon.check_module_compatibility(blank_beacon, beacon_module_proto) then
-                local module = Module.init_by_proto(beacon_module_proto, beacon_proto.module_limit)
-                Beacon.add(blank_beacon, module)
-
-                Line.set_beacon(line, blank_beacon)
-
-            elseif message == nil then  -- don't overwrite previous message, if it exists
-                message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, type="warning"}
-            end
-        end
+        local defaults_message = Line.apply_mb_defaults(line, player)
+        if not message then message = defaults_message end  -- a bit silly
 
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
-
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
     end
 end
@@ -275,8 +238,8 @@ function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
 end
 
 
-local function handle_filter_change(player, tags, metadata)
-    local boolean_state = ui_util.switch.convert_to_boolean(metadata.switch_state)
+local function handle_filter_change(player, tags, event)
+    local boolean_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
     data_util.get("modal_data", player).filters[tags.filter_name] = boolean_state
     data_util.get("preferences", player).recipe_filters[tags.filter_name] = boolean_state
 
@@ -286,12 +249,11 @@ end
 
 -- ** TOP LEVEL **
 recipe_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"fp.two_word_title", {"fp.add"}, {"fp.pl_recipe", 1}},
+    caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
     subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
       modal_data.product_proto.localised_name},
     search_handler_name = "apply_recipe_filter",
-    create_content_frame = true,
-    force_auto_center = true
+    create_content_frame = true
 } end)
 
 -- Checks whether the dialog needs to be created at all

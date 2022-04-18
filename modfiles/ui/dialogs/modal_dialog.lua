@@ -5,8 +5,10 @@ require("utility_dialog")
 require("picker_dialog")
 require("recipe_dialog")
 require("matrix_dialog")
-require("modules_dialog")
 require("porter_dialog")
+require("subfactory_dialog")
+require("machine_dialog")
+require("beacon_dialog")
 
 modal_dialog = {}
 
@@ -163,6 +165,7 @@ function modal_dialog.enter(player, dialog_settings)
 
     ui_state.modal_dialog_type = dialog_settings.type
     ui_state.modal_data.modal_elements = {}
+    ui_state.modal_data.confirmed_dialog = false
 
     -- Create interface_dimmer first so the layering works out correctly
     local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
@@ -175,30 +178,22 @@ function modal_dialog.enter(player, dialog_settings)
     local frame_modal_dialog = create_base_modal_dialog(player, dialog_settings, ui_state.modal_data)
     dialog_object.open(player, ui_state.modal_data)
     player.opened = frame_modal_dialog
-
-    if dialog_settings.force_auto_center then frame_modal_dialog.force_auto_center() end
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
-function modal_dialog.exit(player, button_action, skip_player_opened)
+function modal_dialog.exit(player, action, skip_player_opened)
     local ui_state = data_util.get("ui_state", player)
     if ui_state.modal_dialog_type == nil then return end
 
     local modal_elements = ui_state.modal_data.modal_elements
     local submit_button = modal_elements.dialog_submit_button
 
-    -- If no action is give, submit if possible, otherwise close the dialog
-    if button_action == nil then
-        button_action = (submit_button and submit_button.enabled) and "submit" or "cancel"
-
-    -- Stop exiting if it is not possible on this dialog, or the button is disabled
-    elseif button_action == "submit" and (not submit_button or not submit_button.enabled) then
-        return
-    end
+    -- Stop exiting if trying to submit while submission is disabled
+    if action == "submit" and (submit_button and not submit_button.enabled) then return end
 
     -- Call the closing function for this dialog, if it exists
     local closing_function = _G[ui_state.modal_dialog_type .. "_dialog"].close
-    if closing_function ~= nil then closing_function(player, button_action) end
+    if closing_function ~= nil then closing_function(player, action) end
 
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
@@ -276,8 +271,8 @@ modal_dialog.gui_events = {
         },
         {
             name = "re-center_modal_dialog",
-            handler = (function(player, _, metadata)
-                if metadata.click == "middle" then
+            handler = (function(player, _, event)
+                if event.button == defines.mouse_button_type.middle then
                     local modal_elements = data_util.get("modal_elements", player)
                     modal_elements.modal_frame.force_auto_center()
                 end
@@ -299,8 +294,8 @@ modal_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "modal_searchfield",
-            handler = (function(player, _, metadata)
-                local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+            handler = (function(player, _, event)
+                local search_term = event.element.text:gsub("^%s*(.-)%s*$", "%1"):lower()
                 local handler_name = data_util.get("modal_data", player).search_handler_name
                 SEARCH_HANDLERS[handler_name](player, search_term)
             end)
@@ -309,14 +304,20 @@ modal_dialog.gui_events = {
     on_gui_closed = {
         {
             name = "close_modal_dialog",
-            handler = (function(player, _)
+            handler = (function(player, _, event)
                 local ui_state = data_util.get("ui_state", player)
 
                 if ui_state.flags.selection_mode then
                     modal_dialog.leave_selection_mode(player)
                 else
-                    modal_dialog.exit(player, "cancel")
+                    -- Here, we need to distinguish between submitting a dialog with E or ESC
+                    modal_dialog.exit(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
+                    -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
+                    if event.element.valid then player.opened = event.element end
                 end
+
+                -- Reset .confirmed_dialog if this event didn't actually lead to the dialog closing
+                if event.element.valid then ui_state.modal_data.confirmed_dialog = false end
             end)
         }
     }
@@ -327,6 +328,11 @@ modal_dialog.misc_events = {
         if not data_util.get("flags", player).selection_mode then
             modal_dialog.exit(player, "submit")
         end
+    end),
+
+    fp_confirm_gui = (function(player, _)
+        -- Note that a GUI was closed by confirming, so it'll try submitting on_gui_closed
+        data_util.get("modal_data", player).confirmed_dialog = true
     end),
 
     fp_focus_searchfield = (function(player, _)

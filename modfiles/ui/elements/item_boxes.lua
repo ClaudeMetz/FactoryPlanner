@@ -8,14 +8,13 @@ local function add_recipe(player, context, type, item_proto)
     end
 
     if context.floor.level > 1 then
-        production_box.change_floor(player, "top")
-        local message = {"fp.warning_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
-        -- This needs a lifetime of 2 to survive one additional refresh down the chain
-        title_bar.enqueue_message(player, message, "warning", 2, false)
+        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
+        title_bar.enqueue_message(player, message, "error", 1, true)
+    else
+        local production_type = (type == "byproduct") and "consume" or "produce"
+        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto,
+          production_type=production_type}})
     end
-
-    local production_type = (type == "byproduct") and "consume" or "produce"
-    modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto, production_type=production_type}})
 end
 
 local function build_item_box(player, category, column_count)
@@ -54,21 +53,12 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
-    local default_style, tut_mode_tooltip, global_enable = "flib_slot_button_default", "", true
+    local default_style = (class == "Ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
 
-    if class == "Product" then
-        default_style = "flib_slot_button_red"
-        tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true)
-    elseif class == "Byproduct" then
-        default_style = "flib_slot_button_red"
-        if subfactory.matrix_free_items ~= nil then
-            tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_byproduct", true, true, true)
-        else
-            global_enable = false
-        end
-    elseif class == "Ingredient" then
-        tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_ingredient", true, true, true)
-    end
+    local action = "act_on_top_level_" .. category
+    local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
+    local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
+    local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, true)
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
         local required_amount = (class == "Product") and Item.required_amount(item) or nil
@@ -79,39 +69,37 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
         if class == "Product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
             local percentage_string = ui_util.format_number(satisfied_percentage, 3)
-            satisfaction_line = {"fp.newline", {"fp.two_word_title", (percentage_string .. "%"), {"fp.satisfied"}}}
+            satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
 
             if satisfied_percentage <= 0 then style = "flib_slot_button_red"
             elseif satisfied_percentage < 100 then style = "flib_slot_button_yellow"
             else style = "flib_slot_button_green" end
         end
 
-        local indication, tut_tooltip, enabled = "", tut_mode_tooltip, global_enable
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local name_line, tooltip, enabled = nil, nil, true
         if item.proto.type == "entity" then  -- only relevant to ingredients
-            indication = {"fp.indication", {"fp.indication_raw_ore"}}
-            tut_tooltip = ""
+            name_line = {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}
+            tooltip = {"", name_line, number_line, satisfaction_line}
             enabled = false
+        else
+            name_line = {"fp.tt_title", item.proto.localised_name}
+            tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
         end
 
-        local name_line = {"fp.two_word_title", item.proto.localised_name, indication}
-        local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, tut_tooltip}
-
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-          tags={mod="fp", on_gui_click="act_on_top_level_item", category=category, item_id=item.id},
-          enabled=enabled, mouse_button_filter={"left-and-right"}}
+          tags={mod="fp", on_gui_click=action, category=category, item_id=item.id}, enabled=enabled,
+          mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
         ::skip_item::  -- goto for fun, wooohoo
     end
 
     if allow_addition then  -- meaning allow the user to add items of this type
-        local button_add = table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
+        table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
           tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
-          tooltip={"fp.two_word_title", {"fp.add"}, {"fp.pl_" .. category, 1}},
-          style="fp_sprite-button_inset_tiny", mouse_button_filter={"left"}}
-        button_add.style.padding = 3
-        button_add.style.margin = 3
+          tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
+          style="fp_sprite-button_inset_add", mouse_button_filter={"left"}}
         table_item_count = table_item_count + 1
     end
 
@@ -120,76 +108,68 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 end
 
 
-local function handle_item_button_click(player, tags, metadata)
+local function handle_item_add(player, tags, event)
+    local context = data_util.get("context", player)
+
+    if event.shift then  -- paste
+        -- Use a fake item to paste on top of
+        local class = tags.category:gsub("^%l", string.upper)
+        local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
+        ui_util.clipboard.paste(player, fake_item)
+    else
+        modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=tags.category}})
+    end
+end
+
+local function handle_item_button_click(player, tags, action)
     local context = data_util.get("context", player)
     local subfactory = context.subfactory
 
     local class = (tags.category:gsub("^%l", string.upper))
     local item = Subfactory.get(subfactory, class, tags.item_id)
 
-    if metadata.alt then
-        data_util.execute_alt_action(player, "show_item", {item=item.proto, click=metadata.click})
+    if action == "add_recipe" then
+        add_recipe(player, context, tags.category, item.proto)
 
-    elseif not ui_util.check_archive_status(player) then
-        return
+    elseif action == "edit" then
+        modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
 
-    else  -- individual handlers
-        if class == "Product" then
-            if metadata.direction ~= nil then  -- Shift product in the given direction
-                if Subfactory.shift(subfactory, item, metadata.direction) then
-                    -- Row count doesn't change, so we can refresh directly
-                    refresh_item_box(player, "product", subfactory, true)
-                else
-                    local direction_string = (metadata.direction == "negative") and {"fp.left"} or {"fp.right"}
-                    local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_product", 1}, direction_string}
-                    title_bar.enqueue_message(player, message, "error", 1, true)
-                end
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, item)
 
-            elseif metadata.click == "left" then
-                add_recipe(player, context, "product", item.proto)
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, item)
 
-            elseif metadata.click == "right" then
-                if metadata.action == "edit" then
-                    modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
+    elseif action == "delete" then
+        Subfactory.remove(subfactory, item)
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
 
-                elseif metadata.action == "delete" then
-                    Subfactory.remove(subfactory, item)
+    elseif action == "specify_amount" then
+        -- Set the view state so that the amount shown in the dialog makes sense
+        view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
 
-                    calculation.update(player, subfactory)
-                    main_dialog.refresh(player, "subfactory")
-                end
-            end
-
-        elseif class == "Byproduct" then
-            add_recipe(player, context, "byproduct", item.proto)
-
-        elseif class == "Ingredient" then
-            if metadata.click == "left" then
-                add_recipe(player, context, "ingredient", item.proto)
-            elseif metadata.click == "right" then
-                -- Set the view state so that the amount shown in the dialog makes sense
-                view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
-
-                local modal_data = {
-                    title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
-                    text = {"fp.options_item_text", item.proto.localised_name},
-                    submission_handler_name = "scale_subfactory_by_ingredient_amount",
-                    object = item,
-                    fields = {
-                        {
-                            type = "numeric_textfield",
-                            name = "item_amount",
-                            caption = {"fp.options_item_amount"},
-                            tooltip = {"fp.options_subfactory_ingredient_amount_tt"},
-                            text = item.amount,
-                            width = 140,
-                            focus = true
-                        }
-                    }
+        local modal_data = {
+            title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
+            text = {"fp.options_item_text", item.proto.localised_name},
+            submission_handler_name = "scale_subfactory_by_ingredient_amount",
+            object = item,
+            fields = {
+                {
+                    type = "numeric_textfield",
+                    name = "item_amount",
+                    caption = {"fp.options_item_amount"},
+                    tooltip = {"fp.options_subfactory_ingredient_amount_tt"},
+                    text = item.amount,
+                    width = 140,
+                    focus = true
                 }
-                modal_dialog.enter(player, {type="options", modal_data=modal_data})
-            end
-        end
+            }
+        }
+        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+
+    elseif action == "recipebook" then
+        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -259,12 +239,37 @@ item_boxes.gui_events = {
     on_gui_click = {
         {
             name = "add_top_level_item",
-            handler = (function(player, tags, _)
-                modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=tags.category}})
-            end)
+            handler = handle_item_add
         },
         {
-            name = "act_on_top_level_item",
+            name = "act_on_top_level_product",
+            modifier_actions = {
+                add_recipe = {"left", {archive_open=false}},
+                edit = {"right", {archive_open=false}},
+                copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
+                delete = {"control-right", {archive_open=false}},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_top_level_byproduct",
+            modifier_actions = {
+                add_recipe = {"left", {archive_open=false, matrix_active=true}},
+                copy = {"shift-right"},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_top_level_ingredient",
+            modifier_actions = {
+                add_recipe = {"left", {archive_open=false}},
+                specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                copy = {"shift-right"},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
             handler = handle_item_button_click
         }
     }

@@ -17,7 +17,7 @@ main_dialog = {}
 -- the game automtically closes the currently open GUI before calling this one. This means the top layer
 -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
 -- layer at this point and need to close the things below, if there are any.
-local function handle_other_gui_opening(player)
+local function handle_other_gui_opening(player, _)
     local ui_state = data_util.get("ui_state", player)
 
     -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
@@ -147,17 +147,17 @@ function main_dialog.toggle(player, skip_player_opened)
         main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
-        local dialog_visible = not frame_main_dialog.visible
-        frame_main_dialog.visible = dialog_visible
+        local new_dialog_visible = not frame_main_dialog.visible
+        frame_main_dialog.visible = new_dialog_visible
         if not skip_player_opened then  -- flag used only for hacky internal reasons
-            player.opened = (dialog_visible) and frame_main_dialog or nil
+            player.opened = (new_dialog_visible) and frame_main_dialog or nil
         end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
         title_bar.refresh_message(player)
 
         -- Make sure FP is not behind some vanilla interfaces
-        if dialog_visible then
+        if new_dialog_visible then
             ui_state.main_elements.background_dimmer.bring_to_front()
             frame_main_dialog.bring_to_front()
         end
@@ -216,12 +216,18 @@ function main_dialog.determine_main_dialog_dimensions(player, products_per_row, 
 end
 
 
+function NTH_TICK_HANDLERS.delayed_interface_toggle(metadata)
+    game.print("Mods reloaded")
+    main_dialog.toggle(game.get_player(metadata.player_index))
+end
+
+
 -- ** EVENTS **
 main_dialog.gui_events = {
     on_gui_closed = {
         {
             name = "close_main_dialog",
-            handler = (function(player, _)
+            handler = (function(player, _, _)
                 main_dialog.toggle(player)
             end)
         }
@@ -230,7 +236,12 @@ main_dialog.gui_events = {
         {
             name = "mod_gui_toggle_interface",
             handler = (function(player, _, _)
-                main_dialog.toggle(player)
+                if DEVMODE then  -- implicit mod reload for easier development
+                    game.reload_mods()   -- needs to be delayed by a tick since the reload is not instant
+                    data_util.nth_tick.add((game.tick + 1), "delayed_interface_toggle", {player_index=player.index})
+                else
+                    main_dialog.toggle(player)
+                end
             end)
         },
         {

@@ -34,6 +34,15 @@ based on https://www.hec.ca/en/cams/help/topics/The_steps_of_the_simplex_algorit
 
 matrix_solver = {}
 
+local function split_string(s, separator)
+    local result = {}
+    for token in string.gmatch(s, "[^" .. separator .. "]+") do
+        table.insert(result, (tonumber(token) or token))
+    end
+    return result
+end
+
+
 function matrix_solver.get_recipe_protos(recipe_ids)
     local recipe_protos = {}
     for i, recipe_id in ipairs(recipe_ids) do
@@ -164,7 +173,7 @@ function matrix_solver.num_elements(...)
     local arg = {...}
     local count = 0
     for _, set in pairs(arg) do
-        for e, _ in pairs(set) do
+        for _, _ in pairs(set) do
             count = count + 1
         end
     end
@@ -572,9 +581,9 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
 
     -- initialize matrix to all zeros
     local matrix = {}
-    for i=1, #rows.values do
+    for _=1, #rows.values do
         local row = {}
-        for j=1, #columns.values+1 do -- extra +1 for desired output column
+        for _=1, #columns.values+1 do -- extra +1 for desired output column
             table.insert(row, 0)
         end
         table.insert(matrix, row)

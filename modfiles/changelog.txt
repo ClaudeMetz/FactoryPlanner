@@ -2,11 +2,61 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added copy/paste functionality, allowing you to copy machines, beacons, modules, recipe lines and items
+    - Subfactory names now support rich text, making them be not restricted to a single icon anymore if desired
+    - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
+    - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
   Changes:
-    - 
+    - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
+    - Combined the various machine dialogs (entity picker, limits, modules, fuel) into one
+    - Unified the interactions and appearance of modules for machines and beacons
+    - Moved the utility dialog button to the production toolbar
+    - Streamlined the modifier-clicks for various actions to be more consistent across the mod
+    - Made the 'reset machine' action also set modules and beacons to their configured defaults if possible
+    - Pressing 'E' with an open dialog now tries to confirm instead of closing, mirroring vanilla behavior
+    - Improved consistency and visual appeal of various tooltips
+    - Removed mod interactions with FNEI and WIIRUF, meaning only Recipe Book remains supported (with deeper integration than before)
+    - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
+    - Added a ko-fi patronage 'link' to the preferences pane
+    - Updated to flib 0.9.1
   Bugfixes:
-    - 
+    - Fixed that the first recipe on subfloors could be moved down in certain circumstances
+    - Fixed that shift-click adding a subfactory and cancelling the picker dialog would create an empty subfactory
+    - Fixed that deleting a subfactory through the 'edit subfactory'-dialog would not put it into the archive
+
+---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    -
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.38
+Date: 14. 04. 2022
+  Changes:
+    - Minor UI improvements, such as a better explanation of the matrix solver
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.37
+Date: 23. 03. 2022
+  Bugfixes:
+    - Actually actually fixed the stupid scaling issue, maybe
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.36
+Date: 21. 03. 2022
+  Bugfixes:
+    - Actually fixed the image scaling issue with the matrix solver, as the previous fix resulted in a crash instead
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.35
+Date: 21. 03. 2022
+  Bugfixes:
+    - Potentially fixed an image scaling issue with the matrix solver dialog
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.34

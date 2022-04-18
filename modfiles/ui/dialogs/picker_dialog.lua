@@ -68,8 +68,10 @@ local function add_item_picker(parent_flow, player)
     modal_elements.groups = {}
 
     local existing_products = {}
-    for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
-        existing_products[product.proto.name] = true
+    if not ui_state.modal_data.create_subfactory then  -- check if this is for a new subfactory or not
+        for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
+            existing_products[product.proto.name] = true
+        end
     end
 
     local items_per_column = 10
@@ -321,8 +323,8 @@ local function handle_item_pick(player, tags, _)
     update_dialog_submit_button(modal_data.modal_elements)
 end
 
-local function handle_belt_pick(player, _, metadata)
-    local belt_name = metadata.elem_value
+local function handle_belt_pick(player, _, event)
+    local belt_name = event.element.elem_value
     local belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
 
     local modal_data = data_util.get("modal_data", player)
@@ -337,9 +339,8 @@ end
 picker_dialog.dialog_settings = (function(modal_data)
     local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
     return {
-        caption = {"fp.two_word_title", action, {"fp.pl_" .. modal_data.item_category, 1}},
+        caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
         search_handler_name = (not modal_data.object) and "search_picker_items" or nil,
-        force_auto_center = true,
         show_submit_button = true,
         show_delete_button = (modal_data.object ~= nil)
     }
@@ -347,11 +348,9 @@ end)
 
 function picker_dialog.open(player, modal_data)
     -- Create a blank subfactory if requested
-    local subfactory = (modal_data.create_subfactory) and subfactory_list.add_subfactory(player, "", nil)
-      or data_util.get("context", player).subfactory
-
-    modal_data.timescale = subfactory.timescale
-    modal_data.lob = data_util.get("settings", player).belts_or_lanes
+    local settings = data_util.get("settings", player)
+    modal_data.timescale = settings.default_timescale
+    modal_data.lob = settings.belts_or_lanes
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
@@ -369,9 +368,8 @@ function picker_dialog.open(player, modal_data)
 end
 
 function picker_dialog.close(player, action)
-    local modal_data = data_util.get("modal_data", player)
-    local subfactory = data_util.get("context", player).subfactory
-    local item = modal_data.object
+    local ui_state = data_util.get("ui_state", player)
+    local modal_data, context = ui_state.modal_data, ui_state.context
 
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
@@ -381,27 +379,27 @@ function picker_dialog.close(player, action)
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
         local refresh_scope = "subfactory"
-        if item ~= nil then  -- ie. this is an edit
-            item.required_amount = req_amount
+        if modal_data.object ~= nil then  -- ie. this is an edit
+            modal_data.object.required_amount = req_amount
         else
             local class_name = (modal_data.item_category:gsub("^%l", string.upper))
-            local top_level_item = Item.init_by_proto(modal_data.item_proto, class_name, 0, req_amount)
+            local top_level_item = Item.init(modal_data.item_proto, class_name, 0, req_amount)
 
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
-                local split_sprite = split_string(top_level_item.proto.sprite, "/")
-                subfactory.icon = {type=split_sprite[1], name=split_sprite[2]}
+                local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "]"
+                subfactory_list.add_subfactory(player, subfactory_name)  -- sets context to new subfactory
                 refresh_scope = "all"  -- need to refresh subfactory list too
             end
 
-            Subfactory.add(subfactory, top_level_item)  -- finally add the item to the subfactory
+            Subfactory.add(context.subfactory, top_level_item)
         end
 
-        calculation.update(player, subfactory)
+        calculation.update(player, context.subfactory)
         main_dialog.refresh(player, refresh_scope)
 
     elseif action == "delete" then
-        Subfactory.remove(subfactory, item)
-        calculation.update(player, subfactory)
+        Subfactory.remove(context.subfactory, modal_data.object)
+        calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end
