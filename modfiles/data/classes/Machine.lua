@@ -90,6 +90,13 @@ function Machine.paste(self, object)
     end
 end
 
+function Machine.clone(self)
+    local clone = Machine.unpack(Machine.pack(self))
+    clone.parent = self.parent
+    Machine.validate(clone)
+    return clone
+end
+
 
 function Machine.pack(self)
     return {
