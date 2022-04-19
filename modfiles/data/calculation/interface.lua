@@ -54,6 +54,9 @@ local function generate_floor_data(player, subfactory, floor)
         lines = {}
     }
 
+    local mining_productivity = (subfactory.mining_productivity ~= nil) and
+      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
 
@@ -69,20 +72,23 @@ local function generate_floor_data(player, subfactory, floor)
             if relevant_line.percentage == 0 or not relevant_line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
-                line_data.recipe_proto = line.recipe.proto  -- reference
+                line_data.recipe_proto = line.recipe.proto
                 line_data.timescale = subfactory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
                 line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
                 line_data.beacon_consumption = 0
-                line_data.priority_product_proto = line.priority_product_proto  -- reference
-                line_data.machine_proto = line.machine.proto  -- reference
-                line_data.total_effects = line.total_effects  -- reference
+                line_data.priority_product_proto = line.priority_product_proto
+                line_data.machine_proto = line.machine.proto
+
+                -- Effects - update effects first if mining prod is relevant
+                if line.machine.proto.mining then Machine.summarize_effects(line.machine, mining_productivity) end
+                line_data.total_effects = line.total_effects
 
                 -- Fuel prototype
                 if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
 
-                -- Beacon total (can be calculated here, which is faster and simpler)
+                -- Beacon total - can be calculated here, which is faster and simpler
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then
                     line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
                 end
