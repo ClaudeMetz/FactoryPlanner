@@ -202,10 +202,9 @@ function ui_util.clipboard.paste(player, target)
     if clip == nil then
         ui_util.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        -- Create a clone to paste by unpacking the clip, which creates a new independent object
-        local clone = _G[clip.class].unpack(clip.object)
+        local clone = _G[clip.class].unpack(fancytable.deep_copy(clip.object))
         clone.parent = target.parent
-        _G[clip.class].validate(clip.object)
+        _G[clip.class].validate(clone)
 
         local success, error = _G[target.class].paste(target, clone)
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
