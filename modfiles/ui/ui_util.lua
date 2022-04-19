@@ -184,12 +184,12 @@ end
 
 
 -- ** CLIPBOARD **
--- Copies the given object into the player's clipboard
+-- Copies the given object into the player's clipboard as a packed object
 function ui_util.clipboard.copy(player, object)
     local player_table = data_util.get("table", player)
     player_table.clipboard = {
         class = object.class,
-        object = data_util.clone_object(object)
+        object = _G[object.class].pack(object)
     }
     ui_util.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
 end
@@ -202,10 +202,12 @@ function ui_util.clipboard.paste(player, target)
     if clip == nil then
         ui_util.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local copy_for_paste = data_util.clone_object(clip.object)
-        -- TODO could keep cloned object packed in the clipboard and only unpack to paste
-        local success, error = _G[target.class].paste(target, copy_for_paste)
+        -- Create a clone to paste by unpacking the clip, which creates a new independent object
+        local clone = _G[clip.class].unpack(clip.object)
+        clone.parent = target.parent
+        _G[clip.class].validate(clip.object)
 
+        local success, error = _G[target.class].paste(target, clone)
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             ui_util.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 

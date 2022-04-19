@@ -44,20 +44,6 @@ function data_util.get_attributes(type, prototype)
     end
 end
 
--- Clones the given object using pack/unpacking, which is not ideal
--- performance-wise, but good enough and simpler for its use-cases
-function data_util.clone_object(object)
-    -- Floors can't be cloned this was for technical reasons
-    -- Subfactories or Lines with subfloor should be cloned instead
-    if object.class ~= "Floor" then
-        local object_class = _G[object.class]
-        local cloned_object = object_class.unpack(object_class.pack(object))
-        cloned_object.parent = object.parent  -- necessary for validation
-        object_class.validate(cloned_object)
-        return cloned_object
-    end
-end
-
 -- Checks whether the given recipe's products are used on the given floor
 -- The triple loop is crappy, but it's the simplest way to check
 function data_util.check_product_compatibiltiy(floor, recipe)

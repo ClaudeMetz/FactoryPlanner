@@ -338,7 +338,7 @@ subfactory_list.gui_events = {
             name = "duplicate_subfactory",
             handler = (function(player, _, _)
                 local context = data_util.get("context", player)
-                local clone = data_util.clone_object(context.subfactory)
+                local clone = Subfactory.clone(context.subfactory)
                 local inserted_clone = Factory.add(context.factory, clone)
 
                 ui_util.context.set_subfactory(player, inserted_clone)

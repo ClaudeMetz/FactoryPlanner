@@ -149,6 +149,14 @@ function Subfactory.add_subfloor_references(self, line)
 end
 
 
+function Subfactory.clone(self)
+    local clone = Subfactory.unpack(Subfactory.pack(self))
+    clone.parent = self.parent
+    Subfactory.validate(clone)
+    return clone
+end
+
+
 function Subfactory.pack(self)
     local packed_free_items = (self.matrix_free_items) and {} or nil
     for index, proto in pairs(self.matrix_free_items or {}) do

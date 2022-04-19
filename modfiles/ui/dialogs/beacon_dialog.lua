@@ -100,7 +100,7 @@ end)
 
 function beacon_dialog.open(player, modal_data)
     if modal_data.object ~= nil then
-       modal_data.dialog_beacon = data_util.clone_object(modal_data.object)
+       modal_data.dialog_beacon = Beacon.clone(modal_data.object)
     else
         local beacon_proto = prototyper.defaults.get(player, "beacons")
         local beacon_count = data_util.get("preferences", player).mb_defaults.beacon_count
