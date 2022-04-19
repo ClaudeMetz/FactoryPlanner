@@ -202,7 +202,8 @@ function ui_util.clipboard.paste(player, target)
     if clip == nil then
         ui_util.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local clone = _G[clip.class].unpack(fancytable.deep_copy(clip.object))
+        local level = (clip.class == "Line") and target.parent.level or nil
+        local clone = _G[clip.class].unpack(fancytable.deep_copy(clip.object), level)
         clone.parent = target.parent
         _G[clip.class].validate(clone)
 
