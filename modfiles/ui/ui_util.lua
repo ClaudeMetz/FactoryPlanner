@@ -1,7 +1,8 @@
-mod_gui = require("mod-gui")
+local mod_gui = require("mod-gui")
 
 ui_util = {
     context = {},
+    clipboard = {},
     switch = {}
 }
 
@@ -32,6 +33,38 @@ function ui_util.select_all(textfield)
     textfield.select_all()
 end
 
+
+function ui_util.create_flying_text(player, text)
+    player.create_local_flying_text{text=text, create_at_cursor=true}
+end
+
+function ui_util.create_cursor_blueprint(player, blueprint_entities)
+    local script_inventory = game.create_inventory(1)
+    local blank_slot = script_inventory[1]
+
+    blank_slot.set_stack{name="fp_cursor_blueprint"}
+    blank_slot.set_blueprint_entities(blueprint_entities)
+    player.add_to_clipboard(blank_slot)
+    player.activate_paste()
+    script_inventory.destroy()
+end
+
+
+-- This function is only called when Recipe Book is active, so no need to check for the mod
+function ui_util.open_in_recipebook(player, type, name)
+    local message = nil
+
+    if remote.call("RecipeBook", "version") ~= RECIPEBOOK_API_VERSION then
+        message = {"fp.error_recipebook_version_incompatible"}
+    else
+        local was_opened = remote.call("RecipeBook", "open_page", player.index, type, name)
+        if not was_opened then message = {"fp.error_recipebook_lookup_failed", {"fp.pl_" .. type, 1}} end
+    end
+
+    if message then title_bar.enqueue_message(player, message, "error", 1, true) end
+end
+
+
 -- Toggles the visibility of the toggle-main-dialog-button
 function ui_util.toggle_mod_gui(player)
     local enable = data_util.get("settings", player).show_gui_button
@@ -50,34 +83,10 @@ function ui_util.toggle_mod_gui(player)
     end
 end
 
-
--- ** MISC **
-function ui_util.generate_tutorial_tooltip(player, element_type, has_alt_action, add_padding, avoid_archive)
-    local player_table = data_util.get("table", player)
-
-    local archive_check = (avoid_archive and player_table.ui_state.flags.archive_open)
-    if player_table.preferences.tutorial_mode and not archive_check then
-        local action_tooltip = {"fp.tut_mode_" .. element_type}
-
-        local alt_action_name, alt_action_tooltip = player_table.settings.alt_action, ""
-        if has_alt_action and alt_action_name ~= "none" then
-            alt_action_tooltip = {"fp.tut_mode_alt_action", {"fp.alt_action_" .. alt_action_name}}
-        end
-
-        local padding = (add_padding) and {"fp.tut_mode_tooltip_padding"} or ""
-        return {"fp.tut_mode_tooltip", padding, action_tooltip, alt_action_tooltip}
-    else
-        return ""
-    end
-end
-
-function ui_util.check_archive_status(player)
-    if data_util.get("flags", player).archive_open then
-        title_bar.enqueue_message(player, {"fp.error_editing_archived_subfactory"}, "error", 1, true)
-        return false
-    else
-        return true
-    end
+-- Destroys the toggle-main-dialog-button if present
+function ui_util.destroy_mod_gui(player)
+    local mod_gui_button = mod_gui.get_button_flow(player)["fp_button_toggle_interface"]
+    if mod_gui_button then mod_gui_button.destroy() end
 end
 
 
@@ -139,7 +148,7 @@ end
 
 
 
--- **** Context ****
+-- ** Context **
 -- Creates a blank context referencing which part of the Factory is currently displayed
 function ui_util.context.create(player)
     return {
@@ -154,7 +163,7 @@ function ui_util.context.set_factory(player, factory)
     local context = data_util.get("context", player)
     context.factory = factory
     local subfactory = factory.selected_subfactory or
-      Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
+    Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
     ui_util.context.set_subfactory(player, subfactory)
 end
 
@@ -174,7 +183,53 @@ function ui_util.context.set_floor(player, floor)
 end
 
 
--- **** Switch utility ****
+-- ** CLIPBOARD **
+-- Copies the given object into the player's clipboard
+function ui_util.clipboard.copy(player, object)
+    local player_table = data_util.get("table", player)
+    player_table.clipboard = {
+        class = object.class,
+        object = data_util.clone_object(object)
+    }
+    ui_util.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
+end
+
+-- Tries pasting the player's clipboard content onto the given target
+function ui_util.clipboard.paste(player, target)
+    local player_table = data_util.get("table", player)
+    local clip = player_table.clipboard
+
+    if clip == nil then
+        ui_util.create_flying_text(player, {"fp.clipboard_empty"})
+    else
+        local copy_for_paste = data_util.clone_object(clip.object)
+        -- TODO could keep cloned object packed in the clipboard and only unpack to paste
+        local success, error = _G[target.class].paste(target, copy_for_paste)
+
+        if success then  -- objects in the clipboard are always valid since it resets on_config_changed
+            ui_util.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
+
+            calculation.update(player, player_table.ui_state.context.subfactory)
+            main_dialog.refresh(player, "subfactory")
+        else
+            local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
+            if error == "incompatible_class" then
+                ui_util.create_flying_text(player, {"fp.clipboard_incompatible_class", object_lower, target_lower})
+            elseif error == "incompatible" then
+                ui_util.create_flying_text(player, {"fp.clipboard_incompatible", object_lower})
+            elseif error == "already_exists" then
+                ui_util.create_flying_text(player, {"fp.clipboard_already_exists", target_lower})
+            elseif error == "no_empty_slots" then
+                ui_util.create_flying_text(player, {"fp.clipboard_no_empty_slots"})
+            elseif error == "recipe_irrelevant" then
+                ui_util.create_flying_text(player, {"fp.clipboard_recipe_irrelevant"})
+            end
+        end
+    end
+end
+
+
+-- ** Switch utility **
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)

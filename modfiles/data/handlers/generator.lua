@@ -596,7 +596,7 @@ function generator.all_fuels()
 
     -- Add solid fuels
     local item_map = new_item_types[NEW.all_items.map["item"]].map
-    local item_fuel_filter = table.shallow_copy(fuel_filter)
+    local item_fuel_filter = fancytable.shallow_copy(fuel_filter)
     table.insert(item_fuel_filter, {filter="flag", flag="hidden", invert=true, mode="and"})
 
     for _, proto in pairs(game.get_filtered_item_prototypes(item_fuel_filter)) do
@@ -617,7 +617,7 @@ function generator.all_fuels()
 
     -- Add liquid fuels
     local fluid_map = new_item_types[NEW.all_items.map["fluid"]].map
-    local fluid_fuel_filter = table.shallow_copy(fuel_filter)
+    local fluid_fuel_filter = fancytable.shallow_copy(fuel_filter)
     table.insert(fluid_fuel_filter, {filter="hidden", invert=true, mode="and"})
 
     for _, proto in pairs(game.get_filtered_fluid_prototypes(fluid_fuel_filter)) do

@@ -1,7 +1,7 @@
 tutorial_dialog = {}
 
 -- ** LOCAL UTIL **
-local tab_definitions = {"interface", "usage", "matrix_solver", "pro_tips"}
+local tab_definitions = {"interface", "usage"}
 
 function tab_definitions.interface(player, tab, tab_pane)
     tab.caption = {"fp.interface"}
@@ -40,8 +40,8 @@ function tab_definitions.interface(player, tab, tab_pane)
 
     -- Interface tutorial
     local frame_interface = add_base_frame("interface")
-    local alt_action_string = {"fp.alt_action_" .. data_util.get("settings", player).alt_action}
-    local label_controls = frame_interface.add{type="label", caption={"fp.interface_controls", alt_action_string}}
+    local recipebook_string = (script.active_mods["RecipeBook"]) and {"fp.interface_controls_recipebook"} or ""
+    local label_controls = frame_interface.add{type="label", caption={"", {"fp.interface_controls"}, recipebook_string}}
     label_controls.style.single_line = false
     label_controls.style.margin = {6, 0, 0, 6}
 end
@@ -53,27 +53,6 @@ function tab_definitions.usage(_, tab, tab_pane)
     local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
     label_text.style.single_line = false
     label_text.style.padding = 2
-end
-
-function tab_definitions.matrix_solver(_, tab, tab_pane)
-    tab.caption = {"fp.matrix_solver"}
-
-    local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
-    local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_matrix_solver_text"}}
-    label_text.style.single_line = false
-    label_text.style.padding = 2
-end
-
-function tab_definitions.pro_tips(_, tab, tab_pane)
-    tab.caption = {"fp.pro_tips"}
-
-    local protip_names = {"shortcuts", "line_fuel", "list_ordering", "hovering", "interface_size", "settings",
-      "recursive_subfloors", "priority_product", "preferences", "up_down_grading", "archive", "machine_limits"}
-    for _, name in ipairs(protip_names) do
-        local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
-        local label = bordered_frame.add{type="label", caption={"fp.pro_" .. name}}
-        label.style.single_line = false
-    end
 end
 
 
@@ -108,7 +87,8 @@ tutorial_dialog.gui_events = {
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
-                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING, true)
+                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING)
+                main_dialog.refresh(player, "all")
                 modal_dialog.exit(player, "cancel")
             end)
         }
@@ -116,9 +96,9 @@ tutorial_dialog.gui_events = {
     on_gui_switch_state_changed = {
         {
             name = "toggle_tutorial_mode",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local preferences = data_util.get("preferences", player)
-                preferences.tutorial_mode = ui_util.switch.convert_to_boolean(metadata.switch_state)
+                preferences.tutorial_mode = ui_util.switch.convert_to_boolean(event.element.switch_state)
                 main_dialog.refresh(player, "all")
             end)
         }

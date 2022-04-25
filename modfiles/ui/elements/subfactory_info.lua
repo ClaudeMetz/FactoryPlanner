@@ -33,18 +33,14 @@ local function change_timescale(player, new_timescale)
     main_dialog.refresh(player, "subfactory")
 end
 
-local function handle_solver_change(player, _, metadata)
+local function handle_solver_change(player, _, event)
     local subfactory = data_util.get("context", player).subfactory
-    local new_solver = (metadata.switch_state == "left") and "traditional" or "matrix"
+    local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
+    subfactory.solver = new_solver
 
-    if new_solver == "matrix" then
-        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-    else
-        subfactory.matrix_free_items = nil  -- disable the matrix solver
-        subfactory.linearly_dependant = false
-
-        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
+    if new_solver == "traditional" then
         local any_lines_removed = false
+        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
         local function remove_consuming_recipes(floor)
             for _, line in pairs(Floor.get_in_order(floor, "Line")) do
                 if line.subfloor then
@@ -97,10 +93,10 @@ function subfactory_info.build(player)
 
     local button_repair = flow_repair.add{type="button", tags={mod="fp", on_gui_click="repair_subfactory"},
       caption={"fp.repair_subfactory"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-    button_repair.style.top_margin = 4
+    button_repair.style.top_margin = 2
 
 
-    -- 'No subfactory' flow - This is very stupid
+    -- 'No subfactory' flow - this is very stupid
     local flow_no_subfactory = frame_vertical.add{type="flow", direction="horizontal"}
     main_elements.subfactory_info["no_subfactory_flow"] = flow_no_subfactory
     flow_no_subfactory.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -119,38 +115,21 @@ function subfactory_info.build(player)
     table_power_pollution.style.horizontal_spacing = 20
 
     local flow_power = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_power.add{type="label", caption={"fp.key_title", {"fp.u_power"}}}
+    flow_power.add{type="label", caption={"fp.u_power"}}
     local label_power_value = flow_power.add{type="label"}
     main_elements.subfactory_info["power_label"] = label_power_value
 
     local flow_pollution = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_pollution.add{type="label", caption={"fp.key_title", {"fp.u_pollution"}}}
+    flow_pollution.add{type="label", caption={"fp.pollution"}}
     local label_pollution_value = flow_pollution.add{type="label"}
     main_elements.subfactory_info["pollution_label"] = label_pollution_value
-
-    -- Utility
-    local table_utility = flow_info.add{type="table", column_count=2}
-    table_utility.style.horizontal_spacing = 24
-    main_elements.subfactory_info["utility_table"] = table_utility
-
-    local flow_utility = table_utility.add{type="flow", direction="horizontal"}
-    flow_utility.style.vertical_align = "center"
-    flow_utility.style.horizontal_spacing = 8
-    flow_utility.add{type="label", caption={"fp.key_title", {"fp.utility"}}}
-    flow_utility.add{type="button", tags={mod="fp", on_gui_click="open_utility_dialog"}, caption={"fp.view_utilities"},
-      style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-
-    local label_notes = table_utility.add{type="label", caption={"fp.info_label", {"fp.notes"}}}
-    main_elements.subfactory_info["notes_label"] = label_notes
 
     -- Timescale
     local flow_timescale = flow_info.add{type="flow", direction="horizontal"}
     flow_timescale.style.horizontal_spacing = 10
-    flow_timescale.style.top_margin = 8
     flow_timescale.style.vertical_align = "center"
 
-    flow_timescale.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.timescale"}}},
-      tooltip={"fp.timescale_tt"}}
+    flow_timescale.add{type="label", caption={"fp.info_label", {"fp.timescale"}}, tooltip={"fp.timescale_tt"}}
 
     local table_timescales = flow_timescale.add{type="table", column_count=table_size(TIMESCALE_MAP)}
     table_timescales.style.horizontal_spacing = 0
@@ -166,7 +145,7 @@ function subfactory_info.build(player)
     flow_mining_prod.style.horizontal_spacing = 10
     flow_mining_prod.style.vertical_align = "center"
 
-    flow_mining_prod.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.mining_productivity"}}},
+    flow_mining_prod.add{type="label", caption={"fp.info_label", {"fp.mining_productivity"}},
       tooltip={"fp.mining_productivity_tt"}}
 
     local label_prod_bonus = flow_mining_prod.add{type="label"}
@@ -192,20 +171,21 @@ function subfactory_info.build(player)
     flow_solver_choice.style.horizontal_spacing = 10
     flow_solver_choice.style.vertical_align = "center"
 
-    flow_solver_choice.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.solver_choice"}}},
+    flow_solver_choice.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}},
       tooltip={"fp.solver_choice_tt"}}
 
     local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
       left_label_caption={"fp.solver_choice_traditional"},
       tags={mod="fp", on_gui_switch_state_changed="solver_choice_changed"}}
+      switch_solver_choice.style.margin = {0, 4, 0, 2}
     main_elements.subfactory_info["solver_choice_switch"] = switch_solver_choice
 
-    local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
+    --[[ local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
       tooltip={"fp.solver_choice_configure"}, tags={mod="fp", on_gui_click="configure_matrix_solver"},
       style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     button_configure_solver.style.size = 26
     button_configure_solver.style.padding = 0
-    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver
+    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver ]]
 
     local second_pusher = frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
     main_elements.subfactory_info["second_pusher"] = second_pusher
@@ -231,7 +211,7 @@ function subfactory_info.refresh(player)
 
     elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
-        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
+        local matrix_solver_active = (subfactory.solver == "matrix")
 
         -- Power + Pollution
         local label_power = subfactory_info_elements.power_label
@@ -241,17 +221,6 @@ function subfactory_info.refresh(player)
         local label_pollution = subfactory_info_elements.pollution_label
         label_pollution.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.pollution, "P/m", 3)}
         label_pollution.tooltip = ui_util.format_SI_value(subfactory.pollution, "P/m", 5)
-
-        -- Utility
-        local notes_present = (subfactory.notes ~= "")
-        subfactory_info_elements.utility_table.draw_vertical_lines = notes_present
-        subfactory_info_elements.notes_label.visible = notes_present
-
-        if notes_present then
-            local tooltip = (string.len(subfactory.notes) < 1000) and
-              subfactory.notes or string.sub(subfactory.notes, 1, 1000) .. "\n[...]"
-            subfactory_info_elements.notes_label.tooltip = tooltip
-        end
 
         -- Timescale
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
@@ -266,7 +235,7 @@ function subfactory_info.refresh(player)
 
         if not custom_prod_set then  -- only do this calculation when it'll actually be shown
             local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
-            subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", {"fp.percentage_title", prod_bonus}}
+            subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", prod_bonus .. "%"}
         end
         subfactory_info_elements.prod_bonus_label.visible = not custom_prod_set
 
@@ -284,7 +253,7 @@ function subfactory_info.refresh(player)
         local switch_state = (matrix_solver_active) and "right" or "left"
         subfactory_info_elements.solver_choice_switch.switch_state = switch_state
         subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
-        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
+        --subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
     end
 end
 
@@ -296,12 +265,6 @@ subfactory_info.gui_events = {
             name = "repair_subfactory",
             timeout = 20,
             handler = repair_subfactory
-        },
-        {
-            name = "open_utility_dialog",
-            handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="utility"})
-            end)
         },
         {
             name = "change_timescale",
@@ -317,20 +280,20 @@ subfactory_info.gui_events = {
                 calculation.update(player, subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)
-        },
+        }--[[ ,
         {
             name = "configure_matrix_solver",
             handler = (function(player, _, _)
                 modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
             end)
-        }
+        } ]]
     },
     on_gui_text_changed = {
         {
             name = "mining_prod_override",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local ui_state = data_util.get("ui_state", player)
-                ui_state.context.subfactory.mining_productivity = tonumber(metadata.text)
+                ui_state.context.subfactory.mining_productivity = tonumber(event.element.text)
                 ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
             end)
         }

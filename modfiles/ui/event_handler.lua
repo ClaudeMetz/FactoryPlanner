@@ -1,9 +1,9 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
-local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_info, item_boxes,
+local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_dialog, subfactory_info, item_boxes,
   production_box, production_handler, view_state, modal_dialog, porter_dialog, import_dialog, export_dialog,
-  tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, module_dialog, beacon_dialog,
-  modules_dialog, picker_dialog, recipe_dialog, matrix_dialog}
+  tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, picker_dialog, recipe_dialog,
+  module_configurator, machine_dialog, beacon_dialog}
 
 -- ** RATE LIMITING **
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
@@ -31,6 +31,28 @@ local function rate_limiting_active(player, tick, action_name, timeout)
     end
 end
 
+-- ** TUTORIAL TOOLTIPS **
+local function generate_tutorial_tooltip_lines(modifier_actions)
+    local action_lines = {}
+
+    for modifier_click, modifier_action in pairs(modifier_actions) do
+        if modifier_action.name ~= "recipebook" then  -- needs dynamic handling
+            local split_modifiers = util.split(modifier_click, "-")
+
+            local modifier_string = {""}
+            for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
+                table.insert(modifier_string, {"", {"fp.tut_" .. modifier}, " + "})
+            end
+            table.insert(modifier_string, {"fp.tut_" .. split_modifiers[#split_modifiers]})
+
+            local action_string = {"fp.tut_action_line", modifier_string, {"fp.tut_" .. modifier_action.name}}
+            table.insert(action_lines, {string=action_string, limitations=modifier_action.limitations})
+        end
+    end
+
+    return action_lines
+end
+
 
 -- ** GUI EVENTS **
 -- These handlers go out to the first thing that it finds that registered for it
@@ -47,7 +69,7 @@ local gui_identifier_map = {
 }
 
 local gui_timeouts = {
-    on_gui_click = 4,
+    on_gui_click = 2,
     on_gui_confirmed = 20
 }
 
@@ -55,67 +77,18 @@ local gui_timeouts = {
 -- ** SPECIAL HANDLERS **
 local special_gui_handlers = {}
 
-local mouse_click_map = {
-    [defines.mouse_button_type.left] = "left",
-    [defines.mouse_button_type.right] = "right",
-    [defines.mouse_button_type.middle] = "middle"
-}
-special_gui_handlers.on_gui_click = (function(event, _, _)
-    local click = mouse_click_map[event.button]
-
-    local direction, action
-    if click == "left" then
-        if not event.control and event.shift then direction = "positive"  -- TODO check whether all this crap is needed
-        elseif event.control and not event.shift then direction = "negative" end
-    elseif click == "right" and not event.alt then
-        if event.control and not event.shift then action = "delete"
-        elseif not event.control and not event.shift then action = "edit" end
-    end
-
-    local metadata = {shift=event.shift, control=event.control, alt=event.alt,
-      click=click, direction=direction, action=action}
-
-    return true, metadata
-end)
-
-
-special_gui_handlers.on_gui_text_changed = (function(event, _, _)
-    return true, {text = event.element.text}
-end)
-
-special_gui_handlers.on_gui_checked_state_changed = (function(event, _, _)
-    return true, {state = event.element.state}
-end)
-
-special_gui_handlers.on_gui_switch_state_changed = (function(event, _, _)
-    return true, {switch_state = event.element.switch_state}
-end)
-
-special_gui_handlers.on_gui_elem_changed = (function(event, _, _)
-    return true, {elem_value = event.element.elem_value}
-end)
-
-special_gui_handlers.on_gui_value_changed = (function(event, _, _)
-    return true, {slider_value = event.element.slider_value}
-end)
-
 special_gui_handlers.on_gui_closed = (function(event, _, _)
-    if event.gui_type == defines.gui_type.custom and event.element.visible then
-        return true, nil
+    return (event.gui_type == defines.gui_type.custom and event.element.visible)
+end)
+
+special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
+    if action_name then return true end  -- run the standard handler if one is found
+
+    -- Otherwise, close the currently open modal dialog if possible
+    if data_util.get("ui_state", player).modal_dialog_type ~= nil then
+        modal_dialog.exit(player, "submit")
     end
     return false
-end)
-
-special_gui_handlers.on_gui_confirmed = (function(event, player, action)
-    if action ~= nil then  -- Run the standard handler if one is found
-        return true, {text = event.element.text}
-
-    -- Otherwise, close the currently open modal dialog, if possible
-    -- (doesn't need rate limiting because of the modal_dialog_type check)
-    elseif data_util.get("ui_state", player).modal_dialog_type ~= nil then
-        modal_dialog.exit(player, "submit")
-        return false
-    end
 end)
 
 
@@ -135,13 +108,42 @@ for _, object in pairs(gui_objects) do
             local event_table = gui_event_cache[event_name]
 
             for _, action in pairs(actions) do
-                local timeout = (action.timeout) and action.timeout or gui_timeouts[event_name]  -- could be nil
-                event_table.actions[action.name] = {handler = action.handler, timeout = timeout}
+                local timeout = action.timeout or gui_timeouts[event_name]  -- can be nil
+                local action_table = {handler = action.handler, timeout = timeout}
+
+                if event_name == "on_gui_click" and action.modifier_actions then
+                    action_table.modifier_actions = {}
+                    -- Transform modifier actions into a more useable form
+                    for modifier_action_name, modifier_action in pairs(action.modifier_actions) do
+                        local modifier_click = modifier_action[1]
+                        action_table.modifier_actions[modifier_click] = {
+                            name = modifier_action_name,
+                            limitations = modifier_action[2] or {}
+                        }
+                    end
+
+                    -- Generate all the tooltip lines for these modifier actions
+                    TUTORIAL_TOOLTIPS[action.name] = generate_tutorial_tooltip_lines(action_table.modifier_actions)
+                end
+
+                event_table.actions[action.name] = action_table
             end
         end
     end
 end
 
+local mouse_click_map = {
+    [defines.mouse_button_type.left] = "left",
+    [defines.mouse_button_type.right] = "right",
+    [defines.mouse_button_type.middle] = "middle"
+}
+local function convert_click_to_string(event)
+    local modifier_click = mouse_click_map[event.button]
+    if event.shift then modifier_click = "shift-" .. modifier_click end
+    if event.alt then modifier_click = "alt-" .. modifier_click end
+    if event.control then modifier_click = "control-" .. modifier_click end
+    return modifier_click
+end
 
 local function handle_gui_event(event)
     if not event.element then return end
@@ -149,32 +151,45 @@ local function handle_gui_event(event)
     local tags = event.element.tags
     if tags.mod ~= "fp" then return end
 
+    -- GUI events always have an associated player
+    local player = game.get_player(event.player_index)
+
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
     local event_table = gui_event_cache[event_name]
-
     local action_name = tags[event_name]  -- could be nil
 
-    local player, metadata = game.get_player(event.player_index), nil
-    -- Run the event through the special handler, if one exists; it can stop the event from proceeding
-    if event_table.special_handler then
-        local run_event, md = event_table.special_handler(event, player, action_name)
-        if not run_event then return end
-        metadata = md  -- this is stupid
-    end
+    -- If a special handler is set, it needs to return true before proceeding with the registered handlers
+    local special_handler = event_table.special_handler
+    if special_handler and special_handler(event, player, action_name) == false then return end
 
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
     if not action_name then return end  -- meaning this event type has no action on this element
-    local action = event_table.actions[action_name]
-
-    -- Don't allow unhandled actions to avoid oversights in development
-    if not action then error("\nNo handler for the '" .. action_name .. "'-action!"); end
+    local action_table = event_table.actions[action_name]
 
     -- Check if rate limiting allows this action to proceed
-    if not rate_limiting_active(player, event.tick, action_name, action.timeout) then
-        action.handler(player, tags, metadata)
+    if rate_limiting_active(player, event.tick, action_name, action_table.timeout) then return end
+
+    local third_parameter = event  -- all GUI events except on_gui_click have the event as the third parameter
+
+    -- Special modifier handling for on_gui_click if configured
+    if event_name == "on_gui_click" and action_table.modifier_actions then
+        local modifier_action = action_table.modifier_actions[convert_click_to_string(event)]
+        if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
+
+        local active_limitations = {
+            archive_open = data_util.get("flags", player).archive_open,
+            matrix_active = (data_util.get("context", player).subfactory.solver == "matrix"),
+            recipebook = (script.active_mods["RecipeBook"] ~= nil)
+        }
+        -- Check whether the selected action is allowed according to its limitations
+        if not data_util.action_allowed(modifier_action.limitations, active_limitations) then return end
+
+        third_parameter = modifier_action.name
     end
+
+    action_table.handler(player, tags, third_parameter)
 end
 
 -- Register all the GUI events from the identifier map
@@ -199,6 +214,7 @@ local misc_identifier_map = {
     -- Keyboard shortcuts
     ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
+    ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
     ["fp_toggle_pause"] = "fp_toggle_pause",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",
@@ -213,10 +229,9 @@ local misc_timeouts = {
 -- ** SPECIAL HANDLERS **
 local special_misc_handlers = {}
 
-special_misc_handlers.on_gui_opened = (function(_, event)
+special_misc_handlers.on_gui_opened = (function(event)
     -- This should only fire when a UI not associated with FP is opened, so FP's dialogs can close properly
-    return (event.gui_type ~= defines.gui_type.custom or not event.element
-      or event.element.tags.mod ~= "fp")
+    return (event.gui_type ~= defines.gui_type.custom or not event.element or event.element.tags.mod ~= "fp")
 end)
 
 
@@ -250,7 +265,7 @@ local function handle_misc_event(event)
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_handlers.special_handler
-    if special_handler and not event_handlers.special_handler(player, event) then return end
+    if special_handler and special_handler(event) == false then return end
 
     for _, registered_handler in pairs(event_handlers.registered_handlers) do registered_handler(player, event) end
 end

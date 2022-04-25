@@ -97,12 +97,6 @@ function title_bar.refresh_message(player)
     -- The message types are ordered by priority
     local types = {"error", "warning", "hint"}
 
-    -- TODO this is not the proper way to do this probably, but it works
-    local subfactory = ui_state.context.subfactory
-    if subfactory and subfactory.valid and subfactory.linearly_dependant then
-        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 1, false)
-    end
-
     local new_message = nil
     -- Go over the all types and messages, trying to find one that should be shown
     for _, type in ipairs(types) do
@@ -136,8 +130,8 @@ title_bar.gui_events = {
     on_gui_click = {
         {
             name = "re-center_main_dialog",
-            handler = (function(player, _, metadata)
-                if metadata.click == "middle" then
+            handler = (function(player, _, event)
+                if event.button == defines.mouse_button_type.middle then
                     local ui_state = data_util.get("ui_state", player)
                     local main_frame = ui_state.main_elements.main_frame
                     ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)

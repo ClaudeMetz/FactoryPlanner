@@ -26,26 +26,6 @@ local function set_blank_line(player, floor, line)
     }
 end
 
-local function set_blank_subfactory(player, subfactory)
-    local blank_class = structures.class.init()
-    calculation.interface.set_subfactory_result {
-        player_index = player.index,
-        energy_consumption = 0,
-        pollution = 0,
-        Product = blank_class,
-        Byproduct = blank_class,
-        Ingredient = blank_class,
-        matrix_free_items = subfactory.matrix_free_items
-    }
-
-    -- Subfactory structure does not matter as every line just needs to be blanked out
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-            set_blank_line(player, floor, line)
-        end
-    end
-end
-
 
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, subfactory, floor)
@@ -53,10 +33,6 @@ local function generate_floor_data(player, subfactory, floor)
         id = floor.id,
         lines = {}
     }
-
-    local mining_productivity = (subfactory.mining_productivity ~= nil) and
-      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
-    local check_usefulness = data_util.get("preferences", player).toggle_column
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
@@ -67,20 +43,11 @@ local function generate_floor_data(player, subfactory, floor)
             table.insert(floor_data.lines, line_data)
 
         else
-            local line_is_useful = true
-            if check_usefulness then  -- only care about this if the toggle_column is visible
-                -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
-                if line.percentage == 0 or not line.active then line_is_useful = false end
-
-                -- If this line is on a subfloor and the top line of the floor is useless, the line is useless too
-                if line_is_useful and line.parent.level > 1 then
-                    local first_floor_line = line.parent.defining_line
-                    if first_floor_line.percentage == 0 or not first_floor_line.active then line_is_useful = false end
-                end
-            end
-
-            if not line_is_useful then  -- any useless line doesn't need to go through the solver
-                set_blank_line(player, floor, line)
+            local relevant_line = (line.parent.level > 1) and line.parent.defining_line or line
+            -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
+            -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
+            if relevant_line.percentage == 0 or not relevant_line.active then
+                set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 line_data.recipe_proto = line.recipe.proto  -- reference
                 line_data.timescale = subfactory.timescale
@@ -90,20 +57,10 @@ local function generate_floor_data(player, subfactory, floor)
                 line_data.beacon_consumption = 0
                 line_data.priority_product_proto = line.priority_product_proto  -- reference
                 line_data.machine_proto = line.machine.proto  -- reference
+                line_data.total_effects = line.total_effects  -- reference
 
                 -- Fuel prototype
                 if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
-
-                -- Total effects
-                if line.machine.proto.mining then
-                    -- If there is mining prod, a copy of the table is required
-                    local effects = table.shallow_copy(line.total_effects)
-                    effects.productivity = effects.productivity + mining_productivity
-                    line_data.total_effects = effects
-                else
-                    -- If there's no mining prod, a reference will suffice
-                    line_data.total_effects = line.total_effects
-                end
 
                 -- Beacon total (can be calculated here, which is faster and simpler)
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then
@@ -126,7 +83,9 @@ local function update_object_items(object, item_class, item_results)
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
         local required_amount = (object.class == "Subfactory") and 0 or nil
-        local item = Item.init_by_item(item_result, item_class, item_result.amount, required_amount)
+        local item_type = global.all_items.types[global.all_items.map[item_result.type]]
+        local item_proto = item_type.items[item_type.map[item_result.name]]
+        local item = Item.init(item_proto, item_class, item_result.amount, required_amount)
         object_class.add(object, item)
     end
 end
@@ -187,38 +146,13 @@ function calculation.update(player, subfactory)
         player_table.active_subfactory = subfactory
 
         local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-
-        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
-            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
-
-            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
-                subfactory.matrix_free_items = {}
-                subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-                matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
-            end
-
-            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
-                local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
-                if matrix_metadata.num_rows == matrix_metadata.num_cols and
-                  #linear_dependence_data.linearly_dependent_recipes == 0 then
-                    matrix_solver.run_matrix_solver(subfactory_data, false)
-                    subfactory.linearly_dependant = false
-                else
-                    set_blank_subfactory(player, subfactory)  -- reset subfactory by blanking everything
-
-                    -- Don't open the dialog if calculations are run during migration etc.
-                    if main_dialog.is_in_focus(player) or player_table.ui_state.modal_dialog_type ~= nil then
-                        modal_dialog.enter(player, {type="matrix", allow_queueing=true})
-                    end
-                end
-            else  -- reset top level items
-                set_blank_subfactory(player, subfactory)
-            end
+        if subfactory.solver == "matrix" then
+            matrix_solver.run_matrix_solver(subfactory_data)
         else
             sequential_solver.update_subfactory(subfactory_data)
         end
 
-        --player_table.active_subfactory = nil  -- reset after calculations have been carried out
+        player_table.active_subfactory = nil  -- reset after calculations have been carried out
     end
 end
 
@@ -234,8 +168,7 @@ function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = nil,
-        matrix_free_items = subfactory.matrix_free_items
+        top_floor = nil
     }
 
     for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
@@ -259,7 +192,6 @@ function calculation.interface.set_subfactory_result(result)
 
     subfactory.energy_consumption = result.energy_consumption
     subfactory.pollution = result.pollution
-    subfactory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
     for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
