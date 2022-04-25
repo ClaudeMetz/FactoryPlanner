@@ -56,7 +56,7 @@ end
 function matrix_solver.get_item_key(item_type_name, item_name)
     local item_type_id = global.all_items.map[item_type_name]
     local item_id = global.all_items.types[item_type_id].map[item_name]
-    return tostring(item_type_id)..'_'..tostring(item_id)
+    return tostring(item_type_id) .. '_' .. tostring(item_id)
 end
 
 function matrix_solver.get_item(item_key)
@@ -72,14 +72,14 @@ function matrix_solver.get_item_name(item_key)
     local item_type_id = split_str[1]
     local item_id = split_str[2]
     local item_info = global.all_items.types[item_type_id].items[item_id]
-    return item_info.type.."_"..item_info.name
+    return item_info.type .. "_" .. item_info.name
 end
 
 function matrix_solver.print_rows(rows)
     local s = 'ROWS\n'
     for i, k in ipairs(rows.values) do
         local item_name = matrix_solver.get_item_name(k)
-        s = s..'ROW '..i..': '..item_name..'\n'
+        s = s .. 'ROW ' .. i .. ': ' .. item_name .. '\n'
     end
     llog(s)
 end
@@ -88,12 +88,12 @@ function matrix_solver.print_columns(columns)
     local s = 'COLUMNS\n'
     for i, k in ipairs(columns.values) do
         local col_split_str = split_string(k, "_")
-        if col_split_str[1]=="line" then
-            s = s..'COL '..i..': '..k..'\n'
+        if col_split_str[1] == "line" then
+            s = s .. 'COL ' .. i .. ': ' .. k .. '\n'
         else
-            local item_key = col_split_str[2].."_"..col_split_str[3]
+            local item_key = col_split_str[2] .. "_" .. col_split_str[3]
             local item_name = matrix_solver.get_item_name(item_key)
-            s = s..'COL '..i..': '..item_name..'\n'
+            s = s .. 'COL ' .. i .. ': ' .. item_name .. '\n'
         end
     end
     llog(s)
@@ -128,7 +128,7 @@ function matrix_solver.set_diff(a, b)
 end
 
 function matrix_solver.union_sets(...)
-    local arg = {...}
+    local arg = { ... }
     local result = {}
     for _, set in pairs(arg) do
         for val, _ in pairs(set) do
@@ -139,7 +139,7 @@ function matrix_solver.union_sets(...)
 end
 
 function matrix_solver.intersect_sets(...)
-    local arg = {...}
+    local arg = { ... }
     local counts = {}
     local num_sets = #arg
     for _, set in pairs(arg) do
@@ -153,7 +153,7 @@ function matrix_solver.intersect_sets(...)
     end
     local result = {}
     for k, count in pairs(counts) do
-        if count==num_sets then
+        if count == num_sets then
             result[k] = true
         end
     end
@@ -161,7 +161,7 @@ function matrix_solver.intersect_sets(...)
 end
 
 function matrix_solver.num_elements(...)
-    local arg = {...}
+    local arg = { ... }
     local count = 0
     for _, set in pairs(arg) do
         for e, _ in pairs(set) do
@@ -217,9 +217,9 @@ function matrix_solver.transpose(m)
         return transposed
     end
 
-    for i=1, #m[1] do
+    for i = 1, #m[1] do
         local row = {}
-        for j=1, #m do
+        for j = 1, #m do
             table.insert(row, m[j][i])
         end
         table.insert(transposed, row)
@@ -227,6 +227,135 @@ function matrix_solver.transpose(m)
     return transposed
 end
 
+-- used by function below, which can be removed once outside changes have happened
+function matrix_solver.find_linearly_dependent_cols(matrix, ignore_last)
+    -- Returns linearly dependent columns from a row-reduced matrix
+    -- Algorithm works as follows:
+    -- For each column:
+    --      If this column has a leading 1, track which row maps to this column using the ones_map variable (eg cols 1, 2, 3, 5)
+    --      Otherwise, this column is linearly dependent (eg col 4)
+    --          For any non-zero rows in this col, the col which contains that row's leading 1 is also linearly dependent
+    --                    (eg for col 4, we have row 2 -> col 2 and row 3 -> col 3)
+    -- The example below would give cols 2, 3, 4 as being linearly dependent (x's are non-zeros)
+    -- 1 0 0 0 0
+    -- 0 1 x x 0
+    -- 0 0 1 x 0
+    -- 0 0 0 0 1
+    -- I haven't proven this is 100% correct, this is just something I came up with
+    local row_index = 1
+    local num_rows = #matrix
+    local num_cols = #matrix[1]
+    if ignore_last then
+        num_cols = num_cols - 1
+    end
+    local ones_map = {}
+    local col_set = {}
+    for col_index = 1, num_cols do
+        if (row_index <= num_rows) and (matrix[row_index][col_index] == 1) then
+            ones_map[row_index] = col_index
+            row_index = row_index + 1
+        else
+            col_set[col_index] = true
+            for i = 1, row_index - 1 do
+                if matrix[i][col_index] ~= 0 then
+                    col_set[ones_map[i]] = true
+                end
+            end
+        end
+    end
+    return col_set
+end
+
+-- used by the function below it, which is used outside this file
+-- Contains the raw matrix solver. Converts an NxN+1 matrix to reduced row-echelon form.
+-- Based on the algorithm from octave: https://fossies.org/dox/FreeMat-4.2-Source/rref_8m_source.html
+function matrix_solver.to_reduced_row_echelon_form(m)
+    local num_rows = #m
+    if #m == 0 then return m end
+    local num_cols = #m[1]
+
+    -- set tolerance based on max value in matrix
+    local max_value = 0
+    for i = 1, num_rows do
+        for j = 1, num_cols do
+            if math.abs(m[i][j]) > max_value then
+                max_value = math.abs(m[i][j])
+            end
+        end
+    end
+    local tolerance = 1e-10 * max_value
+
+    local pivot_row = 1
+
+    for curr_col = 1, num_cols do
+        -- find row with highest value in curr col as next pivot
+        local max_pivot_index = pivot_row
+        local max_pivot_value = m[pivot_row][curr_col]
+        for curr_row = pivot_row + 1, num_rows do -- does this need an if-wrapper?
+            local curr_pivot_value = math.abs(m[curr_row][curr_col])
+            if math.abs(m[curr_row][curr_col]) > math.abs(max_pivot_value) then
+                max_pivot_index = curr_row
+                max_pivot_value = curr_pivot_value
+            end
+        end
+
+        if math.abs(max_pivot_value) < tolerance then
+            -- if highest value is approximately zero, set this row and all rows below to zero
+            for zero_row = pivot_row, num_rows do
+                m[zero_row][curr_col] = 0
+            end
+        else
+            -- swap current row with highest value row
+            for swap_col = curr_col, num_cols do
+                local temp = m[pivot_row][swap_col]
+                m[pivot_row][swap_col] = m[max_pivot_index][swap_col]
+                m[max_pivot_index][swap_col] = temp
+            end
+
+            -- normalize pivot row
+            local factor = m[pivot_row][curr_col]
+            for normalize_col = curr_col, num_cols do
+                m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
+            end
+
+            -- find nonzero cols in this row for the elimination step
+            nonzero_pivot_cols = {}
+            for update_col = curr_col + 1, num_cols do
+                curr_pivot_col_value = m[pivot_row][update_col]
+                if curr_pivot_col_value ~= 0 then
+                    nonzero_pivot_cols[update_col] = curr_pivot_col_value
+                end
+            end
+
+            -- eliminate current column from other rows
+            for update_row = 1, pivot_row - 1 do
+                if m[update_row][curr_col] ~= 0 then
+                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
+                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col] * pivot_col_value
+                    end
+                    m[update_row][curr_col] = 0
+                end
+            end
+            for update_row = pivot_row + 1, num_rows do
+                if m[update_row][curr_col] ~= 0 then
+                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
+                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col] * pivot_col_value
+                    end
+                    m[update_row][curr_col] = 0
+                end
+            end
+
+            -- only add 1 if there is another leading 1 row
+            pivot_row = pivot_row + 1
+
+            if pivot_row > num_rows then
+                break
+            end
+        end
+    end
+end
+
+-- still used outside this file
 function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
     local num_rows = matrix_metadata.num_rows
     local num_cols = matrix_metadata.num_cols
@@ -242,7 +371,7 @@ function matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metada
             local recipe_key = col_split_str[2]
             linearly_dependent_recipes[recipe_key] = true
         else -- "item"
-            local item_key = col_split_str[2].."_"..col_split_str[3]
+            local item_key = col_split_str[2] .. "_" .. col_split_str[3]
             linearly_dependent_items[item_key] = true
         end
     end
@@ -297,7 +426,7 @@ function matrix_solver.get_matrix_data(subfactory_data)
     local function get_line_names(prefix, lines)
         local line_names = {}
         for i, line in ipairs(lines) do
-            local line_key = prefix.."_"..i
+            local line_key = prefix .. "_" .. i
             -- these are exclusive because only actual recipes are allowed to be inputs to the matrix solver
             if line.subfloor == nil then
                 line_names[line_key] = true
@@ -308,16 +437,17 @@ function matrix_solver.get_matrix_data(subfactory_data)
         end
         return line_names
     end
+
     local line_names = get_line_names("line", subfactory_data.top_floor.lines)
 
     local raw_free_variables = matrix_solver.union_sets(subfactory_metadata.raw_inputs, subfactory_metadata.byproducts)
     local free_variables = {}
     for k, _ in pairs(raw_free_variables) do
-        free_variables["item_"..k] = true
+        free_variables["item_" .. k] = true
     end
     for _, v in ipairs(matrix_free_items) do
         local item_key = matrix_solver.get_item_key(v.type, v.name)
-        free_variables["item_"..item_key] = true
+        free_variables["item_" .. item_key] = true
     end
     --llog("\n\n\n\n\n\n\nNEW THING:")
     local col_set = matrix_solver.union_sets(line_names, free_variables)
@@ -353,7 +483,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
     --matrix_solver.print_matrix(matrix)
 
---[[ replaced by simplex solver
+    --[[ replaced by simplex solver
     matrix_solver.to_reduced_row_echelon_form(matrix)
     if check_linear_dependence then
         local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix, true)
@@ -382,7 +512,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local function set_line_results(prefix, floor)
         local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
         for i, line in ipairs(floor.lines) do
-            local line_key = prefix.."_"..i
+            local line_key = prefix .. "_" .. i
             local line_aggregate = nil
             if line.subfloor == nil then
                 local col_num = columns.map[line_key]
@@ -390,7 +520,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
                 local machine_count = result[col_num]
                 line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, false, subfactory_metadata, free_variables)
             else
-                line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
+                line_aggregate = set_line_results(prefix .. "_" .. i, line.subfloor)
                 matrix_solver.consolidate(line_aggregate)
             end
 
@@ -399,7 +529,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 
-            calculation.interface.set_line_result{
+            calculation.interface.set_line_result {
                 player_index = subfactory_data.player_index,
                 floor_id = floor.id,
                 line_id = line.id,
@@ -422,7 +552,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     local main_aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
 
     local skip_count = 0
-    for _,column in pairs(columns.values) do
+    for _, column in pairs(columns.values) do
         if split_string(column, "_")[1] == "item" then
             skip_count = skip_count + 1
         end
@@ -479,8 +609,8 @@ function matrix_solver.consolidate(aggregate)
         for type, type_table in pairs(aggregate[output_class]) do
             for item, output_amount in pairs(type_table) do
                 local item_table = {
-                    type=type,
-                    name=item
+                    type = type,
+                    name = item
                 }
                 if aggregate[input_class][type] ~= nil then
                     if aggregate[input_class][type][item] ~= nil then
@@ -498,10 +628,10 @@ function matrix_solver.consolidate(aggregate)
             end
         end
     end
+
     compare_classes("Ingredient", "Product")
     compare_classes("Ingredient", "Byproduct")
 end
-
 
 -- finds inputs and outputs for each line and desired outputs
 function matrix_solver.get_subfactory_metadata(subfactory_data)
@@ -511,7 +641,7 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
         desired_outputs[item_key] = product.amount
     end
     local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines,
-      subfactory_data.player_index)
+        subfactory_data.player_index)
     local line_inputs = lines_metadata.line_inputs
     local line_outputs = lines_metadata.line_outputs
     local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
@@ -572,26 +702,26 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
 
     -- initialize matrix to all zeros
     local matrix = {}
-    for i=1, #rows.values do
+    for i = 1, #rows.values do
         local row = {}
-        for j=1, #columns.values+1 do -- extra +1 for desired output column
+        for j = 1, #columns.values + 1 do -- extra +1 for desired output column
             table.insert(row, 0)
         end
         table.insert(matrix, row)
     end
 
     -- loop over columns since it's easier to look up items for lines/free vars than vice-versa
-    for col_num=1, #columns.values do
+    for col_num = 1, #columns.values do
         local col_str = columns.values[col_num]
         local col_split_str = split_string(col_str, "_")
         local col_type = col_split_str[1]
         if col_type == "item" then
-            local item_id = col_split_str[2].."_"..col_split_str[3]
+            local item_id = col_split_str[2] .. "_" .. col_split_str[3]
             local row_num = rows.map[item_id]
             matrix[row_num][col_num] = 1
         else -- "line"
             local floor = subfactory_data.top_floor
-            for i=2, #col_split_str-1 do
+            for i = 2, #col_split_str - 1 do
                 local line_table_id = col_split_str[i]
                 floor = floor.lines[line_table_id].subfloor
             end
@@ -600,7 +730,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
 
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index,
-              floor.id, 1, true)
+                floor.id, 1, true)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -628,7 +758,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
         -- will be nil for unproduced outputs
         if row_num ~= nil then
             local amount = product.amount
-            matrix[row_num][#columns.values+1] = amount
+            matrix[row_num][#columns.values + 1] = amount
         end
     end
 
@@ -646,7 +776,7 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local speed_multiplier = (1 + math.max(line_data.total_effects.speed, -0.8))
     local energy = recipe_proto.energy
     -- hacky workaround for recipes with zero energy - this really messes up the matrix
-    if energy==0 then energy=0.000000001 end
+    if energy == 0 then energy = 0.000000001 end
     local time_per_craft = energy / (machine_speed * speed_multiplier)
     local launch_sequence_time = line_data.machine_proto.launch_sequence_time
     if launch_sequence_time then
@@ -660,7 +790,7 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     for _, product in pairs(recipe_proto.products) do
         local prodded_amount = calculation.util.determine_prodded_amount(product, unmodified_crafts_per_second, total_effects)
         local item_key = matrix_solver.get_item_key(product.type, product.name)
-        if subfactory_metadata~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_"..item_key]) then
+        if subfactory_metadata ~= nil and (subfactory_metadata.byproducts[item_key] or free_variables["item_" .. item_key]) then
             structures.aggregate.add(line_aggregate, "Byproduct", product, prodded_amount * total_crafts_per_timescale)
         else
             structures.aggregate.add(line_aggregate, "Product", product, prodded_amount * total_crafts_per_timescale)
@@ -677,24 +807,24 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
     local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
-      machine_count, line_data.total_effects)
+        machine_count, line_data.total_effects)
     local pollution = calculation.util.determine_pollution(line_data.machine_proto, line_data.recipe_proto,
-      line_data.fuel_proto, line_data.total_effects, energy_consumption)
+        line_data.fuel_proto, line_data.total_effects, energy_consumption)
 
     local fuel_amount = nil
-    if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
+    if fuel_proto ~= nil then -- Seeing a fuel_proto here means it needs to be re-calculated
         fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
-          line_data.fuel_proto.fuel_value, timescale)
+            line_data.fuel_proto.fuel_value, timescale)
 
         if include_fuel_ingredient then
-            local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}
+            local fuel = { type = fuel_proto.type, name = fuel_proto.name, amount = fuel_amount }
             structures.aggregate.add(line_aggregate, "Ingredient", fuel, fuel_amount)
         end
 
-        energy_consumption = 0  -- set electrical consumption to 0 when fuel is used
+        energy_consumption = 0 -- set electrical consumption to 0 when fuel is used
 
     elseif line_data.machine_proto.energy_type == "void" then
-        energy_consumption = 0  -- set electrical consumption to 0 while still polluting
+        energy_consumption = 0 -- set electrical consumption to 0 while still polluting
     end
 
     line_aggregate.energy_consumption = energy_consumption
@@ -710,35 +840,35 @@ end
 
 function matrix_solver.print_matrix(m)
     local s = ""
-    s = s.."{\n"
+    s = s .. "{\n"
     for _, row in ipairs(m) do
-        s = s.."  {"
-        for j,col in ipairs(row) do
-            s = s..tostring(col)
-            if j<#row then
+        s = s .. "  {"
+        for j, col in ipairs(row) do
+            s = s .. tostring(col)
+            if j < #row then
                 local longest_in_row = 0
-                for _,row2 in ipairs(m) do
-                    if(string.len(tostring(row2[j])) > longest_in_row) then
+                for _, row2 in ipairs(m) do
+                    if (string.len(tostring(row2[j])) > longest_in_row) then
                         longest_in_row = string.len(tostring(row2[j]))
                     end
                 end
-                s = s..string.rep(" ", longest_in_row - string.len(tostring(col)) + 1)
+                s = s .. string.rep(" ", longest_in_row - string.len(tostring(col)) + 1)
             end
         end
-        s = s.."}\n"
+        s = s .. "}\n"
     end
-    s = s.."}"
+    s = s .. "}"
     llog(s)
 end
 
 function matrix_solver.get_mapping_struct(input_set)
     -- turns a set into a mapping struct (eg matrix rows or columns)
     -- a "mapping struct" consists of a table with:
-        -- key "values" - array of set values in sort order
-        -- key "map" - map from input_set values to integers, where the integer is the position in "values"
+    -- key "values" - array of set values in sort order
+    -- key "map" - map from input_set values to integers, where the integer is the position in "values"
     local values = matrix_solver.set_to_ordered_list(input_set)
     local map = {}
-    for i,k in ipairs(values) do
+    for i, k in ipairs(values) do
         map[k] = i
     end
     local result = {
@@ -755,137 +885,11 @@ function matrix_solver.set_to_ordered_list(s)
     return result
 end
 
--- Contains the raw matrix solver. Converts an NxN+1 matrix to reduced row-echelon form.
--- Based on the algorithm from octave: https://fossies.org/dox/FreeMat-4.2-Source/rref_8m_source.html
-function matrix_solver.to_reduced_row_echelon_form(m)
-    local num_rows = #m
-    if #m==0 then return m end
-    local num_cols = #m[1]
-
-    -- set tolerance based on max value in matrix
-    local max_value = 0
-    for i = 1, num_rows do
-        for j = 1, num_cols do
-            if math.abs(m[i][j]) > max_value then
-                max_value = math.abs(m[i][j])
-            end
-        end
-    end
-    local tolerance = 1e-10 * max_value
-
-    local pivot_row = 1
-
-    for curr_col = 1, num_cols do
-        -- find row with highest value in curr col as next pivot
-        local max_pivot_index = pivot_row
-        local max_pivot_value = m[pivot_row][curr_col]
-        for curr_row = pivot_row+1, num_rows do -- does this need an if-wrapper?
-            local curr_pivot_value = math.abs(m[curr_row][curr_col])
-            if math.abs(m[curr_row][curr_col]) > math.abs(max_pivot_value) then
-                max_pivot_index = curr_row
-                max_pivot_value = curr_pivot_value
-            end
-        end
-
-        if math.abs(max_pivot_value) < tolerance then
-            -- if highest value is approximately zero, set this row and all rows below to zero
-            for zero_row = pivot_row, num_rows do
-                m[zero_row][curr_col] = 0
-            end
-        else
-            -- swap current row with highest value row
-            for swap_col = curr_col, num_cols do
-                local temp = m[pivot_row][swap_col]
-                m[pivot_row][swap_col] = m[max_pivot_index][swap_col]
-                m[max_pivot_index][swap_col] = temp
-            end
-
-            -- normalize pivot row
-            local factor = m[pivot_row][curr_col]
-            for normalize_col = curr_col, num_cols do
-                m[pivot_row][normalize_col] = m[pivot_row][normalize_col] / factor
-            end
-
-            -- find nonzero cols in this row for the elimination step
-            nonzero_pivot_cols = {}
-            for update_col = curr_col+1, num_cols do
-                curr_pivot_col_value = m[pivot_row][update_col]
-                if curr_pivot_col_value ~= 0 then
-                    nonzero_pivot_cols[update_col] = curr_pivot_col_value
-                end
-            end
-
-            -- eliminate current column from other rows
-            for update_row = 1, pivot_row - 1 do
-                if m[update_row][curr_col] ~= 0 then
-                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
-                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*pivot_col_value
-                    end
-                    m[update_row][curr_col] = 0
-                end
-            end
-            for update_row = pivot_row+1, num_rows do
-                if m[update_row][curr_col] ~= 0 then
-                    for update_col, pivot_col_value in pairs(nonzero_pivot_cols) do
-                        m[update_row][update_col] = m[update_row][update_col] - m[update_row][curr_col]*pivot_col_value
-                    end
-                    m[update_row][curr_col] = 0
-                end
-            end
-
-            -- only add 1 if there is another leading 1 row
-            pivot_row = pivot_row + 1
-
-            if pivot_row > num_rows then
-                break
-            end
-        end
-    end
-end
-
-function matrix_solver.find_linearly_dependent_cols(matrix, ignore_last)
-    -- Returns linearly dependent columns from a row-reduced matrix
-    -- Algorithm works as follows:
-    -- For each column:
-    --      If this column has a leading 1, track which row maps to this column using the ones_map variable (eg cols 1, 2, 3, 5)
-    --      Otherwise, this column is linearly dependent (eg col 4)
-    --          For any non-zero rows in this col, the col which contains that row's leading 1 is also linearly dependent
-    --                    (eg for col 4, we have row 2 -> col 2 and row 3 -> col 3)
-    -- The example below would give cols 2, 3, 4 as being linearly dependent (x's are non-zeros)
-    -- 1 0 0 0 0
-    -- 0 1 x x 0
-    -- 0 0 1 x 0
-    -- 0 0 0 0 1
-    -- I haven't proven this is 100% correct, this is just something I came up with
-    local row_index = 1
-    local num_rows = #matrix
-    local num_cols = #matrix[1]
-    if ignore_last then
-        num_cols = num_cols - 1
-    end
-    local ones_map = {}
-    local col_set = {}
-    for col_index=1, num_cols do
-        if (row_index <= num_rows) and (matrix[row_index][col_index]==1) then
-            ones_map[row_index] = col_index
-            row_index = row_index+1
-        else
-            col_set[col_index] = true
-            for i=1, row_index-1 do
-                if matrix[i][col_index] ~= 0 then
-                    col_set[ones_map[i]] = true
-                end
-            end
-        end
-    end
-    return col_set
-end
-
 -- utility function that removes from a sorted array in place
 function matrix_solver.remove(orig_table, value)
     local i = 1
     local found = false
-    while i<=#orig_table and (not found) do
+    while i <= #orig_table and (not found) do
         local curr = orig_table[i]
         if curr >= value then
             found = true
@@ -893,7 +897,7 @@ function matrix_solver.remove(orig_table, value)
         if curr == value then
             table.remove(orig_table, i)
         end
-        i = i+1
+        i = i + 1
     end
 end
 
@@ -901,15 +905,15 @@ end
 function matrix_solver.insert(orig_table, value)
     local i = 1
     local found = false
-    while i<=#orig_table and (not found) do
+    while i <= #orig_table and (not found) do
         local curr = orig_table[i]
         if curr >= value then
-            found=true
+            found = true
         end
         if curr > value then
             table.insert(orig_table, i, value)
         end
-        i = i+1
+        i = i + 1
     end
     if not found then
         table.insert(orig_table, value)
@@ -925,7 +929,6 @@ function matrix_solver.shallowcopy(table)
     return copy
 end
 
-
 --Simplex Algo starts here
 
 ---@param matrix number[][]
@@ -933,12 +936,12 @@ end
 local function copy_and_transpose(matrix)
     local copy = {}
     if #matrix ~= 0 then
-        for x = 1,#matrix[1] do
+        for x = 1, #matrix[1] do
             copy[x] = {}
         end
     end
-    for k,v in pairs(matrix) do
-        for kk,vv in pairs(v) do
+    for k, v in pairs(matrix) do
+        for kk, vv in pairs(v) do
             copy[kk][k] = vv
         end
     end
@@ -949,28 +952,20 @@ end
 ---@return number[][]
 local function just_copy(matrix)
     local copy = {}
-    for k,v in pairs(matrix) do
+    for k, v in pairs(matrix) do
         copy[k] = {}
-        for kk,vv in pairs(v) do
+        for kk, vv in pairs(v) do
             copy[k][kk] = vv
         end
     end
     return copy
 end
 
-function matrix_solver.find_result_from_column(recipe_matrix, simplex, column, col_set, row_set)
-    if simplex.is_basic[column] then
-        return simplex.internal[simplex.is_basic[column]][simplex.variable_count+1][0] or 0
-    else
-        return 0
-    end
-end
-
 function matrix_solver.find_result_from_row(recipe_matrix, result, row, col_set, skip_count)
     local accumulated = 0
-    for i=1 + skip_count, #recipe_matrix[row]-1 do
+    for i = 1 + skip_count, #recipe_matrix[row] - 1 do
         accumulated = accumulated + recipe_matrix[row][i]
-                                    * result[i]
+            * result[i]
     end
     return -accumulated
 end
@@ -979,12 +974,12 @@ local function add_constraints(matrix, columns)
     local is_ingredient = {}
     local amount_not_ingredient = 0
     local index = 1
-    for k,v in pairs(matrix) do
+    for k, v in pairs(matrix) do
         if k < #matrix then
             local name = columns.values[k] or "line_AA"
             local split_name = split_string(name, "_")
             if split_name[1] == "fluid" or split_name[1] == "item" then
-                local item_name = matrix_solver.get_item_name(split_name[2].."_"..split_name[3])
+                local item_name = matrix_solver.get_item_name(split_name[2] .. "_" .. split_name[3])
                 if item_name == "fluid_water" then
                     is_ingredient[k] = 100
                 else
@@ -997,14 +992,14 @@ local function add_constraints(matrix, columns)
         end
     end
     local row_offset = #matrix - amount_not_ingredient - 1
-    for k,v in pairs(matrix) do
+    for k, v in pairs(matrix) do
         if is_ingredient[k] then
-            for _=1,amount_not_ingredient do
+            for _ = 1, amount_not_ingredient do
                 table.insert(v, 0)
             end
             table.insert(v, is_ingredient[k])
         else
-            for col=1,amount_not_ingredient do
+            for col = 1, amount_not_ingredient do
                 if col == k - row_offset then
                     table.insert(v, 1)
                 else
@@ -1044,6 +1039,7 @@ local function get_pivot(matrix)
     end
     return max_z ~= 0, final_col, final_row
 end
+
 local abs = math.abs
 local function do_pivot(mat, pivot_row, pivot_col)
     -- for [row, !column], divide by [row, column]
@@ -1058,13 +1054,13 @@ local function do_pivot(mat, pivot_row, pivot_col)
     local pivot = pivot_row_contents[pivot_col]
 
     local cols_to_do = {}
-    for col=1,column_count do
+    for col = 1, column_count do
         if col ~= pivot_col and pivot_row_contents[col] ~= 0 then
             table.insert(cols_to_do, col)
         end
     end
 
-    for _,col in pairs(cols_to_do) do
+    for _, col in pairs(cols_to_do) do
         local value = pivot_row_contents[col] / pivot
         if abs(value) < 1e-8 then
             value = 0
@@ -1075,10 +1071,10 @@ local function do_pivot(mat, pivot_row, pivot_col)
     pivot_row_contents[pivot_col] = 1
 
 
-    for row=1,row_count do
+    for row = 1, row_count do
         if row ~= pivot_row and mat[row][pivot_col] ~= 0 then
             local row_contents = mat[row]
-            for _,col in pairs(cols_to_do) do
+            for _, col in pairs(cols_to_do) do
                 local value = row_contents[col] - row_contents[pivot_col] * pivot_row_contents[col]
                 if abs(value) < 1e-8 then
                     value = 0
@@ -1088,7 +1084,7 @@ local function do_pivot(mat, pivot_row, pivot_col)
         end
     end
 
-    for row=1,row_count do
+    for row = 1, row_count do
         if row ~= pivot_row then
             mat[row][pivot_col] = 0
         end
@@ -1139,9 +1135,9 @@ function matrix_solver.do_simplex_algo(matrix, rows, columns)
     --llog("\n\n\n\n ============== 4 ==============")
     --matrix_solver.print_matrix(original)
     local s = "R: {"
-    for _,i in pairs(results) do
-        s = s..tostring(i).." "
+    for _, i in pairs(results) do
+        s = s .. tostring(i) .. " "
     end
-    llog(s.."}")
+    llog(s .. "}")
     return results
 end
