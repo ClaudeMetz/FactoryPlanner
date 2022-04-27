@@ -47,7 +47,7 @@ styles["fp_frame_slot_table"] = {
     parent = "filter_frame",
     top_padding = 4,
     bottom_padding = 12,
-    graphical_set = table.deepcopy(styles.filter_frame.graphical_set)
+    graphical_set = util.table.deepcopy(styles.filter_frame.graphical_set)
 }
 styles["fp_frame_slot_table"].graphical_set.base.bottom = nil
 
