@@ -1,11 +1,6 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
--- Checks whether the given (internal) prototype can be blueprinted
-local function is_entity_blueprintable(proto)
-    return (not game.entity_prototypes[proto.name].has_flag("not-blueprintable"))
-end
-
 local function handle_done_click(player, tags, _)
     local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -123,25 +118,6 @@ local function handle_machine_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, true) end
 
-    elseif action == "put_into_cursor" then
-        if not is_entity_blueprintable(line.machine.proto) then return end
-
-        local module_list = {}
-        for _, module in pairs(ModuleSet.get_in_order(line.machine.module_set)) do
-            module_list[module.proto.name] = module.amount
-        end
-
-        local blueprint_entity = {
-            entity_number = 1,
-            name = line.machine.proto.name,
-            position = {0, 0},
-            items = module_list,
-            recipe = line.recipe.proto.name
-        }
-
-        ui_util.create_cursor_blueprint(player, {blueprint_entity})
-        main_dialog.toggle(player)
-
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
     end
@@ -179,24 +155,6 @@ local function handle_beacon_click(player, tags, action)
         Line.set_beacon(line, nil)
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
-
-    elseif action == "put_into_cursor" then
-        if not is_entity_blueprintable(line.beacon.proto) then return end
-
-        local module_list = {}
-        for _, module in pairs(ModuleSet.get_in_order(line.beacon.module_set)) do
-            module_list[module.proto.name] = module.amount
-        end
-
-        local blueprint_entity = {
-            entity_number = 1,
-            name = line.beacon.proto.name,
-            position = {0, 0},
-            items = module_list
-        }
-
-        ui_util.create_cursor_blueprint(player, {blueprint_entity})
-        main_dialog.toggle(player)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
@@ -290,7 +248,8 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
+        view_state.select(player, "items_per_timescale")
+        main_dialog.refresh(player, "subfactory")
 
         local type_localised_string = {"fp.pl_" .. tags.class:lower(), 1}
         local produce_consume = (tags.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
@@ -371,7 +330,6 @@ production_handler.gui_events = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_machine_click
@@ -387,7 +345,6 @@ production_handler.gui_events = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
-                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_beacon_click

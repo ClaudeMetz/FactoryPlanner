@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added a compact view of the interface that's useful when actually building your factory after the planning phase
     - Added copy/paste functionality, allowing you to copy machines, beacons, modules, recipe lines and items
     - Subfactory names now support rich text, making them be not restricted to a single icon anymore if desired
     - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use

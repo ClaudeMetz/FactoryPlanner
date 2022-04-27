@@ -13,6 +13,7 @@ require("data.init")
 require("data.data_util")
 
 require("ui.dialogs.main_dialog")
+require("ui.dialogs.compact_dialog")
 require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
@@ -21,8 +22,8 @@ DEVMODE = true  -- enables certain conveniences for development
 MARGIN_OF_ERROR = 1e-8  -- the margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
-NEW = nil  -- global variable used to store new prototype data temporarily for migration
 RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
+NEW = nil  -- global variable used to store new prototype data temporarily for migration
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 FRAME_SPACING = 12

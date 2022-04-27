@@ -89,6 +89,17 @@ function ui_util.destroy_mod_gui(player)
     if mod_gui_button then mod_gui_button.destroy() end
 end
 
+-- Destroys all GUIs so they are loaded anew the next time they are shown
+function ui_util.reset_player_gui(player)
+    ui_util.destroy_mod_gui(player)  -- mod_gui button
+
+    for _, gui_element in pairs(player.gui.screen.children) do  -- all mod frames
+        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
+            gui_element.destroy()
+        end
+    end
+end
+
 
 -- ** Number formatting **
 -- Formats given number to given number of significant digits
@@ -180,6 +191,26 @@ function ui_util.context.set_floor(player, floor)
     local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
     context.floor = floor
+end
+
+-- Changes the context to the floor indicated by the given destination
+function ui_util.context.change_floor(player, destination)
+    local context = data_util.get("context", player)
+    local subfactory, floor = context.subfactory, context.floor
+    if subfactory == nil or floor == nil then return false end
+
+    local selected_floor = nil
+    if destination == "up" and floor.level > 1 then
+        selected_floor = floor.origin_line.parent
+    elseif destination == "top" then
+        selected_floor = Subfactory.get(subfactory, "Floor", 1)
+    end
+
+    if selected_floor ~= nil then
+        ui_util.context.set_floor(player, selected_floor)
+        Floor.remove_if_empty(floor)  -- remove previous floor if it has no recipes
+    end
+    return (selected_floor ~= nil)
 end
 
 

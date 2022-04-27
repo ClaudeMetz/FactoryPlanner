@@ -258,6 +258,8 @@ function subfactory_info.refresh(player)
         subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
         subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
     end
+
+    title_bar.refresh(player)  -- refresh to disallow switching to compact view if the subfactory is nil or invalid
 end
 
 
