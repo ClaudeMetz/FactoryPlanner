@@ -77,6 +77,7 @@ local function reset_ui_state(player)
     ui_state_table.view_states = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
+    ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
@@ -86,6 +87,7 @@ local function reset_ui_state(player)
     ui_state_table.flags = {
         archive_open = false,  -- Wether the players subfactory archive is currently open
         selection_mode = false,  -- Whether the player is currently using a selector
+        compact_view = false,  -- Whether the user has switched to the compact main view
         recalculate_on_subfactory_change = false  -- Whether calculations should re-run
     }
 
@@ -166,17 +168,6 @@ function NTH_TICK_HANDLERS.adjust_interface_dimensions(metadata)
     live_settings["fp_subfactory_list_rows"] = {value = math.max(subfactory_list_rows, height_minimum)}
 end
 
--- Destroys all GUIs so they are loaded anew the next time they are shown
-local function reset_player_gui(player)
-    ui_util.destroy_mod_gui(player)  -- mod_gui button
-
-    for _, gui_element in pairs(player.gui.screen.children) do  -- all mod frames
-        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
-            gui_element.destroy()
-        end
-    end
-end
-
 
 local function global_init()
     -- Set up a new save for development if necessary
@@ -225,7 +216,7 @@ local function handle_configuration_change()
         Collection.validate_datasets(player_table.factory.Subfactory)
         Collection.validate_datasets(player_table.archive.Subfactory)
 
-        reset_player_gui(player)  -- Destroys all existing GUI's
+        ui_util.reset_player_gui(player)  -- Destroys all existing GUI's
         ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
     end
 

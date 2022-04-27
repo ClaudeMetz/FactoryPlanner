@@ -149,7 +149,7 @@ function view_state.rebuild_state(player)
     local selected_view_id = (old_view_states) and old_view_states.selected_view_id or "items_per_timescale"
 
     ui_state.view_states = new_view_states
-    view_state.select(player, selected_view_id, nil)
+    view_state.select(player, selected_view_id)
 end
 
 function view_state.build(player, parent_element)
@@ -172,7 +172,8 @@ function view_state.refresh(player, table_view_state)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
     local subfactory = ui_state.context.subfactory
-    if not subfactory then return
+    if not subfactory then
+        return
     elseif subfactory.current_timescale ~= ui_state.view_states.timescale then
         view_state.rebuild_state(player)
     end
@@ -186,7 +187,7 @@ function view_state.refresh(player, table_view_state)
     end
 end
 
-function view_state.select(player, selected_view, context_to_refresh)
+function view_state.select(player, selected_view)
     local view_states = data_util.get("ui_state", player).view_states
 
     -- Selected view can be either an id or a name, so we might need to match an id to a name
@@ -210,9 +211,6 @@ function view_state.select(player, selected_view, context_to_refresh)
                 view_state.selected = false
             end
         end
-
-        -- Optionally refresh the given context after the view has been changed
-        if context_to_refresh then main_dialog.refresh(player, context_to_refresh) end
     end
 end
 
@@ -223,7 +221,11 @@ view_state.gui_events = {
         {
             name = "change_view_state",
             handler = (function(player, tags, _)
-                view_state.select(player, tags.view_id, "production")
+                view_state.select(player, tags.view_id)
+
+                local compact_view = data_util.get("flags", player).compact_view
+                if compact_view then compact_subfactory.refresh(player)
+                else main_dialog.refresh(player, "production") end
             end)
         }
     }
@@ -233,10 +235,14 @@ view_state.misc_events = {
     fp_cycle_production_views = (function(player, _)
         local ui_state = data_util.get("ui_state", player)
 
-        if ui_state.view_states and main_dialog.is_in_focus(player) then
+        if ui_state.view_states and main_dialog.is_in_focus(player) or compact_dialog.is_in_focus(player) then
             -- Choose the next view in the list, wrapping from the end to the beginning
             local new_view_id = (ui_state.view_states.selected_view_id % #ui_state.view_states) + 1
-            view_state.select(player, new_view_id, "production")
+            view_state.select(player, new_view_id)
+
+            local compact_view = data_util.get("flags", player).compact_view
+            if compact_view then compact_subfactory.refresh(player)
+            else main_dialog.refresh(player, "production") end
 
             -- This avoids the game focusing a random textfield when pressing Tab to change states
             ui_state.main_elements.main_frame.focus()

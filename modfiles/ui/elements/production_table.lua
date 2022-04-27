@@ -259,7 +259,7 @@ function builders.byproducts(line, parent_flow, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tt or ""
-        local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
+        local tooltip = {"", {"fp.tt_title", byproduct.proto.localised_name}, number_line, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_byproduct", line_id=line.id,
           class="Byproduct", item_id=byproduct.id}, sprite=byproduct.proto.sprite, style="flib_slot_button_red_small",

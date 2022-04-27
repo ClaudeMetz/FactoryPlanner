@@ -332,7 +332,8 @@ modal_dialog.misc_events = {
 
     fp_confirm_gui = (function(player, _)
         -- Note that a GUI was closed by confirming, so it'll try submitting on_gui_closed
-        data_util.get("modal_data", player).confirmed_dialog = true
+        local modal_data = data_util.get("modal_data", player)
+        if modal_data ~= nil then modal_data.confirmed_dialog = true end
     end),
 
     fp_focus_searchfield = (function(player, _)

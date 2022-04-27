@@ -9,52 +9,22 @@ require("ui.elements.production_handler")
 
 main_dialog = {}
 
--- ** LOCAL UTIL **
--- Makes sure that another GUI can open properly while a modal dialog is open.
--- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
--- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
--- We need to consider that if the technology screen is opened (which is the reason we get this event),
--- the game automtically closes the currently open GUI before calling this one. This means the top layer
--- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
--- layer at this point and need to close the things below, if there are any.
-local function handle_other_gui_opening(player, _)
-    local ui_state = data_util.get("ui_state", player)
-
-    -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-    if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel", true) end
-
-    -- Then, at this point we're at most at the stage where the main dialog is open, so close it
-    if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
-end
-
-local function handle_background_dimmer_click(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
-    ui_state.main_elements.main_frame.bring_to_front()
-
-    if ui_state.modal_dialog_type ~= nil then
-        local modal_elements = ui_state.modal_data.modal_elements
-        modal_elements.interface_dimmer.bring_to_front()
-        modal_elements.modal_frame.bring_to_front()
-    end
-end
-
-
 -- ** TOP LEVEL **
 function main_dialog.rebuild(player, default_visibility)
     local ui_state = data_util.get("ui_state", player)
     local main_elements = ui_state.main_elements
 
     local interface_visible = default_visibility
+    local main_frame = main_elements.main_frame
     -- Delete the existing interface if there is one
-    if main_elements.main_frame ~= nil then
-        if main_elements.main_frame.valid then
-            interface_visible = main_elements.main_frame.visible
-            main_elements.main_frame.destroy()
+    if main_frame ~= nil then
+        if main_frame.valid then
+            interface_visible = main_frame.visible
+            main_frame.destroy()
         end
         main_elements.background_dimmer.destroy()
 
-        -- Reset all main element references
-        ui_state.main_elements = {}
+        ui_state.main_elements = {}  -- reset all main element references
         main_elements = ui_state.main_elements
     end
 
@@ -147,17 +117,17 @@ function main_dialog.toggle(player, skip_player_opened)
         main_dialog.rebuild(player, true)  -- sets opened and paused-state itself
 
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
-        local new_dialog_visible = not frame_main_dialog.visible
-        frame_main_dialog.visible = new_dialog_visible
+        local new_dialog_visibility = not frame_main_dialog.visible
+        frame_main_dialog.visible = new_dialog_visibility
         if not skip_player_opened then  -- flag used only for hacky internal reasons
-            player.opened = (new_dialog_visible) and frame_main_dialog or nil
+            player.opened = (new_dialog_visibility) and frame_main_dialog or nil
         end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
         title_bar.refresh_message(player)
 
         -- Make sure FP is not behind some vanilla interfaces
-        if new_dialog_visible then
+        if new_dialog_visibility then
             ui_state.main_elements.background_dimmer.bring_to_front()
             frame_main_dialog.bring_to_front()
         end
@@ -216,9 +186,13 @@ function main_dialog.determine_main_dialog_dimensions(player, products_per_row, 
 end
 
 
-function NTH_TICK_HANDLERS.delayed_interface_toggle(metadata)
-    game.print("Mods reloaded")
-    main_dialog.toggle(game.get_player(metadata.player_index))
+function NTH_TICK_HANDLERS.interface_toggle(metadata)
+    if metadata.print then game.print("Mods reloaded") end
+
+    local player = game.get_player(metadata.player_index)
+    local compact_view = data_util.get("flags", player).compact_view
+    if compact_view then compact_dialog.toggle(player)
+    else main_dialog.toggle(player) end
 end
 
 
@@ -237,22 +211,48 @@ main_dialog.gui_events = {
             name = "mod_gui_toggle_interface",
             handler = (function(player, _, _)
                 if DEVMODE then  -- implicit mod reload for easier development
+                    ui_util.reset_player_gui(player)  -- destroys all FP GUIs
+                    ui_util.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()   -- needs to be delayed by a tick since the reload is not instant
-                    data_util.nth_tick.add((game.tick + 1), "delayed_interface_toggle", {player_index=player.index})
-                else
-                    main_dialog.toggle(player)
+                    data_util.nth_tick.add((game.tick + 1), "interface_toggle", {player_index=player.index, print=true})
+                else  -- call the interface toggle function directly
+                    NTH_TICK_HANDLERS.interface_toggle({player_index=player.index, print=false})
                 end
             end)
         },
         {
             name = "re-layer_background_dimmer",
-            handler = handle_background_dimmer_click
+            handler = (function(player, _, _)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.main_elements.main_frame.bring_to_front()
+
+                if ui_state.modal_dialog_type ~= nil then
+                    local modal_elements = ui_state.modal_data.modal_elements
+                    modal_elements.interface_dimmer.bring_to_front()
+                    modal_elements.modal_frame.bring_to_front()
+                end
+            end)
         }
     }
 }
 
 main_dialog.misc_events = {
-    on_gui_opened = handle_other_gui_opening,
+    -- Makes sure that another GUI can open properly while a modal dialog is open.
+    -- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
+    -- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
+    -- We need to consider that if the technology screen is opened (which is the reason we get this event),
+    -- the game automtically closes the currently open GUI before calling this one. This means the top layer
+    -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
+    -- layer at this point and need to close the things below, if there are any.
+    on_gui_opened = (function(player, _)
+        local ui_state = data_util.get("ui_state", player)
+
+        -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
+        if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel", true) end
+
+        -- Then, at this point we're at most at the stage where the main dialog is open, so close it
+        if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
+    end),
 
     on_player_display_resolution_changed = (function(player, _)
         main_dialog.rebuild(player, false)
@@ -263,12 +263,30 @@ main_dialog.misc_events = {
     end),
 
     on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" then
+        if event.prototype_name == "fp_open_interface" and not data_util.get("flags", player).compact_view then
             main_dialog.toggle(player)
         end
     end),
 
-    fp_toggle_main_dialog = (function(player, _)
-        main_dialog.toggle(player)
+    fp_toggle_interface = (function(player, _)
+        if not data_util.get("flags", player).compact_view then main_dialog.toggle(player) end
+    end),
+
+    -- This needs to be in a single place, otherwise the events cancel each other out
+    fp_toggle_compact_view = (function(player, _)
+        local ui_state = data_util.get("ui_state", player)
+        local flags = ui_state.flags
+
+        if flags.compact_view and compact_dialog.is_in_focus(player) then
+            compact_dialog.toggle(player)
+
+            main_dialog.toggle(player)
+            main_dialog.refresh(player, "production")
+
+        elseif main_dialog.is_in_focus(player) and ui_state.context.subfactory ~= nil then
+            main_dialog.toggle(player)
+            compact_dialog.toggle(player)  -- toggle also refreshes
+        end
+        flags.compact_view = not flags.compact_view
     end)
 }
