@@ -101,13 +101,13 @@ local function add_beacon_flow(parent_flow, line)
 end
 
 
-local function add_item_flow(item_class, item_count, button_color, metadata)
-    local column_count = math.max(math.ceil(item_count / 2), 1)
-    local item_table = metadata.parent.add{type="table", column_count=column_count}
+local function add_item_flow(line, item_class, button_color, metadata)
+    --local column_count = math.max(math.ceil(item_count / 2), 1)  -- TODO could use this for more square item tables
+    local item_table = metadata.parent.add{type="table", column_count=metadata.column_counts[item_class]}
 
-    for _, item in ipairs(Line.get_in_order(metadata.line, item_class)) do
+    for _, item in ipairs(Line.get_in_order(line, item_class)) do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (not metadata.line.subfloor) and metadata.line.machine.count or nil
+        local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
@@ -201,20 +201,55 @@ function compact_subfactory.refresh(player)
     local production_table = compact_elements.production_table
     production_table.clear()
 
-    local production_columns = {{"fp.pu_recipe", 1}, {"fp.pu_machine", 2}, {"fp.pu_product", 2},
+    --[[ local production_columns = {{"fp.pu_recipe", 1}, {"fp.pu_machine", 2}, {"fp.pu_product", 2},
       {"fp.pu_byproduct", 2}, {"fp.pu_ingredient", 2}, ""}
     for _, caption in ipairs(production_columns) do
         local label_header = production_table.add{type="label", caption=caption, style="bold_label"}
         label_header.style.bottom_margin = 6
-    end
+    end ]]
 
     local lines = Floor.get_in_order(ui_state.context.floor, "Line")
-    local view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
 
-    local max_ingredient_count = 0
-    for _, line in ipairs(lines) do  -- count ingredients to determine its table size
-        max_ingredient_count = math.max(max_ingredient_count, line.Ingredient.count)
+    local available_buttons = 8 - 2  -- TODO 8 is hardcoded, needs to be derived in finished version
+    if available_buttons < 2 then error("lol") end  -- TODO
+    -- Available buttons is for items only, as recipe and machines have a fixed width
+    local column_counts = {Product = 1, Byproduct = 0, Ingredient = 1}
+
+    local function determine_table_height(incremented_column)
+        local counts = util.table.deepcopy(column_counts)
+        counts[incremented_column] = counts[incremented_column] + 1
+
+        local total_height = 0
+        for _, line in pairs(lines) do
+            local items_height = 0
+            for column, count in pairs(counts) do
+                local column_height = math.ceil(line[column].count / count)
+                items_height = math.max(items_height, column_height)
+            end
+
+            local machines_height = (line.beacon ~= nil) and 2 or 1
+            total_height = total_height + math.max(machines_height, items_height)
+        end
+        return total_height
     end
+
+    while available_buttons > 0 do
+        local table_heights = {}
+        for column, _ in pairs(column_counts) do table_heights[column] = determine_table_height(column) end
+
+        local minimal_height = fancytable.reduce(table_heights, function(acc, v) return math.min(acc, v) end)
+
+        for column, height in pairs(table_heights) do
+            if available_buttons > 0 and height == minimal_height then
+                column_counts[column] = column_counts[column] + 1
+                available_buttons = available_buttons - 1
+            end
+        end
+    end
+
+
+    local view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
+    local metadata = {parent=production_table, column_counts=column_counts, view_state_metadata=view_state_metadata}
 
     for _, line in ipairs(lines) do -- build the individual lines
         local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -231,10 +266,9 @@ function compact_subfactory.refresh(player)
         add_beacon_flow(machines_flow, line)
 
         -- Products, Byproducts and Ingredients
-        local metadata = {parent=production_table, line=line, view_state_metadata=view_state_metadata}
-        add_item_flow("Product", line.Product.count, "default", metadata)
-        add_item_flow("Byproduct", line.Byproduct.count, "red", metadata)
-        add_item_flow("Ingredient", max_ingredient_count, "green", metadata)
+        add_item_flow(line, "Product", "default", metadata)
+        add_item_flow(line, "Byproduct", "red", metadata)
+        add_item_flow(line, "Ingredient", "green", metadata)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
     end
