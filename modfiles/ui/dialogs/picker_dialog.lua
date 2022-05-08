@@ -22,8 +22,10 @@ function SEARCH_HANDLERS.search_picker_items(player, search_term)
         local any_item_visible = false
 
         for _, subgroup_table in pairs(group.subgroup_tables) do
-            for item_name, element in pairs(subgroup_table) do
-                local visible = string.find(item_name, search_term, 1, true)
+            for item_data, element in pairs(subgroup_table) do
+                -- Can only get to this if translations are complete, as the textfield is disabled otherwise
+                local visible = (search_term == item_data.name) or
+                  string.find(item_data.translated_name, search_term, 1, true)
                 element.visible = visible
                 any_item_visible = any_item_visible or visible
             end
@@ -46,8 +48,10 @@ function SEARCH_HANDLERS.search_picker_items(player, search_term)
 end
 
 local function add_item_picker(parent_flow, player)
-    local ui_state = data_util.get("ui_state", player)
+    local player_table = data_util.get("table", player)
+    local ui_state = player_table.ui_state
     local modal_elements = ui_state.modal_data.modal_elements
+    local translations = player_table.translation_tables
 
     local label_warning = parent_flow.add{type="label", caption={"fp.error_message", {"fp.no_item_found"}}}
     label_warning.style.font = "heading-2"
@@ -146,16 +150,17 @@ local function add_item_picker(parent_flow, player)
 
             current_items_in_table_count = current_items_in_table_count + 1
 
-            local existing_product = existing_products[item_proto.name]
+            local item_name = item_proto.name
+            local existing_product = existing_products[item_name]
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
               tags={mod="fp", on_gui_click="select_picker_item", identifier=item_proto.identifier},
               enabled=(existing_product == nil), tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
 
-            -- Ignores item types, so if one subgroup has both a fluid and an item of the same name,
-            -- it'll only catch one. Let's see how long it takes until someone runs into this.
-            subgroup_table[item_proto.name] = button_item
+            -- Figure out the translated name here so search doesn't have to repeat the work for every character
+            local translated_name = (translations) and translations[item_proto.type][item_name]:lower() or nil
+            subgroup_table[{name=item_name, translated_name=translated_name}] = button_item
         end
     end
 
@@ -368,8 +373,9 @@ function picker_dialog.open(player, modal_data)
 end
 
 function picker_dialog.close(player, action)
-    local ui_state = data_util.get("ui_state", player)
-    local modal_data, context = ui_state.modal_data, ui_state.context
+    local player_table = data_util.get("table", player)
+    local modal_data = player_table.ui_state.modal_data
+    local subfactory = player_table.ui_state.context.subfactory
 
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
@@ -383,23 +389,26 @@ function picker_dialog.close(player, action)
             modal_data.object.required_amount = req_amount
         else
             local class_name = (modal_data.item_category:gsub("^%l", string.upper))
-            local top_level_item = Item.init(modal_data.item_proto, class_name, 0, req_amount)
+            local item_proto = modal_data.item_proto
+            local top_level_item = Item.init(item_proto, class_name, 0, req_amount)
 
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
-                local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "]"
+                local translations = player_table.translation_tables
+                local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
+                local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "] " .. translated_name
                 subfactory_list.add_subfactory(player, subfactory_name)  -- sets context to new subfactory
                 refresh_scope = "all"  -- need to refresh subfactory list too
             end
 
-            Subfactory.add(context.subfactory, top_level_item)
+            Subfactory.add(subfactory, top_level_item)
         end
 
-        calculation.update(player, context.subfactory)
+        calculation.update(player, subfactory)
         main_dialog.refresh(player, refresh_scope)
 
     elseif action == "delete" then
-        Subfactory.remove(context.subfactory, modal_data.object)
-        calculation.update(player, context.subfactory)
+        Subfactory.remove(subfactory, modal_data.object)
+        calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end
