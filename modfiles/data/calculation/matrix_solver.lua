@@ -471,88 +471,278 @@ function matrix_solver.get_matrix_data(subfactory_data)
     }
 end
 
-function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
-    -- run through get_matrix_solver_metadata to check against recipe changes
-    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
-    local matrix_data = matrix_solver.get_matrix_data(subfactory_data)
-    local matrix = matrix_data.matrix
-    local columns = matrix_data.columns
-    local rows = matrix_data.rows
-    local free_variables = matrix_data.free_variables
-    local matrix_free_items = matrix_data.matrix_free_items
-
-    local subfactory_metadata = matrix_solver.get_subfactory_metadata(subfactory_data)
-    local all_items = subfactory_metadata.all_items
-
-    --matrix_solver.print_rows(rows)
-    --matrix_solver.print_columns(columns)
-
-    local result = matrix_solver.do_simplex_algo(matrix, rows, columns)
-
-    --matrix_solver.print_matrix(matrix)
-
-    --[[ replaced by simplex solver
-    matrix_solver.to_reduced_row_echelon_form(matrix)
-    if check_linear_dependence then
-        local linearly_dependent_cols = matrix_solver.find_linearly_dependent_cols(matrix, true)
-        local linearly_dependent_variables = {}
-        for col, _ in pairs(linearly_dependent_cols) do
-            local col_name = columns.values[col]
-            local col_split_str = split_string(col_name, "_")
-            if col_split_str[1] == "line" then
-                local floor = subfactory_data.top_floor
-                for i=2, #col_split_str-1 do
-                    local line_table_id = col_split_str[i]
-                    floor = floor.lines[line_table_id].subfloor
-                end
-                local line_table_id = col_split_str[#col_split_str]
-                local line = floor.lines[line_table_id]
-                local recipe_id = line.recipe_proto.id
-                linearly_dependent_variables["recipe_"..recipe_id] = true
-            else -- item
-                linearly_dependent_variables[col_name] = true
-            end
+local function copy_and_transpose(matrix)
+    local copy = {}
+    if #matrix ~= 0 then
+        for x = 1, #matrix[1] do
+            copy[x] = {}
         end
-        return linearly_dependent_variables
     end
-]]
-
-    local function set_line_results(prefix, floor)
-        local floor_aggregate = structures.aggregate.init(subfactory_data.player_index, floor.id)
-        for i, line in ipairs(floor.lines) do
-            local line_key = prefix .. "_" .. i
-            local line_aggregate = nil
-            if line.subfloor == nil then
-                local col_num = columns.map[line_key]
-                --local machine_count = matrix[col_num][#columns.values+1] -- want the jth entry in the last column (output of row-reduction)
-                local machine_count = result[col_num]
-                line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id, machine_count, false, subfactory_metadata, free_variables)
-            else
-                line_aggregate = set_line_results(prefix .. "_" .. i, line.subfloor)
-                matrix_solver.consolidate(line_aggregate)
-            end
-
-            -- lines with subfloors should show actual number of machines to build, so each machine count is rounded up when summed
-            floor_aggregate.machine_count = floor_aggregate.machine_count + math.ceil(line_aggregate.machine_count)
-
-            structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
-
-            calculation.interface.set_line_result {
-                player_index = subfactory_data.player_index,
-                floor_id = floor.id,
-                line_id = line.id,
-                machine_count = line_aggregate.machine_count,
-                energy_consumption = line_aggregate.energy_consumption,
-                pollution = line_aggregate.pollution,
-                production_ratio = line_aggregate.production_ratio,
-                uncapped_production_ratio = line_aggregate.uncapped_production_ratio,
-                Product = line_aggregate.Product,
-                Byproduct = line_aggregate.Byproduct,
-                Ingredient = line_aggregate.Ingredient,
-                fuel_amount = line_aggregate.fuel_amount
-            }
+    for k, v in pairs(matrix) do
+        for kk, vv in pairs(v) do
+            copy[kk][k] = vv
         end
-        return floor_aggregate
+    end
+    return copy
+end
+
+---@param matrix number[][]
+---@return number[][]
+local function just_copy(matrix)
+    local copy = {}
+    for k, v in pairs(matrix) do
+        copy[k] = {}
+        for kk, vv in pairs(v) do
+            copy[k][kk] = vv
+        end
+    end
+    return copy
+end
+
+function matrix_solver.derecurse_recipes(line, line_list, line_id_to_pos)
+    for _, line in ipairs(line.lines) do
+        if line.subfloor then
+            local new_line_id_to_pos = {}
+            matrix_solver.derecurse_recipes(line.subfloor, line_list, new_line_id_to_pos)
+            line_id_to_pos[line.id] = new_line_id_to_pos
+        else
+            table.insert(line_list, line)
+            line_id_to_pos[line.id] = #line_list
+        end
+    end
+end
+
+function matrix_solver.place_items_in_matrix(lines)
+    local items = {}
+    local inverse_map = {}
+    local position = 1
+    local function add_item(item)
+        local index = item.type.."_"..item.name
+        if items[index] == nil then
+            items[index] = position
+            inverse_map[position] = {type = item.type, name = item.name}
+            position = position + 1
+        end
+    end
+    for _, line in pairs(lines) do
+        for _, item in pairs(line.recipe_proto.ingredients) do
+            add_item(item)
+        end
+        for _, item in pairs(line.recipe_proto.products) do
+            add_item(item)
+        end
+        if line.fuel_proto then
+            add_item(line.fuel_proto)
+        end
+    end
+    return items, position - 1, inverse_map
+end
+
+function matrix_solver.make_matrix(lines, items, item_count)
+    local matrix = {}
+
+    local function add_item(item, recipe, amount)
+        local index = items[item.type.."_"..item.name]
+        recipe[index] = recipe[index] + amount
+    end
+
+    for _,line in pairs(lines) do
+        local recipe = {}
+        local crafts_per_tick = calculation.util.determine_crafts_per_tick(line.machine_proto, line.recipe_proto, line.total_effects)
+        for _=1,item_count do
+            table.insert(recipe, 0)
+        end
+        for _, item in pairs(line.recipe_proto.ingredients) do
+            add_item(item, recipe, -item.amount * crafts_per_tick * 60)
+        end
+        for _, item in pairs(line.recipe_proto.products) do
+            local prodded_amount = calculation.util.determine_prodded_amount(item, crafts_per_tick, line.total_effects)
+            add_item(item, recipe, prodded_amount * crafts_per_tick * 60)
+        end
+        if line.fuel_proto then
+            local energy_consumption = calculation.util.determine_energy_consumption(line.machine_proto, 1, line.total_effects)
+            local fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line.machine_proto.burner, line.fuel_proto.fuel_value, line.timescale)
+            add_item(line.fuel_proto, recipe, -fuel_amount)
+        end
+        table.insert(matrix, recipe)
+    end
+    return matrix
+end
+
+function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, water_pos)
+    local items_with_producers = {}
+    local recipe_costs = {}
+    for recipe_pos, recipe in pairs(matrix) do
+        for item_pos, item in pairs(recipe) do
+            if item > 0 then
+                items_with_producers[item_pos] = items_with_producers[item_pos] or true
+            end
+        end
+        recipe_costs[recipe_pos] = 0 -- 0 cost for basic recipes
+    end
+    local is_pseudo_recipe = {}
+    for item_pos=1,item_count do
+        if not items_with_producers[item_pos] then
+            is_pseudo_recipe[#matrix+1] = true
+            local pseudo_recipe = {}
+            for pos=1,item_count do
+                if pos == item_pos then
+                    table.insert(pseudo_recipe, 1)
+                else
+                    table.insert(pseudo_recipe, 0)
+                end
+            end
+            -- water gets a cost of 100, all else 10000
+            if item_pos == water_pos then
+                recipe_costs[#matrix+1] = 100
+            else
+                recipe_costs[#matrix+1] = 10000
+            end
+            table.insert(matrix, pseudo_recipe)
+        end
+    end
+    return recipe_costs, is_pseudo_recipe
+end
+
+function matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
+    local requirements = {}
+    for _=1,item_count do
+        table.insert(requirements, 0)
+    end
+    for _,item in pairs(subfactory_data.top_level_products) do
+        local index = items[item.proto.type.."_"..item.proto.name]
+        if index then
+            requirements[index] = item.amount
+        end
+    end
+    table.insert(matrix, requirements)
+end
+
+local function sum_item_results(matrix, solve_results, required_output, items)
+    local per_line_item_results, global_item_results = {}, {}
+    local function get_global(index)
+        local global = global_item_results[index]
+        if global == nil then
+            global = {product = 0, byproduct = 0, ingredient = 0}
+            global_item_results[index] = global
+        end
+        return global
+    end
+    local function get_line(recipe, item)
+        local line = per_line_item_results[recipe]
+        if line == nil then
+            line = {}
+            per_line_item_results[recipe] = line
+        end
+        local item_res = line[item]
+        if item_res == nil then
+            item_res = {product = 0, byproduct = 0, ingredient = 0}
+            line[item] = item_res
+        end
+        return item
+    end
+    for _, item in pairs(required_output) do
+        local index = items[item.proto.type.."_"..item.proto.name]
+        global_item_results[index] = {product = 0, byproduct = 0, ingredient = item.amount}
+    end
+    for recipe_pos, recipe in pairs(matrix) do
+        local recipe_speed = solve_results[recipe_pos]
+        for item_pos, item in pairs(recipe) do
+            local total_amount = item * recipe_speed
+            if total_amount < 0 then
+                local global = get_global(item_pos)
+                local per_line = get_line(recipe_pos, item_pos)
+                global.ingredient = global.ingredient - total_amount -- total amount is negative, so this is really "+ abs()"
+                per_line.ingredient = -total_amount
+            end
+        end
+    end
+
+    for recipe_pos, recipe in pairs(matrix) do
+        local recipe_speed = solve_results[recipe_pos]
+        for item_pos, item in pairs(recipe) do
+            local total_amount = item * recipe_speed
+            if total_amount > 0 then
+                local global = get_global(item_pos)
+                local per_line = get_line(recipe_pos, item_pos)
+                if per_line.ingredient > 0 then
+                    global.ingredient = global.ingredient - per_line.ingredient
+                    total_amount = total_amount - per_line.ingredient
+                    per_line.ingredient = 0
+                end
+                local overproduction = total_amount - global.ingredient
+                if overproduction > 0 then
+                    total_amount = global.ingredient
+                    global.ingredient = 0
+                    per_line.byproduct = overproduction
+                    global.byproduct = global.byproduct + overproduction
+                end
+                per_line.products = total_amount
+            end
+        end
+    end
+    return per_line_item_results, global_item_results
+end
+
+function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
+    local products = subfactory_data.top_level_products
+    local lines = {}
+    -- line magic map tells us how to get from a position in the subfactory
+    -- (with all it's nested subfloors) to a row in the matrix
+    local line_magic_map = {}
+    matrix_solver.derecurse_recipes(subfactory_data.top_floor, lines, line_magic_map)
+
+    -- maps from 'type.."_"..name' to index in matrix
+    local items, item_count, inverse_item_map = matrix_solver.place_items_in_matrix(lines)
+
+    --llog(lines, line_magic_map, items, item_count)
+
+    local matrix = matrix_solver.make_matrix(lines, items, item_count)
+    -- if there is no water, items["fluid_water"] will just be nil, which is fine
+    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, items["fluid_water"])
+    matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
+
+    matrix_solver.print_matrix(matrix)
+    
+    local results = matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseudo_recipe)
+
+    -- we know how much each recipe is being run, now we just need to propegate that up the subfloor
+    -- and also deal with product/byproduct stuffs
+
+    local per_line_item_results, global_item_results = sum_item_results(matrix, results, subfactory_data.top_level_products, items)
+
+    local function set_line_results(floor, magic_map)
+        for _, line in pairs(floor.lines) do
+            if line.subfloor then
+                local subfloor_results = set_line_results(line.subfloor, magic_map[line.id])
+            else
+                local index = magic_map[line.id]
+                local machine_count = results[index]
+
+                local energy_consumption = calculation.util.determine_energy_consumption(line.machine_proto, machine_count, line.total_effects)
+                local pollution = calculation.util.determine_pollution(line.machine_proto, line.recipe_proto, line.fuel_proto, line.total_effects, energy_consumption)
+                local fuel_usage = nil
+                if line.fuel_proto then
+                    fuel_usage = calculation.util.determine_fuel_amount(energy_consumption, line.machine_proto.burner, line.fuel_proto.fuel_value, line.timescale)
+                    energy_consumption = nil
+                end
+
+                local crafts_per_tick = calculation.util.determine_crafts_per_tick(line.machine_proto, line.recipe_proto, line.total_effects)
+                local production_ratio = calculation.util.determine_production_ratio(crafts_per_tick, machine_count, line.timescale, line.machine_proto.launch_sequence_time)
+
+                calculation.interface.set_line_result {
+                    player_index = subfactory_data.player_index,
+                    floor_id = floor.id,
+                    line_id = line.id,
+                    machine_count = machine_count,
+                    energy_consumption = energy_consumption,
+                    pollution = pollution,
+                    fuel_usage = fuel_usage,
+                    production_ratio = production_ratio,
+                    uncapped_production_ratio = production_ratio
+                }
+            end
+        end
     end
 
     local top_floor_aggregate = set_line_results("line", subfactory_data.top_floor)
@@ -941,33 +1131,7 @@ end
 
 ---@param matrix number[][]
 ---@return number[][]
-local function copy_and_transpose(matrix)
-    local copy = {}
-    if #matrix ~= 0 then
-        for x = 1, #matrix[1] do
-            copy[x] = {}
-        end
-    end
-    for k, v in pairs(matrix) do
-        for kk, vv in pairs(v) do
-            copy[kk][k] = vv
-        end
-    end
-    return copy
-end
 
----@param matrix number[][]
----@return number[][]
-local function just_copy(matrix)
-    local copy = {}
-    for k, v in pairs(matrix) do
-        copy[k] = {}
-        for kk, vv in pairs(v) do
-            copy[k][kk] = vv
-        end
-    end
-    return copy
-end
 
 function matrix_solver.find_result_from_row(recipe_matrix, result, row, col_set, skip_count)
     local accumulated = 0
@@ -978,46 +1142,17 @@ function matrix_solver.find_result_from_row(recipe_matrix, result, row, col_set,
     return -accumulated
 end
 
-local function add_constraints(matrix, columns)
-    local is_ingredient = {}
-    local amount_not_ingredient = 0
-    local index = 1
-    for k, v in pairs(matrix) do
-        if k < #matrix then
-            local name = columns.values[k] or "line_AA"
-            local split_name = split_string(name, "_")
-            if split_name[1] == "fluid" or split_name[1] == "item" then
-                local item_name = matrix_solver.get_item_name(split_name[2] .. "_" .. split_name[3])
-                if item_name == "fluid_water" then
-                    is_ingredient[k] = 100
-                else
-                    is_ingredient[k] = 10000 * index
-                    index = index + 1
-                end
+local function add_slacks(matrix, item_count, recipe_costs, is_pseudo_recipe)
+    for recipe_pos, recipe in pairs(matrix) do
+        for pos=1,item_count do
+            if pos == recipe_pos and not is_pseudo_recipe[recipe_pos] then
+                table.insert(recipe, 1)
             else
-                amount_not_ingredient = amount_not_ingredient + 1
+                table.insert(recipe, 0)
             end
         end
+        table.insert(recipe, recipe_costs[recipe_pos] or 0)
     end
-    local row_offset = #matrix - amount_not_ingredient - 1
-    for k, v in pairs(matrix) do
-        if is_ingredient[k] then
-            for _ = 1, amount_not_ingredient do
-                table.insert(v, 0)
-            end
-            table.insert(v, is_ingredient[k])
-        else
-            for col = 1, amount_not_ingredient do
-                if col == k - row_offset then
-                    table.insert(v, 1)
-                else
-                    table.insert(v, 0)
-                end
-            end
-            table.insert(v, 0)
-        end
-    end
-    return amount_not_ingredient
 end
 
 local function get_pivot(matrix)
@@ -1099,32 +1234,30 @@ local function do_pivot(mat, pivot_row, pivot_col)
     end
 end
 
-local function finalize(mat, original, amount_not_ingredient)
+local function finalize(mat, original)
     local result = {}
     local original_variable_count = #original[1]
-    local row_offset = #mat - amount_not_ingredient - 1
     for row, _ in pairs(original) do
         if row < #mat then
-            local col_of_extra_variable = original_variable_count + row - row_offset
+            local col_of_extra_variable = original_variable_count + row
             result[row] = -mat[#mat][col_of_extra_variable]
         end
     end
     return result
 end
 
-function matrix_solver.do_simplex_algo(matrix, rows, columns)
+function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseudo_recipe)
     if #matrix == 0 then
         return
     end
-    --llog("\n\n\n\n ============== 0 ==============")
-    --matrix_solver.print_matrix(matrix)
-    local copy = copy_and_transpose(matrix)
+    local copy = just_copy(matrix)
     local original = just_copy(copy)
-    --llog("\n\n\n\n ============== 1 ==============")
-    --matrix_solver.print_matrix(copy)
-    local amount_not_ingredient = add_constraints(copy, columns)
-    --llog("\n\n\n\n ============== 2 ==============")
-    --matrix_solver.print_matrix(copy)
+    llog("\n\n\n\n ============== 1 ==============")
+    matrix_solver.print_matrix(copy)
+    is_pseudo_recipe.a = 1
+    add_slacks(copy, item_count, recipe_costs, is_pseudo_recipe)
+    llog("\n\n\n\n ============== 2 ==============")
+    matrix_solver.print_matrix(copy)
     local loop = true
     local counter = 1
     while loop do
@@ -1137,9 +1270,9 @@ function matrix_solver.do_simplex_algo(matrix, rows, columns)
             counter = counter + 1
         end
     end
-    --llog("\n\n\n\n ============== 3 ==============")
-    --matrix_solver.print_matrix(copy)
-    local results = finalize(copy, original, amount_not_ingredient)
+    llog("\n\n\n\n ============== 3 ==============")
+    matrix_solver.print_matrix(copy)
+    local results = finalize(copy, original)
     --llog("\n\n\n\n ============== 4 ==============")
     --matrix_solver.print_matrix(original)
     local s = "R: {"
