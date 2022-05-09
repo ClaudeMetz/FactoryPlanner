@@ -34,6 +34,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
         if dialog_settings.search_handler_name then  -- add a search field if requested
             modal_data.search_handler_name = dialog_settings.search_handler_name
+            modal_data.next_search_tick = nil  -- used for rate limited search
 
             local searchfield = flow_title_bar.add{type="textfield", style="search_popup_textfield",
               tags={mod="fp", on_gui_text_changed="modal_searchfield"}}
@@ -41,6 +42,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             searchfield.style.top_margin = -3
             ui_util.setup_textfield(searchfield)
             modal_elements.search_textfield = searchfield
+            modal_dialog.set_searchfield_state(player)
 
             local search_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.search_button_tt"},
               tags={mod="fp", on_gui_click="focus_modal_searchfield"}, sprite="utility/search_white",
@@ -195,6 +197,10 @@ function modal_dialog.exit(player, action, skip_player_opened)
     local closing_function = _G[ui_state.modal_dialog_type .. "_dialog"].close
     if closing_function ~= nil then closing_function(player, action) end
 
+    -- Unregister the delayed search handler if present
+    local search_tick = ui_state.modal_data.next_search_tick
+    if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
+
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
 
@@ -211,6 +217,17 @@ function modal_dialog.exit(player, action, skip_player_opened)
     end
 end
 
+
+function modal_dialog.set_searchfield_state(player)
+    local player_table = data_util.get("table", player)
+    if not player_table.ui_state.modal_dialog_type then return end
+    local searchfield = player_table.ui_state.modal_data.modal_elements.search_textfield
+    if not searchfield then return end
+
+    local status = (player_table.translation_tables ~= nil)
+    searchfield.enabled = status  -- disables on nil and false
+    searchfield.tooltip = (status) and {"fp.searchfield_tt"} or {"fp.warning_with_icon", {"fp.searchfield_not_ready_tt"}}
+end
 
 function modal_dialog.set_submit_button_state(modal_elements, enabled, message)
     local caption = (enabled) and {"fp.submit"} or {"fp.warning_with_icon", {"fp.submit"}}
@@ -260,6 +277,14 @@ function modal_dialog.leave_selection_mode(player)
 end
 
 
+function NTH_TICK_HANDLERS.run_delayed_modal_search(metadata)
+    local player = game.get_player(metadata.player_index)
+    local modal_data = data_util.get("modal_data", player)
+    local searchfield = modal_data.modal_elements.search_textfield
+    SEARCH_HANDLERS[modal_data.search_handler_name](player, searchfield.text)
+end
+
+
 -- ** EVENTS **
 modal_dialog.gui_events = {
     on_gui_click = {
@@ -294,10 +319,18 @@ modal_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "modal_searchfield",
-            handler = (function(player, _, event)
-                local search_term = event.element.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-                local handler_name = data_util.get("modal_data", player).search_handler_name
-                SEARCH_HANDLERS[handler_name](player, search_term)
+            timeout = MODAL_SEARCH_LIMITING,
+            handler = (function(player, _, metadata)
+                local modal_data = data_util.get("modal_data", player)
+                local search_tick = modal_data.search_tick
+                if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
+
+                -- No special text handling needed as babelfish handles it now
+                SEARCH_HANDLERS[modal_data.search_handler_name](player, metadata.text)
+
+                -- Set up delayed search update to circumvent issues caused by rate limiting
+                modal_data.next_search_tick = data_util.nth_tick.add((game.tick + MODAL_SEARCH_LIMITING),
+                  "run_delayed_modal_search", {player_index=player.index})
             end)
         }
     },
