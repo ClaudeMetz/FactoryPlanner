@@ -35,13 +35,18 @@ end
 
 local function handle_solver_change(player, _, metadata)
     local subfactory = data_util.get("context", player).subfactory
-    local new_solver = (metadata.switch_state == "left") and "traditional" or "matrix"
+    local new_solver = SOLVER_TYPE_MAP[metadata.selected_index]
+
+    subfactory.solver_type = new_solver
+    subfactory.prev_raw_solution = nil
+    subfactory.linearly_dependant = false
 
     if new_solver == "matrix" then
-        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
-    else
-        subfactory.matrix_free_items = nil  -- disable the matrix solver
-        subfactory.linearly_dependant = false
+        subfactory.matrix_free_items = {}
+    elseif new_solver == "interior_point" then
+        subfactory.matrix_free_items = nil
+    elseif new_solver == "traditional" then
+        subfactory.matrix_free_items = nil
 
         -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
         local any_lines_removed = false
@@ -63,6 +68,8 @@ local function handle_solver_change(player, _, metadata)
         if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
             title_bar.enqueue_message(player, {"fp.hint_byproducts_removed"}, "hint", 1, false)
         end
+    else
+        assert(false, new_solver)
     end
 
     calculation.update(player, subfactory)
@@ -195,10 +202,14 @@ function subfactory_info.build(player)
     flow_solver_choice.add{type="label", caption={"fp.key_title", {"fp.info_label", {"fp.solver_choice"}}},
       tooltip={"fp.solver_choice_tt"}}
 
-    local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
-      left_label_caption={"fp.solver_choice_traditional"},
-      tags={mod="fp", on_gui_switch_state_changed="solver_choice_changed"}}
-    main_elements.subfactory_info["solver_choice_switch"] = switch_solver_choice
+    local dropdown_solver_choice = flow_solver_choice.add{type="drop-down",
+      items={
+        {"fp.solver_choice_traditional"},
+        {"fp.solver_choice_matrix"},
+        {"fp.solver_choice_interior_point"},
+      },
+      tags={mod="fp", on_gui_selection_state_changed="solver_choice_changed"}}
+    main_elements.subfactory_info["solver_choice_dropdown"] = dropdown_solver_choice
 
     local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
       tooltip={"fp.solver_choice_configure"}, tags={mod="fp", on_gui_click="configure_matrix_solver"},
@@ -231,7 +242,6 @@ function subfactory_info.refresh(player)
 
     elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
-        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
 
         -- Power + Pollution
         local label_power = subfactory_info_elements.power_label
@@ -281,10 +291,14 @@ function subfactory_info.refresh(player)
         subfactory_info_elements.percentage_label.visible = custom_prod_set
 
         -- Solver Choice
-        local switch_state = (matrix_solver_active) and "right" or "left"
-        subfactory_info_elements.solver_choice_switch.switch_state = switch_state
-        subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
-        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
+        local solver_type = subfactory.solver_type
+        for index, value in ipairs(SOLVER_TYPE_MAP) do
+            if solver_type == value then
+                subfactory_info_elements.solver_choice_dropdown.selected_index = index
+            end
+        end
+        subfactory_info_elements.solver_choice_dropdown.enabled = (not archive_open)
+        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and solver_type == "matrix")
     end
 end
 
@@ -335,7 +349,7 @@ subfactory_info.gui_events = {
             end)
         }
     },
-    on_gui_switch_state_changed = {
+    on_gui_selection_state_changed = {
         {
             name = "solver_choice_changed",
             handler = handle_solver_change

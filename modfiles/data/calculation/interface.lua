@@ -177,6 +177,8 @@ local function update_ingredient_satisfaction(floor, product_class)
     end
 end
 
+local solver_util = require("data.calculation.solver_util")
+local linear_optimization_solver = require("data.calculation.linear_optimization_solver")
 
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
@@ -187,10 +189,10 @@ function calculation.update(player, subfactory)
         player_table.active_subfactory = subfactory
 
         local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-
-        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+        if subfactory.solver_type == "matrix" then
             local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
 
+            subfactory.matrix_free_items = subfactory.matrix_free_items or {}
             if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
                 subfactory.matrix_free_items = {}
                 subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
@@ -214,8 +216,18 @@ function calculation.update(player, subfactory)
             else  -- reset top level items
                 set_blank_subfactory(player, subfactory)
             end
-        else
+        elseif subfactory.solver_type == "interior_point" then
+            local normalized_top_floor = solver_util.normalize(subfactory_data.top_floor)
+            local flat_recipe_lines = solver_util.to_flat_recipe_lines(normalized_top_floor)
+            local normalized_references = solver_util.normalize_references(subfactory_data.top_level_products, subfactory_data.timescale)
+            local problem = linear_optimization_solver.create_problem(subfactory_data.name, flat_recipe_lines, normalized_references)
+            local machine_counts, raw_solution = linear_optimization_solver.primal_dual_interior_point(problem, subfactory.prev_raw_solution)
+            solver_util.feedback(machine_counts, subfactory_data.player_index, subfactory_data.timescale, normalized_top_floor)
+            subfactory.prev_raw_solution = raw_solution
+        elseif subfactory.solver_type == "traditional" then
             sequential_solver.update_subfactory(subfactory_data)
+        else
+            assert(false, "Undefined solver_type = " .. subfactory.solver_type)
         end
 
         player_table.active_subfactory = nil  -- reset after calculations have been carried out
@@ -233,6 +245,8 @@ end
 function calculation.interface.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
+        name = subfactory.name,
+        timescale = subfactory.timescale,
         top_level_products = {},
         top_floor = nil,
         matrix_free_items = subfactory.matrix_free_items

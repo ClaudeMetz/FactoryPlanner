@@ -11,7 +11,7 @@ local function generate_metadata(player)
 
     local metadata = {
         archive_open = (ui_state.flags.archive_open),
-        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
+        solver_type = subfactory.solver_type,
         mining_productivity = mining_productivity,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
@@ -22,7 +22,32 @@ local function generate_metadata(player)
 
     if preferences.tutorial_mode then
         -- Choose the right type of tutorial text right here if possible
-        local matrix_postfix = (metadata.matrix_solver_active) and "_matrix" or ""
+        local element_types
+        if metadata.solver_type == "traditional" then
+          element_types = {
+            ["machine"] = "machine",
+            ["product"] = "product",
+            ["byproduct"] = "byproduct",
+            ["ingredient"] = "ingredient",
+            ["ingredient_entity"] = "ingredient_entity",
+          }
+        elseif metadata.solver_type == "matrix" then
+          element_types = {
+            ["machine"] = "machine_matrix",
+            ["product"] = nil,
+            ["byproduct"] = "byproduct_matrix",
+            ["ingredient"] = "ingredient_matrix",
+            ["ingredient_entity"] = nil,
+          }
+        elseif metadata.solver_type == "interior_point" then
+          element_types = {
+            ["machine"] = "machine",
+            ["product"] = "product_matrix",
+            ["byproduct"] = nil,
+            ["ingredient"] = "ingredient_matrix",
+            ["ingredient_entity"] = nil,
+          }
+        end
 
         metadata.production_toggle_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "production_toggle",
           false, false, true)
@@ -30,16 +55,16 @@ local function generate_metadata(player)
           true, true, true)
         metadata.consuming_recipe_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "consuming_recipe",
           true, true, true)
-        metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "machine" .. matrix_postfix,
+        metadata.machine_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, element_types["machine"],
           false, true, true)
         metadata.beacon_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "beacon", false, true, true)
         metadata.module_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "module", false, true, true)
-        metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "product", true, true, true)
-        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "byproduct" .. matrix_postfix,
+        metadata.product_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, element_types["product"], true, true, true)
+        metadata.byproduct_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, element_types["byproduct"],
          true, true, true)
-        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient" .. matrix_postfix,
+        metadata.ingredient_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, element_types["ingredient"],
           true, true, true)
-        metadata.ingredient_entity_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "ingredient_entity",
+        metadata.ingredient_entity_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, element_types["ingredient_entity"],
           true, true, true)
         metadata.fuel_tutorial_tooltip = ui_util.generate_tutorial_tooltip(player, "fuel", true, true, true)
     end
@@ -97,7 +122,7 @@ end
 function builders.percentage(line, parent_flow, metadata)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
-    local enabled = (not metadata.archive_open and not metadata.matrix_solver_active)
+    local enabled = (not metadata.archive_open)
     local textfield_percentage = parent_flow.add{type="textfield", text=tostring(relevant_line.percentage),
       tags={mod="fp", on_gui_text_changed="line_percentage", on_gui_confirmed="line_percentage", line_id=line.id},
       enabled=enabled}
@@ -126,7 +151,7 @@ function builders.machine(line, parent_flow, metadata)
         if metadata.round_button_numbers then machine_count = math.ceil(machine_count) end
 
         local style, indication, machine_limit = "flib_slot_button_default_small", "", line.machine.limit
-        if not metadata.matrix_solver_active and machine_limit ~= nil then
+        if metadata.solver_type ~= "matrix" and machine_limit ~= nil then
             if line.machine.force_limit then
                 style = "flib_slot_button_pink_small"
                 indication = {"fp.newline", {"fp.notice", {"fp.machine_limit_force", machine_limit}}}
@@ -246,18 +271,22 @@ function builders.products(line, parent_flow, metadata)
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
-          product, nil, machine_count)
+          product, nil, machine_count, not line.subfloor)
         if amount == "0" and line.subfloor then goto skip_product end  -- amount can't be -1 for products
 
-        local style = "flib_slot_button_default_small"
+        local style, enabled = "flib_slot_button_default_small", false
         local indication_string, tutorial_tooltip = "", ""
 
-        if not line.subfloor and not metadata.matrix_solver_active then
+        if metadata.solver_type == "traditional" and not line.subfloor then
             -- We can check for identity because they reference the same table
             if line.priority_product_proto == product.proto then
                 style = "flib_slot_button_pink_small"
                 indication_string = {"fp.indication", {"fp.priority_product"}}
             end
+            enabled = true
+            tutorial_tooltip = metadata.product_tutorial_tooltip
+        else
+            enabled = (metadata.solver_type ~= "matrix")
             tutorial_tooltip = metadata.product_tutorial_tooltip
         end
 
@@ -267,7 +296,7 @@ function builders.products(line, parent_flow, metadata)
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_item", line_id=line.id,
           class="Product", item_id=product.id}, sprite=product.proto.sprite, style=style, number=amount,
-          tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
+          tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
 
         ::skip_product::
     end
@@ -278,11 +307,12 @@ function builders.byproducts(line, parent_flow, metadata)
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
-          byproduct, nil, machine_count)
+          byproduct, nil, machine_count, not line.subfloor)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
 
+        local enabled = (metadata.solver_type ~= "traditional" or not line.subfloor)
         local number_line = (number_tooltip) and {"fp.newline", number_tooltip} or ""
-        local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tooltip or ""
+        local tutorial_tooltip = enabled and metadata.byproduct_tutorial_tooltip or ""
         local tooltip = {"", byproduct.proto.localised_name, number_line, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_item", line_id=line.id,
@@ -298,7 +328,7 @@ function builders.ingredients(line, parent_flow, metadata)
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
-          ingredient, nil, machine_count)
+          ingredient, nil, machine_count, not line.subfloor)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
         local style, enabled = "flib_slot_button_green_small", true
@@ -307,11 +337,11 @@ function builders.ingredients(line, parent_flow, metadata)
 
         if ingredient.proto.type == "entity" then
             style = "flib_slot_button_default_small"
-            enabled = (not metadata.matrix_solver_active)
+            enabled = (metadata.solver_type == "traditional")
             indication_string = {"fp.indication", {"fp.raw_ore"}}
-            tutorial_tooltip = (metadata.matrix_solver_active) and "" or metadata.ingredient_entity_tutorial_tooltip
+            tutorial_tooltip = metadata.ingredient_entity_tutorial_tooltip
 
-        elseif metadata.ingredient_satisfaction then
+        elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
             local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
 
@@ -344,7 +374,8 @@ end
 function builders.fuel(line, parent_flow, metadata)
     local fuel = line.machine.fuel
 
-    local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, line.machine.count)
+    local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
+      fuel, nil, line.machine.count, not line.subfloor)
     if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
     local satisfaction_line = ""
@@ -414,10 +445,18 @@ function production_table.refresh(player)
     production_table_elements.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
     if not subfactory_valid then return end
 
+    local show_column = {}
+    if subfactory.solver_type == "interior_point" then
+        show_column = {["percentage"]=false, ["byproducts"]=false}
+    elseif subfactory.solver_type == "matrix" then
+        show_column = {["percentage"]=false}
+    end
+
     local production_columns, column_count = {}, 0
     for _, column_data in ipairs(all_production_columns) do
         -- Explicit comparison needed here, as both true and nil columns should be shown
-        if preferences[column_data.name .. "_column"] ~= false then
+        local name = column_data.name
+        if show_column[name] ~= false and preferences[name .. "_column"] ~= false then
             column_count = column_count + 1
             production_columns[column_count] = column_data
         end

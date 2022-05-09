@@ -200,6 +200,7 @@ local function handle_machine_click(player, tags, metadata)
     if not ui_util.check_archive_status(player) then return end
 
     local context = data_util.get("context", player)
+    local solver_type = context.subfactory.solver_type
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
@@ -267,7 +268,7 @@ local function handle_machine_click(player, tags, metadata)
             calculation.update(player, context.subfactory)
             main_dialog.refresh(player, "subfactory")
 
-        elseif context.subfactory.matrix_free_items == nil then  -- open the machine options
+        elseif solver_type == "traditional" or solver_type == "interior_point" then  -- open the machine limit options
             local modal_data = {
                 title = {"fp.options_machine_title"},
                 text = {"fp.options_machine_text", line.machine.proto.localised_name},
@@ -383,6 +384,7 @@ end
 
 local function handle_item_click(player, tags, metadata)
     local context = data_util.get("context", player)
+    local solver_type = context.subfactory.solver_type
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local item = Line.get(line, tags.class, tags.item_id)
@@ -395,52 +397,64 @@ local function handle_item_click(player, tags, metadata)
 
     elseif metadata.click == "left" and item.proto.type ~= "entity" then  -- Handles the specific type of item actions
         if tags.class == "Product" then -- Set the priority product
-            if line.Product.count < 2 then
-                title_bar.enqueue_message(player, {"fp.warning_no_prioritizing_single_product"}, "warning", 1, true)
-            elseif context.subfactory.matrix_free_items == nil then
-                -- Remove the priority_product if the already selected one is clicked
-                line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+            if solver_type == "traditional" then
+                if line.Product.count < 2 then
+                    title_bar.enqueue_message(player, {"fp.warning_no_prioritizing_single_product"}, "warning", 1, true)
+                else
+                    -- Remove the priority_product if the already selected one is clicked
+                    line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
 
-                calculation.update(player, context.subfactory)
-                main_dialog.refresh(player, "subfactory")
+                    calculation.update(player, context.subfactory)
+                    main_dialog.refresh(player, "subfactory")
+                end
+            elseif solver_type == "interior_point" then
+                modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto,
+                  production_type="consume", add_after_position=((metadata.shift) and line.gui_position or nil)}})
             end
-
-        else  -- Byproduct or Ingredient
-            local production_type = (tags.class == "Byproduct") and "consume" or "produce"
-            -- The sequential solver does not support byproduct recipes at the moment
-            if production_type == "consume" and context.subfactory.matrix_free_items == nil then
+        elseif tags.class == "Byproduct" then
+            if solver_type == "traditional" then
                 title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
             else
                 modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto,
-                  production_type=production_type, add_after_position=((metadata.shift) and line.gui_position or nil)}})
+                  production_type="consume", add_after_position=((metadata.shift) and line.gui_position or nil)}})
             end
+        elseif tags.class == "Ingredient" then
+            modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto,
+                production_type="produce", add_after_position=((metadata.shift) and line.gui_position or nil)}})
+        else
+            assert()
         end
 
-    elseif metadata.click == "right" and context.subfactory.matrix_free_items == nil then
-        -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
+    elseif metadata.click == "right" then
+        if solver_type == "traditional" then
+            -- Set the view state so that the amount shown in the dialog makes sense
+            view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
 
-        local type_localised_string = {"fp.pl_" .. tags.class:lower(), 1}
-        local produce_consume = (tags.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
+            local type_localised_string = {"fp.pl_" .. tags.class:lower(), 1}
+            local produce_consume = (tags.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
 
-        local modal_data = {
-            title = {"fp.options_item_title", type_localised_string},
-            text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler_name = "apply_item_options",
-            object = item,
-            fields = {
-                {
-                    type = "numeric_textfield",
-                    name = "item_amount",
-                    caption = {"fp.options_item_amount"},
-                    tooltip = {"fp.options_item_amount_tt", type_localised_string, produce_consume},
-                    text = item.amount,
-                    width = 140,
-                    focus = true
+            local modal_data = {
+                title = {"fp.options_item_title", type_localised_string},
+                text = {"fp.options_item_text", item.proto.localised_name},
+                submission_handler_name = "apply_item_options",
+                object = item,
+                fields = {
+                    {
+                        type = "numeric_textfield",
+                        name = "item_amount",
+                        caption = {"fp.options_item_amount"},
+                        tooltip = {"fp.options_item_amount_tt", type_localised_string, produce_consume},
+                        text = item.amount,
+                        width = 140,
+                        focus = true
+                    }
                 }
             }
-        }
-        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+            modal_dialog.enter(player, {type="options", modal_data=modal_data})
+        elseif solver_type == "interior_point" then
+            -- todo: Open the machine limit and item limit options in the improved dialog.
+        end
+        
     end
 end
 

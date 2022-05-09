@@ -2,7 +2,7 @@ item_boxes = {}
 
 --- ** LOCAL UTIL **
 local function add_recipe(player, context, type, item_proto)
-    if type == "byproduct" and context.subfactory.matrix_free_items == nil then
+    if type == "byproduct" and context.subfactory.solver_type == "traditional" then
         title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
         return
     end
@@ -21,14 +21,15 @@ end
 local function build_item_box(player, category, column_count)
     local item_boxes_elements = data_util.get("main_elements", player).item_boxes
 
-    local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
-      style="inside_shallow_frame"}
+    local window_frame = item_boxes_elements.horizontal_flow.add{type="frame",
+      direction="vertical", style="inside_shallow_frame"}
     window_frame.style.top_padding = 6
     window_frame.style.bottom_padding = ITEM_BOX_PADDING
 
-    local label = window_frame.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
+    local label = window_frame.add{type="label", style="caption_label"}
     label.style.left_padding = ITEM_BOX_PADDING
     label.style.bottom_margin = 4
+    item_boxes_elements[category .. "_category_name"] = label
 
     local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
     scroll_pane.style.maximal_height = ITEM_BOX_MAX_ROWS * ITEM_BOX_BUTTON_SIZE
@@ -55,13 +56,22 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
     local default_style, tut_mode_tooltip, global_enable = "flib_slot_button_default", "", true
+    local solver_type = subfactory.solver_type
+    
+    local label = item_boxes_elements[category .. "_category_name"]
+    if subfactory.solver_type == "interior_point" then
+        local conv = {["product"]="refarence", ["byproduct"]="product", ["ingredient"]="ingredient"}
+        label.caption = {"fp.pu_" .. conv[category], 2}
+    else
+        label.caption = {"fp.pu_" .. category, 2}
+    end
 
     if class == "Product" then
         default_style = "flib_slot_button_red"
         tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_product", true, true, true)
     elseif class == "Byproduct" then
         default_style = "flib_slot_button_red"
-        if subfactory.matrix_free_items ~= nil then
+        if solver_type == "matrix" or solver_type == "interior_point" then
             tut_mode_tooltip = ui_util.generate_tutorial_tooltip(player, "tl_byproduct", true, true, true)
         else
             global_enable = false

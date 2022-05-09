@@ -59,10 +59,11 @@ data:extend({
         order = "f"
     },
     {
-        type = "bool-setting",
-        name = "fp_prefer_matrix_solver",
+        type = "string-setting",
+        name = "fp_default_solver_type",
         setting_type = "runtime-per-user",
-        default_value = false,
+        default_value = "interior_point",
+        allowed_values = {"traditional", "matrix", "interior_point"},
         order = "g"
-    },
+    }
 })

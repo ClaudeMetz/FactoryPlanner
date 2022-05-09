@@ -97,9 +97,9 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
     }
 end
 
-function view_state.process_item(metadata, item, item_amount, machine_count)
+function view_state.process_item(metadata, item, item_amount, machine_count, is_recipe_line)
     local raw_amount = item_amount or item.amount
-    if raw_amount == nil or (raw_amount < metadata.adjusted_margin_of_error and item.class ~= "Product") then
+    if raw_amount == nil or (raw_amount < metadata.adjusted_margin_of_error and not is_recipe_line) then
         return -1, nil
     end
 
