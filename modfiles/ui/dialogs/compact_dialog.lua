@@ -65,8 +65,7 @@ local function rebuild_compact_dialog(player, default_visibility)
       tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
-    -- Compact subfactory - handled in different file
-    compact_subfactory.build(player)
+    compact_subfactory.build(player)  -- compact subfactory - handled in different file
 
     return frame_compact_dialog
 end
