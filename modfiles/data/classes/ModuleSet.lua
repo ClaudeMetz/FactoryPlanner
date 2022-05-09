@@ -55,6 +55,10 @@ function ModuleSet.get_in_order(self, reverse)
     return Collection.get_in_order(self.modules, reverse)
 end
 
+function ModuleSet.get_module_kind_amount(self)
+    return self.modules.count
+end
+
 
 function ModuleSet.normalize(self, features)
     self.module_limit = self.parent.proto.module_limit
