@@ -17,20 +17,14 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / (item_proto.type == "fluid" and 50 or 1)
+    local divisor = (item_proto.type == "fluid") and 50 or 1
+    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        
-        if item_proto.type == "fluid" then
-            -- 3.5 belts (assuming 50 fluid/barrel)
-            tooltip = {"fp.annotated_title", {"fp.two_word_title", number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}, {"fp.hint_fluid_belt_barrel"}}
-        else
-            -- 3.5 belts
-            tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
-        end
+        tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
     end
 
     local return_number = (metadata.round_button_numbers) and math.ceil(raw_number) or number
