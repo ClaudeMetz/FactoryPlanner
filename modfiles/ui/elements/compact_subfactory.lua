@@ -2,29 +2,86 @@
 compact_subfactory = {}
 
 -- ** LOCAL UTIL **
--- Checks whether the given (internal) prototype can be blueprinted
-local function put_into_cursor(player, tags, _)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-    -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local object = line[tags.type]
+local function determine_available_columns(lines, frame_width)
+    local frame_border_size = 12
+    local table_padding, table_spacing = 8, 12
+    local recipe_and_check_width = 64
+    local button_width, button_spacing = 36, 4
 
-    if game.entity_prototypes[object.proto.name].has_flag("not-blueprintable") then return end
-
-    local module_list = {}
-    for _, module in pairs(ModuleSet.get_in_order(object.module_set)) do
-        module_list[module.proto.name] = module.amount
+    local max_module_count = 0
+    for _, line in pairs(lines) do
+        if line.subfloor == nil then
+            local module_kinds = ModuleSet.get_module_kind_amount(line.machine.module_set)
+            max_module_count = math.max(max_module_count, module_kinds)
+        end
+        if line.beacon ~= nil then
+            local module_kinds = ModuleSet.get_module_kind_amount(line.beacon.module_set)
+            max_module_count = math.max(max_module_count, module_kinds)
+        end
     end
 
-    local blueprint_entity = {
-        entity_number = 1,
-        name = object.proto.name,
-        position = {0, 0},
-        items = module_list,
-        recipe = (tags.type == "machine") and line.recipe.proto.name or nil
-    }
+    local used_width = 0
+    used_width = used_width + (frame_border_size * 2)  -- border on both sides
+    used_width = used_width + (table_padding * 2)  -- padding on both sides
+    used_width = used_width + (table_spacing * 4)  -- 5 columns -> 4 spaces
+    used_width = used_width + recipe_and_check_width  -- constant
+    -- Add up machines button, module buttons, and spacing for them
+    used_width = used_width + button_width + (max_module_count * button_width) + (max_module_count * button_spacing)
 
-    ui_util.create_cursor_blueprint(player, {blueprint_entity})
+    -- Calculate the remaining width and divide by the amount a button takes up
+    local available_columns = (frame_width - used_width + button_spacing) / (button_width + button_spacing)
+    return math.floor(available_columns)  -- amount is floored as to not cause a horizontal scrollbar
+end
+
+local function determine_table_height(lines, column_counts)
+    local total_height = 0
+    for _, line in pairs(lines) do
+        local items_height = 0
+        for column, count in pairs(column_counts) do
+            local column_height = math.ceil(line[column].count / count)
+            items_height = math.max(items_height, column_height)
+        end
+
+        local machines_height = (line.beacon ~= nil) and 2 or 1
+        total_height = total_height + math.max(machines_height, items_height)
+    end
+    return total_height
+end
+
+local function determine_column_counts(lines, available_columns)
+    local column_counts = {Ingredient = 1, Product = 1, Byproduct = 0}  -- ordered by priority
+    available_columns = available_columns - 2  -- two buttons are already assigned
+
+    local previous_height, increment = math.huge, 1
+    while available_columns > 0 do
+        local table_heights, minimal_height = {}, math.huge
+
+        for column, count in pairs(column_counts) do
+            local potential_column_counts = fancytable.shallow_copy(column_counts)
+            potential_column_counts[column] = count + increment
+            local new_height = determine_table_height(lines, potential_column_counts)
+            table_heights[column] = new_height
+            minimal_height = math.min(minimal_height, new_height)
+        end
+
+        -- If increasing any column by 1 doesn't change the height, try incrementing by more
+        --   until height is decreased, or no columns are available anymore
+        if not (minimal_height < previous_height) and increment < available_columns then
+            increment = increment + 1
+        else
+            for column, height in pairs(table_heights) do
+                if available_columns > 0 and height == minimal_height then
+                    column_counts[column] = column_counts[column] + 1
+                    available_columns = available_columns - 1
+                    break
+                end
+            end
+
+            previous_height, increment = minimal_height, 1  -- reset these
+        end
+    end
+
+    return column_counts
 end
 
 
@@ -97,13 +154,14 @@ local function add_beacon_flow(parent_flow, line)
 end
 
 
-local function add_item_flow(item_class, item_count, button_color, metadata)
-    local column_count = math.max(math.ceil(item_count / 2), 1)
-    local item_table = metadata.parent.add{type="table", column_count=column_count}
+local function add_item_flow(line, item_class, button_color, metadata)
+    local column_count = metadata.column_counts[item_class]
+    if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
 
-    for _, item in ipairs(Line.get_in_order(metadata.line, item_class)) do
+    local item_table = metadata.parent.add{type="table", column_count=column_count}
+    for _, item in ipairs(Line.get_in_order(line, item_class)) do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (not metadata.line.subfloor) and metadata.line.machine.count or nil
+        local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
@@ -115,6 +173,31 @@ local function add_item_flow(item_class, item_count, button_color, metadata)
 
         ::skip_item::
     end
+end
+
+
+local function put_into_cursor(player, tags, _)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local object = line[tags.type]
+
+    if game.entity_prototypes[object.proto.name].has_flag("not-blueprintable") then return end
+
+    local module_list = {}
+    for _, module in pairs(ModuleSet.get_in_order(object.module_set)) do
+        module_list[module.proto.name] = module.amount
+    end
+
+    local blueprint_entity = {
+        entity_number = 1,
+        name = object.proto.name,
+        position = {0, 0},
+        items = module_list,
+        recipe = (tags.type == "machine") and line.recipe.proto.name or nil
+    }
+
+    ui_util.create_cursor_blueprint(player, {blueprint_entity})
 end
 
 
@@ -185,6 +268,7 @@ function compact_subfactory.refresh(player)
     local compact_elements = ui_state.compact_elements
     local subfactory = ui_state.context.subfactory
     local current_level = subfactory.selected_floor.level
+    local lines = Floor.get_in_order(ui_state.context.floor, "Line")
 
     view_state.refresh(player, compact_elements.view_state_table)
 
@@ -197,20 +281,14 @@ function compact_subfactory.refresh(player)
     local production_table = compact_elements.production_table
     production_table.clear()
 
-    local production_columns = {{"fp.pu_recipe", 1}, {"fp.pu_machine", 2}, {"fp.pu_product", 2},
-      {"fp.pu_byproduct", 2}, {"fp.pu_ingredient", 2}, ""}
-    for _, caption in ipairs(production_columns) do
-        local label_header = production_table.add{type="label", caption=caption, style="bold_label"}
-        label_header.style.bottom_margin = 6
-    end
+    -- Available columns for items only, as recipe and machines can't be 'compressed'
+    local frame_width = compact_elements.compact_frame.style.maximal_width
+    local available_columns = determine_available_columns(lines, frame_width)
+    if available_columns < 2 then available_columns = 2 end  -- fix for too many modules or too high of a GUI scale
+    local column_counts = determine_column_counts(lines, available_columns)
 
-    local lines = Floor.get_in_order(ui_state.context.floor, "Line")
     local view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
-
-    local max_ingredient_count = 0
-    for _, line in ipairs(lines) do  -- count ingredients to determine its table size
-        max_ingredient_count = math.max(max_ingredient_count, line.Ingredient.count)
-    end
+    local metadata = {parent=production_table, column_counts=column_counts, view_state_metadata=view_state_metadata}
 
     for _, line in ipairs(lines) do -- build the individual lines
         local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -228,10 +306,9 @@ function compact_subfactory.refresh(player)
         add_beacon_flow(machines_flow, line)
 
         -- Products, Byproducts and Ingredients
-        local metadata = {parent=production_table, line=line, view_state_metadata=view_state_metadata}
-        add_item_flow("Product", line.Product.count, "default", metadata)
-        add_item_flow("Byproduct", line.Byproduct.count, "red", metadata)
-        add_item_flow("Ingredient", max_ingredient_count, "green", metadata)
+        add_item_flow(line, "Product", "default", metadata)
+        add_item_flow(line, "Byproduct", "red", metadata)
+        add_item_flow(line, "Ingredient", "green", metadata)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
 
