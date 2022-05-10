@@ -135,7 +135,8 @@ function utility_structures.components(player, modal_data)
                 elseif missing_amount > 0 then button_style = "flib_slot_button_yellow"
                 else button_style = "flib_slot_button_green" end
 
-                local tooltip = {"fp.components_needed_tt", proto.localised_name, amount_in_inventory, required_amount}
+                local tooltip = {"fp.components_needed_tt", {"fp.tt_title", proto.localised_name},
+                  amount_in_inventory, required_amount}
 
                 local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
@@ -179,8 +180,8 @@ function utility_structures.notes(player, modal_data)
 end
 
 
-local function handle_scope_change(player, tags, metadata)
-    local utility_scope = (metadata.switch_state == "left") and "Subfactory" or "Floor"
+local function handle_scope_change(player, tags, event)
+    local utility_scope = (event.element.switch_state == "left") and "Subfactory" or "Floor"
     data_util.get("preferences", player).utility_scopes[tags.utility_type] = utility_scope
 
     local modal_data = data_util.get("modal_data", player)
@@ -190,7 +191,7 @@ end
 local function handle_item_blueprinting(player, _, _)
     local combinator_proto = game.entity_prototypes["constant-combinator"]
     if combinator_proto == nil then
-        player.create_local_flying_text{text={"fp.utility_blueprint_no_combinator"}, create_at_cursor=true}
+        ui_util.create_flying_text(player, {"fp.utility_blueprint_no_combinator"})
         return
     end
 
@@ -239,7 +240,7 @@ local function handle_item_blueprinting(player, _, _)
     end
 
 
-    data_util.create_cursor_blueprint(player, blueprint_entities)
+    ui_util.create_cursor_blueprint(player, blueprint_entities)
 
     modal_dialog.exit(player, "cancel")
     main_dialog.toggle(player)
@@ -263,24 +264,23 @@ local function handle_item_request(player, _, _)
     update_request_button(player, ui_state.modal_data, subfactory)
 end
 
-local function handle_item_handcraft(player, tags, metadata)
-    local function fly_text(string) player.create_local_flying_text{text=string, create_at_cursor=true} end
+local function handle_item_handcraft(player, tags, event)
+    local fly_text = ui_util.create_flying_text
+    if not player.character then fly_text(player, {"fp.utility_no_character"}); return end
 
-    if not player.character then fly_text({"fp.utility_no_character"}); return end
-
-    local desired_amount = (metadata.click == "left") and 1 or 5
+    local desired_amount = (event.button == defines.mouse_button_type.right) and 5 or 1
     local amount_to_craft = math.min(desired_amount, tags.missing_amount)
 
-    if amount_to_craft <= 0 then fly_text({"fp.utility_no_demand"}); return end
+    if amount_to_craft <= 0 then fly_text(player, {"fp.utility_no_demand"}); return end
 
     local recipes = RECIPE_MAPS["produce"][tags.type][tags.name]
-    if not recipes then fly_text({"fp.utility_no_recipe"}); return end
+    if not recipes then fly_text(player, {"fp.utility_no_recipe"}); return end
 
     for recipe_id, _ in pairs(recipes) do
         local recipe_name = global.all_recipes.recipes[recipe_id].name
         local craftable_amount = player.get_craftable_count(recipe_name)
 
-        if craftable_amount <= 0 then fly_text({"fp.utility_no_resources"}); end
+        if craftable_amount <= 0 then fly_text(player, {"fp.utility_no_resources"}); end
 
         local crafted_amount = math.min(amount_to_craft, craftable_amount)
         player.begin_crafting{count=crafted_amount, recipe=recipe_name, silent=true}
@@ -344,8 +344,8 @@ utility_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "subfactory_notes",
-            handler = (function(player, _, metadata)
-                data_util.get("context", player).subfactory.notes = metadata.text
+            handler = (function(player, _, event)
+                data_util.get("context", player).subfactory.notes = event.element.text
             end)
         }
     }

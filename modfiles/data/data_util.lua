@@ -10,6 +10,7 @@ local getter_functions = {
     preferences = (function(index) return global.players[index].preferences end),
     ui_state = (function(index) return global.players[index].ui_state end),
     main_elements = (function(index) return global.players[index].ui_state.main_elements end),
+    compact_elements = (function(index) return global.players[index].ui_state.compact_elements end),
     context = (function(index) return global.players[index].ui_state.context end),
     modal_data = (function(index) return global.players[index].ui_state.modal_data end),
     modal_elements = (function(index) return global.players[index].ui_state.modal_data.modal_elements end),
@@ -23,26 +24,12 @@ end
 
 -- ** MISC **
 -- Adds given export_string-subfactories to the current factory
-function data_util.add_subfactories_by_string(player, export_string, refresh_interface)
+function data_util.add_subfactories_by_string(player, export_string)
     local context = data_util.get("context", player)
     local first_subfactory = Factory.import_by_string(context.factory, export_string)
 
     ui_util.context.set_subfactory(player, first_subfactory)
     calculation.update(player, first_subfactory)
-    if refresh_interface then main_dialog.refresh(player, "all") end
-end
-
--- Goes through every subfactory's top level products and updates their defined_by
-function data_util.update_all_product_definitions(player)
-    local player_table = data_util.get("table", player)
-
-    local defined_by = player_table.settings.belts_or_lanes
-    Factory.update_product_definitions(player_table.factory, defined_by)
-    Factory.update_product_definitions(player_table.archive, defined_by)
-
-    local subfactory = player_table.ui_state.context.subfactory
-    calculation.update(player, subfactory)
-    main_dialog.refresh(player, "subfactory")
 end
 
 -- Returns the attribute string for the given prototype
@@ -58,44 +45,31 @@ function data_util.get_attributes(type, prototype)
     end
 end
 
--- Executes an alt-action on the given action_type and data
-function data_util.execute_alt_action(player, action_type, data)
-    local alt_action = data_util.get("settings", player).alt_action
-
-    local remote_action = remote_actions[alt_action]
-    if remote_action ~= nil and remote_action[action_type] then
-        remote_actions[action_type](player, alt_action, data)
+-- Checks whether the given recipe's products are used on the given floor
+-- The triple loop is crappy, but it's the simplest way to check
+function data_util.check_product_compatibiltiy(floor, recipe)
+    for _, product in pairs(recipe.proto.products) do
+        for _, line in pairs(Floor.get_all(floor, "Line")) do
+            for _, ingredient in pairs(Line.get_all(line, "Ingredient")) do
+                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
+                    return true
+                end
+            end
+        end
     end
+    return false
 end
 
--- Checks whether the given (internal) prototype can be blueprinted, else throws an error
-function data_util.is_entity_blueprintable(proto)
-    return (not game.entity_prototypes[proto.name].has_flag("not-blueprintable"))
-end
-
--- Create a blueprint with the given entities and put it in the player's cursor
-function data_util.create_cursor_blueprint(player, blueprint_entities)
-    local script_inventory = game.create_inventory(1)
-    local blank_slot = script_inventory[1]
-
-    blank_slot.set_stack{name="fp_cursor_blueprint"}
-    blank_slot.set_blueprint_entities(blueprint_entities)
-    player.add_to_clipboard(blank_slot)
-    player.activate_paste()
-    script_inventory.destroy()
-end
 
 -- Formats the given effects for use in a tooltip
-function data_util.format_module_effects(effects, multiplier, limit_effects)
-    local tooltip_lines, effect_applies = {""}, false
+function data_util.format_module_effects(effects, limit_effects)
+    local tooltip_lines, effect_applies = {"", "\n"}, false
 
     for effect_name, effect_value in pairs(effects) do
-        if type(effect_value) == "table" then effect_value = effect_value.bonus end
-
         if effect_value ~= 0 then
             effect_applies = true
-
             local capped_indication = ""
+
             if limit_effects then
                 if effect_name == "productivity" and effect_value < 0 then
                     effect_value, capped_indication = 0, {"fp.effect_maxed"}
@@ -105,16 +79,16 @@ function data_util.format_module_effects(effects, multiplier, limit_effects)
             end
 
             -- Force display of either a '+' or '-', also round the result
-            local display_value = ("%+d"):format(math.floor((effect_value * multiplier * 100) + 0.5))
-            table.insert(tooltip_lines, {"fp.module_" .. effect_name, display_value, capped_indication})
+            local display_value = ("%+d"):format(math.floor((effect_value * 100) + 0.5))
+            table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, display_value, capped_indication})
         end
     end
 
-    if effect_applies then return {"fp.effects_tooltip", tooltip_lines} else return "" end
+    return (effect_applies) and tooltip_lines or ""
 end
 
 -- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
--- To make it state-less, it needs its return values passed back as arguments
+-- To make it stateless, it needs its return values passed back as arguments
 -- Uses state to avoid needing to call table_size() because that function is slow
 function data_util.build_localised_string(strings_to_insert, current_table, next_index)
     current_table = current_table or {""}
@@ -132,6 +106,30 @@ function data_util.build_localised_string(strings_to_insert, current_table, next
     end
 
     return current_table, next_index
+end
+
+
+function data_util.action_allowed(action_limitations, active_limitations)
+    -- If a particular limitation is nil, it indicates that the action is allowed regardless
+    -- If it is non-nil, it needs to match the current state of the limitation exactly
+    for limitation_name, limitation in pairs(action_limitations) do
+        if active_limitations[limitation_name] ~= limitation then return false end
+    end
+    return true
+end
+
+function data_util.generate_tutorial_tooltip(action_name, active_limitations, recipebook_enabled)
+    local tooltip = {""}
+    for _, action_line in pairs(TUTORIAL_TOOLTIPS[action_name]) do
+        if data_util.action_allowed(action_line.limitations, active_limitations) then
+            table.insert(tooltip, action_line.string)
+        end
+    end
+
+    if table_size(tooltip) > 1 then table.insert(tooltip, 2, "\n") end
+    if recipebook_enabled then table.insert(tooltip, {"fp.tut_open_in_recipebook"}) end
+
+    return tooltip
 end
 
 
@@ -203,7 +201,7 @@ function data_util.porter.get_subfactories(export_string)
     end) then return nil, "migration_failure" end
 
     local import_factory = Factory.init()
-    if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that are too many slow pcalls
+    if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that's too many slow pcalls
         for _, packed_subfactory in pairs(export_table.subfactories) do
             local unpacked_subfactory = Subfactory.unpack(packed_subfactory)
 

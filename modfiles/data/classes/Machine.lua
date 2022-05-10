@@ -1,87 +1,23 @@
 -- Class representing a machine with its attached modules and fuel
 Machine = {}
 
--- Initialised by passing a prototype from the all_machines global table
-function Machine.init_by_proto(proto)
+function Machine.init(proto, parent)
     local machine = {
         proto = proto,
         count = 0,
         limit = nil,  -- will be set by the user
         force_limit = false,
-        fuel = nil,  -- updated by Line.change_machine()
-        Module = Collection.init("Module"),
-        module_count = 0,  -- updated automatically
+        fuel = nil,  -- needs to be set by calling Machine.find_fuel afterwards
+        module_set = nil,  -- set right below
         total_effects = nil,
         effects_tooltip = "",
         valid = true,
-        class = "Machine"
+        class = "Machine",
+        parent = parent
     }
-
-    -- Initialise total_effects
-    Machine.summarize_effects(machine)
+    machine.module_set = ModuleSet.init(machine)
 
     return machine
-end
-
--- lookup exists for internal purposes
-function Machine.clone(self, lookup)
-    lookup = lookup or {}
-    local new = {}
-    lookup[self] = new
-    for k, v in pairs(self) do
-        new[k] = lookup[v] or v
-    end
-    new.Module = Collection.clone(new.Module, lookup)
-    return new
-end
-
-
-function Machine.add(self, object)
-    object.parent = self
-    local dataset = Collection.add(self[object.class], object)
-
-    self.module_count = self.module_count + dataset.amount
-    Machine.normalize_modules(self, true, false)
-
-    return dataset
-end
-
-function Machine.remove(self, dataset)
-    local removed_gui_position = Collection.remove(self[dataset.class], dataset)
-
-    self.module_count = self.module_count - dataset.amount
-    Machine.normalize_modules(self, true, false)
-
-    return removed_gui_position
-end
-
-function Machine.replace(self, dataset, object)
-    object.parent = self
-    local module_count_difference = object.amount - dataset.amount
-    local new_dataset = Collection.replace(self[dataset.class], dataset, object)
-
-    self.module_count = self.module_count + module_count_difference
-    Machine.normalize_modules(self, true, false)
-
-    return new_dataset
-end
-
-function Machine.clear(self, class)
-    self.Module = Collection.clear(self[class]) -- bug workaround
-    self.module_count = 0
-    Machine.normalize_modules(self, false, false) -- no modules to sort or trim at this point
-end
-
-function Machine.get(self, class, dataset_id)
-    return Collection.get(self[class], dataset_id)
-end
-
-function Machine.get_all(self, class)
-    return Collection.get_all(self[class])
-end
-
-function Machine.get_in_order(self, class, reverse)
-    return Collection.get_in_order(self[class], reverse)
 end
 
 
@@ -94,33 +30,21 @@ function Machine.find_fuel(self, player)
         local fuel_category_id = global.all_fuels.map[fuel_category_name]
 
         local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
-        self.fuel = Fuel.init_by_proto(default_fuel_proto)
+        self.fuel = Fuel.init(default_fuel_proto)
         self.fuel.parent = self
     end
 end
 
+function Machine.summarize_effects(self, mining_prod)
+    local effects = self.module_set.total_effects
 
-function Machine.summarize_effects(self)
-    local module_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+    effects["base_prod"] = self.proto.base_productivity or nil
+    effects["mining_prod"] = mining_prod or nil
 
-    -- Machine base productivity
-    module_effects.productivity = module_effects.productivity + self.proto.base_productivity
+    self.total_effects = effects
+    self.effects_tooltip = data_util.format_module_effects(effects, false)
 
-    -- Module productivity
-    for _, module in pairs(Machine.get_in_order(self, "Module")) do
-        for name, effect in pairs(module.proto.effects) do
-            module_effects[name] = module_effects[name] + (effect.bonus * module.amount)
-        end
-
-        module.effects_tooltip = data_util.format_module_effects(module.proto.effects, module.amount, false)
-    end
-
-    self.total_effects = module_effects
-end
-
-
-function Machine.empty_slot_count(self)
-    return (self.proto.module_limit - self.module_count)
+    Line.summarize_effects(self.parent)
 end
 
 function Machine.check_module_compatibility(self, module_proto)
@@ -128,7 +52,7 @@ function Machine.check_module_compatibility(self, module_proto)
 
     if self.proto.module_limit == 0 then return false end
 
-    if table_size(module_proto.limitations) ~= 0 and recipe.proto.use_limitations
+    if next(module_proto.limitations) and recipe.proto.use_limitations
       and not module_proto.limitations[recipe.proto.name] then
         return false
     end
@@ -147,76 +71,30 @@ function Machine.check_module_compatibility(self, module_proto)
     return true
 end
 
-function Machine.compile_module_filter(self)
-    local compatible_modules = {}
-    for module_name, module_proto in pairs(MODULE_NAME_MAP) do
-        if Machine.check_module_compatibility(self, module_proto) then
-            table.insert(compatible_modules, module_name)
-        end
-    end
 
-    return {{filter="name", name=compatible_modules}}
-end
-
-
--- Normalizes the modules of this machine after they've been changed
-function Machine.normalize_modules(self, sort, trim)
-    if sort then Machine.sort_modules(self) end
-    if trim then Machine.trim_modules(self) end
-    Line.summarize_effects(self.parent, true, false)
-end
-
--- Sorts modules in a deterministic fashion so they are in the same order for every line
--- Not a very efficient algorithm, but totally fine for the small (<10) amount of datasets
-function Machine.sort_modules(self)
-    local next_position = 1
-    local new_gui_positions = {}
-
-    if global.all_modules == nil then return end
-    for _, category in ipairs(global.all_modules.categories) do
-        for _, module_proto in ipairs(category.modules) do
-            for _, module in ipairs(Machine.get_in_order(self, "Module")) do
-                if module.proto.category == category.name and module.proto.name == module_proto.name then
-                    table.insert(new_gui_positions, {module = module, new_pos = next_position})
-                    next_position = next_position + 1
-                end
-            end
-        end
-    end
-
-    -- Actually set the new gui positions
-    for _, new_position in pairs(new_gui_positions) do
-        new_position.module.gui_position = new_position.new_pos
-    end
-end
-
--- Trims superfluous modules off the end (might be needed when the machine is downgraded)
-function Machine.trim_modules(self)
-    local module_count = self.module_count
-    local module_limit = self.proto.module_limit or 0
-    -- Return if the module count is within limits
-    if module_count <= module_limit then return end
-
-    local modules_to_remove = {}
-    -- Traverse modules in reverse to trim them off the end
-    for _, module in ipairs(Machine.get_in_order(self, "Module", true)) do
-        -- Remove a whole module if it brings the count to >= limit
-        if (module_count - module.amount) >= module_limit then
-            table.insert(modules_to_remove, module)
-            module_count = module_count - module.amount
-
-        -- Otherwise, diminish the amount on the module appropriately and break
+function Machine.paste(self, object)
+    if object.class == "Machine" then
+        if self.proto.category == object.proto.category
+          and Line.is_machine_applicable(self.parent, object.proto) then
+            object.parent = self.parent
+            self.parent.machine = object
+            Line.summarize_effects(self.parent)
+            return true, nil
         else
-            local new_amount = module.amount - (module_count - module_limit)
-            Module.change_amount(module, new_amount)
-            break
+            return false, "incompatible"
         end
+    elseif object.class == "Module" then
+       return ModuleSet.paste(self.module_set, object)
+    else
+        return false, "incompatible_class"
     end
+end
 
-    -- Remove superfluous modules (no re-sorting necessary)
-    for _, module in pairs(modules_to_remove) do
-        Machine.remove(self, module)
-    end
+function Machine.clone(self)
+    local clone = Machine.unpack(Machine.pack(self))
+    clone.parent = self.parent
+    Machine.validate(clone)
+    return clone
 end
 
 
@@ -226,8 +104,7 @@ function Machine.pack(self)
         limit = self.limit,
         force_limit = self.force_limit,
         fuel = (self.fuel) and Fuel.pack(self.fuel) or nil,
-        Module = Collection.pack(self.Module),
-        module_count = self.module_count,
+        module_set = ModuleSet.pack(self.module_set),
         class = self.class
     }
 end
@@ -238,14 +115,14 @@ function Machine.unpack(packed_self)
     self.fuel = (packed_self.fuel) and Fuel.unpack(packed_self.fuel) or nil
     if self.fuel then self.fuel.parent = self end
 
-    self.Module = Collection.unpack(packed_self.Module, self)
-    -- Effects are summarized by the ensuing validation
+    self.module_set = ModuleSet.unpack(packed_self.module_set)
+    self.module_set.parent = self
 
     return self
 end
 
 
--- Needs validation: proto, fuel, Module
+-- Needs validation: proto, fuel, module_set
 function Machine.validate(self)
     self.valid = prototyper.util.validate_prototype_object(self, "proto", "machines", "category")
 
@@ -256,27 +133,28 @@ function Machine.validate(self)
 
     if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
 
-    self.valid = Collection.validate_datasets(self.Module) and self.valid
-    if self.valid then Machine.normalize_modules(self, true, true) end
+    self.valid = ModuleSet.validate(self.module_set)
 
     return self.valid
 end
 
--- Needs repair: proto, fuel, Module
+-- Needs repair: proto, fuel, module_set
 function Machine.repair(self, player)
     -- If the prototype is still simplified, it couldn't be fixed by validate
     -- A final possible fix is to replace this machine with the default for its category
-    if self.proto.simplified and not Line.change_machine(self.parent, player, nil, nil) then
-        return false  -- if this happens, the whole line is unsavable
+    if self.proto.simplified and not Line.change_machine_to_default(self.parent, player) then
+        return false  -- if this happens, the whole line can not be salvaged
     end
     self.valid = true  -- if it gets to this, change_machine was successful and the machine is valid
     -- It just might need to cleanup some fuel and/or modules
 
-    if self.fuel and not self.fuel.valid then Fuel.repair(self.fuel, player) end
+    if self.fuel and not self.fuel.valid then
+        -- If fuel is invalid, replace it with a default value
+        if not Fuel.repair(self.fuel) then Machine.find_fuel(self, player) end
+    end
 
     -- Remove invalid modules and normalize the remaining ones
-    Collection.repair_datasets(self.Module, nil)
-    Machine.normalize_modules(self, true, true)
+    ModuleSet.repair(self.module_set)
 
-    return self.valid
+    return true
 end

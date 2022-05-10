@@ -1,8 +1,7 @@
 -- This is essentially just a wrapper-'class' for a fuel prototype to add some data to it
 Fuel = {}
 
--- Initialised by passing a prototype from the all_fuels global table
-function Fuel.init_by_proto(proto)
+function Fuel.init(proto)
     return {
         proto = proto,
         amount = 0,  -- produced amount
@@ -38,14 +37,8 @@ function Fuel.validate(self)
     return self.valid
 end
 
--- Needs repair: proto
-function Fuel.repair(self, player)
-    self.parent.fuel = nil  -- invalid fuels need to be removed
-
-    -- If the prototype is still simplified, it couldn't be fixed by validate
-    -- To repair it, replace it with the default for its machine's category
-    if self.proto.simplified then
-        Machine.find_fuel(self.parent, player)
-    end
-    -- no return necessary
+-- Needs repair:
+function Fuel.repair(_, _)
+    -- If the fuel-proto is still simplified, validate couldn't repair it, so it has to be removed
+    return false  -- the parent machine will try to replace it with another fuel of the same category
 end

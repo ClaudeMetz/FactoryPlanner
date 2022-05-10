@@ -1,11 +1,10 @@
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 
-function Subfactory.init(name, icon)
+function Subfactory.init(name)
     local subfactory = {
         name = name,
-        icon = icon,
-        timescale = nil,  -- needs to be set after init
+        timescale = nil,  -- set after init
         energy_consumption = 0,
         pollution = 0,
         notes = "",
@@ -33,45 +32,26 @@ function Subfactory.init(name, icon)
 end
 
 
--- Returns first whether the icon is missing, then the rich text for it
-function Subfactory.verify_icon(self)
-    local type = (self.icon.type == "virtual") and "virtual-signal" or self.icon.type
-    local subfactory_sprite = type .. "/" .. self.icon.name
-
-    if not game.is_valid_sprite_path(subfactory_sprite) then
-        return true, ("[img=utility/missing_icon]")
-    else
-        return false, ("[img=" .. subfactory_sprite .. "]")
-    end
-end
-
 function Subfactory.tostring(self, export_format)
-    local status_string = ""
+    local caption, tooltip = self.name, nil  -- don't return a tooltip for the export_format
+
     if not export_format then
+        local status_string = ""
         if self.tick_of_deletion then status_string = status_string .. "[img=fp_sprite_trash_red] " end
-        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red]  " end
-    end
+        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red] " end
+        caption = status_string .. caption
 
-    local name_string = self.name
-    if self.icon then
-        local _, sprite_rich_text = Subfactory.verify_icon(self)
-        name_string = sprite_rich_text .. "  " .. name_string
-    end
-
-    local tooltip = nil  -- don't return a tooltip for the export_format
-    if not export_format then
         local trashed_string = ""
         if self.tick_of_deletion then
             local ticks_left_in_trash = self.tick_of_deletion - game.tick
             local minutes_left_in_trash = math.ceil(ticks_left_in_trash / 3600)
-            trashed_string = {"fp.newline", {"fp.subfactory_trashed", minutes_left_in_trash}}
+            trashed_string = {"fp.subfactory_trashed", minutes_left_in_trash}
         end
 
-        local invalid_string = (not self.valid) and {"fp.newline", {"fp.subfactory_invalid"}} or ""
-        tooltip = {"", name_string, trashed_string, invalid_string}
+        local invalid_string = (not self.valid) and {"fp.subfactory_invalid"} or ""
+        tooltip = {"", {"fp.tt_title", self.name}, trashed_string, invalid_string}
     end
 
-    local caption = (status_string .. name_string)
     return caption, tooltip
 end
 
@@ -83,6 +63,11 @@ end
 
 function Subfactory.remove(self, dataset)
     return Collection.remove(self[dataset.class], dataset)
+end
+
+function Subfactory.replace(self, dataset, object)
+    object.parent = self
+    return Collection.replace(self[dataset.class], dataset, object)
 end
 
 function Subfactory.clear(self, class)
@@ -112,16 +97,11 @@ function Subfactory.get_by_name(self, class, name)
 end
 
 
-function Subfactory.shift(self, dataset, direction)
-    return Collection.shift(self[dataset.class], dataset, direction)
-end
-
-
 -- Returns the machines and modules needed to actually build this subfactory
 function Subfactory.get_component_data(self)
     local components = {machines={}, modules={}}
 
-    for _, floor in pairs(Floor.get_in_order(self, "Floor")) do
+    for _, floor in pairs(Subfactory.get_in_order(self, "Floor")) do
         -- Relies on the floor-function to do the heavy lifting
         Floor.get_component_data(floor, components)
     end
@@ -160,6 +140,24 @@ function Subfactory.destroy_item_request_proxy(self)
 end
 
 
+-- Given line has to have a subfloor; recursively adds references for all subfloors to list
+function Subfactory.add_subfloor_references(self, line)
+    Subfactory.add(self, line.subfloor)
+
+    for _, sub_line in pairs(Floor.get_all(line.subfloor, "Line")) do
+        if sub_line.subfloor then Subfactory.add_subfloor_references(self, sub_line) end
+    end
+end
+
+
+function Subfactory.clone(self)
+    local clone = Subfactory.unpack(Subfactory.pack(self))
+    clone.parent = self.parent
+    Subfactory.validate(clone)
+    return clone
+end
+
+
 function Subfactory.pack(self)
     local packed_free_items = (self.matrix_free_items) and {} or nil
     for index, proto in pairs(self.matrix_free_items or {}) do
@@ -168,7 +166,6 @@ function Subfactory.pack(self)
 
     return {
         name = self.name,
-        icon = self.icon,
         timescale = self.timescale,
         notes = self.notes,
         mining_productivity = self.mining_productivity,
@@ -182,7 +179,7 @@ function Subfactory.pack(self)
 end
 
 function Subfactory.unpack(packed_self)
-    local self = Subfactory.init(packed_self.name, packed_self.icon)
+    local self = Subfactory.init(packed_self.name)
 
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
@@ -200,6 +197,10 @@ function Subfactory.unpack(packed_self)
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
     local top_floor = self.selected_floor
     Floor.unpack(packed_self.top_floor, top_floor)
+    -- Make sure to create references to all subfloors after unpacking
+    for _, line in pairs(Floor.get_all(top_floor, "Line")) do
+        if line.subfloor then Subfactory.add_subfloor_references(self, line) end
+    end
 
     return self
 end

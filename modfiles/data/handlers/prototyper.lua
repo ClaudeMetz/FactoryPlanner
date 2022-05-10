@@ -112,6 +112,21 @@ function prototyper.util.simplify_prototype(proto)
     return simple_proto
 end
 
+-- Build the necessary RawDictionaries for translation. Should be called after prototyper.finish().
+function prototyper.util.build_translation_dictionaries()
+    for _, type in ipairs(global.all_items.types) do
+        local item_dictionary = translator.new(type.name)
+        for _, proto in pairs(type.items) do
+            item_dictionary:add(proto.name, proto.localised_name)
+        end
+    end
+
+    local recipe_dictionary = translator.new("recipe")
+    for _, proto in pairs(global.all_recipes.recipes) do
+        recipe_dictionary:add(proto.name, proto.localised_name)
+    end
+end
+
 
 -- ** DEFAULTS **
 -- Defines fallbacks by name which overwrites choosing the first in the proto list
@@ -173,10 +188,11 @@ function prototyper.defaults.migrate(player_table, type)
     local new_prototypes = NEW["all_" .. type]
     local default_prototypes = player_table.preferences.default_prototypes
     local default = default_prototypes[type]
+    if not default.prototype or not default.prototypes then return end
 
     if default.structure_type == "simple" then
         -- Use the same prototype if an equivalent can be found, use fallback otherwise
-        local new_prototype_id = new_prototypes.map[default.prototype.name]
+        local new_prototype_id = (default.prototype) and new_prototypes.map[default.prototype.name] or nil
         default.prototype = (new_prototype_id ~= nil) and new_prototypes[type][new_prototype_id]
           or prototyper.defaults.get_fallback(type).prototype
 
