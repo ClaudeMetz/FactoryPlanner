@@ -5,7 +5,7 @@ compact_subfactory = {}
 local function determine_available_columns(lines, frame_width)
     local frame_border_size = 12
     local table_padding, table_spacing = 8, 12
-    local recipe_and_check_width = 64
+    local recipe_and_check_width = 58
     local button_width, button_spacing = 36, 4
 
     local max_module_count = 0
