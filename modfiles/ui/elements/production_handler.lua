@@ -1,15 +1,6 @@
 production_handler = {}
 
 -- ** LOCAL UTIL **
-local function handle_done_click(player, tags, _)
-    local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    relevant_line.done = not relevant_line.done
-
-    -- Refreshing the whole table here is wasteful, but I don't have good selective refreshing yet
-    main_dialog.refresh(player, "production_table")
-end
-
 local function handle_line_move_click(player, tags, event)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
@@ -304,10 +295,6 @@ end
 production_handler.gui_events = {
     on_gui_click = {
         {
-            name = "checkmark_line",
-            handler = handle_done_click
-        },
-        {
             name = "move_line",
             handler = handle_line_move_click
         },
@@ -401,6 +388,16 @@ production_handler.gui_events = {
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_fuel_click
+        }
+    },
+    on_gui_checked_state_changed = {
+        {
+            name = "checkmark_line",
+            handler = (function(player, tags, _)
+                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
+                local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+                relevant_line.done = not relevant_line.done
+            end)
         }
     },
     on_gui_text_changed = {

@@ -28,6 +28,11 @@ local function put_into_cursor(player, tags, _)
 end
 
 
+local function add_checkmark_button(parent_flow, line, relevant_line)
+    parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
+      tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
+end
+
 local function add_recipe_button(parent_flow, line, relevant_line)
     local recipe_proto = relevant_line.recipe.proto
     local style = (line.subfloor ~= nil) and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
@@ -36,15 +41,6 @@ local function add_recipe_button(parent_flow, line, relevant_line)
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="open_compact_subfloor", line_id=line.id},
       sprite=recipe_proto.sprite, tooltip=tooltip, enabled=(line.subfloor ~= nil), style=style,
       mouse_button_filter={"left"}}
-end
-
-local function add_checkmark_button(parent_flow, line, relevant_line)
-    local sprite = (relevant_line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
-    local style = (relevant_line.done) and "fp_button_slot_green" or "flib_slot_default"
-    local checkmark_button = parent_flow.add{type="sprite-button", sprite=sprite, style=style,
-      tags={mod="fp", on_gui_click="checkmark_compact_line", line_id=line.id}, mouse_button_filter={"left"}}
-    checkmark_button.style.size = 20
-    checkmark_button.style.padding = -1
 end
 
 local function add_modules_flow(parent_flow, module_set)
@@ -218,6 +214,7 @@ function compact_subfactory.refresh(player)
 
     for _, line in ipairs(lines) do -- build the individual lines
         local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+        if not relevant_line.active then goto skip_line end
 
         -- Recipe and Checkmark
         local recipe_flow = production_table.add{type="flow", direction="horizontal"}
@@ -237,6 +234,8 @@ function compact_subfactory.refresh(player)
         add_item_flow("Ingredient", max_ingredient_count, "green", metadata)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+        ::skip_line::
     end
 end
 
@@ -261,17 +260,18 @@ compact_subfactory.gui_events = {
             end)
         },
         {
+            name = "put_into_cursor",
+            handler = put_into_cursor
+        }
+    },
+    on_gui_checked_state_changed = {
+        {
             name = "checkmark_compact_line",
             handler = (function(player, tags, _)
                 local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
                 local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
                 relevant_line.done = not relevant_line.done
-                compact_subfactory.refresh(player)
             end)
-        },
-        {
-            name = "put_into_cursor",
-            handler = put_into_cursor
         }
     }
 }
