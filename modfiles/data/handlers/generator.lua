@@ -685,7 +685,7 @@ function generator.all_beacons()
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(beacon_filter)) do
         local sprite = generator_util.determine_entity_sprite(proto)
-        if sprite ~= nil and proto.module_inventory_size then
+        if sprite ~= nil and proto.module_inventory_size and proto.distribution_effectivity > 0 then
             -- Beacons can refer to the actual item prototype right away because they are built after items are
             local items_to_place_this, built_by_item = proto.items_to_place_this, nil
             if items_to_place_this then
