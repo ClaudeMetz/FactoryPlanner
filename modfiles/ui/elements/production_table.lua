@@ -54,13 +54,8 @@ local builders = {}
 function builders.done(line, parent_flow, _)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
-    local sprite = (relevant_line.done) and "utility/check_mark" or "fp_sprite_check_mark_green"
-    local style = (relevant_line.done) and "fp_button_slot_green" or "flib_slot_default"
-
-    local button = parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="checkmark_line", line_id=line.id},
-      sprite=sprite, style=style, mouse_button_filter={"left"}}
-    button.style.size = 20
-    button.style.padding = -1
+    parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
+      tags={mod="fp", on_gui_checked_state_changed="checkmark_line", line_id=line.id}}
 end
 
 function builders.recipe(line, parent_flow, metadata)
