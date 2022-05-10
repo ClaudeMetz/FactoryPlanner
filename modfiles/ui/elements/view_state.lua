@@ -17,9 +17,8 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, nil end
-
-    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse
+    local divisor = (item_proto.type == "fluid") and 50 or 1
+    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
     local tooltip = nil
