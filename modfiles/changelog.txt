@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Added rich text support to subfactory names, so they are not restricted to a single icon anymore if desired
     - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
     - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
+    - Added support for barrelled fluids to the belts/lanes production view (Thanks ZorbaTHut!)
   Changes:
     - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
     - Combined the various machine dialogs (entity picker, limits, modules, fuel) into one
