@@ -18,7 +18,7 @@ require("util")  -- core.lualib
 fancytable = require('__flib__.table')  -- has more functionality than built-in table
 
 translator = require("__flib__.dictionary")  -- translation module for localised search
-translator.set_use_local_storage(true)
+--translator.set_use_local_storage(true)
 
 require("data.init")
 require("data.data_util")

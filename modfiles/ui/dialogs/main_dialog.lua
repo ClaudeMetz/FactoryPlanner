@@ -277,6 +277,7 @@ main_dialog.misc_events = {
         local ui_state = data_util.get("ui_state", player)
         local flags = ui_state.flags
 
+        local p = game.create_profiler()
         if flags.compact_view and compact_dialog.is_in_focus(player) then
             compact_dialog.toggle(player)
 
@@ -288,5 +289,6 @@ main_dialog.misc_events = {
             compact_dialog.toggle(player)  -- toggle also refreshes
         end
         flags.compact_view = not flags.compact_view
+        log(p)
     end)
 }
