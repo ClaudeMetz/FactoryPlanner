@@ -4,32 +4,37 @@ view_state = {}
 -- ** LOCAL UTIL **
 local processors = {}  -- individual functions for each kind of view state
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
-    local number = ui_util.format_number(raw_amount, metadata.formatting_precision)
-
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
+        local tooltip_number = ui_util.format_number(raw_amount, metadata.formatting_precision)
+        local plural_parameter = (tooltip_number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        tooltip = {"fp.two_word_title", number, {"fp.per_title", type_string, metadata.timescale_string}}
+        tooltip = {"fp.two_word_title", tooltip_number, {"fp.per_title", type_string, metadata.timescale_string}}
     end
 
-    return number, tooltip
+    local icon_number = ui_util.format_number_ceil(raw_amount)
+    return icon_number, tooltip
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, nil end
-
-    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse
-    local number = ui_util.format_number(raw_number, metadata.formatting_precision)
+    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / (item_proto.type == "fluid" and 50 or 1)
 
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"fp.two_word_title", number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+        local tooltip_number = ui_util.format_number(raw_number, metadata.formatting_precision)
+        local plural_parameter = (tooltip_number == "1") and 1 or 2
+        
+        if item_proto.type == "fluid" then
+            -- 3.5 belts (assuming 50 fluid/barrel)
+            tooltip = {"fp.annotated_title", {"fp.two_word_title", tooltip_number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}, {"fp.hint_fluid_belt_barrel"}}
+        else
+            -- 3.5 belts
+            tooltip = {"fp.two_word_title", tooltip_number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+        end
     end
 
-    local return_number = (metadata.round_button_numbers) and math.ceil(raw_number) or number
-    return return_number, tooltip
+    local icon_number = ui_util.format_number_ceil((metadata.round_button_numbers) and math.ceil(raw_number) or raw_number)
+    return icon_number, tooltip
 end
 
 function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
@@ -38,33 +43,35 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
       or metadata.cargo_wagon_capactiy * item_proto.stack_size
     local wagon_count = raw_amount / wagon_capacity
-    local number = ui_util.format_number(wagon_count, metadata.formatting_precision)
 
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"fp.two_word_title", number, {"fp.per_title", {"fp.pl_wagon", plural_parameter},
+        local tooltip_number = ui_util.format_number(wagon_count, metadata.formatting_precision)
+        local plural_parameter = (tooltip_number == "1") and 1 or 2
+        tooltip = {"fp.two_word_title", tooltip_number, {"fp.per_title", {"fp.pl_wagon", plural_parameter},
           metadata.timescale_string}}
     end
 
-    return number, tooltip
+    local icon_number = ui_util.format_number_ceil(wagon_count)
+    return icon_number, tooltip
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
     local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil(machine_count or 1))
-    local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
     local tooltip = nil
     if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
+        local tooltip_number = ui_util.format_number(raw_number, metadata.formatting_precision)
+        local plural_parameter = (tooltip_number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
         local item_per_second =  {"fp.per_title", type_string, {"fp.second"}}
         -- If machine_count is nil, this shouldn't show /machine
         local per_machine = (machine_count ~= nil) and {"fp.per_title", "", {"fp.pl_machine", 1}} or ""
-        tooltip = {"fp.two_word_title", number, {"", item_per_second, per_machine}}
+        tooltip = {"fp.two_word_title", tooltip_number, {"", item_per_second, per_machine}}
     end
 
-    return number, tooltip
+    local icon_number = ui_util.format_number_ceil(raw_number)
+    return icon_number, tooltip
 end
 
 

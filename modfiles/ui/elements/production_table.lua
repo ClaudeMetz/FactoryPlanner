@@ -117,13 +117,13 @@ function builders.machine(line, parent_flow, metadata)
           enabled=false, number=machine_count, tooltip=tooltip}
     else
         -- Machine
-        machine_count = ui_util.format_number(machine_count, 4)
-        local tooltip_count = machine_count
-        if machine_count == "0" and line.production_ratio > 0 then
+        local tooltip_count = ui_util.format_number(machine_count, 4)
+        local icon_count = ui_util.format_number_ceil(machine_count)
+        if tooltip_count == "0" and line.production_ratio > 0 then
             tooltip_count = "<0.0001"
-            machine_count = "0.01"  -- shows up as 0.0 on the button
+            icon_count = 0  -- shows up as 0.0 on the button
         end
-        if metadata.round_button_numbers then machine_count = math.ceil(machine_count) end
+        if metadata.round_button_numbers then icon_count = math.ceil(icon_count) end
 
         local style, indication, machine_limit = "flib_slot_button_default_small", "", line.machine.limit
         if not metadata.matrix_solver_active and machine_limit ~= nil then
@@ -147,13 +147,13 @@ function builders.machine(line, parent_flow, metadata)
             effects_tooltip = data_util.format_module_effects(module_effects, 1, true)
         end
 
-        local plural_parameter = (machine_count == "1") and 1 or 2
+        local plural_parameter = (tooltip_count == "1") and 1 or 2
         local number_line = {"fp.newline", {"fp.two_word_title", tooltip_count, {"fp.pl_machine", plural_parameter}}}
         local tutorial_tooltip = metadata.machine_tutorial_tooltip
         local tooltip = {"", machine_proto.localised_name, number_line, indication, effects_tooltip, tutorial_tooltip}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_machine", line_id=line.id},
-          style=style, sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip,
+          style=style, sprite=machine_proto.sprite, number=icon_count, tooltip=tooltip,
           mouse_button_filter={"left-and-right"}}
 
         -- Modules - can only be added to machines that have any module slots

@@ -127,7 +127,7 @@ local function compile_machine_chooser_buttons(player, line, applicable_prototyp
         local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
           line.uncapped_production_ratio, timescale, machine_proto.launch_sequence_time)
 
-        local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
+        local button_number = ui_util.format_number_ceil((round_button_numbers) and math.ceil(machine_count) or machine_count)
 
         -- Have to do this stupid crap because localisation plurals only work on integers
         local formatted_number = ui_util.format_number(machine_count, 4)
