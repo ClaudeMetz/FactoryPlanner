@@ -1,6 +1,7 @@
 require("generic_dialogs")
 require("tutorial_dialog")
 require("preferences_dialog")
+require("solver_dialog")
 require("utility_dialog")
 require("picker_dialog")
 require("recipe_dialog")

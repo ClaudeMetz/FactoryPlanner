@@ -150,6 +150,7 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
         end
         recipe_costs[recipe_pos] = 0 -- 0 cost for basic recipes
     end
+    local default_costs = DEFAULT_SOLVER_COSTS
     local is_pseudo_recipe = {}
     for item_pos = 1, item_count do
         if not items_with_producers[item_pos] then
@@ -166,12 +167,12 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
             local item_info = inverse_item_map[item_pos]
             if item_info and item_info.type == "fluid" then
                 if item_info.name == "water" then
-                    recipe_costs[#matrix + 1] = 100
+                    recipe_costs[#matrix + 1] = default_costs.water
                 else
-                    recipe_costs[#matrix + 1] = 1000
+                    recipe_costs[#matrix + 1] = default_costs.fluid
                 end
             else
-                recipe_costs[#matrix + 1] = 10000
+                recipe_costs[#matrix + 1] = default_costs.item
             end
 
             table.insert(matrix, pseudo_recipe)
