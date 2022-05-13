@@ -181,7 +181,8 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
         end
 
         -- Figure out the translated name here so search doesn't have to repeat the work for every character
-        local translated_name = (translations) and translations["recipe"][recipe_name]:lower() or nil
+        local translated_name = (translations) and translations["recipe"][recipe_name] or nil
+        translated_name = (translated_name) and translated_name:lower() or recipe_name
         recipe_buttons[{name=recipe_name, translated_name=translated_name, hidden=recipe_proto.hidden}] = button_recipe
     end
 end
