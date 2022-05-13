@@ -164,7 +164,7 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     background_dimmer.style = (paused) and "fp_frame_semitransparent" or "fp_frame_transparent"
     -- Re-set the size because assigning a new style resets it (*grumble*)
     local resolution, scale = player.display_resolution, player.display_scale
-    background_dimmer.style.size = {math.ceil(resolution.width / scale), math.ceil(resolution.height / scale)}
+    background_dimmer.style.size = {math.floor(resolution.width / scale), math.floor(resolution.height / scale)}
 end
 
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
