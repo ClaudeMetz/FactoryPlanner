@@ -139,7 +139,7 @@ function matrix_solver.make_matrix(lines, items, item_count)
     return matrix
 end
 
-function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, water_pos)
+function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map)
     local items_with_producers = {}
     local recipe_costs = {}
     for recipe_pos, recipe in pairs(matrix) do
@@ -162,12 +162,18 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
                     table.insert(pseudo_recipe, 0)
                 end
             end
-            -- water gets a cost of 100, all else 10000
-            if item_pos == water_pos then
-                recipe_costs[#matrix + 1] = 100
+            -- water gets a cost of 100, other fluids get 1000, all else 10000
+            local item_info = inverse_item_map[item_pos]
+            if item_info and item_info.type == "fluid" then
+                if item_info.name == "water" then
+                    recipe_costs[#matrix + 1] = 100
+                else
+                    recipe_costs[#matrix + 1] = 1000
+                end
             else
                 recipe_costs[#matrix + 1] = 10000
             end
+
             table.insert(matrix, pseudo_recipe)
         end
     end
@@ -283,7 +289,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
     local matrix = matrix_solver.make_matrix(lines, items, item_count)
     -- if there is no water, items["fluid_water"] will just be nil, which is fine
-    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, items["fluid_water"])
+    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map)
     matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
 
     --matrix_solver.print_matrix(matrix)
@@ -425,7 +431,6 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         Ingredient = ingredient,
         matrix_free_items = {}
     }
-    return {}
 end
 
 function matrix_solver.print_matrix(m)
