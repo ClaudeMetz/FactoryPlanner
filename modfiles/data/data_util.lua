@@ -10,6 +10,7 @@ local getter_functions = {
     preferences = (function(index) return global.players[index].preferences end),
     ui_state = (function(index) return global.players[index].ui_state end),
     main_elements = (function(index) return global.players[index].ui_state.main_elements end),
+    compact_elements = (function(index) return global.players[index].ui_state.compact_elements end),
     context = (function(index) return global.players[index].ui_state.context end),
     modal_data = (function(index) return global.players[index].ui_state.modal_data end),
     modal_elements = (function(index) return global.players[index].ui_state.modal_data.modal_elements end),
@@ -41,20 +42,6 @@ function data_util.get_attributes(type, prototype)
     else  -- structure_type == "complex"
         local category_id = all_prototypes.map[prototype.category]
         return PROTOTYPE_ATTRIBUTES[type][category_id][prototype.id]
-    end
-end
-
--- Clones the given object using pack/unpacking, which is not ideal
--- performance-wise, but good enough and simpler for its use-cases
-function data_util.clone_object(object)
-    -- Floors can't be cloned this was for technical reasons
-    -- Subfactories or Lines with subfloor should be cloned instead
-    if object.class ~= "Floor" then
-        local object_class = _G[object.class]
-        local cloned_object = object_class.unpack(object_class.pack(object))
-        cloned_object.parent = object.parent  -- necessary for validation
-        object_class.validate(cloned_object)
-        return cloned_object
     end
 end
 

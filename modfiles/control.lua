@@ -6,23 +6,28 @@ GENERIC_HANDLERS = {}
 SEARCH_HANDLERS = {}
 TUTORIAL_TOOLTIPS = {}
 
+DEVMODE = true  -- enables certain conveniences for development
+MARGIN_OF_ERROR = 1e-8  -- the margin of error for floating point calculations
+TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
+SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
+MODAL_SEARCH_LIMITING = 10  -- ticks between modal search runs
+RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
+NEW = nil  -- global variable used to store new prototype data temporarily for migration
+
 require("util")  -- core.lualib
-fancytable = require('__flib__.table')  -- has more methods than built-in table
+fancytable = require('__flib__.table')  -- has more functionality than built-in table
+
+translator = require("__flib__.dictionary")  -- translation module for localised search
+--translator.set_use_local_storage(true)
 
 require("data.init")
 require("data.data_util")
 
 require("ui.dialogs.main_dialog")
+require("ui.dialogs.compact_dialog")
 require("ui.dialogs.modal_dialog")
 require("ui.ui_util")
 require("ui.event_handler")
-
-DEVMODE = true  -- enables certain conveniences for development
-MARGIN_OF_ERROR = 1e-8  -- the margin of error for floating point calculations
-TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
-SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
-NEW = nil  -- global variable used to store new prototype data temporarily for migration
-RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 FRAME_SPACING = 12
@@ -43,8 +48,7 @@ TUTORIAL_EXPORT_STRING = "eNrtWU2L2zAQ/S8620uSLWXJsaWFQgulPS6LkeVxdlrJUmU5NIT894
 
 if DEVMODE then
     require("llog")
-    LLOG_EXCLUDES = {parent=true, subfloor=true, origin_line=true, tooltip=true, localised_name=true,
-      Product=true, Byproduct=true, Ingredient=true, Floor=true, Line=true}
+    LLOG_EXCLUDES = {}
 
     DEV_EXPORT_STRING = "eNq1lFFr2zAQx7+Lnu3gpE0Zfh0bFFYY22MpRpbPyRXJ8uRzwQR/951kmaypN1a3fYvv/rn76X86nYSxVfEErkPbiFxkm+2nzfVOJKLry1oqsg6hE/n9STTSACs4hcprT4KG1keQwHA05tHZJm21JBBjIggNdEpqztxkrLHkq/ki352tekW+ji0fQdHUpXWWrA/GcqA5xSVRpQqd6pE8G5pWY41QiZxcD8kzFG7r4FePDqpCGts3oUkFNTYcKQfWxXAy/8ivs8zT2rbQ8AR6Lqu07DzvDDsmLwl7JxvsTbq72n8I2nY1WRiFdfAeWCVontCZKtvskxAsLrsS+9G11lHq0wu9x7Xn0Xg4UmpR/+tAte6xWmX0br/a6Y5Amo+h2mb/eTUfkrhIxZy6nRZz/vxstV8mv+ixYK2tdR7hGwNcbuL8t5Dz4ArbIFq5ooqfhIN1/pDKyZqwOXiOduJnqiJ6NUXgD/IfU29WG6mOkfUSg6VgSs1l06hKd68BOUpXFRoN4+e11B0r7xhEPzfmNL6wOar+ZrQJ6ULFvTnL7uJZvAngFDQkDxAG7l1BfnlpKKI985YFsIVRxyEtE8R7sz3nv4bBj+fAz/m1H8L9jpZ+MS0N4rWv+IJFb7iJC9Xe87AP428/DGfh"
 end

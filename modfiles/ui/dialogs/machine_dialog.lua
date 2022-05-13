@@ -212,7 +212,7 @@ function machine_dialog.open(player, modal_data)
     local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = 400
 
-    modal_data.dialog_machine = data_util.clone_object(modal_data.object)
+    modal_data.dialog_machine = Machine.clone(modal_data.object)
     modal_data.dialog_machine.count = modal_data.object.count  -- copy for fuel calculations
     modal_data.module_set = modal_data.dialog_machine.module_set
 

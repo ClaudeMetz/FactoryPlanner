@@ -35,10 +35,11 @@ function Machine.find_fuel(self, player)
     end
 end
 
-function Machine.summarize_effects(self)
+function Machine.summarize_effects(self, mining_prod)
     local effects = self.module_set.total_effects
 
     effects["base_prod"] = self.proto.base_productivity or nil
+    effects["mining_prod"] = mining_prod or nil
 
     self.total_effects = effects
     self.effects_tooltip = data_util.format_module_effects(effects, false)
@@ -87,6 +88,13 @@ function Machine.paste(self, object)
     else
         return false, "incompatible_class"
     end
+end
+
+function Machine.clone(self)
+    local clone = Machine.unpack(Machine.pack(self))
+    clone.parent = self.parent
+    Machine.validate(clone)
+    return clone
 end
 
 

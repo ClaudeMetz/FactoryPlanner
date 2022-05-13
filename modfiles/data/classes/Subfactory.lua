@@ -142,9 +142,18 @@ end
 -- Given line has to have a subfloor; recursively adds references for all subfloors to list
 function Subfactory.add_subfloor_references(self, line)
     Subfactory.add(self, line.subfloor)
+
     for _, sub_line in pairs(Floor.get_all(line.subfloor, "Line")) do
         if sub_line.subfloor then Subfactory.add_subfloor_references(self, sub_line) end
     end
+end
+
+
+function Subfactory.clone(self)
+    local clone = Subfactory.unpack(Subfactory.pack(self))
+    clone.parent = self.parent
+    Subfactory.validate(clone)
+    return clone
 end
 
 

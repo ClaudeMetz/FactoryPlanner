@@ -3,7 +3,7 @@ production_box = {}
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
     local subfactory = data_util.get("context", player).subfactory
-    if subfactory and subfactory.valid and main_dialog.is_in_focus(player) then
+    if subfactory and subfactory.valid then
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
     end
@@ -134,27 +134,11 @@ end
 
 -- Changes the floor to either be the top one or the one above the current one
 function production_box.change_floor(player, destination)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-    local floor = ui_state.context.floor
+    local floor_changed = ui_util.context.change_floor(player, destination)
 
-    if subfactory == nil or floor == nil then return end
-
-    local selected_floor = nil
-    if destination == "up" and floor.level > 1 then
-        selected_floor = floor.origin_line.parent
-    elseif destination == "top" then
-        selected_floor = Subfactory.get(subfactory, "Floor", 1)
-    end
-
-    -- Only need to refresh if the floor was indeed changed
-    if selected_floor ~= nil then
-        ui_util.context.set_floor(player, selected_floor)
-
-        -- Remove previous floor if it has no recipes
-        local floor_removed = Floor.remove_if_empty(floor)
-
-        if floor_removed then calculation.update(player, subfactory) end
+    if floor_changed then  -- only need to refresh if the floor was indeed changed
+        local subfactory = data_util.get("context", player).subfactory
+        calculation.update(player, subfactory)
         main_dialog.refresh(player, "production_detail")
     end
 end
@@ -188,11 +172,11 @@ production_box.gui_events = {
 }
 
 production_box.misc_events = {
-    fp_refresh_production = refresh_production,
+    fp_refresh_production = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
+    end),
 
     fp_floor_up = (function(player, _)
-        if main_dialog.is_in_focus(player) then
-            production_box.change_floor(player, "up")
-        end
+        if main_dialog.is_in_focus(player) then production_box.change_floor(player, "up") end
     end)
 }

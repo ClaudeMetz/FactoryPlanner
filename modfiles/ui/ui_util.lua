@@ -89,6 +89,17 @@ function ui_util.destroy_mod_gui(player)
     if mod_gui_button then mod_gui_button.destroy() end
 end
 
+-- Destroys all GUIs so they are loaded anew the next time they are shown
+function ui_util.reset_player_gui(player)
+    ui_util.destroy_mod_gui(player)  -- mod_gui button
+
+    for _, gui_element in pairs(player.gui.screen.children) do  -- all mod frames
+        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
+            gui_element.destroy()
+        end
+    end
+end
+
 
 -- ** Number formatting **
 -- Formats given number to given number of significant digits
@@ -182,14 +193,34 @@ function ui_util.context.set_floor(player, floor)
     context.floor = floor
 end
 
+-- Changes the context to the floor indicated by the given destination
+function ui_util.context.change_floor(player, destination)
+    local context = data_util.get("context", player)
+    local subfactory, floor = context.subfactory, context.floor
+    if subfactory == nil or floor == nil then return false end
+
+    local selected_floor = nil
+    if destination == "up" and floor.level > 1 then
+        selected_floor = floor.origin_line.parent
+    elseif destination == "top" then
+        selected_floor = Subfactory.get(subfactory, "Floor", 1)
+    end
+
+    if selected_floor ~= nil then
+        ui_util.context.set_floor(player, selected_floor)
+        Floor.remove_if_empty(floor)  -- remove previous floor if it has no recipes
+    end
+    return (selected_floor ~= nil)
+end
+
 
 -- ** CLIPBOARD **
--- Copies the given object into the player's clipboard
+-- Copies the given object into the player's clipboard as a packed object
 function ui_util.clipboard.copy(player, object)
     local player_table = data_util.get("table", player)
     player_table.clipboard = {
         class = object.class,
-        object = data_util.clone_object(object)
+        object = _G[object.class].pack(object)
     }
     ui_util.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
 end
@@ -202,10 +233,12 @@ function ui_util.clipboard.paste(player, target)
     if clip == nil then
         ui_util.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local copy_for_paste = data_util.clone_object(clip.object)
-        -- TODO could keep cloned object packed in the clipboard and only unpack to paste
-        local success, error = _G[target.class].paste(target, copy_for_paste)
+        local level = (clip.class == "Line") and target.parent.level or nil
+        local clone = _G[clip.class].unpack(util.table.deepcopy(clip.object), level)
+        clone.parent = target.parent
+        _G[clip.class].validate(clone)
 
+        local success, error = _G[target.class].paste(target, clone)
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             ui_util.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 

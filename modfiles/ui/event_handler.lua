@@ -1,9 +1,9 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
 local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_dialog, subfactory_info, item_boxes,
-  production_box, production_handler, view_state, modal_dialog, porter_dialog, import_dialog, export_dialog,
-  tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog, picker_dialog, recipe_dialog,
-  module_configurator, machine_dialog, beacon_dialog}
+  production_box, production_handler, compact_dialog, view_state, compact_subfactory, modal_dialog, porter_dialog,
+  import_dialog, export_dialog, tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog,
+  picker_dialog, recipe_dialog, module_configurator, machine_dialog, beacon_dialog}
 
 -- ** RATE LIMITING **
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
@@ -212,18 +212,21 @@ local misc_identifier_map = {
     [defines.events.on_lua_shortcut] = "on_lua_shortcut",
 
     -- Keyboard shortcuts
-    ["fp_toggle_main_dialog"] = "fp_toggle_main_dialog",
+    ["fp_toggle_interface"] = "fp_toggle_interface",
+    ["fp_toggle_compact_view"] = "fp_toggle_compact_view",
+    ["fp_toggle_pause"] = "fp_toggle_pause",
+    ["fp_floor_up"] = "fp_floor_up",
+    ["fp_refresh_production"] = "fp_refresh_production",
+    ["fp_cycle_production_views"] = "fp_cycle_production_views",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
     ["fp_confirm_gui"] = "fp_confirm_gui",
-    ["fp_focus_searchfield"] = "fp_focus_searchfield",
-    ["fp_toggle_pause"] = "fp_toggle_pause",
-    ["fp_cycle_production_views"] = "fp_cycle_production_views",
-    ["fp_refresh_production"] = "fp_refresh_production",
-    ["fp_floor_up"] = "fp_floor_up"
+    ["fp_focus_searchfield"] = "fp_focus_searchfield"
 }
 
 local misc_timeouts = {
-    fp_confirm_dialog = 20
+    fp_confirm_dialog = 20,
+    fp_confirm_gui = 20,
+    fp_refresh_production = 20
 }
 
 -- ** SPECIAL HANDLERS **
