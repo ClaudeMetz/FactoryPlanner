@@ -163,7 +163,6 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
                     table.insert(pseudo_recipe, 0)
                 end
             end
-            -- water gets a cost of 100, other fluids get 1000, all else 10000
             local item_info = inverse_item_map[item_pos]
             if item_info and item_info.type == "fluid" then
                 if item_info.name == "water" then
