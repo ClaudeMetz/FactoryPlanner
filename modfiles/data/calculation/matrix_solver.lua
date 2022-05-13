@@ -584,11 +584,11 @@ function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseu
     end
     local copy = just_copy(matrix)
     local original = just_copy(copy)
-    llog("\n\n\n\n ============== 1 ==============")
-    matrix_solver.print_matrix(copy)
+    --llog("\n\n\n\n ============== 1 ==============")
+    --matrix_solver.print_matrix(copy)
     add_slacks(copy, item_count, recipe_costs, is_pseudo_recipe)
-    llog("\n\n\n\n ============== 2 ==============")
-    matrix_solver.print_matrix(copy)
+    --llog("\n\n\n\n ============== 2 ==============")
+    --matrix_solver.print_matrix(copy)
     local loop = true
     local counter = 1
     while loop do
@@ -601,8 +601,8 @@ function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseu
             counter = counter + 1
         end
     end
-    llog("\n\n\n\n ============== 3 ==============")
-    matrix_solver.print_matrix(copy)
+    --llog("\n\n\n\n ============== 3 ==============")
+    --matrix_solver.print_matrix(copy)
     local results = finalize(copy, original)
     --llog("\n\n\n\n ============== 4 ==============")
     --matrix_solver.print_matrix(original)
