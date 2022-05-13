@@ -3,7 +3,7 @@ require("ui.elements.compact_subfactory")
 
 compact_dialog = {}
 
-local frame_dimensions = {width = 0.245, height = 0.8}  -- as a percentage of the screen
+local frame_dimensions = {width = 0.25, height = 0.8}  -- as a percentage of the screen
 local frame_location = {x = 10, y = 63}  -- absolute, relative to 1080p with scale 1
 
 -- ** LOCAL UTIL **
