@@ -10,7 +10,7 @@ DEVMODE = true  -- enables certain conveniences for development
 MARGIN_OF_ERROR = 1e-8  -- the margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
-DEFAULT_SOLVER_COSTS = {water = 100, fluid = 1000, item = 10000}
+DEFAULT_SOLVER_COSTS = {water = 1, fluid = 10, item = 100}
 MODAL_SEARCH_LIMITING = 10  -- ticks between modal search runs
 RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
 NEW = nil  -- global variable used to store new prototype data temporarily for migration
