@@ -139,7 +139,7 @@ function matrix_solver.make_matrix(lines, items, item_count)
     return matrix
 end
 
-function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map)
+function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map, item_costs)
     local items_with_producers = {}
     local recipe_costs = {}
     for recipe_pos, recipe in pairs(matrix) do
@@ -164,7 +164,10 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
                 end
             end
             local item_info = inverse_item_map[item_pos]
-            if item_info and item_info.type == "fluid" then
+            local cost = item_costs[item_info.type][item_info.name]
+            if cost then
+                    recipe_costs[#matrix + 1] = cost
+            elseif item_info and item_info.type == "fluid" then
                 if item_info.name == "water" then
                     recipe_costs[#matrix + 1] = default_costs.water
                 else
@@ -289,7 +292,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
     local matrix = matrix_solver.make_matrix(lines, items, item_count)
     -- if there is no water, items["fluid_water"] will just be nil, which is fine
-    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map)
+    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map, subfactory_data.solver_costs)
     matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
 
     --matrix_solver.print_matrix(matrix)
@@ -473,8 +476,8 @@ end
 
 local function add_slacks(matrix, item_count, recipe_costs, is_pseudo_recipe)
     for recipe_pos, recipe in pairs(matrix) do
-        for pos = 1, item_count do
-            if pos == recipe_pos and not is_pseudo_recipe[recipe_pos] then
+        for pos = 1, #matrix-1 do
+            if pos == recipe_pos then
                 table.insert(recipe, 1)
             else
                 table.insert(recipe, 0)
@@ -581,11 +584,11 @@ function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseu
     end
     local copy = just_copy(matrix)
     local original = just_copy(copy)
-    --llog("\n\n\n\n ============== 1 ==============")
-    --matrix_solver.print_matrix(copy)
+    llog("\n\n\n\n ============== 1 ==============")
+    matrix_solver.print_matrix(copy)
     add_slacks(copy, item_count, recipe_costs, is_pseudo_recipe)
-    --llog("\n\n\n\n ============== 2 ==============")
-    --matrix_solver.print_matrix(copy)
+    llog("\n\n\n\n ============== 2 ==============")
+    matrix_solver.print_matrix(copy)
     local loop = true
     local counter = 1
     while loop do
@@ -598,8 +601,8 @@ function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseu
             counter = counter + 1
         end
     end
-    --llog("\n\n\n\n ============== 3 ==============")
-    --matrix_solver.print_matrix(copy)
+    llog("\n\n\n\n ============== 3 ==============")
+    matrix_solver.print_matrix(copy)
     local results = finalize(copy, original)
     --llog("\n\n\n\n ============== 4 ==============")
     --matrix_solver.print_matrix(original)
