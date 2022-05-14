@@ -173,7 +173,7 @@ function prototyper.defaults.migrate(player_table, type)
     local new_prototypes = NEW["all_" .. type]
     local default_prototypes = player_table.preferences.default_prototypes
     local default = default_prototypes[type]
-    if not default.prototype or not default.prototypes then return end
+    if not (default.prototype or default.prototypes) then return end
 
     if default.structure_type == "simple" then
         -- Use the same prototype if an equivalent can be found, use fallback otherwise
