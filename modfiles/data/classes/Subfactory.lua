@@ -14,7 +14,7 @@ function Subfactory.init(name)
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
         solver = "traditional",
-        solver_costs = {item = {}, fluid = {}},
+        solver_costs = {item = {}, fluid = {}},  -- TODO rename to constraints
         selected_floor = nil,
         item_request_proxy = nil,
         tick_of_deletion = nil,  -- ignored on export/import

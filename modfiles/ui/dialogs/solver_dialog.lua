@@ -19,19 +19,34 @@ local function determine_relevant_items(subfactory)
     return relevant_items
 end
 
-local function add_cost_line(parent, type, name, cost, default)
-    local flow = parent.add{type="flow", direction="horizontal"}
+local function add_cost_line(parent, type, name, constraints, default_cost)
+    local flow = parent.add{type="flow", direction="horizontal", tags={name=name, type=type}}
 
     local sprite = flow.add{type="sprite", sprite=(type .. "/" .. name), tooltip={type .. "-name." .. name}}
     sprite.resize_to_sprite = false
     sprite.style.size = 32
 
-    local textfield = flow.add{type="textfield", text=(cost or default), name="textfield_cost",
-      tags={mod="fp", on_gui_text_changed="solver_cost", name=name, type=type, default=default}}
+    local allow_ingredient = false
+    if constraints.allow_ingredient ~= nil then allow_ingredient = constraints.allow_ingredient end
+    local ingredient_style = (allow_ingredient) and "flib_selected_tool_button" or "tool_button"
+    flow.add{type="button", name="button_allow_ingredient", caption="I", style=ingredient_style,
+      tags={mod="fp", on_gui_click="toggle_allow", allow=allow_ingredient},
+      tooltip={"fp.solver_allow_as_ingredient"}, mouse_button_filter={"left"}}
+
+    local allow_byproduct = true
+    if constraints.allow_byproduct ~= nil then allow_byproduct = constraints.allow_byproduct end
+    local byproduct_style = (allow_byproduct) and "flib_selected_tool_button" or "tool_button"
+    flow.add{type="button", name="button_allow_byproduct", caption="B", style=byproduct_style,
+      tags={mod="fp", on_gui_click="toggle_allow", allow=allow_byproduct},
+      tooltip={"fp.solver_allow_as_byproduct"}, mouse_button_filter={"left"}}
+
+    local cost = constraints.cost
+    local textfield = flow.add{type="textfield", text=(cost or default_cost), name="textfield_cost",
+      tags={mod="fp", on_gui_text_changed="solver_cost", default_cost=default_cost}}
     textfield.style.width = 60
     ui_util.setup_numeric_textfield(textfield, false, false)
 
-    local enabled = (cost~=nil and cost~=default)
+    local enabled = (cost~=nil and cost~=default_cost)
     flow.add{type="sprite-button", sprite="utility/refresh", name="button_reset_cost", style="tool_button",
       tooltip={"fp.solver_reset_cost"}, tags={mod="fp", on_gui_click="reset_cost"}, enabled=enabled,
       mouse_button_filter={"left"}}
@@ -64,12 +79,12 @@ function solver_dialog.open(player, modal_data)
     local default_costs = DEFAULT_SOLVER_COSTS
     for type, items in pairs(relevant_items) do
         for name, _ in pairs(items) do
-            local cost = subfactory.solver_costs[type][name]
+            local constraints = subfactory.solver_costs[type][name] or {}
             local default = nil
             if name == "water" then default = default_costs.water
             elseif type == "fluid" then default = default_costs.fluid
             else default = default_costs.item end
-            add_cost_line(table_items, type, name, cost, default)
+            add_cost_line(table_items, type, name, constraints, default)
         end
     end
 end
@@ -83,10 +98,18 @@ function solver_dialog.close(player, action)
         local solver_costs = {item = {}, fluid = {}}
 
         for _, flow in pairs(table_items.children) do
-            local tags = flow["textfield_cost"].tags
+            local default_cost = flow["textfield_cost"].tags.default_cost
             local cost = tonumber(flow["textfield_cost"].text)
-            if tags.default ~= cost then
-                solver_costs[tags.type][tags.name] = cost
+            local allow_ingredient = flow["button_allow_ingredient"].tags.allow
+            local allow_byproduct = flow["button_allow_byproduct"].tags.allow
+
+            local constraints = { cost = (default_cost ~= cost) and cost or nil }
+            -- Only set these when they are different than their default
+            if allow_ingredient then constraints.allow_ingredient = true end
+            if not allow_byproduct then constraints.allow_byproduct = false end
+
+            if table_size(constraints) > 0 then
+                solver_costs[flow.tags.type][flow.tags.name] = constraints
             end
         end
 
@@ -114,6 +137,14 @@ solver_dialog.gui_events = {
                 local textfield = event.element.parent["textfield_cost"]
                 textfield.text = tostring(textfield.tags.default)
                 event.element.enabled = false
+            end)
+        },
+        {
+            name = "toggle_allow",
+            handler = (function(_, tags, event)
+                tags.allow = not tags.allow
+                event.element.tags = tags  -- one has to write the whole table
+                event.element.style = (tags.allow) and "flib_selected_tool_button" or "tool_button"
             end)
         }
     }
