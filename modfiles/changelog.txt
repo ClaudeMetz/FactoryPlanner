@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.41
+Date: 14. 05. 2022
   Bugfixes:
     - Fixed a crash when opening the preferences dialog with certain sets of mods
 
