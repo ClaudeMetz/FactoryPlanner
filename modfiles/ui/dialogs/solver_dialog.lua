@@ -114,6 +114,9 @@ function solver_dialog.close(player, action)
         end
 
         subfactory.solver_costs = solver_costs
+
+        calculation.update(player, subfactory)
+        main_dialog.refresh(player, "subfactory")
     end
 end
 
