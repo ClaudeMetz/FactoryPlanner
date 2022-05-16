@@ -177,7 +177,7 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
             local item_info = inverse_item_map[item_pos]
             local cost = item_costs[item_info.type][item_info.name]
             if cost and cost.cost then
-                    recipe_costs[#matrix + 1] = cost.cost
+                recipe_costs[#matrix + 1] = cost.cost
             else
                 recipe_costs[#matrix + 1] = calc_default_cost(item_info)
             end
@@ -186,7 +186,7 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
             table.insert(matrix, pseudo_recipe)
         end
     end
-    return recipe_costs, is_pseudo_recipe
+    return recipe_costs, is_pseudo_recipe, items_with_producers
 end
 
 function matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
@@ -218,7 +218,7 @@ local function add_custom_constraints(matrix, inverse_item_map, recipe_costs, co
             end
             if allowed_as_ingredient then
                 local new_row = {}
-                for col=1,#matrix[1] do
+                for col = 1, #matrix[1] do
                     if col == position then
                         table.insert(new_row, 1)
                     else
@@ -230,7 +230,7 @@ local function add_custom_constraints(matrix, inverse_item_map, recipe_costs, co
                 table.insert(recipe_costs, cost)
             end
             if not allowed_as_byproduct then
-                for row=1,#matrix do
+                for row = 1, #matrix do
                     table.insert(matrix[row], matrix[row][position] * -1)
                 end
             end
@@ -320,6 +320,21 @@ local function sums_to_class(list, reverse_map)
     return product, byproduct, ingredient
 end
 
+local function dump_matrix(matrix, costs)
+    local s = ""
+    s = s .. tostring(#matrix - 1)
+    s = s .. " " .. tostring(#matrix[1])
+    for pos, row in pairs(matrix) do
+        for _, val in pairs(row) do
+            s = s .. " " .. tostring(val)
+        end
+        if pos < #matrix then
+            s = s .. " " .. tostring(costs[pos])
+        end
+    end
+    llog(s)
+end
+
 function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependence)
     local products = subfactory_data.top_level_products
     local lines = {}
@@ -331,18 +346,18 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
     -- maps from 'type.."_"..name' to index in matrix
     local items, item_count, inverse_item_map = matrix_solver.place_items_in_matrix(lines, subfactory_data.top_level_products)
 
-    --llog(lines, line_magic_map, items, item_count)
+    --llog(items)
 
     --llog(subfactory_data.solver_costs)
 
     local matrix = matrix_solver.make_matrix(lines, items, item_count)
-    -- if there is no water, items["fluid_water"] will just be nil, which is fine
-    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map, subfactory_data.solver_costs)
+    local recipe_costs, is_pseudo_recipe, items_with_producers = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map, subfactory_data.solver_costs)
     matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
     add_custom_constraints(matrix, inverse_item_map, recipe_costs, subfactory_data.solver_costs)
 
     --matrix_solver.print_matrix(matrix)
 
+    --dump_matrix(matrix, recipe_costs)
     local results = matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseudo_recipe)
 
     -- we know how much each recipe is being run, now we just need to propegate that up the subfloor
@@ -458,6 +473,9 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
     local top_floor_results = set_line_results(subfactory_data.top_floor, line_magic_map)
 
+    local constraint_breaks = matrix_solver.find_constraint_breaks(top_floor_results.sums, results, subfactory_data.solver_costs, inverse_item_map, items_with_producers)
+    --llog(constraint_breaks)
+
     local product, byproduct, ingredient = sums_to_class(top_floor_results.sums, inverse_item_map)
 
     -- copied from structures.class.add, and changed, because i need to do something non-standard
@@ -478,8 +496,27 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         Product = product,
         Byproduct = byproduct,
         Ingredient = ingredient,
-        matrix_free_items = {}
+        constraint_breaks = constraint_breaks,
     }
+end
+
+function matrix_solver.find_constraint_breaks(top_floor_results, recipe_results, constraints, inverse_item_map, items_with_producers)
+    local constraint_breaks = {}
+    for item_pos, value in pairs(top_floor_results) do
+        local item = inverse_item_map[item_pos]
+        if (value.byproduct and value.byproduct > 0) and (constraints[item.type][item.name] or {}).allow_byproduct == false then
+            table.insert(constraint_breaks, { type = "item_not_allowed_as_byproduct", item = item })
+        end
+        if (value.ingredient and value.ingredient > 0) and (items_with_producers[item_pos]) and not (constraints[item.type][item.name] or {}).allow_ingredient then
+            table.insert(constraint_breaks, { type = "item_not_allowed_as_ingredient", item = item })
+        end
+    end
+    for _, recipe in pairs(recipe_results) do
+        if recipe < 0 then
+            table.insert(constraint_breaks, { type = "recipe_running_backwards" })
+        end
+    end
+    return constraint_breaks
 end
 
 function matrix_solver.print_matrix(m)
@@ -522,7 +559,7 @@ end
 
 local function add_slacks(matrix, item_count, recipe_costs, is_pseudo_recipe)
     for recipe_pos, recipe in pairs(matrix) do
-        for pos = 1, #matrix-1 do
+        for pos = 1, #matrix - 1 do
             if pos == recipe_pos then
                 table.insert(recipe, 1)
             else
@@ -642,7 +679,7 @@ function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseu
         loop = c
         if c then
             do_pivot(copy, row, col)
-            --llog("\n\n\n\n ============== post pivot "..tostring(counter).." ==============\npivot around: {row: "..tostring(row)..", col: "..tostring(col).."}\n")
+            --llog("\n\n\n\n ============== post pivot " .. tostring(counter) .. " ==============\npivot around: {row: " .. tostring(row) .. ", col: " .. tostring(col) .. "}\n")
             --matrix_solver.print_matrix(copy)
             counter = counter + 1
         end
