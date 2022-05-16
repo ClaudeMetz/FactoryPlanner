@@ -123,11 +123,11 @@ function matrix_solver.make_matrix(lines, items, item_count)
             table.insert(recipe, 0)
         end
         for _, item in pairs(line.recipe_proto.ingredients) do
-            add_item(item, recipe, -item.amount * crafts_per_tick * 60)
+            add_item(item, recipe, -item.amount * crafts_per_tick * line.timescale)
         end
         for _, item in pairs(line.recipe_proto.products) do
             local prodded_amount = calculation.util.determine_prodded_amount(item, crafts_per_tick, line.total_effects)
-            add_item(item, recipe, prodded_amount * crafts_per_tick * 60)
+            add_item(item, recipe, prodded_amount * crafts_per_tick * line.timescale)
         end
         if line.fuel_proto then
             local energy_consumption = calculation.util.determine_energy_consumption(line.machine_proto, 1, line.total_effects)
