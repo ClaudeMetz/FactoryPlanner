@@ -47,7 +47,7 @@ styles["fp_frame_slot_table"] = {
     parent = "filter_frame",
     top_padding = 4,
     bottom_padding = 12,
-    graphical_set = table.deepcopy(styles.filter_frame.graphical_set)
+    graphical_set = util.table.deepcopy(styles.filter_frame.graphical_set)
 }
 styles["fp_frame_slot_table"].graphical_set.base.bottom = nil
 
@@ -250,13 +250,6 @@ styles["fp_button_fake_listbox_item_active"] = {
     clicked_graphical_set = styles.button.selected_clicked_graphical_set,
     default_font_color = styles.button.selected_font_color,
     default_vertical_offset = styles.button.selected_vertical_offset
-}
-
--- Need custom style to get rid of the tooltip vanilla and thus flib includes
-styles["fp_button_slot_green"] = {
-    type = "button_style",
-    parent = "flib_tool_button_light_green",
-    tooltip = ""
 }
 
 -- Generate smaller versions of flib's slot buttons (size 36)

@@ -26,13 +26,15 @@ local function set_blank_line(player, floor, line)
     }
 end
 
-
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, subfactory, floor)
     local floor_data = {
         id = floor.id,
         lines = {}
     }
+
+    local mining_productivity = (subfactory.mining_productivity ~= nil) and
+      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
@@ -49,20 +51,23 @@ local function generate_floor_data(player, subfactory, floor)
             if relevant_line.percentage == 0 or not relevant_line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
-                line_data.recipe_proto = line.recipe.proto  -- reference
+                line_data.recipe_proto = line.recipe.proto
                 line_data.timescale = subfactory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.recipe.production_type
                 line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
                 line_data.beacon_consumption = 0
-                line_data.priority_product_proto = line.priority_product_proto  -- reference
-                line_data.machine_proto = line.machine.proto  -- reference
-                line_data.total_effects = line.total_effects  -- reference
+                line_data.priority_product_proto = line.priority_product_proto
+                line_data.machine_proto = line.machine.proto
+
+                -- Effects - update effects first if mining prod is relevant
+                if line.machine.proto.mining then Machine.summarize_effects(line.machine, mining_productivity) end
+                line_data.total_effects = line.total_effects
 
                 -- Fuel prototype
                 if line.machine.fuel ~= nil then line_data.fuel_proto = line.machine.fuel.proto end
 
-                -- Beacon total (can be calculated here, which is faster and simpler)
+                -- Beacon total - can be calculated here, which is faster and simpler
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then
                     line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
                 end
@@ -73,6 +78,29 @@ local function generate_floor_data(player, subfactory, floor)
     end
 
     return floor_data
+end
+
+-- Returns a table containing all the data needed to run the calculations for the given subfactory
+local function generate_subfactory_data(player, subfactory)
+    local subfactory_data = {
+        player_index = player.index,
+        solver_costs = subfactory.solver_costs,
+        top_level_products = {},
+        top_floor = nil
+    }
+
+    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
+        local product_data = {
+            proto = product.proto,  -- reference
+            amount = Item.required_amount(product)
+        }
+        table.insert(subfactory_data.top_level_products, product_data)
+    end
+
+    local top_floor = Subfactory.get(subfactory, "Floor", 1)
+    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
+
+    return subfactory_data
 end
 
 
@@ -145,7 +173,7 @@ function calculation.update(player, subfactory)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+        local subfactory_data = generate_subfactory_data(player, subfactory)
         if subfactory.solver == "matrix" then
             matrix_solver.run_matrix_solver(subfactory_data)
         else
@@ -163,28 +191,6 @@ end
 
 
 -- ** INTERFACE **
--- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.generate_subfactory_data(player, subfactory)
-    local subfactory_data = {
-        player_index = player.index,
-        top_level_products = {},
-        top_floor = nil
-    }
-
-    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local product_data = {
-            proto = product.proto,  -- reference
-            amount = Item.required_amount(product)
-        }
-        table.insert(subfactory_data.top_level_products, product_data)
-    end
-
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
-
-    return subfactory_data
-end
-
 -- Updates the active subfactories top-level data with the given result
 function calculation.interface.set_subfactory_result(result)
     local player_table = global.players[result.player_index]

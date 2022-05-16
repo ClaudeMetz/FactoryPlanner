@@ -222,7 +222,7 @@ function Line.summarize_effects(self)
     local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
     for _, effect_table in pairs({self.machine.total_effects, beacon_effects}) do
         for name, effect in pairs(effect_table) do
-            if name == "base_prod" then
+            if name == "base_prod" or name == "mining_prod" then
                 effects["productivity"] = effects["productivity"] + effect
             else
                 effects[name] = effects[name] + effect
@@ -277,29 +277,19 @@ function Line.pack(self)
     return packed_line
 end
 
-function Line.unpack(packed_self)
+function Line.unpack(packed_self, parent_level)
     if packed_self.subfloor ~= nil then
-        -- TODO have a look at this mess. It works (I think), but the code is quite convoluted and annoying
-        -- The biggest issue stems from using Floor.init(subfloor_line), which is written to create a
-        -- subfloor from an exisitng line, not this unpacking operation. The better solution might be to
-        -- create the steps it does from scratch here as appropriate.
+        local self = Line.init()  -- empty line which gets the subfloor
+        local subfloor = Floor.init()  -- empty floor to be manually adjusted as necessary
 
-        -- Create a temporary floor so Floor.init() below can do its magic
-        local temporary_floor = Floor.init()
-        -- Add the first subfloor line as a line in this floor
-        local subfloor_line = Line.unpack(packed_self.subfloor.Line.objects[1])
-        Floor.add(temporary_floor, subfloor_line)
+        subfloor.level = parent_level + 1
+        subfloor.origin_line = self
+        self.subfloor = subfloor
 
-        -- Use that line to create the subfloor, which moves it to the newly created floor
-        local subfloor = Floor.init(subfloor_line)  -- sets origin_line and defining_line
-        subfloor.origin_line.comment = packed_self.comment  -- carry over line comment
+        Floor.unpack(packed_self.subfloor, subfloor)
+        subfloor.defining_line = subfloor.Line.datasets[1]
 
-        -- Remove the first subfloor line as it has already been created by initializing the subfloor with it
-        table.remove(packed_self.subfloor.Line.objects, 1)
-
-        Floor.unpack(packed_self.subfloor, subfloor)  -- recursive call
-
-        return temporary_floor.Line.datasets[1]
+        return self
     else
         local self = Line.init(packed_self.recipe)
 

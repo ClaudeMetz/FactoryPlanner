@@ -140,7 +140,7 @@ local function create_filter_box(modal_data)
       modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
 end
 
-local function create_recipe_group_box(modal_data, relevant_group)
+local function create_recipe_group_box(modal_data, relevant_group, translations)
     local modal_elements = modal_data.modal_elements
     local bordered_frame = modal_elements.content_frame.add{type="frame", style="fp_frame_bordered_stretch"}
     bordered_frame.style.padding = 8
@@ -162,6 +162,7 @@ local function create_recipe_group_box(modal_data, relevant_group)
 
     for _, recipe in pairs(relevant_group.recipes) do
         local recipe_proto = recipe.proto
+        local recipe_name = recipe_proto.name
 
         local style = "flib_slot_button_green_small"
         if not recipe.enabled then style = "flib_slot_button_yellow_small"
@@ -175,15 +176,18 @@ local function create_recipe_group_box(modal_data, relevant_group)
               sprite=recipe_proto.sprite, tooltip=recipe_proto.tooltip, mouse_button_filter={"left"}}
         else
             button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", tags=button_tags,
-              style=style, recipe=recipe_proto.name, mouse_button_filter={"left"}}
+              style=style, recipe=recipe_name, mouse_button_filter={"left"}}
             button_recipe.locked = true
         end
 
-        table.insert(recipe_buttons, {name=recipe_proto.name, button=button_recipe})
+        -- Figure out the translated name here so search doesn't have to repeat the work for every character
+        local translated_name = (translations) and translations["recipe"][recipe_name] or nil
+        translated_name = (translated_name) and translated_name:lower() or recipe_name
+        recipe_buttons[{name=recipe_name, translated_name=translated_name, hidden=recipe_proto.hidden}] = button_recipe
     end
 end
 
-local function create_dialog_structure(modal_data)
+local function create_dialog_structure(modal_data, translations)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     content_frame.style.width = 380
@@ -200,7 +204,7 @@ local function create_dialog_structure(modal_data)
         local relevant_group = modal_data.recipe_groups[group.name]
 
         -- Only actually create this group if it contains any relevant recipes
-        if relevant_group ~= nil then create_recipe_group_box(modal_data, relevant_group) end
+        if relevant_group ~= nil then create_recipe_group_box(modal_data, relevant_group, translations) end
     end
 end
 
@@ -213,20 +217,23 @@ function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
         local group_data = modal_data.recipe_groups[group.name]
         local any_group_recipe_visible = false
 
-        for _, recipe in pairs(group.recipe_buttons) do
-            local recipe_data = group_data.recipes[recipe.name]
+        for recipe_data, button in pairs(group.recipe_buttons) do
+            local recipe_name = recipe_data.name
+            local recipe_enabled = group_data.recipes[recipe_name].enabled
 
-            local found = string.find(recipe.name, search_term, 1, true)
-            local visible = found and (disabled or recipe_data.enabled) and (hidden or not recipe_data.proto.hidden)
 
-            recipe.button.visible = visible
+            -- Can only get to this if translations are complete, as the textfield is disabled otherwise
+            local found = (search_term == recipe_name) or string.find(recipe_data.translated_name, search_term, 1, true)
+            local visible = found and (disabled or recipe_enabled) and (hidden or not recipe_data.hidden)
+
+            button.visible = visible
             any_group_recipe_visible = any_group_recipe_visible or visible
         end
 
         group.frame.visible = any_group_recipe_visible
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
 
-        local button_table_height = math.ceil(#group.recipe_buttons / recipes_per_row) * 36
+        local button_table_height = math.ceil(table_size(group.recipe_buttons) / recipes_per_row) * 36
         local additional_height = math.max(88, button_table_height + 24) + 4
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
@@ -292,7 +299,8 @@ function recipe_dialog.open(player, modal_data)
     modal_data.recipe_groups = recipe_groups
     modal_data.filters = modal_data.show.filters
 
-    create_dialog_structure(modal_data)
+    local translations = data_util.get("table", player).translation_tables
+    create_dialog_structure(modal_data, translations)
     SEARCH_HANDLERS.apply_recipe_filter(player, "")
     modal_data.modal_elements.search_textfield.focus()
 

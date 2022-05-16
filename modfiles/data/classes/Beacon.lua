@@ -68,6 +68,13 @@ function Beacon.paste(self, object)
     end
 end
 
+function Beacon.clone(self)
+    local clone = Beacon.unpack(Beacon.pack(self))
+    clone.parent = self.parent
+    Beacon.validate(clone)
+    return clone
+end
+
 
 function Beacon.pack(self)
     return {

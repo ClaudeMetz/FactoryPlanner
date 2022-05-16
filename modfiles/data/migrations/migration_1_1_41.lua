@@ -37,6 +37,7 @@ function migration.subfactory(subfactory)
     end
 
     subfactory.solver = (subfactory.matrix_free_items) and "matrix" or "traditional"
+    subfactory.solver_costs = {item = {}, fluid = {}}
     subfactory.matrix_free_items = nil
     subfactory.linearly_dependent = nil
 
@@ -57,6 +58,7 @@ function migration.packed_subfactory(packed_subfactory)
     end
 
     packed_subfactory.solver = (packed_subfactory.matrix_free_items) and "matrix" or "traditional"
+    packed_subfactory.solver_costs = {item = {}, fluid = {}}
     packed_subfactory.matrix_free_items = nil
 
     local function update_lines(floor)

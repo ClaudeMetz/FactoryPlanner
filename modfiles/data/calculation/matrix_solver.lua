@@ -139,7 +139,19 @@ function matrix_solver.make_matrix(lines, items, item_count)
     return matrix
 end
 
-function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, water_pos)
+local function calc_default_cost(item)
+    if item and item.type == "fluid" then
+        if item.name == "water" then
+            return DEFAULT_SOLVER_COSTS.water
+        else
+            return DEFAULT_SOLVER_COSTS.fluid
+        end
+    else
+        return DEFAULT_SOLVER_COSTS.item
+    end
+end
+
+function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map, item_costs)
     local items_with_producers = {}
     local recipe_costs = {}
     for recipe_pos, recipe in pairs(matrix) do
@@ -162,12 +174,15 @@ function matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count
                     table.insert(pseudo_recipe, 0)
                 end
             end
-            -- water gets a cost of 100, all else 10000
-            if item_pos == water_pos then
-                recipe_costs[#matrix + 1] = 100
+            local item_info = inverse_item_map[item_pos]
+            local cost = item_costs[item_info.type][item_info.name]
+            if cost and cost.cost then
+                    recipe_costs[#matrix + 1] = cost.cost
             else
-                recipe_costs[#matrix + 1] = 10000
+                recipe_costs[#matrix + 1] = calc_default_cost(item_info)
             end
+
+
             table.insert(matrix, pseudo_recipe)
         end
     end
@@ -186,6 +201,41 @@ function matrix_solver.add_item_requirements(matrix, items, item_count, subfacto
         end
     end
     table.insert(matrix, requirements)
+end
+
+local function add_custom_constraints(matrix, inverse_item_map, recipe_costs, cost_table)
+    for position, item in pairs(inverse_item_map) do
+        local cost_data = cost_table[item.type][item.name]
+        if cost_data then
+            --llog(item, cost_data)
+            local allowed_as_byproduct = cost_data.allow_byproduct
+            if allowed_as_byproduct == nil then
+                allowed_as_byproduct = true
+            end
+            local allowed_as_ingredient = cost_data.allow_ingredient
+            if allowed_as_ingredient == nil then
+                allowed_as_ingredient = false
+            end
+            if allowed_as_ingredient then
+                local new_row = {}
+                for col=1,#matrix[1] do
+                    if col == position then
+                        table.insert(new_row, 1)
+                    else
+                        table.insert(new_row, 0)
+                    end
+                end
+                table.insert(matrix, #matrix, new_row) -- insert before the constraints
+                local cost = cost_data.cost or calc_default_cost(item)
+                table.insert(recipe_costs, cost)
+            end
+            if not allowed_as_byproduct then
+                for row=1,#matrix do
+                    table.insert(matrix[row], matrix[row][position] * -1)
+                end
+            end
+        end
+    end
 end
 
 local function sum_item_results(matrix, solve_results, required_output, items)
@@ -261,9 +311,11 @@ local function sums_to_class(list, reverse_map)
     local byproduct = structures.class.init()
     local ingredient = structures.class.init()
     for position, values in pairs(list) do
-        structures.class.add(product, reverse_map[position], values.product)
-        structures.class.add(byproduct, reverse_map[position], values.byproduct)
-        structures.class.add(ingredient, reverse_map[position], values.ingredient)
+        if reverse_map[position] then -- no entry means that it's probably a dupe created by extra restricted byproducts
+            structures.class.add(product, reverse_map[position], values.product)
+            structures.class.add(byproduct, reverse_map[position], values.byproduct)
+            structures.class.add(ingredient, reverse_map[position], values.ingredient)
+        end
     end
     return product, byproduct, ingredient
 end
@@ -281,10 +333,13 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
     --llog(lines, line_magic_map, items, item_count)
 
+    --llog(subfactory_data.solver_costs)
+
     local matrix = matrix_solver.make_matrix(lines, items, item_count)
     -- if there is no water, items["fluid_water"] will just be nil, which is fine
-    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, items["fluid_water"])
+    local recipe_costs, is_pseudo_recipe = matrix_solver.add_pseudo_recipes_and_calculate_costs(matrix, item_count, inverse_item_map, subfactory_data.solver_costs)
     matrix_solver.add_item_requirements(matrix, items, item_count, subfactory_data)
+    add_custom_constraints(matrix, inverse_item_map, recipe_costs, subfactory_data.solver_costs)
 
     --matrix_solver.print_matrix(matrix)
 
@@ -425,7 +480,6 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
         Ingredient = ingredient,
         matrix_free_items = {}
     }
-    return {}
 end
 
 function matrix_solver.print_matrix(m)
@@ -468,8 +522,8 @@ end
 
 local function add_slacks(matrix, item_count, recipe_costs, is_pseudo_recipe)
     for recipe_pos, recipe in pairs(matrix) do
-        for pos = 1, item_count do
-            if pos == recipe_pos and not is_pseudo_recipe[recipe_pos] then
+        for pos = 1, #matrix-1 do
+            if pos == recipe_pos then
                 table.insert(recipe, 1)
             else
                 table.insert(recipe, 0)

@@ -169,7 +169,7 @@ function Floor.unpack(packed_self, self)
     -- This can't use Collection.unpack for its lines because of its recursive nature
     -- The calling function also needs to update its Subfactory to include the new subfloor references
     for _, packed_line in pairs(packed_self.Line.objects) do
-        Floor.add(self, Line.unpack(packed_line))
+        Floor.add(self, Line.unpack(packed_line, packed_self.level))
     end
     -- return value is not needed here
 end

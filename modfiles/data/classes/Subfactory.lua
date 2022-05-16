@@ -14,6 +14,7 @@ function Subfactory.init(name)
         Ingredient = Collection.init("Item"),
         Floor = Collection.init("Floor"),
         solver = "traditional",
+        solver_costs = {item = {}, fluid = {}},  -- TODO rename to constraints
         selected_floor = nil,
         item_request_proxy = nil,
         tick_of_deletion = nil,  -- ignored on export/import
@@ -142,9 +143,18 @@ end
 -- Given line has to have a subfloor; recursively adds references for all subfloors to list
 function Subfactory.add_subfloor_references(self, line)
     Subfactory.add(self, line.subfloor)
+
     for _, sub_line in pairs(Floor.get_all(line.subfloor, "Line")) do
         if sub_line.subfloor then Subfactory.add_subfloor_references(self, sub_line) end
     end
+end
+
+
+function Subfactory.clone(self)
+    local clone = Subfactory.unpack(Subfactory.pack(self))
+    clone.parent = self.parent
+    Subfactory.validate(clone)
+    return clone
 end
 
 
@@ -156,6 +166,7 @@ function Subfactory.pack(self)
         mining_productivity = self.mining_productivity,
         Product = Collection.pack(self.Product),
         solver = self.solver,
+        solver_costs = self.solver_costs,
         -- Floors get packed by recursive nesting, which is necessary for a json-type data
         -- structure. It will need to be unpacked into the regular structure 'manually'.
         top_floor = Floor.pack(Subfactory.get(self, "Floor", 1)),
@@ -171,6 +182,7 @@ function Subfactory.unpack(packed_self)
     self.mining_productivity = packed_self.mining_productivity
     self.Product = Collection.unpack(packed_self.Product, self)
     self.solver = packed_self.solver
+    self.solver_costs = self.solver_costs
 
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
     local top_floor = self.selected_floor
@@ -195,6 +207,8 @@ function Subfactory.validate(self)
     self.valid = Floor.validate(top_floor) and self.valid
 
     Subfactory.validate_item_request_proxy(self)
+
+    -- TODO validate solver_costs
 
     if self.valid then self.last_valid_modset = nil
     -- If this subfactory became invalid with the current configuration, retain the modset before the current one

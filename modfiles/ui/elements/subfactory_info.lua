@@ -180,12 +180,12 @@ function subfactory_info.build(player)
       switch_solver_choice.style.margin = {0, 4, 0, 2}
     main_elements.subfactory_info["solver_choice_switch"] = switch_solver_choice
 
-    --[[ local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
-      tooltip={"fp.solver_choice_configure"}, tags={mod="fp", on_gui_click="configure_matrix_solver"},
+    local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
+      tooltip={"fp.solver_choice_configure"}, tags={mod="fp", on_gui_click="configure_solver"},
       style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     button_configure_solver.style.size = 26
     button_configure_solver.style.padding = 0
-    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver ]]
+    main_elements.subfactory_info["configure_solver_button"] = button_configure_solver
 
     local second_pusher = frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
     main_elements.subfactory_info["second_pusher"] = second_pusher
@@ -253,8 +253,10 @@ function subfactory_info.refresh(player)
         local switch_state = (matrix_solver_active) and "right" or "left"
         subfactory_info_elements.solver_choice_switch.switch_state = switch_state
         subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
-        --subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
+        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
     end
+
+    title_bar.refresh(player)  -- refresh to disallow switching to compact view if the subfactory is nil or invalid
 end
 
 
@@ -280,13 +282,13 @@ subfactory_info.gui_events = {
                 calculation.update(player, subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)
-        }--[[ ,
+        },
         {
-            name = "configure_matrix_solver",
+            name = "configure_solver",
             handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
+                modal_dialog.enter(player, {type="solver"})
             end)
-        } ]]
+        }
     },
     on_gui_text_changed = {
         {

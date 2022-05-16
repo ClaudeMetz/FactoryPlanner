@@ -58,7 +58,8 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
     local action = "act_on_top_level_" .. category
     local matrix_active = (ui_state.context.subfactory.solver == "matrix")
     local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
-    local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, true)
+    local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
+    local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, rb_enabled)
 
     for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
         local required_amount = (class == "Product") and Item.required_amount(item) or nil
@@ -147,7 +148,8 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
-        view_state.select(player, "items_per_timescale", "subfactory")  -- refreshes "subfactory" if necessary
+        view_state.select(player, "items_per_timescale")
+        main_dialog.refresh(player, "subfactory")
 
         local modal_data = {
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
