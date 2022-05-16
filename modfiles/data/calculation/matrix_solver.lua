@@ -207,7 +207,7 @@ local function add_custom_constraints(matrix, inverse_item_map, recipe_costs, co
     for position, item in pairs(inverse_item_map) do
         local cost_data = cost_table[item.type][item.name]
         if cost_data then
-            llog(item, cost_data)
+            --llog(item, cost_data)
             local allowed_as_byproduct = cost_data.allow_byproduct
             if allowed_as_byproduct == nil then
                 allowed_as_byproduct = true
@@ -633,8 +633,8 @@ function matrix_solver.do_simplex_algo(matrix, item_count, recipe_costs, is_pseu
     --llog("\n\n\n\n ============== 1 ==============")
     --matrix_solver.print_matrix(copy)
     add_slacks(copy, item_count, recipe_costs, is_pseudo_recipe)
-    llog("\n\n\n\n ============== 2 ==============")
-    matrix_solver.print_matrix(copy)
+    --llog("\n\n\n\n ============== 2 ==============")
+    --matrix_solver.print_matrix(copy)
     local loop = true
     local counter = 1
     while loop do
