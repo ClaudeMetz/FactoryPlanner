@@ -281,7 +281,8 @@ function NTH_TICK_HANDLERS.run_delayed_modal_search(metadata)
     local player = game.get_player(metadata.player_index)
     local modal_data = data_util.get("modal_data", player)
     local searchfield = modal_data.modal_elements.search_textfield
-    SEARCH_HANDLERS[modal_data.search_handler_name](player, searchfield.text)
+    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+    SEARCH_HANDLERS[modal_data.search_handler_name](player, search_term)
 end
 
 
@@ -325,8 +326,8 @@ modal_dialog.gui_events = {
                 local search_tick = modal_data.search_tick
                 if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
 
-                -- No special text handling needed as babelfish handles it now
-                SEARCH_HANDLERS[modal_data.search_handler_name](player, metadata.text)
+                local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+                SEARCH_HANDLERS[modal_data.search_handler_name](player, search_term)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 modal_data.next_search_tick = data_util.nth_tick.add((game.tick + MODAL_SEARCH_LIMITING),
