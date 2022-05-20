@@ -27,9 +27,11 @@ end
 function data_util.add_subfactories_by_string(player, export_string)
     local context = data_util.get("context", player)
     local first_subfactory = Factory.import_by_string(context.factory, export_string)
-
     ui_util.context.set_subfactory(player, first_subfactory)
-    calculation.update(player, first_subfactory)
+
+    for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
+        calculation.update(player, subfactory)
+    end
 end
 
 -- Returns the attribute string for the given prototype
