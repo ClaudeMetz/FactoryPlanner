@@ -2,12 +2,18 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.44
+Date: 21. 05. 2022
   Changes:
     - Updated Korean localisation (Thanks x2605!)
     - Added partial Portuguese localisation (Thanks ctgPi!)
-  Bugfixes:
-    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.43
