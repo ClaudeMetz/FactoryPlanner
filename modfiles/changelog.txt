@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.42
+Date: 21. 05. 2022
+  Features:
     - Added a compact view of the interface that's useful when actually building your factory after the planning phase
     - Added copy/paste functionality, allowing you to copy machines, beacons, modules, recipe lines and items
     - Implemented localised search for items and recipes, meaning search will find results in the language the game is configured to
