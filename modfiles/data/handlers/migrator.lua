@@ -28,6 +28,7 @@ local migration_masterlist = {
     [18] = {version="1.1.26", migration=require("data.migrations.migration_1_1_26")},
     [19] = {version="1.1.27", migration=require("data.migrations.migration_1_1_27")},
     [20] = {version="1.1.42", migration=require("data.migrations.migration_1_1_42")},
+    [21] = {version="1.1.43", migration=require("data.migrations.migration_1_1_43")},
 }
 
 -- ** LOCAL UTIL **
@@ -98,8 +99,7 @@ function migrator.migrate_player_table(player)
         player_table.mod_version = global.mod_version
 
         -- Subfactory migrations
-        local factories = {"factory", "archive"}
-        for _, factory_name in pairs(factories) do
+        for _, factory_name in pairs({"factory", "archive"}) do
             for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
                 apply_migrations(migrations, "subfactory", subfactory, player)
                 subfactory.mod_version = global.mod_version
