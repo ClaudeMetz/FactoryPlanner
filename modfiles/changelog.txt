@@ -2,11 +2,41 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added a compact view of the interface that's useful when actually building your factory after the planning phase
+    - Added copy/paste functionality, allowing you to copy machines, beacons, modules, recipe lines and items
+    - Implemented localised search for items and recipes, meaning search will find results in the language the game is configured to
+    - Added rich text support to subfactory names, so they are not restricted to a single icon anymore if desired
+    - Added dedicated buttons to move subfactories and recipes up and down, making the interaction more discoverable and easier to use
+    - Added a setting for those that want the 'add subfactory'-button to go to the product picker straight away
+    - Added support for barrelled fluids to the belts/lanes production view (Thanks ZorbaTHut!)
   Changes:
-    - 
+    - Reordered the subfactory list action buttons to make more sense by grouping the archive-related ones
+    - Combined the various machine dialogs (entity picker, limits, modules, fuel) into one
+    - Unified the interactions and appearance of modules for machines and beacons
+    - Moved the utility dialog button to the production toolbar
+    - Streamlined the modifier-clicks for various actions to be more consistent across the mod
+    - Made the 'reset machine' action also set modules and beacons to their configured defaults if possible
+    - Pressing 'E' with an open dialog now tries to confirm instead of closing, mirroring vanilla behavior
+    - Adding a subfactory by selecting a product now sets the name to both the icon and name of that product
+    - Improved consistency and visual appeal of various tooltips
+    - Removed mod interactions with FNEI and WIIRUF, meaning only Recipe Book remains supported (with deeper integration than before)
+    - Removed the dedicated 'toggle recipe'-button and integrated its core functionality into the recipe button itself
+    - Added a ko-fi patronage 'link' to the preferences pane
+    - Updated to flib 0.9.2
   Bugfixes:
-    - 
+    - Fixed that the first recipe on subfloors could be moved down in certain circumstances
+    - Fixed that shift-click adding a subfactory and cancelling the picker dialog would create an empty subfactory
+    - Fixed that deleting a subfactory through the 'edit subfactory'-dialog would not put it into the archive
+
+---------------------------------------------------------------------------------------------------
+Version: 0.00.00
+Date: 00. 00. 0000
+  Features:
+    -
+  Changes:
+    -
+  Bugfixes:
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.41

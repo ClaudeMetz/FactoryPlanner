@@ -10,22 +10,21 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        tooltip = {"fp.two_word_title", number, {"fp.per_title", type_string, metadata.timescale_string}}
+        tooltip = {"", number, " ", type_string, "/", metadata.timescale_string}
     end
 
     return number, tooltip
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "fluid" then return nil, nil end
-
-    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse
+    local divisor = (item_proto.type == "fluid") and 50 or 1
+    local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"fp.two_word_title", number, {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
+        tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
     end
 
     local return_number = (metadata.round_button_numbers) and math.ceil(raw_number) or number
@@ -43,8 +42,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local tooltip = nil
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"fp.two_word_title", number, {"fp.per_title", {"fp.pl_wagon", plural_parameter},
-          metadata.timescale_string}}
+        tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
     end
 
     return number, tooltip
@@ -58,10 +56,9 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     if metadata.include_tooltip then
         local plural_parameter = (number == "1") and 1 or 2
         local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        local item_per_second =  {"fp.per_title", type_string, {"fp.second"}}
         -- If machine_count is nil, this shouldn't show /machine
-        local per_machine = (machine_count ~= nil) and {"fp.per_title", "", {"fp.pl_machine", 1}} or ""
-        tooltip = {"fp.two_word_title", number, {"", item_per_second, per_machine}}
+        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
+        tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
     end
 
     return number, tooltip
@@ -121,26 +118,25 @@ function view_state.rebuild_state(player)
     local new_view_states = {
         [1] = {
             name = "items_per_timescale",
-            caption = {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_" .. timescale}},
+            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_" .. timescale}},
             tooltip = {"fp.view_state_tt", {"fp.items_per_timescale", {"fp." .. timescale}}}
         },
         [2] = {
             name = "belts_or_lanes",
-            caption = {"fp.two_word_title", belt_proto.rich_text, {"fp.pu_" .. singular_bol, 2}},
+            caption = {"", belt_proto.rich_text, " ", {"fp.pu_" .. singular_bol, 2}},
             tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2},
               belt_proto.rich_text, belt_proto.localised_name}}
         },
         [3] = {
             name = "wagons_per_timescale",
-            caption = {"fp.per_title", {"fp.pu_wagon", 2}, {"fp.unit_" .. timescale}},
+            caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale}},
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale},
               cargo_train_proto.rich_text, cargo_train_proto.localised_name,
               fluid_train_proto.rich_text, fluid_train_proto.localised_name}}
         },
         [4] = {
             name = "items_per_second_per_machine",
-            caption = {"fp.per_title", {"fp.per_title", {"fp.pu_item", 2}, {"fp.unit_second"}},
-              "[img=fp_generic_assembler]"},
+            caption = {"", {"fp.pu_item", 2}, "/", {"fp.unit_second"}, "/[img=fp_generic_assembler]"},
             tooltip = {"fp.view_state_tt", {"fp.items_per_second_per_machine"}}
         },
         selected_view_id = nil,  -- set below
@@ -152,7 +148,7 @@ function view_state.rebuild_state(player)
     local selected_view_id = (old_view_states) and old_view_states.selected_view_id or "items_per_timescale"
 
     ui_state.view_states = new_view_states
-    view_state.select(player, selected_view_id, nil)
+    view_state.select(player, selected_view_id)
 end
 
 function view_state.build(player, parent_element)
@@ -175,7 +171,8 @@ function view_state.refresh(player, table_view_state)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
     local subfactory = ui_state.context.subfactory
-    if not subfactory then return
+    if not subfactory then
+        return
     elseif subfactory.current_timescale ~= ui_state.view_states.timescale then
         view_state.rebuild_state(player)
     end
@@ -189,7 +186,7 @@ function view_state.refresh(player, table_view_state)
     end
 end
 
-function view_state.select(player, selected_view, context_to_refresh)
+function view_state.select(player, selected_view)
     local view_states = data_util.get("ui_state", player).view_states
 
     -- Selected view can be either an id or a name, so we might need to match an id to a name
@@ -213,9 +210,6 @@ function view_state.select(player, selected_view, context_to_refresh)
                 view_state.selected = false
             end
         end
-
-        -- Optionally refresh the given context after the view has been changed
-        if context_to_refresh then main_dialog.refresh(player, context_to_refresh) end
     end
 end
 
@@ -226,7 +220,11 @@ view_state.gui_events = {
         {
             name = "change_view_state",
             handler = (function(player, tags, _)
-                view_state.select(player, tags.view_id, "production")
+                view_state.select(player, tags.view_id)
+
+                local compact_view = data_util.get("flags", player).compact_view
+                if compact_view then compact_subfactory.refresh(player)
+                else main_dialog.refresh(player, "production") end
             end)
         }
     }
@@ -236,10 +234,14 @@ view_state.misc_events = {
     fp_cycle_production_views = (function(player, _)
         local ui_state = data_util.get("ui_state", player)
 
-        if ui_state.view_states and main_dialog.is_in_focus(player) then
+        if ui_state.view_states and main_dialog.is_in_focus(player) or compact_dialog.is_in_focus(player) then
             -- Choose the next view in the list, wrapping from the end to the beginning
             local new_view_id = (ui_state.view_states.selected_view_id % #ui_state.view_states) + 1
-            view_state.select(player, new_view_id, "production")
+            view_state.select(player, new_view_id)
+
+            local compact_view = data_util.get("flags", player).compact_view
+            if compact_view then compact_subfactory.refresh(player)
+            else main_dialog.refresh(player, "production") end
 
             -- This avoids the game focusing a random textfield when pressing Tab to change states
             ui_state.main_elements.main_frame.focus()

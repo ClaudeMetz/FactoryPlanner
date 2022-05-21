@@ -28,8 +28,8 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
     for prototype_id, prototype in ipairs(all_prototypes) do
         local selected = (default_proto.id == prototype_id)
         local style = (selected) and "flib_slot_button_green_small" or "flib_slot_button_default_small"
-        local first_line = (selected) and {"fp.annotated_title", prototype.localised_name, {"fp.selected"}}
-            or prototype.localised_name
+        local first_line = (selected) and {"fp.tt_title_with_note", prototype.localised_name, {"fp.selected"}}
+          or {"fp.tt_title", prototype.localised_name}
         local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
@@ -78,11 +78,11 @@ function preference_structures.mb_defaults(preferences, content_frame)
     table_mb_defaults.style.column_alignments[2] = "right"
     table_mb_defaults.style.column_alignments[3] = "right"
 
-    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_machine", 1}}}
+    table_mb_defaults.add{type="label", caption={"", {"fp.pu_machine", 1}, ":"}}
     add_mb_default_button(table_mb_defaults, "machine")
     add_mb_default_button(table_mb_defaults, "machine_secondary")
 
-    table_mb_defaults.add{type="label", caption={"fp.key_title", {"fp.pu_beacon", 1}}}
+    table_mb_defaults.add{type="label", caption={"", {"fp.pu_beacon", 1}, ":"}}
     add_mb_default_button(table_mb_defaults, "beacon")
 
     local beacon_amount_flow = table_mb_defaults.add{type="flow", direction="horizontal"}
@@ -137,7 +137,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
             if #all_prototypes > 1 then
                 any_category_visible = true
 
-                table_prototypes.add{type="label", caption={"fp.quoted_title", category.name}}
+                table_prototypes.add{type="label", caption=("'" .. category.name .. "'")}
                 table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
                 add_defaults_table(8, category_id)
@@ -149,9 +149,9 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 end
 
 
-local function handle_checkbox_preference_change(player, tags, metadata)
+local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
-    data_util.get("preferences", player)[preference_name] = metadata.state
+    data_util.get("preferences", player)[preference_name] = event.element.state
 
     local refresh = data_util.get("modal_data", player).refresh
 
@@ -159,20 +159,16 @@ local function handle_checkbox_preference_change(player, tags, metadata)
         refresh.production = true
     end
 
-    if preference_name == "toggle_column" then
-        refresh.calculations = true
-    end
-
     if preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
-        refresh.update_ingredient_satisfaction = (metadata.state)
+        refresh.update_ingredient_satisfaction = (event.element.state)
         refresh.production = true  -- always refresh production
     end
 end
 
-local function handle_mb_default_change(player, tags, metadata)
+local function handle_mb_default_change(player, tags, event)
     local mb_defaults = data_util.get("preferences", player).mb_defaults
-    local module_name = metadata.elem_value
+    local module_name = event.element.elem_value
 
     if module_name == nil then
         mb_defaults[tags.type] = nil
@@ -189,7 +185,7 @@ local function handle_mb_default_change(player, tags, metadata)
     end
 end
 
-local function handle_default_prototype_change(player, tags, metadata)
+local function handle_default_prototype_change(player, tags, event)
     local type = tags.type
     local category_id = tags.category_id
 
@@ -200,8 +196,8 @@ local function handle_default_prototype_change(player, tags, metadata)
     prototyper.defaults.set(player, type, tags.prototype_id, category_id)
     refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
 
-    -- If this was an alt-click, set this prototype on every category that also has it
-    if metadata.alt and type == "machines" then
+    -- If this was an shift-click, set this prototype on every category that also has it
+    if event.shift and type == "machines" then
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for secondary_category_id, category in pairs(global["all_" .. type].categories) do
@@ -221,8 +217,7 @@ end
 -- ** TOP LEVEL **
 preferences_dialog.dialog_settings = (function(_) return {
     caption = {"fp.preferences"},
-    create_content_frame = false,
-    force_auto_center = true
+    create_content_frame = false
 } end)
 
 function preferences_dialog.open(player, modal_data)
@@ -247,13 +242,13 @@ function preferences_dialog.open(player, modal_data)
     local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
-    label_preferences_info.style.width = 330
+    label_preferences_info.style.width = 335
 
     local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
       "ingredient_satisfaction", "round_button_numbers"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
-    local production_preference_names = {"toggle_column", "done_column", "pollution_column", "line_comment_column"}
+    local production_preference_names = {"done_column", "pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
     preference_structures.mb_defaults(preferences, left_content_frame)
@@ -263,6 +258,9 @@ function preferences_dialog.open(player, modal_data)
     preference_structures.prototypes(player, left_content_frame, modal_elements, "wagons")
 
     local right_content_frame = add_content_frame()
+
+    local support_frame = right_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
@@ -312,9 +310,9 @@ preferences_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "mb_default_beacon_amount",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local mb_defaults = data_util.get("preferences", player).mb_defaults
-                mb_defaults.beacon_count = tonumber(metadata.text)
+                mb_defaults.beacon_count = tonumber(event.element.text)
             end)
         }
     },

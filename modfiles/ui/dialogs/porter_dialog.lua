@@ -223,7 +223,7 @@ end
 
 -- ** IMPORT DIALOG **
 import_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.two_word_title", {"fp.import"}, {"fp.pl_subfactory", 1}},
+    caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
     subheader_text = {"fp.import_instruction_1"},
     create_content_frame = true,
     disable_scroll_pane = true,
@@ -276,17 +276,17 @@ import_dialog.gui_events = {
     on_gui_text_changed = {
         {
             name = "import_string",
-            handler = (function(player, _, metadata)
+            handler = (function(player, _, event)
                 local button_import = data_util.get("modal_elements", player).import_button
-                set_tool_button_state(button_import, "import", (string.len(metadata.text) > 0))
+                set_tool_button_state(button_import, "import", (string.len(event.element.text) > 0))
             end)
         }
     },
     on_gui_confirmed = {
         {
             name = "import_string",
-            handler = (function(player, _, metadata)
-                if metadata.text ~= "" then import_subfactories(player) end
+            handler = (function(player, _, event)
+                if event.element.text ~= "" then import_subfactories(player) end
             end)
         }
     }
@@ -295,7 +295,7 @@ import_dialog.gui_events = {
 
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.two_word_title", {"fp.export"}, {"fp.pl_subfactory", 1}},
+    caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
     subheader_text = {"fp.export_instruction"},
     subheader_tooltip = {"fp.export_instruction_tt"},
     create_content_frame = true,
@@ -339,8 +339,8 @@ porter_dialog.gui_events = {
     on_gui_checked_state_changed = {
         {
             name = "toggle_porter_master_checkbox",
-            handler = (function(player, _, metadata)
-                set_all_checkboxes(player, metadata.state)
+            handler = (function(player, _, event)
+                set_all_checkboxes(player, event.element.state)
             end)
         },
         {

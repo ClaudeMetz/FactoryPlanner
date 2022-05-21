@@ -96,6 +96,10 @@ function Floor.get_in_order(self, class, reverse)
     return Collection.get_in_order(self[class], reverse)
 end
 
+function Floor.get_by_gui_position(self, class, gui_position)
+    return Collection.get_by_gui_position(self[class], gui_position)
+end
+
 function Floor.shift(self, dataset, direction)
     return Collection.shift(self[dataset.class], dataset, direction)
 end
@@ -127,10 +131,11 @@ function Floor.get_component_data(self, component_table)
     -- would mean the subfactory machine total is equal to the floor total of the top floor
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
         if line.subfloor == nil then
-            local ceil_machine_count = math.ceil(line.machine.count)
+            local machine = line.machine
+            local ceil_machine_count = math.ceil(machine.count)
 
-            add_machine(line.machine.proto, ceil_machine_count)
-            for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+            add_machine(machine.proto, ceil_machine_count)
+            for _, module in pairs(ModuleSet.get_in_order(machine.module_set)) do
                 add_component(components.modules, module.proto, ceil_machine_count * module.amount)
             end
 
@@ -139,7 +144,7 @@ function Floor.get_component_data(self, component_table)
                 local ceil_total_amount = math.ceil(beacon.total_amount)
 
                 add_machine(beacon.proto, ceil_total_amount)
-                for _, module in pairs(Beacon.get_all(beacon, "Module")) do
+                for _, module in pairs(ModuleSet.get_all(beacon.module_set)) do
                     add_component(components.modules, module.proto, ceil_total_amount * module.amount)
                 end
             end
@@ -162,31 +167,10 @@ end
 -- This function should thus unpack itself into that floor, instead of creating a new one
 function Floor.unpack(packed_self, self)
     -- This can't use Collection.unpack for its lines because of its recursive nature
-    -- It might also be possible and more correct to move some of this functionality
-    -- to the Line-class, but this works and is more understandable
-
+    -- The calling function also needs to update its Subfactory to include the new subfloor references
     for _, packed_line in pairs(packed_self.Line.objects) do
-        if packed_line.subfloor ~= nil then
-            -- Add the first subfloor line as a line in this floor
-            local subfloor_line = Line.unpack(packed_line.subfloor.Line.objects[1])
-            Floor.add(self, subfloor_line)
-
-            -- Use that line to create the subfloor, which moves it to the newly created floor
-            local subfloor = Floor.init(subfloor_line)  -- sets origin_ and defining_line
-            subfloor.origin_line.comment = packed_line.comment  -- carry over line comment
-
-            Subfactory.add(self.parent, subfloor)
-
-            -- Remove the first subfloor line as it has already been created by initializing the subfloor with it
-            table.remove(packed_line.subfloor.Line.objects, 1)
-
-            Floor.unpack(packed_line.subfloor, subfloor)
-
-        else  -- a normal line just gets unpacked and added straight away
-            Floor.add(self, Line.unpack(packed_line))
-        end
+        Floor.add(self, Line.unpack(packed_line, packed_self.level))
     end
-
     -- return value is not needed here
 end
 

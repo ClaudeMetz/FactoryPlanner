@@ -15,7 +15,7 @@ function migration.subfactory(subfactory)
         for _, line in pairs(Floor.get_in_order(floor, "Line")) do
             if not line.subfloor then
                 line.machine.effects_tooltip = ""
-                for _, module in pairs(Machine.get_in_order(line.machine, "Module")) do
+                for _, module in pairs(line.machine.Module.datasets) do
                     module.effects_tooltip = ""
                 end
 

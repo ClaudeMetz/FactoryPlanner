@@ -3,11 +3,27 @@ production_box = {}
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
     local subfactory = data_util.get("context", player).subfactory
-    if subfactory and subfactory.valid and main_dialog.is_in_focus(player) then
+    if subfactory and subfactory.valid then
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end
+
+local function paste_line(player, _, event)
+    if event.button == defines.mouse_button_type.left and event.shift then
+        local context = data_util.get("context", player)
+        local line_count = context.floor.Line.count
+        local last_line = Floor.get_by_gui_position(context.floor, "Line", line_count)
+        -- Use a fake first line to paste below if no actual line exists
+        if not last_line then last_line = {parent=context.floor, class="Line", gui_position=0} end
+
+        if ui_util.clipboard.paste(player, last_line) then
+            calculation.update(player, context.subfactory)
+            main_dialog.refresh(player, "subfactory")
+        end
+    end
+end
+
 
 -- ** TOP LEVEL **
 function production_box.build(player)
@@ -16,11 +32,14 @@ function production_box.build(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    frame_vertical.style.vertically_stretchable = true
-    frame_vertical.style.horizontally_stretchable = true
-    main_elements.production_box["vertical_frame"] = frame_vertical
+    -- Insert a 'superfluous' flow for the sole purpose of detecting clicks on it
+    local click_flow = frame_vertical.add{type="flow", direction="vertical",
+      tags={mod="fp", on_gui_click="paste_line"}}
+    click_flow.style.vertically_stretchable = true
+    click_flow.style.horizontally_stretchable = true
+    main_elements.production_box["vertical_frame"] = click_flow
 
-    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
+    local subheader = click_flow.add{type="frame", direction="horizontal", style="subheader_frame"}
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height
     subheader.style.padding = {8, 8, 6, 8}
 
@@ -29,29 +48,38 @@ function production_box.build(player)
     main_elements.production_box["refresh_button"] = button_refresh
 
     local label_title = subheader.add{type="label", caption={"fp.production"}, style="frame_title"}
-    label_title.style.padding = 0
-    label_title.style.left_margin = 6
+    label_title.style.padding = {0, 8}
 
     local label_level = subheader.add{type="label"}
-    label_level.style.margin = {0, 12, 0, 6}
+    label_level.style.margin = {0, 6, 0, 6}
     main_elements.production_box["level_label"] = label_level
 
-    local button_floor_up = subheader.add{type="button", tags={mod="fp", on_gui_click="change_floor", destination="up"},
-      caption={"fp.floor_up"}, tooltip={"fp.floor_up_tt"}, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-    button_floor_up.style.disabled_font_color = {}
+    local button_floor_up = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
+      tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_up_button"] = button_floor_up
-    local button_floor_top = subheader.add{type="button", caption={"fp.floor_top"}, tooltip={"fp.floor_top_tt"},
-      tags={mod="fp", on_gui_click="change_floor", destination="top"}, style="fp_button_rounded_mini",
-      mouse_button_filter={"left"}}
-    button_floor_top.style.disabled_font_color = {}
+
+    local button_floor_top = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_bar_up",
+      tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_top_button"] = button_floor_top
+
+    local separator = subheader.add{type="line", direction="vertical"}
+    separator.style.margin = {0, 12}
+    main_elements.production_box["separator_line"] = separator
+
+    local button_utility_dialog = subheader.add{type="sprite-button", sprite="utility/slot_icon_robot_material_black",
+      tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
+      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+    button_utility_dialog.style.padding = -4
+    main_elements.production_box["utility_dialog_button"] = button_utility_dialog
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local table_view_state = view_state.build(player, subheader)
     main_elements.production_box["view_state_table"] = table_view_state
 
-    local label_instruction = frame_vertical.add{type="label", style="bold_label"}
+    local label_instruction = click_flow.add{type="label", style="bold_label"}
     label_instruction.style.margin = 20
     main_elements.production_box["instruction_label"] = label_instruction
 
@@ -71,13 +99,16 @@ function production_box.refresh(player)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
     production_box_elements.level_label.caption = (not subfactory_valid) and ""
-      or {"fp.bold_label", {"fp.two_word_title", {"fp.level"}, current_level}}
+      or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
     production_box_elements.floor_up_button.visible = (subfactory_valid)
     production_box_elements.floor_up_button.enabled = (current_level > 1)
 
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 1)
+
+    production_box_elements.utility_dialog_button.visible = (subfactory_valid)
+    production_box_elements.separator_line.visible = (subfactory_valid)
 
     view_state.refresh(player, production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
@@ -103,27 +134,11 @@ end
 
 -- Changes the floor to either be the top one or the one above the current one
 function production_box.change_floor(player, destination)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-    local floor = ui_state.context.floor
+    local floor_changed = ui_util.context.change_floor(player, destination)
 
-    if subfactory == nil or floor == nil then return end
-
-    local selected_floor = nil
-    if destination == "up" and floor.level > 1 then
-        selected_floor = floor.origin_line.parent
-    elseif destination == "top" then
-        selected_floor = Subfactory.get(subfactory, "Floor", 1)
-    end
-
-    -- Only need to refresh if the floor was indeed changed
-    if selected_floor ~= nil then
-        ui_util.context.set_floor(player, selected_floor)
-
-        -- Remove previous floor if it has no recipes
-        local floor_removed = Floor.remove_if_empty(floor)
-
-        if floor_removed then calculation.update(player, subfactory) end
+    if floor_changed then  -- only need to refresh if the floor was indeed changed
+        local subfactory = data_util.get("context", player).subfactory
+        calculation.update(player, subfactory)
         main_dialog.refresh(player, "production_detail")
     end
 end
@@ -142,16 +157,26 @@ production_box.gui_events = {
             handler = (function(player, tags, _)
                 production_box.change_floor(player, tags.destination)
             end)
+        },
+        {
+            name = "open_utility_dialog",
+            handler = (function(player, _, _)
+                modal_dialog.enter(player, {type="utility"})
+            end)
+        },
+        {
+            name = "paste_line",
+            handler = paste_line
         }
     }
 }
 
 production_box.misc_events = {
-    fp_refresh_production = refresh_production,
+    fp_refresh_production = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
+    end),
 
     fp_floor_up = (function(player, _)
-        if main_dialog.is_in_focus(player) then
-            production_box.change_floor(player, "up")
-        end
+        if main_dialog.is_in_focus(player) then production_box.change_floor(player, "up") end
     end)
 }

@@ -39,12 +39,13 @@ end
 
 local scenes = {
     "01_main_interface",
-    "02_item_picker",
-    "03_recipe_picker",
-    "04_beacon",
-    "05_import",
-    "06_utility",
-    "07_preferences"
+    "02_compact_interface",
+    "03_item_picker",
+    "04_recipe_picker",
+    "05_machine",
+    "06_import",
+    "07_utility",
+    "08_preferences"
 }
 
 local shots = {

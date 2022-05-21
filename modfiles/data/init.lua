@@ -1,25 +1,23 @@
 require("data.classes.Collection")
-require("data.classes.Item")
-require("data.classes.Fuel")
-require("data.classes.Recipe")
-require("data.classes.Machine")
-require("data.classes.Module")
-require("data.classes.Beacon")
 require("data.classes.Factory")
 require("data.classes.Subfactory")
 require("data.classes.Floor")
 require("data.classes.Line")
+require("data.classes.Recipe")
+require("data.classes.Machine")
+require("data.classes.Beacon")
+require("data.classes.ModuleSet")
+require("data.classes.Module")
+require("data.classes.Item")
+require("data.classes.Fuel")
 
 require("data.handlers.generator")
 require("data.handlers.loader")
 require("data.handlers.migrator")
 require("data.handlers.prototyper")
-require("data.handlers.remote")
 require("data.handlers.screenshotter")
 
 require("data.calculation.interface")
-
-init = {}
 
 -- ** LOCAL UTIL **
 local function reload_settings(player)
@@ -32,9 +30,9 @@ local function reload_settings(player)
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
     settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
-    settings_table.alt_action = settings["fp_alt_action"].value
     settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
     settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
 
     global.players[player.index].settings = settings_table
@@ -54,7 +52,6 @@ local function reload_preferences(player)
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
     preferences.round_button_numbers = preferences.round_button_numbers or false
 
-    preferences.toggle_column = preferences.toggle_column or false
     preferences.done_column = preferences.done_column or false
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
@@ -80,6 +77,7 @@ local function reset_ui_state(player)
     ui_state_table.view_states = nil  -- The state of the production views
     ui_state_table.message_queue = {}  -- The general message queue
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
+    ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
@@ -89,6 +87,7 @@ local function reset_ui_state(player)
     ui_state_table.flags = {
         archive_open = false,  -- Wether the players subfactory archive is currently open
         selection_mode = false,  -- Whether the player is currently using a selector
+        compact_view = false,  -- Whether the user has switched to the compact main view
         recalculate_on_subfactory_change = false  -- Whether calculations should re-run
     }
 
@@ -123,13 +122,17 @@ local function update_player_table(player)
 
         title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
 
-    else  -- existing player, only need to update
+    else  -- existing player, only needs to update
         reload_data()
 
         -- If any subfactories exist, select the first one
         local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
         if #subfactories > 0 then ui_util.context.set_subfactory(player, subfactories[1]) end
     end
+
+    -- Translation tables and clipboard are re-initialized every time
+    player_table.translation_tables = nil
+    player_table.clipboard = nil
 
     return player_table
 end
@@ -165,19 +168,6 @@ function NTH_TICK_HANDLERS.adjust_interface_dimensions(metadata)
     live_settings["fp_subfactory_list_rows"] = {value = math.max(subfactory_list_rows, height_minimum)}
 end
 
--- Destroys all GUIs so they are loaded anew the next time they are shown
-local function reset_player_gui(player)
-    local mod_gui_button = mod_gui.get_button_flow(player)["fp_button_toggle_interface"]
-    if mod_gui_button then mod_gui_button.destroy() end
-
-    -- All mod frames
-    for _, gui_element in pairs(player.gui.screen.children) do
-        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
-            gui_element.destroy()
-        end
-    end
-end
-
 
 local function global_init()
     -- Set up a new save for development if necessary
@@ -195,13 +185,18 @@ local function global_init()
     global.nth_tick_events = {}
 
     -- Run through the prototyper without the need to apply (run) it on any player
+    global.tutorial_subfactory_validity = nil
+    global.installed_mods = nil
+
     prototyper.setup()
     prototyper.finish()
 
+    -- Initialize flib's translation module
+    translator.init()
+    prototyper.util.build_translation_dictionaries()
+
     -- Create player tables for all existing players
-    for _, player in pairs(game.players) do
-        update_player_table(player)
-    end
+    for _, player in pairs(game.players) do update_player_table(player) end
 end
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
@@ -209,9 +204,9 @@ local function handle_configuration_change()
     prototyper.setup()  -- Setup prototyper
     migrator.migrate_global()  -- Migrate global
 
-    -- Runs through all players, even new ones (those with no player_table)
+    -- Runs through all players, even new ones without player_table
     for _, player in pairs(game.players) do
-        -- Migrate player_table data
+        -- Migrate player_table data if it exists
         migrator.migrate_player_table(player)
 
         -- Create or update player_table
@@ -223,27 +218,34 @@ local function handle_configuration_change()
         -- Update the validity of the entire factory and archive
         Collection.validate_datasets(player_table.factory.Subfactory)
         Collection.validate_datasets(player_table.archive.Subfactory)
-
-        reset_player_gui(player)  -- Destroys all existing GUI's
-        ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
     end
 
     -- Complete prototyper process by saving new data to global
     prototyper.finish()
 
-    -- Update factory and archive calculations in case some numbers changed
+    -- Re-initialize flib's translation module
+    translator.init()
+    prototyper.util.build_translation_dictionaries()
+
     for index, player in pairs(game.players) do
+        ui_util.reset_player_gui(player)  -- Destroys all existing GUI's
+        ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
+
+        -- Update factory and archive calculations in case some numbers changed
         local player_table = global.players[index]
         for _, factory_name in pairs{"factory", "archive"} do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
                 calculation.update(player, subfactory)
             end
         end
+
+        -- Run translation if the player is connected
+        if player.connected then translator.translate(player) end
     end
 end
 
 
--- ** TOP LEVEL EVENTS **
+-- ** TOP LEVEL **
 script.on_init(global_init)
 
 script.on_configuration_changed(handle_configuration_change)
@@ -251,7 +253,7 @@ script.on_configuration_changed(handle_configuration_change)
 script.on_load(loader.run)
 
 
--- ** PLAYER DATA EVENTS **
+-- ** PLAYER DATA **
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
@@ -266,7 +268,10 @@ script.on_event(defines.events.on_player_created, function(event)
     data_util.nth_tick.add((game.tick + 1), "adjust_interface_dimensions", {player_index=player.index})
 
     -- Add the subfactories that are handy for development
-    if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING, false) end
+    if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
+
+    -- Run translation if the player is connected
+    if player.connected then translator.translate(player) end
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
@@ -274,7 +279,15 @@ script.on_event(defines.events.on_player_removed, function(event)
 end)
 
 
--- Fires when mods settings change to incorporate them
+script.on_event(defines.events.on_player_joined_game, function(event)
+    translator.translate(game.get_player(event.player_index))
+end)
+
+script.on_event(defines.events.on_player_left_game, function(event)
+    translator.cancel_translation(event.player_index)
+end)
+
+
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
         local player = game.get_player(event.player_index)
@@ -285,13 +298,39 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
         elseif event.setting == "fp_products_per_row" or
           event.setting == "fp_subfactory_list_rows" or
-          event.setting == "fp_alt_action" then
+          event.setting == "fp_prefer_product_picker" then
             main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
-            data_util.update_all_product_definitions(player)
+            local player_table = data_util.get("table", player)
+
+            -- Goes through every subfactory's top level products and updates their defined_by
+            local defined_by = player_table.settings.belts_or_lanes
+            Factory.update_product_definitions(player_table.factory, defined_by)
+            Factory.update_product_definitions(player_table.archive, defined_by)
+            local subfactory = player_table.ui_state.context.subfactory
+
+            calculation.update(player, subfactory)
             main_dialog.rebuild(player, false)
 
+        end
+    end
+end)
+
+
+-- ** TRANSLATION **
+script.on_event(defines.events.on_tick, translator.check_skipped)  -- required by flib's translation module
+
+-- Keep translation going, and save a reference to it once it's done
+script.on_event(defines.events.on_string_translated, function(event)
+    local language_data = translator.process_translation(event)
+    if language_data ~= nil then  -- if this is nil, translations have not yet finished
+        for _, player_index in pairs(language_data.players) do
+            local player = game.get_player(player_index)
+            local player_table = data_util.get("table", player)
+
+            player_table.translation_tables = language_data.dictionaries
+            modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
         end
     end
 end)
