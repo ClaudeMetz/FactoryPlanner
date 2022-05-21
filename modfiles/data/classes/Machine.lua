@@ -74,7 +74,10 @@ end
 
 function Machine.paste(self, object)
     if object.class == "Machine" then
-        if self.proto.category == object.proto.category
+        local new_category_id = global.all_machines.map[self.proto.category]
+        local new_machine_map = global.all_machines.categories[new_category_id].map
+
+        if new_machine_map[object.proto.name] ~= nil
           and Line.is_machine_applicable(self.parent, object.proto) then
             object.parent = self.parent
             self.parent.machine = object

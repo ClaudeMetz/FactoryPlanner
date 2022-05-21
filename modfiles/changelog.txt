@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed a crash when loading a previous save in very specific circumstances
     - Fixed a crash related to item search rate limiting
     - Fixed a crash when right-clicking the subfactory dialog rich text buttons
+    - Fixed that machines could not always be pasted even when they should have been allowed to
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.42
