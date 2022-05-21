@@ -6,17 +6,18 @@ options_dialog = {}
 
 -- ** CHOOSER **
 local function add_chooser_button(modal_elements, definition)
-    local style, indication = "flib_slot_button_default", ""
+    local style, note = "flib_slot_button_default", nil
 
     if definition.selected then
         style = "flib_slot_button_green"
-        indication = {"fp.indication", {"fp.selected"}}
+        note = {"fp.selected"}
     elseif definition.preferred then
         style = "flib_slot_button_pink"
-        indication = {"fp.indication", {"fp.preferred"}}
+        note = {"fp.preferred"}
     end
 
-    local first_line = {"fp.two_word_title", definition.localised_name, indication}
+    local first_line = (note == nil) and {"fp.tt_title", definition.localised_name}
+      or {"fp.tt_title_with_note", definition.localised_name, note}
     local tooltip = {"", first_line, "\n", definition.amount_line, "\n\n", definition.tooltip_appendage}
 
     modal_elements.choices_table.add{type="sprite-button", style=style, tooltip=tooltip,
@@ -24,9 +25,9 @@ local function add_chooser_button(modal_elements, definition)
       sprite=definition.sprite, number=definition.button_number, mouse_button_filter={"left"}}
 end
 
-local function handler_chooser_button_click(player, tags, metadata)
+local function handler_chooser_button_click(player, tags, event)
     local handler_name = data_util.get("modal_data", player).click_handler_name
-    GENERIC_HANDLERS[handler_name](player, tags.element_id, metadata)
+    GENERIC_HANDLERS[handler_name](player, tags.element_id, event)
 
     modal_dialog.exit(player, "cancel")
 end
@@ -34,8 +35,8 @@ end
 chooser_dialog.dialog_settings = (function(modal_data)
     local info_tag = (modal_data.text_tooltip) and "[img=info]" or ""
     return {
-        caption = {"fp.two_word_title", {"fp.choose"}, modal_data.title},
-        subheader_text = {"fp.chooser_text", modal_data.text, info_tag},
+        caption = {"", {"fp.choose"}, " ", modal_data.title},
+        subheader_text = {"", modal_data.text, " ", info_tag},
         subheader_tooltip = (modal_data.text_tooltip or ""),
         create_content_frame = true
     }
@@ -67,10 +68,10 @@ chooser_dialog.gui_events = {
 
 -- ** OPTIONS **
 -- ** LOCAL UTIL **
-local function call_change_handler(player, tags, metadata)
+local function call_change_handler(player, tags, event)
     local modal_data = data_util.get("modal_data", player)
     local handler_name = modal_data.field_handlers[tags.field_name]
-    if handler_name then GENERIC_HANDLERS[handler_name](modal_data, metadata) end
+    if handler_name then GENERIC_HANDLERS[handler_name](modal_data, event) end
 end
 
 -- ** ELEMENTS **

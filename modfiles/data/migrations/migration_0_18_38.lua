@@ -31,7 +31,7 @@ function migration.subfactory(subfactory)
             line.Module = nil
 
             line.machine.module_count = module_count
-            Machine.summarize_effects(line.machine)
+            line.machine.total_effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
 
             if line.beacon then
                 line.beacon.module.category = nil

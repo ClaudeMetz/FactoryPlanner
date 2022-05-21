@@ -70,8 +70,9 @@ local actions = {
         set_machine_default(player, "assembling-machine-2", "crafting-with-fluid")
 
         -- Subfactories
-        local import_string = "eNrtWW1v2yAQ/isen+MqSfdS5ds2adKkTaraD9O0VRbG5+Y2DB7gaFHU/77DJk3apHPcpk1f8i2Gh+O5uwcOwowVOksmYCxqxUZscDA4GPZZj8HfUhuXUK8Fx0YzlnILAXD4hgA5F06baSm5UmCWh+YSU/ruH7w76LOLHrNV2oARLBv9mDHFC2/qRGtnCY/CTz1jblr6ZnRQUGsAobJgHE1AhhwWYAWX1P62TwjtvEFG4GOjs0rUPHX6CwTZHc1oRPORCMmtR35uTM8/P2opqdt77q3rMsml1sZb+YIK2qzVmJusSZiAZKPBov9Tbfti0XA6j8uUWi+jclqAJH+n7IX4+x34ODoVCErAqzY1lI3fNGdsmyFxycXv/4gjjo5JoZGuXGQJClEYFy1M/VRx9P5PhQYiHuVox5HTUVqhzKLTEjOSn2lA31BKPy7lqZxGCiCLCk2jkPojThPoguxqVO6GFJH2abjTvrHFI1o2WJQSc4SMjZypoHclJOSxgZp0lvBCV6qeKYOckpQl6ZRwobk3/zEaHPVD3kO2GrPz/MwZX5xtU0jk8zUB+f2gA9yAwLIG3SV2gjs499IbMWF47lCde+4LE0mIbtOyLPSThgChSb04gbnJTHvuOZeWPkowApTj59Q06JMACy7GwbnrvMksFKkkCnFAxYddSOea5kokFugu5/9KrCVsqrYJumlc1EPap14eVEchyOn1IkRh9jXKCT03aafhkIhViyF8hEmBhz3hujuhp4V/XiYBuET+aD73Oru2pLW9cXxq9LLt4WpgFi0fAhW/BW6sdMNRPkVZD+9B1msqUyeR9deIrFMy/HYfW4dPc6d5likBb9qgiPPKKF7HdJ+Yx5CYNQVnn5sby/OVujPcRt25Y0Eersv/2a1uBsOVm0EnIfFswumAl8UCjajQ7Q95+0PeMzvkNUVMKypjOxF583tfxVb9FLqksMSC7v2wz8lG1av7ghpsfacZ3DXv1gHIuJTEutUd/7fdLutN1yPwMuGnsg6to+jEqdng6rXPx0PchItSU05MXCemzcOUWwqH1RKz3WelQOW3yMyglB2J7+x8v2aH7G12/Bve9vi3/SvF4Z2vlAR0lI+Um9a6NoYCrasfHHZSjGsCgtc1RLlOdJ/KHtAsDo3ko9ECrPV7WIuj19A7So5nYeoHk/q1rSPjR3I/O3yQBbrz+9nwnu5nZw/0ytn2sGkvHxpfzEM3f94v3GcX/wDBKHAm"
-        data_util.add_subfactories_by_string(player, import_string, true)
+        local import_string = "eNrtWVtr2zAU/iuZnusuzrqxGfayQWGwwmieRglGlo9bbZKlSXJYCPnvO7KVxKQpidu0aVdDHyrp6Fy+c5UzJ1Ll6RSM5aokCYlP49OzmJwQ+KuVcSmeWnAkmZOMWggE7z8hQSF4huvhaYx/fk2ZU2amBS1LMGtWixNiq6w55WBJcjUnJZWe1xWX15+5A/mWlxaMAzMZXCrlLLJzXIJlVCDdh+EJKZXzdwme/DAqr1itk8p+AUPyZI5SmkXKBLWe8hvyRerl8qsSAo+9lUjrlE4LoZTxXL7zEnZxq2nu4iZgCoIk8fr8vOa9WG+MlxDMcHcFwFiCQKtnr8XetcN1YxQyjCzjUDKINGW/J4OfQG8G42brTWdcMLaQs1N+M8i8QxIysFxqwQsOOUmcqQCFzbS/4jX0xlCpqhIFxB9RsoE/FTeQp8vdOcmhQJjyNJvhpbC9cStDB6dBpYIKC8EZAcJG7BK0pUWLySG9i5hseNXnYwdyA4zrmugh2DLq4NrHQ0KYoYXj5bXXfc0iDeg3O+3ou2wU8B5ByiksWebK617DiozAMCgdvcateIjQS8pugnGbeiNbkJlAFaJAFb3ronShUFYquORuJR8rZSUgDdWyWdl9g3PK3Sxq7uzWpH2pHaZna8QualbbAimc3BVKwQq24ghSu1lqha/KyXBTwhitbWX9RYB84QOfMt9RbtscTnYYWeg0ELYs/HhPmK0GyPfGt6Zuix0dHNhRR2C/BCh8Ld07Ow3l4iWm4ujxU3FLx+vkv+GG/0b7JkYnB3LjC6vjT11Rm/97Lx7Gi+DlG86iojIlrd3Qp+RLdeaWht37815tePQC2/A6Zib3ejGNbr2YOgUfzacUZ+w8Ytywirt+zu7n7H7OPvqc3TR4VWKLP0pi9uPaITs8UxqhjBjNnrq19348pB+tAxCRFmj5zkLkP8Mes092fSK0FX6ePfIZzWp9j3wGPdI6zI0oM3t8yzhsNnYvqk3hOFAmFpWf+7cIUYLnUX26q17fgOSMirYLzv29xTFq9fBxPnRJrTBCTFSHyS5EMmqxVNYIHitGVgVb8tJ339xwITrq/Xqe1fEjP6sf8kOk1TwH48f3yeC1/AxL/29DJ4t/0glIrA=="
+        data_util.add_subfactories_by_string(player, import_string)
+        main_dialog.refresh(player, "all")
 
         local trash = Factory.get_by_gui_position(player_table.factory, "Subfactory", 5)
         Factory.remove(player_table.factory, trash)
@@ -104,7 +105,20 @@ local actions = {
         main_dialog.toggle(player)
     end,
 
-    setup_02_item_picker = function(player)
+    setup_02_compact_interface = function(player)
+        data_util.get("main_elements", player).main_frame.location = player.display_resolution  -- hack city
+        view_state.select(player, 2)
+        local toggle_handler = get_handler(title_bar.gui_events.on_gui_click, "switch_to_compact_view")
+        toggle_handler(player, nil, nil)
+    end,
+    teardown_02_compact_interface = function(player)
+        local compact_frame = data_util.get("compact_elements", player).compact_frame
+        return_dimensions("02_compact_interface", compact_frame)
+        local toggle_handler = get_handler(compact_dialog.gui_events.on_gui_click, "switch_to_main_view")
+        toggle_handler(player, nil, nil)
+    end,
+
+    setup_03_item_picker = function(player)
         local modal_data = {object=nil, item_category="product"}
         open_modal(player, "picker", modal_data)
 
@@ -120,36 +134,36 @@ local actions = {
         modal_elements.belt_amount_textfield.text = "0.5"
         modal_elements.belt_choice_button.elem_value = "fast-transport-belt"
         local belt_handler = get_handler(picker_dialog.gui_events.on_gui_elem_changed, "picker_choose_belt")
-        belt_handler(player, nil, {elem_value="fast-transport-belt"})
+        belt_handler(player, nil, {element=modal_elements.belt_choice_button, elem_value="fast-transport-belt"})
 
         modal_elements.search_textfield.focus()
     end,
-    teardown_02_item_picker = (function(player) modal_teardown(player, "02_item_picker") end),
+    teardown_03_item_picker = (function(player) modal_teardown(player, "03_item_picker") end),
 
-    setup_03_recipe_picker = function(player)
+    setup_04_recipe_picker = function(player)
         local product_proto = prototyper.util.get_new_prototype_by_name("items", "petroleum-gas", "fluid")
         local modal_data = {product_proto=product_proto, production_type="produce"}
         open_modal(player, "recipe", modal_data)
     end,
-    teardown_03_recipe_picker = (function(player) modal_teardown(player, "03_recipe_picker") end),
+    teardown_04_recipe_picker = (function(player) modal_teardown(player, "04_recipe_picker") end),
 
-    setup_04_beacon = function(player)
+    setup_05_machine = function(player)
         local floor = data_util.get("context", player).floor
         local line = Collection.get_by_gui_position(floor.Line, 2)
-        local modal_data = {object=line.beacon, line=line}
-        open_modal(player, "beacon", modal_data)
+        local modal_data = {object=line.machine, line=line}
+        open_modal(player, "machine", modal_data)
     end,
-    teardown_04_beacon = (function(player) modal_teardown(player, "04_beacon") end),
+    teardown_05_machine = (function(player) modal_teardown(player, "05_machine") end),
 
-    setup_05_import = function(player)
+    setup_06_import = function(player)
         open_modal(player, "import", nil)
 
-        local import_string = "eNrtWdtu2zAM/RVPz3GRuLsUeVsHDBiwAUX7MAxbYcgy3XKVJU+SgwVB/32UrTRpms5xb1m7vMUSRR2SR6QYzVip83QCxqJWbMxGe6O9ZMgGDH5X2riUZi04Np6xYxBYwaHWFySW7L3bG5FUxi2EVftv6LvgwmkzrSRXCsyyvkJiRt9DWjhklwNm66wVRrBs/H3GFC+9qmOtnSV5FB7PjLlp5YfRQUmjQQiVBeNoA1LksAQruKTxt0OS0M4rZCR8ZHReiwa8zn6CIL3jGa1oP1IhufWSn1rV888PWkqa9u7w2nWVFlJr47V8RgVd2hqZ27RJmIBk49Fi/mOj+3IxcDL3y5RGr7xyUoIke6fsP7H3G/Dz6EQgKAGvuthQtXbTnrFtl8QVFxd/IUccHRFDI127yJIoRGFdtFD1Q8XR+181Goh4VKA9j5yOshplHp1UmBP9TCv0FaX06zKeyWmkAPKo1LQKaT7itIEuSa9G5W4JEXGfljvtBzssomODZSWxQMjZ2JkaBtdcQhYbaEDnKS91rZqdcigoSHmaTUkuDA/mP8ajg2GIe4hWq3Yenzniy9OHJBLZvEIgnw96iJsmG3mh+/hOcAdnnnpjJgwvHKozj32hIg3ebUeWid6mQy9N7MUJzFXm2mMvuLT0UYERoBw/o6HRkAhYcnEejFvFTWqhzCRBiINUvN8HdKFpr1Riie5q/y+EWsKmbJugm8Zls6R76+VFjRcCnV4vXBR2X8OcMHMbd1oMqbipMbiPZDLgISesmhNmOvAXVRoEl8AfzPdep9dWdLY39k8jvaw7uemYxchhgOJT4MZMNxzlc6R18gi0XlOZepFsuIZkvYLh031sHT7PTPMiQwJetUERF7VRvPHpLjD/QmDWFJxdbG4tz9fqTvIQdeeeBTlZF//TO3UGyY3OoBeReD7hdMHLY4FG1Oh2l7zdJe+FXfLaIqYVlbGtkLz9vatiN+0UuiK3xIL6ftjFZKPq1f9AjR4804zuG3frAGRcSULdaY7/226b9abvFXgZ8HM5h9aRd+LMbNB67eLxFJ1wWWmKiYmbwHRZmHFL7rBaYr79qJSofIrMDUrZE/jW7vdrMuRgs+tfctfr38O3FPv3bilJ0FE8Mm4669o5lGhd8+CwlWLcABC8qSHK9YL7XHJAezg0ko1GC7DW57AOQ1ektxQcj8I0DybNa1tPxP9If7b/JAd06/1Z8kj92ekTvXJ2PWzaq4fGF/7QfXr5B3aFKGY="
+        local import_string = "eNrtWVtr2zAU/iuZnusuzrqxGfayQWGwwmieRglGlo9bbZKlSXJYCPnvO7KVxKQpidu0aVdDHyrp6Fy+c5UzJ1Ll6RSM5aokCYlP49OzmJwQ+KuVcSmeWnAkmZOMWggE7z8hQSF4huvhaYx/fk2ZU2amBS1LMGtWixNiq6w55WBJcjUnJZWe1xWX15+5A/mWlxaMAzMZXCrlLLJzXIJlVCDdh+EJKZXzdwme/DAqr1itk8p+AUPyZI5SmkXKBLWe8hvyRerl8qsSAo+9lUjrlE4LoZTxXL7zEnZxq2nu4iZgCoIk8fr8vOa9WG+MlxDMcHcFwFiCQKtnr8XetcN1YxQyjCzjUDKINGW/J4OfQG8G42brTWdcMLaQs1N+M8i8QxIysFxqwQsOOUmcqQCFzbS/4jX0xlCpqhIFxB9RsoE/FTeQp8vdOcmhQJjyNJvhpbC9cStDB6dBpYIKC8EZAcJG7BK0pUWLySG9i5hseNXnYwdyA4zrmugh2DLq4NrHQ0KYoYXj5bXXfc0iDeg3O+3ou2wU8B5ByiksWebK617DiozAMCgdvcateIjQS8pugnGbeiNbkJlAFaJAFb3ronShUFYquORuJR8rZSUgDdWyWdl9g3PK3Sxq7uzWpH2pHaZna8QualbbAimc3BVKwQq24ghSu1lqha/KyXBTwhitbWX9RYB84QOfMt9RbtscTnYYWeg0ELYs/HhPmK0GyPfGt6Zuix0dHNhRR2C/BCh8Ld07Ow3l4iWm4ujxU3FLx+vkv+GG/0b7JkYnB3LjC6vjT11Rm/97Lx7Gi+DlG86iojIlrd3Qp+RLdeaWht37815tePQC2/A6Zib3ejGNbr2YOgUfzacUZ+w8Ytywirt+zu7n7H7OPvqc3TR4VWKLP0pi9uPaITs8UxqhjBjNnrq19348pB+tAxCRFmj5zkLkP8Mes092fSK0FX6ePfIZzWp9j3wGPdI6zI0oM3t8yzhsNnYvqk3hOFAmFpWf+7cIUYLnUX26q17fgOSMirYLzv29xTFq9fBxPnRJrTBCTFSHyS5EMmqxVNYIHitGVgVb8tJ339xwITrq/Xqe1fEjP6sf8kOk1TwH48f3yeD//hl2svgHeOT7Fg=="
         local modal_elements = data_util.get("modal_elements", player)
         modal_elements.import_textfield.text = import_string
 
         local textfield_handler = get_handler(import_dialog.gui_events.on_gui_text_changed, "import_string")
-        textfield_handler(player, nil, {text=import_string})
+        textfield_handler(player, nil, {element=modal_elements.import_textfield, text=import_string})
 
         local import_handler = get_handler(import_dialog.gui_events.on_gui_click, "import_subfactories")
         import_handler(player, nil, nil)
@@ -158,17 +172,17 @@ local actions = {
         modal_elements.subfactory_checkboxes["tmp_3"].state = false
         modal_elements.master_checkbox.state = false
     end,
-    teardown_05_import = (function(player) modal_teardown(player, "05_import") end),
+    teardown_06_import = (function(player) modal_teardown(player, "06_import") end),
 
-    setup_06_utility = function(player)
+    setup_07_utility = function(player)
         open_modal(player, "utility", nil)
     end,
-    teardown_06_utility = (function(player) modal_teardown(player, "06_utility") end),
+    teardown_07_utility = (function(player) modal_teardown(player, "07_utility") end),
 
-    setup_07_preferences = function(player)
+    setup_08_preferences = function(player)
         open_modal(player, "preferences", nil)
     end,
-    teardown_07_preferences = (function(player) modal_teardown(player, "07_preferences") end)
+    teardown_08_preferences = (function(player) modal_teardown(player, "08_preferences") end)
 }
 
 local function initial_setup()

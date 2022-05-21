@@ -36,12 +36,18 @@ styles["fp_scroll-pane_slot_table"] = {
     }
 }
 
+styles["fp_flow_horizontal_centered"] = {
+    type = "horizontal_flow_style",
+    vertical_align = "center",
+    horizontal_spacing = 16
+}
+
 styles["fp_frame_slot_table"] = {
     type = "frame_style",
     parent = "filter_frame",
     top_padding = 4,
     bottom_padding = 12,
-    graphical_set = table.deepcopy(styles.filter_frame.graphical_set)
+    graphical_set = util.table.deepcopy(styles.filter_frame.graphical_set)
 }
 styles["fp_frame_slot_table"].graphical_set.base.bottom = nil
 
@@ -148,7 +154,7 @@ styles["fp_sprite-button_inset_tiny"] = {
     size = 32
 }
 
-styles["fp_sprite-button_inset_production"] = {
+styles["fp_sprite-button_inset_add"] = {
     type = "button_style",
     parent = "fp_sprite-button_inset_tiny",
     margin = 2,  -- used to offset the smaller size
@@ -162,6 +168,19 @@ styles["fp_sprite-button_group_tab"] = {
     width = 0,
     natural_width = 71,
     disabled_graphical_set = styles.button.selected_graphical_set
+}
+
+styles["fp_sprite-button_disabled_recipe"] = {
+    type = "button_style",
+    parent = "flib_slot_button_grey_small",
+    left_margin = 16
+}
+
+styles["fp_button_move_row"] = {
+    type = "button_style",
+    parent = "button",
+    size = 14,
+    padding = -1
 }
 
 -- Text button in the style of icon tool buttons, for use in the title bar
@@ -231,13 +250,6 @@ styles["fp_button_fake_listbox_item_active"] = {
     clicked_graphical_set = styles.button.selected_clicked_graphical_set,
     default_font_color = styles.button.selected_font_color,
     default_vertical_offset = styles.button.selected_vertical_offset
-}
-
--- Need custom style to get rid of the tooltip vanilla and thus flib includes
-styles["fp_button_slot_green"] = {
-    type = "button_style",
-    parent = "flib_tool_button_light_green",
-    tooltip = ""
 }
 
 -- Generate smaller versions of flib's slot buttons (size 36)

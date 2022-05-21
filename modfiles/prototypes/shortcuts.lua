@@ -5,7 +5,7 @@ data:extend({
         action = "lua",
         toggleable = false,
         order = "fp-a[open]",
-        associated_control_input = "fp_toggle_main_dialog",
+        associated_control_input = "fp_toggle_interface",
         icon =
         {
             filename = "__factoryplanner__/graphics/shortcut_open_x32.png",
