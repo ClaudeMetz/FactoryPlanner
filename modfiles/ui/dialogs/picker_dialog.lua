@@ -397,7 +397,7 @@ function picker_dialog.close(player, action)
                 local translations = player_table.translation_tables
                 local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
                 local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "] " .. translated_name
-                subfactory_list.add_subfactory(player, subfactory_name)  -- sets context to new subfactory
+                subfactory = subfactory_list.add_subfactory(player, subfactory_name)
                 refresh_scope = "all"  -- need to refresh subfactory list too
             end
 

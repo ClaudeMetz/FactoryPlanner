@@ -265,6 +265,8 @@ function subfactory_list.add_subfactory(player, name)
     local context = data_util.get("context", player)
     Factory.add(context.factory, subfactory)
     ui_util.context.set_subfactory(player, subfactory)
+
+    return subfactory
 end
 
 -- Utility function to centralize subfactory deletion behavior
