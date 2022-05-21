@@ -2,11 +2,12 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    - Updated Korean localisation (Thanks x2605!)
+    - Added partial Portuguese localisation (Thanks ctgPi!)
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.43
