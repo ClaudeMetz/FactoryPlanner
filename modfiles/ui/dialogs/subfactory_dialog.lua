@@ -12,6 +12,7 @@ local function add_rich_text(player, tags, event)
     local modal_elements = data_util.get("modal_elements", player)
     local subfactory_name = modal_elements.subfactory_name.text
     local type, elem_value = tags.type, event.element.elem_value
+    if elem_value == nil then return end  -- no need to do anything here
 
     if type == "signal" then
         -- Signal types are insanely stupid
