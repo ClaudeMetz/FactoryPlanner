@@ -220,7 +220,8 @@ function ui_util.clipboard.copy(player, object)
     local player_table = data_util.get("table", player)
     player_table.clipboard = {
         class = object.class,
-        object = _G[object.class].pack(object)
+        object = _G[object.class].pack(object),
+        parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
     ui_util.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
 end
@@ -235,7 +236,7 @@ function ui_util.clipboard.paste(player, target)
     else
         local level = (clip.class == "Line") and target.parent.level or nil
         local clone = _G[clip.class].unpack(util.table.deepcopy(clip.object), level)
-        clone.parent = target.parent
+        clone.parent = clip.parent  -- not very elegant to retain the parent here, but it's an easy solution
         _G[clip.class].validate(clone)
 
         local success, error = _G[target.class].paste(target, clone)
