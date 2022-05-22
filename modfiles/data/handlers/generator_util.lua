@@ -418,7 +418,7 @@ end
 
 -- Adds the tooltip for the given recipe
 function generator_util.add_recipe_tooltip(recipe)
-    local tooltip = {"", {"fp.bold_title", recipe.localised_name}}
+    local tooltip = {"", {"fp.tt_title", recipe.localised_name}}
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
