@@ -219,6 +219,7 @@ function compact_subfactory.build(player)
     flow_view_state.style.padding = {4, 4, 0, 0}
     flow_view_state.add{type="empty-widget", style="flib_horizontal_pusher"}
 
+    view_state.rebuild_state(player)  -- initializes the view_state
     local table_view_state = view_state.build(player, flow_view_state)
     compact_elements["view_state_table"] = table_view_state
 
