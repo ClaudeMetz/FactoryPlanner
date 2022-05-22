@@ -280,7 +280,7 @@ end
 function NTH_TICK_HANDLERS.run_delayed_modal_search(metadata)
     local player = game.get_player(metadata.player_index)
     local modal_data = data_util.get("modal_data", player)
-    if not modal_data then return end
+    if not modal_data or not modal_data.modal_elements then return end
 
     local searchfield = modal_data.modal_elements.search_textfield
     local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
