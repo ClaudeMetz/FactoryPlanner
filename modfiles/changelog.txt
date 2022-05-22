@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.45
+Date: 22. 05. 2022
   Bugfixes:
     - Fixed a couple of locale issues
     - Re-fixed a crash related to item search rate limiting
