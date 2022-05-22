@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.46
+Date: 22. 05. 2022
   Bugfixes:
     - Fixed a crash when opening the main interface in some circumstances
 
