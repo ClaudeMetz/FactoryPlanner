@@ -2,12 +2,18 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.47
+Date: 23. 05. 2022
   Changes:
     - Updated Russian localisation (Thanks Astorin!)
     - The preference to hide crating recipes now also works for the 'Deadlock's Crating Machine' mod
-  Bugfixes:
-    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.46
