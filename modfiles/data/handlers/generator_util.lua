@@ -291,6 +291,7 @@ local compacting_recipe_mods = {
     ["base"] = {"^fill%-.*", "^empty%-.*"},
     ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
+    ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
     ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"},
     ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"}
 }
