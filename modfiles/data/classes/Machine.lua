@@ -136,7 +136,7 @@ function Machine.validate(self)
 
     if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
 
-    self.valid = ModuleSet.validate(self.module_set)
+    self.valid = ModuleSet.validate(self.module_set) and self.valid
 
     return self.valid
 end
