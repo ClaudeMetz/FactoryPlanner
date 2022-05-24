@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a few minor UI issues related to the production table
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.48

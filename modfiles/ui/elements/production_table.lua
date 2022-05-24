@@ -203,7 +203,7 @@ end
 
 function builders.power(line, parent_flow, metadata)
     local pollution_line = (metadata.pollution_column) and ""
-      or {"", {"fp.pollution"}, ": ", ui_util.format_SI_value(line.pollution, "P/m", 5)}
+      or {"", "\n", {"fp.pollution"}, ": ", ui_util.format_SI_value(line.pollution, "P/m", 5)}
     parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
       tooltip={"", ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
 end
@@ -238,7 +238,7 @@ function builders.products(line, parent_flow, metadata)
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_product", line_id=line.id,
           class="Product", item_id=product.id}, sprite=product.proto.sprite, style=style, number=amount,
-          tooltip=tooltip, enabled=(not line.subfloor), mouse_button_filter={"left-and-right"}}
+          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_product::
     end
@@ -253,8 +253,8 @@ function builders.byproducts(line, parent_flow, metadata)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tutorial_tooltip = (not line.subfloor) and metadata.byproduct_tutorial_tt or ""
-        local tooltip = {"", {"fp.tt_title", byproduct.proto.localised_name}, number_line, tutorial_tooltip}
+        local tooltip = {"", {"fp.tt_title", byproduct.proto.localised_name}, number_line,
+          metadata.byproduct_tutorial_tt}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_byproduct", line_id=line.id,
           class="Byproduct", item_id=byproduct.id}, sprite=byproduct.proto.sprite, style="flib_slot_button_red_small",
