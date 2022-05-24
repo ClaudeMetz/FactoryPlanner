@@ -90,7 +90,11 @@ local function handle_machine_click(player, tags, action)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "edit" then
+    if action == "put_into_cursor" then
+        ui_util.put_into_cursor(player, tags, nil)
+        main_dialog.toggle(player)
+
+    elseif action == "edit" then
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
 
     elseif action == "copy" then
@@ -133,7 +137,11 @@ local function handle_beacon_click(player, tags, action)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
-    if action == "edit" then
+    if action == "put_into_cursor" then
+        ui_util.put_into_cursor(player, tags, nil)
+        main_dialog.toggle(player)
+
+    elseif action == "edit" then
         modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
 
     elseif action == "copy" then
@@ -313,6 +321,7 @@ production_handler.gui_events = {
         {
             name = "act_on_line_machine",
             modifier_actions = {
+                put_into_cursor = {"left"},
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
@@ -328,6 +337,7 @@ production_handler.gui_events = {
         {
             name = "act_on_line_beacon",
             modifier_actions = {
+                put_into_cursor = {"left"},
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
