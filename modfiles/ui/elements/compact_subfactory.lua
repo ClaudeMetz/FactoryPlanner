@@ -115,8 +115,8 @@ local function add_machine_flow(parent_flow, line)
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
         local machine_proto = line.machine.proto
 
-        local machine_count = math.ceil(line.machine.count)
         local tooltip_count = ui_util.format_number(line.machine.count, 4)
+        local machine_count = math.ceil(tooltip_count)  -- button count always rounded up here
         if machine_count == "0" and line.production_ratio > 0 then
             tooltip_count = "<0.0001"
             machine_count = "0.01"  -- shows up as 0.0 on the button
