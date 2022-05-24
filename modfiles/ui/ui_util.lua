@@ -49,6 +49,30 @@ function ui_util.create_cursor_blueprint(player, blueprint_entities)
     script_inventory.destroy()
 end
 
+function ui_util.put_into_cursor(player, tags, _)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local object = line[tags.type]
+
+    if game.entity_prototypes[object.proto.name].has_flag("not-blueprintable") then return end
+
+    local module_list = {}
+    for _, module in pairs(ModuleSet.get_in_order(object.module_set)) do
+        module_list[module.proto.name] = module.amount
+    end
+
+    local blueprint_entity = {
+        entity_number = 1,
+        name = object.proto.name,
+        position = {0, 0},
+        items = module_list,
+        recipe = (tags.type == "machine") and line.recipe.proto.name or nil
+    }
+
+    ui_util.create_cursor_blueprint(player, {blueprint_entity})
+end
+
 
 -- This function is only called when Recipe Book is active, so no need to check for the mod
 function ui_util.open_in_recipebook(player, type, name)

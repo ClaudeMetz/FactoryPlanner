@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    - Re-added the 'put into cursor' action to the main interface (bound to a simple left click on machines and beacons)
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.47

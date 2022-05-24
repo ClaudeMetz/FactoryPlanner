@@ -23,10 +23,10 @@ translator = require("__flib__.dictionary")  -- translation module for localised
 require("data.init")
 require("data.data_util")
 
+require("ui.ui_util")
 require("ui.dialogs.main_dialog")
 require("ui.dialogs.compact_dialog")
 require("ui.dialogs.modal_dialog")
-require("ui.ui_util")
 require("ui.event_handler")
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog

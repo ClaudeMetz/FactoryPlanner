@@ -176,31 +176,6 @@ local function add_item_flow(line, item_class, button_color, metadata)
 end
 
 
-local function put_into_cursor(player, tags, _)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-    -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local object = line[tags.type]
-
-    if game.entity_prototypes[object.proto.name].has_flag("not-blueprintable") then return end
-
-    local module_list = {}
-    for _, module in pairs(ModuleSet.get_in_order(object.module_set)) do
-        module_list[module.proto.name] = module.amount
-    end
-
-    local blueprint_entity = {
-        entity_number = 1,
-        name = object.proto.name,
-        position = {0, 0},
-        items = module_list,
-        recipe = (tags.type == "machine") and line.recipe.proto.name or nil
-    }
-
-    ui_util.create_cursor_blueprint(player, {blueprint_entity})
-end
-
-
 -- ** TOP LEVEL **
 function compact_subfactory.build(player)
     local ui_state = data_util.get("ui_state", player)
@@ -341,7 +316,7 @@ compact_subfactory.gui_events = {
         },
         {
             name = "put_into_cursor",
-            handler = put_into_cursor
+            handler = ui_util.put_into_cursor
         }
     },
     on_gui_checked_state_changed = {

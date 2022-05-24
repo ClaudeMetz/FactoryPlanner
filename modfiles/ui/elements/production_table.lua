@@ -158,8 +158,8 @@ function builders.machine(line, parent_flow, metadata)
         local tooltip = {"", {"fp.tt_title", line.machine.proto.localised_name}, number_line,
           line.machine.effects_tooltip, metadata.machine_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_machine", line_id=line.id},
-          style=style, sprite=line.machine.proto.sprite, number=machine_count, tooltip=tooltip,
+        parent_flow.add{type="sprite-button", style=style, sprite=line.machine.proto.sprite, number=machine_count,
+          tags={mod="fp", on_gui_click="act_on_line_machine", line_id=line.id, type="machine"}, tooltip=tooltip,
           mouse_button_filter={"left-and-right"}}
 
         -- Modules
@@ -188,8 +188,8 @@ function builders.beacon(line, parent_flow, metadata)
           metadata.beacon_tutorial_tt}
 
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
-          tags={mod="fp", on_gui_click="act_on_line_beacon", line_id=line.id}, style="flib_slot_button_default_small",
-          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+          tags={mod="fp", on_gui_click="act_on_line_beacon", line_id=line.id, type="beacon"},
+          style="flib_slot_button_default_small", tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
             local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
