@@ -157,8 +157,8 @@ end
 local function add_item_flow(line, item_class, button_color, metadata)
     local column_count = metadata.column_counts[item_class]
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
-
     local item_table = metadata.parent.add{type="table", column_count=column_count}
+
     for _, item in ipairs(Line.get_in_order(line, item_class)) do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
@@ -172,6 +172,21 @@ local function add_item_flow(line, item_class, button_color, metadata)
           style="flib_slot_button_" .. button_color .. "_small", enabled=false}
 
         ::skip_item::
+    end
+
+    if item_class == "Ingredient" and not line.subfloor and line.machine.fuel then
+        local fuel, machine_count = line.machine.fuel, line.machine.count
+        local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, machine_count)
+        if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
+
+        local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
+        local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
+        local tooltip = {"", name_line, number_line}
+
+        item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
+          number=amount, tooltip=tooltip, enabled=false}
+
+        ::skip_fuel::
     end
 end
 
