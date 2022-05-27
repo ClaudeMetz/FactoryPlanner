@@ -2,10 +2,11 @@
 module_configurator = {}
 
 -- ** LOCAL UTIL**
-local function add_module_frame(parent_flow, module, module_filters, empty_slots)
+local function add_module_frame(parent_flow, index, module, module_filters, empty_slots)
     local module_id = module and module.id or nil
 
-    local frame_module = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal"}
+    local frame_module = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal",
+      index=index, tags={module_id=module_id}}
     frame_module.add{type="label", caption={"fp.pu_module", 1}}
 
     local module_name = (module) and module.proto.name or nil
@@ -71,7 +72,7 @@ local function handle_module_slider_change(player, tags, event)
     if tags.module_id then  -- editing an existing module
         local module = ModuleSet.get(module_set, tags.module_id)
         Module.set_amount(module, new_slider_value)
-        module_configurator.refresh_modules_flow(player)
+        module_configurator.refresh_modules_flow(player, tags.module_id)
     else  -- empty line, no influence on anything else
         module_textfield.text = tostring(new_slider_value)
     end
@@ -108,20 +109,32 @@ function module_configurator.add_modules_flow(content_frame, modal_data)
     modal_data.modal_elements["modules_flow"] = flow_modules
 end
 
-function module_configurator.refresh_modules_flow(player)
+function module_configurator.refresh_modules_flow(player, module_id_to_keep)
     local modal_data = data_util.get("modal_data", player)
     local modules_flow = modal_data.modal_elements.modules_flow
-    modules_flow.clear()
+
+    local index_map = {}
+    -- Selectively skip removing the module flow to keep so the slider can be dragger properly
+    for index, frame in pairs(modules_flow.children) do
+        local module_id = frame.tags.module_id
+        if module_id == nil or module_id ~= module_id_to_keep then
+            index_map[module_id or 0] = index  -- 0 for module_id == nil as it isn't used
+            frame.destroy()
+        end
+    end
 
     local module_filters = ModuleSet.compile_filter(modal_data.module_set)
     local empty_slots = modal_data.module_set.empty_slots
 
     for _, module in pairs(ModuleSet.get_in_order(modal_data.module_set)) do
-        add_module_frame(modules_flow, module, module_filters, empty_slots)
+        if module.id ~= module_id_to_keep then
+            add_module_frame(modules_flow, index_map[module.id], module, module_filters, empty_slots)
+        end
     end
 
     if empty_slots > 0 then
-        add_module_frame(modules_flow, nil, module_filters, empty_slots)
+        local index = #modules_flow.children + 1
+        add_module_frame(modules_flow, index, nil, module_filters, empty_slots)
     end
 
     if modal_data.submit_checker then modal_data.submit_checker(modal_data) end

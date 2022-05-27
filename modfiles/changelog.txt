@@ -10,6 +10,7 @@ Date: 00. 00. 0000
     - Fixed a few minor UI issues related to the production table
     - Fixed a minor rounding issue with compact view machines
     - Fixed an issue where disabling lines on subfloors wouldn't work
+    - Fixed an issue where the module slider wouldn't be properly draggable
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.48
