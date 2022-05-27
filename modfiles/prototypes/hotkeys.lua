@@ -9,7 +9,7 @@ data:extend({
     {
         type = "custom-input",
         name = "fp_toggle_compact_view",
-        key_sequence = "CONTROL + S",
+        key_sequence = "CONTROL + SHIFT + R",
         consuming = "game-only",
         order = "b"
     },
