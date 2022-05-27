@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed fuel not being shown in the compact view
     - Fixed a few minor UI issues related to the production table
     - Fixed a minor rounding issue with compact view machines
+    - Fixed an issue where disabling lines on subfloors wouldn't work
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.48

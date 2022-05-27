@@ -66,10 +66,11 @@ local function generate_floor_data(player, subfactory, floor)
             table.insert(floor_data.lines, line_data)
 
         else
-            local relevant_line = (line.parent.level > 1) and line.parent.defining_line or line
+            local relevant_line = (line.parent.level > 1) and line.parent.defining_line or nil
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if relevant_line.percentage == 0 or not relevant_line.active then
+            if line.percentage == 0 or not line.active or (line.parent.level > 1 and
+              (relevant_line.percentage == 0 or not relevant_line.active)) then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 line_data.recipe_proto = line.recipe.proto
