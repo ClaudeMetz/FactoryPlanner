@@ -73,7 +73,7 @@ local function handle_beacon_change(player, _, _)
     modal_data.dialog_beacon.proto = global.all_beacons.beacons[beacon_id]
     ModuleSet.normalize(modal_data.dialog_beacon.module_set, {compatibility=true, trim=true})
 
-    module_configurator.refresh_modules_flow(player)
+    module_configurator.refresh_modules_flow(player, false)
 end
 
 local function handle_beacon_selection(player, entities)
@@ -118,7 +118,7 @@ function beacon_dialog.open(player, modal_data)
     -- Modules
     modal_data.submit_checker = update_dialog_submit_button
     module_configurator.add_modules_flow(content_frame, modal_data)
-    module_configurator.refresh_modules_flow(player)
+    module_configurator.refresh_modules_flow(player, false)
 end
 
 function beacon_dialog.close(player, action)

@@ -162,7 +162,7 @@ local function handle_machine_choice(player, tags, _)
 
     refresh_machine_frame(player)
     refresh_fuel_frame(player)
-    module_configurator.refresh_modules_flow(player)
+    module_configurator.refresh_modules_flow(player, false)
 end
 
 local function handle_fuel_choice(player, tags, _)
@@ -228,7 +228,7 @@ function machine_dialog.open(player, modal_data)
 
     -- Modules
     module_configurator.add_modules_flow(content_frame, modal_data)
-    module_configurator.refresh_modules_flow(player)
+    module_configurator.refresh_modules_flow(player, false)
 end
 
 function machine_dialog.close(player, action)

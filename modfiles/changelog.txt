@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a few issues and crashes related to editing modules on machines and beacons.
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.49
