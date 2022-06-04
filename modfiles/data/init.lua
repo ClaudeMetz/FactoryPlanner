@@ -337,5 +337,12 @@ end)
 
 
 -- ** COMMANDS **
--- Allows running the config_changed function manually, to reset stuff (shouldn't be needed actually)
 commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}, handle_configuration_change)
+commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
+    translator.init()
+    prototyper.util.build_translation_dictionaries()
+
+    for _, player in pairs(game.players) do
+        if player.connected then translator.translate(player) end
+    end
+end)
