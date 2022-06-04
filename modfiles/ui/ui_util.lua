@@ -55,7 +55,12 @@ function ui_util.put_into_cursor(player, tags, _)
     -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
     local object = line[tags.type]
 
-    if game.entity_prototypes[object.proto.name].has_flag("not-blueprintable") then return end
+    local entity_prototype = game.entity_prototypes[object.proto.name]
+    if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
+      or entity_prototype.items_to_place_this == nil then
+        ui_util.create_flying_text(player, {"fp.error_put_into_cursor_failed", entity_prototype.localised_name})
+        return false
+    end
 
     local module_list = {}
     for _, module in pairs(ModuleSet.get_in_order(object.module_set)) do
@@ -71,6 +76,7 @@ function ui_util.put_into_cursor(player, tags, _)
     }
 
     ui_util.create_cursor_blueprint(player, {blueprint_entity})
+    return true
 end
 
 

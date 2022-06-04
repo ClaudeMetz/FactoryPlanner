@@ -91,8 +91,8 @@ local function handle_machine_click(player, tags, action)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if action == "put_into_cursor" then
-        ui_util.put_into_cursor(player, tags, nil)
-        main_dialog.toggle(player)
+        local success = ui_util.put_into_cursor(player, tags, nil)
+        if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
@@ -138,8 +138,8 @@ local function handle_beacon_click(player, tags, action)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if action == "put_into_cursor" then
-        ui_util.put_into_cursor(player, tags, nil)
-        main_dialog.toggle(player)
+        local success = ui_util.put_into_cursor(player, tags, nil)
+        if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
         modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
