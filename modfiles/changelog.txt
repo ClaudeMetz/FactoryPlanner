@@ -6,7 +6,8 @@ Date: 00. 00. 0000
   Changes:
     - Added a command to restart translation in case it hangs. Type '/fp-restart-translation' into the console to run it.
   Bugfixes:
-    - Fixed a few issues and crashes related to editing modules on machines and beacons.
+    - Fixed a few issues and crashes related to editing modules on machines and beacons
+    - Fixed a missing locale string
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.49
