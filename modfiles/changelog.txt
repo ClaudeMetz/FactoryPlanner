@@ -5,10 +5,11 @@ Date: 00. 00. 0000
     -
   Changes:
     - Added a command to restart translation in case it hangs. Type '/fp-restart-translation' into the console to run it.
-    - Changed it so the selected subfactory is retained during migrations if possible.
+    - Changed it so the selected subfactory is retained during migrations if possible
   Bugfixes:
     - Fixed a few issues and crashes related to editing modules on machines and beacons
     - Fixed a couple of migration issues when trying to load certain old saves
+    - Fixed a crash when loading a save where a now invalid subfactory was selected
     - Fixed a crash when trying to put machines into the cursor that can't be blueprinted
     - Fixed a missing locale string
 
@@ -16,7 +17,7 @@ Date: 00. 00. 0000
 Version: 1.1.49
 Date: 27. 05. 2022
   Bugfixes:
-    - Changes a keyboard shortcut that was interferring with game functionality.
+    - Changes a keyboard shortcut that was interferring with game functionality
     - Fixed fuel not being shown in the compact view
     - Fixed a few minor UI issues related to the production table
     - Fixed a minor rounding issue with compact view machines
