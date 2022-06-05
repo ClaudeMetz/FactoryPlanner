@@ -125,9 +125,20 @@ local function update_player_table(player)
     else  -- existing player, only needs to update
         reload_data()
 
-        -- If any subfactories exist, select the first one
-        local subfactories = Factory.get_in_order(player_table.factory, "Subfactory")
-        if #subfactories > 0 then ui_util.context.set_subfactory(player, subfactories[1]) end
+        local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
+        if #archive_subfactories > 0 then player_table.archive.selected_subfactory = archive_subfactories[1] end
+
+        local factory = player_table.factory
+        local subfactories = Factory.get_in_order(factory, "Subfactory")
+        if #subfactories > 0 then
+            local subfactory_to_select = subfactories[1]
+            if factory.selected_subfactory ~= nil then
+                -- Get the selected subfactory from the factory to make sure it still exists
+                local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
+                if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
+            end
+            ui_util.context.set_subfactory(player, subfactory_to_select)
+        end
     end
 
     -- Translation tables and clipboard are re-initialized every time
