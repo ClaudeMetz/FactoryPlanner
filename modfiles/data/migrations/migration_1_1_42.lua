@@ -2,6 +2,7 @@ local migration = {}
 
 local function migrate_modules(object)
     object.module_count = nil
+    if object.proto.simplified then object.proto = {module_limit = 0} end
     local module_set = ModuleSet.init(object)
     for _, module in pairs(object.Module.datasets) do
         ModuleSet.add(module_set, module.proto, module.amount)
