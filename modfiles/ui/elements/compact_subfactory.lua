@@ -258,7 +258,7 @@ function compact_subfactory.refresh(player)
     local ui_state = data_util.get("ui_state", player)
     local compact_elements = ui_state.compact_elements
     local subfactory = ui_state.context.subfactory
-    if not subfactory then return end
+    if not subfactory or not subfactory.valid then return end
 
     local current_level = subfactory.selected_floor.level
     local lines = Floor.get_in_order(ui_state.context.floor, "Line")
