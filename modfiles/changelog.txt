@@ -5,9 +5,10 @@ Date: 00. 00. 0000
     -
   Changes:
     - Added a command to restart translation in case it hangs. Type '/fp-restart-translation' into the console to run it.
+    - Changed it so the selected subfactory is retained during migrations if possible.
   Bugfixes:
     - Fixed a few issues and crashes related to editing modules on machines and beacons
-    - Fixed a migration issue when trying to load certain old saves
+    - Fixed a couple of migration issues when trying to load certain old saves
     - Fixed a crash when trying to put machines into the cursor that can't be blueprinted
     - Fixed a missing locale string
 
