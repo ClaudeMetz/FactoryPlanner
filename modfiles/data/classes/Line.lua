@@ -21,7 +21,6 @@ function Line.init(recipe)
         priority_product_proto = nil,  -- set by the user
         comment = nil,
         production_ratio = (is_standalone_line) and 0 or nil,
-        uncapped_production_ratio = (is_standalone_line) and 0 or nil,
         subfloor = nil,
         valid = true,
         class = "Line"

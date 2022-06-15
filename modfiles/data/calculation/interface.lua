@@ -18,7 +18,6 @@ local function set_blank_line(player, floor, line)
         energy_consumption = 0,
         pollution = 0,
         production_ratio = (not line.subfloor) and 0 or nil,
-        uncapped_production_ratio = (not line.subfloor) and 0 or nil,
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
@@ -277,7 +276,6 @@ function calculation.interface.set_line_result(result)
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
-        line.uncapped_production_ratio = result.uncapped_production_ratio
 
         -- Reset the priority_product if there's only one product
         if structures.class.count(result.Product) == 1 then line.priority_product_proto = nil end

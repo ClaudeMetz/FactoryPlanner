@@ -12,7 +12,6 @@ function structures.aggregate.init(player_index, floor_id)
         energy_consumption = 0,
         pollution = 0,
         production_ratio = nil,
-        uncapped_production_ratio = nil,
         Product = structures.class.init(),
         Byproduct = structures.class.init(),
         Ingredient = structures.class.init()

@@ -16,15 +16,16 @@ local function refresh_machine_frame(player)
     local current_proto = dialog_machine.proto
 
     local round_button_numbers = data_util.get("preferences", player).round_button_numbers
-    local timescale = ui_state.context.subfactory.timescale
 
+    local existing_crafts_per_tick = calculation.util.determine_crafts_per_tick(
+        line.machine.proto, line.recipe.proto, line.total_effects)
+    local existing_machine_count = line.machine.count
     for _, machine_proto in ipairs(category_prototypes) do
         if Line.is_machine_applicable(line, machine_proto) then
             -- Need to get total effects here to include mining productivity
             local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
               line.recipe.proto, line.total_effects)
-            local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
-              line.uncapped_production_ratio, timescale, machine_proto.launch_sequence_time)
+            local machine_count = existing_machine_count * existing_crafts_per_tick / crafts_per_tick
 
             local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
 

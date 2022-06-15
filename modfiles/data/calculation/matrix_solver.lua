@@ -396,7 +396,6 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
                 energy_consumption = line_aggregate.energy_consumption,
                 pollution = line_aggregate.pollution,
                 production_ratio = line_aggregate.production_ratio,
-                uncapped_production_ratio = line_aggregate.uncapped_production_ratio,
                 Product = line_aggregate.Product,
                 Byproduct = line_aggregate.Byproduct,
                 Ingredient = line_aggregate.Ingredient,
@@ -634,7 +633,6 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     local in_game_crafts_per_second = math.min(unmodified_crafts_per_second, 60)
     local total_crafts_per_timescale = timescale * machine_count * in_game_crafts_per_second
     line_aggregate.production_ratio = total_crafts_per_timescale
-    line_aggregate.uncapped_production_ratio = total_crafts_per_timescale
     for _, product in pairs(recipe_proto.products) do
         local prodded_amount = calculation.util.determine_prodded_amount(product, unmodified_crafts_per_second, total_effects)
         local item_key = matrix_solver.get_item_key(product.type, product.name)

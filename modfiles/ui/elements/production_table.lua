@@ -143,7 +143,7 @@ function builders.machine(line, parent_flow, metadata)
             if line.machine.force_limit then
                 style = "flib_slot_button_pink_small"
                 note = {"fp.machine_limit_force", machine_limit}
-            elseif line.production_ratio < line.uncapped_production_ratio then
+            elseif line.machine.count == line.machine.limit then
                 style = "flib_slot_button_orange_small"
                 note = {"fp.machine_limit_enforced", machine_limit}
             else
