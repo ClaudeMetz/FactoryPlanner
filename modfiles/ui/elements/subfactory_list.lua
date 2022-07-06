@@ -341,7 +341,7 @@ subfactory_list.gui_events = {
             handler = (function(player, _, _)
                 local context = data_util.get("context", player)
                 local clone = Subfactory.clone(context.subfactory)
-                local inserted_clone = Factory.add(context.factory, clone)
+                local inserted_clone = Factory.insert_at(context.factory, context.subfactory.gui_position+1, clone)
 
                 ui_util.context.set_subfactory(player, inserted_clone)
                 calculation.update(player, inserted_clone)
