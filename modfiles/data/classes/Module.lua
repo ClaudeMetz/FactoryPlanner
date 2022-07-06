@@ -40,6 +40,7 @@ function Module.paste(self, object)
             if ModuleSet.get_by_name(self.parent, object.proto.name) and object.proto.name ~= self.proto.name then
                 return false, "already_exists"
             else
+                object.amount = math.min(object.amount, self.parent.module_limit)
                 ModuleSet.replace(self.parent, self, object)
                 ModuleSet.summarize_effects(self.parent)
                 return true, nil
