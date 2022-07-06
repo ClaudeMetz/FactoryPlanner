@@ -138,6 +138,17 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     return frame_modal_dialog
 end
 
+local function apply_setting_overrides(base, overrides)
+    for k, v in pairs(overrides) do
+        local base_v = base[k]
+        if type(base_v) == "table" and type(v) == "table" then
+            apply_setting_overrides(base_v, v)
+        else
+            base[k] = v
+        end
+    end
+end
+
 
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
@@ -155,7 +166,7 @@ function modal_dialog.enter(player, dialog_settings)
     local dialog_object = _G[dialog_settings.type .. "_dialog"]
     if dialog_object.dialog_settings ~= nil then  -- collect additional settings
         local additional_settings = dialog_object.dialog_settings(ui_state.modal_data)
-        dialog_settings = util.merge{dialog_settings, additional_settings}
+        apply_setting_overrides(dialog_settings, additional_settings)
     end
 
     local early_abort = dialog_object.early_abort_check  -- abort early if necessary
