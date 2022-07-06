@@ -15,6 +15,12 @@ function Factory.add(self, object)
     return Collection.add(self[object.class], object)
 end
 
+function Factory.insert_at(self, gui_position, object)
+    object.parent = self
+    return Collection.insert_at(self[object.class], gui_position, object)
+end
+
+
 function Factory.remove(self, dataset)
     return Collection.remove(self[dataset.class], dataset)
 end
