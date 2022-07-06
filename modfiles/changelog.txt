@@ -2,17 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    - Made it so recipes that are marked as done in the compact subfactory view are greyed out
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.50
 Date: 05. 06. 2022
   Changes:
-    - Added a command to restart translation in case it hangs. Type '/fp-restart-translation' into the console to run it.
+    - Added a command to restart translation in case it hangs; Type '/fp-restart-translation' into the console to run it
     - Changed it so the selected subfactory is retained during migrations if possible
   Bugfixes:
     - Fixed a few issues and crashes related to editing modules on machines and beacons

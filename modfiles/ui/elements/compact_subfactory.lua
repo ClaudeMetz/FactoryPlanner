@@ -93,6 +93,7 @@ end
 local function add_recipe_button(parent_flow, line, relevant_line)
     local recipe_proto = relevant_line.recipe.proto
     local style = (line.subfloor ~= nil) and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
+    style = (line.done) and "flib_slot_button_grayscale_small" or style
     local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}}
     if line.subfloor ~= nil then table.insert(tooltip, {"", "\n", {"fp.compact_recipe_subfloor_tt"}}) end
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="open_compact_subfloor", line_id=line.id},
@@ -100,13 +101,14 @@ local function add_recipe_button(parent_flow, line, relevant_line)
       mouse_button_filter={"left"}}
 end
 
-local function add_modules_flow(parent_flow, module_set)
+local function add_modules_flow(parent_flow, module_set, line_done)
     for _, module in ipairs(ModuleSet.get_in_order(module_set)) do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
         local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line}
 
+        local style = (line_done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
         parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
-          number=module.amount, style="flib_slot_button_default_small", enabled=false}
+          number=module.amount, style=style, enabled=false}
     end
 end
 
@@ -126,12 +128,13 @@ local function add_machine_flow(parent_flow, line)
         local number_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}, "\n"}
         local action_line = {"fp.tut_action_line", {"fp.tut_left"}, {"fp.tut_put_into_cursor"}}
         local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, number_line, action_line}
+        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip,
           tags={mod="fp", on_gui_click="put_into_cursor", type="machine", line_id=line.id},
-          style="flib_slot_button_default_small", mouse_button_filter={"left"}}
+          style=style, mouse_button_filter={"left"}}
 
-        add_modules_flow(machine_flow, line.machine.module_set)
+        add_modules_flow(machine_flow, line.machine.module_set, line.done)
     end
 end
 
@@ -144,12 +147,13 @@ local function add_beacon_flow(parent_flow, line)
         local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}, "\n"}
         local action_line = {"fp.tut_action_line", {"fp.tut_left"}, {"fp.tut_put_into_cursor"}}
         local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line, action_line}
+        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
           tooltip=tooltip, tags={mod="fp", on_gui_click="put_into_cursor", type="beacon", line_id=line.id},
-          style="flib_slot_button_default_small", mouse_button_filter={"left"}}
+          style=style, mouse_button_filter={"left"}}
 
-        add_modules_flow(beacon_flow, line.beacon.module_set)
+        add_modules_flow(beacon_flow, line.beacon.module_set, line.done)
     end
 end
 
@@ -167,9 +171,11 @@ local function add_item_flow(line, item_class, button_color, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
+        local style = (line.done) and "flib_slot_button_grayscale_small"
+          or "flib_slot_button_" .. button_color .. "_small"
 
         item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
-          style="flib_slot_button_" .. button_color .. "_small", enabled=false}
+          style=style, enabled=false}
 
         ::skip_item::
     end
@@ -182,9 +188,10 @@ local function add_item_flow(line, item_class, button_color, metadata)
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line}
+        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
-        item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
-          number=amount, tooltip=tooltip, enabled=false}
+        item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
+          tooltip=tooltip, enabled=false}
 
         ::skip_fuel::
     end
@@ -341,6 +348,7 @@ compact_subfactory.gui_events = {
                 local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
                 local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
                 relevant_line.done = not relevant_line.done
+                compact_subfactory.refresh(player)
             end)
         }
     }

@@ -261,6 +261,12 @@ for _, color in pairs{"default", "grey", "red", "orange", "yellow", "green", "cy
     }
 end
 
+styles["flib_slot_button_grayscale_small"] = {
+    type = "button_style",
+    parent = "flib_slot_button_default_small",
+    draw_grayscale_picture = true
+}
+
 
 styles["fp_label_module_error"] = {
     type = "label_style",
