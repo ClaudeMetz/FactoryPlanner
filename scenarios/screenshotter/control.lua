@@ -12,7 +12,7 @@ script.on_event(defines.events.on_game_created_from_scenario, function()
     global.setup = function() remote.call("factoryplanner", "execute_action", 1, "player_setup") end
     global.dimensions = {}
 
-    remote.call("factoryplanner", "initial_setup")  -- set up before the player is created
+    global.protected_names = remote.call("factoryplanner", "initial_setup")
 end)
 
 
@@ -33,7 +33,8 @@ local function write_metadata_file()
         }
     end
 
-    game.write_file("dimensions.json", game.table_to_json(frame_corners))
+    local metadata = {frame_corners=frame_corners, protected_names=global.protected_names}
+    game.write_file("metadata.json", game.table_to_json(metadata))
 end
 
 
