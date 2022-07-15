@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Improved performance of opening dialogs (thanks curiosity!)
   Bugfixes:
     - Fixed an issue where pasting onto a module could make it exceed the total module capacity of the machine
+    - Fixed a very rare issue where the game could desync in multiplayer
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.50
