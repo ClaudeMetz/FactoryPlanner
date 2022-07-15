@@ -151,6 +151,9 @@ local function handle_gui_event(event)
     local tags = event.element.tags
     if tags.mod ~= "fp" then return end
 
+    -- Guard against an event being called before the player is initialized
+    if not global.players[event.player_index] then return end
+
     -- GUI events always have an associated player
     local player = game.get_player(event.player_index)
 
@@ -259,6 +262,9 @@ local function handle_misc_event(event)
     local event_name = event.input_name or event.name -- also handles keyboard shortcuts
     local event_handlers = misc_event_cache[misc_identifier_map[event_name]]
     if not event_handlers then return end  -- make sure the given event is even handled
+
+    -- Guard against an event being called before the player is initialized
+    if not global.players[event.player_index] then return end
 
     -- We'll assume every one of the events has a player attached
     local player = game.get_player(event.player_index)
