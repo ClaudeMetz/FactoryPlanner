@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.51
+Date: 16. 07. 2022
   Changes:
     - Changed the key combo for putting machines/beacons into the cursor in the main interface to Alt+Left-click to avoid accidental activation. issues.
     - Marking recipes as done in the compact subfactory view now grays them out
