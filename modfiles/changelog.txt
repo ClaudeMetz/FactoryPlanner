@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Improved performance of opening dialogs (thanks curiosity!)
   Bugfixes:
     - Fixed an issue where pasting onto a module could make it exceed the total module capacity of the machine
+    - Fixed a crash when loading certain old saves
     - Fixed a very rare issue where the game could desync in multiplayer
 
 ---------------------------------------------------------------------------------------------------
@@ -20,7 +21,7 @@ Date: 05. 06. 2022
   Bugfixes:
     - Fixed a few issues and crashes related to editing modules on machines and beacons
     - Fixed a couple of migration issues when trying to load certain old saves
-    - Fixed a crash when loading a save where a now invalid subfactory was selected
+    - Fixed a crash when loading a save where a now-invalid subfactory was selected
     - Fixed a crash when trying to put machines into the cursor that can't be blueprinted
     - Fixed a missing locale string
 

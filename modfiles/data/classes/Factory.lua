@@ -29,6 +29,10 @@ function Factory.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end
 
+function Factory.get_all(self, class)
+    return Collection.get_all(self[class])
+end
+
 function Factory.get_in_order(self, class, reverse)
     return Collection.get_in_order(self[class], reverse)
 end
