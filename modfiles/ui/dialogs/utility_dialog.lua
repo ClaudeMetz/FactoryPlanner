@@ -87,12 +87,12 @@ function utility_structures.components(player, modal_data)
 
         local button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
           caption={"fp.utility_blueprint"}, style="rounded_button", mouse_button_filter={"left"}}
-        button_blueprint.style.size = {85, 26}
+        button_blueprint.style.minimal_width = 0
         modal_elements.blueprint_button = button_blueprint
 
         local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
           style="rounded_button", mouse_button_filter={"left"}}
-        button_request.style.size = {115, 26}
+        button_request.style.minimal_width = 0
         modal_elements.request_button = button_request
 
         local table_components = components_box.add{type="table", column_count=2}

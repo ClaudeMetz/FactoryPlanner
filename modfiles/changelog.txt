@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Marking recipes as done in the compact subfactory view now grays them out
     - Duplicating a subfactory now inserts it right below the cloned subfactory instead of at the end
     - Improved performance of opening dialogs (thanks curiosity!)
+    - Improved the wording around the utility dialog component buttons
   Bugfixes:
     - Fixed an issue where pasting onto a module could make it exceed the total module capacity of the machine
     - Fixed a crash when loading certain old saves
