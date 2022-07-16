@@ -95,14 +95,26 @@ function migrator.migrate_player_table(player)
         local migrations = determine_migrations(player_table.mod_version)
 
         -- General migrations
+        local old_version = player_table.mod_version  -- keep for comparison below
         apply_migrations(migrations, "player_table", player_table, player)
         player_table.mod_version = global.mod_version
 
         -- Subfactory migrations
         for _, factory_name in pairs({"factory", "archive"}) do
-            for _, subfactory in pairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                apply_migrations(migrations, "subfactory", subfactory, player)
-                subfactory.mod_version = global.mod_version
+            local outdated_subfactories = {}
+            for _, subfactory in pairs(Factory.get_all(player_table[factory_name], "Subfactory")) do
+                if subfactory.mod_version ~= old_version then  -- out-of-sync subfactory
+                    table.insert(outdated_subfactories, subfactory)
+                else
+                    apply_migrations(migrations, "subfactory", subfactory, player)
+                    subfactory.mod_version = global.mod_version
+                end
+            end
+
+            -- Remove subfactories who weren't migrated along properly for some reason
+            -- This is likely due to an old, now-fixed bug that left them behind
+            for _, subfactory in pairs(outdated_subfactories) do
+                Factory.remove(player_table[factory_name], subfactory)
             end
         end
     end
