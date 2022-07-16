@@ -321,11 +321,11 @@ production_handler.gui_events = {
         {
             name = "act_on_line_machine",
             modifier_actions = {
-                put_into_cursor = {"left"},
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 reset_to_default = {"control-right", {archive_open=false}},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_machine_click
@@ -337,11 +337,11 @@ production_handler.gui_events = {
         {
             name = "act_on_line_beacon",
             modifier_actions = {
-                put_into_cursor = {"left"},
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_beacon_click
