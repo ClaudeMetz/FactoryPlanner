@@ -11,6 +11,7 @@ Date: 00. 00. 0000
     - Improved the wording around the utility dialog component buttons
   Bugfixes:
     - Fixed an issue where pasting onto a module could make it exceed the total module capacity of the machine
+    - Fixed that the machine dialog would show the limit options even when the matrix solver was active
     - Fixed a crash when loading certain old saves
     - Fixed a very rare issue where the game could desync in multiplayer
 
