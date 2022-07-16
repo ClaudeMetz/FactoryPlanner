@@ -223,8 +223,10 @@ function machine_dialog.open(player, modal_data)
     refresh_fuel_frame(player)
 
     -- Limit
-    add_limit_frame(content_frame, modal_elements)
-    refresh_limit_elements(player)
+    if modal_data.line.parent.parent.matrix_free_items == nil then
+        add_limit_frame(content_frame, modal_elements)
+        refresh_limit_elements(player)
+    end
 
     -- Modules
     module_configurator.add_modules_flow(content_frame, modal_data)
