@@ -296,7 +296,7 @@ import_dialog.gui_events = {
 -- ** EXPORT DIALOG **
 export_dialog.dialog_settings = (function(_) return {
     caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
-    subheader_text = {"fp.export_instruction"},
+    subheader_text = {"fp.info_label", {"fp.export_instruction"}},
     subheader_tooltip = {"fp.export_instruction_tt"},
     create_content_frame = true,
     disable_scroll_pane = true

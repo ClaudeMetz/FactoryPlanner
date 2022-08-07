@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added a button to export all subfactory ingredients to a blueprint containing constant combinators
   Changes:
     -
   Bugfixes:

@@ -25,9 +25,21 @@ local function build_item_box(player, category, column_count)
     window_frame.style.top_padding = 6
     window_frame.style.bottom_padding = ITEM_BOX_PADDING
 
-    local label = window_frame.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
+    local title_flow = window_frame.add{type="flow", direction="horizontal"}
+    title_flow.style.vertical_align = "center"
+
+    local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
     label.style.left_padding = ITEM_BOX_PADDING
     label.style.bottom_margin = 4
+
+    if category == "ingredient" then
+        title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+        local button_combinator = title_flow.add{type="button", caption={"fp.combinator"},
+          tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
+          style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+        button_combinator.style.height = 20
+        button_combinator.style.right_margin = 12
+    end
 
     local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
     scroll_pane.style.maximal_height = ITEM_BOX_MAX_ROWS * ITEM_BOX_BUTTON_SIZE
@@ -273,6 +285,17 @@ item_boxes.gui_events = {
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
+        },
+        {
+            name = "ingredients_to_combinator",
+            timeout = 20,
+            handler = (function(player, _, _)
+                local subfactory, ingredients = data_util.get_in_order("context", player).subfactory, {}
+                for _, ingredient in pairs(Subfactory.get_all(subfactory, "Ingredient")) do
+                    ingredients[ingredient.proto.name] = ingredient.amount
+                end
+                ui_util.create_item_combinators(player, ingredients)
+            end)
         }
     }
 }
