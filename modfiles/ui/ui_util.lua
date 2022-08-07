@@ -150,6 +150,21 @@ function ui_util.open_in_recipebook(player, type, name)
 end
 
 
+-- Destroys the toggle-main-dialog-button if present
+function ui_util.destroy_mod_gui(player)
+    local button_flow = mod_gui.get_button_flow(player)
+    local mod_gui_button = button_flow["fp_button_toggle_interface"]
+
+    if mod_gui_button then
+        if #button_flow.children_names == 1 then
+            -- Remove whole frame if FP is the last button in there
+            button_flow.parent.destroy()
+        else
+            mod_gui_button.destroy()
+        end
+    end
+end
+
 -- Toggles the visibility of the toggle-main-dialog-button
 function ui_util.toggle_mod_gui(player)
     local enable = data_util.get("settings", player).show_gui_button
@@ -157,21 +172,13 @@ function ui_util.toggle_mod_gui(player)
     local frame_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]
 
-    if enable then
-        if not mod_gui_button then
-            frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-              tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
-              style=mod_gui.button_style, mouse_button_filter={"left"}}
-        end
-    else
-        if mod_gui_button then mod_gui_button.destroy() end
+    if enable and not mod_gui_button then
+        frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
+          tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
+          style=mod_gui.button_style, mouse_button_filter={"left"}}
+    elseif mod_gui_button then  -- use the destroy function for possible cleanup reasons
+        ui_util.destroy_mod_gui(player)
     end
-end
-
--- Destroys the toggle-main-dialog-button if present
-function ui_util.destroy_mod_gui(player)
-    local mod_gui_button = mod_gui.get_button_flow(player)["fp_button_toggle_interface"]
-    if mod_gui_button then mod_gui_button.destroy() end
 end
 
 -- Destroys all GUIs so they are loaded anew the next time they are shown

@@ -4,7 +4,7 @@ Date: 00. 00. 0000
   Features:
     - Added a button to export all subfactory ingredients to a blueprint containing constant combinators
   Changes:
-    -
+    - The mod now cleans up the empty mod-gui frame when disabling the FP button would leave it empty
   Bugfixes:
     - Removed info icons from mod settings names as the game now generates them on its own
 
