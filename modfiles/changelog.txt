@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Removed info icons from mod settings names as the game now generates them on its own
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.51
