@@ -86,7 +86,7 @@ function utility_structures.components(player, modal_data)
         modal_elements.scope_switch = scope_switch
 
         local button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
-          caption={"fp.utility_blueprint"}, style="rounded_button", mouse_button_filter={"left"}}
+          caption={"fp.combinator"}, style="rounded_button", mouse_button_filter={"left"}}
         button_blueprint.style.minimal_width = 0
         modal_elements.blueprint_button = button_blueprint
 
@@ -188,64 +188,6 @@ local function handle_scope_change(player, tags, event)
     utility_structures.components(player, modal_data)
 end
 
-local function handle_item_blueprinting(player, _, _)
-    local combinator_proto = game.entity_prototypes["constant-combinator"]
-    if combinator_proto == nil then
-        ui_util.create_flying_text(player, {"fp.utility_blueprint_no_combinator"})
-        return
-    end
-
-    local filter_limit = combinator_proto.item_slot_count
-    local missing_items = data_util.get("modal_data", player).missing_items
-
-    local blueprint_entities = {}
-    local current_combinator, current_filter_count = nil, 0
-    local next_entity_number, next_position = 1, {0, 0}
-
-    for proto_name, missing_amount in pairs(missing_items) do
-        if not current_combinator or current_filter_count == filter_limit then
-            current_combinator = {
-                entity_number = next_entity_number,
-                name = "constant-combinator",
-                position = next_position,
-                control_behavior = {filters = {}},
-                connections = {{green = {}}}  -- filled in below
-            }
-            table.insert(blueprint_entities, current_combinator)
-
-            next_entity_number = next_entity_number + 1
-            next_position = {next_position[1] + 1, 0}
-            current_filter_count = 0
-        end
-
-        current_filter_count = current_filter_count + 1
-        table.insert(current_combinator.control_behavior.filters, {
-            signal = {type = 'item', name = proto_name},
-            count = missing_amount,
-            index = current_filter_count
-        })
-    end
-
-
-    local function connect_if_entity_exists(main_entity, other_entity)
-        if other_entity ~= nil then
-            local entry = {entity_id = other_entity.entity_number}
-            table.insert(main_entity.connections[1].green, entry)
-        end
-    end
-
-    for index, entity in ipairs(blueprint_entities) do
-        connect_if_entity_exists(entity, blueprint_entities[index-1])
-        if table_size(entity.connections[1].green) == 0 then entity.connections = nil end
-    end
-
-
-    ui_util.create_cursor_blueprint(player, blueprint_entities)
-
-    modal_dialog.exit(player, "cancel")
-    main_dialog.toggle(player)
-end
-
 local function handle_item_request(player, _, _)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
@@ -323,7 +265,10 @@ utility_dialog.gui_events = {
         {
             name = "utility_blueprint_items",
             timeout = 20,
-            handler = handle_item_blueprinting
+            handler = (function(player, _, _)
+                local missing_items = data_util.get("modal_data", player).missing_items
+                ui_util.create_item_combinators(player, missing_items)
+            end)
         },
         {
             name = "utility_request_items",
