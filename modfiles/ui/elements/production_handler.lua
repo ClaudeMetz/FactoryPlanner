@@ -85,6 +85,17 @@ local function handle_percentage_confirmation(player, _, _)
 end
 
 
+local function handle_machine_module_add(player, tags, event)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+
+    if event.shift then  -- paste
+        ui_util.clipboard.paste(player, line.machine)
+    else
+        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+    end
+end
+
 local function handle_machine_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
@@ -119,19 +130,6 @@ local function handle_machine_click(player, tags, action)
 end
 
 
-local function handle_beacon_add(player, tags, event)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-
-    if event.shift then  -- paste
-        -- Use a fake beacon to paste on top of
-        local fake_beacon = {parent=line, class="Beacon"}
-        ui_util.clipboard.paste(player, fake_beacon)
-    else
-        modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
-    end
-end
-
 local function handle_beacon_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
@@ -157,6 +155,19 @@ local function handle_beacon_click(player, tags, action)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+    end
+end
+
+local function handle_beacon_add(player, tags, event)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+
+    if event.shift then  -- paste
+        -- Use a fake beacon to paste on top of
+        local fake_beacon = {parent=line, class="Beacon"}
+        ui_util.clipboard.paste(player, fake_beacon)
+    else
+        modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
     end
 end
 
@@ -331,8 +342,8 @@ production_handler.gui_events = {
             handler = handle_machine_click
         },
         {
-            name = "add_line_beacon",
-            handler = handle_beacon_add
+            name = "add_machine_module",
+            handler = handle_machine_module_add
         },
         {
             name = "act_on_line_beacon",
@@ -345,6 +356,10 @@ production_handler.gui_events = {
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_beacon_click
+        },
+        {
+            name = "add_line_beacon",
+            handler = handle_beacon_add
         },
         {
             name = "act_on_line_module",

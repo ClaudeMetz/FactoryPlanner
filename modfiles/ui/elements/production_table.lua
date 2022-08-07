@@ -163,6 +163,13 @@ function builders.machine(line, parent_flow, metadata)
           mouse_button_filter={"left-and-right"}}
 
         -- Modules
+        local module_set = line.machine.module_set
+        if module_set.module_limit > 0 and module_set.module_count == 0 then
+            local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
+            parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="add_machine_module", line_id=line.id},
+              sprite="utility/add", style="fp_sprite-button_inset_add", tooltip=module_tooltip,
+              mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+        end
         add_module_flow(parent_flow, line, "machine", metadata)
     end
 end
