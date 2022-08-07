@@ -7,7 +7,7 @@ SEARCH_HANDLERS = {}
 TUTORIAL_TOOLTIPS = {}
 
 DEVMODE = true  -- enables certain conveniences for development
-MARGIN_OF_ERROR = 1e-8  -- the margin of error for floating point calculations
+MARGIN_OF_ERROR = 1e-6  -- the margin of error for floating point calculations
 TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
 MODAL_SEARCH_LIMITING = 10  -- ticks between modal search runs
