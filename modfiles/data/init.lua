@@ -79,6 +79,7 @@ local function reset_ui_state(player)
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
+    ui_state_table.last_selected_picker_group = nil  -- The item picker category that was last selected
 
     ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
     ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
