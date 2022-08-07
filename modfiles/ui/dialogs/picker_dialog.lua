@@ -170,7 +170,12 @@ local function add_item_picker(parent_flow, player)
     max_item_rows = math.max(current_item_rows, max_item_rows)
     frame_filters.style.natural_height = max_item_rows * 40 + (2*12)
 
-    select_item_group(ui_state.modal_data, 1)
+    -- Select the previously selected item group if possible
+    local group_to_select, previous_selection = 1, ui_state.last_selected_picker_group
+    if previous_selection ~= nil and modal_elements.groups[previous_selection] ~= nil then
+        group_to_select = previous_selection
+    end
+    select_item_group(ui_state.modal_data, group_to_select)
 end
 
 
@@ -375,8 +380,9 @@ end
 
 function picker_dialog.close(player, action)
     local player_table = data_util.get("table", player)
-    local modal_data = player_table.ui_state.modal_data
-    local subfactory = player_table.ui_state.context.subfactory
+    local ui_state = player_table.ui_state
+    local modal_data = ui_state.modal_data
+    local subfactory = ui_state.context.subfactory
 
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
@@ -412,6 +418,9 @@ function picker_dialog.close(player, action)
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
     end
+
+    -- Remember selected group so it can be re-applied when the dialog is re-opened
+    ui_state.last_selected_picker_group = modal_data.selected_group_id
 end
 
 
