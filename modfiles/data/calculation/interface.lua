@@ -7,6 +7,7 @@ calculation = {
     util = {}
 }
 
+
 -- ** LOCAL UTIL **
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
@@ -108,14 +109,27 @@ local function update_object_items(object, item_class, item_results)
     local object_class = _G[object.class]
     object_class.clear(object, item_class)
 
+    local item_types, item_types_map = global.all_items.types, global.all_items.map
     for _, item_result in pairs(structures.class.to_array(item_results)) do
         local required_amount = (object.class == "Subfactory") and 0 or nil
-        local item_type = global.all_items.types[global.all_items.map[item_result.type]]
+        local item_type = item_types[item_types_map[item_result.type]]
         local item_proto = item_type.items[item_type.map[item_result.name]]
         local item = Item.init(item_proto, item_class, item_result.amount, required_amount)
         object_class.add(object, item)
     end
 end
+
+local function set_zeroed_items(line, item_class, items)
+    Line.clear(line, item_class)
+
+    local item_types, item_types_map = global.all_items.types, global.all_items.map
+    for _, item in pairs(items) do
+        local item_type = item_types[item_types_map[item.type]]
+        local item_proto = item_type.items[item_type.map[item.name]]
+        Line.add(line, Item.init(item_proto, item_class, 0))
+    end
+end
+
 
 -- Goes through every line and setting their satisfied_amounts appropriately
 local function update_ingredient_satisfaction(floor, product_class)
@@ -271,7 +285,7 @@ function calculation.interface.set_line_result(result)
     local line = Floor.get(floor, "Line", result.line_id)
 
     if line.subfloor ~= nil then
-        line.machine = {count = result.machine_count}
+        line.machine = { count = result.machine_count }
     else
         line.machine.count = result.machine_count
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
@@ -286,9 +300,15 @@ function calculation.interface.set_line_result(result)
     line.energy_consumption = result.energy_consumption
     line.pollution = result.pollution
 
-    update_object_items(line, "Product", result.Product)
-    update_object_items(line, "Byproduct", result.Byproduct)
-    update_object_items(line, "Ingredient", result.Ingredient)
+    if line.production_ratio == 0 and line.subfloor == nil then
+        local recipe_proto = line.recipe.proto
+        set_zeroed_items(line, "Product", recipe_proto.products)
+        set_zeroed_items(line, "Ingredient", recipe_proto.ingredients)
+    else
+        update_object_items(line, "Product", result.Product)
+        update_object_items(line, "Byproduct", result.Byproduct)
+        update_object_items(line, "Ingredient", result.Ingredient)
+    end
 end
 
 

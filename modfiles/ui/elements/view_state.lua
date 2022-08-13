@@ -96,7 +96,7 @@ end
 
 function view_state.process_item(metadata, item, item_amount, machine_count)
     local raw_amount = item_amount or item.amount
-    if raw_amount == nil or (raw_amount < metadata.adjusted_margin_of_error and item.class ~= "Product") then
+    if raw_amount == nil or (raw_amount ~= 0 and raw_amount < metadata.adjusted_margin_of_error) then
         return -1, nil
     end
 
