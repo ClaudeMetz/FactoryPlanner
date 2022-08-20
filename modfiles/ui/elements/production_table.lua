@@ -6,10 +6,12 @@ local function generate_metadata(player)
     local preferences = data_util.get("preferences", player)
 
     local subfactory = ui_state.context.subfactory
+    local archive_open = (ui_state.flags.archive_open)
+    local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
 
     local metadata = {
-        archive_open = (ui_state.flags.archive_open),
-        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
+        archive_open = archive_open,
+        matrix_solver_active = matrix_solver_active,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
@@ -18,18 +20,17 @@ local function generate_metadata(player)
     }
 
     if preferences.tutorial_mode then
-        local generate = data_util.generate_tutorial_tooltip
-        local limitations = {archive_open = metadata.archive_open, matrix_active = metadata.matrix_solver_active}
-        local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
-
-        metadata.recipe_tutorial_tt = generate("act_on_line_recipe", limitations, rb_enabled)
-        metadata.machine_tutorial_tt = generate("act_on_line_machine", limitations, rb_enabled)
-        metadata.beacon_tutorial_tt = generate("act_on_line_beacon", limitations, rb_enabled)
-        metadata.module_tutorial_tt = generate("act_on_line_module", limitations, rb_enabled)
-        metadata.product_tutorial_tt = generate("act_on_line_product", limitations, rb_enabled)
-        metadata.byproduct_tutorial_tt = generate("act_on_line_byproduct", limitations, rb_enabled)
-        metadata.ingredient_tutorial_tt = generate("act_on_line_ingredient", limitations, rb_enabled)
-        metadata.fuel_tutorial_tt = generate("act_on_line_fuel", limitations, rb_enabled)
+        local limitations = {archive_open = archive_open, matrix_active = matrix_solver_active}
+        data_util.add_tutorial_tooltips(metadata, limitations, {
+            recipe_tutorial_tt = "act_on_line_recipe",
+            machine_tutorial_tt = "act_on_line_machine",
+            beacon_tutorial_tt = "act_on_line_beacon",
+            module_tutorial_tt = "act_on_line_module",
+            product_tutorial_tt = "act_on_line_product",
+            byproduct_tutorial_tt = "act_on_line_byproduct",
+            ingredient_tutorial_tt = "act_on_line_ingredient",
+            fuel_tutorial_tt = "act_on_line_fuel"
+        })
     end
 
     return metadata

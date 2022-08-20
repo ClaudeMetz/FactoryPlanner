@@ -237,7 +237,6 @@ end
 local function handle_item_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local item = Line.get(line, tags.class, tags.item_id)
 
     if action == "prioritize" then
@@ -294,7 +293,6 @@ end
 local function handle_fuel_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local fuel = line.machine.fuel  -- must exist to be able to get here
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then

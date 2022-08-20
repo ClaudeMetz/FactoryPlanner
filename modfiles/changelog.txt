@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Added a button to export all subfactory ingredients to a blueprint containing constant combinators
   Changes:
     - Re-added the '+' button to machines which can accept modules but currently don't have any
+    - Added Recipe Book shortcuts to the compact subfactory dialog
     - Recipes that don't produce anything now show their products and ingredients with 0 amounts instead of not at all
     - The mod now remembers which category was previously selected when re-opening the item picker dialog
     - The mod now cleans up the empty mod-gui frame when disabling the FP button would leave it empty

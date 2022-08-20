@@ -122,17 +122,23 @@ function data_util.action_allowed(action_limitations, active_limitations)
 end
 
 function data_util.generate_tutorial_tooltip(action_name, active_limitations, recipebook_enabled)
-    local tooltip = {""}
+    local tooltip = {"", "\n"}
     for _, action_line in pairs(TUTORIAL_TOOLTIPS[action_name]) do
         if data_util.action_allowed(action_line.limitations, active_limitations) then
             table.insert(tooltip, action_line.string)
         end
     end
-
-    if table_size(tooltip) > 1 then table.insert(tooltip, 2, "\n") end
     if recipebook_enabled then table.insert(tooltip, {"fp.tut_open_in_recipebook"}) end
 
     return tooltip
+end
+
+function data_util.add_tutorial_tooltips(data, limitations, action_list)
+    local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
+
+    for reference_name, action_name in pairs(action_list) do
+        data[reference_name] = data_util.generate_tutorial_tooltip(action_name, limitations, rb_enabled)
+    end
 end
 
 
