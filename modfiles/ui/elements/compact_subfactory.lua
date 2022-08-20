@@ -90,29 +90,29 @@ local function add_checkmark_button(parent_flow, line, relevant_line)
       tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
 end
 
-local function add_recipe_button(parent_flow, line, relevant_line)
+local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local recipe_proto = relevant_line.recipe.proto
     local style = (line.subfloor ~= nil) and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
     style = (line.done) and "flib_slot_button_grayscale_small" or style
-    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}}
-    if line.subfloor ~= nil then table.insert(tooltip, {"", "\n", {"fp.compact_recipe_subfloor_tt"}}) end
-    parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="open_compact_subfloor", line_id=line.id},
-      sprite=recipe_proto.sprite, tooltip=tooltip, enabled=(line.subfloor ~= nil), style=style,
-      mouse_button_filter={"left"}}
+    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
+
+    parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id},
+      sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
 
-local function add_modules_flow(parent_flow, module_set, line_done)
-    for _, module in ipairs(ModuleSet.get_in_order(module_set)) do
+local function add_modules_flow(parent_flow, parent_type, line, metadata)
+    for _, module in ipairs(ModuleSet.get_in_order(line[parent_type].module_set)) do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
-        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, metadata.module_tutorial_tt}
+        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        local style = (line_done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
         parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
-          number=module.amount, style=style, enabled=false}
+          tags={mod="fp", on_gui_click="act_on_compact_module", line_id=line.id, module_id=module.id,
+            parent_type=parent_type}, number=module.amount, style=style, mouse_button_filter={"left-and-right"}}
     end
 end
 
-local function add_machine_flow(parent_flow, line)
+local function add_machine_flow(parent_flow, line, metadata)
     if line.subfloor == nil then
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
         local machine_proto = line.machine.proto
@@ -125,35 +125,33 @@ local function add_machine_flow(parent_flow, line)
         end
 
         local plural_parameter = (machine_count == "1") and 1 or 2
-        local number_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}, "\n"}
-        local action_line = {"fp.tut_action_line", {"fp.tut_left"}, {"fp.tut_put_into_cursor"}}
-        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, number_line, action_line}
+        local number_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
+        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, number_line, metadata.machine_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=machine_count, tooltip=tooltip,
-          tags={mod="fp", on_gui_click="put_into_cursor", type="machine", line_id=line.id},
-          style=style, mouse_button_filter={"left"}}
+        machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=machine_count,
+          tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id},
+          style=style, mouse_button_filter={"left-and-right"}}
 
-        add_modules_flow(machine_flow, line.machine.module_set, line.done)
+        add_modules_flow(machine_flow, "machine", line, metadata)
     end
 end
 
-local function add_beacon_flow(parent_flow, line)
+local function add_beacon_flow(parent_flow, line, metadata)
     if line.subfloor == nil and line.beacon ~= nil then
         local beacon_flow = parent_flow.add{type="flow", direction="horizontal"}
         local beacon_proto = line.beacon.proto
 
         local plural_parameter = (line.beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
-        local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}, "\n"}
-        local action_line = {"fp.tut_action_line", {"fp.tut_left"}, {"fp.tut_put_into_cursor"}}
-        local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line, action_line}
+        local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
+        local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line, metadata.beacon_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
-          tooltip=tooltip, tags={mod="fp", on_gui_click="put_into_cursor", type="beacon", line_id=line.id},
-          style=style, mouse_button_filter={"left"}}
+          tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id},
+          style=style, mouse_button_filter={"left-and-right"}}
 
-        add_modules_flow(beacon_flow, line.beacon.module_set, line.done)
+        add_modules_flow(beacon_flow, "beacon", line, metadata)
     end
 end
 
@@ -170,12 +168,13 @@ local function add_item_flow(line, item_class, button_color, metadata)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line}
+        local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, metadata.item_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small"
           or "flib_slot_button_" .. button_color .. "_small"
 
         item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
-          style=style, enabled=false}
+          tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class=item.class, item_id=item.id},
+          style=style, mouse_button_filter={"left-and-right"}}
 
         ::skip_item::
     end
@@ -187,13 +186,82 @@ local function add_item_flow(line, item_class, button_color, metadata)
 
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line}
+        local tooltip = {"", name_line, number_line, metadata.item_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
         item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
-          tooltip=tooltip, enabled=false}
+          tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class="Fuel"},
+          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_fuel::
+    end
+end
+
+
+local function handle_recipe_click(player, tags, action)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    local recipe = relevant_line.recipe
+
+    if action == "open_subfloor" then
+        if line.subfloor then
+            ui_util.context.set_floor(player, line.subfloor)
+            compact_subfactory.refresh(player)
+        end
+
+    elseif action == "recipebook" then
+        ui_util.open_in_recipebook(player, "recipe", recipe.proto.name)
+    end
+end
+
+local function handle_module_click(player, tags, action)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local parent_entity = line[tags.parent_type]
+    local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
+
+    if action == "recipebook" then
+        ui_util.open_in_recipebook(player, "item", module.proto.name)
+    end
+end
+
+local function handle_machine_click(player, tags, action)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local machine = line.machine
+
+    if action == "put_into_cursor" then
+        ui_util.put_into_cursor(player, tags, nil)
+
+    elseif action == "recipebook" then
+        ui_util.open_in_recipebook(player, "entity", machine.proto.name)
+    end
+end
+
+local function handle_beacon_click(player, tags, action)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local beacon = line.beacon
+
+    if action == "put_into_cursor" then
+        ui_util.put_into_cursor(player, tags, nil)
+
+    elseif action == "recipebook" then
+        ui_util.open_in_recipebook(player, "entity", beacon.proto.name)
+    end
+end
+
+local function handle_item_click(player, tags, action)
+    local context = data_util.get("context", player)
+    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local item = (tags.class == "Fuel") and line.machine.fuel or Line.get(line, tags.class, tags.item_id)
+
+    if action == "recipebook" then
+        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -287,8 +355,22 @@ function compact_subfactory.refresh(player)
     if available_columns < 2 then available_columns = 2 end  -- fix for too many modules or too high of a GUI scale
     local column_counts = determine_column_counts(lines, available_columns)
 
-    local view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
-    local metadata = {parent=production_table, column_counts=column_counts, view_state_metadata=view_state_metadata}
+    local metadata = {
+        parent = production_table,
+        column_counts = column_counts,
+        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
+    }
+
+    if data_util.get("preferences", player).tutorial_mode then
+        local limitations = {archive_open = false, matrix_active = false}
+        data_util.add_tutorial_tooltips(metadata, limitations, {
+            recipe_tutorial_tt = "act_on_compact_recipe",
+            module_tutorial_tt = "act_on_compact_module",
+            machine_tutorial_tt = "act_on_compact_machine",
+            beacon_tutorial_tt = "act_on_compact_beacon",
+            item_tutorial_tt = "act_on_compact_item",
+        })
+    end
 
     for _, line in ipairs(lines) do -- build the individual lines
         local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -298,12 +380,12 @@ function compact_subfactory.refresh(player)
         local recipe_flow = production_table.add{type="flow", direction="horizontal"}
         recipe_flow.style.vertical_align = "center"
         add_checkmark_button(recipe_flow, line, relevant_line)
-        add_recipe_button(recipe_flow, line, relevant_line)
+        add_recipe_button(recipe_flow, line, relevant_line, metadata)
 
         -- Machine and Beacon
         local machines_flow = production_table.add{type="flow", direction="vertical"}
-        add_machine_flow(machines_flow, line)
-        add_beacon_flow(machines_flow, line)
+        add_machine_flow(machines_flow, line, metadata)
+        add_beacon_flow(machines_flow, line, metadata)
 
         -- Products, Byproducts and Ingredients
         add_item_flow(line, "Product", "default", metadata)
@@ -328,17 +410,42 @@ compact_subfactory.gui_events = {
             end)
         },
         {
-            name = "open_compact_subfloor",
-            handler = (function(player, tags, _)
-                -- Can only be called on lines with subfloors, so no need to check
-                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
-                ui_util.context.set_floor(player, line.subfloor)
-                compact_subfactory.refresh(player)
-            end)
+            name = "act_on_compact_recipe",
+            modifier_actions = {
+                open_subfloor = {"left"},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_recipe_click
         },
         {
-            name = "put_into_cursor",
-            handler = ui_util.put_into_cursor
+            name = "act_on_compact_module",
+            modifier_actions = {
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_module_click
+        },
+        {
+            name = "act_on_compact_machine",
+            modifier_actions = {
+                put_into_cursor = {"left"},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_machine_click
+        },
+        {
+            name = "act_on_compact_beacon",
+            modifier_actions = {
+                put_into_cursor = {"left"},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_beacon_click
+        },
+        {
+            name = "act_on_compact_item",
+            modifier_actions = {
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_item_click
         }
     },
     on_gui_checked_state_changed = {
