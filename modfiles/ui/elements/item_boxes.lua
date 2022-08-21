@@ -39,6 +39,7 @@ local function build_item_box(player, category, column_count)
           style="fp_button_rounded_mini", mouse_button_filter={"left"}}
         button_combinator.style.height = 20
         button_combinator.style.right_margin = 12
+        item_boxes_elements["ingredient_combinator_button"] = button_combinator
     end
 
     local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
@@ -114,6 +115,10 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
           tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
           style="fp_sprite-button_inset_add", mouse_button_filter={"left"}}
         table_item_count = table_item_count + 1
+    end
+
+    if category == "ingredient" then
+        item_boxes_elements["ingredient_combinator_button"].enabled = (table_item_count > 0)
     end
 
     local table_rows_required = math.ceil(table_item_count / table_items.column_count)
@@ -290,7 +295,7 @@ item_boxes.gui_events = {
             name = "ingredients_to_combinator",
             timeout = 20,
             handler = (function(player, _, _)
-                local subfactory, ingredients = data_util.get_in_order("context", player).subfactory, {}
+                local subfactory, ingredients = data_util.get("context", player).subfactory, {}
                 for _, ingredient in pairs(Subfactory.get_all(subfactory, "Ingredient")) do
                     ingredients[ingredient.proto.name] = ingredient.amount
                 end
