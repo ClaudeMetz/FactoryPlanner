@@ -35,7 +35,7 @@ function generator.all_recipes()
         end
     end
 
-    -- Adding all standard recipes
+    -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
       {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
@@ -80,12 +80,12 @@ function generator.all_recipes()
         end
     end
 
-    -- Cache them here so they don't have to be recreated over and over
+    -- Localize them here so they don't have to be recreated over and over
     local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes
 
-    -- Adding mining recipes
+    -- Add mining recipes
     for _, proto in pairs(game.entity_prototypes) do
-        -- Adds all mining recipes. Only supports solids for now.
+        -- Add all mining recipes. Only supports solids for now.
         if proto.mineable_properties and proto.resource_category then
             local products = proto.mineable_properties.products
             if not products then goto incompatible_proto end
@@ -151,37 +151,44 @@ function generator.all_recipes()
 
         -- Detect all the implicit rocket silo recipes
         elseif proto.rocket_parts_required ~= nil then
-            -- Add recipe for all 'launchable' items
-            for _, item in pairs(rocket_silo_inputs) do
-                local fixed_recipe = recipe_prototypes[proto.fixed_recipe]
-                if fixed_recipe ~= nil then
-                    local silo_product = item_prototypes[item.rocket_launch_products[1].name]
+            local fixed_recipe = recipe_prototypes[proto.fixed_recipe]
+            if fixed_recipe ~= nil then
+                -- Add recipe for all 'launchable' items
+                for _, silo_input in pairs(rocket_silo_inputs) do
+                    local silo_product = item_prototypes[silo_input.rocket_launch_products[1].name]
 
                     local recipe = custom_recipe()
-                    recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. item.name
+                    recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. silo_input.name
                     recipe.localised_name = silo_product.localised_name
                     recipe.sprite = "item/" .. silo_product.name
                     recipe.category = next(proto.crafting_categories, nil)  -- hopefully this stays working
                     recipe.energy = fixed_recipe.energy * proto.rocket_parts_required
                     recipe.subgroup = {name="science-pack", order="g", valid=true}
-                    recipe.order = "x-silo-" .. proto.order .. "-" .. item.order
+                    recipe.order = "x-silo-" .. proto.order .. "-" .. silo_input.order
 
                     recipe.ingredients = fixed_recipe.ingredients
                     for _, ingredient in pairs(recipe.ingredients) do
                         ingredient.amount = ingredient.amount * proto.rocket_parts_required
                     end
-                    table.insert(recipe.ingredients, {type="item", name=item.name, amount=1, ignore_productivity=true})
-                    recipe.products = item.rocket_launch_products
+                    table.insert(recipe.ingredients, {type="item", name=silo_input.name,
+                      amount=1, ignore_productivity=true})
+                    recipe.products = silo_input.rocket_launch_products
                     recipe.main_product = recipe.products[1]
 
                     generator_util.format_recipe_products_and_ingredients(recipe)
                     generator_util.add_recipe_tooltip(recipe)
                     generator_util.data_structure.insert(recipe)
+
                 end
+
+                -- Modify recipe for all rocket parts so they represent a full launch
+                -- This is needed so the launch sequence times can be incorporated correctly
+                local rocket_part_recipe = generator_util.data_structure.get_prototype(fixed_recipe.name, nil)
+                generator_util.multiply_recipe(rocket_part_recipe, proto.rocket_parts_required)
             end
         end
 
-        -- Adds a recipe for producing steam from a boiler
+        -- Add a recipe for producing steam from a boiler
         local existing_recipe_names = {}
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
@@ -250,23 +257,26 @@ function generator.all_items()
         local name = item.proto.name
         table[type] = table[type] or {}
         table[type][name] = table[type][name] or {}
+        local item_details = table[type][name]
         -- Determine whether this item is used as a product at least once
-        table[type][name].is_product = table[type][name].is_product or item.is_product
-        table[type][name].temperature = item.proto.temperature
+        item_details.is_product = item_details.is_product or item.is_product
+        item_details.is_rocket_part = item_details.is_rocket_part or item.is_rocket_part
+        item_details.temperature = item.proto.temperature
     end
 
     -- Create a table containing every item that is either a product or an ingredient to at least one recipe
     local relevant_items = {}
     for _, recipe in pairs(NEW.all_recipes.recipes) do
         for _, product in pairs(recipe.products) do
-            add_item(relevant_items, {proto=product, is_product=true})
+            local is_rocket_part = (recipe.category == "rocket-building")
+            add_item(relevant_items, {proto=product, is_product=true, is_rocket_part=is_rocket_part})
         end
         for _, ingredient in pairs(recipe.ingredients) do
-            add_item(relevant_items, {proto=ingredient, is_product=false})
+            add_item(relevant_items, {proto=ingredient, is_product=false, is_rocket_part=false})
         end
     end
 
-    -- Adding all standard items
+    -- Add all standard items
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
@@ -280,6 +290,7 @@ function generator.all_items()
             local hidden = false  -- "entity" types are never hidden
             if type == "item" then hidden = proto.has_flag("hidden")
             elseif type == "fluid" then hidden = proto.hidden end
+            if item_details.is_rocket_part then hidden = false end
 
             local item = {
                 name = item_name,
