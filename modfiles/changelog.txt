@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Added a button to export all subfactory ingredients to a blueprint containing constant combinators
+    - Added rocket part recipes, which are useful in certain modded situations
   Changes:
     - Re-added the '+' button to machines which can accept modules but currently don't have any
     - Added Recipe Book shortcuts to the compact subfactory dialog

@@ -23,6 +23,28 @@ function generator_util.data_structure.init(structure_type, main_structure_name,
     }
 end
 
+-- Gets the prototype
+function generator_util.data_structure.get_prototype(prototype_name, category_name)
+    local function find_prototype(prototype_table)
+        for _, prototype in pairs(prototype_table) do
+            if prototype.name == prototype_name then
+                return prototype
+            end
+        end
+    end
+
+    if metadata.structure_type == "simple" then
+        local prototype_table = data[metadata.main_structure_name]
+        return find_prototype(prototype_table)
+
+    else  -- structure_type == "complex"
+        local category_table = data[metadata.main_structure_name]
+        local category_id = metadata.existing_sub_structure_names[category_name]
+        local prototype_table = category_table[category_id][metadata.sub_structure_name]
+        return find_prototype(prototype_table)
+    end
+end
+
 -- Inserts the given prototype into the correct part of the structure.
 function generator_util.data_structure.insert(prototype)
     local function insert_prototype(prototype_table)
@@ -248,9 +270,25 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
         end
     end
 
-
     recipe_proto.ingredients = ingredients
     recipe_proto.products = products
+end
+
+
+-- Multiplies recipe products and ingredients by the given amount
+function generator_util.multiply_recipe(recipe_proto, factor)
+    local function multiply_items(item_list)
+        for _, item in pairs(item_list) do
+            item.amount = item.amount * factor
+            if item.proddable_amount ~= nil then
+                item.proddable_amount = item.proddable_amount * factor
+            end
+        end
+    end
+
+    multiply_items(recipe_proto.products)
+    multiply_items(recipe_proto.ingredients)
+    recipe_proto.energy = recipe_proto.energy * factor
 end
 
 
