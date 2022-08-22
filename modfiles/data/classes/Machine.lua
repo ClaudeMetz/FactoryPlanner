@@ -12,8 +12,8 @@ function Machine.init(proto, parent)
         total_effects = nil,
         effects_tooltip = "",
         valid = true,
-        class = "Machine",
-        parent = parent
+        parent = parent,
+        class = "Machine"
     }
     machine.module_set = ModuleSet.init(machine)
 

@@ -10,8 +10,8 @@ function Beacon.init(beacon_proto, beacon_amount, total_amount, parent)
         total_effects = nil,
         effects_tooltip = "",
         valid = true,
-        class = "Beacon",
-        parent = parent
+        parent = parent,
+        class = "Beacon"
     }
     beacon.module_set = ModuleSet.init(beacon)
 

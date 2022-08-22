@@ -19,8 +19,11 @@ function Subfactory.init(name)
         item_request_proxy = nil,
         tick_of_deletion = nil,  -- ignored on export/import
         last_valid_modset = nil,
-        valid = true,
         mod_version = global.mod_version,
+        valid = true,
+        id = nil,  -- set by collection
+        gui_position = nil,  -- set by collection
+        parent = nil,  -- set by parent
         class = "Subfactory"
     }
 

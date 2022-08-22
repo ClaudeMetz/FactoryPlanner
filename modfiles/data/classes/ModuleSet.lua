@@ -9,8 +9,8 @@ function ModuleSet.init(parent)
         empty_slots = parent.proto.module_limit,
         total_effects = nil,  -- summarized by calling function
         valid = true,
-        class = "ModuleSet",
-        parent = parent
+        parent = parent,
+        class = "ModuleSet"
     }
 end
 

@@ -24,6 +24,9 @@ function Line.init(recipe)
         uncapped_production_ratio = (is_standalone_line) and 0 or nil,
         subfloor = nil,
         valid = true,
+        id = nil,  -- set by collection
+        gui_position = nil,  -- set by collection
+        parent = nil,  -- set by parent
         class = "Line"
     }
 end
