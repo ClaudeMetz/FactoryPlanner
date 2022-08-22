@@ -9,10 +9,10 @@ function Subfactory.init(name)
         pollution = 0,
         notes = "",
         mining_productivity = nil,
-        Product = Collection.init("Item"),
-        Byproduct = Collection.init("Item"),
-        Ingredient = Collection.init("Item"),
-        Floor = Collection.init("Floor"),
+        Product = Collection.init(),
+        Byproduct = Collection.init(),
+        Ingredient = Collection.init(),
+        Floor = Collection.init(),
         matrix_free_items = nil,
         linearly_dependant = false,  -- determined by the solver
         selected_floor = nil,
@@ -71,7 +71,7 @@ function Subfactory.replace(self, dataset, object)
 end
 
 function Subfactory.clear(self, class)
-    self[class] = Collection.clear(self[class])
+    self[class] = Collection.init()
 end
 
 
@@ -169,7 +169,7 @@ function Subfactory.pack(self)
         timescale = self.timescale,
         notes = self.notes,
         mining_productivity = self.mining_productivity,
-        Product = Collection.pack(self.Product),
+        Product = Collection.pack(self.Product, Item),
         matrix_free_items = packed_free_items,
         -- Floors get packed by recursive nesting, which is necessary for a json-type data
         -- structure. It will need to be unpacked into the regular structure 'manually'.
@@ -184,7 +184,7 @@ function Subfactory.unpack(packed_self)
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
-    self.Product = Collection.unpack(packed_self.Product, self)
+    self.Product = Collection.unpack(packed_self.Product, self, Item)
 
     if packed_self.matrix_free_items then
         self.matrix_free_items = {}
@@ -210,7 +210,7 @@ end
 function Subfactory.validate(self)
     local previous_validity = self.valid
 
-    self.valid = Collection.validate_datasets(self.Product)
+    self.valid = Collection.validate_datasets(self.Product, Item)
 
     -- Validating matrix_free_items is a bit messy with the current functions,
     -- it might be worth it to change it into a Collection at some point
@@ -242,7 +242,7 @@ function Subfactory.repair(self, player)
     Floor.remove_if_empty(selected_floor)  -- Make sure no empty floor is left behind
 
     -- Unrepairable item-objects get removed, so the subfactory will always be valid afterwards
-    Collection.repair_datasets(self.Product, nil)
+    Collection.repair_datasets(self.Product, nil, Item)
 
     -- Clear item prototypes so we don't need to rely on the solver to remove them
     Subfactory.clear(self, "Byproduct")
