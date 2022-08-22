@@ -285,6 +285,9 @@ local function handle_item_click(player, tags, action)
     elseif action == "copy" then
         ui_util.clipboard.copy(player, item)
 
+    elseif action == "put_into_cursor" then
+        ui_util.add_item_to_cursor_combinator(player, item.proto, item.amount)
+
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
@@ -301,6 +304,9 @@ local function handle_fuel_click(player, tags, action)
 
     elseif action == "change" then  -- fuel is changed through the machine dialog now
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+
+    elseif action == "put_into_cursor" then
+        ui_util.add_item_to_cursor_combinator(player, fuel.proto, fuel.amount)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
@@ -376,6 +382,7 @@ production_handler.gui_events = {
                 prioritize = {"left", {archive_open=false, matrix_active=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
@@ -387,6 +394,7 @@ production_handler.gui_events = {
                 add_recipe_below = {"control-left", {archive_open=false, matrix_active=true}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
@@ -398,6 +406,7 @@ production_handler.gui_events = {
                 add_recipe_below = {"control-left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
@@ -408,6 +417,7 @@ production_handler.gui_events = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"control-left", {archive_open=false}},
                 change = {"right", {archive_open=false}},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_fuel_click

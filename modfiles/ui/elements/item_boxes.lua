@@ -187,6 +187,10 @@ local function handle_item_button_click(player, tags, action)
         }
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
 
+    elseif action == "put_into_cursor" then
+        local amount = (item.class == "Product") and Item.required_amount(item) or item.amount
+        ui_util.add_item_to_cursor_combinator(player, item.proto, amount)
+
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
@@ -268,6 +272,7 @@ item_boxes.gui_events = {
                 copy = {"shift-right"},
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
@@ -277,6 +282,7 @@ item_boxes.gui_events = {
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false, matrix_active=true}},
                 copy = {"shift-right"},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
@@ -287,6 +293,7 @@ item_boxes.gui_events = {
                 add_recipe = {"left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
                 copy = {"shift-right"},
+                put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_button_click
@@ -299,7 +306,8 @@ item_boxes.gui_events = {
                 for _, ingredient in pairs(Subfactory.get_all(subfactory, "Ingredient")) do
                     ingredients[ingredient.proto.name] = ingredient.amount
                 end
-                ui_util.create_item_combinators(player, ingredients)
+                local success = ui_util.put_item_combinator_into_cursor(player, ingredients)
+                if success then main_dialog.toggle(player) end
             end)
         }
     }

@@ -53,7 +53,7 @@ function ui_util.put_entity_into_cursor(player, line, object)
     local entity_prototype = game.entity_prototypes[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
       or entity_prototype.items_to_place_this == nil then
-        ui_util.create_flying_text(player, {"fp.error_put_into_cursor_failed", entity_prototype.localised_name})
+        ui_util.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})
         return false
     end
 
@@ -74,11 +74,11 @@ function ui_util.put_entity_into_cursor(player, line, object)
     return true
 end
 
-function ui_util.create_item_combinators(player, items)
+function ui_util.put_item_combinator_into_cursor(player, items)
     local combinator_proto = game.entity_prototypes["constant-combinator"]
     if combinator_proto == nil then
-        ui_util.create_flying_text(player, {"fp.blueprint_no_combinator"})
-        return
+        ui_util.create_flying_text(player, {"fp.blueprint_no_combinator_prototype"})
+        return false
     end
     local filter_limit = combinator_proto.item_slot_count
 
@@ -91,6 +91,7 @@ function ui_util.create_item_combinators(player, items)
             current_combinator = {
                 entity_number = next_entity_number,
                 name = "constant-combinator",
+                tags = {fp_item_combinator = true},
                 position = next_position,
                 control_behavior = {filters = {}},
                 connections = {{green = {}}}  -- filled in below
@@ -110,7 +111,6 @@ function ui_util.create_item_combinators(player, items)
         })
     end
 
-
     local function connect_if_entity_exists(main_entity, other_entity)
         if other_entity ~= nil then
             local entry = {entity_id = other_entity.entity_number}
@@ -124,9 +124,29 @@ function ui_util.create_item_combinators(player, items)
     end
 
     ui_util.create_cursor_blueprint(player, blueprint_entities)
+    return true
+end
 
-    modal_dialog.exit(player, "cancel")
-    main_dialog.toggle(player)
+function ui_util.add_item_to_cursor_combinator(player, proto, amount)
+    if proto.type ~= "item" then
+        ui_util.create_flying_text(player, {"fp.impossible_to_blueprint_fluid"})
+        return
+    end
+
+    local items = {}
+    local blueprint_entities = player.get_blueprint_entities()
+    if blueprint_entities ~= nil then
+        for _, entity in pairs(blueprint_entities) do
+            if entity.tags ~= nil and entity.tags["fp_item_combinator"] then
+                for _, filter in pairs(entity.control_behavior.filters) do
+                    items[filter.signal.name] = filter.count
+                end
+            end
+        end
+    end
+
+    items[proto.name] = (items[proto.name] or 0) + amount
+    ui_util.put_item_combinator_into_cursor(player, items)  -- don't care about success here
 end
 
 
