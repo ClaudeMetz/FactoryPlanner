@@ -9,8 +9,10 @@ function Module.init(proto, amount, parent)
         total_effects = nil,
         effects_tooltip = "",
         valid = true,
-        class = "Module",
-        parent = parent
+        id = nil,  -- set by collection
+        gui_position = nil,  -- set by collection
+        parent = parent,
+        class = "Module"
     }
     Module.summarize_effects(module)
 

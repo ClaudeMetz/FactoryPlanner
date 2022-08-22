@@ -15,6 +15,9 @@ function Item.init(proto, class, amount, required_amount)
         satisfied_amount = 0,  -- used with ingredient satisfaction
         top_level = (required_amount ~= nil),
         valid = true,
+        id = nil,  -- set by collection
+        gui_position = nil,  -- set by collection
+        parent = nil,  -- set by parent
         class = class
     }
 end

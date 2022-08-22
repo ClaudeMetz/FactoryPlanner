@@ -8,6 +8,8 @@ function Floor.init(creating_line)
         defining_line = nil,  -- set below, only if level > 1. First line of this subfloor
         Line = Collection.init(),
         valid = true,
+        id = nil,  -- set by collection
+        parent = nil,  -- set by parent
         class = "Floor"
     }
 
