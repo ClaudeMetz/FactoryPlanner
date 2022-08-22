@@ -49,12 +49,7 @@ function ui_util.create_cursor_blueprint(player, blueprint_entities)
     script_inventory.destroy()
 end
 
-function ui_util.put_into_cursor(player, tags, _)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-    -- We don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local object = line[tags.type]
-
+function ui_util.put_entity_into_cursor(player, line, object)
     local entity_prototype = game.entity_prototypes[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
       or entity_prototype.items_to_place_this == nil then
@@ -72,7 +67,7 @@ function ui_util.put_into_cursor(player, tags, _)
         name = object.proto.name,
         position = {0, 0},
         items = module_list,
-        recipe = (tags.type == "machine") and line.recipe.proto.name or nil
+        recipe = (object.class == "Machine") and line.recipe.proto.name or nil
     }
 
     ui_util.create_cursor_blueprint(player, {blueprint_entity})
