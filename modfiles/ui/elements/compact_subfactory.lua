@@ -231,13 +231,12 @@ local function handle_machine_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local machine = line.machine
 
     if action == "put_into_cursor" then
-        ui_util.put_into_cursor(player, tags, nil)
+        ui_util.put_entity_into_cursor(player, line, line.machine)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "entity", machine.proto.name)
+        ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
     end
 end
 
@@ -245,13 +244,12 @@ local function handle_beacon_click(player, tags, action)
     local context = data_util.get("context", player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local beacon = line.beacon
 
     if action == "put_into_cursor" then
-        ui_util.put_into_cursor(player, tags, nil)
+        ui_util.put_entity_into_cursor(player, line, line.beacon)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "entity", beacon.proto.name)
+        ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
     end
 end
 
