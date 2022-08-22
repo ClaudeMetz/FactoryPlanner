@@ -267,7 +267,8 @@ utility_dialog.gui_events = {
             timeout = 20,
             handler = (function(player, _, _)
                 local missing_items = data_util.get("modal_data", player).missing_items
-                ui_util.create_item_combinators(player, missing_items)
+                local success = ui_util.put_item_combinator_into_cursor(player, missing_items)
+                if success then modal_dialog.exit(player, "cancel"); main_dialog.toggle(player) end
             end)
         },
         {

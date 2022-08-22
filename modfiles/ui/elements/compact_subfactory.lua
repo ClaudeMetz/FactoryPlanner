@@ -258,7 +258,10 @@ local function handle_item_click(player, tags, action)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     local item = (tags.class == "Fuel") and line.machine.fuel or Line.get(line, tags.class, tags.item_id)
 
-    if action == "recipebook" then
+    if action == "put_into_cursor" then
+        ui_util.add_item_to_cursor_combinator(player, item.proto, item.amount)
+
+    elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
@@ -441,6 +444,7 @@ compact_subfactory.gui_events = {
         {
             name = "act_on_compact_item",
             modifier_actions = {
+                put_into_cursor = {"left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = handle_item_click
