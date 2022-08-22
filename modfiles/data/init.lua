@@ -228,8 +228,8 @@ local function handle_configuration_change()
         prototyper.run(player_table)
 
         -- Update the validity of the entire factory and archive
-        Collection.validate_datasets(player_table.factory.Subfactory)
-        Collection.validate_datasets(player_table.archive.Subfactory)
+        Collection.validate_datasets(player_table.factory.Subfactory, Subfactory)
+        Collection.validate_datasets(player_table.archive.Subfactory, Subfactory)
     end
 
     -- Complete prototyper process by saving new data to global

@@ -15,9 +15,9 @@ function Line.init(recipe)
         effects_tooltip = "",
         energy_consumption = 0,
         pollution = 0,
-        Product = Collection.init("Item"),
-        Byproduct = Collection.init("Item"),
-        Ingredient = Collection.init("Item"),
+        Product = Collection.init(),
+        Byproduct = Collection.init(),
+        Ingredient = Collection.init(),
         priority_product_proto = nil,  -- set by the user
         comment = nil,
         production_ratio = (is_standalone_line) and 0 or nil,
@@ -44,7 +44,7 @@ function Line.replace(self, dataset, object)
 end
 
 function Line.clear(self, class)
-    self[class] = Collection.clear(self[class])
+    self[class] = Collection.init()
 end
 
 

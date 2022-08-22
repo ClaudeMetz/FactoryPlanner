@@ -2,12 +2,11 @@
 -- (An object only becomes a dataset once it is added to the collection)
 Collection = {}
 
-function Collection.init(object_class)
+function Collection.init()
     return {
         datasets = {},
         index = 0,
         count = 0,
-        object_class = object_class,  -- class of the objects in this collection
         class = "Collection"
     }
 end
@@ -74,10 +73,6 @@ function Collection.replace(self, dataset, object)
     object.gui_position = dataset.gui_position
     self.datasets[dataset.id] = object
     return object  -- Returning it here feels nice
-end
-
-function Collection.clear(self)
-    return Collection.init(self.object_class)
 end
 
 
@@ -179,14 +174,12 @@ end
 
 
 -- Packs every dataset in this collection
-function Collection.pack(self)
+function Collection.pack(self, object_class)
     local packed_collection = {
         objects = {},
-        object_class = self.object_class,
         class = self.class
     }
 
-    local object_class = _G[self.object_class]
     for _, dataset in ipairs(Collection.get_in_order(self)) do
         table.insert(packed_collection.objects, object_class.pack(dataset))
     end
@@ -195,11 +188,10 @@ function Collection.pack(self)
 end
 
 -- Unpacks every dataset in this collection
-function Collection.unpack(packed_self, parent)
-    local self = Collection.init(packed_self.object_class)
+function Collection.unpack(packed_self, parent, object_class)
+    local self = Collection.init()
     self.class = packed_self.class
 
-    local object_class = _G[self.object_class]
     for _, object in ipairs(packed_self.objects) do  -- packed objects already in array order
         local dataset = Collection.add(self, object_class.unpack(object))
         dataset.parent = parent
@@ -210,9 +202,8 @@ end
 
 
 -- Updates the validity of all datasets in this collection
-function Collection.validate_datasets(self)
+function Collection.validate_datasets(self, object_class)
     local valid = true
-    local object_class = _G[self.object_class]
 
     for _, dataset in pairs(self.datasets) do
         -- Stays true until a single dataset is invalid, then stays false
@@ -223,9 +214,7 @@ function Collection.validate_datasets(self)
 end
 
 -- Removes any invalid, unrepairable datasets from the collection
-function Collection.repair_datasets(self, player)
-    local object_class = _G[self.object_class]
-
+function Collection.repair_datasets(self, player, object_class)
     for _, dataset in pairs(self.datasets) do
         if not dataset.valid and not object_class.repair(dataset, player) then
             _G[dataset.parent.class].remove(dataset.parent, dataset)

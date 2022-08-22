@@ -3,7 +3,7 @@ ModuleSet = {}
 
 function ModuleSet.init(parent)
     return {
-        modules = Collection.init("Module"),
+        modules = Collection.init(),
         module_count = 0,
         module_limit = parent.proto.module_limit,
         empty_slots = parent.proto.module_limit,
@@ -35,7 +35,7 @@ function ModuleSet.replace(self, dataset, object)
 end
 
 function ModuleSet.clear(self)
-    self.modules = Collection.clear(self.modules)
+    self.modules = Collection.init()
     ModuleSet.normalize(self, {})  -- adjust metadata
 end
 
@@ -190,7 +190,7 @@ end
 
 function ModuleSet.pack(self)
     return {
-        modules = Collection.pack(self.modules),
+        modules = Collection.pack(self.modules, Module),
         -- module_limit restored by ensuing validation
         module_count = self.module_count,
         empty_slots = self.empty_slots,
@@ -200,14 +200,14 @@ end
 
 function ModuleSet.unpack(packed_self)
     local self = packed_self
-    self.modules = Collection.unpack(packed_self.modules, self)
+    self.modules = Collection.unpack(packed_self.modules, self, Module)
     return self
 end
 
 
 -- Needs validation: modules
 function ModuleSet.validate(self)
-    self.valid = Collection.validate_datasets(self.modules)
+    self.valid = Collection.validate_datasets(self.modules, Module)
     -- .normalize doesn't remove incompatible modules here, the above validation already marks them
     if self.valid and self.parent.valid then ModuleSet.normalize(self, {trim=true, sort=true, effects=true}) end
 
@@ -216,7 +216,7 @@ end
 
 -- Needs repair: modules
 function ModuleSet.repair(self, _)
-    Collection.repair_datasets(self.modules, nil)
+    Collection.repair_datasets(self.modules, nil, Module)
     ModuleSet.normalize(self, {trim=true, sort=true, effects=true})
 
     self.valid = true  -- repairing invalid modules removes them, making this set valid

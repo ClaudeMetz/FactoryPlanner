@@ -11,7 +11,7 @@ function migration.subfactory(subfactory)
         for _, line in pairs(Floor.get_all(floor, "Line")) do
             local beacon = line.beacon
             if beacon and beacon.module then
-                beacon.Module = Collection.init("Module")
+                beacon.Module = Collection.init()
                 beacon.module_count = 0
                 beacon.module.parent = beacon
                 Collection.add(beacon.Module, beacon.module)
@@ -30,9 +30,9 @@ function migration.packed_subfactory(packed_subfactory)
             elseif packed_line.beacon and packed_line.beacon.module then
                 local beacon = packed_line.beacon
                 local module = Module.unpack(beacon.module)
-                local modules = Collection.init("Module")
+                local modules = Collection.init()
                 Collection.add(modules, module)
-                beacon.Module = Collection.pack(modules)
+                beacon.Module = Collection.pack(modules, Module)
                 beacon.module_count = module.amount
             end
         end
