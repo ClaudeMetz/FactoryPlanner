@@ -43,7 +43,7 @@ local function handle_recipe_click(player, tags, action)
         end
 
         ui_util.context.set_floor(player, subfloor)
-        main_dialog.refresh(player, "production_detail")
+        main_dialog.refresh(player, "production")
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, line)  -- use actual line

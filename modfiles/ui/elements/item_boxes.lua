@@ -54,10 +54,9 @@ local function build_item_box(player, category, column_count)
     item_boxes_elements[category .. "_item_table"] = table_items
 end
 
-local function refresh_item_box(player, category, subfactory, allow_addition)
+local function refresh_item_box(player, items, category, subfactory, shows_floor_items)
     local ui_state = data_util.get("ui_state", player)
     local item_boxes_elements = ui_state.main_elements.item_boxes
-    local class = (category:gsub("^%l", string.upper))
 
     local table_items = item_boxes_elements[category .. "_item_table"]
     table_items.clear()
@@ -66,21 +65,21 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
 
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory, 4, true)
-    local default_style = (class == "Ingredient") and "flib_slot_button_default" or "flib_slot_button_red"
+    local default_style = (category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
-    local action = "act_on_top_level_" .. category
+    local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. category)
     local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
     local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
     local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
     local tutorial_tt = data_util.generate_tutorial_tooltip(action, limitations, rb_enabled)
 
-    for _, item in ipairs(Subfactory.get_in_order(subfactory, class)) do
-        local required_amount = (class == "Product") and Item.required_amount(item) or nil
+    for _, item in ipairs(items) do
+        local required_amount = (not shows_floor_items and category == "product") and Item.required_amount(item) or nil
         local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local style, satisfaction_line = default_style, ""
-        if class == "Product" and amount ~= nil and amount ~= "0" then
+        if not shows_floor_items and category == "product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
             local percentage_string = ui_util.format_number(satisfied_percentage, 3)
             satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
@@ -109,7 +108,7 @@ local function refresh_item_box(player, category, subfactory, allow_addition)
         ::skip_item::  -- goto for fun, wooohoo
     end
 
-    if allow_addition then  -- meaning allow the user to add items of this type
+    if category == "product" and not shows_floor_items then  -- meaning allow the user to add items of this type
         table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
           tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
           tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
@@ -140,14 +139,17 @@ local function handle_item_add(player, tags, event)
 end
 
 local function handle_item_button_click(player, tags, action)
-    local context = data_util.get("context", player)
-    local subfactory = context.subfactory
+    local ui_state = data_util.get("ui_state", player)
+    local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
+    local floor_items_active = (ui_state.show_floor_items and floor.level > 1)
 
     local class = (tags.category:gsub("^%l", string.upper))
-    local item = Subfactory.get(subfactory, class, tags.item_id)
+    local item = (floor_items_active) and Line.get(floor.origin_line, class, tags.item_id)
+      or Subfactory.get(subfactory, class, tags.item_id)
 
     if action == "add_recipe" then
-        add_recipe(player, context, tags.category, item.proto)
+        add_recipe(player, ui_state.context, tags.category, item.proto)
 
     elseif action == "edit" then
         modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
@@ -188,7 +190,8 @@ local function handle_item_button_click(player, tags, action)
         modal_dialog.enter(player, {type="options", modal_data=modal_data})
 
     elseif action == "put_into_cursor" then
-        local amount = (item.class == "Product") and Item.required_amount(item) or item.amount
+        local amount = (not floor_items_active and tags.category == "product")
+          and Item.required_amount(item) or item.amount
         ui_util.add_item_to_cursor_combinator(player, item.proto, amount)
 
     elseif action == "recipebook" then
@@ -238,10 +241,25 @@ end
 function item_boxes.refresh(player)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
+    local floor = ui_state.context.floor
 
-    local prow_count = refresh_item_box(player, "product", subfactory, true)
-    local brow_count = refresh_item_box(player, "byproduct", subfactory, false)
-    local irow_count = refresh_item_box(player, "ingredient", subfactory, false)
+    -- This is all kinds of stupid, but the mob wishes the feature to exist
+    local function refresh(parent, class, shows_floor_items)
+        local items = _G[parent.class].get_in_order(parent, class)
+        return refresh_item_box(player, items, class:lower(), subfactory, shows_floor_items)
+    end
+
+    local prow_count, brow_count, irow_count = 0, 0, 0
+    if ui_state.show_floor_items and floor.level > 1 then
+        local line = floor.origin_line
+        prow_count = refresh(line, "Product", true)
+        brow_count = refresh(line, "Byproduct", true)
+        irow_count = refresh(line, "Ingredient", true)
+    else
+        prow_count = refresh(subfactory, "Product", false)
+        brow_count = refresh(subfactory, "Byproduct", false)
+        irow_count = refresh(subfactory, "Ingredient", false)
+    end
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
     local item_table_height = math.min(math.max(maxrow_count, 1), ITEM_BOX_MAX_ROWS) * ITEM_BOX_BUTTON_SIZE
@@ -292,6 +310,15 @@ item_boxes.gui_events = {
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
                 specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                copy = {"shift-right"},
+                put_into_cursor = {"alt-left"},
+                recipebook = {"alt-right", {recipebook=true}}
+            },
+            handler = handle_item_button_click
+        },
+        {
+            name = "act_on_floor_item",
+            modifier_actions = {
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
