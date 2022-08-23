@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added a button to show floor item totals when on subfloors instead of subfactory totals
     - Added a button to export all subfactory ingredients to a blueprint containing constant combinators
     - Added the ability to put items into the cursor as a constant combinator by alt-clicking them
     - Added rocket part recipes, which are useful in certain modded situations

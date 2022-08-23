@@ -202,7 +202,15 @@ styles["fp_sprite-button_rounded_mini"] = {
     type = "button_style",
     parent = "rounded_button",
     size = 26,
-    padding = 0
+    padding = 2
+}
+
+styles["fp_sprite-button_rounded_mini_active"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_rounded_mini",
+    default_graphical_set = styles.rounded_button.selected_graphical_set,
+    hovered_graphical_set = styles.rounded_button.selected_hovered_graphical_set,
+    clicked_graphical_set = styles.rounded_button.selected_clicked_graphical_set
 }
 
 -- Push-button style used for timescale and view_state buttons

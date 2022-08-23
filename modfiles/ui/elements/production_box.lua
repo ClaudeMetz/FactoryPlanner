@@ -51,7 +51,7 @@ function production_box.build(player)
     label_title.style.padding = {0, 8}
 
     local label_level = subheader.add{type="label"}
-    label_level.style.margin = {0, 6, 0, 6}
+    label_level.style.width = 50
     main_elements.production_box["level_label"] = label_level
 
     local button_floor_up = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
@@ -73,6 +73,11 @@ function production_box.build(player)
       style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     button_utility_dialog.style.padding = -4
     main_elements.production_box["utility_dialog_button"] = button_utility_dialog
+
+    local button_show_floor_items = subheader.add{type="sprite-button", sprite="fp_sprite_filter_dark",
+      tooltip={"fp.show_floor_items_tt"}, tags={mod="fp", on_gui_click="toggle_show_floor_items"},
+      mouse_button_filter={"left"}}
+    main_elements.production_box["show_floor_items_button"] = button_show_floor_items
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -108,6 +113,10 @@ function production_box.refresh(player)
     production_box_elements.floor_top_button.enabled = (current_level > 1)
 
     production_box_elements.utility_dialog_button.visible = (subfactory_valid)
+    production_box_elements.show_floor_items_button.visible = (subfactory_valid)
+    production_box_elements.show_floor_items_button.enabled = (current_level > 1)
+    production_box_elements.show_floor_items_button.style = (ui_state.show_floor_items)
+      and "fp_sprite-button_rounded_mini_active" or "fp_sprite-button_rounded_mini"
     production_box_elements.separator_line.visible = (subfactory_valid)
 
     view_state.refresh(player, production_box_elements.view_state_table)
@@ -139,7 +148,7 @@ function production_box.change_floor(player, destination)
     if floor_changed then  -- only need to refresh if the floor was indeed changed
         local subfactory = data_util.get("context", player).subfactory
         calculation.update(player, subfactory)
-        main_dialog.refresh(player, "production_detail")
+        main_dialog.refresh(player, "production")
     end
 end
 
@@ -162,6 +171,14 @@ production_box.gui_events = {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
                 modal_dialog.enter(player, {type="utility"})
+            end)
+        },
+        {
+            name = "toggle_show_floor_items",
+            handler = (function(player, _, _)
+                local ui_state = data_util.get("ui_state", player)
+                ui_state.show_floor_items = not ui_state.show_floor_items
+                refresh_production(player)
             end)
         },
         {
