@@ -64,7 +64,9 @@ function builders.recipe(line, parent_flow, metadata)
     local recipe_proto = relevant_line.recipe.proto
 
     parent_flow.style.vertical_align = "center"
+    parent_flow.style.horizontal_align = "right"
     parent_flow.style.horizontal_spacing = 3
+    parent_flow.style.width = 54
 
     local function create_move_button(flow, direction)
         local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
@@ -77,7 +79,7 @@ function builders.recipe(line, parent_flow, metadata)
 
     local style, enabled, tutorial_tooltip, note = nil, true, "", ""
     if line.parent.level > 1 and line.gui_position == 1 then
-        style = "fp_sprite-button_disabled_recipe"
+        style = "flib_slot_button_grey_small"
         enabled = false  -- first subfloor line is static
     else
         local move_flow = parent_flow.add{type="flow", direction="vertical"}
