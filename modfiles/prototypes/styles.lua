@@ -170,12 +170,6 @@ styles["fp_sprite-button_group_tab"] = {
     disabled_graphical_set = styles.button.selected_graphical_set
 }
 
-styles["fp_sprite-button_disabled_recipe"] = {
-    type = "button_style",
-    parent = "flib_slot_button_grey_small",
-    left_margin = 16
-}
-
 styles["fp_button_move_row"] = {
     type = "button_style",
     parent = "button",
