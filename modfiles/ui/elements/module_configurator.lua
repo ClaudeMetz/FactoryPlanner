@@ -27,11 +27,12 @@ local function add_module_frame(parent_flow,  module, module_filters, empty_slot
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local slider_style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
     local slider = frame_module.add{type="slider", name="fp_slider_module_amount", style=slider_style,
-      tags={mod="fp", on_gui_value_changed="module_amount", module_id=module_id}, enabled=(maximum_value ~= 1),
+      tags={mod="fp", on_gui_value_changed="module_amount", module_id=module_id},
       minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
     -- Fix for the slider value step "not bug" (see https://forums.factorio.com/viewtopic.php?p=516440#p516440)
     -- Fixed by setting step to something other than 1 first, then setting it to 1
     slider.set_slider_value_step(1)
+    slider.enabled = (maximum_value ~= 1)  -- needs to be set here because sliders are buggy as fuck
 
     local textfield = frame_module.add{type="textfield", name="fp_textfield_module_amount", enabled=(maximum_value ~= 1),
       text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount", module_id=module_id}}
@@ -116,7 +117,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
     local empty_slots = modal_data.module_set.empty_slots
 
     if update_only then
-        -- Update the UI instead of rebuilding it so the slider can be dragger properly
+        -- Update the UI instead of rebuilding it so the slider can be dragged properly
         for _, frame in pairs(modules_flow.children) do
             local module_id = frame.tags.module_id
             if module_id == nil then
