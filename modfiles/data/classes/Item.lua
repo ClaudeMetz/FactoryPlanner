@@ -48,8 +48,8 @@ function Item.paste(self, object)
 
         -- Convert object into the appropriate top-level form if necessary
         if not (object.top_level and object.class == self.class) then
-            object.required_amount = {defined_by = "amount", amount = object.amount}
-            object.class = self.class
+            local required_amount = {defined_by = "amount", amount = object.amount}
+            object = Item.init(object.proto, self.class, 0, required_amount)
         end
 
         -- Detect when this is called on a fake item and add instead of replacing
