@@ -15,6 +15,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Removed info icons from mod settings names as the game now generates them on its own
     - Fixed that tutorial tooltips would still show in some places even if disabled
+    - Fixed a crash that could happen when duplicating a subfactory that had previously had a product pasted into it
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.51
