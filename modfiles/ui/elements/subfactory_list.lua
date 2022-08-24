@@ -172,19 +172,20 @@ end
 
 function subfactory_list.refresh(player)
     local player_table = data_util.get("table", player)
-    local ui_state = player_table.ui_state
-    local subfactory_list_elements = ui_state.main_elements.subfactory_list
+    local flags, context = player_table.ui_state.flags, player_table.ui_state.context
+    local subfactory_list_elements = player_table.ui_state.main_elements.subfactory_list
 
-    local selected_subfactory = ui_state.context.subfactory
+    local selected_subfactory = context.subfactory
     local listbox = subfactory_list_elements.subfactory_listbox
     listbox.clear()
 
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
-        local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
-        local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
-        local tutorial_tt = data_util.generate_tutorial_tooltip("act_on_subfactory", limitations, false)
+        local matrix_active = (context.subfactory.matrix_free_items ~= nil)
+        local limitations = {archive_open = flags.archive_open, matrix_active = matrix_active}
+        local tutorial_tt = (player_table.preferences.tutorial_mode) and
+          data_util.generate_tutorial_tooltip("act_on_subfactory", limitations, false) or nil
 
-        for _, subfactory in pairs(Factory.get_in_order(ui_state.context.factory, "Subfactory")) do
+        for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
             local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
             local caption, info_tooltip = Subfactory.tostring(subfactory, false)
@@ -214,7 +215,7 @@ function subfactory_list.refresh(player)
 
     -- Set all the button states and styles appropriately
     local subfactory_exists = (selected_subfactory ~= nil)
-    local archive_open = (ui_state.flags.archive_open)
+    local archive_open = (flags.archive_open)
 
     local archived_subfactory_count = Factory.count(player_table.archive, "Subfactory")
     subfactory_list_elements.toggle_archive_button.enabled = (archived_subfactory_count > 0)
