@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash related to removing the empty mod-gui frame in some situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.52

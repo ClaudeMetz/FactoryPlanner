@@ -171,7 +171,9 @@ function ui_util.destroy_mod_gui(player)
     local mod_gui_button = button_flow["fp_button_toggle_interface"]
 
     if mod_gui_button then
-        if #button_flow.children_names == 1 then
+        -- parent.parent is to check that I'm not deleting a top level element. Now, I have no idea how that
+        -- could ever be a top level element, but oh well, can't know everything now can we?
+        if #button_flow.children_names == 1 and button_flow.parent.parent then
             -- Remove whole frame if FP is the last button in there
             button_flow.parent.destroy()
         else
