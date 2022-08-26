@@ -286,7 +286,7 @@ function builders.ingredients(line, parent_flow, metadata)
             enabled = false
             note = {"fp.raw_ore"}
 
-        elseif metadata.ingredient_satisfaction then
+        elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
             local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
 
@@ -324,7 +324,7 @@ function builders.fuel(line, parent_flow, metadata)
     if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
     local satisfaction_line = ""
-    if metadata.ingredient_satisfaction then
+    if metadata.ingredient_satisfaction and fuel.amount > 0 then
         local satisfaction_percentage = (fuel.satisfied_amount / fuel.amount) * 100
         local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
         satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
