@@ -2,17 +2,17 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.54
 Date: 26. 08. 2022
   Bugfixes:
-    - Fixed a crash when using theingredient satisfaction preference
+    - Fixed a crash when using the ingredient satisfaction preference
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.53
