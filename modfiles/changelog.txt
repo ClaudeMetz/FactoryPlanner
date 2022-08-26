@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.52
+Date: 26. 08. 2022
+  Features:
     - Added a button to show floor item totals when on subfloors instead of subfactory totals
     - Added a button to export all subfactory ingredients to a blueprint containing constant combinators
     - Added the ability to put items into the cursor as a constant combinator by alt-clicking them
