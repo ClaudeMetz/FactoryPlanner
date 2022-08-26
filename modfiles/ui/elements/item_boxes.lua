@@ -243,6 +243,7 @@ function item_boxes.refresh(player)
     local ui_state = data_util.get("ui_state", player)
     local subfactory = ui_state.context.subfactory
     local floor = ui_state.context.floor
+    if not subfactory or not floor then return end
 
     -- This is all kinds of stupid, but the mob wishes the feature to exist
     local function refresh(parent, class, shows_floor_items)
