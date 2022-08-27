@@ -199,7 +199,12 @@ local function update_floor(floor_data, aggregate)
             -- Convert the internal product-format into positive products for the line and main aggregate
             for _, product in pairs(floor_products) do
                 local aggregate_product_amount = subfloor_aggregate.Product[product.type][product.name] or 0
-                subfloor_aggregate.Product[product.type][product.name] = product.amount - aggregate_product_amount
+                local production_difference = product.amount - aggregate_product_amount
+                if production_difference > 0 then
+                    subfloor_aggregate.Product[product.type][product.name] = production_difference
+                else  -- if the difference is negative or 0, the item turns out to consume more of this than it produces
+                    structures.aggregate.subtract(subfloor_aggregate, "Product", product, aggregate_product_amount)
+                end
             end
 
             -- Update the main aggregate with the results
