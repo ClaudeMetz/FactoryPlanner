@@ -332,7 +332,7 @@ item_boxes.gui_events = {
             handler = (function(player, _, _)
                 local subfactory, ingredients = data_util.get("context", player).subfactory, {}
                 for _, ingredient in pairs(Subfactory.get_all(subfactory, "Ingredient")) do
-                    ingredients[ingredient.proto.name] = ingredient.amount
+                    if ingredient.proto.type == "item" then ingredients[ingredient.proto.name] = ingredient.amount end
                 end
                 local success = ui_util.put_item_combinator_into_cursor(player, ingredients)
                 if success then main_dialog.toggle(player) end
