@@ -23,7 +23,7 @@ function generator_util.data_structure.init(structure_type, main_structure_name,
     }
 end
 
--- Gets the prototype
+-- Gets the prototype with the given name and category
 function generator_util.data_structure.get_prototype(prototype_name, category_name)
     local function find_prototype(prototype_table)
         for _, prototype in pairs(prototype_table) do
@@ -31,6 +31,7 @@ function generator_util.data_structure.get_prototype(prototype_name, category_na
                 return prototype
             end
         end
+        return nil
     end
 
     if metadata.structure_type == "simple" then
@@ -45,7 +46,7 @@ function generator_util.data_structure.get_prototype(prototype_name, category_na
     end
 end
 
--- Inserts the given prototype into the correct part of the structure.
+-- Inserts the given prototype into the correct part of the structure
 function generator_util.data_structure.insert(prototype)
     local function insert_prototype(prototype_table)
         local next_id = #prototype_table + 1
@@ -75,7 +76,22 @@ function generator_util.data_structure.insert(prototype)
     end
 end
 
--- Applies the given sorting function to the data. Run before map generation.
+-- Removes the given prototype from the structure
+function generator_util.data_structure.remove(prototype)
+    if metadata.structure_type == "simple" then
+        local prototype_table = data[metadata.main_structure_name]
+        prototype_table[prototype.id] = nil
+
+    else  -- structure_type == "complex"
+        local category_table = data[metadata.main_structure_name]
+        local category_name = prototype[metadata.sub_structure_varname]
+        local category_id = metadata.existing_sub_structure_names[category_name]
+        local prototype_table = category_table[category_id][metadata.sub_structure_name]
+        prototype_table[prototype.id] = nil
+    end
+end
+
+-- Applies the given sorting function to the data. Run before map generation
 function generator_util.data_structure.sort(sorting_function)
     local function reassign_ids(prototype_table)
         for index, prototype in ipairs(prototype_table) do prototype.id = index end
@@ -95,7 +111,7 @@ function generator_util.data_structure.sort(sorting_function)
     end
 end
 
--- Generates a '[prototype.name] -> prototype.id'-map for each part of the structure. Run after sorting.
+-- Generates a '[prototype.name] -> prototype.id'-map for each part of the structure. Run after sorting
 function generator_util.data_structure.generate_map(add_identifiers)
     if metadata.structure_type == "simple" then
         data.map = {}
@@ -166,7 +182,9 @@ local function combine_identical_products(item_list)
             local touched_item = touched_items[item.type][item.name]
             if touched_item ~= nil then
                 touched_item.amount = touched_item.amount + item.amount
-                touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
+                if touched_item.proddable_amount then
+                    touched_item.proddable_amount = touched_item.proddable_amount + item.proddable_amount
+                end
 
                 -- Using the table.remove function to preserve array-format
                 table.remove(item_list, index)
@@ -289,6 +307,20 @@ function generator_util.multiply_recipe(recipe_proto, factor)
     multiply_items(recipe_proto.products)
     multiply_items(recipe_proto.ingredients)
     recipe_proto.energy = recipe_proto.energy * factor
+end
+
+-- Adds the additional proto's ingredients, products and energy to the main proto
+function generator_util.combine_recipes(main_proto, additional_proto)
+    local function add_items_to_main_proto(item_category)
+        for _, item in pairs(additional_proto[item_category]) do
+            table.insert(main_proto[item_category], item)
+        end
+        combine_identical_products(main_proto[item_category])
+    end
+
+    add_items_to_main_proto("products")
+    add_items_to_main_proto("ingredients")
+    main_proto.energy = main_proto.energy + additional_proto.energy
 end
 
 
