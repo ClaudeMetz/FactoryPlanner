@@ -2,9 +2,9 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - Added a hotkey to cycle backwards through the different production views (Shift + Tab)
   Changes:
-    -
+    - Added a hotkey to cycle backwards through the different production views (Shift + Tab)
+    - Removed the floor up hotkey
   Bugfixes:
     -
 

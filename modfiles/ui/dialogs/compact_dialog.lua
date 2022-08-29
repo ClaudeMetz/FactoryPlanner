@@ -142,12 +142,5 @@ compact_dialog.misc_events = {
 
     fp_toggle_interface = (function(player, _)
         if data_util.get("flags", player).compact_view then compact_dialog.toggle(player) end
-    end),
-
-    fp_floor_up = (function(player, _)
-        if compact_dialog.is_in_focus(player) then
-            local floor_changed = ui_util.context.change_floor(player, "up")
-            if floor_changed then compact_subfactory.refresh(player) end
-        end
     end)
 }
