@@ -221,6 +221,7 @@ local misc_identifier_map = {
     ["fp_floor_up"] = "fp_floor_up",
     ["fp_refresh_production"] = "fp_refresh_production",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",
+    ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
     ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield"
