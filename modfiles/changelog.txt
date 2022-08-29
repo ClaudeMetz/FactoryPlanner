@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
   Changes:
     - Added a hotkey to cycle backwards through the different production views (Shift + Tab)
+    - Changed the hotkey that toggles between the main and compact dialogs to open the compact view when used while no dialog is open, instead of silently switching between them in the background
     - Removed the floor up hotkey
   Bugfixes:
     -

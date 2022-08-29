@@ -276,17 +276,27 @@ main_dialog.misc_events = {
     fp_toggle_compact_view = (function(player, _)
         local ui_state = data_util.get("ui_state", player)
         local flags = ui_state.flags
+        local subfactory = ui_state.context.subfactory
 
-        if flags.compact_view and compact_dialog.is_in_focus(player) then
+        local main_focus = main_dialog.is_in_focus(player)
+        local compact_focus = compact_dialog.is_in_focus(player)
+
+        -- Open the compact view if this toggle is pressed when neither dialog
+        -- is open as that makes the most sense from a user perspective
+        if not main_focus and not compact_focus then
+            flags.compact_view = true
             compact_dialog.toggle(player)
 
+        elseif flags.compact_view and compact_focus then
+            compact_dialog.toggle(player)
             main_dialog.toggle(player)
             main_dialog.refresh(player, "production")
+            flags.compact_view = false
 
-        elseif main_dialog.is_in_focus(player) and ui_state.context.subfactory ~= nil then
+        elseif main_focus and subfactory ~= nil and subfactory.valid then
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
+            flags.compact_view = true
         end
-        flags.compact_view = not flags.compact_view
     end)
 }
