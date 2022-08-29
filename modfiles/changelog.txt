@@ -9,7 +9,7 @@ Date: 00. 00. 0000
     - Removed the floor up hotkey
     - Added custom support for Space Exploration Arcosphere Fracture recipes
   Bugfixes:
-    -
+    - Fixed a crash with the subfactory to combinator functionality when there are only fluid ingredients
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.56
