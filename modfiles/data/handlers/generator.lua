@@ -243,15 +243,19 @@ function generator.all_recipes()
         generator_util.data_structure.insert(steam_recipe)
     end
 
-    -- Custom handling for Space Exploration Arcosphere recipe
-    local arcosphere_recipe = generator_util.data_structure.get_prototype("se-arcosphere-fracture", nil)
-    local arcosphere_alt_recipe = generator_util.data_structure.get_prototype("se-arcosphere-fracture-alt", nil)
-    if arcosphere_recipe and arcosphere_alt_recipe then
-        generator_util.combine_recipes(arcosphere_recipe, arcosphere_alt_recipe)
-        generator_util.multiply_recipe(arcosphere_recipe, 0.5)
-        arcosphere_recipe.custom = true
-        generator_util.add_recipe_tooltip(arcosphere_recipe)
-        generator_util.data_structure.remove(arcosphere_alt_recipe)
+    -- Custom handling for Space Exploration Arcosphere recipes
+    local se_split_recipes = {"se-arcosphere-fracture", "se-naquium-processor", "se-naquium-tessaract",
+      "se-space-dilation-data", "se-space-fold-data", "se-space-injection-data", "se-space-warp-data"}
+    for _, recipe_name in pairs(se_split_recipes) do
+        local recipe = generator_util.data_structure.get_prototype(recipe_name, nil)
+        local alt_recipe = generator_util.data_structure.get_prototype(recipe_name .. "-alt", nil)
+        if recipe and alt_recipe then
+            recipe.custom = true
+            generator_util.combine_recipes(recipe, alt_recipe)
+            generator_util.multiply_recipe(recipe, 0.5)
+            generator_util.add_recipe_tooltip(recipe)
+            generator_util.data_structure.remove(alt_recipe)
+        end
     end
 
     generator_util.data_structure.generate_map(false)

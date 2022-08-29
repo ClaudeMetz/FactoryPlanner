@@ -4,10 +4,10 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Added custom support for Space Exploration Arcosphere recipes
     - Added a hotkey to cycle backwards through the different production views (Shift + Tab)
     - Changed the hotkey that toggles between the main and compact dialogs to open the compact view when used while no dialog is open, instead of silently switching between them in the background
     - Removed the floor up hotkey
-    - Added custom support for Space Exploration Arcosphere Fracture recipes
   Bugfixes:
     - Fixed a crash with the subfactory to combinator functionality when there are only fluid ingredients
 
