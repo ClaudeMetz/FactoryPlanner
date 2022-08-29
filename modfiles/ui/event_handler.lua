@@ -218,7 +218,6 @@ local misc_identifier_map = {
     ["fp_toggle_interface"] = "fp_toggle_interface",
     ["fp_toggle_compact_view"] = "fp_toggle_compact_view",
     ["fp_toggle_pause"] = "fp_toggle_pause",
-    ["fp_floor_up"] = "fp_floor_up",
     ["fp_refresh_production"] = "fp_refresh_production",
     ["fp_cycle_production_views"] = "fp_cycle_production_views",
     ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
