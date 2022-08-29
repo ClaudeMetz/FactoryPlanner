@@ -79,6 +79,9 @@ function ui_util.put_item_combinator_into_cursor(player, items)
     if combinator_proto == nil then
         ui_util.create_flying_text(player, {"fp.blueprint_no_combinator_prototype"})
         return false
+    elseif not next(items) then
+        ui_util.create_flying_text(player, {"fp.impossible_to_blueprint_fluid"})
+        return false
     end
     local filter_limit = combinator_proto.item_slot_count
 
