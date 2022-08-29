@@ -243,6 +243,17 @@ function generator.all_recipes()
         generator_util.data_structure.insert(steam_recipe)
     end
 
+    -- Custom handling for Space Exploration Arcosphere recipe
+    local arcosphere_recipe = generator_util.data_structure.get_prototype("se-arcosphere-fracture", nil)
+    local arcosphere_alt_recipe = generator_util.data_structure.get_prototype("se-arcosphere-fracture-alt", nil)
+    if arcosphere_recipe and arcosphere_alt_recipe then
+        generator_util.combine_recipes(arcosphere_recipe, arcosphere_alt_recipe)
+        generator_util.multiply_recipe(arcosphere_recipe, 0.5)
+        arcosphere_recipe.custom = true
+        generator_util.add_recipe_tooltip(arcosphere_recipe)
+        generator_util.data_structure.remove(arcosphere_alt_recipe)
+    end
+
     generator_util.data_structure.generate_map(false)
     return generator_util.data_structure.get()
 end
