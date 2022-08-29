@@ -2,6 +2,29 @@
 view_state = {}
 
 -- ** LOCAL UTIL **
+local function cycle_views(player, direction)
+    local ui_state = data_util.get("ui_state", player)
+
+    if ui_state.view_states and main_dialog.is_in_focus(player) or compact_dialog.is_in_focus(player) then
+        local selected_view_id, view_state_count = ui_state.view_states.selected_view_id, #ui_state.view_states
+        local new_view_id = nil  -- need to make sure this is wrapped properly in either direction
+        if direction == "standard" then
+            new_view_id = (selected_view_id == view_state_count) and 1 or (selected_view_id + 1)
+        else  -- direction == "reverse"
+            new_view_id = (selected_view_id == 1) and view_state_count or (selected_view_id - 1)
+        end
+        view_state.select(player, new_view_id)
+
+        local compact_view = data_util.get("flags", player).compact_view
+        if compact_view then compact_subfactory.refresh(player)
+        else main_dialog.refresh(player, "production") end
+
+        -- This avoids the game focusing a random textfield when pressing Tab to change states
+        ui_state.main_elements.main_frame.focus()
+    end
+end
+
+
 local processors = {}  -- individual functions for each kind of view state
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     local number = ui_util.format_number(raw_amount, metadata.formatting_precision)
@@ -234,19 +257,9 @@ view_state.gui_events = {
 
 view_state.misc_events = {
     fp_cycle_production_views = (function(player, _)
-        local ui_state = data_util.get("ui_state", player)
-
-        if ui_state.view_states and main_dialog.is_in_focus(player) or compact_dialog.is_in_focus(player) then
-            -- Choose the next view in the list, wrapping from the end to the beginning
-            local new_view_id = (ui_state.view_states.selected_view_id % #ui_state.view_states) + 1
-            view_state.select(player, new_view_id)
-
-            local compact_view = data_util.get("flags", player).compact_view
-            if compact_view then compact_subfactory.refresh(player)
-            else main_dialog.refresh(player, "production") end
-
-            -- This avoids the game focusing a random textfield when pressing Tab to change states
-            ui_state.main_elements.main_frame.focus()
-        end
+        cycle_views(player, "standard")
+    end),
+    fp_reverse_cycle_production_views = (function(player, _)
+        cycle_views(player, "reverse")
     end)
 }
