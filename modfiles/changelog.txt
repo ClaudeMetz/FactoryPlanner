@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash when switching to the items/s/machine view in some cases
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.55

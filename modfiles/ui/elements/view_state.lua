@@ -49,6 +49,8 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
 end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
+    if machine_count == 0 then return 0, "" end  -- avoid division by zero
+
     local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil(machine_count or 1))
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
