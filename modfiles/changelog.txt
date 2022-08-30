@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.57
+Date: 30. 08. 2022
   Changes:
     - Added custom support for Space Exploration Arcosphere recipes
     - Added a hotkey to cycle backwards through the different production views (Shift + Tab)
