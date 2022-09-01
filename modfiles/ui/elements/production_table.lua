@@ -347,7 +347,6 @@ function builders.line_comment(line, parent_flow, _)
 end
 
 
--- ** TOP LEVEL **
 local all_production_columns = {
     -- name, caption, tooltip, alignment
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
@@ -363,6 +362,8 @@ local all_production_columns = {
     {name="line_comment", caption={"fp.column_comment"}, alignment="left"}
 }
 
+
+-- ** TOP LEVEL **
 function production_table.build(player)
     local main_elements = data_util.get("main_elements", player)
     main_elements.production_table = {}
@@ -390,24 +391,21 @@ function production_table.refresh(player)
     production_table_elements.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
     if not subfactory_valid then return end
 
-    local production_columns, column_count = {}, 0
+    local production_columns = {}
     for _, column_data in ipairs(all_production_columns) do
         -- Explicit comparison needed here, as both true and nil columns should be shown
         if preferences[column_data.name .. "_column"] ~= false then
-            column_count = column_count + 1
-            production_columns[column_count] = column_data
+            table.insert(production_columns, column_data)
         end
     end
-    column_count = column_count + 1
 
     local scroll_pane_production = production_table_elements.production_scroll_pane
     scroll_pane_production.clear()
 
-    local table_production = scroll_pane_production.add{type="table", column_count=column_count,
+    local table_production = scroll_pane_production.add{type="table", column_count=(#production_columns+1),
       style="fp_table_production"}
     table_production.style.horizontal_spacing = 16
     table_production.style.padding = {6, 0, 0, 12}
-    production_table_elements["table"] = table_production
 
     -- Column headers
     for index, column_data in ipairs(production_columns) do
@@ -417,7 +415,11 @@ function production_table.refresh(player)
         label_column.style.bottom_margin = 6
         table_production.style.column_alignments[index] = column_data.alignment
     end
-    table_production.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    -- Add pushers in both directions to make sure the table takes all available space
+    local flow_pusher = table_production.add{type="flow"}
+    flow_pusher.add{type="empty-widget", style="flib_vertical_pusher"}
+    flow_pusher.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Generates some data that is relevant to several different builders
     local metadata = generate_metadata(player)
