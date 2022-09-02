@@ -56,7 +56,7 @@ function structures.class.add(class, item, amount)
 
     local type_table = class[type]
     type_table[name] = (type_table[name] or 0) + amount_to_add
-    if type_table[name] == 0 then type_table[name] = nil end
+    if math.abs(type_table[name]) < 1e-10 then type_table[name] = nil end
 end
 
 function structures.class.subtract(class, item, amount)
