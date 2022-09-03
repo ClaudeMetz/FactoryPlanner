@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.58
+Date: 03. 09. 2022
   Bugfixes:
     - Fixed a bug where some line products would be shown with an amount of -1
     - Fixed a crash when trying to paste a line with subfloor as a top level product
