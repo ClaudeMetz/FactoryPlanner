@@ -43,6 +43,7 @@ local function reload_preferences(player)
     local preferences = global.players[player.index].preferences
 
     preferences.pause_on_interface = preferences.pause_on_interface or false
+    preferences.fold_out_subfloors = preferences.fold_out_subfloors or false
     preferences.show_floor_items = preferences.show_floor_items or false
     preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.utility_scopes = preferences.utility_scopes or {components = "Subfactory"}

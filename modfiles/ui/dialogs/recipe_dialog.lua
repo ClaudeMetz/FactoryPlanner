@@ -93,7 +93,8 @@ end
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id)
     local ui_state = data_util.get("ui_state", player)
-    local recipe = Recipe.init_by_id(recipe_id, ui_state.modal_data.production_type)
+    local modal_data = ui_state.modal_data
+    local recipe = Recipe.init_by_id(recipe_id, modal_data.production_type)
     local line = Line.init(recipe)
 
     -- If finding a machine fails, this line is invalid
@@ -101,12 +102,12 @@ local function attempt_adding_line(player, recipe_id)
         title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
 
     else
-        local add_after_position = ui_state.modal_data.add_after_position
+        local floor = Subfactory.get(ui_state.context.subfactory, "Floor", modal_data.floor_id)
         -- If add_after_position is given, insert it below that one, add it to the end otherwise
-        if add_after_position == nil then
-            Floor.add(ui_state.context.floor, line)
+        if modal_data.add_after_position == nil then
+            Floor.add(floor, line)
         else
-            Floor.insert_at(ui_state.context.floor, (add_after_position + 1), line)
+            Floor.insert_at(floor, (modal_data.add_after_position + 1), line)
         end
 
         local message = nil

@@ -3,14 +3,15 @@ production_handler = {}
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
 
     local shifting_function = (event.shift) and Floor.shift_to_end or Floor.shift
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
 
     -- Can't shift second line into the first position on subfloors. Top line is disabled, so no special handling
-    if (context.floor.level > 1 and tags.direction == "up" and (line.gui_position == 2 or event.shift)) or
-      not shifting_function(context.floor, line, translated_direction) then
+    if (floor.level > 1 and tags.direction == "up" and (line.gui_position == 2 or event.shift)) or
+      not shifting_function(floor, line, translated_direction) then
         local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_recipe", 1}, {"fp." .. tags.direction}}
         title_bar.enqueue_message(player, message, "error", 1, true)
       else
@@ -21,7 +22,8 @@ end
 
 local function handle_recipe_click(player, tags, action)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     if action == "open_subfloor" then
@@ -57,7 +59,7 @@ local function handle_recipe_click(player, tags, action)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "delete" then
-        Floor.remove(context.floor, line)
+        Floor.remove(floor, line)
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
@@ -69,7 +71,8 @@ end
 
 local function handle_percentage_change(player, tags, event)
     local ui_state = data_util.get("ui_state", player)
-    local line = Floor.get(ui_state.context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(ui_state.context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
 
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     relevant_line.percentage = tonumber(event.element.text) or 100
@@ -85,20 +88,10 @@ local function handle_percentage_confirmation(player, _, _)
 end
 
 
-local function handle_machine_module_add(player, tags, event)
-    local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
-
-    if event.shift then  -- paste
-        ui_util.clipboard.paste(player, line.machine)
-    else
-        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
-    end
-end
-
 local function handle_machine_click(player, tags, action)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if action == "put_into_cursor" then
@@ -129,10 +122,23 @@ local function handle_machine_click(player, tags, action)
     end
 end
 
+local function handle_machine_module_add(player, tags, event)
+    local context = data_util.get("context", player)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
+
+    if event.shift then  -- paste
+        ui_util.clipboard.paste(player, line.machine)
+    else
+        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+    end
+end
+
 
 local function handle_beacon_click(player, tags, action)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if action == "put_into_cursor" then
@@ -160,7 +166,8 @@ end
 
 local function handle_beacon_add(player, tags, event)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
 
     if event.shift then  -- paste
         -- Use a fake beacon to paste on top of
@@ -174,7 +181,8 @@ end
 
 local function handle_module_click(player, tags, action)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local parent_entity = line[tags.parent_type]
     local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
@@ -236,7 +244,8 @@ end
 
 local function handle_item_click(player, tags, action)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
     local item = Line.get(line, tags.class, tags.item_id)
 
     if action == "prioritize" then
@@ -253,7 +262,8 @@ local function handle_item_click(player, tags, action)
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.class == "Byproduct") and "consume" or "produce"
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto, production_type=production_type, add_after_position=add_after_position}})
+        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto, floor_id=floor.id,
+          production_type=production_type, add_after_position=add_after_position}})
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
@@ -295,12 +305,13 @@ end
 
 local function handle_fuel_click(player, tags, action)
     local context = data_util.get("context", player)
-    local line = Floor.get(context.floor, "Line", tags.line_id)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
     local fuel = line.machine.fuel  -- must exist to be able to get here
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
-        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, production_type="produce",
-          add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
+        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, floor_id=floor.id,
+          production_type="produce", add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
 
     elseif action == "change" then  -- fuel is changed through the machine dialog now
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
@@ -427,7 +438,9 @@ production_handler.gui_events = {
         {
             name = "checkmark_line",
             handler = (function(player, tags, _)
-                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
+                local context = data_util.get("context", player)
+                local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+                local line = Floor.get(floor, "Line", tags.line_id)
                 local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
                 relevant_line.done = not relevant_line.done
             end)
@@ -441,7 +454,8 @@ production_handler.gui_events = {
         {
             name = "line_comment",
             handler = (function(player, tags, event)
-                local floor = data_util.get("context", player).floor
+                local context = data_util.get("context", player)
+                local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
                 Floor.get(floor, "Line", tags.line_id).comment = event.element.text
             end)
         }
