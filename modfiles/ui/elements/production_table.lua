@@ -229,6 +229,7 @@ function builders.products(line, parent_flow, metadata)
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
           product, nil, machine_count)
+        if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
 
         local style, note = "flib_slot_button_default_small", nil
         if not line.subfloor and not metadata.matrix_solver_active then
@@ -247,6 +248,8 @@ function builders.products(line, parent_flow, metadata)
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_product", line_id=line.id,
           class="Product", item_id=product.id}, sprite=product.proto.sprite, style=style, number=amount,
           tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+
+        ::skip_product::
     end
 end
 
