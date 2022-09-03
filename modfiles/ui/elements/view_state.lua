@@ -20,7 +20,8 @@ local function cycle_views(player, direction)
         else main_dialog.refresh(player, "production") end
 
         -- This avoids the game focusing a random textfield when pressing Tab to change states
-        ui_state.main_elements.main_frame.focus()
+        local main_frame = ui_state.main_elements.main_frame
+        if main_frame ~= nil then main_frame.focus() end
     end
 end
 
