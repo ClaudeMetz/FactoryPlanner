@@ -13,7 +13,7 @@ local function add_recipe(player, context, type, item_proto)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
         modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto,
-          production_type=production_type}})
+          floor_id=context.floor.id, production_type=production_type}})
     end
 end
 
@@ -140,17 +140,16 @@ local function handle_item_add(player, tags, event)
 end
 
 local function handle_item_button_click(player, tags, action)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-    local floor = ui_state.context.floor
-    local floor_items_active = (ui_state.show_floor_items and floor.level > 1)
+    local player_table = data_util.get("table", player)
+    local context = player_table.ui_state.context
+    local floor_items_active = (player_table.preferences.show_floor_items and context.floor.level > 1)
 
     local class = (tags.category:gsub("^%l", string.upper))
-    local item = (floor_items_active) and Line.get(floor.origin_line, class, tags.item_id)
-      or Subfactory.get(subfactory, class, tags.item_id)
+    local item = (floor_items_active) and Line.get(context.floor.origin_line, class, tags.item_id)
+      or Subfactory.get(context.subfactory, class, tags.item_id)
 
     if action == "add_recipe" then
-        add_recipe(player, ui_state.context, tags.category, item.proto)
+        add_recipe(player, context, tags.category, item.proto)
 
     elseif action == "edit" then
         modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
@@ -162,8 +161,8 @@ local function handle_item_button_click(player, tags, action)
         ui_util.clipboard.paste(player, item)
 
     elseif action == "delete" then
-        Subfactory.remove(subfactory, item)
-        calculation.update(player, subfactory)
+        Subfactory.remove(context.subfactory, item)
+        calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "specify_amount" then
@@ -240,9 +239,10 @@ function item_boxes.build(player)
 end
 
 function item_boxes.refresh(player)
-    local ui_state = data_util.get("ui_state", player)
-    local subfactory = ui_state.context.subfactory
-    local floor = ui_state.context.floor
+    local player_table = data_util.get("table", player)
+    local context = player_table.ui_state.context
+    local subfactory = context.subfactory
+    local floor = context.floor
 
     -- This is all kinds of stupid, but the mob wishes the feature to exist
     local function refresh(parent, class, shows_floor_items)
@@ -251,7 +251,7 @@ function item_boxes.refresh(player)
     end
 
     local prow_count, brow_count, irow_count = 0, 0, 0
-    if ui_state.show_floor_items and floor.level > 1 then
+    if player_table.preferences.show_floor_items and floor.level > 1 then
         local line = floor.origin_line
         prow_count = refresh(line, "Product", true)
         brow_count = refresh(line, "Byproduct", true)
@@ -266,7 +266,7 @@ function item_boxes.refresh(player)
     local item_table_height = math.min(math.max(maxrow_count, 1), ITEM_BOX_MAX_ROWS) * ITEM_BOX_BUTTON_SIZE
 
     -- set the heights for both the visible frame and the scroll pane containing it
-    local item_boxes_elements = ui_state.main_elements.item_boxes
+    local item_boxes_elements = player_table.ui_state.main_elements.item_boxes
     item_boxes_elements.product_item_table.parent.style.minimal_height = item_table_height
     item_boxes_elements.product_item_table.parent.parent.style.minimal_height = item_table_height
     item_boxes_elements.byproduct_item_table.parent.style.minimal_height = item_table_height

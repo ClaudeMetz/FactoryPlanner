@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    - Added a button to unfold subfloors, meaning they will be shown on the top level without needing to go down into them
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.58
