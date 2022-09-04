@@ -163,7 +163,7 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "delete" then
         Subfactory.remove(context.subfactory, item)
         calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        main_dialog.refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense

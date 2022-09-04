@@ -121,13 +121,13 @@ local function setup_subfactories_table(modal_elements, add_location)
 end
 
 -- Adds a row to the subfactories table
-local function add_to_subfactories_table(modal_elements, subfactory, location_name, enable_checkbox)
+local function add_to_subfactories_table(modal_elements, subfactory, location_name, enable_checkbox, attach_products)
     local table_subfactories = modal_elements.subfactories_table
 
     local checkbox = table_subfactories.add{type="checkbox", state=false, enabled=(enable_checkbox or subfactory.valid),
       tags={mod="fp", on_gui_checked_state_changed="toggle_porter_checkbox"}}
 
-    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, true)}
+    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, attach_products, true)}
     label.style.maximal_width = 350
     label.style.right_margin = 4
 
@@ -143,7 +143,9 @@ end
 
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
 local function import_subfactories(player, _, _)
-    local modal_data = data_util.get("modal_data", player)
+    local player_table = data_util.get("table", player)
+    local attach_subfactory_products = player_table.preferences.attach_subfactory_products
+    local modal_data = player_table.ui_state.modal_data
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     local textfield_export_string = modal_elements.import_textfield
@@ -179,7 +181,7 @@ local function import_subfactories(player, _, _)
 
         local any_invalid_subfactories = true
         for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
-            add_to_subfactories_table(modal_elements, subfactory, nil, true)
+            add_to_subfactories_table(modal_elements, subfactory, nil, true, attach_subfactory_products)
             modal_data.subfactories["tmp_" .. subfactory.id] = subfactory
             any_invalid_subfactories = any_invalid_subfactories or (not subfactory.valid)
         end
@@ -304,6 +306,7 @@ export_dialog.dialog_settings = (function(_) return {
 
 function export_dialog.open(player, modal_data)
     local player_table = data_util.get("table", player)
+    local attach_subfactory_products = player_table.preferences.attach_subfactory_products
     local modal_elements = modal_data.modal_elements
 
     setup_subfactories_table(modal_elements, true)
@@ -312,7 +315,7 @@ function export_dialog.open(player, modal_data)
     local valid_subfactory_found = false
     for _, factory_name in ipairs{"factory", "archive"} do
         for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-            add_to_subfactories_table(modal_elements, subfactory, factory_name, false)
+            add_to_subfactories_table(modal_elements, subfactory, factory_name, false, attach_subfactory_products)
             modal_data.subfactories[factory_name .. "_" .. subfactory.id] = subfactory
             valid_subfactory_found = valid_subfactory_found or subfactory.valid
         end

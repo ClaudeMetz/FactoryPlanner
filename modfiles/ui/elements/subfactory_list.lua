@@ -180,6 +180,8 @@ function subfactory_list.refresh(player)
     listbox.clear()
 
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
+        local attach_subfactory_products = player_table.preferences.attach_subfactory_products
+
         local matrix_active = (context.subfactory.matrix_free_items ~= nil)
         local limitations = {archive_open = flags.archive_open, matrix_active = matrix_active}
         local tutorial_tt = (player_table.preferences.tutorial_mode) and
@@ -188,8 +190,8 @@ function subfactory_list.refresh(player)
         for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
             local style = (selected) and "fp_button_fake_listbox_item_active" or "fp_button_fake_listbox_item"
-            local caption, info_tooltip = Subfactory.tostring(subfactory, false)
-            local padded_caption = {"", "             ", caption}
+            local caption, info_tooltip = Subfactory.tostring(subfactory, attach_subfactory_products, false)
+            local padded_caption = {"", "           ", caption}
             local tooltip = {"", info_tooltip, tutorial_tt}
 
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work

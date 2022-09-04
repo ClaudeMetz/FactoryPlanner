@@ -331,17 +331,19 @@ function compact_subfactory.build(player)
 end
 
 function compact_subfactory.refresh(player)
-    local ui_state = data_util.get("ui_state", player)
-    local compact_elements = ui_state.compact_elements
-    local subfactory = ui_state.context.subfactory
+    local player_table = data_util.get("table", player)
+    local compact_elements = player_table.ui_state.compact_elements
+    local context = player_table.ui_state.context
+    local subfactory = context.subfactory
     if not subfactory or not subfactory.valid then return end
 
     local current_level = subfactory.selected_floor.level
-    local lines = Floor.get_in_order(ui_state.context.floor, "Line")
+    local lines = Floor.get_in_order(context.floor, "Line")
 
     view_state.refresh(player, compact_elements.view_state_table)
 
-    compact_elements.name_label.caption = Subfactory.tostring(subfactory, false)
+    local attach_subfactory_products = player_table.preferences.attach_subfactory_products
+    compact_elements.name_label.caption = Subfactory.tostring(subfactory, attach_subfactory_products, true)
 
     compact_elements.level_label.caption = {"fp.bold_label", {"", "-   ", {"fp.level"}, " ", current_level}}
     compact_elements.floor_up_button.enabled = (current_level > 1)

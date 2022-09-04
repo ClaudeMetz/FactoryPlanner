@@ -402,12 +402,13 @@ function picker_dialog.close(player, action)
             if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
                 local translations = player_table.translation_tables
                 local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
-                local subfactory_name = "[img=" .. top_level_item.proto.sprite .. "] " .. translated_name
-                subfactory = subfactory_list.add_subfactory(player, subfactory_name)
-                refresh_scope = "all"  -- need to refresh subfactory list too
+                local icon = (not player_table.preferences.attach_subfactory_products)
+                  and "[img=" .. top_level_item.proto.sprite .. "] " or ""
+                subfactory = subfactory_list.add_subfactory(player, (icon .. translated_name))
             end
 
             Subfactory.add(subfactory, top_level_item)
+            refresh_scope = "all"  -- need to refresh subfactory list too
         end
 
         calculation.update(player, subfactory)

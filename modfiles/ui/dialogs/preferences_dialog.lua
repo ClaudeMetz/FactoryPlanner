@@ -163,6 +163,9 @@ local function handle_checkbox_preference_change(player, tags, event)
         -- Only recalculate if the satisfaction data will actually be shown now
         refresh.update_ingredient_satisfaction = (event.element.state)
         refresh.production = true  -- always refresh production
+
+    elseif preference_name == "attach_subfactory_products" then
+        refresh.subfactory_list = true
     end
 end
 
@@ -245,7 +248,7 @@ function preferences_dialog.open(player, modal_data)
     label_preferences_info.style.width = 335
 
     local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
-      "ingredient_satisfaction", "round_button_numbers"}
+      "ingredient_satisfaction", "round_button_numbers", "attach_subfactory_products"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
     local production_preference_names = {"done_column", "pollution_column", "line_comment_column"}
@@ -274,6 +277,10 @@ function preferences_dialog.close(player, _)
         local player_table = data_util.get("table", player)
         Factory.update_ingredient_satisfactions(player_table.factory)
         Factory.update_ingredient_satisfactions(player_table.archive)
+    end
+
+    if refresh.subfactory_list then
+        subfactory_list.refresh(player)
     end
 
     local context_to_refresh = nil  -- don't refresh by default

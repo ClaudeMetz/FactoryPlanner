@@ -35,8 +35,17 @@ function Subfactory.init(name)
 end
 
 
-function Subfactory.tostring(self, export_format)
+function Subfactory.tostring(self, attach_products, export_format)
     local caption, tooltip = self.name, nil  -- don't return a tooltip for the export_format
+
+    if attach_products and self.valid then
+        local product_string = ""
+        for _, item in pairs(Subfactory.get_in_order(self, "Product")) do
+            product_string = product_string .. "[img=" .. item.proto.sprite .. "]"
+        end
+        if product_string ~= "" then product_string = product_string .. "  " end
+        caption = product_string .. caption
+    end
 
     if not export_format then
         local status_string = ""
@@ -52,7 +61,7 @@ function Subfactory.tostring(self, export_format)
         end
 
         local invalid_string = (not self.valid) and {"fp.subfactory_invalid"} or ""
-        tooltip = {"", {"fp.tt_title", self.name}, trashed_string, invalid_string}
+        tooltip = {"", {"fp.tt_title", caption}, trashed_string, invalid_string}
     end
 
     return caption, tooltip
