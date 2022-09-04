@@ -37,8 +37,9 @@ function Item.required_amount(self)
 end
 
 
-function Item.paste(self, object)
-    if object.class == "Product" or object.class == "Byproduct" or object.class == "Ingredient" then
+function Item.paste(self, object)  -- this is implicitly only called on top level items
+    if object.class == "Product" or object.class == "Byproduct"
+      or object.class == "Ingredient" or object.class == "Fuel" then
         local existing_item = Subfactory.get_by_name(self.parent, self.class, object.proto.name)
         -- Avoid duplicate items, but allow pasting over the same item proto
         if existing_item and existing_item.proto.name == object.proto.name

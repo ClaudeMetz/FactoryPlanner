@@ -318,7 +318,8 @@ function builders.ingredients(line, parent_flow, metadata)
         local name_line = (note == nil) and {"fp.tt_title", ingredient.proto.localised_name}
           or {"fp.tt_title_with_note", ingredient.proto.localised_name, note}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", name_line, number_line, satisfaction_line, metadata.ingredient_tutorial_tt}
+        local tutorial_tt = (enabled) and metadata.ingredient_tutorial_tt or ""
+        local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
 
         parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_ingredient",
           floor_id=line.parent.id, line_id=line.id, class="Ingredient", item_id=ingredient.id},

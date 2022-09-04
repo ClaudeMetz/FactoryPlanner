@@ -313,8 +313,11 @@ local function handle_fuel_click(player, tags, action)
         modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, floor_id=floor.id,
           production_type="produce", add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
 
-    elseif action == "change" then  -- fuel is changed through the machine dialog now
+    elseif action == "edit" then  -- fuel is changed through the machine dialog
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+
+    elseif action == "copy" then
+        ui_util.clipboard.copy(player, fuel)
 
     elseif action == "put_into_cursor" then
         ui_util.add_item_to_cursor_combinator(player, fuel.proto, fuel.amount)
@@ -427,7 +430,8 @@ production_handler.gui_events = {
             modifier_actions = {
                 add_recipe_to_end = {"left", {archive_open=false}},
                 add_recipe_below = {"control-left", {archive_open=false}},
-                change = {"right", {archive_open=false}},
+                edit = {"right", {archive_open=false}},
+                copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
