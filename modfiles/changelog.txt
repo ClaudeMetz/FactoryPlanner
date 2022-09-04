@@ -3,6 +3,7 @@ Version: 0.00.00
 Date: 00. 00. 0000
   Features:
     - Added a button to unfold subfloors, meaning they will be shown on the top level without needing to go down into them
+    - Added a preference that, when enabled, adds a subfactory's products as icons to its name in the subfactory list
   Changes:
     -
   Bugfixes:

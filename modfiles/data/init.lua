@@ -53,6 +53,7 @@ local function reload_preferences(player)
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
     preferences.round_button_numbers = preferences.round_button_numbers or false
+    preferences.attach_subfactory_products = preferences.attach_subfactory_products or false
 
     preferences.done_column = preferences.done_column or false
     preferences.pollution_column = preferences.pollution_column or false
