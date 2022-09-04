@@ -16,6 +16,7 @@ end
 function Fuel.pack(self)
     return {
         proto = prototyper.util.simplify_prototype(self.proto),
+        amount = self.amount,  -- conserve for cloning
         class = self.class
     }
 end
