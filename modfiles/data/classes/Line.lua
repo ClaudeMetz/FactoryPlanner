@@ -275,6 +275,8 @@ function Line.pack(self)
 
         -- If this line has no priority_product, the function will return nil
         packed_line.priority_product_proto = prototyper.util.simplify_prototype(self.priority_product_proto)
+
+        packed_line.Product = Collection.pack(self.Product, Item)  -- conserve for cloning
     end
 
     return packed_line
@@ -311,6 +313,8 @@ function Line.unpack(packed_self, parent_level)
         self.priority_product_proto = packed_self.priority_product_proto
         self.comment = packed_self.comment
 
+        self.Product = Collection.unpack(packed_self.Product, self, Item)  -- conserved for cloning
+
         return self
     end
 end
@@ -334,6 +338,8 @@ function Line.validate(self)
             self.valid = prototyper.util.validate_prototype_object(self, "priority_product_proto", "items", "type")
               and self.valid
         end
+
+        self.valid = Collection.validate_datasets(self.Product, Item) and self.valid  -- conserved for cloning
 
         -- Effects summarized by machine/beacon validation
     end

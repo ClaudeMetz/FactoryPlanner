@@ -57,6 +57,26 @@ function Item.paste(self, object)  -- this is implicitly only called on top leve
         if not self.amount then Subfactory.add(self.parent, object)
         else Subfactory.replace(self.parent, self, object) end
         return true, nil
+
+    elseif object.class == "Line" then
+        local relevant_line = (object.subfloor) and object.subfloor.defining_line or object
+        for _, product in pairs(Line.get_in_order(relevant_line, "Product")) do
+            local fake_item = {proto={name=""}, parent=self.parent, class=self.class}
+            Item.paste(fake_item, product)  -- avoid duplicating existing items
+        end
+
+        local top_floor = Subfactory.get(self.parent, "Floor", 1)  -- line count can be 0
+        if object.subfloor then  -- if the line has a subfloor, paste its contents on the top floor
+            local fake_line = {parent=top_floor, class="Line", gui_position=top_floor.Line.count}
+            for _, line in pairs(Floor.get_in_order(object.subfloor, "Line")) do
+                Line.paste(fake_line, line)
+                fake_line.gui_position = fake_line.gui_position + 1
+            end
+        else  -- if the line has no subfloor, just straight paste it onto the top floor
+            local fake_line = {parent=top_floor, class="Line", gui_position=top_floor.Line.count}
+            Line.paste(fake_line, object)
+        end
+        return true, nil
     else
         return false, "incompatible_class"
     end
