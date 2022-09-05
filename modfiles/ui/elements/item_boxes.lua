@@ -64,7 +64,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
     if not subfactory or not subfactory.valid then return 0 end
 
     local table_item_count = 0
-    local metadata = view_state.generate_metadata(player, subfactory, 4, true)
+    local metadata = view_state.generate_metadata(player, subfactory)
     local default_style = (category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. category)

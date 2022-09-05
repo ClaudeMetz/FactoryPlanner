@@ -16,7 +16,7 @@ local function generate_metadata(player)
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
-        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true),
+        view_state_metadata = view_state.generate_metadata(player, subfactory),
         any_beacons_available = (table_size(global.all_beacons.map) > 0)
     }
 
