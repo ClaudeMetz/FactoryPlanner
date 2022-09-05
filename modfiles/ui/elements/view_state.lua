@@ -30,12 +30,9 @@ local processors = {}  -- individual functions for each kind of view state
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
     local number = ui_util.format_number(raw_amount, metadata.formatting_precision)
 
-    local tooltip = nil
-    if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
-        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        tooltip = {"", number, " ", type_string, "/", metadata.timescale_string}
-    end
+    local plural_parameter = (number == "1") and 1 or 2
+    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+    local tooltip = {"", number, " ", type_string, "/", metadata.timescale_string}
 
     return number, tooltip
 end
@@ -45,11 +42,8 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
     local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
-    local tooltip = nil
-    if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
-    end
+    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
 
     local return_number = (metadata.round_button_numbers) and math.ceil(raw_number) or number
     return return_number, tooltip
@@ -63,11 +57,8 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local wagon_count = raw_amount / wagon_capacity
     local number = ui_util.format_number(wagon_count, metadata.formatting_precision)
 
-    local tooltip = nil
-    if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
-        tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
-    end
+    local plural_parameter = (number == "1") and 1 or 2
+    local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
 
     return number, tooltip
 end
@@ -78,14 +69,11 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil(machine_count or 1))
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
-    local tooltip = nil
-    if metadata.include_tooltip then
-        local plural_parameter = (number == "1") and 1 or 2
-        local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
-        -- If machine_count is nil, this shouldn't show /machine
-        local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
-        tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
-    end
+    local plural_parameter = (number == "1") and 1 or 2
+    local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
+    -- If machine_count is nil, this shouldn't show /machine
+    local per_machine = (machine_count ~= nil) and {"", "/", {"fp.pl_machine", 1}} or ""
+    local tooltip = {"", number, " ", type_string, "/", {"fp.second"}, per_machine}
 
     return number, tooltip
 end
@@ -93,7 +81,7 @@ end
 
 -- ** TOP LEVEL **
 -- Creates metadata relevant for a whole batch of items
-function view_state.generate_metadata(player, subfactory, formatting_precision, include_tooltip)
+function view_state.generate_metadata(player, subfactory)
     local player_table = data_util.get("table", player)
 
     local view_states = player_table.ui_state.view_states
@@ -113,8 +101,7 @@ function view_state.generate_metadata(player, subfactory, formatting_precision, 
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
-        formatting_precision = formatting_precision,
-        include_tooltip = include_tooltip,
+        formatting_precision = 4,
         cargo_wagon_capactiy = cargo_wagon_capactiy,
         fluid_wagon_capacity = fluid_wagon_capacity
     }

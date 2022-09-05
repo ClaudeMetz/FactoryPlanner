@@ -59,7 +59,7 @@ local function refresh_fuel_frame(player)
     modal_elements.fuel_info_label.visible = (machine_burner == nil)
     if machine_burner == nil then return end
 
-    local view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory, 4, true)
+    local view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory)
     local timescale = ui_state.context.subfactory.timescale
     local current_proto = dialog_machine.fuel.proto
 

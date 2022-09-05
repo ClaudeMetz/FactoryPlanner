@@ -361,7 +361,7 @@ function compact_subfactory.refresh(player)
     local metadata = {
         parent = production_table,
         column_counts = column_counts,
-        view_state_metadata = view_state.generate_metadata(player, subfactory, 4, true)
+        view_state_metadata = view_state.generate_metadata(player, subfactory)
     }
 
     if data_util.get("preferences", player).tutorial_mode then
