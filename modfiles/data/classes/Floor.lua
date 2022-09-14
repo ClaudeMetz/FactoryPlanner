@@ -134,7 +134,7 @@ function Floor.get_component_data(self, component_table)
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
         if line.subfloor == nil then
             local machine = line.machine
-            local ceil_machine_count = math.ceil(machine.count)
+            local ceil_machine_count = math.ceil(machine.count - 0.001)
 
             add_machine(machine.proto, ceil_machine_count)
             for _, module in pairs(ModuleSet.get_in_order(machine.module_set)) do
@@ -143,7 +143,7 @@ function Floor.get_component_data(self, component_table)
 
             local beacon = line.beacon
             if beacon and beacon.total_amount then
-                local ceil_total_amount = math.ceil(beacon.total_amount)
+                local ceil_total_amount = math.ceil(beacon.total_amount - 0.001)
 
                 add_machine(beacon.proto, ceil_total_amount)
                 for _, module in pairs(ModuleSet.get_all(beacon.module_set)) do

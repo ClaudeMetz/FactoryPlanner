@@ -117,19 +117,12 @@ local function add_machine_flow(parent_flow, line, metadata)
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
         local machine_proto = line.machine.proto
 
-        local tooltip_count = ui_util.format_number(line.machine.count, 4)
-        local machine_count = math.ceil(tooltip_count)  -- button count always rounded up here
-        if machine_count == "0" and line.production_ratio > 0 then
-            tooltip_count = "<0.0001"
-            machine_count = "0.01"  -- shows up as 0.0 on the button
-        end
-
-        local plural_parameter = (machine_count == "1") and 1 or 2
-        local number_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
-        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, number_line, metadata.machine_tutorial_tt}
+        local count, tooltip_line = ui_util.format_machine_count(line.machine.count, (line.production_ratio > 0), true)
+        local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line,
+          metadata.machine_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=machine_count,
+        machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
           tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id},
           style=style, mouse_button_filter={"left-and-right"}}
 

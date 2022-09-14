@@ -6,7 +6,7 @@ Date: 00. 00. 0000
     - Added a preference that, when enabled, adds a subfactory's products as icons to its name in the subfactory list
     - Added the ability to paste whole lines as top level products, setting product amounts and copying the line(s) over
   Changes:
-    -
+    - Made rounding around machine amounts more consistent, fixing a few inconsistencies
   Bugfixes:
     -
 

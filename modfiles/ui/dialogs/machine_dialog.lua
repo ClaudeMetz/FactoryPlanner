@@ -26,20 +26,14 @@ local function refresh_machine_frame(player)
             local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
               line.uncapped_production_ratio, timescale, machine_proto.launch_sequence_time)
 
-            local button_number = (round_button_numbers) and math.ceil(machine_count) or machine_count
-
-            -- Have to do this stupid crap because localisation plurals only work on integers
-            local formatted_number = ui_util.format_number(machine_count, 4)
-            local plural_parameter = (formatted_number == "1") and 1 or 2
-            local amount_line = {"", formatted_number, " ", {"fp.pl_machine", plural_parameter}}
-
+            local count, tooltip_line = ui_util.format_machine_count(machine_count, true, round_button_numbers)
             local attributes = data_util.get_attributes("machines", machine_proto)
-            local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", amount_line, "\n", attributes}
+            local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line, "\n", attributes}
 
             local selected = (machine_proto.id == current_proto.id)
             local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
-            table_machine.add{type="sprite-button", sprite=machine_proto.sprite, number=button_number,
+            table_machine.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
               tooltip=tooltip, tags={mod="fp", on_gui_click="choose_machine", proto_id=machine_proto.id},
               style=button_style, mouse_button_filter={"left"}}
         end

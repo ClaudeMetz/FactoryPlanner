@@ -144,7 +144,7 @@ end
 
 function attribute_generators.machines(machine)
     local pollution = machine.energy_usage * (machine.emissions * 60) * 60
-    return {"", {"fp.attribute_line", {"fp.crafting_speed"}, ui_util.format_number(machine.speed, 4)},
+    return {"", {"fp.attribute_line", {"fp.crafting_speed"}, ui_util.format_number(machine.speed, 3)},
            {"fp.attribute_line", {"fp.energy_consumption"}, ui_util.format_SI_value(machine.energy_usage * 60, "W", 3)},
            {"fp.attribute_line", {"fp.pollution"}, {"", ui_util.format_SI_value(pollution, "P/m", 3)}},
            {"fp.attribute_line", {"fp.module_slots"}, machine.module_limit}}

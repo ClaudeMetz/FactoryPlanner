@@ -118,7 +118,7 @@ local function update_line(line_data, aggregate)
       timescale, machine_proto.launch_sequence_time)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
-    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count)
+    aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 0.001)
 
 
     -- Determine energy consumption (including potential fuel needs) and pollution
