@@ -383,8 +383,9 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
                 matrix_solver.consolidate(line_aggregate)
             end
 
-            -- lines with subfloors should show actual number of machines to build, so each machine count is rounded up when summed
-            floor_aggregate.machine_count = floor_aggregate.machine_count + math.ceil(line_aggregate.machine_count)
+            -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
+            floor_aggregate.machine_count = floor_aggregate.machine_count +
+              math.ceil(line_aggregate.machine_count - 0.001)
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 

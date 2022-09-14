@@ -140,14 +140,8 @@ function builders.machine(line, parent_flow, metadata)
         parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default_small",
           enabled=false, number=machine_count, tooltip=tooltip}
     else
-        -- Machine
-        machine_count = ui_util.format_number(machine_count, 4)
-        local tooltip_count = machine_count
-        if machine_count == "0" and line.production_ratio > 0 then
-            tooltip_count = "<0.0001"
-            machine_count = "0.01"  -- shows up as 0.0 on the button
-        end
-        if metadata.round_button_numbers then machine_count = math.ceil(machine_count) end
+        local active, round_number = (line.production_ratio > 0), metadata.round_button_numbers
+        local count, tooltip_line = ui_util.format_machine_count(machine_count, active, round_number)
 
         local machine_limit = line.machine.limit
         local style, note = "flib_slot_button_default_small", nil
@@ -164,17 +158,14 @@ function builders.machine(line, parent_flow, metadata)
             end
         end
 
-        local plural_parameter = (machine_count == "1") and 1 or 2
-        local number_line = {"", "\n", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
-        if note ~= nil then table.insert(number_line, {"", " - ", note}) end
-        local tooltip = {"", {"fp.tt_title", line.machine.proto.localised_name}, number_line,
+        if note ~= nil then table.insert(tooltip_line, {"", " - ", note}) end
+        local tooltip = {"", {"fp.tt_title", line.machine.proto.localised_name}, "\n", tooltip_line,
           line.machine.effects_tooltip, metadata.machine_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", style=style, sprite=line.machine.proto.sprite, number=machine_count,
+        parent_flow.add{type="sprite-button", style=style, sprite=line.machine.proto.sprite, number=count,
           tags={mod="fp", on_gui_click="act_on_line_machine", floor_id=line.parent.id, line_id=line.id, type="machine"},
           tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
-        -- Modules
         local module_set = line.machine.module_set
         if module_set.module_limit > 0 and module_set.module_count == 0 then
             local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
@@ -199,7 +190,6 @@ function builders.beacon(line, parent_flow, metadata)
           tags={mod="fp", on_gui_click="add_line_beacon", floor_id=line.parent.id, line_id=line.id},
           tooltip=tooltip, mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
     else
-        -- Beacon
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
         if beacon.total_amount then table.insert(number_line, {"", " - ", {"fp.in_total", beacon.total_amount}}) end
@@ -215,7 +205,6 @@ function builders.beacon(line, parent_flow, metadata)
             sprite_overlay.ignored_by_interaction = true
         end
 
-        -- Modules
         add_module_flow(parent_flow, line, "beacon", metadata)
     end
 end

@@ -270,6 +270,25 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
+function ui_util.format_machine_count(count, active, round_number)
+    -- The formatting is used to 'round down' when the decimal is very small
+    local formatted_count = ui_util.format_number(count, 3)
+    local tooltip_count = formatted_count
+
+    -- If the formatting returns 0, it is a very small number, so show it as 0.001
+    if formatted_count == "0" and active then
+        tooltip_count = "≤0.001"
+        formatted_count = "0.01"  -- shows up as 0.0 on the button
+    end
+
+    if round_number then formatted_count = math.ceil(formatted_count) end
+
+    local plural_parameter = (tooltip_count == "1") and 1 or 2
+    local amount_line = {"", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
+
+    return formatted_count, amount_line
+end
+
 
 -- ** Context **
 -- Creates a blank context referencing which part of the Factory is currently displayed

@@ -45,7 +45,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
     local plural_parameter = (number == "1") and 1 or 2
     local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
 
-    local return_number = (metadata.round_button_numbers) and math.ceil(raw_number) or number
+    local return_number = (metadata.round_button_numbers) and math.ceil(raw_number - 0.001) or number
     return return_number, tooltip
 end
 
@@ -66,7 +66,7 @@ end
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
     if machine_count == 0 then return 0, "" end  -- avoid division by zero
 
-    local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil(machine_count or 1))
+    local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil((machine_count - 0.001) or 1))
     local number = ui_util.format_number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
