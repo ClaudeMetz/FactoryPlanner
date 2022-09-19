@@ -234,7 +234,8 @@ function GENERIC_HANDLERS.apply_item_options(player, options, action)
             end
         end
 
-        relevant_line.percentage = (relevant_line.percentage * item_amount) / current_amount
+        relevant_line.percentage = (current_amount == 0) and 100 or
+          (relevant_line.percentage * item_amount) / current_amount
 
         calculation.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
