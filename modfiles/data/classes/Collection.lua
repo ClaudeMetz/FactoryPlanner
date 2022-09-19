@@ -131,14 +131,14 @@ end
 
 
 -- Shifts given dataset in given direction
-function Collection.shift(self, main_dataset, direction)
+function Collection.shift(self, main_dataset, direction, bottom_position)
     if not main_dataset then error("Can't shift nil dataset")
     elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
 
     local main_gui_position = main_dataset.gui_position
 
     -- Doesn't shift if outmost elements are being shifted further outward
-    if (main_gui_position == 1 and direction == "negative") or
+    if (main_gui_position == bottom_position and direction == "negative") or
       (main_gui_position == self.count and direction == "positive") then
         return false
     end
@@ -152,19 +152,19 @@ function Collection.shift(self, main_dataset, direction)
 end
 
 -- Shifts the given dataset to the end of the collection in the given direction
-function Collection.shift_to_end(self, main_dataset, direction)
+function Collection.shift_to_end(self, main_dataset, direction, bottom_position)
     if not main_dataset then error("Can't shift nil dataset")
     elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
 
     local main_gui_position = main_dataset.gui_position
 
     -- Doesn't shift if outmost elements are being shifted further outward
-    if (main_gui_position == 1 and direction == "negative") or
+    if (main_gui_position == bottom_position and direction == "negative") or
       (main_gui_position == self.count and direction == "positive") then
         return false
     end
 
-    local secondary_gui_position = (direction == "positive") and self.count or 1
+    local secondary_gui_position = (direction == "positive") and self.count or bottom_position
     -- To simplify the code, remove the dataset and re-insert it at the right position
     Collection.remove(self, main_dataset)
     Collection.insert_at(self, secondary_gui_position, main_dataset)
