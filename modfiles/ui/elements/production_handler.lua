@@ -8,15 +8,14 @@ local function handle_line_move_click(player, tags, event)
 
     local shifting_function = (event.shift) and Floor.shift_to_end or Floor.shift
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
+    local bottom_position = (floor.level > 1) and 2 or 1
 
-    -- Can't shift second line into the first position on subfloors. Top line is disabled, so no special handling
-    if (floor.level > 1 and tags.direction == "up" and (line.gui_position == 2 or event.shift)) or
-      not shifting_function(floor, line, translated_direction) then
-        local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_recipe", 1}, {"fp." .. tags.direction}}
-        title_bar.enqueue_message(player, message, "error", 1, true)
-      else
+    if shifting_function(floor, line, translated_direction, bottom_position) then
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
+    else
+        local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_recipe", 1}, {"fp." .. tags.direction}}
+        title_bar.enqueue_message(player, message, "error", 1, true)
     end
 end
 

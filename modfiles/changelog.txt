@@ -8,7 +8,7 @@ Date: 00. 00. 0000
   Changes:
     - Made rounding around machine amounts more consistent, fixing a few inconsistencies
   Bugfixes:
-    -
+    - Fixed an issue where moving subfactories to the top on subfloors did not work correctly
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.58

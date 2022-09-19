@@ -73,7 +73,7 @@ local function handle_move_subfactory_click(player, tags, event)
     local shifting_function = (event.shift) and Factory.shift_to_end or Factory.shift
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
 
-    if shifting_function(context.factory, subfactory, translated_direction) then
+    if shifting_function(context.factory, subfactory, translated_direction, 1) then
         main_dialog.refresh(player, "subfactory_list")
     else
         local direction_string = (translated_direction == "negative") and {"fp.up"} or {"fp.down"}
