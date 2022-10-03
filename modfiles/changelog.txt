@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.59
@@ -16,7 +16,7 @@ Date: 19. 09. 2022
     - Added a preference that, when enabled, adds a subfactory's products as icons to its name in the subfactory list
     - Added the ability to paste whole lines as top level products, setting product amounts and copying the line(s) over
   Changes:
-    - Made rounding around machine amounts more consistent, fixing a few inconsistencies
+    - Made rounding around machine amounts more consistent
   Bugfixes:
     - Fixed an issue where moving subfactories to the top on subfloors did not work correctly
     - Fixed a crash when changing line percentage via item amount when percentage is 0
