@@ -115,7 +115,19 @@ function Subfactory.get_component_data(self)
 
     for _, floor in pairs(Subfactory.get_in_order(self, "Floor")) do
         -- Relies on the floor-function to do the heavy lifting
-        Floor.get_component_data(floor, components)
+        Floor.get_component_data(floor, components, false)
+    end
+
+    return components
+end
+
+-- Returns the machines and modules remaining to actually build this subfactory
+function Subfactory.get_unfinished_component_data(self)
+    local components = {machines={}, modules={}}
+
+    for _, floor in pairs(Subfactory.get_in_order(self, "Floor")) do
+        -- Relies on the floor-function to do the heavy lifting
+        Floor.get_component_data(floor, components, true)
     end
 
     return components

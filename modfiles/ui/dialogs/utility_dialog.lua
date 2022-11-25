@@ -117,7 +117,13 @@ function utility_structures.components(player, modal_data)
         component_row.clear()
 
         local inventory_contents = modal_data.inventory_contents
-        local component_data = _G[scope].get_component_data(context[lower_scope], nil)
+
+        local component_data
+        if data_util.get("preferences", player).done_column then
+            component_data = _G[scope].get_unfinished_component_data(context[lower_scope], nil)
+        else
+            component_data = _G[scope].get_component_data(context[lower_scope], nil)
+        end
 
         local frame_components = component_row.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}

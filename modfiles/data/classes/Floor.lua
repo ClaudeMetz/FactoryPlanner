@@ -112,8 +112,9 @@ end
 
 
 -- Returns the machines and modules needed to actually build this floor
-function Floor.get_component_data(self, component_table)
+function Floor.get_component_data(self, component_table, only_unfinished)
     local components = component_table or {machines={}, modules={}}
+    only_unfinished = only_unfinished or false
 
     local function add_component(table, proto, amount)
         local component = table[proto.name]
@@ -132,7 +133,7 @@ function Floor.get_component_data(self, component_table)
     -- Doesn't count subfloors when looking at this specific floors. Maybe it should, which
     -- would mean the subfactory machine total is equal to the floor total of the top floor
     for _, line in pairs(Floor.get_in_order(self, "Line")) do
-        if line.subfloor == nil then
+        if line.subfloor == nil and not (only_unfinished and line.done) then
             local machine = line.machine
             local ceil_machine_count = math.ceil(machine.count - 0.001)
 
@@ -154,6 +155,11 @@ function Floor.get_component_data(self, component_table)
     end
 
     return components
+end
+
+-- Returns the machines and modules remaining to actually build this floor
+function Floor.get_unfinished_component_data(self, component_table)
+    return Floor.get_component_data(self, component_table, true)
 end
 
 
