@@ -44,8 +44,26 @@ local builders = {}
 function builders.done(line, parent_flow, _)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
-    parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
-      tags={mod="fp", on_gui_checked_state_changed="checkmark_line", floor_id=line.parent.id, line_id=line.id}}
+    if line.subfloor then
+        local status = Floor.get_done_status(line.subfloor)
+        local switch_state, allow_none_state
+        if status == "none" then
+            switch_state = "left"
+            allow_none_state = false
+        elseif status == "some" then
+            switch_state = "none"
+            allow_none_state = true
+        else
+            switch_state = "right"
+            allow_none_state = false
+        end
+
+        parent_flow.add{type="switch", switch_state=switch_state, allow_none_state=allow_none_state,
+          tags={mod="fp", on_gui_switch_state_changed="checkmark_line", floor_id=line.parent.id, line_id=line.id}}
+    else
+        parent_flow.add{type="checkbox", state=relevant_line.done,
+          tags={mod="fp", on_gui_checked_state_changed="checkmark_line", floor_id=line.parent.id, line_id=line.id}}
+    end
 end
 
 function builders.recipe(line, parent_flow, metadata, indent)

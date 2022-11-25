@@ -111,6 +111,77 @@ function Floor.shift_to_end(self, dataset, direction, bottom_position)
 end
 
 
+-- Returns whether "none", "some", or "all" of the machines in this floor (and any subfloors) are marked as done.
+-- This is different from the value of origin_line.done!
+function Floor.get_done_status(self)
+    local any_on = false
+    local any_off = false
+
+    -- Iterate over all floors and subfloors, stopping once enough information is obtained
+    for _, line in pairs(Floor.get_in_order(self, "Line")) do
+        if line.subfloor == nil then
+            if line.done then
+                any_on = true
+                if any_off then break end
+            else
+                any_off = true
+                if any_on then break end
+            end
+        else
+            local status = Floor.get_done_status(line.subfloor)
+            if status == "all" then
+                any_on = true
+                if any_off then break end
+            elseif status == "none" then
+                any_off = true
+                if any_on then break end
+            else
+                any_on = true
+                any_off = true
+                break
+            end
+        end
+    end
+
+    if any_on and not any_off then
+        return "all"
+    elseif any_on and any_off then
+        return "some"
+    else
+        return "none"
+    end
+end
+
+-- Mark or unmark all lines in this floor (recursing through subfloors) as done.
+function Floor.set_done_status(self, status)
+    for _, line in pairs(Floor.get_in_order(self, "Line")) do
+        line.done = status
+
+        if line.subfloor then
+            cascading_change_floor_done_statuses(line.subfloor, status)
+        end
+    end
+    if origin_line then origin_line.done = status end
+end
+
+-- Recompute the value of origin_line.done so that it is true if and only if all lines in this floor are done; if that resulted in a change, also recomputes the parent floor.
+function Floor.recompute_origin_done_status_cascading_up(self)
+    if not self.origin_line then return end
+    local previous_origin_done = self.origin_line.done
+
+    self.origin_line.done = true
+    for _, line in pairs(Floor.get_in_order(self, "Line")) do
+        if not line.done then
+            self.origin_line.done = false
+            break
+        end
+    end
+
+    if previous_origin_done ~= self.origin_line.done and self.level > 1 then
+        Floor.recompute_origin_done_status_cascading_up(self.parent)
+    end
+end
+
 -- Returns the machines and modules needed to actually build this floor
 function Floor.get_component_data(self, component_table)
     local components = component_table or {machines={}, modules={}}

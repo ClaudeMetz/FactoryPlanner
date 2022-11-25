@@ -86,8 +86,26 @@ end
 
 
 local function add_checkmark_button(parent_flow, line, relevant_line)
-    parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
-      tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
+    if line.subfloor then
+        local status = Floor.get_done_status(line.subfloor)
+        local switch_state, allow_none_state
+        if status == "none" then
+            switch_state = "left"
+            allow_none_state = false
+        elseif status == "some" then
+            switch_state = "none"
+            allow_none_state = true
+        else
+            switch_state = "right"
+            allow_none_state = false
+        end
+
+        parent_flow.add{type="switch", switch_state=switch_state, allow_none_state=allow_none_state,
+          tags={mod="fp", on_gui_switch_state_changed="checkmark_compact_line", line_id=line.id}}
+    else
+        parent_flow.add{type="checkbox", state=relevant_line.done,
+          tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
+    end
 end
 
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
@@ -190,6 +208,32 @@ local function add_item_flow(line, item_class, button_color, metadata)
     end
 end
 
+
+local function handle_compact_checkmark_change(player, tags, event)
+    local floor = data_util.get("context", player).floor
+    local line = Floor.get(floor, "Line", tags.line_id)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+
+    if line.subfloor then
+        if event.element.switch_state == "left" then
+            line.done = false
+            relevant_line.done = false
+            -- switched off an entire floor, so unset all its done statuses
+            Floor.set_done_status(line.subfloor, false)
+        elseif event.element.switch_state == "right" then
+            line.done = true
+            relevant_line.done = true
+            -- switched on an entire floor, so set all its done statuses
+            Floor.set_done_status(line.subfloor, true)
+        end
+    else
+        -- checked/unchecked a line, so set its done status
+        relevant_line.done = event.element.state
+    end
+
+    Floor.recompute_origin_done_status_cascading_up(floor)
+    compact_subfactory.refresh(player)
+end
 
 local function handle_recipe_click(player, tags, action)
     local context = data_util.get("context", player)
@@ -448,12 +492,13 @@ compact_subfactory.gui_events = {
     on_gui_checked_state_changed = {
         {
             name = "checkmark_compact_line",
-            handler = (function(player, tags, _)
-                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
-                local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-                relevant_line.done = not relevant_line.done
-                compact_subfactory.refresh(player)
-            end)
+            handler = handle_compact_checkmark_change
+        }
+    },
+    on_gui_switch_state_changed = {
+        {
+            name = "checkmark_compact_line",
+            handler = handle_compact_checkmark_change
         }
     }
 }

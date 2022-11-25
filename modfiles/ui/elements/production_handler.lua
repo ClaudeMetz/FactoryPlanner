@@ -19,6 +19,35 @@ local function handle_line_move_click(player, tags, event)
     end
 end
 
+
+local function handle_checkmark_change(player, tags, event)
+    local context = data_util.get("context", player)
+    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
+    local line = Floor.get(floor, "Line", tags.line_id)
+    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+
+    if line.subfloor then
+        if event.element.switch_state == "left" then
+            line.done = false
+            relevant_line.done = false
+            -- switched off an entire floor, so unset all its done statuses
+            Floor.set_done_status(line.subfloor, false)
+        elseif event.element.switch_state == "right" then
+            line.done = true
+            relevant_line.done = true
+            -- switched on an entire floor, so set all its done statuses
+            Floor.set_done_status(line.subfloor, true)
+        end
+    else
+        -- checked/unchecked a line, so set its done status
+        relevant_line.done = event.element.state
+    end
+
+    Floor.recompute_origin_done_status_cascading_up(floor)
+    main_dialog.refresh(player, "production_detail")
+end
+
+
 local function handle_recipe_click(player, tags, action)
     local context = data_util.get("context", player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
@@ -441,13 +470,13 @@ production_handler.gui_events = {
     on_gui_checked_state_changed = {
         {
             name = "checkmark_line",
-            handler = (function(player, tags, _)
-                local context = data_util.get("context", player)
-                local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-                local line = Floor.get(floor, "Line", tags.line_id)
-                local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-                relevant_line.done = not relevant_line.done
-            end)
+            handler = handle_checkmark_change
+        }
+    },
+    on_gui_switch_state_changed = {
+        {
+            name = "checkmark_line",
+            handler = handle_checkmark_change
         }
     },
     on_gui_text_changed = {
