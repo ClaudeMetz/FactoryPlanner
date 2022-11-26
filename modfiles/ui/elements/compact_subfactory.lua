@@ -2,10 +2,13 @@
 compact_subfactory = {}
 
 -- ** LOCAL UTIL **
-local function determine_available_columns(lines, frame_width)
+
+local checkmark_flow_width = 40
+
+local function determine_available_columns(lines, frame_width, done_column_enabled)
     local frame_border_size = 12
     local table_padding, table_spacing = 8, 12
-    local recipe_and_check_width = 58
+    local check_width = done_column_enabled and checkmark_flow_width or 0
     local button_width, button_spacing = 36, 4
 
     local max_module_count = 0
@@ -24,7 +27,7 @@ local function determine_available_columns(lines, frame_width)
     used_width = used_width + (frame_border_size * 2)  -- border on both sides
     used_width = used_width + (table_padding * 2)  -- padding on both sides
     used_width = used_width + (table_spacing * 4)  -- 5 columns -> 4 spaces
-    used_width = used_width + recipe_and_check_width  -- constant
+    used_width = used_width + button_spacing + check_width + button_width + button_spacing -- constant
     -- Add up machines button, module buttons, and spacing for them
     used_width = used_width + button_width + (max_module_count * button_width) + (max_module_count * button_spacing)
 
@@ -86,6 +89,11 @@ end
 
 
 local function add_checkmark_button(parent_flow, line, relevant_line)
+    local inner_flow = parent_flow.add{type="flow", direction="horizontal"}
+    inner_flow.style.width = checkmark_flow_width
+    inner_flow.style.horizontal_align = "center"
+    inner_flow.style.vertical_align = "center"
+
     if line.subfloor then
         local status = Floor.get_done_status(line.subfloor)
         local switch_state, allow_none_state
@@ -100,29 +108,29 @@ local function add_checkmark_button(parent_flow, line, relevant_line)
             allow_none_state = false
         end
 
-        parent_flow.add{type="switch", switch_state=switch_state, allow_none_state=allow_none_state,
+        inner_flow.add{type="switch", switch_state=switch_state, allow_none_state=allow_none_state,
           tags={mod="fp", on_gui_switch_state_changed="checkmark_compact_line", line_id=line.id}}
     else
-        parent_flow.add{type="checkbox", state=relevant_line.done,
+        inner_flow.add{type="checkbox", state=relevant_line.done,
           tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
     end
 end
 
-local function add_recipe_button(parent_flow, line, relevant_line, metadata)
+local function add_recipe_button(parent_flow, line, relevant_line, metadata, greyscale)
     local recipe_proto = relevant_line.recipe.proto
     local style = (line.subfloor ~= nil) and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
-    style = (line.done) and "flib_slot_button_grayscale_small" or style
+    style = greyscale and "flib_slot_button_grayscale_small" or style
     local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
 
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id},
       sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
 
-local function add_modules_flow(parent_flow, parent_type, line, metadata)
+local function add_modules_flow(parent_flow, parent_type, line, metadata, greyscale)
     for _, module in ipairs(ModuleSet.get_in_order(line[parent_type].module_set)) do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
         local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, metadata.module_tutorial_tt}
-        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
+        local style = greyscale and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
           tags={mod="fp", on_gui_click="act_on_compact_module", line_id=line.id, module_id=module.id,
@@ -130,7 +138,7 @@ local function add_modules_flow(parent_flow, parent_type, line, metadata)
     end
 end
 
-local function add_machine_flow(parent_flow, line, metadata)
+local function add_machine_flow(parent_flow, line, metadata, greyscale)
     if line.subfloor == nil then
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
         local machine_proto = line.machine.proto
@@ -138,17 +146,17 @@ local function add_machine_flow(parent_flow, line, metadata)
         local count, tooltip_line = ui_util.format_machine_count(line.machine.count, (line.production_ratio > 0), true)
         local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line,
           metadata.machine_tutorial_tt}
-        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
+        local style = greyscale and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
           tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id},
           style=style, mouse_button_filter={"left-and-right"}}
 
-        add_modules_flow(machine_flow, "machine", line, metadata)
+        add_modules_flow(machine_flow, "machine", line, metadata, greyscale)
     end
 end
 
-local function add_beacon_flow(parent_flow, line, metadata)
+local function add_beacon_flow(parent_flow, line, metadata, greyscale)
     if line.subfloor == nil and line.beacon ~= nil then
         local beacon_flow = parent_flow.add{type="flow", direction="horizontal"}
         local beacon_proto = line.beacon.proto
@@ -156,18 +164,18 @@ local function add_beacon_flow(parent_flow, line, metadata)
         local plural_parameter = (line.beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", line.beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}
         local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line, metadata.beacon_tutorial_tt}
-        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
+        local style = greyscale and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
           tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id},
           style=style, mouse_button_filter={"left-and-right"}}
 
-        add_modules_flow(beacon_flow, "beacon", line, metadata)
+        add_modules_flow(beacon_flow, "beacon", line, metadata, greyscale)
     end
 end
 
 
-local function add_item_flow(line, item_class, button_color, metadata)
+local function add_item_flow(line, item_class, button_color, metadata, greyscale)
     local column_count = metadata.column_counts[item_class]
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
@@ -180,7 +188,7 @@ local function add_item_flow(line, item_class, button_color, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, metadata.item_tutorial_tt}
-        local style = (line.done) and "flib_slot_button_grayscale_small"
+        local style = greyscale and "flib_slot_button_grayscale_small"
           or "flib_slot_button_" .. button_color .. "_small"
 
         item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
@@ -389,9 +397,11 @@ function compact_subfactory.refresh(player)
     local production_table = compact_elements.production_table
     production_table.clear()
 
+    local done_column_enabled = data_util.get("preferences", player)["done_column"] == true
+
     -- Available columns for items only, as recipe and machines can't be 'compressed'
     local frame_width = compact_elements.compact_frame.style.maximal_width
-    local available_columns = determine_available_columns(lines, frame_width)
+    local available_columns = determine_available_columns(lines, frame_width, done_column_enabled)
     if available_columns < 2 then available_columns = 2 end  -- fix for too many modules or too high of a GUI scale
     local column_counts = determine_column_counts(lines, available_columns)
 
@@ -416,21 +426,25 @@ function compact_subfactory.refresh(player)
         local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
         if not relevant_line.active then goto skip_line end
 
+        local greyscale = done_column_enabled and line.done
+
         -- Recipe and Checkmark
         local recipe_flow = production_table.add{type="flow", direction="horizontal"}
         recipe_flow.style.vertical_align = "center"
-        add_checkmark_button(recipe_flow, line, relevant_line)
-        add_recipe_button(recipe_flow, line, relevant_line, metadata)
+        if done_column_enabled then
+            add_checkmark_button(recipe_flow, line, relevant_line)
+        end
+        add_recipe_button(recipe_flow, line, relevant_line, metadata, greyscale)
 
         -- Machine and Beacon
         local machines_flow = production_table.add{type="flow", direction="vertical"}
-        add_machine_flow(machines_flow, line, metadata)
-        add_beacon_flow(machines_flow, line, metadata)
+        add_machine_flow(machines_flow, line, metadata, greyscale)
+        add_beacon_flow(machines_flow, line, metadata, greyscale)
 
         -- Products, Byproducts and Ingredients
-        add_item_flow(line, "Product", "default", metadata)
-        add_item_flow(line, "Byproduct", "red", metadata)
-        add_item_flow(line, "Ingredient", "green", metadata)
+        add_item_flow(line, "Product", "default", metadata, greyscale)
+        add_item_flow(line, "Byproduct", "red", metadata, greyscale)
+        add_item_flow(line, "Ingredient", "green", metadata, greyscale)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
 
