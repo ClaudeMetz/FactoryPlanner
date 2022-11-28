@@ -45,12 +45,11 @@ function builders.done(line, parent_flow, _)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
     if line.subfloor then
-        local status = Floor.get_done_status(line.subfloor)
         local switch_state, allow_none_state
-        if status == "none" then
+        if line.subfloor.done == "none" then
             switch_state = "left"
             allow_none_state = false
-        elseif status == "some" then
+        elseif line.subfloor.done == "some" then
             switch_state = "none"
             allow_none_state = true
         else

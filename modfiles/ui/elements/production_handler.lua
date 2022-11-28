@@ -43,7 +43,7 @@ local function handle_checkmark_change(player, tags, event)
         relevant_line.done = event.element.state
     end
 
-    Floor.recompute_origin_done_status_cascading_up(floor)
+    Floor.recompute_done_status_cascading_up(floor)
     main_dialog.refresh(player, "production_detail")
 end
 

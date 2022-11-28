@@ -95,12 +95,11 @@ local function add_checkmark_button(parent_flow, line, relevant_line)
     inner_flow.style.vertical_align = "center"
 
     if line.subfloor then
-        local status = Floor.get_done_status(line.subfloor)
         local switch_state, allow_none_state
-        if status == "none" then
+        if line.subfloor.done == "none" then
             switch_state = "left"
             allow_none_state = false
-        elseif status == "some" then
+        elseif line.subfloor.done == "some" then
             switch_state = "none"
             allow_none_state = true
         else
@@ -239,7 +238,7 @@ local function handle_compact_checkmark_change(player, tags, event)
         relevant_line.done = event.element.state
     end
 
-    Floor.recompute_origin_done_status_cascading_up(floor)
+    Floor.recompute_done_status_cascading_up(floor)
     compact_subfactory.refresh(player)
 end
 
