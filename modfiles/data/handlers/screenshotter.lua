@@ -112,6 +112,7 @@ local actions = {
         toggle_handler(player, nil, nil)
     end,
     teardown_02_compact_interface = function(player)
+        mod_gui.get_frame_flow(player)["flib_translation_progress"].visible = false
         local compact_frame = data_util.get("compact_elements", player).compact_frame
         return_dimensions("02_compact_interface", compact_frame)
         local toggle_handler = get_handler(compact_dialog.gui_events.on_gui_click, "switch_to_main_view")
