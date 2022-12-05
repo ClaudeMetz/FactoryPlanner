@@ -10,6 +10,7 @@ function Floor.init(creating_line)
         valid = true,
         id = nil,  -- set by collection
         parent = nil,  -- set by parent
+        done = "none",
         class = "Floor"
     }
 
@@ -35,29 +36,88 @@ function Floor.init(creating_line)
 end
 
 
+local function recompute_done_status(floor)
+    local any_true = false
+    local any_false = false
+
+    for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+        if line.subfloor then
+            if line.subfloor.done == "all" then
+                any_true = true
+            elseif line.subfloor.done == "some" then
+                any_true = true
+                any_false = true
+            else
+                any_false = true
+            end
+        else
+            if line.done then
+                any_true = true
+            else
+                any_false = true
+            end
+        end
+
+        if any_true and any_false then break end
+    end
+
+    if not any_true then
+        floor.done = "none"
+    elseif any_false then
+        floor.done = "some"
+    else
+        floor.done = "all"
+    end
+end
+
+
 function Floor.add(self, object)
     object.parent = self
+
+    if object.class == "Line" then
+        if self.done == "all" and not object.done then
+            self.done = "some"
+        elseif self.done == "none" and object.done then
+            self.done = (self.Line.count == 0) and "all" or "none"
+        end
+    end
+
     return Collection.add(self[object.class], object)
 end
 
 function Floor.insert_at(self, gui_position, object)
     object.parent = self
+
+    if object.class == "Line" then
+        if self.done == "all" and not object.done then
+            self.done = "some"
+        elseif self.done == "none" and object.done then
+            self.done = (self.Line.count == 0) and "all" or "none"
+        end
+    end
+
     return Collection.insert_at(self[object.class], gui_position, object)
 end
 
 
 function Floor.remove(self, dataset)
-    -- Remove the subfloor(s) associated to a line recursively, so they don't hang around
-    if dataset.class == "Line" and dataset.subfloor ~= nil then
-        for _, line in pairs(Floor.get_in_order(dataset.subfloor, "Line")) do
-            if line.subfloor then Floor.remove(dataset.subfloor, line) end
+    if dataset.class == "Line" then
+        -- Remove the subfloor(s) associated to a line recursively, so they don't hang around
+        if dataset.subfloor ~= nil then
+            for _, line in pairs(Floor.get_in_order(dataset.subfloor, "Line")) do
+                if line.subfloor then Floor.remove(dataset.subfloor, line) end
+            end
+            Collection.remove(self.parent.Floor, dataset.subfloor)
         end
-        Collection.remove(self.parent.Floor, dataset.subfloor)
-    end
 
-    -- If the first line of a subfloor is removed, the whole subfloor needs to go
-    if dataset.class == "Line" and self.level > 1 and dataset.gui_position == 1 then
-        Floor.remove(self.origin_line.parent, self.origin_line)
+        -- If the first line of a subfloor is removed, the whole subfloor needs to go
+        if self.level > 1 and dataset.gui_position == 1 then
+            Floor.remove(self.origin_line.parent, self.origin_line)
+        end
+
+        if self.done == "some" then
+            recompute_done_status(self)
+        end
     end
 
     return Collection.remove(self[dataset.class], dataset)
@@ -83,7 +143,13 @@ end
 
 function Floor.replace(self, dataset, object)
     object.parent = self
-    return Collection.replace(self[dataset.class], dataset, object)
+    result = Collection.replace(self[dataset.class], dataset, object)
+
+    if object.class == "Line" then
+        recompute_done_status(self)
+    end
+
+    return result
 end
 
 function Floor.get(self, class, dataset_id)
@@ -108,6 +174,34 @@ end
 
 function Floor.shift_to_end(self, dataset, direction, bottom_position)
     return Collection.shift_to_end(self[dataset.class], dataset, direction, bottom_position)
+end
+
+
+-- Mark or unmark all lines in this floor (recursing through subfloors) as done.
+function Floor.set_done_status(self, status)
+    self.done = status and "all" or "none"
+
+    for _, line in pairs(Floor.get_in_order(self, "Line")) do
+        line.done = status
+
+        if line.subfloor then
+            Floor.set_done_status(line.subfloor, status)
+        end
+    end
+
+    if origin_line then origin_line.done = status end
+end
+
+function Floor.recompute_done_status_cascading_up(self)
+    if self.level == 1 then return end
+    local previous_done = self.done
+
+    recompute_done_status(self)
+    self.origin_line.done = self.done == "all"
+
+    if previous_done ~= self.done then
+        Floor.recompute_done_status_cascading_up(self.origin_line.parent)
+    end
 end
 
 
