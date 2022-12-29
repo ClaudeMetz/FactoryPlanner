@@ -15,7 +15,7 @@ end
 local function return_dimensions(scene, frame)
     local dimensions = {actual_size=frame.actual_size, location=frame.location}
     -- We do this on teardown so the frame has time to adjust all its sizes
-    remote.call("screenshotter", "return_dimensions", scene, dimensions)
+    remote.call("screenshotter_output", "return_dimensions", scene, dimensions)
 end
 
 local function modal_teardown(player, scene)
@@ -196,7 +196,7 @@ local function execute_action(player_index, action_name)
     actions[action_name](player)
 end
 
-remote.add_interface("factoryplanner", {
+remote.add_interface("screenshotter_input", {
     initial_setup = initial_setup,
     execute_action = execute_action
 })
