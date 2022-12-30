@@ -36,7 +36,7 @@ local function build_item_box(player, category, column_count)
         title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
         local button_combinator = title_flow.add{type="button", caption={"fp.combinator"},
           tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
-          style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+          enabled=false, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
         button_combinator.style.height = 20
         button_combinator.style.right_margin = 12
         item_boxes_elements["ingredient_combinator_button"] = button_combinator
@@ -331,7 +331,6 @@ item_boxes.gui_events = {
             timeout = 20,
             handler = (function(player, _, _)
                 local subfactory, ingredients = data_util.get("context", player).subfactory, {}
-                if not subfactory then return end
 
                 for _, ingredient in pairs(Subfactory.get_all(subfactory, "Ingredient")) do
                     if ingredient.proto.type == "item" then ingredients[ingredient.proto.name] = ingredient.amount end
