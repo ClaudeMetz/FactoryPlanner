@@ -410,6 +410,29 @@ function generator_util.is_irrelevant_recipe(recipe)
 end
 
 
+-- Determines whether this machine is irrelevant or not and should thus be excluded
+-- Compatible with: 'Ghost On Water'
+local irrelevant_machine_mods = {
+    ["GhostOnWater"] = {"waterGhost%-.*"}
+}
+
+local irrelevant_machines_lookup = {}
+for modname, patterns in pairs(irrelevant_machine_mods) do
+    for _, pattern in pairs(patterns) do
+        if active_mods[modname] then
+            table.insert(irrelevant_machines_lookup, pattern)
+        end
+    end
+end
+
+function generator_util.is_irrelevant_machine(proto)
+    for _, pattern in pairs(irrelevant_machines_lookup) do
+        if string.match(proto.name, pattern) then return true end
+    end
+    return false
+end
+
+
 -- Finds a sprite for the given entity prototype
 function generator_util.determine_entity_sprite(proto)
     local entity_sprite = "entity/" .. proto.name
