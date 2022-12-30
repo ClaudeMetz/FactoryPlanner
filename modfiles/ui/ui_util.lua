@@ -109,7 +109,7 @@ function ui_util.put_item_combinator_into_cursor(player, items)
         current_filter_count = current_filter_count + 1
         table.insert(current_combinator.control_behavior.filters, {
             signal = {type = 'item', name = proto_name},
-            count = item_amount,
+            count = math.max(item_amount, 1),  -- make sure amounts < 1 are not excluded
             index = current_filter_count
         })
     end
