@@ -93,7 +93,7 @@ end
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local recipe_proto = relevant_line.recipe.proto
     local style = (line.subfloor ~= nil) and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
-    style = (line.done) and "flib_slot_button_grayscale_small" or style
+    style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
     local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
 
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id},
@@ -149,7 +149,7 @@ local function add_beacon_flow(parent_flow, line, metadata)
 end
 
 
-local function add_item_flow(line, item_class, button_color, metadata)
+local function add_item_flow(line, relevant_line, item_class, button_color, metadata)
     local column_count = metadata.column_counts[item_class]
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
@@ -162,7 +162,7 @@ local function add_item_flow(line, item_class, button_color, metadata)
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, metadata.item_tutorial_tt}
-        local style = (line.done) and "flib_slot_button_grayscale_small"
+        local style = (relevant_line.done) and "flib_slot_button_grayscale_small"
           or "flib_slot_button_" .. button_color .. "_small"
 
         item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
@@ -180,7 +180,7 @@ local function add_item_flow(line, item_class, button_color, metadata)
         local name_line = {"fp.tt_title_with_note", fuel.proto.localised_name, {"fp.pl_fuel", 1}}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, metadata.item_tutorial_tt}
-        local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
+        local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
         item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
           tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class="Fuel"},
@@ -384,9 +384,9 @@ function compact_subfactory.refresh(player)
         add_beacon_flow(machines_flow, line, metadata)
 
         -- Products, Byproducts and Ingredients
-        add_item_flow(line, "Product", "default", metadata)
-        add_item_flow(line, "Byproduct", "red", metadata)
-        add_item_flow(line, "Ingredient", "green", metadata)
+        add_item_flow(line, relevant_line, "Product", "default", metadata)
+        add_item_flow(line, relevant_line, "Byproduct", "red", metadata)
+        add_item_flow(line, relevant_line, "Ingredient", "green", metadata)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
 
