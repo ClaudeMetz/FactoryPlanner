@@ -134,6 +134,8 @@ function Machine.validate(self)
         self.valid = Line.is_machine_applicable(parent_line, self.proto)
     end
 
+    -- If the machine changed to not use a burner, remove its fuel
+    if not self.proto.burner then self.fuel = nil end
     if self.fuel then self.valid = Fuel.validate(self.fuel) and self.valid end
 
     self.valid = ModuleSet.validate(self.module_set) and self.valid
@@ -150,6 +152,9 @@ function Machine.repair(self, player)
     end
     self.valid = true  -- if it gets to this, change_machine was successful and the machine is valid
     -- It just might need to cleanup some fuel and/or modules
+
+    -- If the machine changed to not use a burner, remove its fuel
+    if not self.proto.burner then self.fuel = nil end
 
     if self.fuel and not self.fuel.valid then
         -- If fuel is invalid, replace it with a default value
