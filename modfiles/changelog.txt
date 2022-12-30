@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed a migration crash when adding the example subfactory with Industrial Revolution loaded
     - Fixed a crash when clicking the ingredient combinator button
     - Fixed a crash caused by a mod adding trains with a capacity of 0
+    - Fixed an issue where exporting ingredients to combinator would leave out items with amounts below 1
     - Fixed that lines with subfloor would not be grayed out as desired when checked off in the compact dialog
 
 ---------------------------------------------------------------------------------------------------
