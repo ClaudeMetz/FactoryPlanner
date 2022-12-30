@@ -756,28 +756,32 @@ function generator.all_wagons()
     local cargo_wagon_filter = {{filter="type", type="cargo-wagon"},
       {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
-        generator_util.data_structure.insert{
-            name = proto.name,
-            localised_name = proto.localised_name,
-            sprite = generator_util.determine_entity_sprite(proto),
-            rich_text = "[entity=" .. proto.name .. "]",
-            category = "cargo-wagon",
-            storage = proto.get_inventory_size(1)
-        }
+        if proto.get_inventory_size(1) > 0 then
+            generator_util.data_structure.insert{
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = generator_util.determine_entity_sprite(proto),
+                rich_text = "[entity=" .. proto.name .. "]",
+                category = "cargo-wagon",
+                storage = proto.get_inventory_size(1)
+            }
+        end
     end
 
     -- Add fluid wagons
     local fluid_wagon_filter = {{filter="type", type="fluid-wagon"},
       {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
-        generator_util.data_structure.insert{
-            name = proto.name,
-            localised_name = proto.localised_name,
-            sprite = generator_util.determine_entity_sprite(proto),
-            rich_text = "[entity=" .. proto.name .. "]",
-            category = "fluid-wagon",
-            storage = proto.fluid_capacity
-        }
+        if proto.fluid_capacity > 0 then
+            generator_util.data_structure.insert{
+                name = proto.name,
+                localised_name = proto.localised_name,
+                sprite = generator_util.determine_entity_sprite(proto),
+                rich_text = "[entity=" .. proto.name .. "]",
+                category = "fluid-wagon",
+                storage = proto.fluid_capacity
+            }
+        end
     end
 
     local function sorting_function(a, b)
