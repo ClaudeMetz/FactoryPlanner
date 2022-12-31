@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Updated to the new flib translation library for faster translations, requiring a bump of the minimum flib version to 0.9.2 and a minimum Factorio version of 1.1.74
     - Added Spanish localisation (Thanks MarXam!)
     - Filtered out dummy entities from the 'Ghost on Water' mod
   Bugfixes:
