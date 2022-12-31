@@ -79,9 +79,11 @@ function Machine.paste(self, object)
 
         if new_machine_map[object.proto.name] ~= nil
           and Line.is_machine_applicable(self.parent, object.proto) then
-            object.parent = self.parent
             self.parent.machine = object
-            Line.summarize_effects(self.parent)
+            object.parent = self.parent
+
+            ModuleSet.normalize(object.module_set, {compatibility=true, effects=true})
+            Line.summarize_effects(object.parent)
             return true, nil
         else
             return false, "incompatible"
