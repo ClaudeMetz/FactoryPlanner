@@ -115,15 +115,15 @@ end
 -- Build the necessary RawDictionaries for translation. Should be called after prototyper.finish().
 function prototyper.util.build_translation_dictionaries()
     for _, type in ipairs(global.all_items.types) do
-        local item_dictionary = translator.new(type.name)
+        translator.new(type.name)
         for _, proto in pairs(type.items) do
-            item_dictionary:add(proto.name, proto.localised_name)
+            translator.add(type.name, proto.name, proto.localised_name)
         end
     end
 
-    local recipe_dictionary = translator.new("recipe")
+    translator.new("recipe")
     for _, proto in pairs(global.all_recipes.recipes) do
-        recipe_dictionary:add(proto.name, proto.localised_name)
+        translator.add("recipe", proto.name, proto.localised_name)
     end
 end
 

@@ -207,7 +207,7 @@ local function global_init()
     prototyper.finish()
 
     -- Initialize flib's translation module
-    translator.init()
+    translator.on_init()
     prototyper.util.build_translation_dictionaries()
 
     -- Create player tables for all existing players
@@ -239,7 +239,7 @@ local function handle_configuration_change()
     prototyper.finish()
 
     -- Re-initialize flib's translation module
-    translator.init()
+    translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
 
     for index, player in pairs(game.players) do
@@ -253,9 +253,6 @@ local function handle_configuration_change()
                 calculation.update(player, subfactory)
             end
         end
-
-        -- Run translation if the player is connected
-        if player.connected then translator.translate(player) end
     end
 end
 
@@ -284,9 +281,6 @@ script.on_event(defines.events.on_player_created, function(event)
 
     -- Add the subfactories that are handy for development
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
-
-    -- Run translation if the player is connected
-    if player.connected then translator.translate(player) end
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
@@ -294,14 +288,7 @@ script.on_event(defines.events.on_player_removed, function(event)
 end)
 
 
-script.on_event(defines.events.on_player_joined_game, function(event)
-    translator.translate(game.get_player(event.player_index))
-end)
-
-script.on_event(defines.events.on_player_left_game, function(event)
-    translator.cancel_translation(event.player_index)
-end)
-
+script.on_event(defines.events.on_player_joined_game, translator.on_player_joined_game)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
@@ -334,30 +321,24 @@ end)
 
 
 -- ** TRANSLATION **
-script.on_event(defines.events.on_tick, translator.check_skipped)  -- required by flib's translation module
+script.on_event(defines.events.on_tick, translator.on_tick)  -- required by flib's translation module
 
--- Keep translation going, and save a reference to it once it's done
-script.on_event(defines.events.on_string_translated, function(event)
-    local language_data = translator.process_translation(event)
-    if language_data ~= nil then  -- if this is nil, translations have not yet finished
-        for _, player_index in pairs(language_data.players) do
-            local player = game.get_player(player_index)
-            local player_table = data_util.get("table", player)
+-- Keep translation going
+script.on_event(defines.events.on_string_translated, translator.on_string_translated)
 
-            player_table.translation_tables = language_data.dictionaries
-            modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
-        end
-    end
+-- Save translations once they are complete
+script.on_event(translator.on_player_dictionaries_ready, function(e)
+  local player = game.get_player(e.player_index)
+  local player_table = data_util.get("table", player)
+
+  player_table.translation_tables = translator.get_all(e.player_index)
+  modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
 end)
 
 
 -- ** COMMANDS **
 commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}, handle_configuration_change)
 commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
-    translator.init()
+    translator.on_init()
     prototyper.util.build_translation_dictionaries()
-
-    for _, player in pairs(game.players) do
-        if player.connected then translator.translate(player) end
-    end
 end)
