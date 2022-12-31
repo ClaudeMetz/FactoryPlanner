@@ -189,7 +189,6 @@ end
 function loader.run()
     data_util.nth_tick.register_all()
 
-    translator.load()
     --prototyper.util.build_translation_dictionaries()  -- necessary because we use local storage
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
