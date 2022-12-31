@@ -166,14 +166,14 @@ function builders.machine(line, parent_flow, metadata)
           tags={mod="fp", on_gui_click="act_on_line_machine", floor_id=line.parent.id, line_id=line.id, type="machine"},
           tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
+        add_module_flow(parent_flow, line, "machine", metadata)
         local module_set = line.machine.module_set
-        if module_set.module_limit > 0 and module_set.module_count == 0 then
+        if module_set.module_limit > module_set.module_count then
             local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
             parent_flow.add{type="sprite-button", sprite="utility/add", style="fp_sprite-button_inset_add",
               tags={mod="fp", on_gui_click="add_machine_module", floor_id=line.parent.id, line_id=line.id},
               tooltip=module_tooltip, mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
         end
-        add_module_flow(parent_flow, line, "machine", metadata)
     end
 end
 
