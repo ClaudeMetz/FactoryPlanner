@@ -4,6 +4,7 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Added Spanish localisation (Thanks MarXam!)
     - Filtered out dummy entities from the 'Ghost on Water' mod
   Bugfixes:
     - Fixed a migration crash when adding the example subfactory with Industrial Revolution loaded
