@@ -61,7 +61,10 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
     local table_items = item_boxes_elements[category .. "_item_table"]
     table_items.clear()
 
-    if not subfactory or not subfactory.valid then return 0 end
+    if not subfactory or not subfactory.valid then
+        item_boxes_elements["ingredient_combinator_button"].enabled = false
+        return 0
+    end
 
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, subfactory)
@@ -251,7 +254,7 @@ function item_boxes.refresh(player)
     end
 
     local prow_count, brow_count, irow_count = 0, 0, 0
-    if player_table.preferences.show_floor_items and floor.level > 1 then
+    if player_table.preferences.show_floor_items and floor and floor.level > 1 then
         local line = floor.origin_line
         prow_count = refresh(line, "Product", true)
         brow_count = refresh(line, "Byproduct", true)
