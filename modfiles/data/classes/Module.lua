@@ -43,6 +43,8 @@ function Module.paste(self, object)
                 return false, "already_exists"
             else
                 object.amount = math.min(object.amount, self.amount + self.parent.empty_slots)
+                Module.summarize_effects(object)
+
                 ModuleSet.replace(self.parent, self, object)
                 ModuleSet.summarize_effects(self.parent)
                 return true, nil
