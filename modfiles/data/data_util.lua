@@ -76,8 +76,10 @@ function data_util.format_module_effects(effects, limit_effects)
             if limit_effects then
                 if effect_name == "productivity" and effect_value < 0 then
                     effect_value, capped_indication = 0, {"fp.effect_maxed"}
-                elseif effect_value < -0.8 then
-                    effect_value, capped_indication = -0.8, {"fp.effect_maxed"}
+                elseif effect_value < EFFECTS_LOWER_BOUND then
+                    effect_value, capped_indication = EFFECTS_LOWER_BOUND, {"fp.effect_maxed"}
+                elseif effect_value > EFFECTS_UPPER_BOUND then
+                    effect_value, capped_indication = EFFECTS_UPPER_BOUND, {"fp.effect_maxed"}
                 end
             end
 

@@ -313,9 +313,14 @@ end
 
 
 -- **** UTIL ****
+-- Speed can't go lower than 20%, or higher than 32676% due to the engine limit
+local function cap_effect(value)
+    return math.min(math.max(value, EFFECTS_LOWER_BOUND), EFFECTS_UPPER_BOUND)
+end
+
 -- Determines the number of crafts per tick for the given data
 function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
-    local machine_speed = machine_proto.speed * (1 + math.max(total_effects.speed, -0.8))
+    local machine_speed = machine_proto.speed * (1 + cap_effect(total_effects.speed))
     return machine_speed / recipe_proto.energy
 end
 
@@ -335,7 +340,7 @@ end
 
 -- Calculates the product amount after applying productivity bonuses
 function calculation.util.determine_prodded_amount(item, crafts_per_tick, total_effects)
-    local productivity = math.max(total_effects.productivity, 0)
+    local productivity = math.max(total_effects.productivity, 0)  -- no negative productivity
     if productivity == 0 then return item.amount end
 
     if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
@@ -348,7 +353,7 @@ end
 -- Determines the amount of energy needed to satisfy the given recipe in the given context
 function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
     local drain = math.ceil(machine_count - 0.001) * (machine_proto.energy_drain * 60)
-    local consumption_multiplier = 1 + math.max(total_effects.consumption, -0.8)
+    local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
     return (machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier) + drain
 end
 
@@ -356,7 +361,7 @@ end
 function calculation.util.determine_pollution(machine_proto, recipe_proto, fuel_proto,
   total_effects, energy_consumption)
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
-    local pollution_multiplier = 1 + math.max(total_effects.pollution, -0.8)
+    local pollution_multiplier = 1 + cap_effect(total_effects.pollution)
     return energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
       * fuel_multiplier * recipe_proto.emissions_multiplier
 end
