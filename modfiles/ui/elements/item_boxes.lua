@@ -33,12 +33,12 @@ local function build_item_box(player, category, column_count)
     label.style.bottom_margin = 4
 
     if category == "ingredient" then
-        title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
-        local button_combinator = title_flow.add{type="button", caption={"fp.combinator"},
+        local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
           tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
-          enabled=false, style="fp_button_rounded_mini", mouse_button_filter={"left"}}
-        button_combinator.style.height = 20
-        button_combinator.style.right_margin = 12
+          enabled=false, mouse_button_filter={"left"}}
+        button_combinator.style.size = 24
+        button_combinator.style.padding = -2
+        button_combinator.style.left_margin = 4
         item_boxes_elements["ingredient_combinator_button"] = button_combinator
     end
 
