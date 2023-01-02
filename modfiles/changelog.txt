@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Added Ukranian translation (Thanks Met en Bouldry!)
+    - Changed the ingredient combinator button to use a sprite instead of text
   Bugfixes:
     -
 
