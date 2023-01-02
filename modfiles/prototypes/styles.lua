@@ -269,6 +269,26 @@ styles["flib_slot_button_grayscale_small"] = {
     draw_grayscale_picture = true
 }
 
+styles["flib_slot_button_transparent"] = {
+    type = "button_style",
+    parent = "flib_slot_button_default",
+    default_graphical_set = {},
+    disabled_graphical_set = {},
+    padding = 4
+}
+
+styles["flib_slot_button_transparent_small"] = {
+    type = "button_style",
+    parent = "flib_slot_button_transparent",
+    size = 36
+}
+
+styles["flib_slot_button_transparent_grayscale_small"] = {
+    type = "button_style",
+    parent = "flib_slot_button_transparent_small",
+    draw_grayscale_picture = true
+}
+
 
 styles["fp_label_module_error"] = {
     type = "label_style",

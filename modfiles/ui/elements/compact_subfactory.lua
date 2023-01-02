@@ -162,12 +162,19 @@ local function add_item_flow(line, relevant_line, item_class, button_color, meta
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, metadata.item_tutorial_tt}
-        local style = (relevant_line.done) and "flib_slot_button_grayscale_small"
-          or "flib_slot_button_" .. button_color .. "_small"
+        local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
+        if relevant_line.done then style = "flib_slot_button_grayscale_small" end
+
+        if item.proto.type == "entity" then
+            style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
+              or "flib_slot_button_transparent_small"
+            enabled = false
+            tooltip = {"", {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}, number_line}
+        end
 
         item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
           tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class=item.class, item_id=item.id},
-          style=style, mouse_button_filter={"left-and-right"}}
+          style=style, enabled=enabled, mouse_button_filter={"left-and-right"}}
 
         ::skip_item::
     end

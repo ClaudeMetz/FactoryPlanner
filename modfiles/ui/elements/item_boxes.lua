@@ -98,6 +98,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
         if item.proto.type == "entity" then  -- only relevant to ingredients
             name_line = {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}
             tooltip = {"", name_line, number_line, satisfaction_line}
+            style = "flib_slot_button_transparent"
             enabled = false
         else
             name_line = {"fp.tt_title", item.proto.localised_name}
