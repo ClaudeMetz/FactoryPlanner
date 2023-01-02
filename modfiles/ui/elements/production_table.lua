@@ -285,7 +285,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local satisfaction_line, note = "", nil
 
         if ingredient.proto.type == "entity" then
-            style = "flib_slot_button_default_small"
+            style = "flib_slot_button_transparent_small"
             enabled = false
             note = {"fp.raw_ore"}
 
