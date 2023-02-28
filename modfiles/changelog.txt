@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Added Ukranian translation (Thanks Met en Bouldry!)
     - Changed the ingredient combinator button to use a sprite instead of text
+    - Simplified the beacon UI when beacon overload is active
   Bugfixes:
     - Fixed that absurdly high module effects were not being capped correctly at the engine limit of +32767%
     - Fixed a few inconsistencies around raw ores and made them more visually distinct

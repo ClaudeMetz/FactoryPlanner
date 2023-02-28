@@ -1,6 +1,10 @@
 data_util = {
     nth_tick = {},
-    porter = {}
+    porter = {},
+    is_beacon_overload_active = (
+        script.active_mods["space-exploration"] or
+        script.active_mods["wret-beacon-rebalance-mod"] or
+        script.active_mods["beacon-overhaul"]) and true
 }
 
 -- ** GETTER **

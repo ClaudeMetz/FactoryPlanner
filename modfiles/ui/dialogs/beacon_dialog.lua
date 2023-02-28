@@ -18,7 +18,7 @@ local function add_beacon_frame(parent_flow, modal_data)
     button_beacon.style.right_margin = 12
     modal_elements["beacon_button"] = button_beacon
 
-    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
+    local label_amount = flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
 
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount,
@@ -28,6 +28,12 @@ local function add_beacon_frame(parent_flow, modal_data)
     textfield_amount.style.width = 40
     textfield_amount.style.right_margin = 12
     modal_elements["beacon_amount"] = textfield_amount
+
+    if data_util.is_beacon_overload_active then
+        label_amount.visible = false
+        textfield_amount.visible = false
+        textfield_amount.text = "1"
+    end
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"}}
 

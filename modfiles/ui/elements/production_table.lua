@@ -199,6 +199,9 @@ function builders.beacon(line, parent_flow, metadata)
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
           tags={mod="fp", on_gui_click="act_on_line_beacon", floor_id=line.parent.id, line_id=line.id, type="beacon"},
           style="flib_slot_button_default_small", tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+        if data_util.is_beacon_overload_active then  -- don't show beacon count if beacon overload is active
+          button_beacon.number = nil
+        end
 
         if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
             local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
