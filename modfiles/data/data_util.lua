@@ -263,7 +263,7 @@ function data_util.porter.format_modset_diff(old_modset)
     local tooltip = {"", {"fp.subfactory_modset_changes"}}
     local current_table, next_index = tooltip, 3
 
-    if table_size(changes.added) > 0 then
+    if next(changes.added) then
         current_table, next_index = data_util.build_localised_string({
           {"fp.subfactory_mod_added"}}, current_table, next_index)
         for name, version in pairs(changes.added) do
@@ -272,7 +272,7 @@ function data_util.porter.format_modset_diff(old_modset)
         end
     end
 
-    if table_size(changes.removed) > 0 then
+    if next(changes.removed) then
         current_table, next_index = data_util.build_localised_string({
           {"fp.subfactory_mod_removed"}}, current_table, next_index)
         for name, version in pairs(changes.removed) do
@@ -281,7 +281,7 @@ function data_util.porter.format_modset_diff(old_modset)
         end
     end
 
-    if table_size(changes.updated) > 0 then
+    if next(changes.updated) then
         current_table, next_index = data_util.build_localised_string({
           {"fp.subfactory_mod_updated"}}, current_table, next_index)
         for name, versions in pairs(changes.updated) do

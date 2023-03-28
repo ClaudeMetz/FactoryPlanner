@@ -96,7 +96,7 @@ function matrix_dialog.early_abort_check(player, modal_data)
 
     local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
-    if #linear_dependence_data.linearly_dependent_recipes > 0 then  -- too many ways to create the products
+    if next(linear_dependence_data.linearly_dependent_recipes) then  -- too many ways to create the products
         modal_data.linearly_dependent_recipes = linear_dependence_data.linearly_dependent_recipes
         subfactory.linearly_dependant = true
         return false

@@ -140,7 +140,7 @@ end
 function Subfactory.validate_item_request_proxy(self)
     local item_request_proxy = self.item_request_proxy
     if item_request_proxy then
-        if not item_request_proxy.valid or table_size(item_request_proxy.item_requests) == 0 then
+        if not item_request_proxy.valid or not next(item_request_proxy.item_requests) then
             Subfactory.destroy_item_request_proxy(self)
         end
     end

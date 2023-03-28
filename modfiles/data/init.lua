@@ -130,11 +130,11 @@ local function update_player_table(player)
         reload_data()
 
         local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
-        if #archive_subfactories > 0 then player_table.archive.selected_subfactory = archive_subfactories[1] end
+        if next(archive_subfactories) then player_table.archive.selected_subfactory = archive_subfactories[1] end
 
         local factory = player_table.factory
         local subfactories = Factory.get_in_order(factory, "Subfactory")
-        if #subfactories > 0 then
+        if next(subfactories) then
             local subfactory_to_select = subfactories[1]
             if factory.selected_subfactory ~= nil then
                 -- Get the selected subfactory from the factory to make sure it still exists

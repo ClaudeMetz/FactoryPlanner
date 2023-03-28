@@ -8,7 +8,7 @@ local function _llog(table_to_print)
     for _=0, tab_width-1, 1 do super_space = super_space .. " " end
 
     local function format(table_part, depth)
-        if table_size(table_part) == 0 then return "{}" end
+        if not next(table_part) then return "{}" end
 
         local spacing = ""
         for _=0, depth-1, 1 do spacing = spacing .. " " end
