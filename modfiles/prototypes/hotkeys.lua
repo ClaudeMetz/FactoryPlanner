@@ -29,17 +29,31 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "fp_up_floor",
+        key_sequence = "ALT + UP",
+        consuming = "none",
+        order = "e"
+    },
+    {
+        type = "custom-input",
+        name = "fp_top_floor",
+        key_sequence = "SHIFT + ALT + UP",
+        consuming = "none",
+        order = "f"
+    },
+    {
+        type = "custom-input",
         name = "fp_cycle_production_views",
         key_sequence = "TAB",
         consuming = "none",
-        order = "e"
+        order = "g"
     },
     {
         type = "custom-input",
         name = "fp_reverse_cycle_production_views",
         key_sequence = "CONTROL + TAB",
         consuming = "none",
-        order = "f"
+        order = "h"
     },
     {
         type = "custom-input",
@@ -47,7 +61,7 @@ data:extend({
         key_sequence = "ENTER",
         alternative_key_sequence = "KP_ENTER",
         consuming = "none",
-        order = "g"
+        order = "i"
     },
     {
         type = "custom-input",

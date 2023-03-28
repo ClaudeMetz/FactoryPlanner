@@ -217,5 +217,11 @@ production_box.gui_events = {
 production_box.misc_events = {
     fp_refresh_production = (function(player, _, _)
         if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
+    end),
+    fp_up_floor = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then production_box.change_floor(player, "up") end
+    end),
+    fp_top_floor = (function(player, _, _)
+        if main_dialog.is_in_focus(player) then production_box.change_floor(player, "top") end
     end)
 }
