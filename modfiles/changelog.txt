@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Added hotkeys to go up a floor (Alt + Up) and to the top floor (Shift + Alt + Up)
   Changes:
     - Added Ukranian translation (Thanks Met en Bouldry!)
     - Changed the ingredient combinator button to use a sprite instead of text
