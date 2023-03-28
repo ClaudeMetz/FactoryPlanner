@@ -75,7 +75,7 @@ function generator.all_recipes()
     local launch_products_filter = {{filter="has-rocket-launch-products"}}
     local rocket_silo_inputs = {}
     for _, item in pairs(game.get_filtered_item_prototypes(launch_products_filter)) do
-        if table_size(item.rocket_launch_products) > 0 then
+        if next(item.rocket_launch_products) then
             table.insert(rocket_silo_inputs, item)
         end
     end
@@ -548,7 +548,7 @@ function generator.machines_second_pass()
         end
 
         -- If the category ends up empty because of this, make sure to remove it
-        if table_size(machine_category.machines) == 0 then
+        if not next(machine_category.machines) then
             unused_category_names[machine_category.name] = true
         end
     end

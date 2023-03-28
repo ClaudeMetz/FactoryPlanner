@@ -128,7 +128,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 
     else  -- structure_type == "complex"
         local all_categories = global["all_" .. type].categories
-        if #all_categories == 0 then preference_box.visible = false; return end
+        if not next(all_categories) then preference_box.visible = false; return end
 
         local any_category_visible = false
         for category_id, category in ipairs(all_categories) do

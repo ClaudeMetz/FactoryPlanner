@@ -441,7 +441,7 @@ function generator_util.determine_entity_sprite(proto)
     end
 
     local items_to_place_this = proto.items_to_place_this
-    if items_to_place_this and #items_to_place_this > 0 then
+    if items_to_place_this and next(items_to_place_this) then
         local item_sprite = "item/" .. items_to_place_this[1].name
         if game.is_valid_sprite_path(item_sprite) then
             return item_sprite
@@ -524,7 +524,7 @@ function generator_util.add_recipe_tooltip(recipe)
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         current_table, next_index = data_util.build_localised_string(
           {"", "\n  ", {locale_key, 2}, ":"}, current_table, next_index)
-        if #recipe[item_type] == 0 then
+        if not next(recipe[item_type]) then
             current_table, next_index = data_util.build_localised_string({
               "\n    ", {"fp.none"}}, current_table, next_index)
         else

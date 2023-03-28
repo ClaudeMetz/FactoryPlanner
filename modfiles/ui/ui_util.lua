@@ -123,7 +123,7 @@ function ui_util.put_item_combinator_into_cursor(player, items)
 
     for index, entity in ipairs(blueprint_entities) do
         connect_if_entity_exists(entity, blueprint_entities[index-1])
-        if table_size(entity.connections[1].green) == 0 then entity.connections = nil end
+        if not next(entity.connections[1].green) then entity.connections = nil end
     end
 
     ui_util.create_cursor_blueprint(player, blueprint_entities)

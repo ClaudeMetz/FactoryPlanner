@@ -57,7 +57,7 @@ local function update_request_button(player, modal_data, subfactory)
         if not player.force.character_logistic_requests then
             tooltip = {"fp.warning_with_icon", {"fp.request_logistics_not_researched"}}
             button_enabled = false
-        elseif table_size(modal_data.missing_items) == 0 then
+        elseif not next(modal_data.missing_items) then
             tooltip = {"fp.warning_with_icon", {"fp.utility_no_items_necessary", scope_string}}
             button_enabled = false
         elseif player.character == nil then  -- happens when the editor is active for example
@@ -145,7 +145,7 @@ function utility_structures.components(player, modal_data)
             end
         end
 
-        if #table_components.children_names == 0 then
+        if not next(table_components.children_names) then
             frame_components.visible = false
             local label = component_row.add{type="label", caption={"fp.no_components_needed", {"fp.pl_" .. type, 2}}}
             label.style.margin = {10, 0}
@@ -160,7 +160,7 @@ function utility_structures.components(player, modal_data)
     local subfactory = data_util.get("context", player).subfactory
     Subfactory.validate_item_request_proxy(subfactory)
 
-    local any_missing_items = table_size(modal_data.missing_items) > 0
+    local any_missing_items = (next(modal_data.missing_items) ~= nil)
     modal_elements.blueprint_button.enabled = any_missing_items
     modal_elements.blueprint_button.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
       or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}

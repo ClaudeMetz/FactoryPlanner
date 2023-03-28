@@ -34,7 +34,7 @@ end
 function Beacon.check_module_compatibility(self, module_proto)
     local recipe_proto, machine_proto = self.parent.recipe.proto, self.parent.machine.proto
 
-    if table_size(module_proto.limitations) ~= 0 and recipe_proto.use_limitations
+    if next(module_proto.limitations) and recipe_proto.use_limitations
       and not module_proto.limitations[recipe_proto.name] then
         return false
     end
