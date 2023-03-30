@@ -328,8 +328,6 @@ end
 local active_mods = script.active_mods
 
 -- Determines whether this recipe is a recycling one or not
--- Compatible with: 'Industrial Revolution', 'Space Exploration', 'Angel's Petrochem', 'Reverse Factory',
---   'Recycling Machines'
 local recycling_recipe_mods = {
     ["IndustrialRevolution"] = {"^scrap%-.*"},
     ["space-exploration"] = {"^se%-recycle%-.*"},
@@ -356,7 +354,6 @@ end
 
 
 -- Determines whether the given recipe is a barreling or stacking one
--- Compatible with: 'base', 'Deadlock's Stacking Beltboxes & Compact Loaders' and extensions, 'Space Exploration', 'Satisfactorio'
 local compacting_recipe_mods = {
     ["base"] = {"^fill%-.*", "^empty%-.*"},
     ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
@@ -385,7 +382,6 @@ end
 
 
 -- Determines whether this recipe is irrelevant or not and should thus be excluded
--- Compatible with: 'Klonan's Transport+Mining Drones', 'Deep Storage Unit', 'Satisfactorio'
 local irrelevant_recipe_categories = {
     ["Transport_Drones"] = {"transport-drone-request", "transport-fluid-request"},
     ["Mining_Drones"] = {"mining-depot"},
@@ -412,7 +408,6 @@ end
 
 
 -- Determines whether this machine is irrelevant or not and should thus be excluded
--- Compatible with: 'Ghost On Water'
 local irrelevant_machine_mods = {
     ["GhostOnWater"] = {"waterGhost%-.*"}
 }
