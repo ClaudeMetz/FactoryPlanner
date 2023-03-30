@@ -362,6 +362,7 @@ local compacting_recipe_mods = {
     ["deadlock-beltboxes-loaders"] = {"^deadlock%-stacks%-.*", "^deadlock%-packrecipe%-.*",
                                       "^deadlock%-unpackrecipe%-.*"},
     ["DeadlockCrating"] = {"^deadlock%-packrecipe%-.*", "^deadlock%-unpackrecipe%-.*"},
+    ["IntermodalContainers"] = {"^ic%-load%-.*", "^ic%-unload%-.*"},
     ["space-exploration"] = {"^se%-delivery%-cannon%-pack%-.*"},
     ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"}
 }
