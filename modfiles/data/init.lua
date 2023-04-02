@@ -154,7 +154,7 @@ end
 
 
 -- Downscale width and height mod settings until the main interface fits onto the player's screen
-function NTH_TICK_HANDLERS.adjust_interface_dimensions(metadata)
+function NTH_TICK_HANDLERS.shrinkwrap_interface(metadata)
     local player = game.get_player(metadata.player_index)
     local resolution, scale = player.display_resolution, player.display_scale
     local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
@@ -277,7 +277,7 @@ script.on_event(defines.events.on_player_created, function(event)
 
     -- Make sure the width and height mod settings are appropriate
     -- Resolution and scale are not loaded for the player at this point, so we need to delay this action a tick
-    data_util.nth_tick.add((game.tick + 1), "adjust_interface_dimensions", {player_index=player.index})
+    data_util.nth_tick.add((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
 
     -- Add the subfactories that are handy for development
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
