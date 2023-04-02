@@ -19,7 +19,6 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     local frame_modal_dialog = player.gui.screen.add{type="frame", direction="vertical",
       tags={mod="fp", on_gui_closed="close_modal_dialog"}}
     frame_modal_dialog.style.minimal_width = 240
-    frame_modal_dialog.auto_center = true
     modal_elements.modal_frame = frame_modal_dialog
 
     -- Title bar
@@ -191,6 +190,7 @@ function modal_dialog.enter(player, dialog_settings)
     local frame_modal_dialog = create_base_modal_dialog(player, dialog_settings, ui_state.modal_data)
     dialog_object.open(player, ui_state.modal_data)
     player.opened = frame_modal_dialog
+    frame_modal_dialog.force_auto_center()  -- seems to be necessary now, not sure why
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter

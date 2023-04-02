@@ -9,6 +9,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed that absurdly high module effects were not being capped correctly at the engine limit of +32767%
     - Fixed a few inconsistencies around raw ores and made them more visually distinct
+    - Fixed an issue where the centering of modal dialogs didn't work in all cases anymore
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.60
