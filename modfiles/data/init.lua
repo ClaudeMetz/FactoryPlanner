@@ -246,7 +246,7 @@ local function handle_configuration_change()
         ui_util.reset_player_gui(player)  -- Destroys all existing GUI's
         ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
-        -- Update factory and archive calculations in case some numbers changed
+        -- Update factory and archive calculations in case prototypes changed in a relevant way
         local player_table = global.players[index]
         for _, factory_name in pairs{"factory", "archive"} do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
@@ -321,7 +321,8 @@ end)
 
 
 -- ** TRANSLATION **
-script.on_event(defines.events.on_tick, translator.on_tick)  -- required by flib's translation module
+-- Required by flib's translation module
+script.on_event(defines.events.on_tick, translator.on_tick)
 
 -- Keep translation going
 script.on_event(defines.events.on_string_translated, translator.on_string_translated)
