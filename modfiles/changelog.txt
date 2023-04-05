@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.61
+Date: 05. 04. 2023
+  Features:
     - Added hotkeys to go up a floor (Alt + Up) and to the top floor (Shift + Alt + Up)
     - Implemented paste functionality for machine fuel
   Changes:

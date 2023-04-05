@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2022 Claude Metz
+Copyright (c) 2023 Claude Metz
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
