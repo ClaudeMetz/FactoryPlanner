@@ -319,6 +319,9 @@ local function handle_fuel_click(player, tags, action)
     elseif action == "copy" then
         ui_util.clipboard.copy(player, fuel)
 
+    elseif action == "paste" then
+        ui_util.clipboard.paste(player, fuel)
+
     elseif action == "put_into_cursor" then
         ui_util.add_item_to_cursor_combinator(player, fuel.proto, fuel.amount)
 
@@ -432,6 +435,7 @@ production_handler.gui_events = {
                 add_recipe_below = {"control-left", {archive_open=false}},
                 edit = {"right", {archive_open=false}},
                 copy = {"shift-right"},
+                paste = {"shift-left", {archive_open=false}},
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },

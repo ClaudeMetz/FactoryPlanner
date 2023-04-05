@@ -13,6 +13,22 @@ function Fuel.init(proto)
 end
 
 
+function Fuel.paste(self, object)
+    if object.class == "Fuel" then
+        local burner = self.parent.proto.burner  -- will exist if there is fuel to paste on
+        for category_name, _ in pairs(burner.categories) do
+            if self.proto.category == category_name then
+                self.proto = object.proto
+                return true, nil
+            end
+        end
+        return false, "incompatible"
+    else
+        return false, "incompatible_class"
+    end
+end
+
+
 function Fuel.pack(self)
     return {
         proto = prototyper.util.simplify_prototype(self.proto),
