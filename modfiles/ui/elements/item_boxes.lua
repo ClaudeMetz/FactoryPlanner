@@ -314,7 +314,7 @@ item_boxes.gui_events = {
             name = "act_on_top_level_ingredient",
             modifier_actions = {
                 add_recipe = {"left", {archive_open=false}},
-                specify_amount = {"right", {archive_open=false, matrix_active=false}},
+                specify_amount = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
