@@ -45,9 +45,9 @@ local function reload_preferences(player)
     preferences.pause_on_interface = preferences.pause_on_interface or false
     preferences.fold_out_subfloors = preferences.fold_out_subfloors or false
     preferences.show_floor_items = preferences.show_floor_items or false
-    preferences.tutorial_mode = preferences.tutorial_mode or true
     preferences.utility_scopes = preferences.utility_scopes or {components = "Subfactory"}
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
+    if preferences.tutorial_mode == nil then preferences.tutorial_mode = true end
 
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
