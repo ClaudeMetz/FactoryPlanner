@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.62
+Date: 27. 04. 2023
   Bugfixes:
     - Fixed that specifying amounts on top level ingredients was disabled when the matrix solver was enabled
     - Fixed a crash when selecting a specific nexelit recipe from PyMods
