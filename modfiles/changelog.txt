@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that certain Exotic Industries recipes would not be usable until researched
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.62

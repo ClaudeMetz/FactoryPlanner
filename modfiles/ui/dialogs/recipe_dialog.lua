@@ -37,8 +37,8 @@ local function run_preliminary_checks(player, product_proto, production_type)
                     -- least one enabled technology that could potentially enable it
                     if not recipe_should_show and recipe.enabling_technologies ~= nil then
                         for _, technology_name in pairs(recipe.enabling_technologies) do
-                            local force_technology = force_technologies[technology_name]
-                            if force_technology and force_technology.enabled then
+                            local force_tech = force_technologies[technology_name]
+                            if force_tech and (force_tech.enabled or force_tech.visible_when_disabled) then
                                 recipe_should_show = true
                                 break
                             end
@@ -62,7 +62,6 @@ local function run_preliminary_checks(player, product_proto, production_type)
     local user_prefs = preferences.recipe_filters
     local relevant_recipes_count = #relevant_recipes
 
-    -- (This logic is probably inefficient, but it's clear and way faster than the loop above anyways)
     if relevant_recipes_count - counts.disabled - counts.hidden - counts.disabled_hidden > 0 then
         show.filters.disabled = user_prefs.disabled or false
         show.filters.hidden = user_prefs.hidden or false
