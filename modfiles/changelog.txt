@@ -7,8 +7,9 @@ Date: 00. 00. 0000
     - Removed the amount indication on machines and fuels in the machine dialog
   Bugfixes:
     - Fixed a bug where module effects were not updated straight away when changing a machine or beacon type
-    - Fixed that certain Exotic Industries recipes would not be usable until researched
     - Fixed that putting top level ingredients into the cursor would not respect the 'show floor items' preference
+    - Fixed that certain Exotic Industries recipes would not be usable until researched
+    - Fixed duplicate machines being detected in Industrial Revolution 3
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.62
