@@ -64,13 +64,13 @@ function subfactory_dialog.open(player, modal_data)
 
     local signal_flow = flow_rich_text.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     signal_flow.style.horizontal_spacing = 6
-    signal_flow.add{type="label", caption="Signals"}
+    signal_flow.add{type="label", caption={"fp.subfactory_dialog_signals"}}
     signal_flow.add{type="choose-elem-button", elem_type="signal", style="fp_sprite-button_inset_tiny",
       tags={mod="fp", on_gui_elem_changed="add_rich_text", type="signal"}}
 
     local recipe_flow = flow_rich_text.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     recipe_flow.style.horizontal_spacing = 6
-    recipe_flow.add{type="label", caption="Recipes"}
+    recipe_flow.add{type="label", caption={"fp.subfactory_dialog_recipes"}}
     recipe_flow.add{type="choose-elem-button", elem_type="recipe", style="fp_sprite-button_inset_tiny",
       tags={mod="fp", on_gui_elem_changed="add_rich_text", type="recipe"}}
 
