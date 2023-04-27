@@ -4,79 +4,57 @@ machine_dialog = {}
 
 -- ** LOCAL UTIL **
 local function refresh_machine_frame(player)
-    local ui_state = data_util.get("ui_state", player)
-    local line = ui_state.modal_data.line
-    local dialog_machine = ui_state.modal_data.dialog_machine
+    local modal_data = data_util.get("modal_data", player)
 
-    local table_machine = ui_state.modal_data.modal_elements.machine_table
+    local table_machine = modal_data.modal_elements.machine_table
     table_machine.clear()
 
+    local dialog_machine = modal_data.dialog_machine
     local machine_category_id = global.all_machines.map[dialog_machine.proto.category]
     local category_prototypes = global.all_machines.categories[machine_category_id].machines
-    local current_proto = dialog_machine.proto
-
-    local round_button_numbers = data_util.get("preferences", player).round_button_numbers
-    local timescale = ui_state.context.subfactory.timescale
+    local current_proto_id = dialog_machine.proto.id
 
     for _, machine_proto in ipairs(category_prototypes) do
-        if Line.is_machine_applicable(line, machine_proto) then
-            -- Need to get total effects here to include mining productivity
-            local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto,
-              line.recipe.proto, line.total_effects)
-            local machine_count = calculation.util.determine_machine_count(crafts_per_tick,
-              line.uncapped_production_ratio, timescale, machine_proto.launch_sequence_time)
-
-            local count, tooltip_line = ui_util.format_machine_count(machine_count, true, round_button_numbers)
+        if Line.is_machine_applicable(modal_data.line, machine_proto) then
             local attributes = data_util.get_attributes("machines", machine_proto)
-            local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line, "\n", attributes}
+            local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", attributes}
 
-            local selected = (machine_proto.id == current_proto.id)
+            local selected = (machine_proto.id == current_proto_id)
             local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
-            table_machine.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
-              tooltip=tooltip, tags={mod="fp", on_gui_click="choose_machine", proto_id=machine_proto.id},
+            table_machine.add{type="sprite-button", sprite=machine_proto.sprite, tooltip=tooltip,
+              tags={mod="fp", on_gui_click="choose_machine", proto_id=machine_proto.id},
               style=button_style, mouse_button_filter={"left"}}
         end
     end
 end
 
 local function refresh_fuel_frame(player)
-    local ui_state = data_util.get("ui_state", player)
-    local line = ui_state.modal_data.line
-    local dialog_machine = ui_state.modal_data.dialog_machine
+    local modal_data = data_util.get("modal_data", player)
+    local dialog_machine = modal_data.dialog_machine
 
-    local modal_elements = ui_state.modal_data.modal_elements
+    local modal_elements = modal_data.modal_elements
     modal_elements.fuel_table.clear()
 
     local machine_burner = dialog_machine.proto.burner
     modal_elements.fuel_table.visible = (machine_burner ~= nil)
     modal_elements.fuel_info_label.visible = (machine_burner == nil)
-    if machine_burner == nil then return end
 
-    local view_state_metadata = view_state.generate_metadata(player, ui_state.context.subfactory)
-    local timescale = ui_state.context.subfactory.timescale
+    if machine_burner == nil then return end
     local current_proto = dialog_machine.fuel.proto
 
-    local energy_consumption = calculation.util.determine_energy_consumption(dialog_machine.proto, dialog_machine.count,
-      line.total_effects)  -- don't care about mining productivity in this case, only the consumption-effect
-
     -- Applicable fuels come from all categories that this burner supports
-    for category_name, _ in pairs(dialog_machine.proto.burner.categories) do
+    for category_name, _ in pairs(machine_burner.categories) do
         local category_id = global.all_fuels.map[category_name]
         if category_id ~= nil then
             for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-                local raw_fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_burner,
-                  fuel_proto.fuel_value, timescale)
-                local amount, number_tooltip = view_state_metadata.processor(view_state_metadata, raw_fuel_amount,
-                  fuel_proto, dialog_machine.count)  -- Raw processor call because we only have a prototype, no object
-
                 local attributes = data_util.get_attributes("fuels", fuel_proto)
-                local tooltip = {"", {"fp.tt_title", fuel_proto.localised_name}, "\n", number_tooltip, "\n", attributes}
+                local tooltip = {"", {"fp.tt_title", fuel_proto.localised_name}, "\n", attributes}
 
                 local selected = (current_proto.category == fuel_proto.category and current_proto.id == fuel_proto.id)
                 local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
-                modal_elements.fuel_table.add{type="sprite-button", sprite=fuel_proto.sprite, number=amount,
+                modal_elements.fuel_table.add{type="sprite-button", sprite=fuel_proto.sprite,
                   tags={mod="fp", on_gui_click="choose_fuel", proto_id=(category_id .. "_" .. fuel_proto.id)},
                   tooltip=tooltip, style=button_style, mouse_button_filter={"left"}}
             end
