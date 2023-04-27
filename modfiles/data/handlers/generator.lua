@@ -434,8 +434,7 @@ function generator.all_machines()
     end
 
     for _, proto in pairs(game.entity_prototypes) do
-        if (not proto.has_flag("hidden") or proto.has_flag("player-creation")) and
-          proto.crafting_categories and proto.energy_usage ~= nil
+        if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil
           and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
                 local machine = generate_category_entry(category, proto)
