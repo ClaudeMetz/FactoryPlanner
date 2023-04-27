@@ -262,6 +262,21 @@ function generator.all_recipes()
     return generator_util.data_structure.get()
 end
 
+function generator.recipes_second_pass()
+    -- Check again if all recipes still have a machine to produce them after machine second pass
+    local recipes_without_machine = {}
+    for _, recipe in pairs(NEW.all_recipes.recipes) do
+        if not NEW.all_machines.map[recipe.category] then
+            recipes_without_machine[recipe.name] = true
+        end
+    end
+
+    -- Actually remove unbuildable recipes
+    for recipe_name, _ in pairs(recipes_without_machine) do
+        generator_util.data_structure.remove_mapped_element(NEW.all_recipes, "recipes", recipe_name)
+    end
+end
+
 
 -- Returns all relevant items and fluids
 function generator.all_items()
@@ -499,24 +514,6 @@ function generator.all_machines()
 end
 
 function generator.machines_second_pass()
-    -- Properly removes a prototype element without leaving any gaps in the name -> id map
-    local function remove_mapped_element(dataset, structure_name, name_to_remove)
-        local id_to_remove = nil
-        for id, proto in pairs(dataset[structure_name]) do
-            if proto.name == name_to_remove then id_to_remove = id end
-        end
-
-        table.remove(dataset[structure_name], id_to_remove)  -- fixes gaps automatically
-        dataset.map[name_to_remove] = nil  -- does not fix gap, needs to be done manually below
-
-        for name, id in pairs(dataset.map) do
-            if id >= id_to_remove then
-                dataset.map[name] = dataset.map[name] - 1
-            end
-        end
-    end
-
-
     -- Go over all recipes to find unused categories
     local used_category_names = {}
     for _, recipe_proto in pairs(NEW.all_recipes.recipes) do
@@ -544,7 +541,7 @@ function generator.machines_second_pass()
         end
 
         for _, machine_name in pairs(invalid_machines) do
-            remove_mapped_element(machine_category, "machines", machine_name)
+            generator_util.data_structure.remove_mapped_element(machine_category, "machines", machine_name)
         end
 
         -- If the category ends up empty because of this, make sure to remove it
@@ -553,9 +550,9 @@ function generator.machines_second_pass()
         end
     end
 
-    -- Finally actually remove unused categories
+    -- Actually remove unused categories
     for category_name, _ in pairs(unused_category_names) do
-        remove_mapped_element(NEW.all_machines, "categories", category_name)
+        generator_util.data_structure.remove_mapped_element(NEW.all_machines, "categories", category_name)
     end
 
 
