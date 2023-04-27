@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a bug where module effects were not updated straight away when changing a machine or beacon type
     - Fixed that certain Exotic Industries recipes would not be usable until researched
+    - Fixed that putting top level ingredients into the cursor would not respect the 'show floor items' preference
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.62

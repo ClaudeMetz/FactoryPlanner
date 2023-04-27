@@ -203,6 +203,24 @@ local function handle_item_button_click(player, tags, action)
     end
 end
 
+
+function put_ingredients_into_cursor(player, _, _)
+    local context = data_util.get("context", player)
+    local floor = context.floor
+    local show_floor_items = data_util.get("preferences", player).show_floor_items
+    local container = (show_floor_items and floor.level > 1) and floor.origin_line or context.subfactory
+
+    local ingredients = {}
+    for _, ingredient in pairs(_G[container.class].get_all(container, "Ingredient")) do
+        if ingredient.proto.type == "item" then ingredients[ingredient.proto.name] = ingredient.amount end
+    end
+
+    local success = ui_util.put_item_combinator_into_cursor(player, ingredients)
+    if success then main_dialog.toggle(player) end
+end
+
+
+
 function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options, action)
     if action == "submit" then
         local ui_state = data_util.get("ui_state", player)
@@ -333,16 +351,7 @@ item_boxes.gui_events = {
         {
             name = "ingredients_to_combinator",
             timeout = 20,
-            handler = (function(player, _, _)
-                local subfactory, ingredients = data_util.get("context", player).subfactory, {}
-
-                for _, ingredient in pairs(Subfactory.get_all(subfactory, "Ingredient")) do
-                    if ingredient.proto.type == "item" then ingredients[ingredient.proto.name] = ingredient.amount end
-                end
-
-                local success = ui_util.put_item_combinator_into_cursor(player, ingredients)
-                if success then main_dialog.toggle(player) end
-            end)
+            handler = put_ingredients_into_cursor
         }
     }
 }
