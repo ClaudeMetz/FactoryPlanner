@@ -68,7 +68,10 @@ function ModuleSet.normalize(self, features)
     if features.sort then ModuleSet.sort(self) end
     if features.effects then ModuleSet.summarize_effects(self) end
 
-    ModuleSet.update_count(self)
+    self.module_count = 0
+    for _, module in pairs(self.modules.datasets) do
+        self.module_count = self.module_count + module.amount
+    end
     self.empty_slots = self.module_limit - self.module_count
 end
 
@@ -98,7 +101,7 @@ function ModuleSet.trim(self)
             module_count = module_count - module.amount
         else  -- Otherwise, diminish the amount on the module appropriately and break
             local new_amount = module.amount - (module_count - module_limit)
-            module.amount = new_amount  -- done raw since counts are updated by calling function
+            Module.set_amount(module, new_amount)
             break
         end
     end
@@ -136,14 +139,6 @@ function ModuleSet.summarize_effects(self)
     self.total_effects = effects
 
     _G[self.parent.class].summarize_effects(self.parent)
-end
-
-function ModuleSet.update_count(self)
-    local count = 0
-    for _, module in pairs(self.modules.datasets) do
-        count = count + module.amount
-    end
-    self.module_count = count
 end
 
 
