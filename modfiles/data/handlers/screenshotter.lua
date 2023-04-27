@@ -6,6 +6,8 @@
 -- but it needs to do that to manipulate the interface because GUI events
 -- can't be raised manually anymore.
 
+local mod_gui = require("mod-gui")
+
 local function open_modal(player, type, modal_data)
     main_dialog.toggle(player)
     data_util.get("main_elements", player).main_frame.location = player.display_resolution  -- hack city
@@ -112,7 +114,8 @@ local actions = {
         toggle_handler(player, nil, nil)
     end,
     teardown_02_compact_interface = function(player)
-        mod_gui.get_frame_flow(player)["flib_translation_progress"].visible = false
+        local translation_progress = mod_gui.get_frame_flow(player)["flib_translation_progress"]
+        if translation_progress then translation_progress.visible = false end
         local compact_frame = data_util.get("compact_elements", player).compact_frame
         return_dimensions("02_compact_interface", compact_frame)
         local toggle_handler = get_handler(compact_dialog.gui_events.on_gui_click, "switch_to_main_view")
