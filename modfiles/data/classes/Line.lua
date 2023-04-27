@@ -94,19 +94,12 @@ function Line.change_machine_to_proto(self, player, proto)
     else
         self.machine.proto = proto
 
-        -- Check if the fuel is still compatible, remove it otherwise
-        local fuel = self.machine.fuel
-        if fuel ~= nil and (not fuel.valid or not (proto.energy_type == "burner"
-          and proto.burner.categories[fuel.proto.category])) then
-            self.machine.fuel = nil
-        end
-
         ModuleSet.normalize(self.machine.module_set, {compatibility=true, trim=true, effects=true})
         if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
     end
 
-    -- Set the machine-fuel, if appropriate
-    Machine.find_fuel(self.machine, player)
+    -- Make sure the machine's fuel still applies
+    Machine.normalize_fuel(self.machine, player)
 
     return true
 end
