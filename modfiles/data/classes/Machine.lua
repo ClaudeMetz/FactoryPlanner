@@ -21,10 +21,16 @@ function Machine.init(proto, parent)
 end
 
 
-function Machine.find_fuel(self, player)
-    if self.fuel == nil and self.proto.energy_type == "burner" then
-        local burner = self.proto.burner
+function Machine.normalize_fuel(self, player)
+    if self.proto.energy_type ~= "burner" then self.fuel = nil; return end
+    -- no need to continue if this machine doesn't have a burner
 
+    local burner = self.proto.burner
+    -- Check if fuel has a valid category for this machine, replace otherwise
+    if self.fuel and not burner.categories[self.fuel.proto.category] then self.fuel = nil end
+
+    -- If this machine has fuel already, don't replace it
+    if self.fuel == nil then
         -- Use the first category of this machine's burner as the default one
         local fuel_category_name, _ = next(burner.categories, nil)
         local fuel_category_id = global.all_fuels.map[fuel_category_name]
@@ -155,12 +161,10 @@ function Machine.repair(self, player)
     self.valid = true  -- if it gets to this, change_machine was successful and the machine is valid
     -- It just might need to cleanup some fuel and/or modules
 
-    -- If the machine changed to not use a burner, remove its fuel
-    if not self.proto.burner then self.fuel = nil end
-
-    if self.fuel and not self.fuel.valid then
-        -- If fuel is invalid, replace it with a default value
-        if not Fuel.repair(self.fuel) then Machine.find_fuel(self, player) end
+    if self.fuel and not self.fuel.valid and not Fuel.repair(self.fuel) then
+        -- If fuel is unrepairable, replace it with a default value
+        self.fuel = nil
+        Machine.normalize_fuel(self, player)
     end
 
     -- Remove invalid modules and normalize the remaining ones

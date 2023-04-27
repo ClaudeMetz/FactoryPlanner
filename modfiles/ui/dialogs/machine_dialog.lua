@@ -150,8 +150,7 @@ local function handle_machine_choice(player, tags, _)
 
     -- This can't use Line.change_machine_to_proto() as that modifies the line, which we can't do
     dialog_machine.proto = machine_proto
-    if dialog_machine.fuel and dialog_machine.proto.energy_type ~= "burner" then dialog_machine.fuel = nil end
-    Machine.find_fuel(dialog_machine, player)
+    Machine.normalize_fuel(dialog_machine, player)
     ModuleSet.normalize(dialog_machine.module_set, {compatibility=true, trim=true})
 
     refresh_machine_frame(player)
