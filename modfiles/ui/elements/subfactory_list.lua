@@ -65,6 +65,26 @@ local function add_subfactory(player, _, event)
     end
 end
 
+local function duplicate_subfactory(player, _, _)
+    local player_table = data_util.get("table", player)
+    local context = player_table.ui_state.context
+    local archive_open = player_table.ui_state.flags.archive_open
+    local factory = player_table.factory
+
+    local clone = Subfactory.clone(context.subfactory)
+    local inserted_clone = nil
+    if archive_open then
+        inserted_clone = Factory.add(factory, clone)
+        toggle_archive(player, _, _)
+    else
+        inserted_clone = Factory.insert_at(factory, context.subfactory.gui_position+1, clone)
+    end
+
+    ui_util.context.set_subfactory(player, inserted_clone)
+    calculation.update(player, inserted_clone)
+    main_dialog.refresh(player, "all")
+end
+
 
 local function handle_move_subfactory_click(player, tags, event)
     local context = data_util.get("context", player)
@@ -248,8 +268,7 @@ function subfactory_list.refresh(player)
       {"fp.action_add_subfactory_by_product"} or {"fp.action_add_subfactory_by_name"}
 
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
-    subfactory_list_elements.duplicate_button.enabled =
-      (subfactory_exists and selected_subfactory.valid and not archive_open)
+    subfactory_list_elements.duplicate_button.enabled = (subfactory_exists and selected_subfactory.valid)
 
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
     local delay_in_minutes = math.floor(SUBFACTORY_DELETION_DELAY / 3600)
@@ -341,15 +360,7 @@ subfactory_list.gui_events = {
         },
         {
             name = "duplicate_subfactory",
-            handler = (function(player, _, _)
-                local context = data_util.get("context", player)
-                local clone = Subfactory.clone(context.subfactory)
-                local inserted_clone = Factory.insert_at(context.factory, context.subfactory.gui_position+1, clone)
-
-                ui_util.context.set_subfactory(player, inserted_clone)
-                calculation.update(player, inserted_clone)
-                main_dialog.refresh(player, "all")
-            end)
+            handler = duplicate_subfactory
         },
         {
             name = "delete_subfactory",

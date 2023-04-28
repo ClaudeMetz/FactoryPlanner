@@ -2,7 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - Subfactories can now be duplicated from the archive, placing them into the main list
   Changes:
     - Removed the amount indication on machines and fuels in the machine dialog
   Bugfixes:
