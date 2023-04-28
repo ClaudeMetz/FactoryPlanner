@@ -189,6 +189,16 @@ styles["fp_button_frame_tool"] = {
     left_padding = 8
 }
 
+styles["fp_button_frame_tool_active"] = {
+    type = "button_style",
+    parent = "fp_button_frame_tool",
+    default_graphical_set = styles.frame_button.clicked_graphical_set,
+    default_font_color = {},  -- black
+    hovered_graphical_set = styles.frame_button.hovered_graphical_set,
+    clicked_graphical_set = styles.frame_button.default_graphical_set,
+    clicked_font_color = {0.9, 0.9, 0.9}
+}
+
 styles["fp_button_rounded_mini"] = {
     type = "button_style",
     parent = "rounded_button",
@@ -208,9 +218,9 @@ styles["fp_sprite-button_rounded_mini"] = {
 styles["fp_sprite-button_rounded_mini_active"] = {
     type = "button_style",
     parent = "fp_sprite-button_rounded_mini",
-    default_graphical_set = styles.rounded_button.selected_graphical_set,
-    hovered_graphical_set = styles.rounded_button.selected_hovered_graphical_set,
-    clicked_graphical_set = styles.rounded_button.selected_clicked_graphical_set
+    default_graphical_set = styles.rounded_button.clicked_graphical_set,
+    hovered_graphical_set = styles.rounded_button.hovered_graphical_set,
+    clicked_graphical_set = styles.rounded_button.default_graphical_set
 }
 
 -- Push-button style used for timescale and view_state buttons
@@ -227,10 +237,8 @@ styles["fp_button_push_active"] = {
     type = "button_style",
     parent = "fp_button_push",
     default_graphical_set = styles.button.selected_graphical_set,
-    hovered_graphical_set = styles.button.selected_hovered_graphical_set,
-    clicked_graphical_set = styles.button.selected_clicked_graphical_set,
-    disabled_font_color = {},  -- black
-    disabled_graphical_set = styles.button.selected_graphical_set
+    disabled_graphical_set = styles.button.selected_graphical_set,
+    disabled_font_color = {}  -- black
 }
 
 -- A button that can be used in a fake listbox, but looks identical to the real thing
@@ -248,9 +256,8 @@ styles["fp_button_fake_listbox_item_active"] = {
     type = "button_style",
     parent = "fp_button_fake_listbox_item",
     default_graphical_set = styles.button.selected_graphical_set,
-    hovered_graphical_set = styles.button.selected_hovered_graphical_set,
-    clicked_graphical_set = styles.button.selected_clicked_graphical_set,
-    default_font_color = styles.button.selected_font_color,
+    disabled_graphical_set = styles.button.selected_graphical_set,
+    disabled_font_color = {},  -- black
     default_vertical_offset = styles.button.selected_vertical_offset
 }
 

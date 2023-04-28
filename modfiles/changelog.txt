@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     - Subfactories can now be duplicated from the archive, placing them into the main list
   Changes:
     - Redesigned the subfactory info box slightly
+    - Made the game pause button more obvious in the UI
     - Removed the amount indication on machines and fuels in the machine dialog
   Bugfixes:
     - Fixed a bug where module effects were not updated straight away when changing a machine or beacon type
