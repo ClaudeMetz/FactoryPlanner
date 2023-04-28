@@ -60,8 +60,8 @@ local function add_item_picker(parent_flow, player)
     modal_elements["warning_label"] = label_warning
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
-    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=6}
-    table_item_groups.style.width = 71 * 6
+    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=PICKER_GROUP_COUNT}
+    table_item_groups.style.width = 71 * PICKER_GROUP_COUNT
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
@@ -78,7 +78,7 @@ local function add_item_picker(parent_flow, player)
         end
     end
 
-    local items_per_column = 10
+    local items_per_column = PICKER_ITEM_COLUMN_COUNT
     local current_item_rows, max_item_rows = 0, 0
     local current_items_in_table_count = 0
     for _, item_proto in ipairs(SORTED_ITEMS) do
