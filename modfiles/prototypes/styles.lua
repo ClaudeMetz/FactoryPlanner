@@ -165,8 +165,8 @@ styles["fp_sprite-button_group_tab"] = {
     type = "button_style",
     parent = "filter_group_button_tab",
     horizontally_stretchable = "on",
-    width = 0,
-    natural_width = 71,
+    width = 0,  -- allows stretching
+    height = 71,
     disabled_graphical_set = styles.button.selected_graphical_set
 }
 
