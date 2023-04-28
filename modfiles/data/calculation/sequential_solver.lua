@@ -123,10 +123,8 @@ local function update_line(line_data, aggregate)
 
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption = calculation.util.determine_energy_consumption(machine_proto,
-      machine_count, total_effects)  -- calculated in W/timescale
-    local pollution = calculation.util.determine_pollution(machine_proto, recipe_proto,
-      fuel_proto, total_effects, energy_consumption)  -- calculated in P/m
+    local energy_consumption, pollution = calculation.util.determine_energy_consumption_and_pollution(
+      machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
