@@ -232,7 +232,7 @@ function builders.products(line, parent_flow, metadata)
         local style, note = "flib_slot_button_default_small", nil
         if not line.subfloor and not metadata.matrix_solver_active then
             -- We can check for identity because they reference the same table
-            if line.priority_product_proto == product.proto then
+            if line.Product.count > 1 and line.priority_product_proto == product.proto then
                 style = "flib_slot_button_pink_small"
                 note = {"fp.priority_product"}
             end
