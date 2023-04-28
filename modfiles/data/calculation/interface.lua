@@ -350,20 +350,19 @@ function calculation.util.determine_prodded_amount(item, crafts_per_tick, total_
     return item.amount + (item.proddable_amount * productivity)
 end
 
--- Determines the amount of energy needed to satisfy the given recipe in the given context
-function calculation.util.determine_energy_consumption(machine_proto, machine_count, total_effects)
-    local drain = math.ceil(machine_count - 0.001) * (machine_proto.energy_drain * 60)
+-- Determines the amount of energy needed for a machine and the pollution that produces
+function calculation.util.determine_energy_consumption_and_pollution(machine_proto, recipe_proto,
+  fuel_proto, machine_count, total_effects)
     local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
-    return (machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier) + drain
-end
+    local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
+    local drain = math.ceil(machine_count - 0.001) * (machine_proto.energy_drain * 60)
 
--- Determines the amount of pollution this recipe produces
-function calculation.util.determine_pollution(machine_proto, recipe_proto, fuel_proto,
-  total_effects, energy_consumption)
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + cap_effect(total_effects.pollution)
-    return energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
+    local pollution = energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
       * fuel_multiplier * recipe_proto.emissions_multiplier
+
+    return (energy_consumption + drain), pollution
 end
 
 -- Determines the amount of fuel needed in the given context

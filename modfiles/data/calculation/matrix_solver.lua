@@ -655,10 +655,8 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
 
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption = calculation.util.determine_energy_consumption(line_data.machine_proto,
-      machine_count, line_data.total_effects)
-    local pollution = calculation.util.determine_pollution(line_data.machine_proto, line_data.recipe_proto,
-      line_data.fuel_proto, line_data.total_effects, energy_consumption)
+    local energy_consumption, pollution = calculation.util.determine_energy_consumption_and_pollution(
+      line_data.machine_proto, line_data.recipe_proto, line_data.fuel_proto, machine_count, line_data.total_effects)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
