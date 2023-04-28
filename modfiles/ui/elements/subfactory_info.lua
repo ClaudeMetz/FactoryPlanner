@@ -79,13 +79,21 @@ function subfactory_info.build(player)
     local frame_vertical = parent_flow.add{type="frame", direction="vertical",
       style="inside_shallow_frame_with_padding"}
     frame_vertical.style.size = {SUBFACTORY_LIST_WIDTH, SUBFACTORY_INFO_HEIGHT}
-    frame_vertical.style.bottom_padding = 4  -- this makes the vertical pushers align stuff nicely
 
-    local title = frame_vertical.add{type="label", caption={"fp.subfactory_info"}, style="caption_label"}
-    title.style.top_margin = -4
+    local flow_title = frame_vertical.add{type="flow", direction="horizontal"}
+    flow_title.style.margin = {-4, 0, 8, 0}
+    flow_title.add{type="label", caption={"fp.subfactory_info"}, style="caption_label"}
+    flow_title.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local first_pusher = frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
-    main_elements.subfactory_info["first_pusher"] = first_pusher
+    -- Power + Pollution
+    local flow_power_pollution = flow_title.add{type="flow", direction="horizontal"}
+    main_elements.subfactory_info["power_pollution_flow"] = flow_power_pollution
+    local label_power_value = flow_power_pollution.add{type="label"}
+    main_elements.subfactory_info["power_label"] = label_power_value
+    flow_power_pollution.add{type="label", caption="|"}
+    local label_pollution_value = flow_power_pollution.add{type="label"}
+    main_elements.subfactory_info["pollution_label"] = label_pollution_value
+
 
     -- Repair flow
     local flow_repair = frame_vertical.add{type="flow", direction="vertical"}
@@ -100,33 +108,10 @@ function subfactory_info.build(player)
     button_repair.style.top_margin = 2
 
 
-    -- 'No subfactory' flow - this is very stupid
-    local flow_no_subfactory = frame_vertical.add{type="flow", direction="horizontal"}
-    main_elements.subfactory_info["no_subfactory_flow"] = flow_no_subfactory
-    flow_no_subfactory.add{type="empty-widget", style="flib_horizontal_pusher"}
-    flow_no_subfactory.add{type="label", caption={"fp.no_subfactory"}}
-    flow_no_subfactory.add{type="empty-widget", style="flib_horizontal_pusher"}
-
-
     -- Subfactory info
     local flow_info = frame_vertical.add{type="flow", direction="vertical"}
     flow_info.style.vertical_spacing = 8
     main_elements.subfactory_info["info_flow"] = flow_info
-
-    -- Power + Pollution
-    local table_power_pollution = flow_info.add{type="table", column_count=2}
-    table_power_pollution.draw_vertical_lines = true
-    table_power_pollution.style.horizontal_spacing = 20
-
-    local flow_power = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_power.add{type="label", caption={"fp.u_power"}}
-    local label_power_value = flow_power.add{type="label"}
-    main_elements.subfactory_info["power_label"] = label_power_value
-
-    local flow_pollution = table_power_pollution.add{type="flow", direction="horizontal"}
-    flow_pollution.add{type="label", caption={"fp.pollution"}}
-    local label_pollution_value = flow_pollution.add{type="label"}
-    main_elements.subfactory_info["pollution_label"] = label_pollution_value
 
     -- Timescale
     local flow_timescale = flow_info.add{type="flow", direction="horizontal"}
@@ -134,6 +119,7 @@ function subfactory_info.build(player)
     flow_timescale.style.vertical_align = "center"
 
     flow_timescale.add{type="label", caption={"fp.info_label", {"fp.timescale"}}, tooltip={"fp.timescale_tt"}}
+    flow_timescale.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local table_timescales = flow_timescale.add{type="table", column_count=table_size(TIMESCALE_MAP)}
     table_timescales.style.horizontal_spacing = 0
@@ -151,6 +137,7 @@ function subfactory_info.build(player)
 
     flow_mining_prod.add{type="label", caption={"fp.info_label", {"fp.mining_productivity"}},
       tooltip={"fp.mining_productivity_tt"}}
+    flow_mining_prod.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local label_prod_bonus = flow_mining_prod.add{type="label"}
     main_elements.subfactory_info["prod_bonus_label"] = label_prod_bonus
@@ -177,6 +164,7 @@ function subfactory_info.build(player)
 
     flow_solver_choice.add{type="label", caption={"fp.info_label", {"fp.solver_choice"}},
       tooltip={"fp.solver_choice_tt"}}
+    flow_solver_choice.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
       left_label_caption={"fp.solver_choice_traditional"},
@@ -190,9 +178,6 @@ function subfactory_info.build(player)
     button_configure_solver.style.padding = 0
     main_elements.subfactory_info["configure_solver_button"] = button_configure_solver
 
-    local second_pusher = frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
-    main_elements.subfactory_info["second_pusher"] = second_pusher
-
     subfactory_info.refresh(player)
 end
 
@@ -201,12 +186,11 @@ function subfactory_info.refresh(player)
     local subfactory_info_elements = ui_state.main_elements.subfactory_info
     local subfactory = ui_state.context.subfactory
 
-    subfactory_info_elements.no_subfactory_flow.visible = (not subfactory)
-
     local invalid_subfactory_selected = (subfactory and not subfactory.valid)
     subfactory_info_elements.repair_flow.visible = invalid_subfactory_selected
 
     local valid_subfactory_selected = (subfactory and subfactory.valid)
+    subfactory_info_elements.power_pollution_flow.visible = valid_subfactory_selected
     subfactory_info_elements.info_flow.visible = valid_subfactory_selected
 
     if invalid_subfactory_selected then
