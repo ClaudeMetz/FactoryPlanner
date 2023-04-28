@@ -110,10 +110,7 @@ local function handle_subfactory_click(player, tags, action)
     ui_util.context.set_subfactory(player, selected_subfactory)
 
     if action == "select" then
-        if previous_subfactory.id == selected_subfactory.id then
-            -- Reset Floor when clicking on previously selected subfactory
-            production_box.change_floor(player, "top")
-        elseif ui_state.flags.recalculate_on_subfactory_change then
+        if ui_state.flags.recalculate_on_subfactory_change then
             -- This flag is set when a textfield is changed but not confirmed
             ui_state.flags.recalculate_on_subfactory_change = false
             calculation.update(player, previous_subfactory)
@@ -217,7 +214,7 @@ function subfactory_list.refresh(player)
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
             local subfactory_button = listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory",
               subfactory_id=subfactory.id}, caption=padded_caption, tooltip=tooltip, style=style,
-              mouse_button_filter={"left-and-right"}}
+              enabled=(not selected), mouse_button_filter={"left-and-right"}}
 
             local function create_move_button(flow, direction)
                 local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}

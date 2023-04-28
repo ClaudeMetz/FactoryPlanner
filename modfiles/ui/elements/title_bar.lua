@@ -2,13 +2,7 @@ title_bar = {}
 
 -- ** LOCAL UTIL **
 local function configure_pause_button_style(button, pause_on_interface)
-    if pause_on_interface then
-        button.style = "flib_selected_frame_action_button"
-        button.sprite = "utility/pause"
-    else
-        button.style = "frame_action_button"
-        button.sprite = "fp_sprite_pause_light"
-    end
+    button.style = (pause_on_interface) and "fp_button_frame_tool_active" or "fp_button_frame_tool"
 end
 
 local function toggle_paused_state(player, _, _)
@@ -65,9 +59,9 @@ function title_bar.build(player)
     local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = 24
 
-    local button_pause = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_pause_game"},
-      hovered_sprite="utility/pause", clicked_sprite="utility/pause", tooltip={"fp.pause_on_interface"},
-      enabled=(not game.is_multiplayer()), mouse_button_filter={"left"}}  -- sprite set dynamically
+    local is_singleplayer = (not game.is_multiplayer())
+    local button_pause = flow_title_bar.add{type="button", caption={"fp.pause"}, style="fp_button_frame_tool",
+      tags={mod="fp", on_gui_click="toggle_pause_game"}, enabled=is_singleplayer, mouse_button_filter={"left"}}
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = data_util.get("preferences", player)
