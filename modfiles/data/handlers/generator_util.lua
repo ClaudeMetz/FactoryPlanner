@@ -142,24 +142,6 @@ function generator_util.data_structure.get()
     return structure
 end
 
--- Properly removes a prototype element without leaving any gaps in the name -> id map
--- Only relevant for structures that already had their map generated
-function generator_util.data_structure.remove_mapped_element(dataset, structure_name, name_to_remove)
-    local id_to_remove = nil
-    for id, proto in pairs(dataset[structure_name]) do
-        if proto.name == name_to_remove then id_to_remove = id end
-    end
-
-    table.remove(dataset[structure_name], id_to_remove)  -- fixes gaps automatically
-    dataset.map[name_to_remove] = nil  -- does not fix gap, needs to be done manually below
-
-    for name, id in pairs(dataset.map) do
-        if id >= id_to_remove then
-            dataset.map[name] = dataset.map[name] - 1
-        end
-    end
-end
-
 
 -- ** LOCAL UTIL **
 -- Determines the actual amount of items that a recipe product or ingredient equates to
@@ -234,6 +216,26 @@ end
 
 
 -- ** TOP LEVEL **
+-- Properly removes a prototype element without leaving any gaps in the name -> id map
+-- DON'T USE WITH ITEMS, since their identifiers won't be fixed
+function generator_util.remove_mapped_element(dataset, structure_name, name_to_remove)
+    local id_to_remove = dataset.map[name_to_remove]
+    table.remove(dataset[structure_name], id_to_remove)  -- fixes gaps automatically
+    dataset.map[name_to_remove] = nil  -- does not fix gap, needs to be done manually below
+
+    for name, id in pairs(dataset.map) do
+        if id >= id_to_remove then
+            dataset.map[name] = dataset.map[name] - 1
+        end
+    end
+    for _, recipe in pairs(dataset[structure_name]) do
+        if recipe.id >= id_to_remove then
+            recipe.id = recipe.id - 1
+        end
+    end
+end
+
+
 -- Formats the products/ingredients of a recipe for more convenient use
 function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     local ingredients = {}
