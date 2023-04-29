@@ -109,7 +109,7 @@ local function handle_machine_click(player, tags, action)
     elseif action == "reset_to_default" then
         Line.change_machine_to_default(line, player)  -- guaranteed to find something
         line.machine.limit = nil
-        line.machine.force_limit = false
+        line.machine.force_limit = true
         local message = Line.apply_mb_defaults(line, player)
 
         calculation.update(player, context.subfactory)
