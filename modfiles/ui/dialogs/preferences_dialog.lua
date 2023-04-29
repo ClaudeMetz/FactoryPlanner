@@ -92,7 +92,9 @@ function preference_structures.mb_defaults(preferences, content_frame)
     beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
       tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
 
-    local textfield_amount = beacon_amount_flow.add{type="textfield", text=tostring(mb_defaults.beacon_count or ""),
+    local se_active = (script.active_mods["space-exploration"] ~= nil)
+    local beacon_amount = (se_active) and "1" or tostring(mb_defaults.beacon_count or "")
+    local textfield_amount = beacon_amount_flow.add{type="textfield", text=beacon_amount, enabled=(not se_active),
       tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 42
