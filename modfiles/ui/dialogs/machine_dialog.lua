@@ -152,7 +152,7 @@ local function change_machine_limit(player, _, event)
     local machine = modal_data.dialog_machine
 
     machine.limit = tonumber(event.element.text)
-    if machine.limit == nil then machine.force_limit = false end
+    if machine.limit == nil then machine.force_limit = true end
 
     refresh_limit_elements(player)
 end

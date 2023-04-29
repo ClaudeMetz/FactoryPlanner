@@ -6,7 +6,7 @@ function Machine.init(proto, parent)
         proto = proto,
         count = 0,
         limit = nil,  -- will be set by the user
-        force_limit = false,
+        force_limit = true,
         fuel = nil,  -- needs to be set by calling Machine.find_fuel afterwards
         module_set = nil,  -- set right below
         total_effects = nil,
