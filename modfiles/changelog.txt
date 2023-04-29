@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Made the game pause button more obvious in the UI
     - Removed the amount indication on machines and fuels in the machine dialog
   Bugfixes:
+    - Fixed an issue where items were showing the wrong recipes to produce them sometimes, leading to crashes
     - Fixed a bug where module effects were not updated straight away when changing a machine or beacon type
     - Fixed that putting top level ingredients into the cursor would not respect the 'show floor items' preference
     - Fixed that machine energy drain was generating pollution when it shouldn't be

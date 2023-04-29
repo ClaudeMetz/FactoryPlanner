@@ -274,7 +274,7 @@ function generator.recipes_second_pass()
 
     -- Actually remove unbuildable recipes
     for recipe_name, _ in pairs(recipes_without_machine) do
-        generator_util.data_structure.remove_mapped_element(NEW.all_recipes, "recipes", recipe_name)
+        generator_util.remove_mapped_element(NEW.all_recipes, "recipes", recipe_name)
     end
 end
 
@@ -541,7 +541,7 @@ function generator.machines_second_pass()
         end
 
         for _, machine_name in pairs(invalid_machines) do
-            generator_util.data_structure.remove_mapped_element(machine_category, "machines", machine_name)
+            generator_util.remove_mapped_element(machine_category, "machines", machine_name)
         end
 
         -- If the category ends up empty because of this, make sure to remove it
@@ -550,9 +550,8 @@ function generator.machines_second_pass()
         end
     end
 
-    -- Actually remove unused categories
     for category_name, _ in pairs(unused_category_names) do
-        generator_util.data_structure.remove_mapped_element(NEW.all_machines, "categories", category_name)
+        generator_util.remove_mapped_element(NEW.all_machines, "categories", category_name)
     end
 
 
