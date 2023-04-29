@@ -152,10 +152,11 @@ function generator.all_recipes()
         -- Detect all the implicit rocket silo recipes
         elseif proto.rocket_parts_required ~= nil then
             local fixed_recipe = recipe_prototypes[proto.fixed_recipe]
-            if fixed_recipe ~= nil then
+            if fixed_recipe ~= nil and not fixed_recipe.hidden then
                 -- Add recipe for all 'launchable' items
                 for _, silo_input in pairs(rocket_silo_inputs) do
-                    local silo_product = item_prototypes[silo_input.rocket_launch_products[1].name]
+                    local silo_product = table_size(silo_input.rocket_launch_products) > 1 and
+                      item_prototypes[silo_input.rocket_launch_products[1].name] or silo_input
 
                     local recipe = custom_recipe()
                     recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. silo_input.name
