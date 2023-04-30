@@ -152,7 +152,7 @@ function generator.all_recipes()
         -- Detect all the implicit rocket silo recipes
         elseif proto.rocket_parts_required ~= nil then
             local fixed_recipe = recipe_prototypes[proto.fixed_recipe]
-            if fixed_recipe ~= nil and not fixed_recipe.hidden then
+            if fixed_recipe ~= nil then
                 -- Add recipe for all 'launchable' items
                 for _, silo_input in pairs(rocket_silo_inputs) do
                     local silo_product = table_size(silo_input.rocket_launch_products) > 1 and
@@ -179,13 +179,14 @@ function generator.all_recipes()
                     generator_util.format_recipe_products_and_ingredients(recipe)
                     generator_util.add_recipe_tooltip(recipe)
                     generator_util.data_structure.insert(recipe)
-
                 end
 
                 -- Modify recipe for all rocket parts so they represent a full launch
                 -- This is needed so the launch sequence times can be incorporated correctly
                 local rocket_part_recipe = generator_util.data_structure.get_prototype(fixed_recipe.name, nil)
-                generator_util.multiply_recipe(rocket_part_recipe, proto.rocket_parts_required)
+                if rocket_part_recipe then
+                    generator_util.multiply_recipe(rocket_part_recipe, proto.rocket_parts_required)
+                end
             end
         end
 
