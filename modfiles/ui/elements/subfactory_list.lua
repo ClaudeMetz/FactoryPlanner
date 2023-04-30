@@ -90,10 +90,10 @@ local function handle_move_subfactory_click(player, tags, event)
     local context = data_util.get("context", player)
     local subfactory = Factory.get(context.factory, "Subfactory", tags.subfactory_id)
 
-    local shifting_function = (event.shift) and Factory.shift_to_end or Factory.shift
+    local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
 
-    if shifting_function(context.factory, subfactory, translated_direction, 1) then
+    if Factory.shift(context.factory, subfactory, 1, translated_direction, spots_to_shift) then
         main_dialog.refresh(player, "subfactory_list")
     else
         local direction_string = (translated_direction == "negative") and {"fp.up"} or {"fp.down"}

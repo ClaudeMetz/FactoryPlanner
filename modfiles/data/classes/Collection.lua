@@ -129,45 +129,31 @@ function Collection.get_by_type_and_name(self, type_name, name)
     return nil
 end
 
-
--- Shifts given dataset in given direction
-function Collection.shift(self, main_dataset, direction, bottom_position)
+function Collection.shift(self, main_dataset, first_position, direction, spots)
     if not main_dataset then error("Can't shift nil dataset")
     elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
 
-    local main_gui_position = main_dataset.gui_position
+    local original_position = main_dataset.gui_position
 
-    -- Doesn't shift if outmost elements are being shifted further outward
-    if (main_gui_position == bottom_position and direction == "negative") or
-      (main_gui_position == self.count and direction == "positive") then
+    -- Don't shift if outmost elements are being shifted further outward
+    if (original_position == first_position and direction == "negative") or
+      (original_position == self.count and direction == "positive") then
         return false
     end
 
-    local secondary_gui_position = (direction == "positive") and (main_gui_position + 1) or (main_gui_position - 1)
-    local secondary_dataset = Collection.get_by_gui_position(self, secondary_gui_position)
-    main_dataset.gui_position = secondary_gui_position
-    secondary_dataset.gui_position = main_gui_position
-
-    return true
-end
-
--- Shifts the given dataset to the end of the collection in the given direction
-function Collection.shift_to_end(self, main_dataset, direction, bottom_position)
-    if not main_dataset then error("Can't shift nil dataset")
-    elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
-
-    local main_gui_position = main_dataset.gui_position
-
-    -- Doesn't shift if outmost elements are being shifted further outward
-    if (main_gui_position == bottom_position and direction == "negative") or
-      (main_gui_position == self.count and direction == "positive") then
-        return false
+    local new_position = nil
+    if spots == nil then  -- means shift-to-end
+        new_position = (direction == "positive") and self.count or first_position
+    else
+        if direction == "positive" then
+            new_position = math.min(original_position + spots, self.count)
+        else
+            new_position = math.max(original_position - spots, first_position)
+        end
     end
 
-    local secondary_gui_position = (direction == "positive") and self.count or bottom_position
-    -- To simplify the code, remove the dataset and re-insert it at the right position
     Collection.remove(self, main_dataset)
-    Collection.insert_at(self, secondary_gui_position, main_dataset)
+    Collection.insert_at(self, new_position, main_dataset)
 
     return true
 end
