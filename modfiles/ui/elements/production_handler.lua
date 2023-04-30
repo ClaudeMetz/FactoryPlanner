@@ -6,11 +6,11 @@ local function handle_line_move_click(player, tags, event)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
 
-    local shifting_function = (event.shift) and Floor.shift_to_end or Floor.shift
+    local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
-    local bottom_position = (floor.level > 1) and 2 or 1
+    local first_position = (floor.level > 1) and 2 or 1
 
-    if shifting_function(floor, line, translated_direction, bottom_position) then
+    if Floor.shift(floor, line, first_position, translated_direction, spots_to_shift) then
         calculation.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
     else

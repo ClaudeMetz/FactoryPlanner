@@ -102,12 +102,8 @@ function Floor.get_by_gui_position(self, class, gui_position)
     return Collection.get_by_gui_position(self[class], gui_position)
 end
 
-function Floor.shift(self, dataset, direction, bottom_position)
-    return Collection.shift(self[dataset.class], dataset, direction, bottom_position)
-end
-
-function Floor.shift_to_end(self, dataset, direction, bottom_position)
-    return Collection.shift_to_end(self[dataset.class], dataset, direction, bottom_position)
+function Floor.shift(self, dataset, first_position, direction, spots)
+    return Collection.shift(self[dataset.class], dataset, first_position, direction, spots)
 end
 
 
