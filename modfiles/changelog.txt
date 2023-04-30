@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.64
+Date: 30. 04. 2023
+  Features:
     - Added the ability to shift subfactories and recipes by 5 spots
   Changes:
     - Limited beacon amount to 1 when using the mod with Space Exploration
