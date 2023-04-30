@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Limited beacon amount to 1 when using the mod with Space Exploration
     - Changed exact machine limits to default to being enabled
   Bugfixes:
-    -
+    - Fixed space science not showing up at all
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.63
