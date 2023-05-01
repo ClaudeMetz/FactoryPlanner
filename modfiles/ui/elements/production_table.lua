@@ -55,14 +55,11 @@ function builders.recipe(line, parent_flow, metadata, indent)
     parent_flow.style.vertical_align = "center"
     parent_flow.style.horizontal_spacing = 3
 
-    if indent > 0 then
-        local arrow = parent_flow.add{type="sprite", sprite="fp_sprite_indent_angle_light"}
-        arrow.style.margin = {0, 4, 0, (indent - 1) * 24}
-    end
+    if indent > 0 then parent_flow.style.left_margin = indent * 18 end
 
     local function create_move_button(flow, direction, disable)
         local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
-        local move_tooltip = (metadata.archive_open) and "" or
+        local move_tooltip = (metadata.archive_open or disable) and "" or
           {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. direction}, endpoint}
         flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
           tags={mod="fp", on_gui_click="move_line", direction=direction, floor_id=line.parent.id, line_id=line.id},
