@@ -157,7 +157,8 @@ local function handle_checkbox_preference_change(player, tags, event)
 
     local refresh = data_util.get("modal_data", player).refresh
 
-    if tags.type == "production" or preference_name == "round_button_numbers" then
+    if tags.type == "production" or preference_name == "round_button_numbers"
+      or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
         refresh.production = true
     end
 
@@ -249,8 +250,8 @@ function preferences_dialog.open(player, modal_data)
     label_preferences_info.style.single_line = false
     label_preferences_info.style.width = 335
 
-    local general_preference_names = {"ignore_barreling_recipes", "ignore_recycling_recipes",
-      "ingredient_satisfaction", "round_button_numbers", "attach_subfactory_products"}
+    local general_preference_names = {"attach_subfactory_products", "show_floor_items", "fold_out_subfloors",
+      "ingredient_satisfaction", "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
     local production_preference_names = {"done_column", "pollution_column", "line_comment_column"}
