@@ -125,6 +125,7 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
         local all_prototypes = global["all_" .. type][type]
         if #all_prototypes < 2 then preference_box.visible = false; return end
 
+        table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
         add_defaults_table(8, nil)
         refresh_defaults_table(player, modal_elements, type, nil)
 
@@ -259,15 +260,14 @@ function preferences_dialog.open(player, modal_data)
 
     preference_structures.mb_defaults(preferences, left_content_frame)
 
-    preference_structures.prototypes(player, left_content_frame, modal_elements, "belts")
-    preference_structures.prototypes(player, left_content_frame, modal_elements, "beacons")
-    preference_structures.prototypes(player, left_content_frame, modal_elements, "wagons")
-
     local right_content_frame = add_content_frame()
 
     local support_frame = right_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
+    preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
+    preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
+    preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
 end
