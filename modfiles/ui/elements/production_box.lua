@@ -64,28 +64,13 @@ function production_box.build(player)
       style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_top_button"] = button_floor_top
 
-    local first_separator = subheader.add{type="line", direction="vertical"}
-    first_separator.style.margin = {0, 8}
-    main_elements.production_box["first_separator_line"] = first_separator
+    local separator = subheader.add{type="line", direction="vertical"}
+    separator.style.margin = {0, 8}
+    main_elements.production_box["separator_line"] = separator
 
-    local button_fold_out_subfloors = subheader.add{type="sprite-button", sprite="fp_sprite_indent_angle_dark",
-      tooltip={"fp.fold_out_subfloors_tt"}, tags={mod="fp", on_gui_click="toggle_fold_out_subfloors"},
-      mouse_button_filter={"left"}}
-    main_elements.production_box["fold_out_subfloors_button"] = button_fold_out_subfloors
-
-    local button_show_floor_items = subheader.add{type="sprite-button", sprite="fp_sprite_filter_dark",
-      tooltip={"fp.show_floor_items_tt"}, tags={mod="fp", on_gui_click="toggle_show_floor_items"},
-      mouse_button_filter={"left"}}
-    main_elements.production_box["show_floor_items_button"] = button_show_floor_items
-
-    local second_separator = subheader.add{type="line", direction="vertical"}
-    second_separator.style.margin = {0, 8}
-    main_elements.production_box["second_separator_line"] = second_separator
-
-    local button_utility_dialog = subheader.add{type="sprite-button", sprite="utility/slot_icon_robot_material_black",
+    local button_utility_dialog = subheader.add{type="button", caption={"fp.utilities"},
       tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
-      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
-    button_utility_dialog.style.padding = -4
+      style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["utility_dialog_button"] = button_utility_dialog
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -122,19 +107,7 @@ function production_box.refresh(player)
     production_box_elements.floor_top_button.visible = (subfactory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 1)
 
-    production_box_elements.first_separator_line.visible = (subfactory_valid)
-
-    production_box_elements.fold_out_subfloors_button.visible = (subfactory_valid)
-    production_box_elements.fold_out_subfloors_button.style = (player_table.preferences.fold_out_subfloors)
-      and "fp_sprite-button_rounded_mini_active" or "fp_sprite-button_rounded_mini"
-
-    production_box_elements.show_floor_items_button.visible = (subfactory_valid)
-    production_box_elements.show_floor_items_button.enabled = (current_level > 1)
-    production_box_elements.show_floor_items_button.style = (player_table.preferences.show_floor_items)
-      and "fp_sprite-button_rounded_mini_active" or "fp_sprite-button_rounded_mini"
-
-    production_box_elements.second_separator_line.visible = (subfactory_valid)
-
+    production_box_elements.separator_line.visible = (subfactory_valid)
     production_box_elements.utility_dialog_button.visible = (subfactory_valid)
 
     view_state.refresh(player, production_box_elements.view_state_table)
@@ -183,22 +156,6 @@ production_box.gui_events = {
             name = "change_floor",
             handler = (function(player, tags, _)
                 production_box.change_floor(player, tags.destination)
-            end)
-        },
-        {
-            name = "toggle_show_floor_items",
-            handler = (function(player, _, _)
-                local preferences = data_util.get("preferences", player)
-                preferences.show_floor_items = not preferences.show_floor_items
-                refresh_production(player)
-            end)
-        },
-        {
-            name = "toggle_fold_out_subfloors",
-            handler = (function(player, _, _)
-                local preferences = data_util.get("preferences", player)
-                preferences.fold_out_subfloors = not preferences.fold_out_subfloors
-                refresh_production(player)
             end)
         },
         {

@@ -120,22 +120,8 @@ data:extend({
     },
     {
         type = "sprite",
-        name = "fp_sprite_filter_dark",
-        filename = "__factoryplanner__/graphics/filter_dark.png",
-        size = 32, icon_mipmaps = 2,
-        flags = {"gui-icon"}
-    },
-    {
-        type = "sprite",
         name = "fp_sprite_indent_angle_light",
         filename = "__factoryplanner__/graphics/indent_angle_light.png",
-        size = 32, icon_mipmaps = 2,
-        flags = {"gui-icon"}
-    },
-    {
-        type = "sprite",
-        name = "fp_sprite_indent_angle_dark",
-        filename = "__factoryplanner__/graphics/indent_angle_dark.png",
         size = 32, icon_mipmaps = 2,
         flags = {"gui-icon"}
     }

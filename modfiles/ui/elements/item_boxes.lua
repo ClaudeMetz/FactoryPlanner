@@ -35,7 +35,7 @@ local function build_item_box(player, category, column_count)
     if category == "ingredient" then
         local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
           tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
-          enabled=false, mouse_button_filter={"left"}}
+          visible=false, mouse_button_filter={"left"}}
         button_combinator.style.size = 24
         button_combinator.style.padding = -2
         button_combinator.style.left_margin = 4
@@ -62,7 +62,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
     table_items.clear()
 
     if not subfactory or not subfactory.valid then
-        item_boxes_elements["ingredient_combinator_button"].enabled = false
+        item_boxes_elements["ingredient_combinator_button"].visible = false
         return 0
     end
 
@@ -122,7 +122,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
     end
 
     if category == "ingredient" then
-        item_boxes_elements["ingredient_combinator_button"].enabled = (table_item_count > 0)
+        item_boxes_elements["ingredient_combinator_button"].visible = (table_item_count > 0)
     end
 
     local table_rows_required = math.ceil(table_item_count / table_items.column_count)
