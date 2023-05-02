@@ -186,8 +186,7 @@ function options_dialog.open(_, modal_data)
     modal_data.field_handlers = {}
     for _, field in ipairs(modal_data.fields) do
         local caption = (field.tooltip) and {"fp.info_label", field.caption} or field.caption
-        local label = table_options.add{type="label", caption=caption, tooltip=field.tooltip}
-        label.style.font = "heading-3"
+        table_options.add{type="label", caption=caption, tooltip=field.tooltip, style="heading_3_label"}
 
         elements[field.type].create(table_options, field, modal_elements)
         modal_data.field_handlers[field.name] = field.change_handler_name

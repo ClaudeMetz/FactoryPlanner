@@ -114,8 +114,7 @@ local function setup_subfactories_table(modal_elements, add_location)
     for column_nr, table_column in pairs(table_columns) do
         table_subfactories.style.column_alignments[column_nr] = table_column.alignment or "center"
 
-        local label_column = table_subfactories.add{type="label", caption=table_column.caption}
-        label_column.style.font = "heading-3"
+        local label_column = table_subfactories.add{type="label", caption=table_column.caption, style="heading_3_label"}
         label_column.style.margin = table_column.margin or {0, 4}
     end
 end

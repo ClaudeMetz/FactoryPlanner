@@ -69,6 +69,7 @@ function Beacon.paste(self, object)
 end
 
 function Beacon.clone(self)
+    if not self then return nil end
     local clone = Beacon.unpack(Beacon.pack(self))
     clone.parent = self.parent
     Beacon.validate(clone)

@@ -100,8 +100,7 @@ function utility_structures.components(player, modal_data)
         table_components.style.vertical_spacing = 8
 
         local function add_component_row(type)
-            local label = table_components.add{type="label", caption={"fp.pu_" .. type, 2}}
-            label.style.font = "heading-3"
+            table_components.add{type="label", caption={"fp.pu_" .. type, 2}, style="heading_3_label"}
 
             local flow = table_components.add{type="flow", direction="horizontal"}
             modal_elements["components_" .. type .. "_flow"] = flow

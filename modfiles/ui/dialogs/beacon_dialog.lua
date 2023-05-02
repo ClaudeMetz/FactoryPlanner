@@ -5,11 +5,11 @@ beacon_dialog = {}
 -- ** LOCAL UTIL **
 local function add_beacon_frame(parent_flow, modal_data)
     local modal_elements = modal_data.modal_elements
-    local beacon = modal_data.dialog_beacon
+    local beacon = modal_data.object
 
     local flow_beacon = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal"}
 
-    flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}}
+    flow_beacon.add{type="label", caption={"fp.pu_beacon", 1}, style="heading_3_label"}
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
@@ -18,7 +18,8 @@ local function add_beacon_frame(parent_flow, modal_data)
     button_beacon.style.right_margin = 12
     modal_elements["beacon_button"] = button_beacon
 
-    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"}}
+    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
+      style="heading_3_label"}
 
     local se_active = (script.active_mods["space-exploration"] ~= nil)
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
@@ -31,7 +32,8 @@ local function add_beacon_frame(parent_flow, modal_data)
     textfield_amount.style.right_margin = 12
     modal_elements["beacon_amount"] = textfield_amount
 
-    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"}}
+    flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"},
+      style="heading_3_label"}
 
     local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
       text=tostring(beacon.total_amount or "")}
@@ -61,8 +63,9 @@ end
 local function handle_beacon_change(player, _, _)
     local modal_data = data_util.get("modal_data", player)
     local beacon_button = modal_data.modal_elements.beacon_button
+    local beacon = modal_data.object
 
-    local previous_beacon_name = modal_data.dialog_beacon.proto.name
+    local previous_beacon_name = beacon.proto.name
     if not beacon_button.elem_value then
         beacon_button.elem_value = previous_beacon_name  -- reset the beacon so it can't be nil
         return  -- nothing changed
@@ -72,8 +75,8 @@ local function handle_beacon_change(player, _, _)
 
     -- Change the beacon to the new type
     local beacon_id = global.all_beacons.map[beacon_button.elem_value]
-    modal_data.dialog_beacon.proto = global.all_beacons.beacons[beacon_id]
-    ModuleSet.normalize(modal_data.dialog_beacon.module_set, {compatibility=true, trim=true})
+    beacon.proto = global.all_beacons.beacons[beacon_id]
+    ModuleSet.normalize(beacon.module_set, {compatibility=true, trim=true, effects=true})
 
     module_configurator.refresh_modules_flow(player, false)
 end
@@ -102,16 +105,16 @@ end)
 
 function beacon_dialog.open(player, modal_data)
     if modal_data.object ~= nil then
-       modal_data.dialog_beacon = Beacon.clone(modal_data.object)
+        modal_data.backup_beacon = Beacon.clone(modal_data.object)
     else
         local beacon_proto = prototyper.defaults.get(player, "beacons")
         local beacon_count = data_util.get("preferences", player).mb_defaults.beacon_count
-        modal_data.dialog_beacon = Beacon.init(beacon_proto, beacon_count, nil, modal_data.line)
+        modal_data.object = Beacon.init(beacon_proto, beacon_count, nil, modal_data.line)
     end
 
-    modal_data.module_set = modal_data.dialog_beacon.module_set
+    modal_data.module_set = modal_data.object.module_set
     local content_frame = modal_data.modal_elements.content_frame
-    content_frame.style.minimal_width = 400
+    content_frame.style.minimal_width = MODULE_DIALOG_WIDTH
 
     -- Beacon
     add_beacon_frame(content_frame, modal_data)
@@ -128,12 +131,9 @@ function beacon_dialog.close(player, action)
     local subfactory = data_util.get("context", player).subfactory
 
     if action == "submit" then
-        local dialog_beacon = modal_data.dialog_beacon
-        dialog_beacon.amount = tonumber(modal_data.modal_elements.beacon_amount.text)
+        local beacon = modal_data.object
         local total_amount = tonumber(modal_data.modal_elements.beacon_total.text) or 0
-        dialog_beacon.total_amount = (total_amount > 0) and total_amount or nil
-
-        Line.set_beacon(modal_data.line, dialog_beacon)
+        beacon.total_amount = (total_amount > 0) and total_amount or nil
 
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
@@ -142,6 +142,9 @@ function beacon_dialog.close(player, action)
         Line.set_beacon(modal_data.line, nil)
         calculation.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
+
+    else -- action == "cancel"
+        Line.set_beacon(modal_data.line, modal_data.backup_beacon)
     end
 end
 
@@ -159,6 +162,9 @@ beacon_dialog.gui_events = {
             name = "beacon_amount",
             handler = (function(player, _, _)
                 local modal_data = data_util.get("modal_data", player)
+                modal_data.object.amount = tonumber(modal_data.modal_elements.beacon_amount.text) or 0
+                ModuleSet.normalize(modal_data.object.module_set, {effects=true})
+                module_configurator.refresh_effects_flow(modal_data)
                 update_dialog_submit_button(modal_data)
             end)
         }
