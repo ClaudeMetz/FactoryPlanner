@@ -9,12 +9,12 @@ local function determine_slider_config(module, empty_slots)
     return slider_value, maximum_value, minimum_value
 end
 
-local function add_module_frame(parent_flow,  module, module_filters, empty_slots)
+local function add_module_frame(parent_flow, module, module_filters, empty_slots)
     local module_id = module and module.id or nil
 
     local frame_module = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal",
       tags={module_id=module_id}}
-    frame_module.add{type="label", caption={"fp.pu_module", 1}}
+    frame_module.add{type="label", caption={"fp.pu_module", 1}, style="heading_3_label"}
 
     local module_name = (module) and module.proto.name or nil
     local button_module = frame_module.add{type="choose-elem-button", name="fp_chooser_module", elem_type="item",
@@ -22,7 +22,7 @@ local function add_module_frame(parent_flow,  module, module_filters, empty_slot
       elem_filters=module_filters, style="fp_sprite-button_inset_tiny"}
     button_module.style.right_margin = 12
 
-    frame_module.add{type="label", caption={"fp.amount"}}
+    frame_module.add{type="label", caption={"fp.amount"}, style="heading_3_label"}
 
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local slider_style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
@@ -38,6 +38,21 @@ local function add_module_frame(parent_flow,  module, module_filters, empty_slot
       text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount", module_id=module_id}}
     ui_util.setup_numeric_textfield(textfield, false, false)
     textfield.style.width = 40
+end
+
+local function add_effects_section(parent_flow, object, modal_elements)
+    local frame_effects = parent_flow.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    frame_effects.style.vertically_stretchable = true
+    frame_effects.style.width = (MODULE_DIALOG_WIDTH / 2) - 14
+
+    local class_lower = object.class:lower()
+    local caption = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}
+    frame_effects.add{type="label", caption=caption, style="heading_3_label"}
+
+    local label_effects = frame_effects.add{type="label", caption=object.effects_tooltip}
+    label_effects.style.top_margin = -40  -- need this because extracting linebreaks from LS is hard
+    label_effects.style.single_line = false
+    modal_elements[class_lower .. "_effects_label"] = label_effects
 end
 
 
@@ -59,8 +74,8 @@ local function handle_module_selection(player, tags, event)
         ModuleSet.add(module_set, MODULE_NAME_MAP[new_name], slider.slider_value)
     end
 
+    ModuleSet.normalize(module_set, {effects=true})
     module_configurator.refresh_modules_flow(player, false)
-    -- Sorting and effects refresh is done when the dialog is submitted
 end
 
 local function handle_module_slider_change(player, tags, event)
@@ -72,12 +87,11 @@ local function handle_module_slider_change(player, tags, event)
     if tags.module_id then  -- editing an existing module
         local module = ModuleSet.get(module_set, tags.module_id)
         Module.set_amount(module, new_slider_value)
+        ModuleSet.normalize(module_set, {effects=true})
         module_configurator.refresh_modules_flow(player, true)
     else  -- empty line, no influence on anything else
         module_textfield.text = tostring(new_slider_value)
     end
-
-    -- Sorting and effects refresh is done when the dialog is submitted
 end
 
 local function handle_module_textfield_change(player, tags, event)
@@ -93,20 +107,32 @@ local function handle_module_textfield_change(player, tags, event)
     if tags.module_id then  -- editing an existing module
         local module = ModuleSet.get(module_set, tags.module_id)
         Module.set_amount(module, new_amount)
+        ModuleSet.normalize(module_set, {effects=true})
         module_configurator.refresh_modules_flow(player, true)
     else  -- empty line, no influence on anything else
         module_slider.slider_value = new_amount
         event.element.text = tostring(new_amount)
     end
-
-    -- Sorting and effects refresh is done when the dialog is submitted
 end
 
 
 -- ** TOP LEVEL **
-function module_configurator.add_modules_flow(content_frame, modal_data)
-    local flow_modules = content_frame.add{type="flow", direction="vertical"}
+function module_configurator.add_modules_flow(parent, modal_data)
+    local flow_modules = parent.add{type="flow", direction="vertical"}
     modal_data.modal_elements["modules_flow"] = flow_modules
+end
+
+function module_configurator.refresh_effects_flow(modal_data)
+    local effects_tooltip = modal_data.object.effects_tooltip
+
+    local lower_class = modal_data.object.class:lower()
+    local object_label = modal_data.modal_elements[lower_class .. "_effects_label"]
+    object_label.parent.parent.visible = (effects_tooltip ~= "")
+
+    if effects_tooltip ~= "" then
+        object_label.caption = effects_tooltip
+        modal_data.modal_elements["line_effects_label"].caption = modal_data.line.effects_tooltip
+    end
 end
 
 function module_configurator.refresh_modules_flow(player, update_only)
@@ -116,9 +142,15 @@ function module_configurator.refresh_modules_flow(player, update_only)
     local module_filters = ModuleSet.compile_filter(modal_data.module_set)
     local empty_slots = modal_data.module_set.empty_slots
 
+    local effects_tooltip = modal_data.object.effects_tooltip
+
     if update_only then
+        module_configurator.refresh_effects_flow(modal_data)
+
         -- Update the UI instead of rebuilding it so the slider can be dragged properly
         for _, frame in pairs(modules_flow.children) do
+            if frame.name == "flow_effects" then goto skip end
+
             local module_id = frame.tags.module_id
             if module_id == nil then
                 frame.destroy()  -- destroy empty frame as it'll be re-added below
@@ -144,9 +176,17 @@ function module_configurator.refresh_modules_flow(player, update_only)
                     slider.style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
                 end
             end
+            :: skip ::
         end
     else
         modules_flow.clear()
+
+        if effects_tooltip ~= "" then
+            local effects_flow = modules_flow.add{type="flow", direction="horizontal", name="flow_effects"}
+            add_effects_section(effects_flow, modal_data.object, modal_data.modal_elements)
+            add_effects_section(effects_flow, modal_data.line, modal_data.modal_elements)
+        end
+
         for _, module in pairs(ModuleSet.get_in_order(modal_data.module_set)) do
             add_module_frame(modules_flow, module, module_filters, empty_slots)
         end
