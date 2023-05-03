@@ -9,6 +9,54 @@ require("ui.elements.production_handler")
 
 main_dialog = {}
 
+
+-- ** LOCAL UTIL **
+-- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
+local function determine_main_dimensions(player, products_per_row, subfactory_list_rows)
+    local settings = data_util.get("settings", player)
+    products_per_row = products_per_row or settings.products_per_row
+    subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
+
+    -- Width of the larger ingredients-box, which has twice the buttons per row
+    local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
+    -- Width of the two smaller product+byproduct-boxes
+    local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
+    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
+
+    local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
+    local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
+
+    return {width=width, height=height}
+end
+
+-- Downscale width and height mod settings until the main interface fits onto the player's screen
+function main_dialog.shrinkwrap_interface(player)
+    local resolution, scale = player.display_resolution, player.display_scale
+    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
+
+    local mod_settings = data_util.get("settings", player)
+    local products_per_row = mod_settings.products_per_row
+    local subfactory_list_rows = mod_settings.subfactory_list_rows
+
+    local function dimensions() return determine_main_dimensions(player, products_per_row, subfactory_list_rows) end
+
+    while (actual_resolution.width * 0.95) < dimensions().width do
+        products_per_row = products_per_row - 1
+    end
+    while (actual_resolution.height * 0.95) < dimensions().height do
+        subfactory_list_rows = subfactory_list_rows - 2
+    end
+
+    local setting_prototypes = game.mod_setting_prototypes
+    local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1]
+    local height_minimum = setting_prototypes["fp_subfactory_list_rows"].allowed_values[1]
+
+    local live_settings = settings.get_player_settings(player)
+    live_settings["fp_products_per_row"] = {value = math.max(products_per_row, width_minimum)}
+    live_settings["fp_subfactory_list_rows"] = {value = math.max(subfactory_list_rows, height_minimum)}
+end
+
+
 -- ** TOP LEVEL **
 function main_dialog.rebuild(player, default_visibility)
     local ui_state = data_util.get("ui_state", player)
@@ -41,7 +89,7 @@ function main_dialog.rebuild(player, default_visibility)
       name="fp_frame_main_dialog"}
     main_elements["main_frame"] = frame_main_dialog
 
-    local dimensions = main_dialog.determine_main_dialog_dimensions(player)
+    local dimensions = determine_main_dimensions(player)
     ui_state.main_dialog_dimensions = dimensions
     frame_main_dialog.style.size = dimensions
     ui_util.properly_center_frame(player, frame_main_dialog, dimensions)
@@ -167,24 +215,6 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     background_dimmer.style.size = {math.floor(resolution.width / scale), math.floor(resolution.height / scale)}
 end
 
--- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
-function main_dialog.determine_main_dialog_dimensions(player, products_per_row, subfactory_list_rows)
-    local settings = data_util.get("settings", player)
-    products_per_row = products_per_row or settings.products_per_row
-    subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
-
-    -- Width of the larger ingredients-box, which has twice the buttons per row
-    local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
-    -- Width of the two smaller product+byproduct-boxes
-    local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
-    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
-
-    local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
-    local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
-
-    return {width=width, height=height}
-end
-
 
 function NTH_TICK_HANDLERS.interface_toggle(metadata)
     if metadata.print then game.print("Mods reloaded") end
@@ -213,7 +243,7 @@ main_dialog.gui_events = {
                 if DEVMODE then  -- implicit mod reload for easier development
                     ui_util.reset_player_gui(player)  -- destroys all FP GUIs
                     ui_util.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
-                    game.reload_mods()   -- needs to be delayed by a tick since the reload is not instant
+                    game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
                     data_util.nth_tick.add((game.tick + 1), "interface_toggle", {player_index=player.index, print=true})
                 else  -- call the interface toggle function directly
                     NTH_TICK_HANDLERS.interface_toggle({player_index=player.index, print=false})
@@ -255,10 +285,12 @@ main_dialog.misc_events = {
     end),
 
     on_player_display_resolution_changed = (function(player, _)
+        main_dialog.shrinkwrap_interface(player)
         main_dialog.rebuild(player, false)
     end),
 
     on_player_display_scale_changed = (function(player, _)
+        main_dialog.shrinkwrap_interface(player)
         main_dialog.rebuild(player, false)
     end),
 

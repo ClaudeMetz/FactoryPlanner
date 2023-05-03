@@ -152,38 +152,6 @@ local function update_player_table(player)
     return player_table
 end
 
-
--- Downscale width and height mod settings until the main interface fits onto the player's screen
-function NTH_TICK_HANDLERS.shrinkwrap_interface(metadata)
-    local player = game.get_player(metadata.player_index)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
-
-    local mod_settings = data_util.get("settings", player)
-    local products_per_row = mod_settings.products_per_row
-    local subfactory_list_rows = mod_settings.subfactory_list_rows
-
-    local function determine_dimensions()
-        return main_dialog.determine_main_dialog_dimensions(player, products_per_row, subfactory_list_rows)
-    end
-
-    while (actual_resolution.width * 0.95) < determine_dimensions().width do
-        products_per_row = products_per_row - 1
-    end
-    while (actual_resolution.height * 0.95) < determine_dimensions().height do
-        subfactory_list_rows = subfactory_list_rows - 2
-    end
-
-    local setting_prototypes = game.mod_setting_prototypes
-    local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1]
-    local height_minimum = setting_prototypes["fp_subfactory_list_rows"].allowed_values[1]
-
-    local live_settings = settings.get_player_settings(player)
-    live_settings["fp_products_per_row"] = {value = math.max(products_per_row, width_minimum)}
-    live_settings["fp_subfactory_list_rows"] = {value = math.max(subfactory_list_rows, height_minimum)}
-end
-
-
 local function global_init()
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
@@ -275,10 +243,6 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the mod-GUI for the new player if necessary
     ui_util.toggle_mod_gui(player)
 
-    -- Make sure the width and height mod settings are appropriate
-    -- Resolution and scale are not loaded for the player at this point, so we need to delay this action a tick
-    data_util.nth_tick.add((game.tick + 1), "shrinkwrap_interface", {player_index=player.index})
-
     -- Add the subfactories that are handy for development
     if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
 end)
@@ -342,4 +306,7 @@ commands.add_command("fp-reset-prototypes", {"command-help.fp_reset_prototypes"}
 commands.add_command("fp-restart-translation", {"command-help.fp_restart_translation"}, function()
     translator.on_init()
     prototyper.util.build_translation_dictionaries()
+end)
+commands.add_command("fp-shrinkwrap-interface", {"command-help.fp_shrinkwrap_interface"}, function(command)
+    if command.player_index then main_dialog.shrinkwrap_interface(game.get_player(command.player_index)) end
 end)
