@@ -245,10 +245,13 @@ function preferences_dialog.open(player, modal_data)
 
     local left_content_frame = add_content_frame()
 
-    local bordered_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    local label_preferences_info = bordered_frame.add{type="label", caption={"fp.preferences_info"}}
+    local info_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    local label_preferences_info = info_frame.add{type="label", caption={"fp.preferences_info"}}
     label_preferences_info.style.single_line = false
     label_preferences_info.style.width = 335
+
+    local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     local general_preference_names = {"attach_subfactory_products", "show_floor_items", "fold_out_subfloors",
       "ingredient_satisfaction", "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
@@ -260,9 +263,6 @@ function preferences_dialog.open(player, modal_data)
     preference_structures.mb_defaults(preferences, left_content_frame)
 
     local right_content_frame = add_content_frame()
-
-    local support_frame = right_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    support_frame.add{type="label", caption={"fp.preferences_support"}}
 
     preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
