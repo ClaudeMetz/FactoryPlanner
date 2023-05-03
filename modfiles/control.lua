@@ -14,10 +14,13 @@ SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory t
 MODAL_SEARCH_LIMITING = 10  -- ticks between modal search runs
 RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
 NEW = nil  -- global variable used to store new prototype data temporarily for migration
+
+local active_mods = script.active_mods
+RECIPEBOOK_ACTIVE = (active_mods["RecipeBook"] ~= nil)
 BEACON_OVERLOAD_ACTIVE = (
-    script.active_mods["space-exploration"] or
-    script.active_mods["wret-beacon-rebalance-mod"] or
-    script.active_mods["beacon-overhaul"]
+    active_mods["space-exploration"] or
+    active_mods["wret-beacon-rebalance-mod"] or
+    active_mods["beacon-overhaul"]
 ) and true
 
 require("util")  -- core.lualib

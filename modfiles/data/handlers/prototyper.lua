@@ -55,7 +55,7 @@ function prototyper.finish()
     global.tutorial_subfactory_validity = (not error and Factory.get(imported_tutorial_factory, "Subfactory", 1).valid)
 
     -- Retain current modset to detect mod changes for subfactories that became invalid
-    global.installed_mods = game.active_mods
+    global.installed_mods = script.active_mods
 end
 
 

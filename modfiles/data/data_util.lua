@@ -136,10 +136,8 @@ function data_util.generate_tutorial_tooltip(action_name, active_limitations, re
 end
 
 function data_util.add_tutorial_tooltips(data, limitations, action_list)
-    local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
-
     for reference_name, action_name in pairs(action_list) do
-        data[reference_name] = data_util.generate_tutorial_tooltip(action_name, limitations, rb_enabled)
+        data[reference_name] = data_util.generate_tutorial_tooltip(action_name, limitations, RECIPEBOOK_ACTIVE)
     end
 end
 
@@ -241,7 +239,7 @@ function data_util.porter.format_modset_diff(old_modset)
     if not old_modset then return "" end
 
     local changes = {added={}, removed={}, updated={}}
-    local new_modset = game.active_mods
+    local new_modset = script.active_mods
 
     -- Determine changes by running through both sets of mods once each
     for name, current_version in pairs(new_modset) do
