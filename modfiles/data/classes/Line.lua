@@ -194,7 +194,7 @@ function Line.apply_mb_defaults(self, player)
 
     -- Add default beacon modules, if desired by the user
     local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
-    if script.active_mods["space-exploration"] then beacon_count = 1 end
+    if BEACON_OVERLOAD_ACTIVE then beacon_count = 1 end
     local beacon_proto = prototyper.defaults.get(player, "beacons")  -- this will always exist
 
     if beacon_module_proto ~= nil and beacon_count ~= nil then
