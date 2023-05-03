@@ -161,7 +161,7 @@ local function global_init()
     end
 
     -- Initiates all factorio-global variables
-    global.mod_version = game.active_mods["factoryplanner"]
+    global.mod_version = script.active_mods["factoryplanner"]
     global.players = {}
 
     -- Save metadata about currently registered on_nth_tick events

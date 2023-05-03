@@ -87,7 +87,7 @@ function migrator.migrate_global()
     local migrations = determine_migrations(global.mod_version)
 
     apply_migrations(migrations, "global", nil, nil)
-    global.mod_version = game.active_mods["factoryplanner"]
+    global.mod_version = script.active_mods["factoryplanner"]
 end
 
 -- Applies any appropriate migrations to the given factory

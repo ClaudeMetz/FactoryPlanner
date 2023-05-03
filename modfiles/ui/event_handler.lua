@@ -181,10 +181,11 @@ local function handle_gui_event(event)
         local modifier_action = action_table.modifier_actions[convert_click_to_string(event)]
         if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
+        local ui_state = data_util.get("ui_state", player)
         local active_limitations = {
-            archive_open = data_util.get("flags", player).archive_open,
-            matrix_active = (data_util.get("context", player).subfactory.matrix_free_items ~= nil),
-            recipebook = (script.active_mods["RecipeBook"] ~= nil)
+            archive_open = ui_state.flags.archive_open,
+            matrix_active = (ui_state.flags.subfactory.matrix_free_items ~= nil),
+            recipebook = RECIPEBOOK_ACTIVE
         }
         -- Check whether the selected action is allowed according to its limitations
         if not data_util.action_allowed(modifier_action.limitations, active_limitations) then return end

@@ -73,9 +73,8 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. category)
     local matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil)
     local limitations = {archive_open = ui_state.flags.archive_open, matrix_active = matrix_active}
-    local rb_enabled = (script.active_mods["RecipeBook"] ~= nil)
     local tutorial_tt = (data_util.get("preferences", player).tutorial_mode) and
-      data_util.generate_tutorial_tooltip(action, limitations, rb_enabled) or nil
+      data_util.generate_tutorial_tooltip(action, limitations, RECIPEBOOK_ACTIVE) or nil
 
     for _, item in ipairs(items) do
         local required_amount = (not shows_floor_items and category == "product") and Item.required_amount(item) or nil
