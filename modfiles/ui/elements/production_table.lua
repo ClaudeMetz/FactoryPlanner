@@ -4,14 +4,11 @@ production_table = {}
 local function generate_metadata(player)
     local ui_state = data_util.get("ui_state", player)
     local preferences = data_util.get("preferences", player)
-
     local subfactory = ui_state.context.subfactory
-    local archive_open = (ui_state.flags.archive_open)
-    local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
 
     local metadata = {
-        archive_open = archive_open,
-        matrix_solver_active = matrix_solver_active,
+        archive_open = ui_state.flags.archive_open,
+        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
         fold_out_subfloors = preferences.fold_out_subfloors,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
@@ -21,8 +18,7 @@ local function generate_metadata(player)
     }
 
     if preferences.tutorial_mode then
-        local limitations = {archive_open = archive_open, matrix_active = matrix_solver_active}
-        data_util.add_tutorial_tooltips(metadata, limitations, {
+        data_util.add_tutorial_tooltips(metadata, player, {
             recipe_tutorial_tt = "act_on_line_recipe",
             machine_tutorial_tt = "act_on_line_machine",
             beacon_tutorial_tt = "act_on_line_beacon",

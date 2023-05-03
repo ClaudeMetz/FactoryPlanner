@@ -365,8 +365,7 @@ function compact_subfactory.refresh(player)
     }
 
     if data_util.get("preferences", player).tutorial_mode then
-        local limitations = {archive_open = false, matrix_active = false}
-        data_util.add_tutorial_tooltips(metadata, limitations, {
+        data_util.add_tutorial_tooltips(metadata, player, {
             recipe_tutorial_tt = "act_on_compact_recipe",
             module_tutorial_tt = "act_on_compact_module",
             machine_tutorial_tt = "act_on_compact_machine",
