@@ -54,7 +54,7 @@ end
 
 local function add_subfactory(player, _, event)
     local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
-    function xor(a,b) return not a ~= not b end  -- fancy, first time I ever needed this
+    local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
         modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
