@@ -28,7 +28,30 @@ local function refresh_item_category(modal_data, type)
     local table_items = modal_data.modal_elements[type .. "_table"]
     table_items.clear()
 
+    -- order items by the natural Factorio order
+    local display_order = {}
     for index, proto in ipairs(modal_data[type .. "_items"]) do
+        display_order[index] = {
+            key = { proto.group.order, proto.subgroup.order, proto.order, proto.name, index },
+            index = index, proto = proto }
+    end
+    table.sort(display_order, function (item_1, item_2)
+        local key_1 = item_1.key
+        local key_2 = item_2.key
+        assert(#key_1 == #key_2)
+
+        for i = 1, #key_1 do
+            if key_1[i] ~= key_2[i] then
+                return key_1[i] < key_2[i]
+            end
+        end
+
+        return false  -- identical items
+    end)
+
+    for _, item in pairs(display_order) do
+        local index = item.index
+        local proto = item.proto
         local button = table_items.add{type="sprite-button", sprite=proto.sprite, tooltip=proto.localised_name,
           tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index}, style="flib_slot_button_default",
           mouse_button_filter={"left"}}
