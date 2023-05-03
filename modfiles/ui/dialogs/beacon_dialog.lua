@@ -21,13 +21,12 @@ local function add_beacon_frame(parent_flow, modal_data)
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
       style="heading_3_label"}
 
-    local se_active = (script.active_mods["space-exploration"] ~= nil)
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
-    if se_active then beacon_amount = "1" end
-    local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount, enabled=(not se_active),
+    if BEACON_OVERLOAD_ACTIVE then beacon_amount = "1" end
+    local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount, enabled=(not BEACON_OVERLOAD_ACTIVE),
       tags={mod="fp", on_gui_text_changed="beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
-    if not se_active then ui_util.select_all(textfield_amount) end
+    if not BEACON_OVERLOAD_ACTIVE then ui_util.select_all(textfield_amount) end
     textfield_amount.style.width = 40
     textfield_amount.style.right_margin = 12
     modal_elements["beacon_amount"] = textfield_amount
