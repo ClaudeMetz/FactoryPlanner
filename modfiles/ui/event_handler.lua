@@ -36,18 +36,16 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
     local action_lines = {}
 
     for modifier_click, modifier_action in pairs(modifier_actions) do
-        if modifier_action.name ~= "recipebook" then  -- needs dynamic handling
-            local split_modifiers = util.split(modifier_click, "-")
+        local split_modifiers = util.split(modifier_click, "-")
 
-            local modifier_string = {""}
-            for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
-                table.insert(modifier_string, {"", {"fp.tut_" .. modifier}, " + "})
-            end
-            table.insert(modifier_string, {"fp.tut_" .. split_modifiers[#split_modifiers]})
-
-            local action_string = {"fp.tut_action_line", modifier_string, {"fp.tut_" .. modifier_action.name}}
-            table.insert(action_lines, {string=action_string, limitations=modifier_action.limitations})
+        local modifier_string = {""}
+        for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
+            table.insert(modifier_string, {"", {"fp.tut_" .. modifier}, " + "})
         end
+        table.insert(modifier_string, {"fp.tut_" .. split_modifiers[#split_modifiers]})
+
+        local action_string = {"fp.tut_action_line", modifier_string, {"fp.tut_" .. modifier_action.name}}
+        table.insert(action_lines, {string=action_string, limitations=modifier_action.limitations})
     end
 
     return action_lines
@@ -181,12 +179,7 @@ local function handle_gui_event(event)
         local modifier_action = action_table.modifier_actions[convert_click_to_string(event)]
         if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
-        local ui_state = data_util.get("ui_state", player)
-        local active_limitations = {
-            archive_open = ui_state.flags.archive_open,
-            matrix_active = (ui_state.flags.subfactory.matrix_free_items ~= nil),
-            recipebook = RECIPEBOOK_ACTIVE
-        }
+        local active_limitations = data_util.current_limitations(player)
         -- Check whether the selected action is allowed according to its limitations
         if not data_util.action_allowed(modifier_action.limitations, active_limitations) then return end
 

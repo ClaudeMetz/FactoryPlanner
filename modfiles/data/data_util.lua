@@ -114,6 +114,15 @@ function data_util.build_localised_string(strings_to_insert, current_table, next
 end
 
 
+function data_util.current_limitations(player)
+    local ui_state = data_util.get("ui_state", player)
+    return {
+        archive_open = ui_state.flags.archive_open,
+        matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil),
+        recipebook = RECIPEBOOK_ACTIVE
+    }
+end
+
 function data_util.action_allowed(action_limitations, active_limitations)
     -- If a particular limitation is nil, it indicates that the action is allowed regardless
     -- If it is non-nil, it needs to match the current state of the limitation exactly
@@ -123,21 +132,23 @@ function data_util.action_allowed(action_limitations, active_limitations)
     return true
 end
 
-function data_util.generate_tutorial_tooltip(action_name, active_limitations, recipebook_enabled)
+function data_util.generate_tutorial_tooltip(action_name, active_limitations, player)
+    active_limitations = active_limitations or data_util.current_limitations(player)
+
     local tooltip = {"", "\n"}
     for _, action_line in pairs(TUTORIAL_TOOLTIPS[action_name]) do
         if data_util.action_allowed(action_line.limitations, active_limitations) then
             table.insert(tooltip, action_line.string)
         end
     end
-    if recipebook_enabled then table.insert(tooltip, {"fp.tut_open_in_recipebook"}) end
 
     return tooltip
 end
 
-function data_util.add_tutorial_tooltips(data, limitations, action_list)
+function data_util.add_tutorial_tooltips(data, player, action_list)
+    local active_limitations = data_util.current_limitations(player)  -- done here so it's 'cached'
     for reference_name, action_name in pairs(action_list) do
-        data[reference_name] = data_util.generate_tutorial_tooltip(action_name, limitations, RECIPEBOOK_ACTIVE)
+        data[reference_name] = data_util.generate_tutorial_tooltip(action_name, active_limitations, nil)
     end
 end
 
