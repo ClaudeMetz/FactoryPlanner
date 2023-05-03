@@ -7,6 +7,7 @@ Date: 00. 00. 0000
   Changes:
     - Changed the main interface shrinkwrap to now apply when resolution or scale changes
     - Extended the overload beacon detection to a couple more mods (Thanks ctgPi!)
+    - Changed the matrix settings dialog to show items in natural sort order (Thanks ctgPi!)
     - Moved a couple of preferences from the production frame to the preferences dialog
     - Simplified indentation visuals for folded out subfloors
     - Re-arranged the preferences dialog slightly
