@@ -88,22 +88,6 @@ local function identifier_item_map()
     return map
 end
 
-
--- Generates a table containing all modules per category, ordered by tier
-local function module_tier_map()
-    local map = {}
-
-    if not global.all_modules then return end
-    for _, category in pairs(global.all_modules.categories) do
-        map[category.id] = {}
-        for _, module in pairs(category.modules) do
-            map[category.id][module.tier] = module
-        end
-    end
-
-    return map
-end
-
 -- Generates a table mapping modules to their prototype by name
 local function module_name_map()
     local map = {}
@@ -199,8 +183,6 @@ function loader.run()
 
     SORTED_ITEMS = sorted_items()
     IDENTIFIER_ITEM_MAP = identifier_item_map()
-
-    MODULE_TIER_MAP = module_tier_map()
     MODULE_NAME_MAP = module_name_map()
 
     PROTOTYPE_ATTRIBUTES = prototype_attributes()
