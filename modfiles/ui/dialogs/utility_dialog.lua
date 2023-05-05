@@ -167,12 +167,71 @@ function utility_structures.components(player, modal_data)
     update_request_button(player, modal_data, subfactory)
 end
 
+function utility_structures.blueprints(player, modal_data)
+    local modal_elements = modal_data.modal_elements
+
+    if modal_elements.blueprints_box == nil then
+        local blueprints_box = add_utility_box(player, modal_data.modal_elements, "blueprints", true, false)
+        modal_elements["blueprints_box"] = blueprints_box
+
+        local frame_blueprints = blueprints_box.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
+        local table_blueprints = frame_blueprints.add{type="table", column_count=UTILITY_BLUEPRINT_LIMIT,
+            style="filter_slot_table"}
+        modal_elements["blueprints_table"] = table_blueprints
+    end
+
+    local subfactory = data_util.get("context", player).subfactory
+    local blueprints = subfactory.blueprints
+
+    local table_blueprints =  modal_elements["blueprints_table"]
+    table_blueprints.clear()
+
+    local tutorial_tt = (data_util.get("preferences", player).tutorial_mode) and
+        data_util.generate_tutorial_tooltip("act_on_blueprint", nil, player) or nil
+
+    local blueprint = modal_data.utility_inventory[1]  -- re-usable inventory slot
+    for index, blueprint_string in pairs(blueprints) do
+        blueprint.import_stack(blueprint_string)
+
+        local tooltip = {"", (blueprint.label or ""), tutorial_tt}
+        local button = table_blueprints.add{type="sprite-button", sprite="item/blueprint", tooltip=tooltip,
+            tags={mod="fp", on_gui_click="act_on_blueprint", index=index}, mouse_button_filter={"left-and-right"}}
+
+        local icons = blueprint.blueprint_icons
+        if icons then
+            local icon_count = #icons
+            local flow = button.add{type="flow", direction="horizontal", ignored_by_interaction=true}
+
+            if icon_count == 1 then  -- this is jank-hell
+                local signal = blueprint.blueprint_icons[1].signal
+                local sprite_icon = flow.add{type="sprite", sprite=(signal.type .. "/" .. signal.name)}
+                sprite_icon.style.margin = {7, 0, 0, 7}
+            else
+                flow.style.padding = {4, 0, 0, 3}
+                local table = flow.add{type="table", column_count=2}
+                table.style.cell_padding = -4
+                if icon_count == 2 then table.style.top_margin = 7 end
+                for _, icon in pairs(icons) do
+                    table.add{type="sprite", sprite=(icon.signal.type .. "/" .. icon.signal.name)}
+                end
+            end
+        end
+
+        blueprint.clear()
+    end
+
+    if #blueprints < UTILITY_BLUEPRINT_LIMIT then
+        table_blueprints.add{type="sprite-button", tags={mod="fp", on_gui_click="utility_store_blueprint"},
+            sprite="utility/add", style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
+    end
+end
+
 function utility_structures.notes(player, modal_data)
     local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
 
     local notes = data_util.get("context", player).subfactory.notes
-    local text_box = utility_box.add{type="text-box", tags={mod="fp", on_gui_text_changed="subfactory_notes"},
-        text=notes}
+    local text_box = utility_box.add{type="text-box", text=notes,
+        tags={mod="fp", on_gui_text_changed="subfactory_notes"}}
     text_box.style.size = {500, 250}
     text_box.word_wrap = true
     text_box.style.top_margin = -2
@@ -239,6 +298,37 @@ local function handle_inventory_change(player)
 end
 
 
+local function store_blueprint(player, _, _)
+    local ui_state = data_util.get("ui_state", player)
+    local fly_text = ui_util.create_flying_text
+
+    if not player.is_cursor_blueprint() then fly_text(player, {"fp.utility_no_blueprint"}); return end
+    local cursor = player.cursor_stack
+    if not cursor.is_blueprint_setup() then fly_text(player, {"fp.utility_blueprint_not_setup"}); return end
+
+    table.insert(ui_state.context.subfactory.blueprints, cursor.export_stack())
+    fly_text(player, {"fp.utility_blueprint_stored"});
+    cursor.clear()
+
+    utility_structures.blueprints(player, ui_state.modal_data)
+end
+
+local function handle_blueprint_click(player, tags, action)
+    local ui_state = data_util.get("ui_state", player)
+    local blueprints = ui_state.context.subfactory.blueprints
+
+    if action == "pick_up" then
+        player.cursor_stack.import_stack(blueprints[tags.index])
+        modal_dialog.exit(player, "cancel")
+        main_dialog.toggle(player)
+
+    elseif action == "delete" then
+        table.remove(blueprints, tags.index)
+        utility_structures.blueprints(player, ui_state.modal_data)
+    end
+end
+
+
 -- ** TOP LEVEL **
 utility_dialog.dialog_settings = (function(_) return {
     caption = {"fp.utilities"},
@@ -248,12 +338,15 @@ utility_dialog.dialog_settings = (function(_) return {
 function utility_dialog.open(player, modal_data)
     -- Add the players' relevant inventory components to modal_data
     modal_data.inventory_contents = player.get_main_inventory().get_contents()
+    modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
 
     utility_structures.components(player, modal_data)
+    utility_structures.blueprints(player, modal_data)
     utility_structures.notes(player, modal_data)
 end
 
 function utility_dialog.close(player, _)
+    data_util.get("modal_data", player).utility_inventory.destroy()
     main_dialog.refresh(player, "subfactory_info")
 end
 
@@ -278,7 +371,19 @@ utility_dialog.gui_events = {
         {
             name = "utility_craft_items",
             handler = handle_item_handcraft
-        }
+        },
+        {
+            name = "utility_store_blueprint",
+            handler = store_blueprint
+        },
+        {
+            name = "act_on_blueprint",
+            modifier_actions = {
+                pick_up = {"left"},
+                delete = {"control-right"}
+            },
+            handler = handle_blueprint_click
+        },
     },
     on_gui_switch_state_changed = {
         {

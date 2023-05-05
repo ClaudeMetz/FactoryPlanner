@@ -157,8 +157,13 @@ styles["fp_sprite-button_inset_tiny"] = {
 styles["fp_sprite-button_inset_add"] = {
     type = "button_style",
     parent = "fp_sprite-button_inset_tiny",
-    margin = 2,  -- used to offset the smaller size
     padding = 5  -- makes it so the plus doesn't look so stupid
+}
+
+styles["fp_sprite-button_inset_add_slot"] = {
+    type = "button_style",
+    parent = "fp_sprite-button_inset_add",
+    margin = 4,  -- used to offset the smaller size
 }
 
 styles["fp_sprite-button_group_tab"] = {
