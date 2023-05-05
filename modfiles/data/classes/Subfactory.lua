@@ -9,6 +9,7 @@ function Subfactory.init(name)
         pollution = 0,
         notes = "",
         mining_productivity = nil,
+        blueprints = {},
         Product = Collection.init(),
         Byproduct = Collection.init(),
         Ingredient = Collection.init(),
@@ -181,6 +182,7 @@ function Subfactory.pack(self)
         timescale = self.timescale,
         notes = self.notes,
         mining_productivity = self.mining_productivity,
+        blueprints = self.blueprints,
         Product = Collection.pack(self.Product, Item),
         matrix_free_items = packed_free_items,
         -- Floors get packed by recursive nesting, which is necessary for a json-type data
@@ -196,6 +198,7 @@ function Subfactory.unpack(packed_self)
     self.timescale = packed_self.timescale
     self.notes = packed_self.notes
     self.mining_productivity = packed_self.mining_productivity
+    self.blueprints = packed_self.blueprints
     self.Product = Collection.unpack(packed_self.Product, self, Item)
 
     if packed_self.matrix_free_items then

@@ -2,6 +2,7 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - Added a section to the Utility dialog where relevant blueprints can be stored on each subfactory
     - Added a live-updating list of module effects to the machine and beacon dialogs
     - Added the console command '/fp-shrinkwrap-interface' to reduce the size of the interface until it fits the screen
   Changes:

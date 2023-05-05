@@ -31,6 +31,7 @@ local migration_masterlist = {
     [21] = {version="1.1.43", migration=require("data.migrations.migration_1_1_43")},
     [22] = {version="1.1.59", migration=require("data.migrations.migration_1_1_59")},
     [23] = {version="1.1.61", migration=require("data.migrations.migration_1_1_61")},
+    [24] = {version="1.1.65", migration=require("data.migrations.migration_1_1_65")},
 }
 
 -- ** LOCAL UTIL **
@@ -124,8 +125,6 @@ end
 
 -- Applies any appropriate migrations to the given export_table's subfactories
 function migrator.migrate_export_table(export_table)
-    if not compare_versions(last_migratable_version, export_table.mod_version) then error() end
-
     local migrations = determine_migrations(export_table.mod_version)
     for _, packed_subfactory in pairs(export_table.subfactories) do
         -- This migration type won't need the player argument, and removing it allows

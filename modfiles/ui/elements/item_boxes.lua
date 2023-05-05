@@ -114,7 +114,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
         table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
             tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
             tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
-            style="fp_sprite-button_inset_add", mouse_button_filter={"left"}}
+            style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
         table_item_count = table_item_count + 1
     end
 
