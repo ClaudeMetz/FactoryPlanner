@@ -29,12 +29,12 @@ local function refresh_defaults_table(player, modal_elements, type, category_id)
         local selected = (default_proto.id == prototype_id)
         local style = (selected) and "flib_slot_button_green_small" or "flib_slot_button_default_small"
         local first_line = (selected) and {"fp.tt_title_with_note", prototype.localised_name, {"fp.selected"}}
-          or {"fp.tt_title", prototype.localised_name}
+            or {"fp.tt_title", prototype.localised_name}
         local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
-          tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_id=prototype_id,
-          category_id=category_id}, mouse_button_filter={"left"}}
+            tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_id=prototype_id,
+            category_id=category_id}, mouse_button_filter={"left"}}
     end
 end
 
@@ -50,7 +50,7 @@ function preference_structures.checkboxes(preferences, content_frame, type, pref
         local caption = {"fp.info_label", {"fp.preference_" .. identifier}}
         local tooltip ={"fp.preference_" .. identifier .. "_tt"}
         flow_checkboxes.add{type="checkbox", state=preferences[pref_name], caption=caption, tooltip=tooltip,
-          tags={mod="fp", on_gui_checked_state_changed="toggle_preference", type=type, name=pref_name}}
+            tags={mod="fp", on_gui_checked_state_changed="toggle_preference", type=type, name=pref_name}}
     end
 end
 
@@ -64,11 +64,11 @@ function preference_structures.mb_defaults(preferences, content_frame)
         flow.style.horizontal_spacing = 8
 
         flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_" .. type}},
-          tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
+            tooltip={"fp.preference_mb_default_" .. type .. "_tt"}}
         local item = (mb_defaults[type] ~= nil) and mb_defaults[type].name or nil
         flow.add{type="choose-elem-button", elem_type="item", item=item, style="fp_sprite-button_inset_tiny",
-          elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}},
-          tags={mod="fp", on_gui_elem_changed="change_mb_default", type=type}}
+            elem_filters={{filter="type", type="module"}, {filter="flag", flag="hidden", mode="and", invert=true}},
+            tags={mod="fp", on_gui_elem_changed="change_mb_default", type=type}}
     end
 
     local table_mb_defaults = preference_box.add{type="table", column_count=3}
@@ -90,11 +90,11 @@ function preference_structures.mb_defaults(preferences, content_frame)
     beacon_amount_flow.style.horizontal_spacing = 8
 
     beacon_amount_flow.add{type="label", caption={"fp.info_label", {"fp.preference_mb_default_beacon_amount"}},
-      tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
+        tooltip={"fp.preference_mb_default_beacon_amount_tt"}}
 
     local beacon_amount = (BEACON_OVERLOAD_ACTIVE) and "1" or tostring(mb_defaults.beacon_count or "")
     local textfield_amount = beacon_amount_flow.add{type="textfield", text=beacon_amount,
-      enabled=(not BEACON_OVERLOAD_ACTIVE), tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
+        enabled=(not BEACON_OVERLOAD_ACTIVE), tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 42
 end
@@ -158,7 +158,7 @@ local function handle_checkbox_preference_change(player, tags, event)
     local refresh = data_util.get("modal_data", player).refresh
 
     if tags.type == "production" or preference_name == "round_button_numbers"
-      or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
+            or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
         refresh.production = true
     end
 

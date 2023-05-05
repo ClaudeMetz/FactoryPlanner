@@ -25,7 +25,7 @@ function SEARCH_HANDLERS.search_picker_items(player, search_term)
             for item_data, element in pairs(subgroup_table) do
                 -- Can only get to this if translations are complete, as the textfield is disabled otherwise
                 local visible = (search_term == item_data.name) or
-                  string.find(item_data.translated_name, search_term, 1, true)
+                    string.find(item_data.translated_name, search_term, 1, true)
                 element.visible = visible
                 any_item_visible = any_item_visible or visible
             end
@@ -93,13 +93,13 @@ local function add_item_picker(parent_flow, player)
                 group_id = cache_count
 
                 local button_group = table_item_groups.add{type="sprite-button", sprite=("item-group/" .. group_name),
-                  tags={mod="fp", on_gui_click="select_picker_item_group", group_id=group_id},
-                  style="fp_sprite-button_group_tab", tooltip=item_proto.group.localised_name,
-                  mouse_button_filter={"left"}}
+                    tags={mod="fp", on_gui_click="select_picker_item_group", group_id=group_id},
+                    style="fp_sprite-button_group_tab", tooltip=item_proto.group.localised_name,
+                    mouse_button_filter={"left"}}
 
                 -- This only exists when button_group also exists
                 local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
-                  style="fp_scroll-pane_slot_table"}
+                    style="fp_scroll-pane_slot_table"}
                 scroll_pane_subgroups.style.vertically_stretchable = true
 
                 local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}
@@ -135,7 +135,7 @@ local function add_item_picker(parent_flow, player)
 
             if table_subgroup == nil then
                 table_subgroup = flow_subgroups.add{type="table", column_count=items_per_column,
-                  style="filter_slot_table"}
+                    style="filter_slot_table"}
                 table_subgroup.style.horizontally_stretchable = true
                 subgroup_table_cache[subgroup_name] = table_subgroup
 
@@ -155,8 +155,8 @@ local function add_item_picker(parent_flow, player)
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
-              tags={mod="fp", on_gui_click="select_picker_item", identifier=item_proto.identifier},
-              enabled=(existing_product == nil), tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
+                tags={mod="fp", on_gui_click="select_picker_item", identifier=item_proto.identifier},
+                enabled=(existing_product == nil), tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
@@ -286,7 +286,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     local item_amount = (item and defined_by == "amount") and tostring(item.required_amount.amount) or ""
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
-      tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
+        tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 90
     modal_elements["item_amount_textfield"] = textfield_amount
@@ -297,7 +297,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount.amount) or ""
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
-      tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
+        tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
     ui_util.setup_numeric_textfield(textfield_belts, true, false)
     textfield_belts.style.width = 85
     textfield_belts.style.left_margin = 4
@@ -307,8 +307,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
-      tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
-      style="fp_sprite-button_inset_tiny"}
+        tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
+        style="fp_sprite-button_inset_tiny"}
     modal_elements["belt_choice_button"] = choose_belt_button
 
 
@@ -403,7 +403,7 @@ function picker_dialog.close(player, action)
                 local translations = player_table.translation_tables
                 local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
                 local icon = (not player_table.preferences.attach_subfactory_products)
-                  and "[img=" .. top_level_item.proto.sprite .. "] " or ""
+                    and "[img=" .. top_level_item.proto.sprite .. "] " or ""
                 subfactory = subfactory_list.add_subfactory(player, (icon .. translated_name))
             end
 

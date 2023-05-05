@@ -13,7 +13,7 @@ local function add_recipe(player, context, type, item_proto)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
         modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto,
-          floor_id=context.floor.id, production_type=production_type}})
+            floor_id=context.floor.id, production_type=production_type}})
     end
 end
 
@@ -21,7 +21,7 @@ local function build_item_box(player, category, column_count)
     local item_boxes_elements = data_util.get("main_elements", player).item_boxes
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
-      style="inside_shallow_frame"}
+        style="inside_shallow_frame"}
     window_frame.style.top_padding = 6
     window_frame.style.bottom_padding = ITEM_BOX_PADDING
 
@@ -34,8 +34,8 @@ local function build_item_box(player, category, column_count)
 
     if category == "ingredient" then
         local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
-          tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
-          visible=false, mouse_button_filter={"left"}}
+            tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="ingredients_to_combinator"},
+            visible=false, mouse_button_filter={"left"}}
         button_combinator.style.size = 24
         button_combinator.style.padding = -2
         button_combinator.style.left_margin = 4
@@ -72,7 +72,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
 
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. category)
     local tutorial_tt = (data_util.get("preferences", player).tutorial_mode) and
-      data_util.generate_tutorial_tooltip(action, nil, player) or nil
+        data_util.generate_tutorial_tooltip(action, nil, player) or nil
 
     for _, item in ipairs(items) do
         local required_amount = (not shows_floor_items and category == "product") and Item.required_amount(item) or nil
@@ -103,8 +103,8 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
         end
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-          tags={mod="fp", on_gui_click=action, category=category, item_id=item.id}, enabled=enabled,
-          mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click=action, category=category, item_id=item.id}, enabled=enabled,
+            mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
         ::skip_item::  -- goto for fun, wooohoo
@@ -112,9 +112,9 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
 
     if category == "product" and not shows_floor_items then  -- meaning allow the user to add items of this type
         table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
-          tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
-          tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
-          style="fp_sprite-button_inset_add", mouse_button_filter={"left"}}
+            tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
+            tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
+            style="fp_sprite-button_inset_add", mouse_button_filter={"left"}}
         table_item_count = table_item_count + 1
     end
 
@@ -147,7 +147,7 @@ local function handle_item_button_click(player, tags, action)
 
     local class = (tags.category:gsub("^%l", string.upper))
     local item = (floor_items_active) and Line.get(context.floor.origin_line, class, tags.item_id)
-      or Subfactory.get(context.subfactory, class, tags.item_id)
+        or Subfactory.get(context.subfactory, class, tags.item_id)
 
     if action == "add_recipe" then
         add_recipe(player, context, tags.category, item.proto)
@@ -192,7 +192,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "put_into_cursor" then
         local amount = (not floor_items_active and tags.category == "product")
-          and Item.required_amount(item) or item.amount
+            and Item.required_amount(item) or item.amount
         ui_util.add_item_to_cursor_combinator(player, item.proto, amount)
 
     elseif action == "recipebook" then

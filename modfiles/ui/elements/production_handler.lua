@@ -223,7 +223,7 @@ function GENERIC_HANDLERS.apply_item_options(player, options, action)
         if item.class ~= "Ingredient" then
             local other_class = (item.class == "Product") and "Byproduct" or "Product"
             local corresponding_item = Line.get_by_type_and_name(relevant_line, other_class,
-              item.proto.type, item.proto.name)
+                item.proto.type, item.proto.name)
 
             if corresponding_item then  -- Further adjustments if item is both product and byproduct
                 -- In either case, we need to consider the sum of both types as the current amount
@@ -263,7 +263,7 @@ local function handle_item_click(player, tags, action)
         local production_type = (tags.class == "Byproduct") and "consume" or "produce"
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
         modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto, floor_id=floor.id,
-          production_type=production_type, add_after_position=add_after_position}})
+            production_type=production_type, add_after_position=add_after_position}})
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
@@ -311,7 +311,7 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, floor_id=floor.id,
-          production_type="produce", add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
+            production_type="produce", add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
         modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})

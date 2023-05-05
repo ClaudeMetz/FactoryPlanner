@@ -13,18 +13,18 @@ local function add_beacon_frame(parent_flow, modal_data)
 
     local beacon_filter = {{filter="type", type="beacon"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
     local button_beacon = flow_beacon.add{type="choose-elem-button", elem_type="entity", entity=beacon.proto.name,
-      tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=beacon_filter,
-      style="fp_sprite-button_inset_tiny"}
+        tags={mod="fp", on_gui_elem_changed="select_beacon"}, elem_filters=beacon_filter,
+        style="fp_sprite-button_inset_tiny"}
     button_beacon.style.right_margin = 12
     modal_elements["beacon_button"] = button_beacon
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.amount"}}, tooltip={"fp.beacon_amount_tt"},
-      style="heading_3_label"}
+        style="heading_3_label"}
 
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
     if BEACON_OVERLOAD_ACTIVE then beacon_amount = "1" end
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount, enabled=(not BEACON_OVERLOAD_ACTIVE),
-      tags={mod="fp", on_gui_text_changed="beacon_amount"}}
+        tags={mod="fp", on_gui_text_changed="beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
     if not BEACON_OVERLOAD_ACTIVE then ui_util.select_all(textfield_amount) end
     textfield_amount.style.width = 40
@@ -32,16 +32,16 @@ local function add_beacon_frame(parent_flow, modal_data)
     modal_elements["beacon_amount"] = textfield_amount
 
     flow_beacon.add{type="label", caption={"fp.info_label", {"fp.beacon_total"}}, tooltip={"fp.beacon_total_tt"},
-      style="heading_3_label"}
+        style="heading_3_label"}
 
     local textfield_total = flow_beacon.add{type="textfield", name="fp_textfield_beacon_total_amount",
-      text=tostring(beacon.total_amount or "")}
+        text=tostring(beacon.total_amount or "")}
     ui_util.setup_numeric_textfield(textfield_total, true, false)
     textfield_total.style.width = 40
     modal_elements["beacon_total"] = textfield_total
 
     local button_total = flow_beacon.add{type="sprite-button", tags={mod="fp", on_gui_click="use_beacon_selector"},
-      tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
+        tooltip={"fp.beacon_selector_tt"}, sprite="fp_zone_selection", style="button", mouse_button_filter={"left"}}
     button_total.style.padding = 2
     button_total.style.size = 26
     button_total.style.top_margin = 1

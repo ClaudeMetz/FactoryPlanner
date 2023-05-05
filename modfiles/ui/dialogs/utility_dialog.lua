@@ -4,7 +4,7 @@ utility_dialog = {}
 -- Adds a box with title and optional scope switch for the given type of utility
 local function add_utility_box(player, modal_elements, type, show_tooltip, show_switch)
     local bordered_frame = modal_elements.content_frame.add{type="frame", direction="vertical",
-      style="fp_frame_bordered_stretch"}
+        style="fp_frame_bordered_stretch"}
     modal_elements[type .. "_box"] = bordered_frame
 
     local flow_title_bar = bordered_frame.add{type="flow", direction="horizontal"}
@@ -28,8 +28,8 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
         local utility_scope = data_util.get("preferences", player).utility_scopes[type]
         local switch_state = (utility_scope == "Subfactory") and "left" or "right"
         scope_switch = flow_title_bar.add{type="switch", switch_state=switch_state,
-          tags={mod="fp", on_gui_switch_state_changed="utility_change_scope", utility_type=type},
-          left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
+            tags={mod="fp", on_gui_switch_state_changed="utility_change_scope", utility_type=type},
+            left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
 
     return bordered_frame, flow_custom, scope_switch
@@ -86,12 +86,12 @@ function utility_structures.components(player, modal_data)
         modal_elements.scope_switch = scope_switch
 
         local button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
-          caption={"fp.combinator"}, style="rounded_button", mouse_button_filter={"left"}}
+            caption={"fp.combinator"}, style="rounded_button", mouse_button_filter={"left"}}
         button_blueprint.style.minimal_width = 0
         modal_elements.blueprint_button = button_blueprint
 
         local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
-          style="rounded_button", mouse_button_filter={"left"}}
+            style="rounded_button", mouse_button_filter={"left"}}
         button_request.style.minimal_width = 0
         modal_elements.request_button = button_request
 
@@ -135,12 +135,12 @@ function utility_structures.components(player, modal_data)
                 else button_style = "flib_slot_button_green" end
 
                 local tooltip = {"fp.components_needed_tt", {"fp.tt_title", proto.localised_name},
-                  amount_in_inventory, required_amount}
+                    amount_in_inventory, required_amount}
 
                 local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
-                  tags={mod="fp", on_gui_click="utility_craft_items", type=item_type, name=proto.name,
-                  missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
+                    tags={mod="fp", on_gui_click="utility_craft_items", type=item_type, name=proto.name,
+                    missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
 
@@ -162,7 +162,7 @@ function utility_structures.components(player, modal_data)
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
     modal_elements.blueprint_button.enabled = any_missing_items
     modal_elements.blueprint_button.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
-      or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}
+        or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}
 
     update_request_button(player, modal_data, subfactory)
 end
@@ -172,7 +172,7 @@ function utility_structures.notes(player, modal_data)
 
     local notes = data_util.get("context", player).subfactory.notes
     local text_box = utility_box.add{type="text-box", tags={mod="fp", on_gui_text_changed="subfactory_notes"},
-      text=notes}
+        text=notes}
     text_box.style.size = {500, 250}
     text_box.word_wrap = true
     text_box.style.top_margin = -2
@@ -198,8 +198,8 @@ local function handle_item_request(player, _, _)
         -- The advantage that is has is that the delivery is one-time, not a constant request
         -- The disadvantage is that it's weird to have construction bots bring you stuff
         subfactory.item_request_proxy = player.surface.create_entity{name="item-request-proxy",
-          position=player.position, force=player.force, target=player.character,
-          modules=ui_state.modal_data.missing_items}
+            position=player.position, force=player.force, target=player.character,
+            modules=ui_state.modal_data.missing_items}
     end
 
     update_request_button(player, ui_state.modal_data, subfactory)

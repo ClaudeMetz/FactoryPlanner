@@ -26,7 +26,7 @@ local function run_preliminary_checks(player, product_proto, production_type)
 
             elseif force_recipe ~= nil then  -- only add recipes that exist on the current force
                 local user_disabled = (preferences.ignore_barreling_recipes and recipe.barreling)
-                  or (preferences.ignore_recycling_recipes and recipe.recycling)
+                    or (preferences.ignore_recycling_recipes and recipe.recycling)
                 user_disabled_recipe = user_disabled_recipe or user_disabled
 
                 if not user_disabled then  -- only add recipes that are not disabled by the user
@@ -135,9 +135,9 @@ local function create_filter_box(modal_data)
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
     ui_util.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
-      modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
+        modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
     ui_util.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
-      modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
+        modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
 end
 
 local function create_recipe_group_box(modal_data, relevant_group, translations)
@@ -153,7 +153,7 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
     flow_group.style.vertical_align = "center"
 
     local group_sprite = flow_group.add{type="sprite-button", sprite=("item-group/" .. relevant_group.proto.name),
-      tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
+        tooltip=relevant_group.proto.localised_name, style="transparent_slot"}
     group_sprite.style.size = 64
     group_sprite.style.right_margin = 12
 
@@ -173,10 +173,10 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
 
         if recipe_proto.custom then  -- can't use choose-elem-buttons for custom recipes
             button_recipe = table_recipes.add{type="sprite-button", tags=button_tags, style=style,
-              sprite=recipe_proto.sprite, tooltip=recipe_proto.tooltip, mouse_button_filter={"left"}}
+                sprite=recipe_proto.sprite, tooltip=recipe_proto.tooltip, mouse_button_filter={"left"}}
         else
             button_recipe = table_recipes.add{type="choose-elem-button", elem_type="recipe", tags=button_tags,
-              style=style, recipe=recipe_name, mouse_button_filter={"left"}}
+                style=style, recipe=recipe_name, mouse_button_filter={"left"}}
             button_recipe.locked = true
         end
 
@@ -258,7 +258,7 @@ end
 recipe_dialog.dialog_settings = (function(modal_data) return {
     caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
     subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
-      modal_data.product_proto.localised_name},
+        modal_data.product_proto.localised_name},
     search_handler_name = "apply_recipe_filter",
     create_content_frame = true
 } end)

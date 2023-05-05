@@ -194,7 +194,7 @@ function prototyper.defaults.migrate(player_table, type)
         -- Use the same prototype if an equivalent can be found, use fallback otherwise
         local new_prototype_id = (default.prototype) and new_prototypes.map[default.prototype.name] or nil
         default.prototype = (new_prototype_id ~= nil) and new_prototypes[type][new_prototype_id]
-          or prototyper.defaults.get_fallback(type).prototype
+            or prototyper.defaults.get_fallback(type).prototype
 
     else  -- structure_type == "complex"
         local category_map = {}  -- Needs a map of category_name -> old_prototype

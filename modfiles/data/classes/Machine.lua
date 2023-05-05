@@ -59,7 +59,7 @@ function Machine.check_module_compatibility(self, module_proto)
     if self.proto.module_limit == 0 then return false end
 
     if next(module_proto.limitations) and recipe.proto.use_limitations
-      and not module_proto.limitations[recipe.proto.name] then
+            and not module_proto.limitations[recipe.proto.name] then
         return false
     end
 
@@ -84,7 +84,7 @@ function Machine.paste(self, object)
         local new_machine_map = global.all_machines.categories[new_category_id].map
 
         if new_machine_map[object.proto.name] ~= nil
-          and Line.is_machine_applicable(self.parent, object.proto) then
+                and Line.is_machine_applicable(self.parent, object.proto) then
             self.parent.machine = object
             object.parent = self.parent
 

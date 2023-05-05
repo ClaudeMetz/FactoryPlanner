@@ -38,31 +38,31 @@ local function rebuild_compact_dialog(player, default_visibility)
     end
 
     local frame_compact_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      visible=interface_visible, name="fp_frame_compact_dialog"}
+        visible=interface_visible, name="fp_frame_compact_dialog"}
     set_compact_frame_location(player, frame_compact_dialog)
     set_compact_frame_dimensions(player, frame_compact_dialog)
     compact_elements["compact_frame"] = frame_compact_dialog
 
     -- Title bar
     local flow_title_bar = frame_compact_dialog.add{type="flow", direction="horizontal",
-      tags={mod="fp", on_gui_click="place_compact_dialog"}}
+        tags={mod="fp", on_gui_click="place_compact_dialog"}}
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = frame_compact_dialog
 
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
-      ignored_by_interaction=true}
+        ignored_by_interaction=true}
     flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
-      ignored_by_interaction=true}
+        ignored_by_interaction=true}
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
-      tags={mod="fp", on_gui_click="switch_to_main_view"}, tooltip={"fp.switch_to_main_view"},
-      sprite="fp_sprite_arrow_right_light", hovered_sprite="fp_sprite_arrow_right_dark",
-      clicked_sprite="fp_sprite_arrow_right_dark", mouse_button_filter={"left"}}
+        tags={mod="fp", on_gui_click="switch_to_main_view"}, tooltip={"fp.switch_to_main_view"},
+        sprite="fp_sprite_arrow_right_light", hovered_sprite="fp_sprite_arrow_right_dark",
+        clicked_sprite="fp_sprite_arrow_right_dark", mouse_button_filter={"left"}}
     button_switch.style.padding = 2
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_compact_dialog"},
-      sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
-      tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
+        sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
+        tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
     compact_subfactory.build(player)  -- compact subfactory - handled in different file

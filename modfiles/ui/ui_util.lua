@@ -52,7 +52,7 @@ end
 function ui_util.put_entity_into_cursor(player, line, object)
     local entity_prototype = game.entity_prototypes[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
-      or entity_prototype.items_to_place_this == nil then
+            or entity_prototype.items_to_place_this == nil then
         ui_util.create_flying_text(player, {"fp.put_into_cursor_failed", entity_prototype.localised_name})
         return false
     end
@@ -194,8 +194,8 @@ function ui_util.toggle_mod_gui(player)
 
     if enable and not mod_gui_button then
         frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-          tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
-          style=mod_gui.button_style, mouse_button_filter={"left"}}
+            tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
+            style=mod_gui.button_style, mouse_button_filter={"left"}}
     elseif mod_gui_button then  -- use the destroy function for possible cleanup reasons
         ui_util.destroy_mod_gui(player)
     end
@@ -305,7 +305,7 @@ function ui_util.context.set_factory(player, factory)
     local context = data_util.get("context", player)
     context.factory = factory
     local subfactory = factory.selected_subfactory or
-      Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
+        Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
     ui_util.context.set_subfactory(player, subfactory)
 end
 
@@ -408,7 +408,7 @@ function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, 
         local tags = {mod="fp", on_gui_switch_state_changed=action}
         for key, value in pairs(additional_tags) do tags[key] = value end
         switch = flow.add{type="switch", tags=tags, switch_state=state,
-          left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
+            left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
     end
 
     local function add_label()

@@ -8,7 +8,7 @@ local data, metadata = nil, nil
 
 -- Initializes the data and metadata for the given data structure
 function generator_util.data_structure.init(structure_type, main_structure_name,
-  sub_structure_name, sub_structure_varname)
+        sub_structure_name, sub_structure_varname)
     data = {
         [main_structure_name] = {},
         structure_type = structure_type,

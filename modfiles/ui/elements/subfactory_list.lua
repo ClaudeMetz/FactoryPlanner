@@ -58,7 +58,7 @@ local function add_subfactory(player, _, event)
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
         modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
-          create_subfactory=true}})
+            create_subfactory=true}})
 
     else  -- otherwise, have the user pick a subfactory name first
         modal_dialog.enter(player, {type="subfactory", modal_data={action="add", subfactory=nil}})
@@ -140,43 +140,43 @@ function subfactory_list.build(player)
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 
     local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
-      sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
+        sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
     main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
 
     local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_subfactory"},
-      style="tool_button", mouse_button_filter={"left"}}
+        style="tool_button", mouse_button_filter={"left"}}
     main_elements.subfactory_list["archive_button"] = button_archive
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local button_import = subheader.add{type="sprite-button", sprite="utility/import",
-      tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-      tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="import"}}
+        tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="import"}}
     main_elements.subfactory_list["import_button"] = button_import
 
     local button_export = subheader.add{type="sprite-button", sprite="utility/export",
-      tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-      tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="export"}}
+        tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="export"}}
     main_elements.subfactory_list["export_button"] = button_export
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_subfactory"},
-      sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
+        sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
     main_elements.subfactory_list["add_button"] = button_add
 
     local button_edit = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="edit_subfactory"},
-      sprite="utility/rename_icon_normal", tooltip={"fp.action_edit_subfactory"}, style="tool_button",
-      mouse_button_filter={"left"}}
+        sprite="utility/rename_icon_normal", tooltip={"fp.action_edit_subfactory"}, style="tool_button",
+        mouse_button_filter={"left"}}
     main_elements.subfactory_list["edit_button"] = button_edit
 
     local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_subfactory"},
-      sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
-      mouse_button_filter={"left"}}
+        sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
+        mouse_button_filter={"left"}}
     main_elements.subfactory_list["duplicate_button"] = button_duplicate
 
     local button_delete = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_subfactory"},
-      sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
+        sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
     main_elements.subfactory_list["delete_button"] = button_delete
 
     -- This is not really a list-box, but it imitates one and allows additional features
@@ -200,7 +200,7 @@ function subfactory_list.refresh(player)
         local attach_subfactory_products = player_table.preferences.attach_subfactory_products
 
         local tutorial_tt = (player_table.preferences.tutorial_mode) and
-          data_util.generate_tutorial_tooltip("act_on_subfactory", nil, player) or nil
+            data_util.generate_tutorial_tooltip("act_on_subfactory", nil, player) or nil
 
         for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
@@ -211,15 +211,15 @@ function subfactory_list.refresh(player)
 
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
             local subfactory_button = listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory",
-              subfactory_id=subfactory.id}, caption=padded_caption, tooltip=tooltip, style=style,
-              enabled=(not selected), mouse_button_filter={"left-and-right"}}
+                subfactory_id=subfactory.id}, caption=padded_caption, tooltip=tooltip, style=style,
+                enabled=(not selected), mouse_button_filter={"left-and-right"}}
 
             local function create_move_button(flow, direction)
                 local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
                 local move_tooltip = {"fp.move_row_tt", {"fp.pl_subfactory", 1}, {"fp." .. direction}, endpoint}
                 flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
-                  tags={mod="fp", on_gui_click="move_subfactory", direction=direction, subfactory_id=subfactory.id},
-                  tooltip=move_tooltip, mouse_button_filter={"left"}}
+                    tags={mod="fp", on_gui_click="move_subfactory", direction=direction, subfactory_id=subfactory.id},
+                    tooltip=move_tooltip, mouse_button_filter={"left"}}
             end
 
             local move_flow = subfactory_button.add{type="flow", direction="horizontal"}
@@ -242,7 +242,7 @@ function subfactory_list.refresh(player)
     if not archive_open then
         local subfactory_plural = {"fp.pl_subfactory", archived_subfactory_count}
         local archive_tooltip = {"fp.action_open_archive_tt", (archived_subfactory_count > 0)
-          and {"fp.archive_filled", archived_subfactory_count, subfactory_plural} or {"fp.archive_empty"}}
+            and {"fp.archive_filled", archived_subfactory_count, subfactory_plural} or {"fp.archive_empty"}}
         subfactory_list_elements.toggle_archive_button.tooltip = archive_tooltip
     else
         subfactory_list_elements.toggle_archive_button.tooltip = {"fp.action_close_archive_tt"}

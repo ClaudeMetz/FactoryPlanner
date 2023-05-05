@@ -330,7 +330,7 @@ function Line.validate(self)
 
         if self.priority_product_proto then
             self.valid = prototyper.util.validate_prototype_object(self, "priority_product_proto", "items", "type")
-              and self.valid
+                and self.valid
         end
 
         self.valid = Collection.validate_datasets(self.Product, Item) and self.valid  -- conserved for cloning
