@@ -15,12 +15,12 @@ If there are more recipes than items, the problem is under-constrained and some 
 If there are more items than recipes, the problem is over-constrained (this is more common).
     In this case we can construct "pseudo-recipes" for certrain items that produce 1/timescale/"building".
     Items with pseudo-recipes will be "free" variables that will have some constrained non-zero input or
-      output after solving.
+    output after solving.
     The solved "number of buildings" will be equal to the extra input or output needed for that item.
     Typically these pseudo-recipes will be for external inputs or non-fully-recycled byproducts.
 Currently the algorithm assumes any item which is part of at least one input and one output in any recipe
-  is not a free variable,
-    though the user can click on constrained items in the matrix dialog to make them free variables.
+    is not a free variable, though the user can click on constrained items in the matrix dialog to make
+    them free variables.
     The dialog calls constrained intermediate items "eliminated" since their output is constrained to zero.
 If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
@@ -377,7 +377,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
                  -- want the j-th entry in the last column (output of row-reduction)
                 local machine_count = matrix[col_num][#columns.values+1]
                 line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index, floor.id,
-                  machine_count, false, subfactory_metadata, free_variables)
+                    machine_count, false, subfactory_metadata, free_variables)
             else
                 line_aggregate = set_line_results(prefix.."_"..i, line.subfloor)
                 matrix_solver.consolidate(line_aggregate)
@@ -385,7 +385,7 @@ function matrix_solver.run_matrix_solver(subfactory_data, check_linear_dependenc
 
             -- Lines with subfloors show actual number of machines to build, so each counts are rounded up when summed
             floor_aggregate.machine_count = floor_aggregate.machine_count +
-              math.ceil(line_aggregate.machine_count - 0.001)
+                math.ceil(line_aggregate.machine_count - 0.001)
 
             structures.aggregate.add_aggregate(line_aggregate, floor_aggregate)
 
@@ -490,7 +490,7 @@ function matrix_solver.get_subfactory_metadata(subfactory_data)
         desired_outputs[item_key] = true
     end
     local lines_metadata = matrix_solver.get_lines_metadata(subfactory_data.top_floor.lines,
-      subfactory_data.player_index)
+        subfactory_data.player_index)
     local line_inputs = lines_metadata.line_inputs
     local line_outputs = lines_metadata.line_outputs
     local unproduced_outputs = matrix_solver.set_diff(desired_outputs, line_outputs)
@@ -579,7 +579,7 @@ function matrix_solver.get_matrix(subfactory_data, rows, columns)
 
             -- use amounts for 1 building as matrix entries
             local line_aggregate = matrix_solver.get_line_aggregate(line, subfactory_data.player_index,
-              floor.id, 1, true)
+                floor.id, 1, true)
 
             for item_type_name, items in pairs(line_aggregate.Product) do
                 for item_name, amount in pairs(items) do
@@ -656,12 +656,12 @@ function matrix_solver.get_line_aggregate(line_data, player_index, floor_id, mac
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
     local energy_consumption, pollution = calculation.util.determine_energy_consumption_and_pollution(
-      line_data.machine_proto, line_data.recipe_proto, line_data.fuel_proto, machine_count, line_data.total_effects)
+        line_data.machine_proto, line_data.recipe_proto, line_data.fuel_proto, machine_count, line_data.total_effects)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
         fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, line_data.machine_proto.burner,
-          line_data.fuel_proto.fuel_value, timescale)
+            line_data.fuel_proto.fuel_value, timescale)
 
         if include_fuel_ingredient then
             local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}

@@ -53,8 +53,8 @@ local function refresh_item_category(modal_data, type)
         local index = item.index
         local proto = item.proto
         local button = table_items.add{type="sprite-button", sprite=proto.sprite, tooltip=proto.localised_name,
-          tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index}, style="flib_slot_button_default",
-          mouse_button_filter={"left"}}
+            tags={mod="fp", on_gui_click="swap_item_category", type=type, index=index}, style="flib_slot_button_default",
+            mouse_button_filter={"left"}}
         button.style.size = 48
     end
 end

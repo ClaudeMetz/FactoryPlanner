@@ -228,7 +228,7 @@ function Subfactory.validate(self)
     -- it might be worth it to change it into a Collection at some point
     for index, _ in pairs(self.matrix_free_items or {}) do
         self.valid = prototyper.util.validate_prototype_object(self.matrix_free_items, index, "items", "type")
-          and self.valid
+            and self.valid
     end
 
     -- Floor validation is called on the top floor, which recursively goes through its subfloors

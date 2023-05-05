@@ -34,7 +34,7 @@ function production_box.build(player)
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
     -- Insert a 'superfluous' flow for the sole purpose of detecting clicks on it
     local click_flow = frame_vertical.add{type="flow", direction="vertical",
-      tags={mod="fp", on_gui_click="paste_line"}}
+        tags={mod="fp", on_gui_click="paste_line"}}
     click_flow.style.vertically_stretchable = true
     click_flow.style.horizontally_stretchable = true
     main_elements.production_box["vertical_frame"] = click_flow
@@ -44,7 +44,7 @@ function production_box.build(player)
     subheader.style.padding = {8, 8, 6, 8}
 
     local button_refresh = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="refresh_production"},
-      sprite="utility/refresh", style="tool_button", tooltip={"fp.refresh_production"}, mouse_button_filter={"left"}}
+        sprite="utility/refresh", style="tool_button", tooltip={"fp.refresh_production"}, mouse_button_filter={"left"}}
     main_elements.production_box["refresh_button"] = button_refresh
 
     local label_title = subheader.add{type="label", caption={"fp.production"}, style="frame_title"}
@@ -55,13 +55,13 @@ function production_box.build(player)
     main_elements.production_box["level_label"] = label_level
 
     local button_floor_up = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
-      tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
-      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
+        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_up_button"] = button_floor_up
 
     local button_floor_top = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_bar_up",
-      tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
-      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
+        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_top_button"] = button_floor_top
 
     local separator = subheader.add{type="line", direction="vertical"}
@@ -69,8 +69,8 @@ function production_box.build(player)
     main_elements.production_box["separator_line"] = separator
 
     local button_utility_dialog = subheader.add{type="button", caption={"fp.utilities"},
-      tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
-      style="fp_button_rounded_mini", mouse_button_filter={"left"}}
+        tooltip={"fp.utility_dialog_tt"}, tags={mod="fp", on_gui_click="open_utility_dialog"},
+        style="fp_button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["utility_dialog_button"] = button_utility_dialog
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -99,7 +99,7 @@ function production_box.refresh(player)
 
     production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
     production_box_elements.level_label.caption = (not subfactory_valid) and ""
-      or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
+        or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
     production_box_elements.floor_up_button.visible = (subfactory_valid)
     production_box_elements.floor_up_button.enabled = (current_level > 1)

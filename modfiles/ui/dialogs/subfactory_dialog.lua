@@ -47,11 +47,11 @@ function subfactory_dialog.open(player, modal_data)
 
     local flow_name = content_frame.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     flow_name.add{type="label", caption={"fp.info_label", {"fp.subfactory_dialog_name"}},
-      tooltip={"fp.subfactory_dialog_name_tt"}}
+        tooltip={"fp.subfactory_dialog_name_tt"}}
 
     local subfactory_name = (modal_data.action == "edit") and modal_data.subfactory.name or ""
     local textfield_name = flow_name.add{type="textfield", text=subfactory_name,
-      tags={mod="fp", on_gui_text_changed="subfactory_name"}}
+        tags={mod="fp", on_gui_text_changed="subfactory_name"}}
     textfield_name.style.rich_text_setting = defines.rich_text_setting.enabled
     textfield_name.style.width = 250
     textfield_name.focus()
@@ -66,13 +66,13 @@ function subfactory_dialog.open(player, modal_data)
     signal_flow.style.horizontal_spacing = 6
     signal_flow.add{type="label", caption={"fp.subfactory_dialog_signals"}}
     signal_flow.add{type="choose-elem-button", elem_type="signal", style="fp_sprite-button_inset_tiny",
-      tags={mod="fp", on_gui_elem_changed="add_rich_text", type="signal"}}
+        tags={mod="fp", on_gui_elem_changed="add_rich_text", type="signal"}}
 
     local recipe_flow = flow_rich_text.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     recipe_flow.style.horizontal_spacing = 6
     recipe_flow.add{type="label", caption={"fp.subfactory_dialog_recipes"}}
     recipe_flow.add{type="choose-elem-button", elem_type="recipe", style="fp_sprite-button_inset_tiny",
-      tags={mod="fp", on_gui_elem_changed="add_rich_text", type="recipe"}}
+        tags={mod="fp", on_gui_elem_changed="add_rich_text", type="recipe"}}
 
     update_submit_button(player)
 end

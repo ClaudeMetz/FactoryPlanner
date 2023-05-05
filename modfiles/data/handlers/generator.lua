@@ -13,7 +13,7 @@ function generator.all_recipes()
             enabled_from_the_start = true,
             hidden = false,
             group = {name="intermediate-products", order="c", valid=true,
-              localised_name={"item-group-name.intermediate-products"}},
+                localised_name={"item-group-name.intermediate-products"}},
             type_counts = {},
             enabling_technologies = nil,
             use_limitations = false,
@@ -156,7 +156,7 @@ function generator.all_recipes()
                 -- Add recipe for all 'launchable' items
                 for _, silo_input in pairs(rocket_silo_inputs) do
                     local silo_product = table_size(silo_input.rocket_launch_products) > 1 and
-                      item_prototypes[silo_input.rocket_launch_products[1].name] or silo_input
+                        item_prototypes[silo_input.rocket_launch_products[1].name] or silo_input
 
                     local recipe = custom_recipe()
                     recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. silo_input.name
@@ -172,7 +172,7 @@ function generator.all_recipes()
                         ingredient.amount = ingredient.amount * proto.rocket_parts_required
                     end
                     table.insert(recipe.ingredients, {type="item", name=silo_input.name,
-                      amount=1, ignore_productivity=true})
+                        amount=1, ignore_productivity=true})
                     recipe.products = silo_input.rocket_launch_products
                     recipe.main_product = recipe.products[1]
 
@@ -207,7 +207,7 @@ function generator.all_recipes()
                         local recipe = custom_recipe()
                         recipe.name = recipe_name
                         recipe.localised_name = {"fp.fluid_at_temperature", {"fluid-name.steam"},
-                          temperature, {"fp.unit_celsius"}}
+                            temperature, {"fp.unit_celsius"}}
                         recipe.sprite = "fluid/steam"
                         recipe.category = "steam-" .. temperature
                         recipe.order = "z-" .. temperature
@@ -437,7 +437,7 @@ function generator.all_machines()
 
     for _, proto in pairs(game.entity_prototypes) do
         if not proto.has_flag("hidden") and proto.crafting_categories and proto.energy_usage ~= nil
-          and not generator_util.is_irrelevant_machine(proto) then
+                and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
                 local machine = generate_category_entry(category, proto)
                 generator_util.data_structure.insert(machine)
@@ -467,7 +467,7 @@ function generator.all_machines()
         -- Add machines that produce steam (ie. boilers)
         for _, fluidbox in ipairs(proto.fluidbox_prototypes) do
             if fluidbox.production_type == "output" and fluidbox.filter
-              and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
+                    and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat as their energy source
                 if proto.burner_prototype or proto.electric_energy_source_prototype then
                     -- Find the corresponding input fluidbox

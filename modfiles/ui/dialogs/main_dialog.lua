@@ -79,14 +79,14 @@ function main_dialog.rebuild(player, default_visibility)
 
     -- Background dimmer (created first so the layering is correct, style set afterwards)
     local background_dimmer = player.gui.screen.add{type="frame",
-      tags={mod="fp", on_gui_click="re-layer_background_dimmer"}}
+        tags={mod="fp", on_gui_click="re-layer_background_dimmer"}}
     main_elements["background_dimmer"] = background_dimmer
 
 
     -- Create and configure the top-level frame
     local frame_main_dialog = player.gui.screen.add{type="frame", direction="vertical",
-      visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"},
-      name="fp_frame_main_dialog"}
+        visible=interface_visible, tags={mod="fp", on_gui_closed="close_main_dialog"},
+        name="fp_frame_main_dialog"}
     main_elements["main_frame"] = frame_main_dialog
 
     local dimensions = determine_main_dimensions(player)
@@ -126,7 +126,7 @@ end
 
 
 local refreshable_elements = {subfactory_list=true, subfactory_info=true,
-  item_boxes=true, production_box=true, production_table=true}
+    item_boxes=true, production_box=true, production_table=true}
 
 function main_dialog.refresh(player, context_to_refresh)
     if context_to_refresh == nil then return end
@@ -187,7 +187,7 @@ end
 function main_dialog.is_in_focus(player)
     local frame_main_dialog = data_util.get("main_elements", player).main_frame
     return (frame_main_dialog ~= nil and frame_main_dialog.valid and frame_main_dialog.visible
-      and data_util.get("ui_state", player).modal_dialog_type == nil)
+        and data_util.get("ui_state", player).modal_dialog_type == nil)
 end
 
 -- Sets the game.paused-state as is appropriate

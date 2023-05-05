@@ -55,7 +55,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     if item_proto.type == "entity" then return nil, nil end  -- raw ores don't make sense here
 
     local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
-      or metadata.cargo_wagon_capactiy * item_proto.stack_size
+        or metadata.cargo_wagon_capactiy * item_proto.stack_size
     local wagon_count = raw_amount / wagon_capacity
     local number = ui_util.format_number(wagon_count, metadata.formatting_precision)
 
@@ -141,14 +141,14 @@ function view_state.rebuild_state(player)
             name = "belts_or_lanes",
             caption = {"", belt_proto.rich_text, " ", {"fp.pu_" .. singular_bol, 2}},
             tooltip = {"fp.view_state_tt", {"fp.belts_or_lanes", {"fp.pl_" .. singular_bol, 2},
-              belt_proto.rich_text, belt_proto.localised_name}}
+                 belt_proto.rich_text, belt_proto.localised_name}}
         },
         [3] = {
             name = "wagons_per_timescale",
             caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale}},
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale},
-              cargo_train_proto.rich_text, cargo_train_proto.localised_name,
-              fluid_train_proto.rich_text, fluid_train_proto.localised_name}}
+                cargo_train_proto.rich_text, cargo_train_proto.localised_name,
+                fluid_train_proto.rich_text, fluid_train_proto.localised_name}}
         },
         [4] = {
             name = "items_per_second_per_machine",
@@ -176,7 +176,7 @@ function view_state.build(player, parent_element)
     -- Using ipairs is important as we only want to iterate the array-part
     for view_id, _ in ipairs(view_states) do
         table_view_state.add{type="button", tags={mod="fp", on_gui_click="change_view_state", view_id=view_id},
-          style="fp_button_push", mouse_button_filter={"left"}}
+            style="fp_button_push", mouse_button_filter={"left"}}
     end
 
     return table_view_state

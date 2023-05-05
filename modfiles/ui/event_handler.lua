@@ -1,9 +1,9 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
 local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_dialog, subfactory_info, item_boxes,
-  production_box, production_handler, compact_dialog, view_state, compact_subfactory, modal_dialog, porter_dialog,
-  import_dialog, export_dialog, tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog,
-  picker_dialog, recipe_dialog, matrix_dialog, module_configurator, machine_dialog, beacon_dialog}
+    production_box, production_handler, compact_dialog, view_state, compact_subfactory, modal_dialog, porter_dialog,
+    import_dialog, export_dialog, tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog,
+    picker_dialog, recipe_dialog, matrix_dialog, module_configurator, machine_dialog, beacon_dialog}
 
 -- ** RATE LIMITING **
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding

@@ -87,7 +87,7 @@ end
 
 local function add_checkmark_button(parent_flow, line, relevant_line)
     parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
-      tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
+        tags={mod="fp", on_gui_checked_state_changed="checkmark_compact_line", line_id=line.id}}
 end
 
 local function add_recipe_button(parent_flow, line, relevant_line, metadata)
@@ -97,7 +97,7 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
 
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id},
-      sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
+        sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
 end
 
 local function add_modules_flow(parent_flow, parent_type, line, metadata)
@@ -107,7 +107,7 @@ local function add_modules_flow(parent_flow, parent_type, line, metadata)
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
-          tags={mod="fp", on_gui_click="act_on_compact_module", line_id=line.id, module_id=module.id,
+            tags={mod="fp", on_gui_click="act_on_compact_module", line_id=line.id, module_id=module.id,
             parent_type=parent_type}, number=module.amount, style=style, mouse_button_filter={"left-and-right"}}
     end
 end
@@ -119,12 +119,12 @@ local function add_machine_flow(parent_flow, line, metadata)
 
         local count, tooltip_line = ui_util.format_machine_count(line.machine.count, (line.production_ratio > 0), true)
         local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line,
-          metadata.machine_tutorial_tt}
+            metadata.machine_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=count,
-          tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id},
-          style=style, mouse_button_filter={"left-and-right"}}
+            tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id},
+            style=style, mouse_button_filter={"left-and-right"}}
 
         add_modules_flow(machine_flow, "machine", line, metadata)
     end
@@ -141,8 +141,8 @@ local function add_beacon_flow(parent_flow, line, metadata)
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
         beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
-          tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id},
-          style=style, mouse_button_filter={"left-and-right"}}
+            tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id},
+            style=style, mouse_button_filter={"left-and-right"}}
 
         add_modules_flow(beacon_flow, "beacon", line, metadata)
     end
@@ -167,14 +167,14 @@ local function add_item_flow(line, relevant_line, item_class, button_color, meta
 
         if item.proto.type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
-              or "flib_slot_button_transparent_small"
+                or "flib_slot_button_transparent_small"
             enabled = false
             tooltip = {"", {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}, number_line}
         end
 
         item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
-          tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class=item.class, item_id=item.id},
-          style=style, enabled=enabled, mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class=item.class, item_id=item.id},
+            style=style, enabled=enabled, mouse_button_filter={"left-and-right"}}
 
         ::skip_item::
     end
@@ -190,8 +190,8 @@ local function add_item_flow(line, relevant_line, item_class, button_color, meta
         local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
         item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
-          tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class="Fuel"},
-          tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class="Fuel"},
+            tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_fuel::
     end
@@ -274,7 +274,7 @@ function compact_subfactory.build(player)
 
     -- Content frame
     local content_frame = compact_elements.compact_frame.add{type="frame", direction="vertical",
-      style="inside_deep_frame"}
+        style="inside_deep_frame"}
     content_frame.style.vertically_stretchable = true
 
     local subheader = content_frame.add{type="frame", direction="vertical", style="subheader_frame"}
@@ -306,18 +306,18 @@ function compact_subfactory.build(player)
     compact_elements["level_label"] = label_level
 
     local button_floor_up = flow_navigation.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
-      tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="up"},
-      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="up"},
+        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     compact_elements["floor_up_button"] = button_floor_up
 
     local button_floor_top = flow_navigation.add{type="sprite-button", sprite="fp_sprite_arrow_line_bar_up",
-      tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="top"},
-      style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="top"},
+        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     compact_elements["floor_top_button"] = button_floor_top
 
     -- Production table
     local scroll_pane_production = content_frame.add{type="scroll-pane", direction="vertical",
-      style="flib_naked_scroll_pane_no_padding"}
+        style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.horizontally_stretchable = true
 
     local table_production = scroll_pane_production.add{type="table", column_count=6, style="fp_table_production"}

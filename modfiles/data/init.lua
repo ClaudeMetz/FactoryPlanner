@@ -263,8 +263,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             ui_util.toggle_mod_gui(player)
 
         elseif event.setting == "fp_products_per_row" or
-          event.setting == "fp_subfactory_list_rows" or
-          event.setting == "fp_prefer_product_picker" then
+                event.setting == "fp_subfactory_list_rows" or
+                event.setting == "fp_prefer_product_picker" then
             main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
@@ -293,11 +293,11 @@ script.on_event(defines.events.on_string_translated, translator.on_string_transl
 
 -- Save translations once they are complete
 script.on_event(translator.on_player_dictionaries_ready, function(event)
-  local player = game.get_player(event.player_index)
-  local player_table = data_util.get("table", player)
+    local player = game.get_player(event.player_index)
+    local player_table = data_util.get("table", player)
 
-  player_table.translation_tables = translator.get_all(event.player_index)
-  modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
+    player_table.translation_tables = translator.get_all(event.player_index)
+    modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
 end)
 
 

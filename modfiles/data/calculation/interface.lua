@@ -349,7 +349,7 @@ end
 
 -- Determines the amount of energy needed for a machine and the pollution that produces
 function calculation.util.determine_energy_consumption_and_pollution(machine_proto, recipe_proto,
-  fuel_proto, machine_count, total_effects)
+        fuel_proto, machine_count, total_effects)
     local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
     local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
     local drain = math.ceil(machine_count - 0.001) * (machine_proto.energy_drain * 60)

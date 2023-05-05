@@ -25,21 +25,21 @@ function title_bar.build(player)
     main_elements.title_bar = {}
 
     local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal",
-      tags={mod="fp", on_gui_click="re-center_main_dialog"}}
+        tags={mod="fp", on_gui_click="re-center_main_dialog"}}
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
     -- The separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
     flow_title_bar.style.height = TITLE_BAR_HEIGHT
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
-      tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
-      sprite="fp_sprite_arrow_left_light", hovered_sprite="fp_sprite_arrow_left_dark",
-      clicked_sprite="fp_sprite_arrow_left_dark", mouse_button_filter={"left"}}
+        tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
+        sprite="fp_sprite_arrow_left_light", hovered_sprite="fp_sprite_arrow_left_dark",
+        clicked_sprite="fp_sprite_arrow_left_dark", mouse_button_filter={"left"}}
     button_switch.style.padding = 2
     main_elements.title_bar["switch_button"] = button_switch
 
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
-      ignored_by_interaction=true}
+        ignored_by_interaction=true}
 
     local label_hint = flow_title_bar.add{type="label", ignored_by_interaction=true}
     label_hint.style.font = "heading-2"
@@ -48,28 +48,28 @@ function title_bar.build(player)
     main_elements.title_bar["hint_label"] = label_hint
 
     local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
-      ignored_by_interaction=true}
+        ignored_by_interaction=true}
     drag_handle.style.minimal_width = 80
 
     flow_title_bar.add{type="button", caption={"fp.tutorial"}, style="fp_button_frame_tool",
-      tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
+        tags={mod="fp", on_gui_click="title_bar_open_dialog", type="tutorial"}, mouse_button_filter={"left"}}
     flow_title_bar.add{type="button", caption={"fp.preferences"}, style="fp_button_frame_tool",
-      tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
+        tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
 
     local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = 24
 
     local is_singleplayer = (not game.is_multiplayer())
     local button_pause = flow_title_bar.add{type="button", caption={"fp.pause"}, style="fp_button_frame_tool",
-      tags={mod="fp", on_gui_click="toggle_pause_game"}, enabled=is_singleplayer, mouse_button_filter={"left"}}
+        tags={mod="fp", on_gui_click="toggle_pause_game"}, enabled=is_singleplayer, mouse_button_filter={"left"}}
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = data_util.get("preferences", player)
     configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
-      sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
-      tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
+        sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
+        tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 end
 

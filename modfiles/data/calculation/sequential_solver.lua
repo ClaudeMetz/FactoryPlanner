@@ -24,7 +24,7 @@ local function update_line(line_data, aggregate)
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Product[relevant_product.type][relevant_product.name]
         local prodded_amount = calculation.util.determine_prodded_amount(relevant_product,
-          crafts_per_tick, total_effects)
+            crafts_per_tick, total_effects)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
 
@@ -55,9 +55,9 @@ local function update_line(line_data, aggregate)
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
         local capped_production_ratio = calculation.util.determine_production_ratio(crafts_per_tick,
-          machine_limit.limit, timescale, machine_proto.launch_sequence_time)
+            machine_limit.limit, timescale, machine_proto.launch_sequence_time)
         production_ratio = machine_limit.force_limit and
-          capped_production_ratio or math.min(production_ratio, capped_production_ratio)
+            capped_production_ratio or math.min(production_ratio, capped_production_ratio)
     end
 
 
@@ -99,7 +99,7 @@ local function update_line(line_data, aggregate)
         -- If productivity is to be ignored, un-apply it by applying the product-productivity to an ingredient,
         -- effectively reversing the effect (this is way simpler than doing it properly)
         local ingredient_amount = (ingredient.ignore_productivity) and
-          determine_amount_with_productivity(ingredient) or (ingredient.amount * production_ratio)
+            determine_amount_with_productivity(ingredient) or (ingredient.amount * production_ratio)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 
@@ -115,7 +115,7 @@ local function update_line(line_data, aggregate)
 
     -- Determine machine count
     local machine_count = calculation.util.determine_machine_count(crafts_per_tick, production_ratio,
-      timescale, machine_proto.launch_sequence_time)
+        timescale, machine_proto.launch_sequence_time)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
     aggregate.machine_count = aggregate.machine_count + math.ceil(machine_count - 0.001)
@@ -124,12 +124,12 @@ local function update_line(line_data, aggregate)
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
     local energy_consumption, pollution = calculation.util.determine_energy_consumption_and_pollution(
-      machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
+        machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
         fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
-          fuel_proto.fuel_value, timescale)
+            fuel_proto.fuel_value, timescale)
 
         local fuel_class = structures.class.init()
         local fuel = {type=fuel_proto.type, name=fuel_proto.name, amount=fuel_amount}

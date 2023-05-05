@@ -22,8 +22,8 @@ local function refresh_machine_frame(player)
             local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
             table_machine.add{type="sprite-button", sprite=machine_proto.sprite, tooltip=tooltip,
-              tags={mod="fp", on_gui_click="choose_machine", proto_id=machine_proto.id},
-              style=button_style, mouse_button_filter={"left"}}
+                tags={mod="fp", on_gui_click="choose_machine", proto_id=machine_proto.id},
+                style=button_style, mouse_button_filter={"left"}}
         end
     end
 end
@@ -54,8 +54,8 @@ local function refresh_fuel_frame(player)
                 local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
                 modal_elements.fuel_table.add{type="sprite-button", sprite=fuel_proto.sprite,
-                  tags={mod="fp", on_gui_click="choose_fuel", proto_id=(category_id .. "_" .. fuel_proto.id)},
-                  tooltip=tooltip, style=button_style, mouse_button_filter={"left"}}
+                    tags={mod="fp", on_gui_click="choose_fuel", proto_id=(category_id .. "_" .. fuel_proto.id)},
+                    tooltip=tooltip, style=button_style, mouse_button_filter={"left"}}
             end
         end
     end
@@ -101,7 +101,7 @@ local function add_limit_frame(parent_frame, modal_elements)
     local flow_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
 
     flow_limit.add{type="label", caption={"fp.info_label", {"fp.machine_limit"}},
-      tooltip={"fp.machine_limit_tt"}, style="heading_3_label"}
+        tooltip={"fp.machine_limit_tt"}, style="heading_3_label"}
     local textfield_limit = flow_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit"}}
     textfield_limit.style.width = 45
     ui_util.setup_numeric_textfield(textfield_limit, true, false)
@@ -109,7 +109,7 @@ local function add_limit_frame(parent_frame, modal_elements)
 
     local flow_force_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     flow_force_limit.add{type="label", caption={"fp.info_label", {"fp.machine_force_limit"}},
-      tooltip={"fp.machine_force_limit_tt"}, style="heading_3_label"}
+        tooltip={"fp.machine_force_limit_tt"}, style="heading_3_label"}
     local switch_force_limit = ui_util.switch.add_on_off(flow_force_limit, "machine_force_limit", {}, "left")
     modal_elements["force_limit_switch"] = switch_force_limit
 end

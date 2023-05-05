@@ -13,13 +13,13 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     local module_id = module and module.id or nil
 
     local frame_module = parent_flow.add{type="frame", style="fp_frame_module", direction="horizontal",
-      tags={module_id=module_id}}
+        tags={module_id=module_id}}
     frame_module.add{type="label", caption={"fp.pu_module", 1}, style="heading_3_label"}
 
     local module_name = (module) and module.proto.name or nil
     local button_module = frame_module.add{type="choose-elem-button", name="fp_chooser_module", elem_type="item",
-      item=module_name, tags={mod="fp", on_gui_elem_changed="select_module", module_id=module_id},
-      elem_filters=module_filters, style="fp_sprite-button_inset_tiny"}
+        item=module_name, tags={mod="fp", on_gui_elem_changed="select_module", module_id=module_id},
+        elem_filters=module_filters, style="fp_sprite-button_inset_tiny"}
     button_module.style.right_margin = 12
 
     frame_module.add{type="label", caption={"fp.amount"}, style="heading_3_label"}
@@ -27,15 +27,15 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
     local slider_value, maximum_value, minimum_value = determine_slider_config(module, empty_slots)
     local slider_style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
     local slider = frame_module.add{type="slider", name="fp_slider_module_amount", style=slider_style,
-      tags={mod="fp", on_gui_value_changed="module_amount", module_id=module_id},
-      minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
+        tags={mod="fp", on_gui_value_changed="module_amount", module_id=module_id},
+        minimum_value=minimum_value, maximum_value=maximum_value, value=slider_value, value_step=0.1}
     -- Fix for the slider value step "not bug" (see https://forums.factorio.com/viewtopic.php?p=516440#p516440)
     -- Fixed by setting step to something other than 1 first, then setting it to 1
     slider.set_slider_value_step(1)
     slider.enabled = (maximum_value ~= 1)  -- needs to be set here because sliders are buggy as fuck
 
     local textfield = frame_module.add{type="textfield", name="fp_textfield_module_amount", enabled=(maximum_value ~= 1),
-      text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount", module_id=module_id}}
+        text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount", module_id=module_id}}
     ui_util.setup_numeric_textfield(textfield, false, false)
     textfield.style.width = 40
 end
