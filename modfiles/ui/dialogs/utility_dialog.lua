@@ -189,11 +189,16 @@ function utility_structures.blueprints(player, modal_data)
     local tutorial_tt = (data_util.get("preferences", player).tutorial_mode) and
         data_util.generate_tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
+    local function format_signal(signal)
+        local type = (signal.type == "virtual") and "virtual-signal" or signal.type
+        return (type .. "/" .. signal.name)
+    end
+
     local blueprint = modal_data.utility_inventory[1]  -- re-usable inventory slot
     for index, blueprint_string in pairs(blueprints) do
         blueprint.import_stack(blueprint_string)
 
-        local tooltip = {"", (blueprint.label or ""), tutorial_tt}
+        local tooltip = {"", (blueprint.label or "Blueprint"), tutorial_tt}
         local button = table_blueprints.add{type="sprite-button", sprite="item/blueprint", tooltip=tooltip,
             tags={mod="fp", on_gui_click="act_on_blueprint", index=index}, mouse_button_filter={"left-and-right"}}
 
@@ -204,7 +209,7 @@ function utility_structures.blueprints(player, modal_data)
 
             if icon_count == 1 then  -- this is jank-hell
                 local signal = blueprint.blueprint_icons[1].signal
-                local sprite_icon = flow.add{type="sprite", sprite=(signal.type .. "/" .. signal.name)}
+                local sprite_icon = flow.add{type="sprite", sprite=format_signal(signal)}
                 sprite_icon.style.margin = {7, 0, 0, 7}
             else
                 flow.style.padding = {4, 0, 0, 3}
@@ -212,7 +217,7 @@ function utility_structures.blueprints(player, modal_data)
                 table.style.cell_padding = -4
                 if icon_count == 2 then table.style.top_margin = 7 end
                 for _, icon in pairs(icons) do
-                    table.add{type="sprite", sprite=(icon.signal.type .. "/" .. icon.signal.name)}
+                    table.add{type="sprite", sprite=format_signal(icon.signal)}
                 end
             end
         end
@@ -308,7 +313,7 @@ local function store_blueprint(player, _, _)
 
     table.insert(ui_state.context.subfactory.blueprints, cursor.export_stack())
     fly_text(player, {"fp.utility_blueprint_stored"});
-    cursor.clear()
+    player.clear_cursor()  -- doesn't delete blueprint, but puts it back in the inventory
 
     utility_structures.blueprints(player, ui_state.modal_data)
 end
