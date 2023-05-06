@@ -85,10 +85,12 @@ function utility_structures.components(player, modal_data)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
-        local button_blueprint = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_blueprint_items"},
-            caption={"fp.combinator"}, style="rounded_button", mouse_button_filter={"left"}}
-        button_blueprint.style.minimal_width = 0
-        modal_elements.blueprint_button = button_blueprint
+        local button_combinator = custom_flow.add{type="sprite-button", sprite="item/constant-combinator",
+            tooltip={"fp.ingredients_to_combinator_tt"}, tags={mod="fp", on_gui_click="utility_item_combinator"},
+            style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
+        button_combinator.style.size = 29
+        button_combinator.style.padding = 0
+        modal_elements.combinator_button = button_combinator
 
         local button_request = custom_flow.add{type="button", tags={mod="fp", on_gui_click="utility_request_items"},
             style="rounded_button", mouse_button_filter={"left"}}
@@ -160,9 +162,9 @@ function utility_structures.components(player, modal_data)
     Subfactory.validate_item_request_proxy(subfactory)
 
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
-    modal_elements.blueprint_button.enabled = any_missing_items
-    modal_elements.blueprint_button.tooltip = (any_missing_items) and {"fp.utility_blueprint_tt"}
-        or {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}
+    modal_elements.combinator_button.enabled = any_missing_items
+    modal_elements.combinator_button.tooltip = (any_missing_items) and {"fp.utility_combinator_tt"}
+        or {"fp.warning_with_icon", {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}}
 
     update_request_button(player, modal_data, subfactory)
 end
@@ -360,7 +362,7 @@ end
 utility_dialog.gui_events = {
     on_gui_click = {
         {
-            name = "utility_blueprint_items",
+            name = "utility_item_combinator",
             timeout = 20,
             handler = (function(player, _, _)
                 local missing_items = data_util.get("modal_data", player).missing_items
