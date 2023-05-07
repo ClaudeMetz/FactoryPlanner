@@ -190,8 +190,6 @@ end
 
 
 function NTH_TICK_HANDLERS.interface_toggle(metadata)
-    if metadata.print then game.print("Mods reloaded") end
-
     local player = game.get_player(metadata.player_index)
     local compact_view = data_util.get("flags", player).compact_view
     if compact_view then compact_dialog.toggle(player)
@@ -217,9 +215,10 @@ main_dialog.gui_events = {
                     ui_util.reset_player_gui(player)  -- destroys all FP GUIs
                     ui_util.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
-                    data_util.nth_tick.add((game.tick + 1), "interface_toggle", {player_index=player.index, print=true})
+                    game.print("Mods reloaded")
+                    data_util.nth_tick.add((game.tick + 1), "interface_toggle", {player_index=player.index})
                 else  -- call the interface toggle function directly
-                    NTH_TICK_HANDLERS.interface_toggle({player_index=player.index, print=false})
+                    NTH_TICK_HANDLERS.interface_toggle({player_index=player.index})
                 end
             end)
         }
