@@ -5,6 +5,22 @@ local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_dialog,
     import_dialog, export_dialog, tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog,
     picker_dialog, recipe_dialog, matrix_dialog, module_configurator, machine_dialog, beacon_dialog}
 
+
+local function guarded_event(handler, arguments)
+    if DEVMODE then
+        local status, ret = xpcall(handler, debug.traceback, table.unpack(arguments))
+        if status then
+            return ret
+        else
+            llog(ret)
+            game.print(util.split(ret, "\n")[1])
+            game.reload_mods()
+        end
+    else
+        return handler(table.unpack(arguments))
+    end
+end
+
 -- ** RATE LIMITING **
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
@@ -162,7 +178,7 @@ local function handle_gui_event(event)
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_table.special_handler
-    if special_handler and special_handler(event, player, action_name) == false then return end
+    if special_handler and guarded_event(special_handler, {event, player, action_name}) == false then return end
 
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
@@ -186,7 +202,7 @@ local function handle_gui_event(event)
         third_parameter = modifier_action.name
     end
 
-    action_table.handler(player, tags, third_parameter)
+    guarded_event(action_table.handler, {player, tags, third_parameter})
 end
 
 -- Register all the GUI events from the identifier map
@@ -270,9 +286,11 @@ local function handle_misc_event(event)
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_handlers.special_handler
-    if special_handler and special_handler(event) == false then return end
+    if special_handler and guarded_event(special_handler, {event}) == false then return end
 
-    for _, registered_handler in pairs(event_handlers.registered_handlers) do registered_handler(player, event) end
+    for _, registered_handler in pairs(event_handlers.registered_handlers) do
+        guarded_event(registered_handler, {player, event})
+    end
 end
 
 -- Register all the misc events from the identifier map
