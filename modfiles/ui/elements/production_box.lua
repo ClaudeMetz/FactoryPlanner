@@ -24,6 +24,13 @@ local function paste_line(player, _, event)
     end
 end
 
+-- Changes the floor to either be the top one or the one above the current one
+local function change_floor(player, destination)
+    if ui_util.context.change_floor(player, destination) then
+        main_dialog.refresh(player, "production")  -- only refresh if the floor was indeed changed
+    end
+end
+
 
 -- ** TOP LEVEL **
 function production_box.build(player)
@@ -132,18 +139,6 @@ function production_box.refresh(player)
 end
 
 
--- Changes the floor to either be the top one or the one above the current one
-function production_box.change_floor(player, destination)
-    local floor_changed = ui_util.context.change_floor(player, destination)
-
-    if floor_changed then  -- only need to refresh if the floor was indeed changed
-        local subfactory = data_util.get("context", player).subfactory
-        calculation.update(player, subfactory)
-        main_dialog.refresh(player, "production")
-    end
-end
-
-
 -- ** EVENTS **
 production_box.gui_events = {
     on_gui_click = {
@@ -155,7 +150,7 @@ production_box.gui_events = {
         {
             name = "change_floor",
             handler = (function(player, tags, _)
-                production_box.change_floor(player, tags.destination)
+                change_floor(player, tags.destination)
             end)
         },
         {
@@ -176,9 +171,9 @@ production_box.misc_events = {
         if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
     end),
     fp_up_floor = (function(player, _, _)
-        if main_dialog.is_in_focus(player) then production_box.change_floor(player, "up") end
+        if main_dialog.is_in_focus(player) then change_floor(player, "up") end
     end),
     fp_top_floor = (function(player, _, _)
-        if main_dialog.is_in_focus(player) then production_box.change_floor(player, "top") end
+        if main_dialog.is_in_focus(player) then change_floor(player, "top") end
     end)
 }
