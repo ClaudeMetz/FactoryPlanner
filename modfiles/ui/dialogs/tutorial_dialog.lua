@@ -34,7 +34,7 @@ function tab_definitions.interface(player, tab, tab_pane)
 
     local tutorial_mode = data_util.get("preferences", player).tutorial_mode
     ui_util.switch.add_on_off(flow_interactive, "toggle_tutorial_mode", {}, tutorial_mode,
-      {"fp.tutorial_mode"}, nil, true)
+        {"fp.tutorial_mode"}, nil, true)
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 

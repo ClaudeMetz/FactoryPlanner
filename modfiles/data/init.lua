@@ -59,8 +59,8 @@ local function reload_preferences(player)
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
 
-    preferences.mb_defaults = preferences.mb_defaults or
-      {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}
+    preferences.mb_defaults = preferences.mb_defaults
+        or {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}
 
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {
@@ -262,9 +262,9 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         if event.setting == "fp_display_gui_button" then
             ui_util.toggle_mod_gui(player)
 
-        elseif event.setting == "fp_products_per_row" or
-                event.setting == "fp_subfactory_list_rows" or
-                event.setting == "fp_prefer_product_picker" then
+        elseif event.setting == "fp_products_per_row"
+                or event.setting == "fp_subfactory_list_rows"
+                or event.setting == "fp_prefer_product_picker" then
             main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then

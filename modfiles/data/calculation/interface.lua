@@ -55,8 +55,8 @@ local function generate_floor_data(player, subfactory, floor)
         lines = {}
     }
 
-    local mining_productivity = (subfactory.mining_productivity ~= nil) and
-      (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+    local mining_productivity = (subfactory.mining_productivity ~= nil)
+        and (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
     for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
         local line_data = { id = line.id }
@@ -70,8 +70,8 @@ local function generate_floor_data(player, subfactory, floor)
             local relevant_line = (line.parent.level > 1) and line.parent.defining_line or nil
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if line.percentage == 0 or not line.active or (line.parent.level > 1 and
-              (relevant_line.percentage == 0 or not relevant_line.active)) then
+            if (line.parent.level > 1 and (relevant_line.percentage == 0 or not relevant_line.active))
+                    or line.percentage == 0 or not line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 line_data.recipe_proto = line.recipe.proto
@@ -199,8 +199,8 @@ function calculation.update(player, subfactory)
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
                 local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
-                if matrix_metadata.num_rows == matrix_metadata.num_cols and
-                  #linear_dependence_data.linearly_dependent_recipes == 0 then
+                if matrix_metadata.num_rows == matrix_metadata.num_cols
+                        and #linear_dependence_data.linearly_dependent_recipes == 0 then
                     matrix_solver.run_matrix_solver(subfactory_data, false)
                     subfactory.linearly_dependant = false
                 else
@@ -357,7 +357,7 @@ function calculation.util.determine_energy_consumption_and_pollution(machine_pro
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + cap_effect(total_effects.pollution)
     local pollution = energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
-      * fuel_multiplier * recipe_proto.emissions_multiplier
+        * fuel_multiplier * recipe_proto.emissions_multiplier
 
     return (energy_consumption + drain), pollution
 end

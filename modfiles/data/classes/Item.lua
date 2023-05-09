@@ -90,8 +90,8 @@ function Item.pack(self)
         required_amount = (self.top_level) and {
             defined_by = self.required_amount.defined_by,
             amount = self.required_amount.amount,
-            belt_proto = (self.required_amount.defined_by ~= "amount") and
-                prototyper.util.simplify_prototype(self.required_amount.belt_proto)
+            belt_proto = (self.required_amount.defined_by ~= "amount")
+                and prototyper.util.simplify_prototype(self.required_amount.belt_proto)
         } or nil,
         top_level = self.top_level,
         class = self.class

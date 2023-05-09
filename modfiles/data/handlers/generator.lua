@@ -37,7 +37,7 @@ function generator.all_recipes()
 
     -- Add all standard recipes
     local recipe_filter = {{filter="energy", comparison=">", value=0},
-      {filter="energy", comparison="<", value=1e+21, mode="and"}}
+        {filter="energy", comparison="<", value=1e+21, mode="and"}}
     for recipe_name, proto in pairs(game.get_filtered_recipe_prototypes(recipe_filter)) do
         local category_id = NEW.all_machines.map[proto.category]
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
@@ -155,8 +155,8 @@ function generator.all_recipes()
             if fixed_recipe ~= nil then
                 -- Add recipe for all 'launchable' items
                 for _, silo_input in pairs(rocket_silo_inputs) do
-                    local silo_product = table_size(silo_input.rocket_launch_products) > 1 and
-                        item_prototypes[silo_input.rocket_launch_products[1].name] or silo_input
+                    local silo_product = table_size(silo_input.rocket_launch_products) > 1
+                        and item_prototypes[silo_input.rocket_launch_products[1].name] or silo_input
 
                     local recipe = custom_recipe()
                     recipe.name = "impostor-silo-" .. proto.name .. "-item-" .. silo_input.name
@@ -247,7 +247,7 @@ function generator.all_recipes()
 
     -- Custom handling for Space Exploration Arcosphere recipes
     local se_split_recipes = {"se-arcosphere-fracture", "se-naquium-processor", "se-naquium-tessaract",
-      "se-space-dilation-data", "se-space-fold-data", "se-space-injection-data", "se-space-warp-data"}
+        "se-space-dilation-data", "se-space-fold-data", "se-space-injection-data", "se-space-warp-data"}
     for _, recipe_name in pairs(se_split_recipes) do
         local recipe = generator_util.data_structure.get_prototype(recipe_name, nil)
         local alt_recipe = generator_util.data_structure.get_prototype(recipe_name .. "-alt", nil)
@@ -615,7 +615,7 @@ function generator.all_fuels()
     end
 
     local fuel_filter = {{filter="fuel-value", comparison=">", value=0},
-      {filter="fuel-value", comparison="<", value=1e+21, mode="and"}}
+        {filter="fuel-value", comparison="<", value=1e+21, mode="and"}}
     local new_item_types = NEW.all_items.types
 
     -- Add solid fuels
@@ -752,7 +752,7 @@ function generator.all_wagons()
 
     -- Add cargo wagons
     local cargo_wagon_filter = {{filter="type", type="cargo-wagon"},
-      {filter="flag", flag="hidden", invert=true, mode="and"}}
+        {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
         if proto.get_inventory_size(1) > 0 then
             generator_util.data_structure.insert{
@@ -768,7 +768,7 @@ function generator.all_wagons()
 
     -- Add fluid wagons
     local fluid_wagon_filter = {{filter="type", type="fluid-wagon"},
-      {filter="flag", flag="hidden", invert=true, mode="and"}}
+        {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(fluid_wagon_filter)) do
         if proto.fluid_capacity > 0 then
             generator_util.data_structure.insert{

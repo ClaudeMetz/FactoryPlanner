@@ -160,7 +160,7 @@ function ModuleSet.compile_filter(self)
     end
 
     return {{filter="name", name=compatible_modules},
-      {filter="name", mode="and", invert=true, name=existing_modules}}
+        {filter="name", mode="and", invert=true, name=existing_modules}}
 end
 
 

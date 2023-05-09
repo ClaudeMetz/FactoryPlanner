@@ -266,9 +266,9 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
             table.insert(products, formatted_product)
 
             -- Update the main product as well, if present
-            if recipe_proto.main_product ~= nil and
-            formatted_product.type == recipe_proto.main_product.type and
-            formatted_product.name == recipe_proto.main_product.name then
+            if recipe_proto.main_product ~= nil
+                    and formatted_product.type == recipe_proto.main_product.type
+                    and formatted_product.name == recipe_proto.main_product.name then
                 recipe_proto.main_product = formatted_product
             end
         end
@@ -486,7 +486,7 @@ function generator_util.determine_launch_sequence_time(silo_proto)
         engine_starting = (1 / rocket_proto.engine_starting_speed) + 1,
         -- This calculates a fractional amount of ticks. Also, math.log(x) calculates the natural logarithm
         rocket_flying = math.log(1 + rocket_flight_threshold * rocket_proto.flying_acceleration
-          / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
+            / rocket_proto.flying_speed) / math.log(1 + rocket_proto.flying_acceleration),
         lights_blinking_close = (1 / silo_proto.light_blinking_speed) + 1,
         doors_closing = (1 / silo_proto.door_opening_speed) + 1
     }
@@ -533,23 +533,23 @@ function generator_util.add_recipe_tooltip(recipe)
 
     if recipe.energy ~= nil then
         current_table, next_index = data_util.build_localised_string(
-          {"", "\n  ", {"fp.crafting_time"}, ": ", recipe.energy}, current_table, next_index)
+            {"", "\n  ", {"fp.crafting_time"}, ": ", recipe.energy}, current_table, next_index)
     end
 
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
         current_table, next_index = data_util.build_localised_string(
-          {"", "\n  ", {locale_key, 2}, ":"}, current_table, next_index)
+            {"", "\n  ", {locale_key, 2}, ":"}, current_table, next_index)
         if not next(recipe[item_type]) then
             current_table, next_index = data_util.build_localised_string({
-              "\n    ", {"fp.none"}}, current_table, next_index)
+                "\n    ", {"fp.none"}}, current_table, next_index)
         else
             for _, item in ipairs(recipe[item_type]) do
                 local name = generator_util.format_temperature_name(item, item.name)
                 local proto = game[item.type .. "_prototypes"][name]
                 local localised_name = generator_util.format_temperature_localised_name(item, proto)
                 current_table, next_index = data_util.build_localised_string({("\n    " .. "[" .. item.type .. "="
-                  .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)
+                    .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)
             end
         end
     end

@@ -56,8 +56,8 @@ local function update_line(line_data, aggregate)
     if machine_limit.limit ~= nil then
         local capped_production_ratio = calculation.util.determine_production_ratio(crafts_per_tick,
             machine_limit.limit, timescale, machine_proto.launch_sequence_time)
-        production_ratio = machine_limit.force_limit and
-            capped_production_ratio or math.min(production_ratio, capped_production_ratio)
+        production_ratio = machine_limit.force_limit and capped_production_ratio
+            or math.min(production_ratio, capped_production_ratio)
     end
 
 
@@ -98,8 +98,8 @@ local function update_line(line_data, aggregate)
     for _, ingredient in pairs(recipe_proto.ingredients) do
         -- If productivity is to be ignored, un-apply it by applying the product-productivity to an ingredient,
         -- effectively reversing the effect (this is way simpler than doing it properly)
-        local ingredient_amount = (ingredient.ignore_productivity) and
-            determine_amount_with_productivity(ingredient) or (ingredient.amount * production_ratio)
+        local ingredient_amount = (ingredient.ignore_productivity) and determine_amount_with_productivity(ingredient)
+            or (ingredient.amount * production_ratio)
 
         structures.class.add(Ingredient, ingredient, ingredient_amount)
 

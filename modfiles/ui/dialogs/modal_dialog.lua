@@ -344,7 +344,7 @@ modal_dialog.gui_events = {
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 modal_data.next_search_tick = data_util.nth_tick.add((game.tick + MODAL_SEARCH_LIMITING),
-                  "run_delayed_modal_search", {player_index=player.index})
+                    "run_delayed_modal_search", {player_index=player.index})
             end)
         }
     },

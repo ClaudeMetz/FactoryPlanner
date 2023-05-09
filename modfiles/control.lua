@@ -18,9 +18,9 @@ NEW = nil  -- global variable used to store new prototype data temporarily for m
 local active_mods = script.active_mods
 RECIPEBOOK_ACTIVE = (active_mods["RecipeBook"] ~= nil)
 BEACON_OVERLOAD_ACTIVE = (
-    active_mods["space-exploration"] or
-    active_mods["wret-beacon-rebalance-mod"] or
-    active_mods["beacon-overhaul"]
+    active_mods["space-exploration"]
+    or active_mods["wret-beacon-rebalance-mod"]
+    or active_mods["beacon-overhaul"]
 ) and true
 
 require("util")  -- core.lualib

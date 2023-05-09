@@ -81,7 +81,7 @@ function utility_structures.components(player, modal_data)
 
     if modal_elements.components_box == nil then
         local components_box, custom_flow, scope_switch = add_utility_box(player, modal_data.modal_elements,
-          "components", true, true)
+            "components", true, true)
         modal_elements.components_box = components_box
         modal_elements.scope_switch = scope_switch
 
@@ -188,8 +188,8 @@ function utility_structures.blueprints(player, modal_data)
     local table_blueprints =  modal_elements["blueprints_table"]
     table_blueprints.clear()
 
-    local tutorial_tt = (data_util.get("preferences", player).tutorial_mode) and
-        data_util.generate_tutorial_tooltip("act_on_blueprint", nil, player) or nil
+    local tutorial_tt = (data_util.get("preferences", player).tutorial_mode)
+        and data_util.generate_tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
     local function format_signal(signal)
         local type = (signal.type == "virtual") and "virtual-signal" or signal.type
