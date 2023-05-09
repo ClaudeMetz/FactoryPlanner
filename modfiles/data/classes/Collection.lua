@@ -28,8 +28,8 @@ end
 
 -- Inserts the given object at the given position, shifting other elements down
 function Collection.insert_at(self, gui_position, object)
-    if not object then error("Can't insert nil dataset")
-    elseif not gui_position then error("Can't insert at nil position") end
+    if not object then error("Can't insert nil dataset") end
+    if not gui_position then error("Can't insert at nil position") end
 
     self.index = self.index + 1
     object.id = self.index
@@ -60,14 +60,16 @@ function Collection.remove(self, dataset)
     self.count = self.count - 1
     self.datasets[dataset.id] = nil
 
+    if self.count ~= table_size(self.datasets) then error("Dataset count incorrect") end
+
     -- Returning the deleted position here to allow for GUI adjustments
     return dataset.gui_position
 end
 
 -- Replaces the dataset with the new object in-place
 function Collection.replace(self, dataset, object)
-    if not dataset then error("Can't replace nil dataset")
-    elseif not object then error("Can't replace with nil object") end
+    if not dataset then error("Can't replace nil dataset") end
+    if not object then error("Can't replace with nil object") end
 
     object.id = dataset.id
     object.gui_position = dataset.gui_position
@@ -130,8 +132,8 @@ function Collection.get_by_type_and_name(self, type_name, name)
 end
 
 function Collection.shift(self, main_dataset, first_position, direction, spots)
-    if not main_dataset then error("Can't shift nil dataset")
-    elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
+    if not main_dataset then error("Can't shift nil dataset") end
+    if not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
 
     local original_position = main_dataset.gui_position
     local new_position = nil

@@ -55,29 +55,14 @@ function Floor.remove(self, dataset)
         Collection.remove(self.parent.Floor, dataset.subfloor)
     end
 
-    -- If the first line of a subfloor is removed, the whole subfloor needs to go
-    if dataset.class == "Line" and self.level > 1 and dataset.gui_position == 1 then
-        Floor.remove(self.origin_line.parent, self.origin_line)
-    end
-
     return Collection.remove(self[dataset.class], dataset)
 end
 
--- Floor deletes itself if it consists of only its mandatory first line
--- That line can't be invalid as the whole subfloor would be removed already at that point
-function Floor.remove_if_empty(self)
-    if self.level > 1 and self.Line.count == 1 then
-        local origin_line = self.origin_line
-
-        Floor.replace(origin_line.parent, origin_line, self.defining_line)
-        -- No need to remove eventual subfloors to the given floor,
-        -- as there can't be any if the floor is empty
-        Subfactory.remove(self.parent, self)
-
-        return true
-    end
-
-    return false  -- returns whether the floor was deleted or not
+-- Call only on subfloor; deletes itself while leaving defining_line intact
+function Floor.reset(self)
+    local origin_line = self.origin_line
+    Floor.replace(origin_line.parent, origin_line, self.defining_line)
+    Subfactory.remove(self.parent, self)
 end
 
 
@@ -188,7 +173,5 @@ function Floor.repair(self, player)
     self.valid = true
 
     -- Make this floor remove itself if it's empty after repairs
-    Floor.remove_if_empty(self)
-
-    return true  -- make sure this floor is not removed by the calling Collection-function
+    if self.level > 1 and self.Line.count < 2 then Floor.reset(self) end
 end
