@@ -79,7 +79,9 @@ local gui_identifier_map = {
     [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed",
     [defines.events.on_gui_switch_state_changed] = "on_gui_switch_state_changed",
     [defines.events.on_gui_elem_changed] = "on_gui_elem_changed",
-    [defines.events.on_gui_value_changed] = "on_gui_value_changed"
+    [defines.events.on_gui_value_changed] = "on_gui_value_changed",
+    [defines.events.on_gui_hover] = "on_gui_hover",
+    [defines.events.on_gui_leave] = "on_gui_leave"
 }
 
 local gui_timeouts = {
