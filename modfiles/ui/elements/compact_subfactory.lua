@@ -150,32 +150,39 @@ local function add_beacon_flow(parent_flow, line, metadata)
 end
 
 
-local function add_item_flow(line, relevant_line, item_class, button_color, metadata)
+local function add_item_flow(line, relevant_line, item_class, button_color, metadata, item_buttons)
     local column_count = metadata.column_counts[item_class]
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
 
     for _, item in ipairs(Line.get_in_order(line, item_class)) do
+        local proto, type = item.proto, item.proto.type
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (not line.subfloor) and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local tooltip = {"", {"fp.tt_title", item.proto.localised_name}, number_line, metadata.item_tutorial_tt}
+        local tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line, metadata.item_tutorial_tt}
         local style, enabled = "flib_slot_button_" .. button_color .. "_small", true
         if relevant_line.done then style = "flib_slot_button_grayscale_small" end
 
-        if item.proto.type == "entity" then
+        if type == "entity" then
             style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
                 or "flib_slot_button_transparent_small"
             enabled = false
-            tooltip = {"", {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}, number_line}
+            tooltip = {"", {"fp.tt_title_with_note", proto.localised_name, {"fp.raw_ore"}}, number_line}
         end
 
-        item_table.add{type="sprite-button", sprite=item.proto.sprite, number=amount, tooltip=tooltip,
-            tags={mod="fp", on_gui_click="act_on_compact_item", line_id=line.id, class=item.class, item_id=item.id},
+        local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount, tooltip=tooltip,
+            tags={mod="fp", on_gui_click="act_on_compact_item", on_gui_hover="hover_compact_item",
+            on_gui_leave="leave_compact_item", line_id=line.id, class=item.class, item_id=item.id},
             style=style, enabled=enabled, mouse_button_filter={"left-and-right"}}
+
+        button.raise_hover_events = true
+        item_buttons[type] = item_buttons[type] or {}
+        item_buttons[type][proto.name] = item_buttons[type][proto.name] or {}
+        table.insert(item_buttons[type][proto.name], {button=button, proper_style=style})
 
         ::skip_item::
     end
@@ -264,6 +271,18 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    end
+end
+
+local function handle_hover_change(player, tags, event)
+    local ui_state = data_util.get("ui_state", player)
+    local line = Floor.get(ui_state.context.floor, "Line", tags.line_id)
+    local proto = Line.get(line, tags.class, tags.item_id).proto
+
+    local relevant_buttons = ui_state.compact_elements.item_buttons[proto.type][proto.name]
+    for _, button_data in pairs(relevant_buttons) do
+        button_data.button.style = (event.name == defines.events.on_gui_hover)
+            and "flib_slot_button_pink_small" or button_data.proper_style
     end
 end
 
@@ -365,6 +384,9 @@ function compact_subfactory.refresh(player)
         view_state_metadata = view_state.generate_metadata(player, subfactory)
     }
 
+    compact_elements.item_buttons = {}  -- (re)set the item_buttons table
+    local item_buttons = compact_elements.item_buttons
+
     if data_util.get("preferences", player).tutorial_mode then
         data_util.add_tutorial_tooltips(metadata, player, {
             recipe_tutorial_tt = "act_on_compact_recipe",
@@ -391,9 +413,9 @@ function compact_subfactory.refresh(player)
         add_beacon_flow(machines_flow, line, metadata)
 
         -- Products, Byproducts and Ingredients
-        add_item_flow(line, relevant_line, "Product", "default", metadata)
-        add_item_flow(line, relevant_line, "Byproduct", "red", metadata)
-        add_item_flow(line, relevant_line, "Ingredient", "green", metadata)
+        add_item_flow(line, relevant_line, "Product", "default", metadata, item_buttons)
+        add_item_flow(line, relevant_line, "Byproduct", "red", metadata, item_buttons)
+        add_item_flow(line, relevant_line, "Ingredient", "green", metadata, item_buttons)
 
         production_table.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -461,6 +483,18 @@ compact_subfactory.gui_events = {
                 relevant_line.done = not relevant_line.done
                 compact_subfactory.refresh(player)
             end)
+        }
+    },
+    on_gui_hover = {
+        {
+            name = "hover_compact_item",
+            handler = handle_hover_change
+        }
+    },
+    on_gui_leave = {
+        {
+            name = "leave_compact_item",
+            handler = handle_hover_change
         }
     }
 }
