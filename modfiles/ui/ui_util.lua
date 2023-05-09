@@ -304,8 +304,8 @@ end
 function ui_util.context.set_factory(player, factory)
     local context = data_util.get("context", player)
     context.factory = factory
-    local subfactory = factory.selected_subfactory or
-        Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
+    local subfactory = factory.selected_subfactory
+        or Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
     ui_util.context.set_subfactory(player, subfactory)
 end
 

@@ -195,8 +195,8 @@ function subfactory_list.refresh(player)
         local attach_subfactory_products = player_table.preferences.attach_subfactory_products
 
         local subfactory_count = Factory.count(context.factory, "Subfactory")
-        local tutorial_tt = (player_table.preferences.tutorial_mode) and
-            data_util.generate_tutorial_tooltip("act_on_subfactory", nil, player) or nil
+        local tutorial_tt = (player_table.preferences.tutorial_mode)
+            and data_util.generate_tutorial_tooltip("act_on_subfactory", nil, player) or nil
 
         for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
@@ -235,8 +235,8 @@ function subfactory_list.refresh(player)
 
     local archived_subfactory_count = Factory.count(player_table.archive, "Subfactory")
     subfactory_list_elements.toggle_archive_button.enabled = (archived_subfactory_count > 0)
-    subfactory_list_elements.toggle_archive_button.style = (archive_open) and
-      "flib_selected_tool_button" or "tool_button"
+    subfactory_list_elements.toggle_archive_button.style = (archive_open)
+        and "flib_selected_tool_button" or "tool_button"
 
     if not archive_open then
         local subfactory_plural = {"fp.pl_subfactory", archived_subfactory_count}
@@ -248,26 +248,26 @@ function subfactory_list.refresh(player)
     end
 
     subfactory_list_elements.archive_button.enabled = (subfactory_exists)
-    subfactory_list_elements.archive_button.sprite = (archive_open) and
-      "utility/export_slot" or "utility/import_slot"
-    subfactory_list_elements.archive_button.tooltip = (archive_open) and
-      {"fp.action_unarchive_subfactory"} or {"fp.action_archive_subfactory"}
+    subfactory_list_elements.archive_button.sprite = (archive_open)
+        and "utility/export_slot" or "utility/import_slot"
+    subfactory_list_elements.archive_button.tooltip = (archive_open)
+        and {"fp.action_unarchive_subfactory"} or {"fp.action_archive_subfactory"}
 
     subfactory_list_elements.import_button.enabled = (not archive_open)
     subfactory_list_elements.export_button.enabled = (subfactory_exists)
 
     local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
     subfactory_list_elements.add_button.enabled = (not archive_open)
-    subfactory_list_elements.add_button.tooltip = (prefer_product_picker) and
-      {"fp.action_add_subfactory_by_product"} or {"fp.action_add_subfactory_by_name"}
+    subfactory_list_elements.add_button.tooltip = (prefer_product_picker)
+        and {"fp.action_add_subfactory_by_product"} or {"fp.action_add_subfactory_by_name"}
 
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
     subfactory_list_elements.duplicate_button.enabled = (subfactory_exists and selected_subfactory.valid)
 
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
     local delay_in_minutes = math.floor(SUBFACTORY_DELETION_DELAY / 3600)
-    subfactory_list_elements.delete_button.tooltip = (archive_open) and
-      {"fp.action_delete_subfactory"} or {"fp.action_trash_subfactory", delay_in_minutes}
+    subfactory_list_elements.delete_button.tooltip = (archive_open)
+        and {"fp.action_delete_subfactory"} or {"fp.action_trash_subfactory", delay_in_minutes}
 end
 
 -- Utility function to centralize subfactory creation behavior
@@ -300,7 +300,7 @@ function subfactory_list.delete_subfactory(player)
     else
         local desired_tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
         local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
-          "delete_subfactory_for_good", {player_index=player.index, subfactory=subfactory})
+            "delete_subfactory_for_good", {player_index=player.index, subfactory=subfactory})
         subfactory.tick_of_deletion = actual_tick_of_deletion
 
         archive_subfactory(player)

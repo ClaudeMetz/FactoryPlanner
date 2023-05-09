@@ -126,8 +126,8 @@ function title_bar.refresh_message(player)
     end
 
     -- Set caption and hide if no message is shown so that the margins work out
-    title_bar_elements.hint_label.caption = (new_message) and
-      {"fp." .. new_message.type .. "_message", new_message.text} or ""
+    title_bar_elements.hint_label.caption = (new_message)
+        and {"fp." .. new_message.type .. "_message", new_message.text} or ""
     title_bar_elements.hint_label.visible = (new_message)
 
     -- Decrease the lifetime of every queued message

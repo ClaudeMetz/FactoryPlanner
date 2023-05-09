@@ -274,28 +274,28 @@ function data_util.porter.format_modset_diff(old_modset)
 
     if next(changes.added) then
         current_table, next_index = data_util.build_localised_string({
-          {"fp.subfactory_mod_added"}}, current_table, next_index)
+            {"fp.subfactory_mod_added"}}, current_table, next_index)
         for name, version in pairs(changes.added) do
             current_table, next_index = data_util.build_localised_string({
-              {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
+                {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
         end
     end
 
     if next(changes.removed) then
         current_table, next_index = data_util.build_localised_string({
-          {"fp.subfactory_mod_removed"}}, current_table, next_index)
+            {"fp.subfactory_mod_removed"}}, current_table, next_index)
         for name, version in pairs(changes.removed) do
             current_table, next_index = data_util.build_localised_string({
-              {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
+                {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
         end
     end
 
     if next(changes.updated) then
         current_table, next_index = data_util.build_localised_string({
-          {"fp.subfactory_mod_updated"}}, current_table, next_index)
+            {"fp.subfactory_mod_updated"}}, current_table, next_index)
         for name, versions in pairs(changes.updated) do
             current_table, next_index = data_util.build_localised_string({
-              {"fp.subfactory_mod_and_versions", name, versions.old, versions.current}}, current_table, next_index)
+                {"fp.subfactory_mod_and_versions", name, versions.old, versions.current}}, current_table, next_index)
         end
     end
 

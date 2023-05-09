@@ -24,8 +24,8 @@ function SEARCH_HANDLERS.search_picker_items(player, search_term)
         for _, subgroup_table in pairs(group.subgroup_tables) do
             for item_data, element in pairs(subgroup_table) do
                 -- Can only get to this if translations are complete, as the textfield is disabled otherwise
-                local visible = (search_term == item_data.name) or
-                    string.find(item_data.translated_name, search_term, 1, true)
+                local visible = (search_term == item_data.name)
+                    or string.find(item_data.translated_name, search_term, 1, true)
                 element.visible = visible
                 any_item_visible = any_item_visible or visible
             end
