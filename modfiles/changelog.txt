@@ -14,7 +14,7 @@ Date: 00. 00. 0000
     - Simplified indentation visuals for folded out subfloors
     - Updated the GUI in a few other minor ways
   Bugfixes:
-    -
+    - Fixed a rare bug when repairing subfactories with invalid subfloors
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.64

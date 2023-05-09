@@ -339,7 +339,8 @@ function ui_util.context.change_floor(player, destination)
 
     if selected_floor ~= nil then
         ui_util.context.set_floor(player, selected_floor)
-        Floor.remove_if_empty(floor)  -- remove previous floor if it has no recipes
+        -- Reset the subfloor we moved from if it doesn't have any additional recipes
+        if Floor.count(floor, "Line") < 2 then Floor.reset(floor) end
     end
     return (selected_floor ~= nil)
 end

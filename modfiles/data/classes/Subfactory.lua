@@ -250,11 +250,8 @@ end
 
 -- Needs repair: Product, Floor, selected_floor
 function Subfactory.repair(self, player)
-    -- Set selected floor to the top one in case the selected one gets deleted
-    local selected_floor = self.selected_floor
     local top_floor = Subfactory.get(self, "Floor", 1)
-    ui_util.context.set_floor(player, top_floor)  -- sets selected_floor on this subfactory
-    Floor.remove_if_empty(selected_floor)  -- Make sure no empty floor is left behind
+    self.selected_floor = top_floor  -- reset the selected floor to the one that's guaranteed to exist
 
     -- Unrepairable item-objects get removed, so the subfactory will always be valid afterwards
     Collection.repair_datasets(self.Product, nil, Item)

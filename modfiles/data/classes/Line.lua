@@ -346,9 +346,13 @@ function Line.repair(self, player)
     self.valid = true
 
     if self.subfloor then
-        if not self.subfloor.valid then
-            -- Repairing a floor always makes it valid, or removes it if left empty
-            Floor.repair(self.subfloor, player)
+        local subfloor = self.subfloor
+        if not subfloor.valid then
+            if not subfloor.defining_line.valid then
+                self.valid = false  -- if the defining line is invalid, this whole thing is toast
+            else
+                Floor.repair(self.subfloor, player)
+            end
         end
 
     else
