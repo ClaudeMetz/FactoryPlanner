@@ -59,9 +59,9 @@ function title_bar.build(player)
     local separation = flow_title_bar.add{type="line", direction="vertical"}
     separation.style.height = 24
 
-    local is_singleplayer = (not game.is_multiplayer())
-    local button_pause = flow_title_bar.add{type="button", caption={"fp.pause"}, style="fp_button_frame_tool",
-        tags={mod="fp", on_gui_click="toggle_pause_game"}, enabled=is_singleplayer, mouse_button_filter={"left"}}
+    local button_pause = flow_title_bar.add{type="button", caption={"fp.pause"}, tooltip={"fp.pause_on_interface"},
+        tags={mod="fp", on_gui_click="toggle_pause_game"}, enabled=(not game.is_multiplayer()),
+        style="fp_button_frame_tool", mouse_button_filter={"left"}}
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = data_util.get("preferences", player)
