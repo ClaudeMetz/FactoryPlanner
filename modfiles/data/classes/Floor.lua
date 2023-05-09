@@ -103,8 +103,10 @@ function Floor.get_by_gui_position(self, class, gui_position)
 end
 
 function Floor.shift(self, dataset, first_position, direction, spots)
-    return Collection.shift(self[dataset.class], dataset, first_position, direction, spots)
+    Collection.shift(self[dataset.class], dataset, first_position, direction, spots)
 end
+
+function Floor.count(self, class) return self[class].count end
 
 
 -- Returns the machines and modules needed to actually build this floor

@@ -92,14 +92,9 @@ local function handle_move_subfactory_click(player, tags, event)
 
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
+    Factory.shift(context.factory, subfactory, 1, translated_direction, spots_to_shift)
 
-    if Factory.shift(context.factory, subfactory, 1, translated_direction, spots_to_shift) then
-        main_dialog.refresh(player, "subfactory_list")
-    else
-        local direction_string = (translated_direction == "negative") and {"fp.up"} or {"fp.down"}
-        local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_subfactory", 1}, direction_string}
-        title_bar.enqueue_message(player, message, "error", 1, true)
-    end
+    main_dialog.refresh(player, "subfactory_list")
 end
 
 local function handle_subfactory_click(player, tags, action)
@@ -199,6 +194,7 @@ function subfactory_list.refresh(player)
     if selected_subfactory ~= nil then  -- only need to run this if any subfactory exists
         local attach_subfactory_products = player_table.preferences.attach_subfactory_products
 
+        local subfactory_count = Factory.count(context.factory, "Subfactory")
         local tutorial_tt = (player_table.preferences.tutorial_mode) and
             data_util.generate_tutorial_tooltip("act_on_subfactory", nil, player) or nil
 
@@ -215,11 +211,14 @@ function subfactory_list.refresh(player)
                 enabled=(not selected), mouse_button_filter={"left-and-right"}}
 
             local function create_move_button(flow, direction)
+                local enabled = (direction == "up" and subfactory.gui_position ~= 1)
+                    or (direction == "down" and subfactory.gui_position < subfactory_count)
                 local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
-                local move_tooltip = {"fp.move_row_tt", {"fp.pl_subfactory", 1}, {"fp." .. direction}, endpoint}
+                local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_subfactory", 1}, {"fp." .. direction}, endpoint} or ""
+
                 flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
                     tags={mod="fp", on_gui_click="move_subfactory", direction=direction, subfactory_id=subfactory.id},
-                    tooltip=move_tooltip, mouse_button_filter={"left"}}
+                    tooltip=move_tooltip, enabled=enabled, mouse_button_filter={"left"}}
             end
 
             local move_flow = subfactory_button.add{type="flow", direction="horizontal"}

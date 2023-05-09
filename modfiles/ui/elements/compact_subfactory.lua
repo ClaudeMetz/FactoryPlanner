@@ -94,7 +94,8 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local recipe_proto = relevant_line.recipe.proto
     local style = (line.subfloor ~= nil) and "flib_slot_button_blue_small" or "flib_slot_button_default_small"
     style = (relevant_line.done) and "flib_slot_button_grayscale_small" or style
-    local tooltip = {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
+    local tooltip = (line.subfloor == nil) and {"fp.tt_title", recipe_proto.localised_name}
+        or {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
 
     parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id},
         sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
