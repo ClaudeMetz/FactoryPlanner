@@ -14,7 +14,8 @@ local function generate_metadata(player)
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         view_state_metadata = view_state.generate_metadata(player, subfactory),
-        any_beacons_available = (next(global.all_beacons.map) ~= nil)
+        any_beacons_available = (next(global.all_beacons.map) ~= nil),
+        line_count = nil, level = nil  -- set dynamically per floor
     }
 
     if preferences.tutorial_mode then
@@ -54,12 +55,15 @@ function builders.recipe(line, parent_flow, metadata, indent)
     if indent > 0 then parent_flow.style.left_margin = indent * 18 end
 
     local function create_move_button(flow, direction, disable)
+        local direction_enabled = (direction == "up" and line.gui_position ~= ((metadata.level > 1) and 2 or 1))
+            or (direction == "down" and line.gui_position < metadata.line_count)
+        local enabled = direction_enabled and (not metadata.archive_open and not disable)
         local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
-        local move_tooltip = (metadata.archive_open or disable) and "" or
-          {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. direction}, endpoint}
+        local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. direction}, endpoint} or ""
+
         flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
             tags={mod="fp", on_gui_click="move_line", direction=direction, floor_id=line.parent.id, line_id=line.id},
-            tooltip=move_tooltip, enabled=(not metadata.archive_open and not disable), mouse_button_filter={"left"}}
+            tooltip=move_tooltip, enabled=enabled, mouse_button_filter={"left"}}
     end
 
     local move_flow = parent_flow.add{type="flow", direction="vertical"}
@@ -426,6 +430,9 @@ function production_table.refresh(player)
 
     -- Production lines
     local function render_lines(floor, indent)
+        metadata.line_count = Floor.count(floor, "Line")
+        metadata.level = floor.level
+
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
             for _, column_data in ipairs(production_columns) do
                 local flow = table_production.add{type="flow", direction="horizontal"}

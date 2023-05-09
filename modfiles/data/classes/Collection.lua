@@ -134,14 +134,8 @@ function Collection.shift(self, main_dataset, first_position, direction, spots)
     elseif not(direction == "negative" or direction == "positive") then error("Can't shift in invalid direction") end
 
     local original_position = main_dataset.gui_position
-
-    -- Don't shift if outmost elements are being shifted further outward
-    if (original_position == first_position and direction == "negative") or
-      (original_position == self.count and direction == "positive") then
-        return false
-    end
-
     local new_position = nil
+
     if spots == nil then  -- means shift-to-end
         new_position = (direction == "positive") and self.count or first_position
     else
@@ -154,8 +148,6 @@ function Collection.shift(self, main_dataset, first_position, direction, spots)
 
     Collection.remove(self, main_dataset)
     Collection.insert_at(self, new_position, main_dataset)
-
-    return true
 end
 
 

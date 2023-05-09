@@ -9,14 +9,10 @@ local function handle_line_move_click(player, tags, event)
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
     local first_position = (floor.level > 1) and 2 or 1
+    Floor.shift(floor, line, first_position, translated_direction, spots_to_shift)
 
-    if Floor.shift(floor, line, first_position, translated_direction, spots_to_shift) then
-        calculation.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
-    else
-        local message = {"fp.error_list_item_cant_be_shifted", {"fp.pl_recipe", 1}, {"fp." .. tags.direction}}
-        title_bar.enqueue_message(player, message, "error", 1, true)
-    end
+    calculation.update(player, context.subfactory)
+    main_dialog.refresh(player, "subfactory")
 end
 
 local function handle_recipe_click(player, tags, action)
