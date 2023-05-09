@@ -3,9 +3,6 @@
 
 migrator = {}
 
--- Factory exchange strings from versions before this can no longer be imported
-local last_migratable_version = "0.18.0"
-
 -- Returns a table containing all existing migrations in order
 local migration_masterlist = {
     [1] = {version="0.18.20", migration=require("data.migrations.migration_0_18_20")},
