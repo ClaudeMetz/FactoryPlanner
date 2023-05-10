@@ -216,8 +216,8 @@ function machine_dialog.close(player, action)
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup
-        line.beacon = modal_data.beacon_backup
         ModuleSet.normalize(line.machine.module_set, {effects=true})
+        Line.set_beacon(modal_data.line, modal_data.beacon_backup)
     end
 end
 
