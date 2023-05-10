@@ -221,8 +221,6 @@ function preferences_dialog.open(player, modal_data)
 
     local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
     flow_content.style.horizontal_spacing = 12
-    local main_dialog_dimensions = data_util.get("ui_state", player).main_dialog_dimensions
-    flow_content.style.maximal_height = main_dialog_dimensions.height * 0.85
 
     local function add_content_frame()
         local content_frame = flow_content.add{type="frame", direction="vertical", style="inside_shallow_frame"}

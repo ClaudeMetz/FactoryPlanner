@@ -52,7 +52,7 @@ local scenes = {
 local shots = {
     function(scene)
         remote.call("screenshotter_input", "execute_action", 1, ("setup_" .. scene))
-        global.pause = 5
+        global.pause = 10
     end,
     function(scene)
         game.take_screenshot{path=(scene .. ".png"), show_gui=true, zoom=3}

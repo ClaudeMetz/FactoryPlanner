@@ -8,27 +8,23 @@
 
 local mod_gui = require("mod-gui")
 
-local function open_modal(player, type, modal_data)
-    main_dialog.toggle(player)
-    data_util.get("main_elements", player).main_frame.location = player.display_resolution  -- hack city
-    modal_dialog.enter(player, {type=type, modal_data=modal_data, skip_dimmer=true})
-end
-
 local function return_dimensions(scene, frame)
     local dimensions = {actual_size=frame.actual_size, location=frame.location}
     -- We do this on teardown so the frame has time to adjust all its sizes
     remote.call("screenshotter_output", "return_dimensions", scene, dimensions)
 end
 
-local function modal_teardown(player, scene)
-    local ui_state = data_util.get("ui_state", player)
-
-    return_dimensions(scene, ui_state.modal_data.modal_elements.modal_frame)
-    modal_dialog.exit(player, "cancel")
-
-    ui_util.properly_center_frame(player, ui_state.main_elements.main_frame, ui_state.main_dialog_dimensions)
+local function open_modal(player, type, modal_data)
     main_dialog.toggle(player)
+    data_util.get("main_elements", player).main_frame.location = player.display_resolution  -- hack city
+    modal_dialog.enter(player, {type=type, modal_data=modal_data, skip_dimmer=true})
 end
+
+local function modal_teardown(player, scene)
+    return_dimensions(scene, data_util.get("modal_elements", player).modal_frame)
+    modal_dialog.exit(player, "cancel")
+end
+
 
 local function get_handler(table, name)
     for _, handler_table in pairs(table) do
@@ -42,14 +38,15 @@ local function set_machine_default(player, proto_name, category_name)
     prototyper.defaults.set(player, "machines", proto_id, category_id)
 end
 
+
 local actions = {
     player_setup = function(player)
         local player_table = data_util.get("table", player)
 
         -- Mod settings
         settings.get_player_settings(player)["fp_display_gui_button"] = {value = false}
-        settings.get_player_settings(player)["fp_products_per_row"] = {value = 6}
-        settings.get_player_settings(player)["fp_subfactory_list_rows"] = {value = 16}
+        settings.get_player_settings(player)["fp_products_per_row"] = {value = 5}
+        settings.get_player_settings(player)["fp_subfactory_list_rows"] = {value = 18}
 
         -- Preferences
         player_table.preferences.recipe_filters = {disabled = true, hidden = false}
@@ -98,12 +95,13 @@ local actions = {
     end,
 
     setup_01_main_interface = function(player)
+        local translation_progress = mod_gui.get_frame_flow(player)["flib_translation_progress"]
+        if translation_progress then translation_progress.visible = false end
         main_dialog.toggle(player)
     end,
     teardown_01_main_interface = function(player)
         local main_frame = data_util.get("main_elements", player).main_frame
         return_dimensions("01_main_interface", main_frame)
-        main_dialog.toggle(player)
     end,
 
     setup_02_compact_interface = function(player)
@@ -113,8 +111,6 @@ local actions = {
         toggle_handler(player, nil, nil)
     end,
     teardown_02_compact_interface = function(player)
-        local translation_progress = mod_gui.get_frame_flow(player)["flib_translation_progress"]
-        if translation_progress then translation_progress.visible = false end
         local compact_frame = data_util.get("compact_elements", player).compact_frame
         return_dimensions("02_compact_interface", compact_frame)
         local toggle_handler = get_handler(compact_dialog.gui_events.on_gui_click, "switch_to_main_view")
