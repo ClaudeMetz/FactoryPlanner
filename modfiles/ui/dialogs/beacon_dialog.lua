@@ -109,6 +109,7 @@ function beacon_dialog.open(player, modal_data)
         local beacon_proto = prototyper.defaults.get(player, "beacons")
         local beacon_count = data_util.get("preferences", player).mb_defaults.beacon_count
         modal_data.object = Beacon.init(beacon_proto, beacon_count, nil, modal_data.line)
+        Line.set_beacon(modal_data.line, modal_data.object)
     end
 
     modal_data.module_set = modal_data.object.module_set
@@ -143,7 +144,7 @@ function beacon_dialog.close(player, action)
         main_dialog.refresh(player, "subfactory")
 
     else -- action == "cancel"
-        Line.set_beacon(modal_data.line, modal_data.backup_beacon)
+        Line.set_beacon(modal_data.line, modal_data.backup_beacon)  -- can write nil
     end
 end
 

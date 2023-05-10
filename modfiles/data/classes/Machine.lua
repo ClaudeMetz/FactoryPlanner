@@ -6,7 +6,7 @@ function Machine.init(proto, parent)
         proto = proto,
         count = 0,
         limit = nil,  -- will be set by the user
-        force_limit = true,
+        force_limit = true,  -- ignored if limit is not set
         fuel = nil,  -- needs to be set by calling Machine.find_fuel afterwards
         module_set = nil,  -- set right below
         total_effects = nil,
@@ -104,6 +104,7 @@ end
 function Machine.clone(self)
     local clone = Machine.unpack(Machine.pack(self))
     clone.parent = self.parent
+    clone.count = self.count  -- keep around to avoid recalc being needed
     Machine.validate(clone)
     return clone
 end

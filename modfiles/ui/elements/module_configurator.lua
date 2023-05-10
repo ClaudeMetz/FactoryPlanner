@@ -127,8 +127,9 @@ function module_configurator.refresh_effects_flow(modal_data)
 
     local lower_class = modal_data.object.class:lower()
     local object_label = modal_data.modal_elements[lower_class .. "_effects_label"]
-    object_label.parent.parent.visible = (effects_tooltip ~= "")
+    if not object_label or not object_label.valid then return end
 
+    object_label.parent.parent.visible = (effects_tooltip ~= "")
     if effects_tooltip ~= "" then
         object_label.caption = effects_tooltip
         modal_data.modal_elements["line_effects_label"].caption = modal_data.line.effects_tooltip
