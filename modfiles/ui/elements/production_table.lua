@@ -430,10 +430,10 @@ function production_table.refresh(player)
 
     -- Production lines
     local function render_lines(floor, indent)
-        metadata.line_count = Floor.count(floor, "Line")
-        metadata.level = floor.level
-
         for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+            metadata.line_count = Floor.count(floor, "Line")
+            metadata.level = floor.level
+
             for _, column_data in ipairs(production_columns) do
                 local flow = table_production.add{type="flow", direction="horizontal"}
                 builders[column_data.name](line, flow, metadata, indent)
