@@ -2,6 +2,16 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.65
+Date: 10. 05. 2023
+  Features:
     - Added a section to the Utility dialog where relevant blueprints can be stored on each subfactory
     - Added a live-updating list of module effects to the machine and beacon dialogs
     - Made it so all items of the same kind are highlighted when hovering over one in the compact dialog
