@@ -130,19 +130,17 @@ local function update_player_table(player)
         reload_data()
 
         local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
-        if next(archive_subfactories) then player_table.archive.selected_subfactory = archive_subfactories[1] end
+        player_table.archive.selected_subfactory = archive_subfactories[1]  -- can be nil
 
         local factory = player_table.factory
         local subfactories = Factory.get_in_order(factory, "Subfactory")
-        if next(subfactories) then
-            local subfactory_to_select = subfactories[1]
-            if factory.selected_subfactory ~= nil then
-                -- Get the selected subfactory from the factory to make sure it still exists
-                local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
-                if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
-            end
-            ui_util.context.set_subfactory(player, subfactory_to_select)
+        local subfactory_to_select = subfactories[1]  -- can be nil
+        if factory.selected_subfactory ~= nil then
+            -- Get the selected subfactory from the factory to make sure it still exists
+            local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
+            if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
         end
+        ui_util.context.set_subfactory(player, subfactory_to_select)
     end
 
     -- Translation tables and clipboard are re-initialized every time
@@ -278,7 +276,6 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 
             calculation.update(player, subfactory)
             main_dialog.rebuild(player, false)
-
         end
     end
 end)

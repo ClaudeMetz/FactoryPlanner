@@ -318,8 +318,8 @@ function NTH_TICK_HANDLERS.delete_subfactory_for_good(metadata)
 
     if data_util.get("flags", player).archive_open then
         refresh_after_subfactory_deletion(player, archive, removed_gui_position)
-    else  -- doing this conditional is a bit dumb, but it works (I think)
-        main_dialog.refresh(player, "all")
+    else  -- only need to refresh the archive button enabled state really
+        subfactory_list.refresh(player)
     end
 end
 
