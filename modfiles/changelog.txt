@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.66
+Date: 10. 05. 2023
   Changes:
     - Bumped the required Factorio version to 1.1.79
   Bugfixes:
