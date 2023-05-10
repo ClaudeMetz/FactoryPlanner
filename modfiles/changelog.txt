@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     - Bumped the required Factorio version to 1.1.79
   Bugfixes:
     - Fixed recipe move buttons not being enabled correctly when subfloors are folded out
+    - Fixed beacons with the overload mechanic being forced to 0 beacons instead of 1
     - (Hopefully) fixed a crash due to migration issues for subfactories in archive
 
 ---------------------------------------------------------------------------------------------------

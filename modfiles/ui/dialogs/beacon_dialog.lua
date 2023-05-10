@@ -22,7 +22,6 @@ local function add_beacon_frame(parent_flow, modal_data)
         style="heading_3_label"}
 
     local beacon_amount = (beacon.amount ~= 0) and tostring(beacon.amount) or ""
-    if BEACON_OVERLOAD_ACTIVE then beacon_amount = "1" end
     local textfield_amount = flow_beacon.add{type="textfield", text=beacon_amount, enabled=(not BEACON_OVERLOAD_ACTIVE),
         tags={mod="fp", on_gui_text_changed="beacon_amount"}}
     ui_util.setup_numeric_textfield(textfield_amount, true, false)
@@ -112,7 +111,9 @@ function beacon_dialog.open(player, modal_data)
         Line.set_beacon(modal_data.line, modal_data.object)
     end
 
+    if BEACON_OVERLOAD_ACTIVE then modal_data.object.amount = 1 end
     modal_data.module_set = modal_data.object.module_set
+
     local content_frame = modal_data.modal_elements.content_frame
     content_frame.style.minimal_width = MODULE_DIALOG_WIDTH
 
