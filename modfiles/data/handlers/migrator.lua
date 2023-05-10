@@ -29,6 +29,7 @@ local migration_masterlist = {
     [22] = {version="1.1.59", migration=require("data.migrations.migration_1_1_59")},
     [23] = {version="1.1.61", migration=require("data.migrations.migration_1_1_61")},
     [24] = {version="1.1.65", migration=require("data.migrations.migration_1_1_65")},
+    [25] = {version="1.1.66", migration=require("data.migrations.migration_1_1_66")},
 }
 
 -- ** LOCAL UTIL **
@@ -101,21 +102,22 @@ function migrator.migrate_player_table(player)
 
         -- Subfactory migrations
         for _, factory_name in pairs({"factory", "archive"}) do
-            local outdated_subfactories = {}
+            --local outdated_subfactories = {}
             for _, subfactory in pairs(Factory.get_all(player_table[factory_name], "Subfactory")) do
                 if subfactory.mod_version ~= old_version then  -- out-of-sync subfactory
-                    table.insert(outdated_subfactories, subfactory)
+                    error("Out of date subfactory, please report this to the mod author including the save file")
+                    --table.insert(outdated_subfactories, subfactory)
                 else
                     apply_migrations(migrations, "subfactory", subfactory, player)
                     subfactory.mod_version = global.mod_version
                 end
             end
 
-            -- Remove subfactories who weren't migrated along properly for some reason
+            --[[ -- Remove subfactories who weren't migrated along properly for some reason
             -- This is likely due to an old, now-fixed bug that left them behind
             for _, subfactory in pairs(outdated_subfactories) do
                 Factory.remove(player_table[factory_name], subfactory)
-            end
+            end ]]
         end
     end
 end

@@ -22,7 +22,11 @@ end
 
 
 function Factory.remove(self, dataset)
-    return Collection.remove(self[dataset.class], dataset)
+    local removed = Collection.remove(self[dataset.class], dataset)
+    if self.selected_subfactory and self.selected_subfactory.id == dataset.id then
+        self.selected_subfactory = self.Subfactory.datasets[1]  -- can be nil
+    end
+    return removed
 end
 
 function Factory.get(self, class, dataset_id)
