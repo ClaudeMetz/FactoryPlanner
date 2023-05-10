@@ -104,6 +104,8 @@ function Beacon.validate(self)
     local machine = self.parent.machine  -- make sure the machine can still be influenced by beacons
     if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end
 
+    if BEACON_OVERLOAD_ACTIVE then self.amount = 1 end
+
     self.valid = ModuleSet.validate(self.module_set) and self.valid
 
     return self.valid
