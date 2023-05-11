@@ -1,8 +1,5 @@
 local migration = {}
 
-function migration.global()
-end
-
 function migration.player_table(player_table)
     for _, factory_name in pairs({"factory", "archive"}) do
         local factory = player_table[factory_name]
@@ -15,12 +12,6 @@ function migration.player_table(player_table)
             end
         end
     end
-end
-
-function migration.subfactory(subfactory)
-end
-
-function migration.packed_subfactory(packed_subfactory)
 end
 
 return migration

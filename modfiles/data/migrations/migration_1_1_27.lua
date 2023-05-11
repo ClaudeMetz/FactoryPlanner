@@ -1,11 +1,5 @@
 local migration = {}
 
-function migration.global()
-end
-
-function migration.player_table(player_table)
-end
-
 function migration.subfactory(subfactory)
     for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
         for _, line in pairs(Floor.get_all(floor, "Line")) do

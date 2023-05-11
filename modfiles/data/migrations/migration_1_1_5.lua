@@ -1,8 +1,5 @@
 local migration = {}
 
-function migration.global()
-end
-
 function migration.player_table(player_table)
     player_table.ui_state.view_states = player_table.ui_state.view_state
     player_table.preferences.toggle_column = false

@@ -1,11 +1,5 @@
 local migration = {}
 
-function migration.global()
-end
-
-function migration.player_table(player_table)
-end
-
 function migration.subfactory(subfactory)
     subfactory.scopes = {}
 
@@ -16,9 +10,6 @@ function migration.subfactory(subfactory)
             line.Ingredient = Collection.init()
         end
     end
-end
-
-function migration.packed_subfactory(packed_subfactory)
 end
 
 return migration
