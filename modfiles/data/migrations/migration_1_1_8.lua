@@ -1,11 +1,5 @@
 local migration = {}
 
-function migration.global()
-end
-
-function migration.player_table(player_table)
-end
-
 function migration.subfactory(subfactory)
     -- Revert all the crap I did with the previous version
     for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
@@ -13,9 +7,6 @@ function migration.subfactory(subfactory)
             if line.subfloor then line.machine = nil end
         end
     end
-end
-
-function migration.packed_subfactory(packed_subfactory)
 end
 
 return migration

@@ -1,8 +1,5 @@
 local migration = {}
 
-function migration.global()
-end
-
 function migration.player_table(player_table)
     local preferences = player_table.preferences
 
@@ -18,12 +15,6 @@ function migration.player_table(player_table)
         preferences.line_comment_column = optional_columns.line_comments
         preferences.optional_production_columns = nil
     end
-end
-
-function migration.subfactory(subfactory)
-end
-
-function migration.packed_subfactory(packed_subfactory)
 end
 
 return migration
