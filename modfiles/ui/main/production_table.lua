@@ -170,7 +170,7 @@ function builders.machine(line, parent_flow, metadata)
             local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=module_tooltip,
                 tags={mod="fp", on_gui_click="add_machine_module", floor_id=line.parent.id, line_id=line.id},
                 style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
-            button.style.margin = 3
+            button.style.margin = 2
         end
     end
 end
@@ -187,7 +187,7 @@ function builders.beacon(line, parent_flow, metadata)
         local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=tooltip,
             tags={mod="fp", on_gui_click="add_line_beacon", floor_id=line.parent.id, line_id=line.id},
             style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
-        button.style.margin = 3
+        button.style.margin = 2
     else
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
         local number_line = {"", "\n", beacon.amount, " ", {"fp.pl_beacon", plural_parameter}}

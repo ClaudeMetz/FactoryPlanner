@@ -186,9 +186,7 @@ end
 function ModuleSet.pack(self)
     return {
         modules = Collection.pack(self.modules, Module),
-        -- module_limit restored by ensuing validation
-        module_count = self.module_count,
-        empty_slots = self.empty_slots,
+        -- count, limit, and empty_slots restored by ensuing validation
         class = self.class
     }
 end
@@ -202,6 +200,8 @@ end
 
 -- Needs validation: modules
 function ModuleSet.validate(self)
+    ModuleSet.normalize(self, {})  -- initialize module_count, empty_slots if necessary
+
     self.valid = Collection.validate_datasets(self.modules, Module)
     -- .normalize doesn't remove incompatible modules here, the above validation already marks them
     if self.valid and self.parent.valid then ModuleSet.normalize(self, {trim=true, sort=true, effects=true}) end
