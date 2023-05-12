@@ -177,7 +177,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
                     slider.style = (maximum_value == 1) and "fp_slider_module_none" or "fp_slider_module"
                 end
             end
-            :: skip ::
+            ::skip::
         end
     else
         modules_flow.clear()

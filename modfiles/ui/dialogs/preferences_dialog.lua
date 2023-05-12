@@ -268,7 +268,7 @@ function preferences_dialog.close(player, _)
     end
 
     if refresh.subfactory_list then
-        subfactory_list.refresh(player)
+        main_dialog.refresh(player, "subfactory_list")
     end
 
     local context_to_refresh = nil  -- don't refresh by default
