@@ -81,7 +81,7 @@ local function duplicate_subfactory(player, _, _)
     end
 
     ui_util.context.set_subfactory(player, inserted_clone)
-    calculation.update(player, inserted_clone)
+    solver.update(player, inserted_clone)
     main_dialog.refresh(player, "all")
 end
 
@@ -108,7 +108,7 @@ local function handle_subfactory_click(player, tags, action)
         if ui_state.flags.recalculate_on_subfactory_change then
             -- This flag is set when a textfield is changed but not confirmed
             ui_state.flags.recalculate_on_subfactory_change = false
-            calculation.update(player, previous_subfactory)
+            solver.update(player, previous_subfactory)
         end
         main_dialog.refresh(player, "all")
 

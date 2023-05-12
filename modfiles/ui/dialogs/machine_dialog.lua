@@ -211,7 +211,7 @@ function machine_dialog.close(player, action)
         ModuleSet.normalize(machine.module_set, {sort=true})
 
         local subfactory = data_util.get("context", player).subfactory
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
 
     else  -- action == "cancel"

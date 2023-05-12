@@ -76,7 +76,7 @@ end
 -- Updates the ingredient satisfaction data on every subfactory
 function Factory.update_ingredient_satisfactions(self)
     for _, subfactory in ipairs(Factory.get_in_order(self, "Subfactory")) do
-        calculation.determine_ingredient_satisfaction(subfactory)
+        solver.determine_ingredient_satisfaction(subfactory)
     end
 end
 

@@ -163,7 +163,7 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "delete" then
         Subfactory.remove(context.subfactory, item)
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         main_dialog.refresh(player, "all")  -- make sure product icons are updated
 
     elseif action == "specify_amount" then
@@ -233,7 +233,7 @@ function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options,
             end
         end
 
-        calculation.update(player, ui_state.context.subfactory)
+        solver.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end

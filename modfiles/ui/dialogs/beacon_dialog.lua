@@ -136,12 +136,12 @@ function beacon_dialog.close(player, action)
         local total_amount = tonumber(modal_data.modal_elements.beacon_total.text) or 0
         beacon.total_amount = (total_amount > 0) and total_amount or nil
 
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "delete" then
         Line.set_beacon(modal_data.line, nil)
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
 
     else -- action == "cancel"

@@ -17,7 +17,7 @@ require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.screenshotter")
 
-require("data.calculation.interface")
+require("data.calculation.solver")
 
 -- ** LOCAL UTIL **
 local function reload_settings(player)
@@ -216,7 +216,7 @@ local function handle_configuration_change()
         local player_table = global.players[index]
         for _, factory_name in pairs{"factory", "archive"} do
             for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                calculation.update(player, subfactory)
+                solver.update(player, subfactory)
             end
         end
     end
@@ -274,7 +274,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             Factory.update_product_definitions(player_table.archive, defined_by)
             local subfactory = player_table.ui_state.context.subfactory
 
-            calculation.update(player, subfactory)
+            solver.update(player, subfactory)
             main_dialog.rebuild(player, false)
         end
     end

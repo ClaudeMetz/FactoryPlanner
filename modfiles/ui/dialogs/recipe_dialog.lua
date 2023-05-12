@@ -116,7 +116,7 @@ local function attempt_adding_line(player, recipe_id)
         local defaults_message = Line.apply_mb_defaults(line, player)
         if not message then message = defaults_message end  -- a bit silly
 
-        calculation.update(player, ui_state.context.subfactory)
+        solver.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
     end

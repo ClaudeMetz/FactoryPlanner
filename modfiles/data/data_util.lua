@@ -31,7 +31,7 @@ function data_util.add_subfactories_by_string(player, export_string)
 
     for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
         if not subfactory.valid then Subfactory.repair(subfactory, player) end
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
     end
 end
 

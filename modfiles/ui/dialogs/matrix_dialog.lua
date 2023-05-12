@@ -88,8 +88,8 @@ local function swap_item_category(player, tags, _)
         table.insert(subfactory.matrix_free_items, item_proto)
     end
 
-    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(modal_data.subfactory_data)
-    local linear_dependence_data = matrix_solver.get_linear_dependence_data(modal_data.subfactory_data, matrix_metadata)
+    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(modal_data.subfactory_data)
+    local linear_dependence_data = matrix_engine.get_linear_dependence_data(modal_data.subfactory_data, matrix_metadata)
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
 
@@ -112,12 +112,12 @@ function matrix_dialog.early_abort_check(player, modal_data)
 
     if subfactory.selected_floor.Line.count == 0 then return true end
 
-    local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-    local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+    local subfactory_data = solver.generate_subfactory_data(player, subfactory)
+    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
 
     modal_data.subfactory_data = subfactory_data
 
-    local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
+    local linear_dependence_data = matrix_engine.get_linear_dependence_data(subfactory_data, matrix_metadata)
 
     if next(linear_dependence_data.linearly_dependent_recipes) then  -- too many ways to create the products
         modal_data.linearly_dependent_recipes = linear_dependence_data.linearly_dependent_recipes
@@ -167,7 +167,7 @@ function matrix_dialog.close(player, action)
         local subfactory = ui_state.context.subfactory
         subfactory.matrix_free_items = ui_state.modal_data.free_items
 
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "cancel" then

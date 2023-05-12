@@ -411,12 +411,12 @@ function picker_dialog.close(player, action)
             refresh_scope = "all"  -- need to refresh subfactory list too
         end
 
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, refresh_scope)
 
     elseif action == "delete" then
         Subfactory.remove(subfactory, modal_data.object)
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 

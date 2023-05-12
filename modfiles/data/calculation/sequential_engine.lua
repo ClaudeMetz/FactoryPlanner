@@ -1,5 +1,5 @@
 -- Contains the 'meat and potatoes' calculation model that struggles with some more complex setups
-sequential_solver = {}
+sequential_engine = {}
 
 -- ** LOCAL UTIL **
 local function update_line(line_data, aggregate)
@@ -18,12 +18,12 @@ local function update_line(line_data, aggregate)
 
     -- Determine production ratio
     local production_ratio, uncapped_production_ratio = 0, 0
-    local crafts_per_tick = calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+    local crafts_per_tick = solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
 
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Product[relevant_product.type][relevant_product.name]
-        local prodded_amount = calculation.util.determine_prodded_amount(relevant_product,
+        local prodded_amount = solver_util.determine_prodded_amount(relevant_product,
             crafts_per_tick, total_effects)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
@@ -54,7 +54,7 @@ local function update_line(line_data, aggregate)
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
-        local capped_production_ratio = calculation.util.determine_production_ratio(crafts_per_tick,
+        local capped_production_ratio = solver_util.determine_production_ratio(crafts_per_tick,
             machine_limit.limit, timescale, machine_proto.launch_sequence_time)
         production_ratio = machine_limit.force_limit and capped_production_ratio
             or math.min(production_ratio, capped_production_ratio)
@@ -63,7 +63,7 @@ local function update_line(line_data, aggregate)
 
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
-        local prodded_amount = calculation.util.determine_prodded_amount(item, crafts_per_tick, total_effects)
+        local prodded_amount = solver_util.determine_prodded_amount(item, crafts_per_tick, total_effects)
         return prodded_amount * production_ratio
     end
 
@@ -114,7 +114,7 @@ local function update_line(line_data, aggregate)
 
 
     -- Determine machine count
-    local machine_count = calculation.util.determine_machine_count(crafts_per_tick, production_ratio,
+    local machine_count = solver_util.determine_machine_count(crafts_per_tick, production_ratio,
         timescale, machine_proto.launch_sequence_time)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line
@@ -123,12 +123,12 @@ local function update_line(line_data, aggregate)
 
     -- Determine energy consumption (including potential fuel needs) and pollution
     local fuel_proto = line_data.fuel_proto
-    local energy_consumption, pollution = calculation.util.determine_energy_consumption_and_pollution(
+    local energy_consumption, pollution = solver_util.determine_energy_consumption_and_pollution(
         machine_proto, recipe_proto, fuel_proto, machine_count, total_effects)
 
     local fuel_amount = nil
     if fuel_proto ~= nil then  -- Seeing a fuel_proto here means it needs to be re-calculated
-        fuel_amount = calculation.util.determine_fuel_amount(energy_consumption, machine_proto.burner,
+        fuel_amount = solver_util.determine_fuel_amount(energy_consumption, machine_proto.burner,
             fuel_proto.fuel_value, timescale)
 
         local fuel_class = structures.class.init()
@@ -152,7 +152,7 @@ local function update_line(line_data, aggregate)
 
 
     -- Update the actual line with the calculated results
-    calculation.interface.set_line_result {
+    solver.set_line_result {
         player_index = aggregate.player_index,
         floor_id = aggregate.floor_id,
         line_id = line_data.id,
@@ -220,7 +220,7 @@ local function update_floor(floor_data, aggregate)
 
 
             -- Update the parent line of the subfloor with the results from the subfloor aggregate
-            calculation.interface.set_line_result {
+            solver.set_line_result {
                 player_index = aggregate.player_index,
                 floor_id = aggregate.floor_id,
                 line_id = line_data.id,
@@ -257,7 +257,7 @@ end
 
 
 -- ** TOP LEVEL **
-function sequential_solver.update_subfactory(subfactory_data)
+function sequential_engine.update_subfactory(subfactory_data)
     -- Initialize aggregate with the top level items
     local aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
     for _, product in ipairs(subfactory_data.top_level_products) do
@@ -267,7 +267,7 @@ function sequential_solver.update_subfactory(subfactory_data)
     update_floor(subfactory_data.top_floor, aggregate)  -- updates aggregate
 
     -- Fuels are combined with Ingredients for top-level purposes
-    calculation.interface.set_subfactory_result {
+    solver.set_subfactory_result {
         player_index = subfactory_data.player_index,
         energy_consumption = aggregate.energy_consumption,
         pollution = aggregate.pollution,

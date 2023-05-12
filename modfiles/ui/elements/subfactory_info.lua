@@ -7,7 +7,7 @@ local function repair_subfactory(player, _, _)
 
     Subfactory.repair(subfactory, player)
 
-    calculation.update(player, subfactory)
+    solver.update(player, subfactory)
     main_dialog.refresh(player, "all")  -- needs the full refresh to reset subfactory list buttons
 end
 
@@ -28,7 +28,7 @@ local function change_timescale(player, new_timescale)
         end
     end
 
-    calculation.update(player, subfactory)
+    solver.update(player, subfactory)
     -- View state updates itself automatically if it detects a timescale change
     main_dialog.refresh(player, "subfactory")
 end
@@ -65,7 +65,7 @@ local function handle_solver_change(player, _, event)
         end
     end
 
-    calculation.update(player, subfactory)
+    solver.update(player, subfactory)
     main_dialog.refresh(player, "subfactory")
 end
 
@@ -266,7 +266,7 @@ subfactory_info.gui_events = {
             handler = (function(player, _, _)
                 local subfactory = data_util.get("context", player).subfactory
                 subfactory.mining_productivity = 0
-                calculation.update(player, subfactory)
+                solver.update(player, subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)
         },
@@ -299,7 +299,7 @@ subfactory_info.gui_events = {
             handler = (function(player, _, _)
                 local ui_state = data_util.get("ui_state", player)
                 ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
-                calculation.update(player, ui_state.context.subfactory)
+                solver.update(player, ui_state.context.subfactory)
                 main_dialog.refresh(player, "subfactory")
             end)
         }

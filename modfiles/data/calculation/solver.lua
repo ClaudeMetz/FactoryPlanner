@@ -1,17 +1,13 @@
-require("sequential_solver")
-require("matrix_solver")
-require("structures")
+require("data.calculation.sequential_engine")
+require("data.calculation.matrix_engine")
+require("data.calculation.structures")
 
-calculation = {
-    interface = {},
-    util = {}
-}
-
+solver, solver_util = {}, {}
 
 -- ** LOCAL UTIL **
 local function set_blank_line(player, floor, line)
     local blank_class = structures.class.init()
-    calculation.interface.set_line_result{
+    solver.set_line_result{
         player_index = player.index,
         floor_id = floor.id,
         line_id = line.id,
@@ -29,7 +25,7 @@ end
 
 local function set_blank_subfactory(player, subfactory)
     local blank_class = structures.class.init()
-    calculation.interface.set_subfactory_result {
+    solver.set_subfactory_result {
         player_index = player.index,
         energy_consumption = 0,
         pollution = 0,
@@ -180,28 +176,28 @@ end
 
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
-function calculation.update(player, subfactory)
+function solver.update(player, subfactory)
     if subfactory ~= nil and subfactory.valid then
         local player_table = data_util.get("table", player)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 
-        local subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
+        local subfactory_data = solver.generate_subfactory_data(player, subfactory)
 
         if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
-            local matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+            local matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
 
             if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
                 subfactory.matrix_free_items = {}
-                subfactory_data = calculation.interface.generate_subfactory_data(player, subfactory)
-                matrix_metadata = matrix_solver.get_matrix_solver_metadata(subfactory_data)
+                subfactory_data = solver.generate_subfactory_data(player, subfactory)
+                matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
             end
 
             if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
-                local linear_dependence_data = matrix_solver.get_linear_dependence_data(subfactory_data, matrix_metadata)
+                local linear_dependence_data = matrix_engine.get_linear_dependence_data(subfactory_data, matrix_metadata)
                 if matrix_metadata.num_rows == matrix_metadata.num_cols
                         and #linear_dependence_data.linearly_dependent_recipes == 0 then
-                    matrix_solver.run_matrix_solver(subfactory_data, false)
+                    matrix_engine.run_matrix_solver(subfactory_data, false)
                     subfactory.linearly_dependant = false
                 else
                     set_blank_subfactory(player, subfactory)  -- reset subfactory by blanking everything
@@ -215,7 +211,7 @@ function calculation.update(player, subfactory)
                 set_blank_subfactory(player, subfactory)
             end
         else
-            sequential_solver.update_subfactory(subfactory_data)
+            sequential_engine.update_subfactory(subfactory_data)
         end
 
         player_table.active_subfactory = nil  -- reset after calculations have been carried out
@@ -223,14 +219,14 @@ function calculation.update(player, subfactory)
 end
 
 -- Updates the given subfactory's ingredient satisfactions
-function calculation.determine_ingredient_satisfaction(subfactory)
+function solver.determine_ingredient_satisfaction(subfactory)
     update_ingredient_satisfaction(Subfactory.get(subfactory, "Floor", 1), nil)
 end
 
 
 -- ** INTERFACE **
 -- Returns a table containing all the data needed to run the calculations for the given subfactory
-function calculation.interface.generate_subfactory_data(player, subfactory)
+function solver.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
@@ -253,7 +249,7 @@ function calculation.interface.generate_subfactory_data(player, subfactory)
 end
 
 -- Updates the active subfactories top-level data with the given result
-function calculation.interface.set_subfactory_result(result)
+function solver.set_subfactory_result(result)
     local player_table = global.players[result.player_index]
     local subfactory = player_table.active_subfactory
 
@@ -272,12 +268,12 @@ function calculation.interface.set_subfactory_result(result)
 
     -- Determine satisfaction-amounts for all line ingredients
     if player_table.preferences.ingredient_satisfaction then
-        calculation.determine_ingredient_satisfaction(subfactory)
+        solver.determine_ingredient_satisfaction(subfactory)
     end
 end
 
 -- Updates the given line of the given floor of the active subfactory
-function calculation.interface.set_line_result(result)
+function solver.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
     if subfactory == nil then return end
 
@@ -316,27 +312,27 @@ local function cap_effect(value)
 end
 
 -- Determines the number of crafts per tick for the given data
-function calculation.util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+function solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
     local machine_speed = machine_proto.speed * (1 + cap_effect(total_effects.speed))
     return machine_speed / recipe_proto.energy
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function calculation.util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
+function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
     crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
     return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function calculation.util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
+function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
     crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
     -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
     return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
 end
 
 -- Calculates the product amount after applying productivity bonuses
-function calculation.util.determine_prodded_amount(item, crafts_per_tick, total_effects)
+function solver_util.determine_prodded_amount(item, crafts_per_tick, total_effects)
     local productivity = math.max(total_effects.productivity, 0)  -- no negative productivity
     if productivity == 0 then return item.amount end
 
@@ -348,7 +344,7 @@ function calculation.util.determine_prodded_amount(item, crafts_per_tick, total_
 end
 
 -- Determines the amount of energy needed for a machine and the pollution that produces
-function calculation.util.determine_energy_consumption_and_pollution(machine_proto, recipe_proto,
+function solver_util.determine_energy_consumption_and_pollution(machine_proto, recipe_proto,
         fuel_proto, machine_count, total_effects)
     local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
     local energy_consumption = machine_count * (machine_proto.energy_usage * 60) * consumption_multiplier
@@ -363,6 +359,6 @@ function calculation.util.determine_energy_consumption_and_pollution(machine_pro
 end
 
 -- Determines the amount of fuel needed in the given context
-function calculation.util.determine_fuel_amount(energy_consumption, burner, fuel_value, timescale)
+function solver_util.determine_fuel_amount(energy_consumption, burner, fuel_value, timescale)
     return ((energy_consumption / burner.effectivity) / fuel_value) * timescale
 end

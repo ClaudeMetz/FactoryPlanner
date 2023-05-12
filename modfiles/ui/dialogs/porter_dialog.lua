@@ -256,7 +256,7 @@ function import_dialog.close(player, action)
                     imported_subfactory.last_valid_modset = modal_data.export_modset
                 end
 
-                calculation.update(player, imported_subfactory)
+                solver.update(player, imported_subfactory)
                 first_subfactory = first_subfactory or imported_subfactory
             end
         end
