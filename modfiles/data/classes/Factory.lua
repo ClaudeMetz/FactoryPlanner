@@ -79,3 +79,9 @@ function Factory.update_ingredient_satisfactions(self)
         calculation.determine_ingredient_satisfaction(subfactory)
     end
 end
+
+-- Needs validation: Subfactory
+function Factory.validate(self)
+    Collection.validate_datasets(self.Subfactory, Subfactory)
+    -- Factories can't be invalid, this is just to cleanly validate the subfactories
+end
