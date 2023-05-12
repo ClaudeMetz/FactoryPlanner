@@ -288,14 +288,17 @@ script.on_event(defines.events.on_tick, translator.on_tick)
 -- Keep translation going
 script.on_event(defines.events.on_string_translated, translator.on_string_translated)
 
--- Save translations once they are complete
-script.on_event(translator.on_player_dictionaries_ready, function(event)
+---@param event GuiEvent
+local function dictionaries_ready(event)
     local player = game.get_player(event.player_index)
     local player_table = data_util.get("table", player)
 
     player_table.translation_tables = translator.get_all(event.player_index)
     modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible
-end)
+end
+
+-- Save translations once they are complete
+script.on_event(translator.on_player_dictionaries_ready, dictionaries_ready)
 
 
 -- ** COMMANDS **
