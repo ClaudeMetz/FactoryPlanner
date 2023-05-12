@@ -74,7 +74,8 @@ function builders.recipe(line, parent_flow, metadata, indent)
     create_move_button(move_flow, "up", first_subfloor_line)
     create_move_button(move_flow, "down", first_subfloor_line)
 
-    local style, enabled, tutorial_tooltip, note = nil, true, "", ""
+    local style, enabled, tutorial_tooltip = nil, true, ""
+    local note = ""  ---@type LocalisedString
     if first_subfloor_line then
         style = "flib_slot_button_grey_small"
         enabled = false  -- first subfloor line is static
@@ -280,8 +281,8 @@ function builders.ingredients(line, parent_flow, metadata)
             ingredient, nil, machine_count)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
-        local style, enabled = "flib_slot_button_green_small", true
-        local satisfaction_line, note = "", nil
+        local style, enabled, note = "flib_slot_button_green_small", true, nil
+        local satisfaction_line = ""  ---@type LocalisedString
 
         if ingredient.proto.type == "entity" then
             style = "flib_slot_button_transparent_small"
@@ -327,7 +328,7 @@ function builders.fuel(line, parent_flow, metadata)
     local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, line.machine.count)
     if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
-    local satisfaction_line = ""
+    local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and fuel.amount > 0 then
         local satisfaction_percentage = (fuel.satisfied_amount / fuel.amount) * 100
         local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)

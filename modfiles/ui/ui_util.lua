@@ -281,7 +281,7 @@ function ui_util.format_machine_count(count, active, round_number)
         formatted_count = "0.01"  -- shows up as 0.0 on the button
     end
 
-    if round_number then formatted_count = math.ceil(formatted_count) end
+    if round_number then formatted_count = math.ceil(formatted_count  --[[@as number]]) end
 
     local plural_parameter = (tooltip_count == "1") and 1 or 2
     local amount_line = {"", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}

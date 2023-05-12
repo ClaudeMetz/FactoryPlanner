@@ -79,7 +79,8 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
         local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
-        local style, satisfaction_line = default_style, ""
+        local style = default_style
+        local satisfaction_line = ""  ---@type LocalisedString
         if not shows_floor_items and category == "product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
             local percentage_string = ui_util.format_number(satisfied_percentage, 3)

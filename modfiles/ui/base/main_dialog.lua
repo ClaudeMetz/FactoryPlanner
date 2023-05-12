@@ -47,8 +47,8 @@ function main_dialog.shrinkwrap_interface(player)
     end
 
     local setting_prototypes = game.mod_setting_prototypes
-    local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1]
-    local height_minimum = setting_prototypes["fp_subfactory_list_rows"].allowed_values[1]
+    local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1] --[[@as number]]
+    local height_minimum = setting_prototypes["fp_subfactory_list_rows"].allowed_values[1] --[[@as number]]
 
     local live_settings = settings.get_player_settings(player)
     live_settings["fp_products_per_row"] = {value = math.max(products_per_row, width_minimum)}
