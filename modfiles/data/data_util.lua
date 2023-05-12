@@ -71,7 +71,7 @@ function data_util.format_module_effects(effects, limit_effects)
     for effect_name, effect_value in pairs(effects) do
         if effect_value ~= 0 then
             effect_applies = true
-            local capped_indication = ""
+            local capped_indication = ""  ---@type LocalisedString
 
             if limit_effects then
                 if effect_name == "productivity" and effect_value < 0 then
@@ -212,7 +212,7 @@ function data_util.porter.get_subfactories(export_string)
     local export_table = nil
 
     if not pcall(function()
-        export_table = game.json_to_table(game.decode_string(export_string))
+        export_table = game.json_to_table(game.decode_string(export_string) --[[@as string]])
         assert(type(export_table) == "table")
     end) then return nil, "decoding_failure" end
 

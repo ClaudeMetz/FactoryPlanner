@@ -173,8 +173,9 @@ local function import_subfactories(player, _, _)
         add_info_label({"fp.error_message", {"fp.importer_" .. error}})
         ui_util.select_all(textfield_export_string)
     else
-        add_info_label({"fp.import_instruction_2"})
+        ---@cast import_factory -nil
 
+        add_info_label({"fp.import_instruction_2"})
         setup_subfactories_table(modal_elements, false)
         modal_data.subfactories = {}
 

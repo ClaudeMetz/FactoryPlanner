@@ -42,7 +42,9 @@ local function update_request_button(player, modal_data, subfactory)
     local modal_elements = modal_data.modal_elements
 
     local button_enabled, switch_enabled = true, true
-    local caption, tooltip, font_color = "", "", {}
+    local caption = ""  ---@type LocalisedString
+    local tooltip = ""  ---@type LocalisedString
+    local font_color = {}
 
     if subfactory.item_request_proxy ~= nil then
         caption = {"fp.cancel_request"}

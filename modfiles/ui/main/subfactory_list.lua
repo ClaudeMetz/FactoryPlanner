@@ -262,7 +262,7 @@ function subfactory_list.refresh(player)
         and {"fp.action_add_subfactory_by_product"} or {"fp.action_add_subfactory_by_name"}
 
     subfactory_list_elements.edit_button.enabled = (subfactory_exists)
-    subfactory_list_elements.duplicate_button.enabled = (subfactory_exists and selected_subfactory.valid)
+    subfactory_list_elements.duplicate_button.enabled = (selected_subfactory ~= nil and selected_subfactory.valid)
 
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
     local delay_in_minutes = math.floor(SUBFACTORY_DELETION_DELAY / 3600)

@@ -357,7 +357,7 @@ function generator.all_machines()
     local function generate_category_entry(category, proto)
         -- First, determine if there is a valid sprite for this machine
         local sprite = generator_util.determine_entity_sprite(proto)
-        if sprite == nil then return nil end
+        if sprite == nil then return {} end
 
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
@@ -754,14 +754,15 @@ function generator.all_wagons()
     local cargo_wagon_filter = {{filter="type", type="cargo-wagon"},
         {filter="flag", flag="hidden", invert=true, mode="and"}}
     for _, proto in pairs(game.get_filtered_entity_prototypes(cargo_wagon_filter)) do
-        if proto.get_inventory_size(1) > 0 then
+        local inventory_size = proto.get_inventory_size(defines.inventory.cargo_wagon)
+        if inventory_size > 0 then
             generator_util.data_structure.insert{
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = generator_util.determine_entity_sprite(proto),
                 rich_text = "[entity=" .. proto.name .. "]",
                 category = "cargo-wagon",
-                storage = proto.get_inventory_size(1)
+                storage = inventory_size
             }
         end
     end

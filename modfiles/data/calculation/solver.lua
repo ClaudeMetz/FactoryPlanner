@@ -66,7 +66,7 @@ local function generate_floor_data(player, subfactory, floor)
             local relevant_line = (line.parent.level > 1) and line.parent.defining_line or nil
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
-            if (line.parent.level > 1 and (relevant_line.percentage == 0 or not relevant_line.active))
+            if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else

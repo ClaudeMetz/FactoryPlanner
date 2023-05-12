@@ -54,7 +54,7 @@ function Subfactory.tostring(self, attach_products, export_format)
         if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red] " end
         caption = status_string .. caption
 
-        local trashed_string = ""
+        local trashed_string = ""  ---@type LocalisedString
         if self.tick_of_deletion then
             local ticks_left_in_trash = self.tick_of_deletion - game.tick
             local minutes_left_in_trash = math.ceil(ticks_left_in_trash / 3600)
@@ -210,7 +210,7 @@ function Subfactory.unpack(packed_self)
     end
 
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
-    local top_floor = self.selected_floor
+    local top_floor = self.selected_floor  --[[@as table]]
     Floor.unpack(packed_self.top_floor, top_floor)
     -- Make sure to create references to all subfloors after unpacking
     for _, line in pairs(Floor.get_all(top_floor, "Line")) do

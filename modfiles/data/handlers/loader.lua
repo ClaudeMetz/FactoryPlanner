@@ -7,7 +7,7 @@ local function ordered_recipe_groups()
     local group_dict = {}
 
     -- Make a dict with all recipe groups
-    if not global.all_recipes.recipes then return end
+    if not global.all_recipes.recipes then return {} end
     for _, recipe in pairs(global.all_recipes.recipes) do
         if group_dict[recipe.group.name] == nil then
             group_dict[recipe.group.name] = recipe.group
@@ -34,7 +34,7 @@ end
 local function recipe_map_from(item_type)
     local map = {}
 
-    if not global.all_recipes.recipes then return end
+    if not global.all_recipes.recipes then return {} end
     for _, recipe in pairs(global.all_recipes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
             map[item.type] = map[item.type] or {}
@@ -92,7 +92,7 @@ end
 local function module_name_map()
     local map = {}
 
-    if not global.all_modules then return end
+    if not global.all_modules then return {} end
     for _, category in pairs(global.all_modules.categories) do
         for _, module in pairs(category.modules) do
             map[module.name] = module
@@ -141,7 +141,7 @@ local function prototype_attributes()
 
     for _, type in pairs(relevant_prototypes) do
         local all_prototypes = global["all_" .. type]
-        if not all_prototypes or not all_prototypes.structure_type then return end
+        if not all_prototypes or not all_prototypes.structure_type then return {} end
 
         local generator_function = attribute_generators[type]
 
@@ -172,8 +172,6 @@ end
 -- ** TOP LEVEL **
 function loader.run()
     data_util.nth_tick.register_all()
-
-    --prototyper.util.build_translation_dictionaries()  -- necessary because we use local storage
 
     ORDERED_RECIPE_GROUPS = ordered_recipe_groups()
     RECIPE_MAPS = {
