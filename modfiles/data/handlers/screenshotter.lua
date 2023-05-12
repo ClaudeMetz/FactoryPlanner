@@ -78,7 +78,7 @@ local actions = {
 
         local hotness = Factory.get_by_gui_position(player_table.factory, "Subfactory", 3)
         ui_util.context.set_subfactory(player, hotness)
-        calculation.update(player, hotness)
+        solver.update(player, hotness)
         main_dialog.refresh(player, "all")
 
         -- Research

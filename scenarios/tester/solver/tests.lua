@@ -35,7 +35,7 @@ local function runner(test)
     local import_factory = data_util.porter.get_subfactories(export_string)
     local subfactory = Factory.get(import_factory, "Subfactory", 1)
     if not subfactory.valid then error("Loaded subfactory setup is invalid") end
-    calculation.update(game.get_player(1), subfactory)  -- jank
+    solver.update(game.get_player(1), subfactory)  -- jank
 
     return test.body(subfactory)
 end

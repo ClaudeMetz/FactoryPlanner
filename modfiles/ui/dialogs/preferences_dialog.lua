@@ -286,7 +286,7 @@ function preferences_dialog.close(player, _)
 
     if refresh.calculations then
         local context = data_util.get("context", player)
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         context_to_refresh = "subfactory"
     end
 

@@ -11,7 +11,7 @@ local function handle_line_move_click(player, tags, event)
     local first_position = (floor.level > 1) and 2 or 1
     Floor.shift(floor, line, first_position, translated_direction, spots_to_shift)
 
-    calculation.update(player, context.subfactory)
+    solver.update(player, context.subfactory)
     main_dialog.refresh(player, "subfactory")
 end
 
@@ -36,7 +36,7 @@ local function handle_recipe_click(player, tags, action)
 
             subfloor = Floor.init(line)  -- attaches itself to the given line automatically
             Subfactory.add(context.subfactory, subfloor)
-            calculation.update(player, context.subfactory)
+            solver.update(player, context.subfactory)
         end
 
         ui_util.context.set_floor(player, subfloor)
@@ -50,12 +50,12 @@ local function handle_recipe_click(player, tags, action)
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "delete" then
         Floor.remove(floor, line)
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "recipebook" then
@@ -78,7 +78,7 @@ end
 local function handle_percentage_confirmation(player, _, _)
     local ui_state = data_util.get("ui_state", player)
     ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
-    calculation.update(player, ui_state.context.subfactory)
+    solver.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
 end
 
@@ -108,7 +108,7 @@ local function handle_machine_click(player, tags, action)
         line.machine.force_limit = true
         local message = Line.apply_mb_defaults(line, player)
 
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, true) end
 
@@ -151,7 +151,7 @@ local function handle_beacon_click(player, tags, action)
 
     elseif action == "delete" then
         Line.set_beacon(line, nil)
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "recipebook" then
@@ -200,7 +200,7 @@ local function handle_module_click(player, tags, action)
         end
 
         ModuleSet.normalize(module_set, {effects=true})
-        calculation.update(player, context.subfactory)
+        solver.update(player, context.subfactory)
         main_dialog.refresh(player, "subfactory")
 
     elseif action == "recipebook" then
@@ -233,7 +233,7 @@ function GENERIC_HANDLERS.apply_item_options(player, options, action)
         relevant_line.percentage = (current_amount == 0) and 100
             or (relevant_line.percentage * item_amount) / current_amount
 
-        calculation.update(player, ui_state.context.subfactory)
+        solver.update(player, ui_state.context.subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end
@@ -251,7 +251,7 @@ local function handle_item_click(player, tags, action)
             -- Remove the priority_product if the already selected one is clicked
             line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
 
-            calculation.update(player, context.subfactory)
+            solver.update(player, context.subfactory)
             main_dialog.refresh(player, "subfactory")
         end
 

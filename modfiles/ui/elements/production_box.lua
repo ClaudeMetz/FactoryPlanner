@@ -4,7 +4,7 @@ production_box = {}
 local function refresh_production(player, _, _)
     local subfactory = data_util.get("context", player).subfactory
     if subfactory and subfactory.valid then
-        calculation.update(player, subfactory)
+        solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
     end
 end
@@ -18,7 +18,7 @@ local function paste_line(player, _, event)
         if not last_line then last_line = {parent=context.floor, class="Line", gui_position=0} end
 
         if ui_util.clipboard.paste(player, last_line) then
-            calculation.update(player, context.subfactory)
+            solver.update(player, context.subfactory)
             main_dialog.refresh(player, "subfactory")
         end
     end

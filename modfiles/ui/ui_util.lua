@@ -375,7 +375,7 @@ function ui_util.clipboard.paste(player, target)
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             ui_util.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
-            calculation.update(player, player_table.ui_state.context.subfactory)
+            solver.update(player, player_table.ui_state.context.subfactory)
             main_dialog.refresh(player, "subfactory")
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
