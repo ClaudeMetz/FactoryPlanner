@@ -1,14 +1,13 @@
-require("ui.elements.title_bar")
-require("ui.elements.subfactory_list")
-require("ui.elements.subfactory_info")
-require("ui.elements.view_state")
-require("ui.elements.item_boxes")
-require("ui.elements.production_box")
-require("ui.elements.production_table")
-require("ui.elements.production_handler")
+require("ui.main.title_bar")
+require("ui.main.subfactory_list")
+require("ui.main.subfactory_info")
+require("ui.main.item_boxes")
+require("ui.main.production_box")
+require("ui.main.production_table")
+require("ui.main.production_handler")
+require("ui.base.view_state")
 
 main_dialog = {}
-
 
 -- ** LOCAL UTIL **
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings

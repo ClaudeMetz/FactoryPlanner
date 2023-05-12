@@ -23,6 +23,7 @@ BEACON_OVERLOAD_ACTIVE = (
     or active_mods["beacon-overhaul"]
 ) and true
 
+
 require("util")  -- core.lualib
 fancytable = require('__flib__.table')  -- has more functionality than built-in table
 translator = require("__flib__.dictionary-lite")  -- translation module for localised search
@@ -31,10 +32,11 @@ require("data.init")
 require("data.data_util")
 
 require("ui.ui_util")
-require("ui.dialogs.main_dialog")
-require("ui.dialogs.compact_dialog")
-require("ui.dialogs.modal_dialog")
+require("ui.base.main_dialog")
+require("ui.base.compact_dialog")
+require("ui.base.modal_dialog")
 require("ui.event_handler")
+
 
 -- Some magic numbers to determine and calculate the dimensions of the main dialog
 FRAME_SPACING = 12
@@ -57,6 +59,7 @@ UTILITY_BLUEPRINT_LIMIT = 12
 MODULE_DIALOG_WIDTH = 460
 
 TUTORIAL_EXPORT_STRING = "eNrtGdtq2zD0V4ae4y7OutEF9rKxwmCDsT6WYmT5ONUmWZokh4bgf9+RLScmSUncpk3LDHmwj879LmdJpMqSORjLVUGmJD6Lz84nZETgTivjEjy14Mh0SVJqISC8/4gIueApvo/PYvz5d8qcMgstaFGAWbOqRsSWaXPKwZLp9ZIUVHpe11zOPnEH8q02KiuZQx0iyzgUDCJN2Z+bN1/vqNQCkL/jEiyj+Dz9MB6RQjnPjODJz4bYK6nS38BcIwR5OuWBQdo9MpCB5SiD5xwyMnWmBBS20J7E6+YNoFKVBQqIL1Cygb8lN5AlLXRJMsh5gZB0gUQBvEGVgnBJUCmnwgKydUonAuYgWrFMUOuNai2qbkbBpKQ9+uZVWmN+UUJAbRQJDHOhlPFKfUeVNn3SktVnTWB6oBtgXNdIj/Etow5mmClIxgzNHS9mXvc1iyR4v4FAx9pfjQI+Iog5h5ZlprzutVuRERgGhaMzBMVjdL2k7DYYt6k3sgWZClQhCljRuz5K5wplJYJL7lbysWRKAUkom+bNHpqcc+4WUUOzX5MuUTdNz9ce+1Gz2pVI4eS+VApWsBVHkNotEiuUt2C8KeEKra06wODyyic+Zb61bNscTvYYmeskIHYsvHigm60GyA72b43dFTs5umMnPR37ObiiGvWoTkO5eI2lOHn6UlxWj4vfeCN+k0MLo1cAufGN1fHn7qjN8xDF40QRvHzDWZSXpqB1GIaSfK3B3DGwh3g+aAxPXuEYXufMtuCQOrvFhnW/Y8FlvYD3Sz6azSnu2FnEuGEld8OePezZw5598j27GfCqwBF/ksIc1rVjTnimNLoyYjR97tE+xPGYcbQOQERaoOV7G5EEcdI52feK0FX4Zc7IF7SrDTPyBcxI67A2otQc8C3juNXYv6k2jeNIlZiXfu/fIUQJnkX16b5+fQuSMyq6Ibj0dNUpevX4aT50Sa0wQ0xUp8k+j6TUYqusPXiqHFk1bMkLP30zw4Xoqff/c62On/haHW9dq9eAq/ZPSBxPN9U/38n8Xw=="
+
 
 if DEVMODE then
     llog = require("llog")
