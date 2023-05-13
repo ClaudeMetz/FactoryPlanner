@@ -202,7 +202,7 @@ local function handle_item_button_click(player, tags, action)
 end
 
 
-function put_ingredients_into_cursor(player, _, _)
+local function put_ingredients_into_cursor(player, _, _)
     local context = data_util.get("context", player)
     local floor = context.floor
     local show_floor_items = data_util.get("preferences", player).show_floor_items

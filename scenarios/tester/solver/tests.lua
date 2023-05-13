@@ -32,7 +32,7 @@ local tests = {
 
 local function runner(test)
     local export_string = game.encode_string(parts.export_string(test.setup))
-    local import_factory = data_util.porter.get_subfactories(export_string)
+    local import_factory = data_util.porter.get_subfactories(export_string)  ---@cast import_factory -nil
     local subfactory = Factory.get(import_factory, "Subfactory", 1)
     if not subfactory.valid then error("Loaded subfactory setup is invalid") end
     solver.update(game.get_player(1), subfactory)  -- jank

@@ -51,7 +51,8 @@ function prototyper.finish()
 
     -- Verify tutorial subfactory so we don't have to later on
     -- This can't be done on_load since game is not available at that stage
-    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)  --[[@as table]]
+    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)
+    ---@cast imported_tutorial_factory -nil
     global.tutorial_subfactory_validity = (not error and Factory.get(imported_tutorial_factory, "Subfactory", 1).valid)
 
     -- Retain current modset to detect mod changes for subfactories that became invalid

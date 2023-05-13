@@ -148,7 +148,7 @@ local actions = {
 
     setup_05_machine = function(player)
         local floor = data_util.get("context", player).floor
-        local line = Collection.get_by_gui_position(floor.Line, 2)  --[[@as unknown]]
+        local line = Collection.get_by_gui_position(floor.Line, 2)  ---@cast line -nil
         local modal_data = {object=line.machine, line=line}
         open_modal(player, "machine", modal_data)
     end,
