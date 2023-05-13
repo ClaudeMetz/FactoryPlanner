@@ -53,7 +53,7 @@ function Factory.count(self, class) return self[class].count end
 
 -- Imports every subfactory in the given string to this Factory, returning a reference to the first one
 function Factory.import_by_string(self, export_string)
-    local import_factory = data_util.porter.get_subfactories(export_string)  --[[@as table]]
+    local import_factory = data_util.porter.get_subfactories(export_string)  ---@cast import_factory -nil
     -- No error handling here, as the export_string for this will always be known to work
 
     local first_subfactory = nil

@@ -210,7 +210,7 @@ function Subfactory.unpack(packed_self)
     end
 
     -- Floor unpacking is called on the top floor, which recursively goes through its subfloors
-    local top_floor = self.selected_floor  --[[@as table]]
+    local top_floor = self.selected_floor  ---@cast top_floor -nil
     Floor.unpack(packed_self.top_floor, top_floor)
     -- Make sure to create references to all subfloors after unpacking
     for _, line in pairs(Floor.get_all(top_floor, "Line")) do

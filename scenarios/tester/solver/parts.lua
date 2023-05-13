@@ -9,7 +9,7 @@ local parts = {}
 -- TODO Also, these parts are missing lots of things (like the line missing its beacon, for example)
 
 function parts.export_string(setup)
-    return {
+    return game.table_to_json({
         mod_version = "1.1.64",
         export_modset = {
             base = "1.1.80",
@@ -19,7 +19,7 @@ function parts.export_string(setup)
         subfactories = {
             setup
         }
-    }
+    })
 end
 
 function parts.subfactory(members)
