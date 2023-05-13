@@ -1,3 +1,28 @@
+---@class FPSubfactory
+---@field name string
+---@field timescale Timescale
+---@field energy_consumption number
+---@field pollution number
+---@field notes string
+---@field mining_productivity number | nil
+---@field blueprints string[]
+---@field Product FPCollection<FPItem>
+---@field Byproduct FPCollection<FPItem>
+---@field Ingredient FPCollection<FPItem>
+---@field Floor FPCollection<FPFloor>
+---@field matrix_free_items FPItemPrototype[] | nil
+---@field linearly_dependant boolean
+---@field selected_floor FPFloor
+---@field item_request_proxy LuaEntity | nil
+---@field tick_of_deletion uint | nil
+---@field last_valid_modset { [string]: string } | nil
+---@field mod_version string
+---@field valid boolean
+---@field id integer
+---@field gui_position integer
+---@field parent FPFactory
+---@field class "Subfactory"
+
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 

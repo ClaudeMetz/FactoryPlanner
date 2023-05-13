@@ -1,3 +1,11 @@
+---@class FPFuel
+---@field proto FPFuelPrototype
+---@field amount number
+---@field satisfied_amount number
+---@field valid boolean
+---@field parent FPLine
+---@field class "Fuel"
+
 -- This is essentially just a wrapper-'class' for a fuel prototype to add some data to it
 Fuel = {}
 

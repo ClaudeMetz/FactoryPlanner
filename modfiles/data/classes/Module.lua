@@ -1,3 +1,14 @@
+---@class FPModule
+---@field proto FPModulePrototype
+---@field amount integer
+---@field total_effects ModuleEffects
+---@field effects_tooltip string
+---@field valid boolean
+---@field id integer
+---@field gui_position integer
+---@field parent FPModuleSet
+---@field class "Module"
+
 -- 'Class' representing an module
 Module = {}
 

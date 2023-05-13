@@ -1,3 +1,16 @@
+---@class FPMachine
+---@field proto FPMachinePrototype
+---@field count number
+---@field limit number | nil
+---@field force_limit boolean
+---@field fuel FPFuel | nil
+---@field module_set FPModuleSet
+---@field total_effects ModuleEffects
+---@field effects_tooltip string
+---@field valid boolean
+---@field parent FPLine
+---@field class "Machine"
+
 -- Class representing a machine with its attached modules and fuel
 Machine = {}
 

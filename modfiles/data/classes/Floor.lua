@@ -1,3 +1,13 @@
+---@class FPFloor
+---@field level integer
+---@field origin_line FPLine | nil
+---@field defining_line FPLine | nil
+---@field Line FPCollection<FPLine>
+---@field valid boolean
+---@field id integer
+---@field parent FPSubfactory
+---@field class "Floor"
+
 -- 'Class' representing a floor of a subfactory with individual assembly lines
 Floor = {}
 

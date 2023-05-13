@@ -1,3 +1,9 @@
+---@class FPRecipe
+---@field proto FPRecipePrototype
+---@field production_type "output" | "input"
+---@field valid boolean
+---@field class "Recipe"
+
 -- This is essentially just a wrapper-'class' for a recipe prototype to add some data to it
 Recipe = {}
 

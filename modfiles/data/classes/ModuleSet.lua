@@ -1,3 +1,13 @@
+---@class FPModuleSet
+---@field modules FPCollection<FPModule>
+---@field module_count integer
+---@field module_limit integer
+---@field empty_slots integer
+---@field total_effects ModuleEffects
+---@field valid boolean
+---@field parent FPMachine | FPBeacon
+---@field class "ModuleSet"
+
 -- 'Class' representing a group of modules in a machine or beacon
 ModuleSet = {}
 
