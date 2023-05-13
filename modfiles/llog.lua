@@ -1,4 +1,6 @@
--- Internally used logging function for a single table
+--- Internally used logging function for a single table
+---@param table_to_print AnyBasic
+---@return string
 local function _llog(table_to_print)
     local excludes = LLOG_EXCLUDES or {}  -- Optional custom excludes defined by the parent mod
 
@@ -46,6 +48,7 @@ local function _llog(table_to_print)
 end
 
 -- User-facing function, handles multiple tables at being passed at once
+---@param ... AnyBasic
 local function llog(...)
     local info = debug.getinfo(2, "Sl")
     local out = "\n" .. info.short_src .. ":" .. info.currentline .. ":"
