@@ -1,3 +1,14 @@
+---@class FPBeacon
+---@field proto FPBeaconPrototype
+---@field amount number
+---@field total_amount number
+---@field module_set FPModuleSet
+---@field total_effects ModuleEffects
+---@field effects_tooltip string
+---@field valid boolean
+---@field parent FPLine
+---@field class "Beacon"
+
 -- This is a 'class' representing a (group of) beacon(s) and the modules attached to it
 Beacon = {}
 

@@ -1,3 +1,20 @@
+---@class RequiredAmount
+---@field defined_by "amount" | "belts" | "lanes"
+---@field amount number
+---@field belt_proto FPBeltPrototype
+
+---@class FPItem
+---@field proto FPItemPrototype
+---@field amount number
+---@field required_amount RequiredAmount
+---@field satisfied_amount number
+---@field top_level boolean
+---@field valid boolean
+---@field id integer
+---@field gui_position integer
+---@field parent FPSubfactory | FPLine
+---@field class "Product" | "Byproduct" | "Ingredient"
+
 -- 'Class' representing an item in the general sense
 Item = {}
 Product, Byproduct, Ingredient = Item, Item, Item  -- allows _G[class] to work for all items

@@ -1,3 +1,28 @@
+---@class FPLine
+---@field recipe FPRecipe | nil
+---@field active boolean | nil
+---@field done boolean
+---@field percentage number
+---@field machine FPMachine | nil
+---@field beacon FPBeacon | nil
+---@field total_effects ModuleEffects
+---@field effects_tooltip LocalisedString
+---@field energy_consumption number
+---@field pollution number
+---@field Product FPCollection<FPItem>
+---@field Byproduct FPCollection<FPItem>
+---@field Ingredient FPCollection<FPItem>
+---@field priority_product_proto FPItemPrototype
+---@field comment string | nil
+---@field production_ratio number | nil
+---@field uncapped_production_ratio number | nil
+---@field subfloor FPFloor | nil
+---@field valid boolean
+---@field id integer
+---@field gui_position integer
+---@field parent FPFloor
+---@field class "Line"
+
 -- 'Class' representing an assembly line producing a recipe or representing a subfloor
 Line = {}
 

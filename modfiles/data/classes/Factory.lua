@@ -1,3 +1,8 @@
+---@class FPFactory
+---@field Subfactory FPCollection<FPSubfactory>
+---@field selected_subfactory FPSubfactory
+---@field class "Factory"
+
 -- 'Class' representing the whole of a players actual data, including all subfactories
 Factory = {}
 

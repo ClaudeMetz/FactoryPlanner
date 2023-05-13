@@ -1,3 +1,9 @@
+---@class FPCollection<T>
+---@field datasets { [integer]: `T` }
+---@field index integer
+---@field count integer
+---@field class "Collection"
+
 -- 'Class' representing a list of objects/datasets with some useful methods
 -- (An object only becomes a dataset once it is added to the collection)
 Collection = {}
