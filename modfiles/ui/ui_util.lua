@@ -6,8 +6,10 @@ ui_util = {
     switch = {}
 }
 
--- ** GUI **
 -- Properly centers the given frame (need width/height parameters cause no API-read exists)
+---@param player LuaPlayer
+---@param frame LuaGuiElement
+---@param dimensions DisplayResolution
 function ui_util.properly_center_frame(player, frame, dimensions)
     local resolution, scale = player.display_resolution, player.display_scale
     local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
@@ -15,11 +17,15 @@ function ui_util.properly_center_frame(player, frame, dimensions)
     frame.location = {x_offset, y_offset}
 end
 
+---@param textfield LuaGuiElement
 function ui_util.setup_textfield(textfield)
     textfield.lose_focus_on_confirm = true
     textfield.clear_and_focus_on_right_click = true
 end
 
+---@param textfield LuaGuiElement
+---@param decimal boolean
+---@param negative boolean
 function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     textfield.lose_focus_on_confirm = true
     textfield.clear_and_focus_on_right_click = true
@@ -28,16 +34,21 @@ function ui_util.setup_numeric_textfield(textfield, decimal, negative)
     textfield.allow_negative = (negative or false)
 end
 
+---@param textfield LuaGuiElement
 function ui_util.select_all(textfield)
     textfield.focus()
     textfield.select_all()
 end
 
 
+---@param player LuaPlayer
+---@param text LocalisedString
 function ui_util.create_flying_text(player, text)
     player.create_local_flying_text{text=text, create_at_cursor=true}
 end
 
+---@param player LuaPlayer
+---@param blueprint_entities BlueprintEntity[]
 function ui_util.create_cursor_blueprint(player, blueprint_entities)
     local script_inventory = game.create_inventory(1)
     local blank_slot = script_inventory[1]
@@ -49,6 +60,10 @@ function ui_util.create_cursor_blueprint(player, blueprint_entities)
     script_inventory.destroy()
 end
 
+---@param player LuaPlayer
+---@param line FPLine
+---@param object FPMachine | FPBeacon
+---@return boolean success
 function ui_util.put_entity_into_cursor(player, line, object)
     local entity_prototype = game.entity_prototypes[object.proto.name]
     if entity_prototype.has_flag("not-blueprintable") or not entity_prototype.has_flag("player-creation")
@@ -74,6 +89,9 @@ function ui_util.put_entity_into_cursor(player, line, object)
     return true
 end
 
+---@param player LuaPlayer
+---@param items { [string]: number }
+---@return boolean success
 function ui_util.put_item_combinator_into_cursor(player, items)
     local combinator_proto = game.entity_prototypes["constant-combinator"]
     if combinator_proto == nil then
@@ -85,7 +103,7 @@ function ui_util.put_item_combinator_into_cursor(player, items)
     end
     local filter_limit = combinator_proto.item_slot_count
 
-    local blueprint_entities = {}
+    local blueprint_entities = {}  ---@type BlueprintEntity[]
     local current_combinator, current_filter_count = nil, 0
     local next_entity_number, next_position = 1, {0, 0}
 
@@ -114,6 +132,8 @@ function ui_util.put_item_combinator_into_cursor(player, items)
         })
     end
 
+    ---@param main_entity BlueprintEntity
+    ---@param other_entity BlueprintEntity
     local function connect_if_entity_exists(main_entity, other_entity)
         if other_entity ~= nil then
             local entry = {entity_id = other_entity.entity_number}
@@ -130,6 +150,9 @@ function ui_util.put_item_combinator_into_cursor(player, items)
     return true
 end
 
+---@param player LuaPlayer
+---@param proto FPItemPrototype | FPFuelPrototype
+---@param amount number
 function ui_util.add_item_to_cursor_combinator(player, proto, amount)
     if proto.type ~= "item" then
         ui_util.create_flying_text(player, {"fp.impossible_to_blueprint_fluid"})
@@ -154,6 +177,9 @@ end
 
 
 -- This function is only called when Recipe Book is active, so no need to check for the mod
+---@param player LuaPlayer
+---@param type string
+---@param name string
 function ui_util.open_in_recipebook(player, type, name)
     local message = nil
 
@@ -169,6 +195,7 @@ end
 
 
 -- Destroys the toggle-main-dialog-button if present
+---@param player LuaPlayer
 function ui_util.destroy_mod_gui(player)
     local button_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = button_flow["fp_button_toggle_interface"]
@@ -186,6 +213,7 @@ function ui_util.destroy_mod_gui(player)
 end
 
 -- Toggles the visibility of the toggle-main-dialog-button
+---@param player LuaPlayer
 function ui_util.toggle_mod_gui(player)
     local enable = data_util.get("settings", player).show_gui_button
 
@@ -202,6 +230,7 @@ function ui_util.toggle_mod_gui(player)
 end
 
 -- Destroys all GUIs so they are loaded anew the next time they are shown
+---@param player LuaPlayer
 function ui_util.reset_player_gui(player)
     ui_util.destroy_mod_gui(player)  -- mod_gui button
 
@@ -213,11 +242,11 @@ function ui_util.reset_player_gui(player)
 end
 
 
--- ** Number formatting **
 -- Formats given number to given number of significant digits
+---@param number number
+---@param precision integer
+---@return string formatted_number
 function ui_util.format_number(number, precision)
-    if number == nil then return nil end
-
     -- To avoid scientific notation, chop off the decimals points for big numbers
     if (number / (10 ^ precision)) >= 1 then
         return ("%d"):format(number)
@@ -242,6 +271,10 @@ function ui_util.format_number(number, precision)
 end
 
 -- Returns string representing the given power
+---@param value number
+---@param unit string
+---@param precision integer
+---@return LocalisedString formatted_number
 function ui_util.format_SI_value(value, unit, precision)
     local prefixes = {"", "kilo", "mega", "giga", "tera", "peta", "exa", "zetta", "yotta"}
     local units = {
@@ -270,6 +303,11 @@ function ui_util.format_SI_value(value, unit, precision)
 end
 
 
+---@param count number
+---@param active boolean
+---@param round_number boolean
+---@return string formatted_count
+---@return LocalisedString tooltip_line
 function ui_util.format_machine_count(count, active, round_number)
     -- The formatting is used to 'round down' when the decimal is very small
     local formatted_count = ui_util.format_number(count, 3)
@@ -281,17 +319,18 @@ function ui_util.format_machine_count(count, active, round_number)
         formatted_count = "0.01"  -- shows up as 0.0 on the button
     end
 
-    if round_number then formatted_count = math.ceil(formatted_count  --[[@as number]]) end
+    if round_number then formatted_count = tostring(math.ceil(formatted_count --[[@as number]])) end
 
     local plural_parameter = (tooltip_count == "1") and 1 or 2
-    local amount_line = {"", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
+    local tooltip_line = {"", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
 
-    return formatted_count, amount_line
+    return formatted_count, tooltip_line
 end
 
 
--- ** Context **
 -- Creates a blank context referencing which part of the Factory is currently displayed
+---@param player LuaPlayer
+---@return table context
 function ui_util.context.create(player)
     return {
         factory = global.players[player.index].factory,
@@ -301,6 +340,8 @@ function ui_util.context.create(player)
 end
 
 -- Updates the context to match the newly selected factory
+---@param player LuaPlayer
+---@param factory FPFactory
 function ui_util.context.set_factory(player, factory)
     local context = data_util.get("context", player)
     context.factory = factory
@@ -310,6 +351,8 @@ function ui_util.context.set_factory(player, factory)
 end
 
 -- Updates the context to match the newly selected subfactory
+---@param player LuaPlayer
+---@param subfactory FPSubfactory | nil
 function ui_util.context.set_subfactory(player, subfactory)
     local context = data_util.get("context", player)
     context.factory.selected_subfactory = subfactory
@@ -318,6 +361,8 @@ function ui_util.context.set_subfactory(player, subfactory)
 end
 
 -- Updates the context to match the newly selected floor
+---@param player LuaPlayer
+---@param floor FPFloor | nil
 function ui_util.context.set_floor(player, floor)
     local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
@@ -325,6 +370,9 @@ function ui_util.context.set_floor(player, floor)
 end
 
 -- Changes the context to the floor indicated by the given destination
+---@param player LuaPlayer
+---@param destination "up" | "down"
+---@return boolean success
 function ui_util.context.change_floor(player, destination)
     local context = data_util.get("context", player)
     local subfactory, floor = context.subfactory, context.floor
@@ -346,8 +394,9 @@ function ui_util.context.change_floor(player, destination)
 end
 
 
--- ** CLIPBOARD **
 -- Copies the given object into the player's clipboard as a packed object
+---@param player LuaPlayer
+---@param object FPObject
 function ui_util.clipboard.copy(player, object)
     local player_table = data_util.get("table", player)
     player_table.clipboard = {
@@ -359,6 +408,8 @@ function ui_util.clipboard.copy(player, object)
 end
 
 -- Tries pasting the player's clipboard content onto the given target
+---@param player LuaPlayer
+---@param target LuaObject
 function ui_util.clipboard.paste(player, target)
     local player_table = data_util.get("table", player)
     local clip = player_table.clipboard
@@ -395,9 +446,18 @@ function ui_util.clipboard.paste(player, target)
 end
 
 
--- ** Switch utility **
+---@alias SwitchState "left" | "right"
+
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
+---@param parent_flow LuaGuiElement
+---@param action string
+---@param additional_tags Tags
+---@param state SwitchState
+---@param caption LocalisedString
+---@param tooltip LocalisedString
+---@param label_first boolean
+---@return LuaGuiElement created_switch
 function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)
     if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
 
@@ -406,9 +466,8 @@ function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, 
     local switch, label
 
     local function add_switch()
-        local tags = {mod="fp", on_gui_switch_state_changed=action}
-        for key, value in pairs(additional_tags) do tags[key] = value end
-        switch = flow.add{type="switch", tags=tags, switch_state=state,
+        additional_tags.mod = "fp"; additional_tags.on_gui_switch_state_changed = action
+        switch = flow.add{type="switch", tags=additional_tags, switch_state=state,
             left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
     end
 
@@ -424,10 +483,14 @@ function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, 
     return switch
 end
 
+---@param state SwitchState
+---@return boolean converted_state
 function ui_util.switch.convert_to_boolean(state)
     return (state == "left") and true or false
 end
 
+---@param boolean boolean
+---@return SwitchState converted_state
 function ui_util.switch.convert_to_state(boolean)
     return boolean and "left" or "right"
 end
