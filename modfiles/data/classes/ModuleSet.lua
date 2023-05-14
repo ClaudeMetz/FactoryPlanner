@@ -217,13 +217,15 @@ end
 function ModuleSet.validate(self)
     self.valid = Collection.validate_datasets(self.modules, Module)
 
-    if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
-        self.module_limit = self.parent.proto.module_limit
-        ModuleSet.count_modules(self)
-    end
+    if self.valid and self.parent.valid then
+        if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
+            self.module_limit = self.parent.proto.module_limit
+            ModuleSet.count_modules(self)
+        end
 
-    -- .normalize doesn't remove incompatible modules here, the above validation already marks them
-    if self.valid and self.parent.valid then ModuleSet.normalize(self, {trim=true, sort=true, effects=true}) end
+        -- .normalize doesn't remove incompatible modules here, the above validation already marks them
+        ModuleSet.normalize(self, {trim=true, sort=true, effects=true})
+    end
 
     return self.valid
 end
