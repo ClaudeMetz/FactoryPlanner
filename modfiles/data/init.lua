@@ -20,24 +20,6 @@ require("data.handlers.screenshotter")
 require("data.calculation.solver")
 
 -- ** LOCAL UTIL **
-local function reload_settings(player)
-    -- Writes the current user mod settings to their player_table, for read-performance
-    local settings = settings.get_player_settings(player)
-    local settings_table = {}
-
-    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
-
-    settings_table.show_gui_button = settings["fp_display_gui_button"].value
-    settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
-    settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
-    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
-    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
-    settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
-    settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
-
-    global.players[player.index].settings = settings_table
-end
-
 local function reload_preferences(player)
     -- Reloads the user preferences, incorporating previous preferences if possible
     local preferences = global.players[player.index].preferences
@@ -72,6 +54,24 @@ local function reload_preferences(player)
     }
 end
 
+local function reload_settings(player)
+    -- Writes the current user mod settings to their player_table, for read-performance
+    local settings = settings.get_player_settings(player)
+    local settings_table = {}
+
+    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
+
+    settings_table.show_gui_button = settings["fp_display_gui_button"].value
+    settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
+    settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
+    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
+    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
+    settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
+    settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
+
+    global.players[player.index].settings = settings_table
+end
+
 local function reset_ui_state(player)
     local ui_state_table = {}
 
@@ -100,55 +100,50 @@ local function reset_ui_state(player)
 end
 
 
--- Makes sure that the given player has a player_table and a reset gui state
-local function update_player_table(player)
-    local function reload_data()
-        reload_settings(player)  -- reloads the settings of the player
-        reload_preferences(player) -- reloads and adjusts the player's preferences
-        reset_ui_state(player)  -- Resets the player's UI state
-    end
-
+local function create_player_table(player)
+    global.players[player.index] = {}
     local player_table = global.players[player.index]
-    if player_table == nil then  -- new player
-        global.players[player.index] = {}
-        player_table = global.players[player.index]
 
-        player_table.mod_version = global.mod_version
-        player_table.index = player.index
+    player_table.mod_version = global.mod_version
+    player_table.index = player.index
 
-        player_table.factory = Factory.init()
-        player_table.archive = Factory.init()
+    player_table.factory = Factory.init()
+    player_table.archive = Factory.init()
 
-        player_table.settings = {}
-        player_table.preferences = {}
-        player_table.ui_state = {}
-        reload_data()
+    player_table.preferences = {}
+    reload_preferences(player)
 
-        title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
+    reload_settings(player)
+    reset_ui_state(player)
 
-    else  -- existing player, only needs to update
-        reload_data()
+    title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
+end
 
-        local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
-        player_table.archive.selected_subfactory = archive_subfactories[1]  -- can be nil
+local function refresh_player_table(player)
+    local player_table = global.players[player.index]
 
-        local factory = player_table.factory
-        local subfactories = Factory.get_in_order(factory, "Subfactory")
-        local subfactory_to_select = subfactories[1]  -- can be nil
-        if factory.selected_subfactory ~= nil then
-            -- Get the selected subfactory from the factory to make sure it still exists
-            local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
-            if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
-        end
-        ui_util.context.set_subfactory(player, subfactory_to_select)
+    reload_preferences(player)
+    reload_settings(player)
+    reset_ui_state(player)
+
+    -- This whole reset thing will be moved ...
+    local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
+    player_table.archive.selected_subfactory = archive_subfactories[1]  -- can be nil
+
+    local factory = player_table.factory
+    local subfactories = Factory.get_in_order(factory, "Subfactory")
+    local subfactory_to_select = subfactories[1]  -- can be nil
+    if factory.selected_subfactory ~= nil then
+        -- Get the selected subfactory from the factory to make sure it still exists
+        local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
+        if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
     end
+    ui_util.context.set_subfactory(player, subfactory_to_select)
 
-    -- Translation tables and clipboard are re-initialized every time
     player_table.translation_tables = nil
     player_table.clipboard = nil
-
-    return player_table
 end
+
 
 local function global_init()
     -- Set up a new save for development if necessary
@@ -177,7 +172,7 @@ local function global_init()
     prototyper.util.build_translation_dictionaries()
 
     -- Create player tables for all existing players
-    for _, player in pairs(game.players) do update_player_table(player) end
+    for _, player in pairs(game.players) do create_player_table(player) end
 end
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
@@ -191,7 +186,8 @@ local function handle_configuration_change()
         migrator.migrate_player_table(player)
 
         -- Create or update player_table
-        local player_table = update_player_table(player)
+        refresh_player_table(player)
+        local player_table = global.players[player.index]
 
         -- Migrate the default prototypes for the player
         prototyper.run(player_table)
@@ -214,11 +210,8 @@ local function handle_configuration_change()
 
         -- Update factory and archive calculations in case prototypes changed in a relevant way
         local player_table = global.players[index]
-        for _, factory_name in pairs{"factory", "archive"} do
-            for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-                solver.update(player, subfactory)
-            end
-        end
+        Factory.update_calculations(player_table.factory)
+        Factory.update_calculations(player_table.archive)
     end
 end
 
@@ -236,7 +229,7 @@ script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
 
     -- Sets up the player_table for the new player
-    update_player_table(player)
+    create_player_table(player)
 
     -- Sets up the mod-GUI for the new player if necessary
     ui_util.toggle_mod_gui(player)
