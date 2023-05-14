@@ -33,7 +33,7 @@ end
 
 function Module.set_amount(self, new_amount)
     self.amount = new_amount
-    ModuleSet.normalize(self.parent, {})  -- adjust metadata
+    ModuleSet.count_modules(self.parent)
     Module.summarize_effects(self)
 end
 

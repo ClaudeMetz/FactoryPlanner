@@ -28,25 +28,25 @@ end
 function ModuleSet.add(self, proto, amount)
     local object = Module.init(proto, amount, self)
     local dataset = Collection.add(self.modules, object)
-    ModuleSet.normalize(self, {})  -- adjust metadata
+    ModuleSet.count_modules(self)
     return dataset
 end
 
 function ModuleSet.remove(self, dataset)
     Collection.remove(self.modules, dataset)
-    ModuleSet.normalize(self, {})  -- adjust metadata
+    ModuleSet.count_modules(self)
 end
 
 function ModuleSet.replace(self, dataset, object)
     object.parent = self
     local replacement = Collection.replace(self.modules, dataset, object)
-    ModuleSet.normalize(self, {})  -- adjust metadata
+    ModuleSet.count_modules(self)
     return replacement
 end
 
 function ModuleSet.clear(self)
     self.modules = Collection.init()
-    ModuleSet.normalize(self, {})  -- adjust metadata
+    ModuleSet.count_modules(self)
 end
 
 function ModuleSet.get(self, dataset_id)
@@ -78,10 +78,15 @@ function ModuleSet.normalize(self, features)
     if features.sort then ModuleSet.sort(self) end
     if features.effects then ModuleSet.summarize_effects(self) end
 
-    self.module_count = 0
+    ModuleSet.count_modules(self)
+end
+
+function ModuleSet.count_modules(self)
+    local count = 0
     for _, module in pairs(self.modules.datasets) do
-        self.module_count = self.module_count + module.amount
+        count = count + module.amount
     end
+    self.module_count = count
     self.empty_slots = self.module_limit - self.module_count
 end
 
@@ -210,9 +215,13 @@ end
 
 -- Needs validation: modules
 function ModuleSet.validate(self)
-    ModuleSet.normalize(self, {})  -- initialize module_count, empty_slots if necessary
-
     self.valid = Collection.validate_datasets(self.modules, Module)
+
+    if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
+        self.module_limit = self.parent.proto.module_limit
+        ModuleSet.count_modules(self)
+    end
+
     -- .normalize doesn't remove incompatible modules here, the above validation already marks them
     if self.valid and self.parent.valid then ModuleSet.normalize(self, {trim=true, sort=true, effects=true}) end
 
