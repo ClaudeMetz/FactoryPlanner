@@ -352,7 +352,7 @@ end
 
 -- Updates the context to match the newly selected subfactory
 ---@param player LuaPlayer
----@param subfactory FPSubfactory | nil
+---@param subfactory FPSubfactory?
 function ui_util.context.set_subfactory(player, subfactory)
     local context = data_util.get("context", player)
     context.factory.selected_subfactory = subfactory
@@ -362,7 +362,7 @@ end
 
 -- Updates the context to match the newly selected floor
 ---@param player LuaPlayer
----@param floor FPFloor | nil
+---@param floor FPFloor?
 function ui_util.context.set_floor(player, floor)
     local context = data_util.get("context", player)
     context.subfactory.selected_floor = floor
@@ -396,7 +396,7 @@ end
 
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
----@param object FPObject
+---@param object FPCopyableObject
 function ui_util.clipboard.copy(player, object)
     local player_table = data_util.get("table", player)
     player_table.clipboard = {
@@ -409,7 +409,7 @@ end
 
 -- Tries pasting the player's clipboard content onto the given target
 ---@param player LuaPlayer
----@param target LuaObject
+---@param target FPCopyableObject
 function ui_util.clipboard.paste(player, target)
     local player_table = data_util.get("table", player)
     local clip = player_table.clipboard

@@ -1,7 +1,7 @@
 ---@class FPFloor
 ---@field level integer
----@field origin_line FPLine | nil
----@field defining_line FPLine | nil
+---@field origin_line FPLine?
+---@field defining_line FPLine?
 ---@field Line FPCollection<FPLine>
 ---@field valid boolean
 ---@field id integer

@@ -1,10 +1,10 @@
 ---@class FPLine
----@field recipe FPRecipe | nil
----@field active boolean | nil
+---@field recipe FPRecipe?
+---@field active boolean?
 ---@field done boolean
 ---@field percentage number
----@field machine FPMachine | nil
----@field beacon FPBeacon | nil
+---@field machine FPMachine?
+---@field beacon FPBeacon?
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
 ---@field energy_consumption number
@@ -13,10 +13,10 @@
 ---@field Byproduct FPCollection<FPItem>
 ---@field Ingredient FPCollection<FPItem>
 ---@field priority_product_proto FPItemPrototype
----@field comment string | nil
----@field production_ratio number | nil
----@field uncapped_production_ratio number | nil
----@field subfloor FPFloor | nil
+---@field comment string?
+---@field production_ratio number?
+---@field uncapped_production_ratio number?
+---@field subfloor FPFloor?
 ---@field valid boolean
 ---@field id integer
 ---@field gui_position integer

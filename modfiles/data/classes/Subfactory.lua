@@ -4,18 +4,18 @@
 ---@field energy_consumption number
 ---@field pollution number
 ---@field notes string
----@field mining_productivity number | nil
+---@field mining_productivity number?
 ---@field blueprints string[]
 ---@field Product FPCollection<FPItem>
 ---@field Byproduct FPCollection<FPItem>
 ---@field Ingredient FPCollection<FPItem>
 ---@field Floor FPCollection<FPFloor>
----@field matrix_free_items FPItemPrototype[] | nil
+---@field matrix_free_items FPItemPrototype[]?
 ---@field linearly_dependant boolean
 ---@field selected_floor FPFloor
----@field item_request_proxy LuaEntity | nil
----@field tick_of_deletion uint | nil
----@field last_valid_modset { [string]: string } | nil
+---@field item_request_proxy LuaEntity?
+---@field tick_of_deletion uint?
+---@field last_valid_modset { [string]: string }?
 ---@field mod_version string
 ---@field valid boolean
 ---@field id integer
