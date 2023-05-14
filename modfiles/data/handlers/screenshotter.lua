@@ -16,12 +16,12 @@ end
 
 local function open_modal(player, type, modal_data)
     main_dialog.toggle(player)
-    data_util.get("main_elements", player).main_frame.location = player.display_resolution  -- hack city
+    data_util.main_elements(player).main_frame.location = player.display_resolution  -- hack city
     modal_dialog.enter(player, {type=type, modal_data=modal_data, skip_dimmer=true})
 end
 
 local function modal_teardown(player, scene)
-    return_dimensions(scene, data_util.get("modal_elements", player).modal_frame)
+    return_dimensions(scene, data_util.modal_elements(player).modal_frame)
     modal_dialog.exit(player, "cancel")
 end
 
@@ -41,7 +41,7 @@ end
 
 local actions = {
     player_setup = function(player)
-        local player_table = data_util.get("table", player)
+        local player_table = data_util.player_table(player)
 
         -- Mod settings
         settings.get_player_settings(player)["fp_display_gui_button"] = {value = false}
@@ -100,18 +100,18 @@ local actions = {
         main_dialog.toggle(player)
     end,
     teardown_01_main_interface = function(player)
-        local main_frame = data_util.get("main_elements", player).main_frame
+        local main_frame = data_util.main_elements(player).main_frame
         return_dimensions("01_main_interface", main_frame)
     end,
 
     setup_02_compact_interface = function(player)
-        data_util.get("main_elements", player).main_frame.location = player.display_resolution  -- hack city
+        data_util.main_elements(player).main_frame.location = player.display_resolution  -- hack city
         view_state.select(player, 2)
         local toggle_handler = get_handler(title_bar.gui_events.on_gui_click, "switch_to_compact_view")
         toggle_handler(player, nil, nil)
     end,
     teardown_02_compact_interface = function(player)
-        local compact_frame = data_util.get("compact_elements", player).compact_frame
+        local compact_frame = data_util.ui_state(player).compact_elements.compact_frame
         return_dimensions("02_compact_interface", compact_frame)
         local toggle_handler = get_handler(compact_dialog.gui_events.on_gui_click, "switch_to_main_view")
         toggle_handler(player, nil, nil)
@@ -121,7 +121,7 @@ local actions = {
         local modal_data = {object=nil, item_category="product"}
         open_modal(player, "picker", modal_data)
 
-        local modal_elements = data_util.get("modal_elements", player)
+        local modal_elements = data_util.modal_elements(player)
         modal_elements.search_textfield.text = "f"
         local search_handler = get_handler(modal_dialog.gui_events.on_gui_text_changed, "modal_searchfield")
         search_handler(player, nil, {text="f"})
@@ -147,7 +147,7 @@ local actions = {
     teardown_04_recipe_picker = (function(player) modal_teardown(player, "04_recipe_picker") end),
 
     setup_05_machine = function(player)
-        local floor = data_util.get("context", player).floor
+        local floor = data_util.context(player).floor
         local line = Collection.get_by_gui_position(floor.Line, 2)  ---@cast line -nil
         local modal_data = {object=line.machine, line=line}
         open_modal(player, "machine", modal_data)
@@ -158,7 +158,7 @@ local actions = {
         open_modal(player, "import", nil)
 
         local export_string = "eNrtWt+P4jYQ/lfcPG+2hG2ra6Q+tJUqVepJp+Ohqu5Q5DiT3Wn9I7UdVIT43ztOzIK4RRDKHnBF4gHb4/HM941n7CSLRJmqmIF1aHSSJ9l9dv/tKLlL4J/GWF/QqAOf5Iuk5A5WAt+TQC2xpPboPqNfaHPhjZ03kmsNdq1qeZe4tuxHEVySf1gkmqug6wOqxx/Qg/oatQPrwU7Ze2O8I3UeFTjBJcl9N7pLtPFhbkIj76ypWtHZZMo/QZB4vqBV+kYhJHdB8lfSS9Kr5s9GShoOXpKsN01RS2Ns0PIbatinrZPZpU3CDGSSZ+vxXzrdy3XHZAXBnHqfAZgokOT1/P/i75rwpneKFKZOIGgBacPFX1P2B/AnNum7vtqNS8reUaAx03rmaCKwqIWtFX/UKfvx7xYtMM5qdE/MG1a2KCs2abCieLO90O8oZZhX8lLOmQaomDI0C2mccVrAKNJrUPsdbFBE03RvQmf0dId/pMChaiTWCFWSe9sCuThvwpSAS4CQK9PSUnn2hvy10HlQFaveRVJBTeRURTmnSbF7a1ZJYVVEk2ouHcQQiMT1y66oWnm0nJ4ypgiTrVgKWWCAuAWBTSf0X7AV3MNjiMI8EZbXHvVjsH2toojo9z2bMf++NyAwQpIzWKmsTLC9g5UUgRWgPX+krmxE0CsunqJz23aTWlClJBPSKJU+DDG6NrRWIVGhf16f8nMroYg5um+5Q4Nzhn6e9nP2W7I5aTNMv1kj9rZT9VIgxZFdoRS9EM8aQTV+XjgZakE+2l5hQt5u5Jq3EfJlCHwuQh371Oc4ssfJuimi4IaHb46E2TWUSg7Gt5PeXHZ8cmDHA4H9KUIRMvjBu9NylNe4FcevvxVfqLOD+Btt8Tc+dGMMIjCUvdR5vM6MeqMxYgNhfYsirVurecfDjcxrJfOFin3j86g6PL7COryOmelRF7XxJxe1QcHHqxmnQ3aVCrSiRX87aN8O2reD9tkP2n2BN5pK/Fk2Zv//VuFPU+GFaQjKVPDyc5f2a+Hx9Bs/O/nGz7ZiJXuVWHEeQKaNJNf2+hyeMJ+zFg+9hmwa/CXvd+cJ0bS0B1yzbxxe6pMS1Rji0aYdmftQKbkjCJ2RWJ2fSYU6pO/KopQDDb+Ue9kL2fvusCP4+Ngj+OlPig9HXwUHPT4gQU8cltzurdNPoND57r3dWQ4XnQGCd/VN+0HmXkaueXgVCvtNaJBwsUaAcyG/7gFnS/pMhAYrbPfOsnvRPdDiy7yLP1xOIrjku/j4mu/i08/+UYR7/ixhyr7sT0Kmy38BcOORig=="
-        local modal_elements = data_util.get("modal_elements", player)
+        local modal_elements = data_util.modal_elements(player)
         modal_elements.import_textfield.text = export_string
 
         local textfield_handler = get_handler(import_dialog.gui_events.on_gui_text_changed, "import_string")

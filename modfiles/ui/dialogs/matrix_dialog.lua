@@ -75,7 +75,7 @@ local function create_item_category(modal_data, type, label_arg)
 end
 
 local function swap_item_category(player, tags, _)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
     local modal_data = ui_state.modal_data
 
@@ -107,7 +107,7 @@ matrix_dialog.dialog_settings = (function(_) return {
 } end)
 
 function matrix_dialog.early_abort_check(player, modal_data)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
 
     if subfactory.selected_floor.Line.count == 0 then return true end
@@ -144,7 +144,7 @@ function matrix_dialog.early_abort_check(player, modal_data)
 end
 
 function matrix_dialog.open(player, modal_data)
-    if data_util.get("context", player).subfactory.linearly_dependant then
+    if data_util.context(player).subfactory.linearly_dependant then
         show_linearly_dependent_recipes(modal_data, modal_data.linearly_dependent_recipes)
         modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
 
@@ -163,7 +163,7 @@ end
 
 function matrix_dialog.close(player, action)
     if action == "submit" then
-        local ui_state = data_util.get("ui_state", player)
+        local ui_state = data_util.ui_state(player)
         local subfactory = ui_state.context.subfactory
         subfactory.matrix_free_items = ui_state.modal_data.free_items
 

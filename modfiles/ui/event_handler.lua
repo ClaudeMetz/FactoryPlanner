@@ -25,7 +25,7 @@ end
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
 local function rate_limiting_active(player, tick, action_name, timeout)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
 
     -- If this action has no timeout, reset the last action and allow it
     if timeout == nil or game.tick_paused then
@@ -101,7 +101,7 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
     if action_name then return true end  -- run the standard handler if one is found
 
     -- Otherwise, close the currently open modal dialog if possible
-    if data_util.get("ui_state", player).modal_dialog_type ~= nil then
+    if data_util.ui_state(player).modal_dialog_type ~= nil then
         modal_dialog.exit(player, "submit")
     end
     return false

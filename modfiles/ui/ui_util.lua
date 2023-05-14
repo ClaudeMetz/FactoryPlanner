@@ -215,7 +215,7 @@ end
 -- Toggles the visibility of the toggle-main-dialog-button
 ---@param player LuaPlayer
 function ui_util.toggle_mod_gui(player)
-    local enable = data_util.get("settings", player).show_gui_button
+    local enable = data_util.settings(player).show_gui_button
 
     local frame_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]
@@ -343,7 +343,7 @@ end
 ---@param player LuaPlayer
 ---@param factory FPFactory
 function ui_util.context.set_factory(player, factory)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     context.factory = factory
     local subfactory = factory.selected_subfactory
         or Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
@@ -354,7 +354,7 @@ end
 ---@param player LuaPlayer
 ---@param subfactory FPSubfactory?
 function ui_util.context.set_subfactory(player, subfactory)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     context.factory.selected_subfactory = subfactory
     context.subfactory = subfactory
     context.floor = (subfactory ~= nil) and subfactory.selected_floor or nil
@@ -364,7 +364,7 @@ end
 ---@param player LuaPlayer
 ---@param floor FPFloor?
 function ui_util.context.set_floor(player, floor)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     context.subfactory.selected_floor = floor
     context.floor = floor
 end
@@ -374,7 +374,7 @@ end
 ---@param destination "up" | "down"
 ---@return boolean success
 function ui_util.context.change_floor(player, destination)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local subfactory, floor = context.subfactory, context.floor
     if subfactory == nil or floor == nil then return false end
 
@@ -398,7 +398,7 @@ end
 ---@param player LuaPlayer
 ---@param object FPCopyableObject
 function ui_util.clipboard.copy(player, object)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     player_table.clipboard = {
         class = object.class,
         object = _G[object.class].pack(object),
@@ -411,7 +411,7 @@ end
 ---@param player LuaPlayer
 ---@param target FPCopyableObject
 function ui_util.clipboard.paste(player, target)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local clip = player_table.clipboard
 
     if clip == nil then

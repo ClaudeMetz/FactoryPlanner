@@ -2,7 +2,7 @@ production_box = {}
 
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
-    local subfactory = data_util.get("context", player).subfactory
+    local subfactory = data_util.context(player).subfactory
     if subfactory and subfactory.valid then
         solver.update(player, subfactory)
         main_dialog.refresh(player, "subfactory")
@@ -11,7 +11,7 @@ end
 
 local function paste_line(player, _, event)
     if event.button == defines.mouse_button_type.left and event.shift then
-        local context = data_util.get("context", player)
+        local context = data_util.context(player)
         local line_count = context.floor.Line.count
         local last_line = Floor.get_by_gui_position(context.floor, "Line", line_count)
         -- Use a fake first line to paste below if no actual line exists
@@ -34,7 +34,7 @@ end
 
 -- ** TOP LEVEL **
 function production_box.build(player)
-    local main_elements = data_util.get("main_elements", player)
+    local main_elements = data_util.main_elements(player)
     main_elements.production_box = {}
 
     local parent_flow = main_elements.flows.right_vertical
@@ -93,7 +93,7 @@ function production_box.build(player)
 end
 
 function production_box.refresh(player)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local ui_state = player_table.ui_state
     local production_box_elements = ui_state.main_elements.production_box
 

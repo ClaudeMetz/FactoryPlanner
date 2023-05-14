@@ -2,7 +2,7 @@ production_handler = {}
 
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
 
@@ -16,7 +16,7 @@ local function handle_line_move_click(player, tags, event)
 end
 
 local function handle_recipe_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -29,7 +29,7 @@ local function handle_recipe_click(player, tags, action)
 
         local subfloor = line.subfloor
         if subfloor == nil then
-            if data_util.get("flags", player).archive_open then
+            if data_util.flags(player).archive_open then
                 title_bar.enqueue_message(player, {"fp.error_no_new_subfloors_in_archive"}, "error", 1, true)
                 return
             end
@@ -65,7 +65,7 @@ end
 
 
 local function handle_percentage_change(player, tags, event)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local floor = Subfactory.get(ui_state.context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
 
@@ -76,7 +76,7 @@ local function handle_percentage_change(player, tags, event)
 end
 
 local function handle_percentage_confirmation(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
     solver.update(player, ui_state.context.subfactory)
     main_dialog.refresh(player, "subfactory")
@@ -84,7 +84,7 @@ end
 
 
 local function handle_machine_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
@@ -118,7 +118,7 @@ local function handle_machine_click(player, tags, action)
 end
 
 local function handle_machine_module_add(player, tags, event)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
 
@@ -131,7 +131,7 @@ end
 
 
 local function handle_beacon_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
@@ -160,7 +160,7 @@ local function handle_beacon_click(player, tags, action)
 end
 
 local function handle_beacon_add(player, tags, event)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
 
@@ -175,7 +175,7 @@ end
 
 
 local function handle_module_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
@@ -211,7 +211,7 @@ end
 
 function GENERIC_HANDLERS.apply_item_options(player, options, action)
     if action == "submit" then
-        local ui_state = data_util.get("ui_state", player)
+        local ui_state = data_util.ui_state(player)
         local item = ui_state.modal_data.object
         local relevant_line = (item.parent.subfloor) and item.parent.subfloor.defining_line or item.parent
 
@@ -239,7 +239,7 @@ function GENERIC_HANDLERS.apply_item_options(player, options, action)
 end
 
 local function handle_item_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
     local item = Line.get(line, tags.class, tags.item_id)
@@ -300,7 +300,7 @@ local function handle_item_click(player, tags, action)
 end
 
 local function handle_fuel_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
     local line = Floor.get(floor, "Line", tags.line_id)
     local fuel = line.machine.fuel  -- must exist to be able to get here
@@ -442,7 +442,7 @@ production_handler.gui_events = {
         {
             name = "checkmark_line",
             handler = (function(player, tags, _)
-                local context = data_util.get("context", player)
+                local context = data_util.context(player)
                 local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
                 local line = Floor.get(floor, "Line", tags.line_id)
                 local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
@@ -458,7 +458,7 @@ production_handler.gui_events = {
         {
             name = "line_comment",
             handler = (function(player, tags, event)
-                local context = data_util.get("context", player)
+                local context = data_util.context(player)
                 local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
                 Floor.get(floor, "Line", tags.line_id).comment = event.element.text
             end)

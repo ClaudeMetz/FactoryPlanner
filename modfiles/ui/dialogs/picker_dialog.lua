@@ -13,7 +13,7 @@ local function select_item_group(modal_data, new_group_id)
 end
 
 function SEARCH_HANDLERS.search_picker_items(player, search_term)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     local modal_elements = modal_data.modal_elements
 
     -- Groups are indexed continuously, so using ipairs here is fine
@@ -48,7 +48,7 @@ function SEARCH_HANDLERS.search_picker_items(player, search_term)
 end
 
 local function add_item_picker(parent_flow, player)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local ui_state = player_table.ui_state
     local modal_elements = ui_state.modal_data.modal_elements
     local translations = player_table.translation_tables
@@ -325,7 +325,7 @@ end
 
 
 local function handle_item_pick(player, tags, _)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
 
     local item_proto = IDENTIFIER_ITEM_MAP[tags.identifier]
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
@@ -338,7 +338,7 @@ local function handle_belt_pick(player, _, event)
     local belt_name = event.element.elem_value
     local belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
 
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself
 
     set_appropriate_focus(modal_data)
@@ -359,7 +359,7 @@ end)
 
 function picker_dialog.open(player, modal_data)
     -- Create a blank subfactory if requested
-    local settings = data_util.get("settings", player)
+    local settings = data_util.settings(player)
     modal_data.timescale = settings.default_timescale
     modal_data.lob = settings.belts_or_lanes
 
@@ -379,7 +379,7 @@ function picker_dialog.open(player, modal_data)
 end
 
 function picker_dialog.close(player, action)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local ui_state = player_table.ui_state
     local modal_data = ui_state.modal_data
     local subfactory = ui_state.context.subfactory
@@ -431,7 +431,7 @@ picker_dialog.gui_events = {
         {
             name = "select_picker_item_group",
             handler = (function(player, tags, _)
-                local modal_data = data_util.get("modal_data", player)
+                local modal_data = data_util.modal_data(player)
                 select_item_group(modal_data, tags.group_id)
             end)
         },
@@ -450,14 +450,14 @@ picker_dialog.gui_events = {
         {
             name = "picker_item_amount",
             handler = (function(player, _, _)
-                local modal_data = data_util.get("modal_data", player)
+                local modal_data = data_util.modal_data(player)
                 update_dialog_submit_button(modal_data.modal_elements)
             end)
         },
         {
             name = "picker_belt_amount",
             handler = (function(player, _, _)
-                local modal_data = data_util.get("modal_data", player)
+                local modal_data = data_util.modal_data(player)
                 sync_amounts(modal_data)  -- defined_by ~= "amount"
                 update_dialog_submit_button(modal_data.modal_elements)
             end)

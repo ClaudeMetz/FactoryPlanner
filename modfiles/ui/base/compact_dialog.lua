@@ -20,7 +20,7 @@ local function set_compact_frame_location(player, frame)
 end
 
 local function rebuild_compact_dialog(player, default_visibility)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local compact_elements = ui_state.compact_elements
 
     local interface_visible = default_visibility
@@ -72,7 +72,7 @@ end
 
 -- ** TOP LEVEL **
 function compact_dialog.toggle(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local frame_compact_dialog = ui_state.compact_elements.compact_frame
     -- Doesn't set player.opened so other GUIs like the inventory can be opened when building
 
@@ -87,7 +87,7 @@ function compact_dialog.toggle(player)
 end
 
 function compact_dialog.is_in_focus(player)
-    local frame_compact_dialog = data_util.get("compact_elements", player).compact_frame
+    local frame_compact_dialog = data_util.ui_state(player).compact_elements.compact_frame
     return (frame_compact_dialog ~= nil and frame_compact_dialog.valid and frame_compact_dialog.visible)
 end
 
@@ -98,7 +98,7 @@ compact_dialog.gui_events = {
         {
             name = "switch_to_main_view",
             handler = (function(player, _, _)
-                data_util.get("flags", player).compact_view = false
+                data_util.flags(player).compact_view = false
                 compact_dialog.toggle(player)
 
                 main_dialog.toggle(player)
@@ -115,7 +115,7 @@ compact_dialog.gui_events = {
             name = "place_compact_dialog",
             handler = (function(player, _, event)
                 if event.button == defines.mouse_button_type.middle then
-                    local ui_state = data_util.get("ui_state", player)
+                    local ui_state = data_util.ui_state(player)
                     local frame_compact_dialog = ui_state.compact_elements.compact_frame
                     set_compact_frame_location(player, frame_compact_dialog)
                 end
@@ -134,13 +134,13 @@ compact_dialog.misc_events = {
     end),
 
     on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" and data_util.get("flags", player).compact_view then
+        if event.prototype_name == "fp_open_interface" and data_util.flags(player).compact_view then
             compact_dialog.toggle(player)
         end
     end),
 
     fp_toggle_interface = (function(player, _)
-        if data_util.get("flags", player).compact_view then compact_dialog.toggle(player) end
+        if data_util.flags(player).compact_view then compact_dialog.toggle(player) end
     end)
 }
 
@@ -355,7 +355,7 @@ end
 
 
 local function handle_recipe_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
     local recipe = relevant_line.recipe
@@ -372,7 +372,7 @@ local function handle_recipe_click(player, tags, action)
 end
 
 local function handle_module_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
     local parent_entity = line[tags.parent_type]
@@ -384,7 +384,7 @@ local function handle_module_click(player, tags, action)
 end
 
 local function handle_machine_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
@@ -397,7 +397,7 @@ local function handle_machine_click(player, tags, action)
 end
 
 local function handle_beacon_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
@@ -410,7 +410,7 @@ local function handle_beacon_click(player, tags, action)
 end
 
 local function handle_item_click(player, tags, action)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local line = Floor.get(context.floor, "Line", tags.line_id)
     local item = (tags.class == "Fuel") and line.machine.fuel or Line.get(line, tags.class, tags.item_id)
 
@@ -423,7 +423,7 @@ local function handle_item_click(player, tags, action)
 end
 
 local function handle_hover_change(player, tags, event)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local line = Floor.get(ui_state.context.floor, "Line", tags.line_id)
     local proto = Line.get(line, tags.class, tags.item_id).proto
 
@@ -437,7 +437,7 @@ end
 
 -- ** TOP LEVEL **
 function compact_subfactory.build(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local compact_elements = ui_state.compact_elements
 
     -- Content frame
@@ -499,7 +499,7 @@ function compact_subfactory.build(player)
 end
 
 function compact_subfactory.refresh(player)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local compact_elements = player_table.ui_state.compact_elements
     local context = player_table.ui_state.context
     local subfactory = context.subfactory
@@ -535,7 +535,7 @@ function compact_subfactory.refresh(player)
     compact_elements.item_buttons = {}  -- (re)set the item_buttons table
     local item_buttons = compact_elements.item_buttons
 
-    if data_util.get("preferences", player).tutorial_mode then
+    if data_util.preferences(player).tutorial_mode then
         data_util.add_tutorial_tooltips(metadata, player, {
             recipe_tutorial_tt = "act_on_compact_recipe",
             module_tutorial_tt = "act_on_compact_module",
@@ -626,7 +626,7 @@ compact_subfactory.gui_events = {
         {
             name = "checkmark_compact_line",
             handler = (function(player, tags, _)
-                local line = Floor.get(data_util.get("context", player).floor, "Line", tags.line_id)
+                local line = Floor.get(data_util.context(player).floor, "Line", tags.line_id)
                 local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
                 relevant_line.done = not relevant_line.done
                 compact_subfactory.refresh(player)

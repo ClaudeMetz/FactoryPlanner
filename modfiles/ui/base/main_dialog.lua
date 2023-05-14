@@ -12,7 +12,7 @@ main_dialog = {}
 -- ** LOCAL UTIL **
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
 local function determine_main_dimensions(player, products_per_row, subfactory_list_rows)
-    local settings = data_util.get("settings", player)
+    local settings = data_util.settings(player)
     products_per_row = products_per_row or settings.products_per_row
     subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
 
@@ -33,7 +33,7 @@ function main_dialog.shrinkwrap_interface(player)
     local resolution, scale = player.display_resolution, player.display_scale
     local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
 
-    local mod_settings = data_util.get("settings", player)
+    local mod_settings = data_util.settings(player)
     local products_per_row = mod_settings.products_per_row
     local subfactory_list_rows = mod_settings.subfactory_list_rows
 
@@ -58,7 +58,7 @@ end
 
 -- ** TOP LEVEL **
 function main_dialog.rebuild(player, default_visibility)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local main_elements = ui_state.main_elements
 
     local interface_visible = default_visibility
@@ -122,7 +122,7 @@ local refreshable_elements = {subfactory_list=true, subfactory_info=true,
 function main_dialog.refresh(player, context_to_refresh)
     if context_to_refresh == nil then return end
 
-    local main_frame = data_util.get("main_elements", player).main_frame
+    local main_frame = data_util.main_elements(player).main_frame
     if main_frame == nil then return end
 
     if refreshable_elements[context_to_refresh] ~= nil then
@@ -149,7 +149,7 @@ function main_dialog.refresh(player, context_to_refresh)
 end
 
 function main_dialog.toggle(player, skip_player_opened)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local frame_main_dialog = ui_state.main_elements.main_frame
 
     if frame_main_dialog == nil or not frame_main_dialog.valid then
@@ -173,9 +173,9 @@ end
 
 -- Returns true when the main dialog is open while no modal dialogs are
 function main_dialog.is_in_focus(player)
-    local frame_main_dialog = data_util.get("main_elements", player).main_frame
+    local frame_main_dialog = data_util.main_elements(player).main_frame
     return (frame_main_dialog ~= nil and frame_main_dialog.valid and frame_main_dialog.visible
-        and data_util.get("ui_state", player).modal_dialog_type == nil)
+        and data_util.ui_state(player).modal_dialog_type == nil)
 end
 
 -- Sets the game.paused-state as is appropriate
@@ -183,14 +183,14 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     -- Don't touch paused-state if this is a multiplayer session or the editor is active
     if game.is_multiplayer() or player.controller_type == defines.controllers.editor then return end
 
-    game.tick_paused = (data_util.get("preferences", player).pause_on_interface and not force_false)
+    game.tick_paused = (data_util.preferences(player).pause_on_interface and not force_false)
         and frame_main_dialog.visible or false
 end
 
 
 function NTH_TICK_HANDLERS.interface_toggle(metadata)
     local player = game.get_player(metadata.player_index)
-    local compact_view = data_util.get("flags", player).compact_view
+    local compact_view = data_util.flags(player).compact_view
     if compact_view then compact_dialog.toggle(player)
     else main_dialog.toggle(player) end
 end
@@ -233,7 +233,7 @@ main_dialog.misc_events = {
     -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
     -- layer at this point and need to close the things below, if there are any.
     on_gui_opened = (function(player, _)
-        local ui_state = data_util.get("ui_state", player)
+        local ui_state = data_util.ui_state(player)
 
         -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
         if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel", true) end
@@ -253,18 +253,18 @@ main_dialog.misc_events = {
     end),
 
     on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" and not data_util.get("flags", player).compact_view then
+        if event.prototype_name == "fp_open_interface" and not data_util.flags(player).compact_view then
             main_dialog.toggle(player)
         end
     end),
 
     fp_toggle_interface = (function(player, _)
-        if not data_util.get("flags", player).compact_view then main_dialog.toggle(player) end
+        if not data_util.flags(player).compact_view then main_dialog.toggle(player) end
     end),
 
     -- This needs to be in a single place, otherwise the events cancel each other out
     fp_toggle_compact_view = (function(player, _)
-        local ui_state = data_util.get("ui_state", player)
+        local ui_state = data_util.ui_state(player)
         local flags = ui_state.flags
         local subfactory = ui_state.context.subfactory
 

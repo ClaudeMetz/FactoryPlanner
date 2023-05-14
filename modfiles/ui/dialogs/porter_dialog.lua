@@ -26,7 +26,7 @@ end
 
 -- Sets the slave checkboxes after the master one has been clicked
 local function set_all_checkboxes(player, checkbox_state)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local modal_elements = ui_state.modal_data.modal_elements
 
     for _, checkbox in pairs(modal_elements.subfactory_checkboxes) do
@@ -38,7 +38,7 @@ end
 
 -- Sets the master checkbox to the appropriate state after a slave one is changed
 local function adjust_after_checkbox_click(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local modal_elements = ui_state.modal_data.modal_elements
 
     local checked_element_count, unchecked_element_count = 0, 0
@@ -142,7 +142,7 @@ end
 
 -- Tries importing the given string, showing the resulting subfactories-table, if possible
 local function import_subfactories(player, _, _)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local attach_subfactory_products = player_table.preferences.attach_subfactory_products
     local modal_data = player_table.ui_state.modal_data
     local modal_elements = modal_data.modal_elements
@@ -206,7 +206,7 @@ end
 
 -- Exports the currently selected subfactories and puts the resulting string into the textbox
 local function export_subfactories(player, _, _)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     local modal_elements = modal_data.modal_elements
     local subfactories_to_export = {}
 
@@ -243,7 +243,7 @@ end
 -- Imports the selected subfactories into the player's main factory
 function import_dialog.close(player, action)
     if action == "submit" then
-        local ui_state = data_util.get("ui_state", player)
+        local ui_state = data_util.ui_state(player)
         local modal_data = ui_state.modal_data
         local factory = ui_state.context.factory
 
@@ -279,7 +279,7 @@ import_dialog.gui_events = {
         {
             name = "import_string",
             handler = (function(player, _, event)
-                local button_import = data_util.get("modal_elements", player).import_button
+                local button_import = data_util.modal_elements(player).import_button
                 set_tool_button_state(button_import, "import", (string.len(event.element.text) > 0))
             end)
         }
@@ -305,7 +305,7 @@ export_dialog.dialog_settings = (function(_) return {
 } end)
 
 function export_dialog.open(player, modal_data)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local attach_subfactory_products = player_table.preferences.attach_subfactory_products
     local modal_elements = modal_data.modal_elements
 

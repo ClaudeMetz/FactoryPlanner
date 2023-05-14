@@ -57,7 +57,7 @@ end
 
 
 local function handle_module_selection(player, tags, event)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     local module_set = modal_data.module_set
     local new_name = event.element.elem_value
 
@@ -79,7 +79,7 @@ local function handle_module_selection(player, tags, event)
 end
 
 local function handle_module_slider_change(player, tags, event)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     local module_set = modal_data.module_set
     local new_slider_value = event.element.slider_value
     local module_textfield = event.element.parent["fp_textfield_module_amount"]
@@ -95,7 +95,7 @@ local function handle_module_slider_change(player, tags, event)
 end
 
 local function handle_module_textfield_change(player, tags, event)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     local module_set = modal_data.module_set
     local new_textfield_value = tonumber(event.element.text)
     local module_slider = event.element.parent["fp_slider_module_amount"]
@@ -137,7 +137,7 @@ function module_configurator.refresh_effects_flow(modal_data)
 end
 
 function module_configurator.refresh_modules_flow(player, update_only)
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     local modules_flow = modal_data.modal_elements.modules_flow
 
     local module_filters = ModuleSet.compile_filter(modal_data.module_set)

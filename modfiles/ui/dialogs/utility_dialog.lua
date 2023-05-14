@@ -25,7 +25,7 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
     -- Scope switch
     local scope_switch = nil
     if show_switch then
-        local utility_scope = data_util.get("preferences", player).utility_scopes[type]
+        local utility_scope = data_util.preferences(player).utility_scopes[type]
         local switch_state = (utility_scope == "Subfactory") and "left" or "right"
         scope_switch = flow_title_bar.add{type="switch", switch_state=switch_state,
             tags={mod="fp", on_gui_switch_state_changed="utility_change_scope", utility_type=type},
@@ -52,7 +52,7 @@ local function update_request_button(player, modal_data, subfactory)
         switch_enabled = false
 
     else
-        local scope = data_util.get("preferences", player).utility_scopes.components
+        local scope = data_util.preferences(player).utility_scopes.components
         local scope_string = {"fp.pl_" .. scope:lower(), 1}
         caption, tooltip = {"fp.request_items"}, {"fp.request_items_tt", scope_string}
 
@@ -76,9 +76,9 @@ local function update_request_button(player, modal_data, subfactory)
 end
 
 function utility_structures.components(player, modal_data)
-    local scope = data_util.get("preferences", player).utility_scopes.components
+    local scope = data_util.preferences(player).utility_scopes.components
     local lower_scope = scope:lower()
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local modal_elements = modal_data.modal_elements
 
     if modal_elements.components_box == nil then
@@ -160,7 +160,7 @@ function utility_structures.components(player, modal_data)
     refresh_component_flow("module")
 
 
-    local subfactory = data_util.get("context", player).subfactory
+    local subfactory = data_util.context(player).subfactory
     Subfactory.validate_item_request_proxy(subfactory)
 
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
@@ -184,13 +184,13 @@ function utility_structures.blueprints(player, modal_data)
         modal_elements["blueprints_table"] = table_blueprints
     end
 
-    local subfactory = data_util.get("context", player).subfactory
+    local subfactory = data_util.context(player).subfactory
     local blueprints = subfactory.blueprints
 
     local table_blueprints =  modal_elements["blueprints_table"]
     table_blueprints.clear()
 
-    local tutorial_tt = (data_util.get("preferences", player).tutorial_mode)
+    local tutorial_tt = (data_util.preferences(player).tutorial_mode)
         and data_util.generate_tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
     local function format_signal(signal)
@@ -238,7 +238,7 @@ end
 function utility_structures.notes(player, modal_data)
     local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
 
-    local notes = data_util.get("context", player).subfactory.notes
+    local notes = data_util.context(player).subfactory.notes
     local text_box = utility_box.add{type="text-box", text=notes,
         tags={mod="fp", on_gui_text_changed="subfactory_notes"}}
     text_box.style.size = {500, 250}
@@ -249,14 +249,14 @@ end
 
 local function handle_scope_change(player, tags, event)
     local utility_scope = (event.element.switch_state == "left") and "Subfactory" or "Floor"
-    data_util.get("preferences", player).utility_scopes[tags.utility_type] = utility_scope
+    data_util.preferences(player).utility_scopes[tags.utility_type] = utility_scope
 
-    local modal_data = data_util.get("modal_data", player)
+    local modal_data = data_util.modal_data(player)
     utility_structures.components(player, modal_data)
 end
 
 local function handle_item_request(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
 
     if subfactory.item_request_proxy then  -- if an item_proxy is set, cancel it
@@ -298,7 +298,7 @@ local function handle_item_handcraft(player, tags, event)
 end
 
 local function handle_inventory_change(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
 
     if ui_state.modal_dialog_type == "utility" then
         ui_state.modal_data.inventory_contents = player.get_main_inventory().get_contents()
@@ -308,7 +308,7 @@ end
 
 
 local function store_blueprint(player, _, _)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local fly_text = ui_util.create_flying_text
 
     if not player.is_cursor_blueprint() then fly_text(player, {"fp.utility_no_blueprint"}); return end
@@ -323,7 +323,7 @@ local function store_blueprint(player, _, _)
 end
 
 local function handle_blueprint_click(player, tags, action)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local blueprints = ui_state.context.subfactory.blueprints
 
     if action == "pick_up" then
@@ -355,7 +355,7 @@ function utility_dialog.open(player, modal_data)
 end
 
 function utility_dialog.close(player, _)
-    data_util.get("modal_data", player).utility_inventory.destroy()
+    data_util.modal_data(player).utility_inventory.destroy()
     main_dialog.refresh(player, "subfactory_info")
 end
 
@@ -367,7 +367,7 @@ utility_dialog.gui_events = {
             name = "utility_item_combinator",
             timeout = 20,
             handler = (function(player, _, _)
-                local missing_items = data_util.get("modal_data", player).missing_items
+                local missing_items = data_util.modal_data(player).missing_items
                 local success = ui_util.put_item_combinator_into_cursor(player, missing_items)
                 if success then modal_dialog.exit(player, "cancel"); main_dialog.toggle(player) end
             end)
@@ -404,7 +404,7 @@ utility_dialog.gui_events = {
         {
             name = "subfactory_notes",
             handler = (function(player, _, event)
-                data_util.get("context", player).subfactory.notes = event.element.text
+                data_util.context(player).subfactory.notes = event.element.text
             end)
         }
     }
