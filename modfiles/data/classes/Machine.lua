@@ -1,9 +1,9 @@
 ---@class FPMachine
 ---@field proto FPMachinePrototype
 ---@field count number
----@field limit number | nil
+---@field limit number?
 ---@field force_limit boolean
----@field fuel FPFuel | nil
+---@field fuel FPFuel?
 ---@field module_set FPModuleSet
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip string

@@ -77,3 +77,4 @@ end
 ---@field player_index uint
 
 ---@alias Timescale 1 | 60 | 3600
+---@alias FPCopyableObject FPLine | FPMachine | FPBeacon | FPModule | FPItem | FPFuel

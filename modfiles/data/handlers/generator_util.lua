@@ -471,6 +471,8 @@ end
 -- These stages mirror the in-game progression and timing exactly. Most steps take an additional tick (+1)
 -- due to how the game code is written. If one stage is completed, you can only progress to the next one
 -- in the next tick. No stages can be skipped, meaning a minimal sequence time is around 10 ticks long.
+---@param silo_proto LuaEntityPrototype
+---@return number? launch_sequence_time
 function generator_util.determine_launch_sequence_time(silo_proto)
     local rocket_proto = silo_proto.rocket_entity_prototype
     if not rocket_proto then return nil end  -- meaning this isn't a rocket silo proto
@@ -499,8 +501,11 @@ function generator_util.determine_launch_sequence_time(silo_proto)
     return (total_ticks / 60)  -- retured value is in seconds
 end
 
+---@alias AllowedEffects { [string]: boolean }?
 
 -- Returns nil if no effect is true, returns the effects otherwise
+---@param allowed_effects AllowedEffects
+---@return AllowedEffects? allowed_effects
 function generator_util.format_allowed_effects(allowed_effects)
     if allowed_effects == nil then return nil end
     for _, allowed in pairs(allowed_effects) do
@@ -527,6 +532,7 @@ end
 
 
 -- Adds the tooltip for the given recipe
+---@param recipe FPRecipePrototype
 function generator_util.add_recipe_tooltip(recipe)
     local tooltip = {"", {"fp.tt_title", recipe.localised_name}}
     local current_table, next_index = tooltip, 3
@@ -557,13 +563,15 @@ function generator_util.add_recipe_tooltip(recipe)
     recipe.tooltip = tooltip
 end
 
--- Adds the tooltip for the given item
-function generator_util.add_item_tooltip(item)
-    item.tooltip = item.localised_name
-end
-
+---@class ItemGroup
+---@field name string
+---@field localised_name LocalisedString
+---@field order string
+---@field valid boolean
 
 -- Generates a table imitating LuaGroup to avoid lua-cpp bridging
+---@param group LuaGroup
+---@return ItemGroup group_table
 function generator_util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end

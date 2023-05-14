@@ -2,7 +2,28 @@ require("data.handlers.generator_util")
 
 generator = {}
 
--- ** TOP LEVEL **
+---@class FPRecipePrototype
+---@field name string
+---@field category string
+---@field localised_name LocalisedString
+---@field sprite SpritePath
+---@field energy double
+---@field emissions_multiplier double
+---@field ingredients Ingredient[]
+---@field products Product[]
+---@field main_product Product?
+---@field type_count any
+---@field recycling boolean
+---@field barreling boolean
+---@field enabling_technologies string[]
+---@field use_limitations boolean
+---@field custom boolean
+---@field enabled_from_the_start boolean
+---@field hidden boolean
+---@field order string
+---@field group ItemGroup
+---@field subgroup ItemGroup
+
 -- Returns all standard recipes + custom mining, steam and rocket recipes
 function generator.all_recipes()
     generator_util.data_structure.init("simple", "recipes")
@@ -279,6 +300,18 @@ function generator.recipes_second_pass()
     end
 end
 
+---@class FPItemPrototype
+---@field name string
+---@field type string
+---@field sprite SpritePath
+---@field localised_name LocalisedString
+---@field hidden boolean
+---@field stack_size uint?
+---@field ingredient_only boolean
+---@field temperature number
+---@field order string
+---@field group ItemGroup
+---@field subgroup ItemGroup
 
 -- Returns all relevant items and fluids
 function generator.all_items()
@@ -312,7 +345,7 @@ function generator.all_items()
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
-            local proto = game[type .. "_prototypes"][proto_name]
+            local proto = game[type .. "_prototypes"][proto_name]  ---@type LuaItemPrototype
             if proto == nil then goto skip_item end
 
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
@@ -338,7 +371,6 @@ function generator.all_items()
                 subgroup = generator_util.generate_group_table(proto.subgroup)
             }
 
-            generator_util.add_item_tooltip(item)
             generator_util.data_structure.insert(item)
 
             ::skip_item::
@@ -350,10 +382,39 @@ function generator.all_items()
 end
 
 
+---@class FluidChannels
+---@field input integer
+---@field output integer
+
+---@class MachineBurner
+---@field effectivity double
+---@field categories { [string]: boolean }
+
+---@class FPMachinePrototype
+---@field name string
+---@field category string
+---@field localised_name LocalisedString
+---@field sprite SpritePath
+---@field ingredient_limit integer
+---@field fluid_channels FluidChannels
+---@field speed double
+---@field energy_type "burner" | "electric" | "void"
+---@field energy_usage double
+---@field energy_drain double
+---@field emissions double
+---@field built_by_item FPItemPrototype?
+---@field base_productivity double
+---@field allowed_effects AllowedEffects?
+---@field module_limit integer
+---@field launch_sequence_time number?
+---@field burner MachineBurner?
+
 -- Generates a table containing all machines for all categories
 function generator.all_machines()
     generator_util.data_structure.init("complex", "categories", "machines", "category")
 
+    ---@param category string
+    ---@param proto LuaEntityPrototype
     local function generate_category_entry(category, proto)
         -- First, determine if there is a valid sprite for this machine
         local sprite = generator_util.determine_entity_sprite(proto)
@@ -569,6 +630,13 @@ function generator.machines_second_pass()
 end
 
 
+---@class FPBeltPrototype
+---@field name string
+---@field localised_name LocalisedString
+---@field sprite SpritePath
+---@field rich_text string
+---@field throughput double
+
 -- Generates a table containing all available transport belts
 function generator.all_belts()
     generator_util.data_structure.init("simple", "belts")
@@ -597,6 +665,16 @@ function generator.all_belts()
     return generator_util.data_structure.get()
 end
 
+
+---@class FPFuelPrototype
+---@field name string
+---@field type "item" | "fluid"
+---@field localised_name LocalisedString
+---@field sprite SpritePath
+---@field category string | "fluid-fuel"
+---@field fuel_value float
+---@field stack_size uint?
+---@field emissions_multiplier double
 
 -- Generates a table containing all fuels that can be used in a burner
 function generator.all_fuels()
@@ -654,6 +732,7 @@ function generator.all_fuels()
                 sprite = "fluid/" .. proto.name,
                 category = "fluid-fuel",
                 fuel_value = proto.fuel_value,
+                stack_size = nil,
                 emissions_multiplier = proto.emissions_multiplier
             }
         end
@@ -671,6 +750,15 @@ function generator.all_fuels()
     return generator_util.data_structure.get()
 end
 
+
+---@class FPModulePrototype
+---@field name string
+---@field localised_name LocalisedString
+---@field sprite SpritePath
+---@field category string
+---@field tier uint
+---@field effects ModuleEffects
+---@field limitations { [string]: true }
 
 -- Generates a table containing all available modules
 function generator.all_modules()
@@ -699,6 +787,17 @@ function generator.all_modules()
     return generator_util.data_structure.get()
 end
 
+
+---@class FPBeaconPrototype
+---@field name string
+---@field localised_string LocalisedString
+---@field sprite SpritePath
+---@field category "fp_beacon"
+---@field built_by_item FPItemPrototype
+---@field allowed_effects AllowedEffects
+---@field module_limit uint
+---@field effectivity double
+---@field energy_usage double
 
 -- Generates a table containing all available beacons
 function generator.all_beacons()
@@ -745,6 +844,14 @@ function generator.all_beacons()
     return generator_util.data_structure.get()
 end
 
+
+---@class FPWagonPrototype
+---@field name string
+---@field localised_name LocalisedString
+---@field sprite SpritePath
+---@field rich_text string
+---@field category "cargo-wagon" | "fluid-wagon"
+---@field storage number
 
 -- Generates a table containing all available cargo and fluid wagons
 function generator.all_wagons()
