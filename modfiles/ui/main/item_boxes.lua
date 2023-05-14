@@ -18,7 +18,7 @@ local function add_recipe(player, context, type, item_proto)
 end
 
 local function build_item_box(player, category, column_count)
-    local item_boxes_elements = data_util.get("main_elements", player).item_boxes
+    local item_boxes_elements = data_util.main_elements(player).item_boxes
 
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
@@ -55,7 +55,7 @@ local function build_item_box(player, category, column_count)
 end
 
 local function refresh_item_box(player, items, category, subfactory, shows_floor_items)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local item_boxes_elements = ui_state.main_elements.item_boxes
 
     local table_items = item_boxes_elements[category .. "_item_table"]
@@ -71,7 +71,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
     local default_style = (category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. category)
-    local tutorial_tt = (data_util.get("preferences", player).tutorial_mode)
+    local tutorial_tt = (data_util.preferences(player).tutorial_mode)
         and data_util.generate_tutorial_tooltip(action, nil, player) or nil
 
     for _, item in ipairs(items) do
@@ -129,7 +129,7 @@ end
 
 
 local function handle_item_add(player, tags, event)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
 
     if event.shift then  -- paste
         -- Use a fake item to paste on top of
@@ -142,7 +142,7 @@ local function handle_item_add(player, tags, event)
 end
 
 local function handle_item_button_click(player, tags, action)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local context = player_table.ui_state.context
     local floor_items_active = (player_table.preferences.show_floor_items and context.floor.level > 1)
 
@@ -203,9 +203,9 @@ end
 
 
 local function put_ingredients_into_cursor(player, _, _)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local floor = context.floor
-    local show_floor_items = data_util.get("preferences", player).show_floor_items
+    local show_floor_items = data_util.preferences(player).show_floor_items
     local container = (show_floor_items and floor.level > 1) and floor.origin_line or context.subfactory
 
     local ingredients = {}
@@ -221,7 +221,7 @@ end
 
 function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options, action)
     if action == "submit" then
-        local ui_state = data_util.get("ui_state", player)
+        local ui_state = data_util.ui_state(player)
         local item = ui_state.modal_data.object
         local subfactory = item.parent
 
@@ -242,7 +242,7 @@ end
 
 -- ** TOP LEVEL **
 function item_boxes.build(player)
-    local main_elements = data_util.get("main_elements", player)
+    local main_elements = data_util.main_elements(player)
     main_elements.item_boxes = {}
 
     local parent_flow = main_elements.flows.right_vertical
@@ -250,7 +250,7 @@ function item_boxes.build(player)
     flow_horizontal.style.horizontal_spacing = FRAME_SPACING
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
-    local products_per_row = data_util.get("settings", player).products_per_row
+    local products_per_row = data_util.settings(player).products_per_row
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
     build_item_box(player, "ingredient", products_per_row*2)
@@ -259,7 +259,7 @@ function item_boxes.build(player)
 end
 
 function item_boxes.refresh(player)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local context = player_table.ui_state.context
     local subfactory = context.subfactory
     local floor = context.floor

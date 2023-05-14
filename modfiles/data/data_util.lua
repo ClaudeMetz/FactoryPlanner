@@ -3,29 +3,36 @@ data_util = {
     porter = {}
 }
 
--- ** GETTER **
 local getter_functions = {
     table = (function(index) return global.players[index] end),
     settings = (function(index) return global.players[index].settings end),
     preferences = (function(index) return global.players[index].preferences end),
     ui_state = (function(index) return global.players[index].ui_state end),
     main_elements = (function(index) return global.players[index].ui_state.main_elements end),
+
     compact_elements = (function(index) return global.players[index].ui_state.compact_elements end),
+
     context = (function(index) return global.players[index].ui_state.context end),
     modal_data = (function(index) return global.players[index].ui_state.modal_data end),
     modal_elements = (function(index) return global.players[index].ui_state.modal_data.modal_elements end),
     flags = (function(index) return global.players[index].ui_state.flags end)
 }
 
-function data_util.get(name, player)
-    return getter_functions[name](player.index)
-end
+function data_util.player_table(player) return global.players[player.index] end
+function data_util.settings(player) return global.players[player.index].settings end
+function data_util.preferences(player) return global.players[player.index].preferences end
+function data_util.ui_state(player) return global.players[player.index].ui_state end
+function data_util.main_elements(player) return global.players[player.index].ui_state.main_elements end
+function data_util.context(player) return global.players[player.index].ui_state.context end
+function data_util.modal_data(player) return global.players[player.index].ui_state.modal_data end
+function data_util.modal_elements(player) return global.players[player.index].ui_state.modal_data.modal_elements end
+function data_util.flags(player) return global.players[player.index].ui_state.flags end
 
 
 -- ** MISC **
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local first_subfactory = Factory.import_by_string(context.factory, export_string)
     ui_util.context.set_subfactory(player, first_subfactory)
 
@@ -115,7 +122,7 @@ end
 
 
 function data_util.current_limitations(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     return {
         archive_open = ui_state.flags.archive_open,
         matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil),

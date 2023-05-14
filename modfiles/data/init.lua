@@ -266,7 +266,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             main_dialog.rebuild(player, false)
 
         elseif event.setting == "fp_view_belts_or_lanes" then
-            local player_table = data_util.get("table", player)
+            local player_table = data_util.player_table(player)
 
             -- Goes through every subfactory's top level products and updates their defined_by
             local defined_by = player_table.settings.belts_or_lanes
@@ -291,7 +291,7 @@ script.on_event(defines.events.on_string_translated, translator.on_string_transl
 ---@param event GuiEvent
 local function dictionaries_ready(event)
     local player = game.get_player(event.player_index)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
 
     player_table.translation_tables = translator.get_all(event.player_index)
     modal_dialog.set_searchfield_state(player)  -- enables searchfields if possible

@@ -201,7 +201,7 @@ function Line.apply_mb_defaults(self, player)
     ModuleSet.clear(self.machine.module_set)
     Line.set_beacon(self, nil)
 
-    local mb_defaults = data_util.get("preferences", player).mb_defaults
+    local mb_defaults = data_util.preferences(player).mb_defaults
     local machine_module, secondary_module = mb_defaults.machine, mb_defaults.machine_secondary
     local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
     local message = nil

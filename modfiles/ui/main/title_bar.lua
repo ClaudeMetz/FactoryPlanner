@@ -7,10 +7,10 @@ end
 
 local function toggle_paused_state(player, _, _)
     if not game.is_multiplayer() then
-        local preferences = data_util.get("preferences", player)
+        local preferences = data_util.preferences(player)
         preferences.pause_on_interface = not preferences.pause_on_interface
 
-        local main_elements = data_util.get("main_elements", player)
+        local main_elements = data_util.main_elements(player)
         local button_pause = main_elements.title_bar.pause_button
         configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
@@ -21,7 +21,7 @@ end
 
 -- ** TOP LEVEL **
 function title_bar.build(player)
-    local main_elements = data_util.get("main_elements", player)
+    local main_elements = data_util.main_elements(player)
     main_elements.title_bar = {}
 
     local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal",
@@ -64,7 +64,7 @@ function title_bar.build(player)
         style="fp_button_frame_tool", mouse_button_filter={"left"}}
     main_elements.title_bar["pause_button"] = button_pause
 
-    local preferences = data_util.get("preferences", player)
+    local preferences = data_util.preferences(player)
     configure_pause_button_style(button_pause, preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
@@ -74,7 +74,7 @@ function title_bar.build(player)
 end
 
 function title_bar.refresh(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
     local title_bar_elements = ui_state.main_elements.title_bar
     -- Disallow switching to compact view if the selected subfactory is nil or invalid
@@ -84,7 +84,7 @@ end
 
 -- Enqueues the given message into the message queue; Possible types: error, warning, hint
 function title_bar.enqueue_message(player, message, type, lifetime, instant_refresh)
-    local message_queue = data_util.get("ui_state", player).message_queue
+    local message_queue = data_util.ui_state(player).message_queue
     table.insert(message_queue, {text=message, type=type, lifetime=lifetime})
 
     if instant_refresh then title_bar.refresh_message(player) end
@@ -95,7 +95,7 @@ end
 -- The lifetime is decreased for every message on every refresh
 -- (The algorithm(s) could be more efficient, but it doesn't matter for the small dataset)
 function title_bar.refresh_message(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local message_queue = ui_state.message_queue
 
     local title_bar_elements = ui_state.main_elements.title_bar
@@ -145,7 +145,7 @@ title_bar.gui_events = {
             name = "re-center_main_dialog",
             handler = (function(player, _, event)
                 if event.button == defines.mouse_button_type.middle then
-                    local ui_state = data_util.get("ui_state", player)
+                    local ui_state = data_util.ui_state(player)
                     local main_frame = ui_state.main_elements.main_frame
                     ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
                 end
@@ -155,7 +155,7 @@ title_bar.gui_events = {
             name = "switch_to_compact_view",
             handler = (function(player, _, _)
                 main_dialog.toggle(player)
-                data_util.get("flags", player).compact_view = true
+                data_util.flags(player).compact_view = true
 
                 compact_dialog.toggle(player)
             end)

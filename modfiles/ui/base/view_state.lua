@@ -3,7 +3,7 @@ view_state = {}
 
 -- ** LOCAL UTIL **
 local function cycle_views(player, direction)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
 
     if ui_state.view_states and main_dialog.is_in_focus(player) or compact_dialog.is_in_focus(player) then
         local selected_view_id, view_state_count = ui_state.view_states.selected_view_id, #ui_state.view_states
@@ -15,7 +15,7 @@ local function cycle_views(player, direction)
         end
         view_state.select(player, new_view_id)
 
-        local compact_view = data_util.get("flags", player).compact_view
+        local compact_view = data_util.flags(player).compact_view
         if compact_view then compact_subfactory.refresh(player)
         else main_dialog.refresh(player, "production") end
 
@@ -85,7 +85,7 @@ end
 -- ** TOP LEVEL **
 -- Creates metadata relevant for a whole batch of items
 function view_state.generate_metadata(player, subfactory)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
 
     local view_states = player_table.ui_state.view_states
     local current_view_name = view_states[view_states.selected_view_id].name
@@ -121,12 +121,12 @@ end
 
 
 function view_state.rebuild_state(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
 
     -- If no subfactory exists yet, choose a default timescale so the UI can build properly
     local timescale = (subfactory) and TIMESCALE_MAP[subfactory.timescale] or "second"
-    local singular_bol = data_util.get("settings", player).belts_or_lanes:sub(1, -2)
+    local singular_bol = data_util.settings(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
     local cargo_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"])
     local fluid_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["fluid-wagon"])
@@ -168,7 +168,7 @@ function view_state.rebuild_state(player)
 end
 
 function view_state.build(player, parent_element)
-    local view_states = data_util.get("ui_state", player).view_states
+    local view_states = data_util.ui_state(player).view_states
 
     local table_view_state = parent_element.add{type="table", column_count=#view_states}
     table_view_state.style.horizontal_spacing = 0
@@ -183,7 +183,7 @@ function view_state.build(player, parent_element)
 end
 
 function view_state.refresh(player, table_view_state)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
     local subfactory = ui_state.context.subfactory
@@ -203,7 +203,7 @@ function view_state.refresh(player, table_view_state)
 end
 
 function view_state.select(player, selected_view)
-    local view_states = data_util.get("ui_state", player).view_states
+    local view_states = data_util.ui_state(player).view_states
 
     -- Selected view can be either an id or a name, so we might need to match an id to a name
     local selected_view_id = selected_view
@@ -238,7 +238,7 @@ view_state.gui_events = {
             handler = (function(player, tags, _)
                 view_state.select(player, tags.view_id)
 
-                local compact_view = data_util.get("flags", player).compact_view
+                local compact_view = data_util.flags(player).compact_view
                 if compact_view then compact_subfactory.refresh(player)
                 else main_dialog.refresh(player, "production") end
             end)

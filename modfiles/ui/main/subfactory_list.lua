@@ -2,7 +2,7 @@ subfactory_list = {}
 
 -- ** LOCAL UTIL **
 local function toggle_archive(player, _, _)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local flags = player_table.ui_state.flags
     flags.archive_open = not flags.archive_open
 
@@ -17,10 +17,10 @@ local function refresh_after_subfactory_deletion(player, factory, removed_gui_po
     local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
     ui_util.context.set_subfactory(player, subfactory)
 
-    local archive_open = data_util.get("flags", player).archive_open
+    local archive_open = data_util.flags(player).archive_open
     if archive_open and Factory.count(factory, "Subfactory") == 0 then
         -- Make sure the just-unarchived subfactory is the selected one in factory; It'll always be the last one
-        local main_factory = data_util.get("table", player).factory
+        local main_factory = data_util.player_table(player).factory
         local last_position = Factory.count(main_factory, "Subfactory")
         -- It's okay to set selected_subfactory directly here, as toggle_archive calls the proper context util function
         main_factory.selected_subfactory = Factory.get_by_gui_position(main_factory, "Subfactory", last_position)
@@ -33,7 +33,7 @@ end
 
 
 local function archive_subfactory(player, _, _)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local ui_state = player_table.ui_state
     local subfactory = ui_state.context.subfactory
     local archive_open = ui_state.flags.archive_open
@@ -53,7 +53,7 @@ local function archive_subfactory(player, _, _)
 end
 
 local function add_subfactory(player, _, event)
-    local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
+    local prefer_product_picker = data_util.settings(player).prefer_product_picker
     local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
@@ -66,7 +66,7 @@ local function add_subfactory(player, _, event)
 end
 
 local function duplicate_subfactory(player, _, _)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local context = player_table.ui_state.context
     local archive_open = player_table.ui_state.flags.archive_open
     local factory = player_table.factory
@@ -87,7 +87,7 @@ end
 
 
 local function handle_move_subfactory_click(player, tags, event)
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     local subfactory = Factory.get(context.factory, "Subfactory", tags.subfactory_id)
 
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
@@ -98,7 +98,7 @@ local function handle_move_subfactory_click(player, tags, event)
 end
 
 local function handle_subfactory_click(player, tags, action)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local previous_subfactory = ui_state.context.subfactory
 
     local selected_subfactory = Factory.get(ui_state.context.factory, "Subfactory", tags.subfactory_id)
@@ -124,12 +124,12 @@ end
 
 -- ** TOP LEVEL **
 function subfactory_list.build(player)
-    local main_elements = data_util.get("main_elements", player)
+    local main_elements = data_util.main_elements(player)
     main_elements.subfactory_list = {}
 
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    local row_count = data_util.get("settings", player).subfactory_list_rows
+    local row_count = data_util.settings(player).subfactory_list_rows
     frame_vertical.style.height = SUBFACTORY_SUBHEADER_HEIGHT + (row_count * SUBFACTORY_LIST_ELEMENT_HEIGHT)
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
@@ -183,7 +183,7 @@ function subfactory_list.build(player)
 end
 
 function subfactory_list.refresh(player)
-    local player_table = data_util.get("table", player)
+    local player_table = data_util.player_table(player)
     local flags, context = player_table.ui_state.flags, player_table.ui_state.context
     local subfactory_list_elements = player_table.ui_state.main_elements.subfactory_list
 
@@ -256,7 +256,7 @@ function subfactory_list.refresh(player)
     subfactory_list_elements.import_button.enabled = (not archive_open)
     subfactory_list_elements.export_button.enabled = (subfactory_exists)
 
-    local prefer_product_picker = data_util.get("settings", player).prefer_product_picker
+    local prefer_product_picker = data_util.settings(player).prefer_product_picker
     subfactory_list_elements.add_button.enabled = (not archive_open)
     subfactory_list_elements.add_button.tooltip = (prefer_product_picker)
         and {"fp.action_add_subfactory_by_product"} or {"fp.action_add_subfactory_by_name"}
@@ -274,11 +274,11 @@ end
 function subfactory_list.add_subfactory(player, name)
     local subfactory = Subfactory.init(name)
 
-    local settings = data_util.get("settings", player)
+    local settings = data_util.settings(player)
     subfactory.timescale = settings.default_timescale
     if settings.prefer_matrix_solver then subfactory.matrix_free_items = {} end
 
-    local context = data_util.get("context", player)
+    local context = data_util.context(player)
     Factory.add(context.factory, subfactory)
     ui_util.context.set_subfactory(player, subfactory)
 
@@ -287,7 +287,7 @@ end
 
 -- Utility function to centralize subfactory deletion behavior
 function subfactory_list.delete_subfactory(player)
-    local ui_state = data_util.get("ui_state", player)
+    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
     if subfactory == nil then return end  -- prevent crashes due to multiplayer latency
 
@@ -314,9 +314,9 @@ function NTH_TICK_HANDLERS.delete_subfactory_for_good(metadata)
     local removed_gui_position = Factory.remove(archive, metadata.subfactory)
 
     local player = game.get_player(metadata.player_index)
-    if data_util.get("main_elements", player).main_frame == nil then return end
+    if data_util.main_elements(player).main_frame == nil then return end
 
-    if data_util.get("flags", player).archive_open then
+    if data_util.flags(player).archive_open then
         refresh_after_subfactory_deletion(player, archive, removed_gui_position)
     else  -- only need to refresh the archive button enabled state really
         main_dialog.refresh(player, "subfactory_list")
@@ -348,7 +348,7 @@ subfactory_list.gui_events = {
         {
             name = "edit_subfactory",
             handler = (function(player, _, _)
-                local subfactory = data_util.get("context", player).subfactory
+                local subfactory = data_util.context(player).subfactory
                 modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=subfactory}})
             end)
         },

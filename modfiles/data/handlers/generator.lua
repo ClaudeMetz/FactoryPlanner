@@ -345,7 +345,7 @@ function generator.all_items()
     for type, item_table in pairs(relevant_items) do
         for item_name, item_details in pairs(item_table) do
             local proto_name = generator_util.format_temperature_name(item_details, item_name)
-            local proto = game[type .. "_prototypes"][proto_name]  ---@type LuaItemPrototype
+            local proto = game[type .. "_prototypes"][proto_name]  ---@type LuaItemPrototype | LuaFluidPrototype
             if proto == nil then goto skip_item end
 
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
