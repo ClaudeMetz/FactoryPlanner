@@ -85,6 +85,12 @@ function Factory.update_ingredient_satisfactions(self)
     end
 end
 
+function Factory.update_calculations(self)
+    for _, subfactory in ipairs(Factory.get_in_order(self, "Subfactory")) do
+        solver.update(player, subfactory)
+    end
+end
+
 -- Needs validation: Subfactory
 function Factory.validate(self)
     Collection.validate_datasets(self.Subfactory, Subfactory)
