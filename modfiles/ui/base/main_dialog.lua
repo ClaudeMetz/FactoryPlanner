@@ -1,10 +1,5 @@
 require("ui.main.title_bar")
 require("ui.main.subfactory_list")
-require("ui.main.subfactory_info")
-require("ui.main.item_boxes")
-require("ui.main.production_box")
-require("ui.main.production_table")
-require("ui.main.production_handler")
 require("ui.base.view_state")
 
 main_dialog = {}
