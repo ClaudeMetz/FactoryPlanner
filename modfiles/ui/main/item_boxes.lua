@@ -240,8 +240,7 @@ function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options,
 end
 
 
--- ** TOP LEVEL **
-function item_boxes.build(player)
+local function build_item_boxes(player)
     local main_elements = data_util.main_elements(player)
     main_elements.item_boxes = {}
 
@@ -258,6 +257,8 @@ function item_boxes.build(player)
     item_boxes.refresh(player)
 end
 
+
+-- ** TOP LEVEL **
 function item_boxes.refresh(player)
     local player_table = data_util.player_table(player)
     local context = player_table.ui_state.context
@@ -354,6 +355,14 @@ listeners.gui = {
             handler = put_ingredients_into_cursor
         }
     }
+}
+
+listeners.misc = {
+    build_gui_element = (function(player, event)
+        if event.context == "main_dialog" then
+            build_item_boxes(player)
+        end
+    end)
 }
 
 return { listeners }

@@ -64,7 +64,7 @@ local function rebuild_compact_dialog(player, default_visibility)
         tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
-    compact_subfactory.build(player)
+    ui_util.raise_build(player, "compact_subfactory", nil)
 
     return frame_compact_dialog
 end
@@ -437,8 +437,7 @@ local function handle_hover_change(player, tags, event)
 end
 
 
--- ** TOP LEVEL **
-function compact_subfactory.build(player)
+local function build_compact_subfactory(player)
     local ui_state = data_util.ui_state(player)
     local compact_elements = ui_state.compact_elements
 
@@ -456,8 +455,8 @@ function compact_subfactory.build(player)
     flow_view_state.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     view_state.rebuild_state(player)  -- initializes the view_state
-    local table_view_state = view_state.build(player, flow_view_state)
-    compact_elements["view_state_table"] = table_view_state
+    ui_util.raise_build(player, "view_state", flow_view_state)
+    compact_elements["view_state_table"] = flow_view_state["table_view_state"]
 
     subheader.add{type="line", direction="horizontal"}
 
@@ -500,6 +499,8 @@ function compact_subfactory.build(player)
     compact_subfactory.refresh(player)
 end
 
+
+-- ** TOP LEVEL **
 function compact_subfactory.refresh(player)
     local player_table = data_util.player_table(player)
     local compact_elements = player_table.ui_state.compact_elements
@@ -649,6 +650,14 @@ subfactory_listeners.gui = {
             handler = handle_hover_change
         }
     }
+}
+
+subfactory_listeners.misc = {
+    build_gui_element = (function(player, event)
+        if event.context == "compact_subfactory" then
+            build_compact_subfactory(player)
+        end
+    end)
 }
 
 return { dialog_listeners, subfactory_listeners }

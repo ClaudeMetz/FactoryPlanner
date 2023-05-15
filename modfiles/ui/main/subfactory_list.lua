@@ -122,8 +122,7 @@ local function handle_subfactory_click(player, tags, action)
 end
 
 
--- ** TOP LEVEL **
-function subfactory_list.build(player)
+local function build_subfactory_list(player)
     local main_elements = data_util.main_elements(player)
     main_elements.subfactory_list = {}
 
@@ -182,6 +181,8 @@ function subfactory_list.build(player)
     subfactory_list.refresh(player)
 end
 
+
+-- ** TOP LEVEL **
 function subfactory_list.refresh(player)
     local player_table = data_util.player_table(player)
     local flags, context = player_table.ui_state.flags, player_table.ui_state.context
@@ -376,6 +377,14 @@ listeners.gui = {
             handler = handle_subfactory_click
         }
     }
+}
+
+listeners.misc = {
+    build_gui_element = (function(player, event)
+        if event.context == "main_dialog" then
+            build_subfactory_list(player)
+        end
+    end)
 }
 
 return { listeners }

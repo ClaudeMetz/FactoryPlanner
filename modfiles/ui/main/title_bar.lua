@@ -19,12 +19,12 @@ local function toggle_paused_state(player, _, _)
 end
 
 
--- ** TOP LEVEL **
-function title_bar.build(player)
+local function build_title_bar(player)
     local main_elements = data_util.main_elements(player)
     main_elements.title_bar = {}
 
-    local flow_title_bar = main_elements.main_frame.add{type="flow", direction="horizontal",
+    local parent_flow = main_elements.flows.top_horizontal
+    local flow_title_bar = parent_flow.add{type="flow", direction="horizontal",
         tags={mod="fp", on_gui_click="re-center_main_dialog"}}
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
@@ -73,6 +73,8 @@ function title_bar.build(player)
     button_close.style.padding = 1
 end
 
+
+-- ** TOP LEVEL **
 function title_bar.refresh(player)
     local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
@@ -184,6 +186,12 @@ listeners.gui = {
 listeners.misc = {
     fp_toggle_pause = (function(player, _)
         if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
+    end),
+
+    build_gui_element = (function(player, event)
+        if event.context == "main_dialog" then
+            build_title_bar(player)
+        end
     end)
 }
 

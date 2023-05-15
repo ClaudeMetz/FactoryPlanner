@@ -32,8 +32,7 @@ local function change_floor(player, destination)
 end
 
 
--- ** TOP LEVEL **
-function production_box.build(player)
+local function build_production_box(player)
     local main_elements = data_util.main_elements(player)
     main_elements.production_box = {}
 
@@ -82,8 +81,8 @@ function production_box.build(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local table_view_state = view_state.build(player, subheader)
-    main_elements.production_box["view_state_table"] = table_view_state
+    ui_util.raise_build(player, "view_state", subheader)
+    main_elements.production_box["view_state_table"] = subheader["table_view_state"]
 
     local label_instruction = click_flow.add{type="label", style="bold_label"}
     label_instruction.style.margin = 20
@@ -92,6 +91,8 @@ function production_box.build(player)
     production_box.refresh(player)
 end
 
+
+-- ** TOP LEVEL **
 function production_box.refresh(player)
     local player_table = data_util.player_table(player)
     local ui_state = player_table.ui_state
@@ -177,6 +178,12 @@ listeners.misc = {
     end),
     fp_top_floor = (function(player, _, _)
         if main_dialog.is_in_focus(player) then change_floor(player, "top") end
+    end),
+
+    build_gui_element = (function(player, event)
+        if event.context == "main_dialog" then
+            build_production_box(player)
+        end
     end)
 }
 
