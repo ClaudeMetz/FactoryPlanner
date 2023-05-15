@@ -212,7 +212,7 @@ function machine_dialog.close(player, action)
 
         local subfactory = data_util.context(player).subfactory
         solver.update(player, subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup

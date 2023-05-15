@@ -99,7 +99,7 @@ listeners.gui = {
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
                 data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING)
-                main_dialog.refresh(player, "all")
+                ui_util.raise_refresh(player, "all", nil)
                 modal_dialog.exit(player, "cancel")
             end)
         }
@@ -110,7 +110,7 @@ listeners.gui = {
             handler = (function(player, _, event)
                 local preferences = data_util.preferences(player)
                 preferences.tutorial_mode = ui_util.switch.convert_to_boolean(event.element.switch_state)
-                main_dialog.refresh(player, "all")
+                ui_util.raise_refresh(player, "all", nil)
             end)
         }
     }

@@ -1,5 +1,4 @@
 -- This contains both the UI handling for view states, as well as the amount conversions
-view_state = {}
 
 -- ** LOCAL UTIL **
 local function cycle_views(player, direction)
@@ -16,8 +15,8 @@ local function cycle_views(player, direction)
         view_state.select(player, new_view_id)
 
         local compact_view = data_util.flags(player).compact_view
-        if compact_view then compact_subfactory.refresh(player)
-        else main_dialog.refresh(player, "production") end
+        local refresh = (compact_view) and "compact_subfactory" or "production"
+        ui_util.raise_refresh(player, refresh, nil)
 
         -- This avoids the game focusing a random textfield when pressing Tab to change states
         local main_frame = ui_state.main_elements.main_frame
@@ -82,6 +81,27 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
 end
 
 
+local function refresh_view_state(player, table_view_state)
+    local ui_state = data_util.ui_state(player)
+
+    -- Automatically detects a timescale change and refreshes the state if necessary
+    local subfactory = ui_state.context.subfactory
+    if not subfactory then
+        return
+    elseif subfactory.current_timescale ~= ui_state.view_states.timescale then
+        view_state.rebuild_state(player)
+    end
+
+    for _, view_button in ipairs(table_view_state.children) do
+        local view_state = ui_state.view_states[view_button.tags.view_id]
+        view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
+        view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
+        view_button.style.padding = {0, 12}  -- needs to be re-set when changing the style
+        view_button.enabled = (not view_state.selected)
+    end
+end
+
+
 local function build_view_state(player, parent_element)
     local view_states = data_util.ui_state(player).view_states
 
@@ -97,6 +117,8 @@ end
 
 
 -- ** TOP LEVEL **
+view_state = {}
+
 -- Creates metadata relevant for a whole batch of items
 function view_state.generate_metadata(player, subfactory)
     local player_table = data_util.player_table(player)
@@ -181,26 +203,6 @@ function view_state.rebuild_state(player)
     view_state.select(player, selected_view_id)
 end
 
-function view_state.refresh(player, table_view_state)
-    local ui_state = data_util.ui_state(player)
-
-    -- Automatically detects a timescale change and refreshes the state if necessary
-    local subfactory = ui_state.context.subfactory
-    if not subfactory then
-        return
-    elseif subfactory.current_timescale ~= ui_state.view_states.timescale then
-        view_state.rebuild_state(player)
-    end
-
-    for _, view_button in ipairs(table_view_state.children) do
-        local view_state = ui_state.view_states[view_button.tags.view_id]
-        view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
-        view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
-        view_button.style.padding = {0, 12}  -- needs to be re-set when changing the style
-        view_button.enabled = (not view_state.selected)
-    end
-end
-
 function view_state.select(player, selected_view)
     local view_states = data_util.ui_state(player).view_states
 
@@ -240,8 +242,8 @@ listeners.gui = {
                 view_state.select(player, tags.view_id)
 
                 local compact_view = data_util.flags(player).compact_view
-                if compact_view then compact_subfactory.refresh(player)
-                else main_dialog.refresh(player, "production") end
+                local refresh = (compact_view) and "compact_subfactory" or "production"
+                ui_util.raise_refresh(player, refresh, nil)
             end)
         }
     }
@@ -256,8 +258,13 @@ listeners.misc = {
     end),
 
     build_gui_element = (function(player, event)
-        if event.context == "view_state" then
+        if event.trigger == "view_state" then
             build_view_state(player, event.parent)
+        end
+    end),
+    refresh_gui_element = (function(player, event)
+        if event.trigger == "view_state" then
+            refresh_view_state(player, event.element)
         end
     end)
 }

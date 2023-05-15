@@ -1,6 +1,5 @@
 import_dialog = {}
 export_dialog = {}
-porter_dialog = {}  -- table containing functionality shared between both dialogs
 
 -- ** LOCAL UTIL **
 local function set_tool_button_state(button, dialog_type, enabled)
@@ -263,7 +262,7 @@ function import_dialog.close(player, action)
         end
 
         ui_util.context.set_subfactory(player, first_subfactory)
-        main_dialog.refresh(player, "all")
+        ui_util.raise_refresh(player, "all", nil)
     end
 end
 

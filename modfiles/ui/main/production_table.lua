@@ -1,5 +1,3 @@
-production_table = {}
-
 -- ** LOCAL UTIL **
 local function generate_metadata(player)
     local ui_state = data_util.ui_state(player)
@@ -367,27 +365,12 @@ local all_production_columns = {
     {name="line_comment", caption={"fp.column_comment"}, alignment="left"}
 }
 
+local function refresh_production_table(player)
+    local ui_state = data_util.ui_state(player)
+    if ui_state.main_elements.main_frame == nil then return end
 
-local function build_production_table(player)
-    local main_elements = data_util.main_elements(player)
-    main_elements.production_table = {}
-
-    -- Can't do much here since the table needs to be destroyed on refresh anyways
-    local frame_vertical = main_elements.production_box.vertical_frame
-    local scroll_pane_production = frame_vertical.add{type="scroll-pane", direction="vertical",
-        style="flib_naked_scroll_pane_no_padding"}
-    scroll_pane_production.style.horizontally_stretchable = true
-    main_elements.production_table["production_scroll_pane"] = scroll_pane_production
-
-    production_table.refresh(player)
-end
-
-
--- ** TOP LEVEL **
-function production_table.refresh(player)
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = data_util.preferences(player)
-    local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
 
     local production_table_elements = ui_state.main_elements.production_table
@@ -449,15 +432,33 @@ function production_table.refresh(player)
     render_lines(ui_state.context.floor, 0)
 end
 
+local function build_production_table(player)
+    local main_elements = data_util.main_elements(player)
+    main_elements.production_table = {}
+
+    -- Can't do much here since the table needs to be destroyed on refresh anyways
+    local frame_vertical = main_elements.production_box.vertical_frame
+    local scroll_pane_production = frame_vertical.add{type="scroll-pane", direction="vertical",
+        style="flib_naked_scroll_pane_no_padding"}
+    scroll_pane_production.style.horizontally_stretchable = true
+    main_elements.production_table["production_scroll_pane"] = scroll_pane_production
+
+    refresh_production_table(player)
+end
+
 
 -- ** EVENTS **
 local listeners = {}
 
 listeners.misc = {
     build_gui_element = (function(player, event)
-        if event.context == "main_dialog" then
+        if event.trigger == "main_dialog" then
             build_production_table(player)
         end
+    end),
+    refresh_gui_element = (function(player, event)
+        local triggers = {production_table=true, production_detail=true, production=true, subfactory=true, all=true}
+        if triggers[event.trigger] then refresh_production_table(player) end
     end)
 }
 

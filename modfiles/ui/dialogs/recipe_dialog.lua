@@ -117,7 +117,7 @@ local function attempt_adding_line(player, recipe_id)
         if not message then message = defaults_message end  -- a bit silly
 
         solver.update(player, ui_state.context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
     end
 end

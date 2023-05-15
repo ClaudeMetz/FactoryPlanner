@@ -1,5 +1,3 @@
-subfactory_info = {}
-
 -- ** LOCAL UTIL **
 local function repair_subfactory(player, _, _)
     -- This function can only run is a subfactory is selected and invalid
@@ -8,7 +6,7 @@ local function repair_subfactory(player, _, _)
     Subfactory.repair(subfactory, player)
 
     solver.update(player, subfactory)
-    main_dialog.refresh(player, "all")  -- needs the full refresh to reset subfactory list buttons
+    ui_util.raise_refresh(player, "all", nil)  -- needs the full refresh to reset subfactory list buttons
 end
 
 local function change_timescale(player, new_timescale)
@@ -30,7 +28,7 @@ local function change_timescale(player, new_timescale)
 
     solver.update(player, subfactory)
     -- View state updates itself automatically if it detects a timescale change
-    main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 end
 
 local function handle_solver_change(player, _, event)
@@ -66,9 +64,74 @@ local function handle_solver_change(player, _, event)
     end
 
     solver.update(player, subfactory)
-    main_dialog.refresh(player, "subfactory")
+    ui_util.raise_refresh(player, "subfactory", nil)
 end
 
+
+local function refresh_subfactory_info(player)
+    local ui_state = data_util.ui_state(player)
+    if ui_state.main_elements.main_frame == nil then return end
+
+    local subfactory_info_elements = ui_state.main_elements.subfactory_info
+    local subfactory = ui_state.context.subfactory
+
+    local invalid_subfactory_selected = (subfactory and not subfactory.valid)
+    subfactory_info_elements.repair_flow.visible = invalid_subfactory_selected
+
+    local valid_subfactory_selected = (subfactory and subfactory.valid)
+    subfactory_info_elements.power_pollution_flow.visible = valid_subfactory_selected
+    subfactory_info_elements.info_flow.visible = valid_subfactory_selected
+
+    if invalid_subfactory_selected then
+        subfactory_info_elements.repair_label.tooltip = data_util.porter.format_modset_diff(subfactory.last_valid_modset)
+
+    elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
+        local archive_open = ui_state.flags.archive_open
+        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
+
+        -- Power + Pollution
+        local label_power = subfactory_info_elements.power_label
+        label_power.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.energy_consumption, "W", 3)}
+        label_power.tooltip = ui_util.format_SI_value(subfactory.energy_consumption, "W", 5)
+
+        local label_pollution = subfactory_info_elements.pollution_label
+        label_pollution.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.pollution, "P/m", 3)}
+        label_pollution.tooltip = ui_util.format_SI_value(subfactory.pollution, "P/m", 5)
+
+        -- Timescale
+        for _, button in pairs(subfactory_info_elements.timescales_table.children) do
+            local selected = (subfactory.timescale == button.tags.timescale)
+            button.style = (selected) and "fp_button_push_active" or "fp_button_push"
+            button.style.width = 42  -- needs to be re-set when changing the style
+            button.enabled = not (selected or archive_open)
+        end
+
+        -- Mining Productivity
+        local custom_prod_set = subfactory.mining_productivity
+
+        if not custom_prod_set then  -- only do this calculation when it'll actually be shown
+            local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
+            subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", prod_bonus .. "%"}
+        end
+        subfactory_info_elements.prod_bonus_label.visible = not custom_prod_set
+
+        subfactory_info_elements.override_prod_bonus_button.enabled = (not archive_open)
+        subfactory_info_elements.override_prod_bonus_button.visible = not custom_prod_set
+
+        if custom_prod_set then  -- only change the text when the textfield will actually be shown
+            subfactory_info_elements.prod_bonus_override_textfield.text = tostring(subfactory.mining_productivity)
+        end
+        subfactory_info_elements.prod_bonus_override_textfield.enabled = (not archive_open)
+        subfactory_info_elements.prod_bonus_override_textfield.visible = custom_prod_set
+        subfactory_info_elements.percentage_label.visible = custom_prod_set
+
+        -- Solver Choice
+        local switch_state = (matrix_solver_active) and "right" or "left"
+        subfactory_info_elements.solver_choice_switch.switch_state = switch_state
+        subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
+        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
+    end
+end
 
 local function build_subfactory_info(player)
     local main_elements = data_util.main_elements(player)
@@ -177,74 +240,7 @@ local function build_subfactory_info(player)
     button_configure_solver.style.padding = 0
     main_elements.subfactory_info["configure_solver_button"] = button_configure_solver
 
-    subfactory_info.refresh(player)
-end
-
-
--- ** TOP LEVEL **
-function subfactory_info.refresh(player)
-    local ui_state = data_util.ui_state(player)
-    local subfactory_info_elements = ui_state.main_elements.subfactory_info
-    local subfactory = ui_state.context.subfactory
-
-    local invalid_subfactory_selected = (subfactory and not subfactory.valid)
-    subfactory_info_elements.repair_flow.visible = invalid_subfactory_selected
-
-    local valid_subfactory_selected = (subfactory and subfactory.valid)
-    subfactory_info_elements.power_pollution_flow.visible = valid_subfactory_selected
-    subfactory_info_elements.info_flow.visible = valid_subfactory_selected
-
-    if invalid_subfactory_selected then
-        subfactory_info_elements.repair_label.tooltip = data_util.porter.format_modset_diff(subfactory.last_valid_modset)
-
-    elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
-        local archive_open = ui_state.flags.archive_open
-        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
-
-        -- Power + Pollution
-        local label_power = subfactory_info_elements.power_label
-        label_power.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.energy_consumption, "W", 3)}
-        label_power.tooltip = ui_util.format_SI_value(subfactory.energy_consumption, "W", 5)
-
-        local label_pollution = subfactory_info_elements.pollution_label
-        label_pollution.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.pollution, "P/m", 3)}
-        label_pollution.tooltip = ui_util.format_SI_value(subfactory.pollution, "P/m", 5)
-
-        -- Timescale
-        for _, button in pairs(subfactory_info_elements.timescales_table.children) do
-            local selected = (subfactory.timescale == button.tags.timescale)
-            button.style = (selected) and "fp_button_push_active" or "fp_button_push"
-            button.style.width = 42  -- needs to be re-set when changing the style
-            button.enabled = not (selected or archive_open)
-        end
-
-        -- Mining Productivity
-        local custom_prod_set = subfactory.mining_productivity
-
-        if not custom_prod_set then  -- only do this calculation when it'll actually be shown
-            local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
-            subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", prod_bonus .. "%"}
-        end
-        subfactory_info_elements.prod_bonus_label.visible = not custom_prod_set
-
-        subfactory_info_elements.override_prod_bonus_button.enabled = (not archive_open)
-        subfactory_info_elements.override_prod_bonus_button.visible = not custom_prod_set
-
-        if custom_prod_set then  -- only change the text when the textfield will actually be shown
-            subfactory_info_elements.prod_bonus_override_textfield.text = tostring(subfactory.mining_productivity)
-        end
-        subfactory_info_elements.prod_bonus_override_textfield.enabled = (not archive_open)
-        subfactory_info_elements.prod_bonus_override_textfield.visible = custom_prod_set
-        subfactory_info_elements.percentage_label.visible = custom_prod_set
-
-        -- Solver Choice
-        local switch_state = (matrix_solver_active) and "right" or "left"
-        subfactory_info_elements.solver_choice_switch.switch_state = switch_state
-        subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
-        subfactory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
-    end
-
-    title_bar.refresh(player)  -- refresh to disallow switching to compact view if the subfactory is nil or invalid
+    refresh_subfactory_info(player)
 end
 
 
@@ -270,7 +266,7 @@ listeners.gui = {
                 local subfactory = data_util.context(player).subfactory
                 subfactory.mining_productivity = 0
                 solver.update(player, subfactory)
-                main_dialog.refresh(player, "subfactory")
+                ui_util.raise_refresh(player, "subfactory", nil)
             end)
         },
         {
@@ -303,7 +299,7 @@ listeners.gui = {
                 local ui_state = data_util.ui_state(player)
                 ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
                 solver.update(player, ui_state.context.subfactory)
-                main_dialog.refresh(player, "subfactory")
+                ui_util.raise_refresh(player, "subfactory", nil)
             end)
         }
     }
@@ -311,9 +307,13 @@ listeners.gui = {
 
 listeners.misc = {
     build_gui_element = (function(player, event)
-        if event.context == "main_dialog" then
+        if event.trigger == "main_dialog" then
             build_subfactory_info(player)
         end
+    end),
+    refresh_gui_element = (function(player, event)
+        local triggers = {subfactory_info=true, subfactory=true, all=true}
+        if triggers[event.trigger] then refresh_subfactory_info(player) end
     end)
 }
 

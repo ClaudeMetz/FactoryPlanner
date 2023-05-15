@@ -1,6 +1,4 @@
-item_boxes = {}
-
---- ** LOCAL UTIL **
+-- ** LOCAL UTIL **
 local function add_recipe(player, context, type, item_proto)
     if type == "byproduct" and context.subfactory.matrix_free_items == nil then
         title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
@@ -165,12 +163,12 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "delete" then
         Subfactory.remove(context.subfactory, item)
         solver.update(player, context.subfactory)
-        main_dialog.refresh(player, "all")  -- make sure product icons are updated
+        ui_util.raise_refresh(player, "all", nil)  -- make sure product icons are updated
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
         local modal_data = {
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
@@ -235,32 +233,17 @@ function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options,
         end
 
         solver.update(player, ui_state.context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
     end
 end
 
 
-local function build_item_boxes(player)
-    local main_elements = data_util.main_elements(player)
-    main_elements.item_boxes = {}
-
-    local parent_flow = main_elements.flows.right_vertical
-    local flow_horizontal = parent_flow.add{type="flow", direction="horizontal"}
-    flow_horizontal.style.horizontal_spacing = FRAME_SPACING
-    main_elements.item_boxes["horizontal_flow"] = flow_horizontal
-
-    local products_per_row = data_util.settings(player).products_per_row
-    build_item_box(player, "product", products_per_row)
-    build_item_box(player, "byproduct", products_per_row)
-    build_item_box(player, "ingredient", products_per_row*2)
-
-    item_boxes.refresh(player)
-end
-
-
--- ** TOP LEVEL **
-function item_boxes.refresh(player)
+local function refresh_item_boxes(player)
     local player_table = data_util.player_table(player)
+
+    local main_elements = player_table.ui_state.main_elements
+    if main_elements.main_frame == nil then return end
+
     local context = player_table.ui_state.context
     local subfactory = context.subfactory
     local floor = context.floor
@@ -294,6 +277,23 @@ function item_boxes.refresh(player)
     item_boxes_elements.byproduct_item_table.parent.parent.style.minimal_height = item_table_height
     item_boxes_elements.ingredient_item_table.parent.style.minimal_height = item_table_height
     item_boxes_elements.ingredient_item_table.parent.parent.style.minimal_height = item_table_height
+end
+
+local function build_item_boxes(player)
+    local main_elements = data_util.main_elements(player)
+    main_elements.item_boxes = {}
+
+    local parent_flow = main_elements.flows.right_vertical
+    local flow_horizontal = parent_flow.add{type="flow", direction="horizontal"}
+    flow_horizontal.style.horizontal_spacing = FRAME_SPACING
+    main_elements.item_boxes["horizontal_flow"] = flow_horizontal
+
+    local products_per_row = data_util.settings(player).products_per_row
+    build_item_box(player, "product", products_per_row)
+    build_item_box(player, "byproduct", products_per_row)
+    build_item_box(player, "ingredient", products_per_row*2)
+
+    refresh_item_boxes(player)
 end
 
 
@@ -359,9 +359,13 @@ listeners.gui = {
 
 listeners.misc = {
     build_gui_element = (function(player, event)
-        if event.context == "main_dialog" then
+        if event.trigger == "main_dialog" then
             build_item_boxes(player)
         end
+    end),
+    refresh_gui_element = (function(player, event)
+        local triggers = {item_boxes=true, production=true, subfactory=true, all=true}
+        if triggers[event.trigger] then refresh_item_boxes(player) end
     end)
 }
 

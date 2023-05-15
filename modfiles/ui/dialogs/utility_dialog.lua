@@ -356,7 +356,7 @@ end
 
 function utility_dialog.close(player, _)
     data_util.modal_data(player).utility_inventory.destroy()
-    main_dialog.refresh(player, "subfactory_info")
+    ui_util.raise_refresh(player, "subfactory_info", nil)
 end
 
 

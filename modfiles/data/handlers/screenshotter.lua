@@ -85,7 +85,7 @@ local actions = {
         local hotness = Factory.get_by_gui_position(player_table.factory, "Subfactory", 3)
         ui_util.context.set_subfactory(player, hotness)
         solver.update(player, hotness)
-        main_dialog.refresh(player, "all")
+        ui_util.raise_refresh(player, "all", nil)
 
         -- Research
         player.force.technologies["oil-processing"].researched=true

@@ -427,7 +427,7 @@ function ui_util.clipboard.paste(player, target)
             ui_util.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
             solver.update(player, player_table.ui_state.context.subfactory)
-            main_dialog.refresh(player, "subfactory")
+            ui_util.raise_refresh(player, "subfactory", nil)
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
             if error == "incompatible_class" then
@@ -497,14 +497,15 @@ end
 
 
 ---@param player LuaPlayer
----@param context string
+---@param trigger "main_dialog" | "compact_subfactory" | "view_state"
 ---@param parent LuaGuiElement?
-function ui_util.raise_build(player, context, parent)
-    script.raise_event(BUILD_GUI_ELEMENT, {player_index=player.index, context=context, parent=parent})
+function ui_util.raise_build(player, trigger, parent)
+    script.raise_event(BUILD_GUI_ELEMENT, {player_index=player.index, trigger=trigger, parent=parent})
 end
 
---[[ ---@param player LuaPlayer
----@param context string
-function ui_util.raise_refresh(player, context)
-    script.raise_event(REFRESH_GUI_ELEMENT, {player_index=player.index, context=context})
-end ]]
+---@param player LuaPlayer
+---@param trigger "all" | "subfactory" | "production" | "production_detail" | "title_bar" | "subfactory_list" | "subfactory_info" | "item_boxes" | "production_box" | "production_table" | "compact_subfactory" | "view_state"
+---@param element LuaGuiElement?
+function ui_util.raise_refresh(player, trigger, element)
+    script.raise_event(REFRESH_GUI_ELEMENT, {player_index=player.index, trigger=trigger, element=element})
+end
