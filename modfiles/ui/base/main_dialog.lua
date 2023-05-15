@@ -112,39 +112,6 @@ function main_dialog.rebuild(player, default_visibility)
     main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
-
-local refreshable_elements = {subfactory_list=true, subfactory_info=true,
-    item_boxes=true, production_box=true, production_table=true}
-
-function main_dialog.refresh(player, context_to_refresh)
-    if context_to_refresh == nil then return end
-
-    local main_frame = data_util.main_elements(player).main_frame
-    if main_frame == nil then return end
-
-    if refreshable_elements[context_to_refresh] ~= nil then
-        -- If the given argument points to a specific element, only refresh that one
-        _G[context_to_refresh].refresh(player)
-    else
-        -- If not, it designates a category of elements that need to be refreshed
-        -- The code to refresh is independent for each element so call order doesn't matter
-
-        production_table.refresh(player)
-        -- If you only want the production table, refresh it using "production_table"
-        production_box.refresh(player)
-        if context_to_refresh == "production_detail" then goto end_refresh end
-        item_boxes.refresh(player)
-        if context_to_refresh == "production" then goto end_refresh end
-        subfactory_info.refresh(player)
-        if context_to_refresh == "subfactory" then goto end_refresh end
-        subfactory_list.refresh(player)
-        -- Refreshing everything doesn't need a name, but should be called "all" for clarity
-    end
-
-    ::end_refresh::
-    title_bar.refresh_message(player)
-end
-
 function main_dialog.toggle(player, skip_player_opened)
     local ui_state = data_util.ui_state(player)
     local frame_main_dialog = ui_state.main_elements.main_frame
@@ -279,7 +246,7 @@ listeners.misc = {
         elseif flags.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
-            main_dialog.refresh(player, "production")
+            ui_util.raise_refresh(player, "production", nil)
             flags.compact_view = false
 
         elseif main_focus and subfactory ~= nil and subfactory.valid then
@@ -287,6 +254,12 @@ listeners.misc = {
             compact_dialog.toggle(player)  -- toggle also refreshes
             flags.compact_view = true
         end
+    end),
+
+    refresh_gui_element = (function(player, event)
+        -- TODO refreshes no matter the context, which isn't correct really
+        -- Will be removed with the messages system refactor
+        title_bar.refresh_message(player)
     end)
 }
 

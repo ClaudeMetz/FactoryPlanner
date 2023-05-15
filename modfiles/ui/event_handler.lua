@@ -228,7 +228,7 @@ for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle
 -- is that multiple handlers can be registered to the same event, and there is no standard handler
 
 BUILD_GUI_ELEMENT = script.generate_event_name()
---REFRESH_GUI_ELEMENT = script.generate_event_name()
+REFRESH_GUI_ELEMENT = script.generate_event_name()
 
 local misc_identifier_map = {
     -- Standard events
@@ -254,7 +254,7 @@ local misc_identifier_map = {
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
 
     [BUILD_GUI_ELEMENT] = "build_gui_element",
-    --[REFRESH_GUI_ELEMENT] = "refresh_gui_element"
+    [REFRESH_GUI_ELEMENT] = "refresh_gui_element"
 }
 
 local misc_timeouts = {

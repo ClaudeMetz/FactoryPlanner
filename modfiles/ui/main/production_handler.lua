@@ -1,5 +1,3 @@
-production_handler = {}
-
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
     local context = data_util.context(player)
@@ -12,7 +10,7 @@ local function handle_line_move_click(player, tags, event)
     Floor.shift(floor, line, first_position, translated_direction, spots_to_shift)
 
     solver.update(player, context.subfactory)
-    main_dialog.refresh(player, "subfactory")
+    ui_util.raise_refresh(player, "subfactory", nil)
 end
 
 local function handle_recipe_click(player, tags, action)
@@ -40,7 +38,7 @@ local function handle_recipe_click(player, tags, action)
         end
 
         ui_util.context.set_floor(player, subfloor)
-        main_dialog.refresh(player, "production")
+        ui_util.raise_refresh(player, "production", nil)
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, line)  -- use actual line
@@ -51,7 +49,7 @@ local function handle_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
     elseif action == "delete" then
         Floor.remove(floor, line)
@@ -60,7 +58,7 @@ local function handle_recipe_click(player, tags, action)
         if fold_out_subfloors and Floor.count(floor, "Line") < 2 then Floor.reset(floor) end
 
         solver.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
@@ -83,7 +81,7 @@ local function handle_percentage_confirmation(player, _, _)
     local ui_state = data_util.ui_state(player)
     ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
     solver.update(player, ui_state.context.subfactory)
-    main_dialog.refresh(player, "subfactory")
+    ui_util.raise_refresh(player, "subfactory", nil)
 end
 
 
@@ -113,7 +111,7 @@ local function handle_machine_click(player, tags, action)
         local message = Line.apply_mb_defaults(line, player)
 
         solver.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
         if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, true) end
 
     elseif action == "recipebook" then
@@ -156,7 +154,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         Line.set_beacon(line, nil)
         solver.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
@@ -205,7 +203,7 @@ local function handle_module_click(player, tags, action)
 
         ModuleSet.normalize(module_set, {effects=true})
         solver.update(player, context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "item", module.proto.name)
@@ -238,7 +236,7 @@ function GENERIC_HANDLERS.apply_item_options(player, options, action)
             or (relevant_line.percentage * item_amount) / current_amount
 
         solver.update(player, ui_state.context.subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
     end
 end
 
@@ -256,7 +254,7 @@ local function handle_item_click(player, tags, action)
             line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
 
             solver.update(player, context.subfactory)
-            main_dialog.refresh(player, "subfactory")
+            ui_util.raise_refresh(player, "subfactory", nil)
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
@@ -268,7 +266,7 @@ local function handle_item_click(player, tags, action)
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
 
         local type_localised_string = {"fp.pl_" .. tags.class:lower(), 1}
         local produce_consume = (tags.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}

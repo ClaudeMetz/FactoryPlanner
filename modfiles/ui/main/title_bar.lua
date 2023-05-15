@@ -1,5 +1,3 @@
-title_bar = {}
-
 -- ** LOCAL UTIL **
 local function configure_pause_button_style(button, pause_on_interface)
     button.style = (pause_on_interface) and "fp_button_frame_tool_active" or "fp_button_frame_tool"
@@ -18,6 +16,16 @@ local function toggle_paused_state(player, _, _)
     end
 end
 
+
+local function refresh_title_bar(player)
+    local ui_state = data_util.ui_state(player)
+    if ui_state.main_elements.main_frame == nil then return end
+
+    local subfactory = ui_state.context.subfactory
+    local title_bar_elements = ui_state.main_elements.title_bar
+    -- Disallow switching to compact view if the selected subfactory is nil or invalid
+    title_bar_elements.switch_button.enabled = subfactory and subfactory.valid
+end
 
 local function build_title_bar(player)
     local main_elements = data_util.main_elements(player)
@@ -75,14 +83,7 @@ end
 
 
 -- ** TOP LEVEL **
-function title_bar.refresh(player)
-    local ui_state = data_util.ui_state(player)
-    local subfactory = ui_state.context.subfactory
-    local title_bar_elements = ui_state.main_elements.title_bar
-    -- Disallow switching to compact view if the selected subfactory is nil or invalid
-    title_bar_elements.switch_button.enabled = subfactory and subfactory.valid
-end
-
+title_bar = {}
 
 -- Enqueues the given message into the message queue; Possible types: error, warning, hint
 function title_bar.enqueue_message(player, message, type, lifetime, instant_refresh)
@@ -189,9 +190,13 @@ listeners.misc = {
     end),
 
     build_gui_element = (function(player, event)
-        if event.context == "main_dialog" then
+        if event.trigger == "main_dialog" then
             build_title_bar(player)
         end
+    end),
+    refresh_gui_element = (function(player, event)
+        local triggers = {title_bar=true, subfactory=true, all=true}
+        if triggers[event.trigger] then refresh_title_bar(player) end
     end)
 }
 

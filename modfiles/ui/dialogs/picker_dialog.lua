@@ -412,12 +412,12 @@ function picker_dialog.close(player, action)
         end
 
         solver.update(player, subfactory)
-        main_dialog.refresh(player, refresh_scope)
+        ui_util.raise_refresh(player, refresh_scope, nil)
 
     elseif action == "delete" then
         Subfactory.remove(subfactory, modal_data.object)
         solver.update(player, subfactory)
-        main_dialog.refresh(player, "subfactory")
+        ui_util.raise_refresh(player, "subfactory", nil)
     end
 
     -- Remember selected group so it can be re-applied when the dialog is re-opened

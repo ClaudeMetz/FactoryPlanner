@@ -88,7 +88,7 @@ function subfactory_dialog.close(player, action)
         if subfactory ~= nil then subfactory.name = subfactory_name
         else subfactory_list.add_subfactory(player, subfactory_name) end
 
-        main_dialog.refresh(player, "all")
+        ui_util.raise_refresh(player, "all", nil)
 
     elseif action == "delete" then
         subfactory_list.delete_subfactory(player)  -- handles archiving if necessary

@@ -1,5 +1,3 @@
-subfactory_list = {}
-
 -- ** LOCAL UTIL **
 local function toggle_archive(player, _, _)
     local player_table = data_util.player_table(player)
@@ -8,7 +6,7 @@ local function toggle_archive(player, _, _)
 
     local factory = flags.archive_open and player_table.archive or player_table.factory
     ui_util.context.set_factory(player, factory)
-    main_dialog.refresh(player, "all")
+    ui_util.raise_refresh(player, "all", nil)
 end
 
 -- Refresh the dialog, quitting archive view if it has become empty
@@ -27,7 +25,7 @@ local function refresh_after_subfactory_deletion(player, factory, removed_gui_po
 
         toggle_archive(player)  -- does refreshing on its own
     else
-        main_dialog.refresh(player, "all")
+        ui_util.raise_refresh(player, "all", nil)
     end
 end
 
@@ -82,7 +80,7 @@ local function duplicate_subfactory(player, _, _)
 
     ui_util.context.set_subfactory(player, inserted_clone)
     solver.update(player, inserted_clone)
-    main_dialog.refresh(player, "all")
+    ui_util.raise_refresh(player, "all", nil)
 end
 
 
@@ -94,7 +92,7 @@ local function handle_move_subfactory_click(player, tags, event)
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
     Factory.shift(context.factory, subfactory, 1, translated_direction, spots_to_shift)
 
-    main_dialog.refresh(player, "subfactory_list")
+    ui_util.raise_refresh(player, "subfactory_list", nil)
 end
 
 local function handle_subfactory_click(player, tags, action)
@@ -110,10 +108,10 @@ local function handle_subfactory_click(player, tags, action)
             ui_state.flags.recalculate_on_subfactory_change = false
             solver.update(player, previous_subfactory)
         end
-        main_dialog.refresh(player, "all")
+        ui_util.raise_refresh(player, "all", nil)
 
     elseif action == "edit" then
-        main_dialog.refresh(player, "all")  -- refresh to update the selected subfactory
+        ui_util.raise_refresh(player, "all", nil)  -- refresh to update the selected subfactory
         modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=selected_subfactory}})
 
     elseif action == "delete" then
@@ -122,73 +120,15 @@ local function handle_subfactory_click(player, tags, action)
 end
 
 
-local function build_subfactory_list(player)
-    local main_elements = data_util.main_elements(player)
-    main_elements.subfactory_list = {}
-
-    local parent_flow = main_elements.flows.left_vertical
-    local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    local row_count = data_util.settings(player).subfactory_list_rows
-    frame_vertical.style.height = SUBFACTORY_SUBHEADER_HEIGHT + (row_count * SUBFACTORY_LIST_ELEMENT_HEIGHT)
-
-    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
-
-    local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
-        sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
-    main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
-
-    local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_subfactory"},
-        style="tool_button", mouse_button_filter={"left"}}
-    main_elements.subfactory_list["archive_button"] = button_archive
-
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-
-    local button_import = subheader.add{type="sprite-button", sprite="utility/import",
-        tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-        tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="import"}}
-    main_elements.subfactory_list["import_button"] = button_import
-
-    local button_export = subheader.add{type="sprite-button", sprite="utility/export",
-        tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
-        tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="export"}}
-    main_elements.subfactory_list["export_button"] = button_export
-
-    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
-
-    local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_subfactory"},
-        sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
-    main_elements.subfactory_list["add_button"] = button_add
-
-    local button_edit = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="edit_subfactory"},
-        sprite="utility/rename_icon_normal", tooltip={"fp.action_edit_subfactory"}, style="tool_button",
-        mouse_button_filter={"left"}}
-    main_elements.subfactory_list["edit_button"] = button_edit
-
-    local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_subfactory"},
-        sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
-        mouse_button_filter={"left"}}
-    main_elements.subfactory_list["duplicate_button"] = button_duplicate
-
-    local button_delete = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_subfactory"},
-        sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
-    main_elements.subfactory_list["delete_button"] = button_delete
-
-    -- This is not really a list-box, but it imitates one and allows additional features
-    local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll-pane_fake_listbox"}
-    listbox_subfactories.style.width = SUBFACTORY_LIST_WIDTH
-    main_elements.subfactory_list["subfactory_listbox"] = listbox_subfactories
-
-    subfactory_list.refresh(player)
-end
-
-
--- ** TOP LEVEL **
-function subfactory_list.refresh(player)
+local function refresh_subfactory_list(player)
     local player_table = data_util.player_table(player)
     local flags, context = player_table.ui_state.flags, player_table.ui_state.context
-    local subfactory_list_elements = player_table.ui_state.main_elements.subfactory_list
+
+    local main_elements = player_table.ui_state.main_elements
+    if main_elements.main_frame == nil then return end
 
     local selected_subfactory = context.subfactory
+    local subfactory_list_elements = main_elements.subfactory_list
     local listbox = subfactory_list_elements.subfactory_listbox
     listbox.clear()
 
@@ -271,6 +211,69 @@ function subfactory_list.refresh(player)
         and {"fp.action_delete_subfactory"} or {"fp.action_trash_subfactory", delay_in_minutes}
 end
 
+local function build_subfactory_list(player)
+    local main_elements = data_util.main_elements(player)
+    main_elements.subfactory_list = {}
+
+    local parent_flow = main_elements.flows.left_vertical
+    local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
+    local row_count = data_util.settings(player).subfactory_list_rows
+    frame_vertical.style.height = SUBFACTORY_SUBHEADER_HEIGHT + (row_count * SUBFACTORY_LIST_ELEMENT_HEIGHT)
+
+    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
+
+    local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
+        sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
+    main_elements.subfactory_list["toggle_archive_button"] = button_toggle_archive
+
+    local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_subfactory"},
+        style="tool_button", mouse_button_filter={"left"}}
+    main_elements.subfactory_list["archive_button"] = button_archive
+
+    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local button_import = subheader.add{type="sprite-button", sprite="utility/import",
+        tooltip={"fp.action_import_subfactory"}, style="tool_button", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="import"}}
+    main_elements.subfactory_list["import_button"] = button_import
+
+    local button_export = subheader.add{type="sprite-button", sprite="utility/export",
+        tooltip={"fp.action_export_subfactory"}, style="tool_button", mouse_button_filter={"left"},
+        tags={mod="fp", on_gui_click="subfactory_list_open_dialog", type="export"}}
+    main_elements.subfactory_list["export_button"] = button_export
+
+    subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
+
+    local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_subfactory"},
+        sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
+    main_elements.subfactory_list["add_button"] = button_add
+
+    local button_edit = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="edit_subfactory"},
+        sprite="utility/rename_icon_normal", tooltip={"fp.action_edit_subfactory"}, style="tool_button",
+        mouse_button_filter={"left"}}
+    main_elements.subfactory_list["edit_button"] = button_edit
+
+    local button_duplicate = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="duplicate_subfactory"},
+        sprite="utility/clone", tooltip={"fp.action_duplicate_subfactory"}, style="tool_button",
+        mouse_button_filter={"left"}}
+    main_elements.subfactory_list["duplicate_button"] = button_duplicate
+
+    local button_delete = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="delete_subfactory"},
+        sprite="utility/trash", style="tool_button_red", mouse_button_filter={"left"}}
+    main_elements.subfactory_list["delete_button"] = button_delete
+
+    -- This is not really a list-box, but it imitates one and allows additional features
+    local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll-pane_fake_listbox"}
+    listbox_subfactories.style.width = SUBFACTORY_LIST_WIDTH
+    main_elements.subfactory_list["subfactory_listbox"] = listbox_subfactories
+
+    refresh_subfactory_list(player)
+end
+
+
+-- ** TOP LEVEL **
+subfactory_list = {}
+
 -- Utility function to centralize subfactory creation behavior
 function subfactory_list.add_subfactory(player, name)
     local subfactory = Subfactory.init(name)
@@ -314,13 +317,13 @@ function NTH_TICK_HANDLERS.delete_subfactory_for_good(metadata)
     local archive = metadata.subfactory.parent
     local removed_gui_position = Factory.remove(archive, metadata.subfactory)
 
-    local player = game.get_player(metadata.player_index)
+    local player = game.get_player(metadata.player_index)  ---@cast player -nil
     if data_util.main_elements(player).main_frame == nil then return end
 
     if data_util.flags(player).archive_open then
         refresh_after_subfactory_deletion(player, archive, removed_gui_position)
     else  -- only need to refresh the archive button enabled state really
-        main_dialog.refresh(player, "subfactory_list")
+        ui_util.raise_refresh(player, "subfactory_list", nil)
     end
 end
 
@@ -381,9 +384,13 @@ listeners.gui = {
 
 listeners.misc = {
     build_gui_element = (function(player, event)
-        if event.context == "main_dialog" then
+        if event.trigger == "main_dialog" then
             build_subfactory_list(player)
         end
+    end),
+    refresh_gui_element = (function(player, event)
+        local triggers = {subfactory_list=true, all=true}
+        if triggers[event.trigger] then refresh_subfactory_list(player) end
     end)
 }
 
