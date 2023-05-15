@@ -361,7 +361,9 @@ end
 
 
 -- ** EVENTS **
-utility_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "utility_item_combinator",
@@ -410,6 +412,8 @@ utility_dialog.gui_events = {
     }
 }
 
-utility_dialog.misc_events = {
+listeners.misc = {
     on_player_main_inventory_changed = handle_inventory_change
 }
+
+return { listeners }

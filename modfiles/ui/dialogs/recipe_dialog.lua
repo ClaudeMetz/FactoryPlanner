@@ -311,7 +311,9 @@ end
 
 
 -- ** EVENTS **
-recipe_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "pick_recipe",
@@ -329,3 +331,5 @@ recipe_dialog.gui_events = {
         }
     }
 }
+
+return { listeners }

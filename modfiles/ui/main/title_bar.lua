@@ -139,7 +139,9 @@ end
 
 
 -- ** EVENTS **
-title_bar.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "re-center_main_dialog",
@@ -179,8 +181,10 @@ title_bar.gui_events = {
     }
 }
 
-title_bar.misc_events = {
+listeners.misc = {
     fp_toggle_pause = (function(player, _)
         if main_dialog.is_in_focus(player) then toggle_paused_state(player) end
     end)
 }
+
+return { listeners }

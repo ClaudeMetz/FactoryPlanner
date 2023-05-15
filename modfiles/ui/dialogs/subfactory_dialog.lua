@@ -97,7 +97,9 @@ end
 
 
 -- ** EVENTS **
-subfactory_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_text_changed = {
         {
             name = "subfactory_name",
@@ -111,3 +113,5 @@ subfactory_dialog.gui_events = {
         }
     }
 }
+
+return { listeners }

@@ -426,7 +426,9 @@ end
 
 
 -- ** EVENTS **
-picker_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "select_picker_item_group",
@@ -464,3 +466,5 @@ picker_dialog.gui_events = {
         }
     }
 }
+
+return { listeners }

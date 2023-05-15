@@ -332,7 +332,9 @@ end
 
 
 -- ** EVENTS **
-production_handler.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "move_line",
@@ -475,3 +477,5 @@ production_handler.gui_events = {
         }
     }
 }
+
+return { listeners }

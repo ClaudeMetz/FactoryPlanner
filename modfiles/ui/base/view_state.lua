@@ -231,7 +231,9 @@ end
 
 
 -- ** EVENTS **
-view_state.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "change_view_state",
@@ -246,7 +248,7 @@ view_state.gui_events = {
     }
 }
 
-view_state.misc_events = {
+listeners.misc = {
     fp_cycle_production_views = (function(player, _)
         cycle_views(player, "standard")
     end),
@@ -254,3 +256,5 @@ view_state.misc_events = {
         cycle_views(player, "reverse")
     end)
 }
+
+return { listeners }

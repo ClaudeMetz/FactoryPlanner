@@ -89,7 +89,9 @@ end
 
 
 -- ** EVENTS **
-tutorial_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "add_example_subfactory",
@@ -113,3 +115,5 @@ tutorial_dialog.gui_events = {
         }
     }
 }
+
+return { listeners }

@@ -199,7 +199,9 @@ end
 
 
 -- ** EVENTS **
-module_configurator.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_elem_changed = {
         {
             name = "select_module",
@@ -219,3 +221,5 @@ module_configurator.gui_events = {
         }
     }
 }
+
+return { listeners }

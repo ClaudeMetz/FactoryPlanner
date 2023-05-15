@@ -140,7 +140,9 @@ end
 
 
 -- ** EVENTS **
-production_box.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "refresh_production",
@@ -166,7 +168,7 @@ production_box.gui_events = {
     }
 }
 
-production_box.misc_events = {
+listeners.misc = {
     fp_refresh_production = (function(player, _, _)
         if main_dialog.is_in_focus(player) then refresh_production(player, nil, nil) end
     end),
@@ -177,3 +179,5 @@ production_box.misc_events = {
         if main_dialog.is_in_focus(player) then change_floor(player, "top") end
     end)
 }
+
+return { listeners }
