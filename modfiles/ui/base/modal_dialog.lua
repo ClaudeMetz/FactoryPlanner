@@ -1,15 +1,3 @@
-require("ui.dialogs.generic_dialogs")
-require("ui.dialogs.tutorial_dialog")
-require("ui.dialogs.preferences_dialog")
-require("ui.dialogs.utility_dialog")
-require("ui.dialogs.picker_dialog")
-require("ui.dialogs.recipe_dialog")
-require("ui.dialogs.matrix_dialog")
-require("ui.dialogs.porter_dialog")
-require("ui.dialogs.subfactory_dialog")
-require("ui.dialogs.machine_dialog")
-require("ui.dialogs.beacon_dialog")
-
 modal_dialog = {}
 
 -- ** LOCAL UTIL **
