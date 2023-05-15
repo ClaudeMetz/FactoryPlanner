@@ -177,7 +177,9 @@ end
 
 
 -- ** EVENTS **
-matrix_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "swap_item_category",
@@ -185,3 +187,5 @@ matrix_dialog.gui_events = {
         }
     }
 }
+
+return { listeners }

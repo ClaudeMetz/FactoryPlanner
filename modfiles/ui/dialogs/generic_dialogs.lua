@@ -55,7 +55,9 @@ function chooser_dialog.open(_, modal_data)
     end
 end
 
-chooser_dialog.gui_events = {
+local chooser_listeners = {}
+
+chooser_listeners.gui = {
     on_gui_click = {
         {
             name = "make_chooser_choice",  -- great naming right there
@@ -67,6 +69,8 @@ chooser_dialog.gui_events = {
 
 
 -- ** OPTIONS **
+local options_listeners = {}
+
 -- ** LOCAL UTIL **
 local function call_change_handler(player, tags, event)
     local modal_data = data_util.modal_data(player)
@@ -75,7 +79,7 @@ local function call_change_handler(player, tags, event)
 end
 
 -- ** ELEMENTS **
-options_dialog.gui_events = {}
+options_listeners.gui = {}
 local elements = {}
 
 -- ** TEXTFIELD **
@@ -112,7 +116,7 @@ function elements.numeric_textfield.read(textfield)
 end
 
 -- ** TEXTFIELD EVENT **
-options_dialog.gui_events.on_gui_text_changed = {
+options_listeners.gui.on_gui_text_changed = {
     {
         name = "change_option",
         handler = call_change_handler
@@ -122,7 +126,7 @@ options_dialog.gui_events.on_gui_text_changed = {
 -- ** ON OFF SWITCH **
 elements.on_off_switch = {}
 
-options_dialog.gui_events.on_gui_switch_state_changed = {
+options_listeners.gui.on_gui_switch_state_changed = {
     {
         name = "change_option",
         handler = call_change_handler
@@ -145,7 +149,7 @@ end
 -- ** CHOOSE ELEM BUTTON **
 elements.choose_elem_button = {}
 
-options_dialog.gui_events.on_gui_elem_changed = {
+options_listeners.gui.on_gui_elem_changed = {
     {
         name = "change_option",
         handler = call_change_handler
@@ -210,3 +214,5 @@ function options_dialog.close(player, action)
     local handler_name = modal_data.submission_handler_name
     GENERIC_HANDLERS[handler_name](player, options_data, action)
 end
+
+return { chooser_listeners, options_listeners }

@@ -1,9 +1,20 @@
 -- Assembles event handlers from all the relevant files and calls them when needed
 
-local gui_objects = {main_dialog, title_bar, subfactory_list, subfactory_dialog, subfactory_info, item_boxes,
-    production_box, production_handler, compact_dialog, view_state, compact_subfactory, modal_dialog, porter_dialog,
-    import_dialog, export_dialog, tutorial_dialog, chooser_dialog, options_dialog, utility_dialog, preferences_dialog,
-    picker_dialog, recipe_dialog, matrix_dialog, module_configurator, machine_dialog, beacon_dialog}
+local event_listener_names = {"ui.base.main_dialog", "ui.base.compact_dialog", "ui.base.modal_dialog",
+    "ui.base.view_state", "ui.main.title_bar", "ui.main.subfactory_list", "ui.main.subfactory_info",
+    "ui.main.item_boxes", "ui.main.production_box", "ui.main.production_table", "ui.main.production_handler",
+    "ui.elements.module_configurator", "ui.dialogs.beacon_dialog", "ui.dialogs.generic_dialogs",
+    "ui.dialogs.machine_dialog", "ui.dialogs.matrix_dialog", "ui.dialogs.picker_dialog",
+    "ui.dialogs.picker_dialog", "ui.dialogs.porter_dialog", "ui.dialogs.preferences_dialog",
+    "ui.dialogs.recipe_dialog", "ui.dialogs.subfactory_dialog", "ui.dialogs.tutorial_dialog",
+    "ui.dialogs.utility_dialog"}
+
+local event_listeners = {}
+for _, listener_path in ipairs(event_listener_names) do
+    for _, listener in pairs(require(listener_path)) do
+        table.insert(event_listeners, listener)
+    end
+end
 
 
 local function guarded_event(handler, arguments)
@@ -21,7 +32,7 @@ local function guarded_event(handler, arguments)
     end
 end
 
--- ** RATE LIMITING **
+
 -- Returns whether rate limiting is active for the given action, stopping it from proceeding
 -- This is essentially to prevent duplicate commands in quick succession, enabled by lag
 local function rate_limiting_active(player, tick, action_name, timeout)
@@ -47,7 +58,7 @@ local function rate_limiting_active(player, tick, action_name, timeout)
     end
 end
 
--- ** TUTORIAL TOOLTIPS **
+
 local function generate_tutorial_tooltip_lines(modifier_actions)
     local action_lines = {}
 
@@ -118,9 +129,9 @@ for _, event_name in pairs(gui_identifier_map) do
 end
 
 -- Compile the list of GUI actions
-for _, object in pairs(gui_objects) do
-    if object.gui_events then
-        for event_name, actions in pairs(object.gui_events) do
+for _, listener in pairs(event_listeners) do
+    if listener.gui then
+        for event_name, actions in pairs(listener.gui) do
             local event_table = gui_event_cache[event_name]
 
             for _, action in pairs(actions) do
@@ -257,9 +268,9 @@ end)
 
 local misc_event_cache = {}
 -- Compile the list of misc handlers
-for _, object in pairs(gui_objects) do
-    if object.misc_events then
-        for event_name, handler in pairs(object.misc_events) do
+for _, listener in pairs(event_listeners) do
+    if listener.misc then
+        for event_name, handler in pairs(listener.misc) do
             misc_event_cache[event_name] = misc_event_cache[event_name] or {
                 registered_handlers = {},
                 special_handler = special_misc_handlers[event_name],

@@ -151,7 +151,9 @@ end
 
 
 -- ** EVENTS **
-beacon_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_elem_changed = {
         {
             name = "select_beacon",
@@ -181,7 +183,7 @@ beacon_dialog.gui_events = {
     }
 }
 
-beacon_dialog.misc_events = {
+listeners.misc = {
     on_player_cursor_stack_changed = (function(player, _)
         -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
         if data_util.flags(player).selection_mode and not player.cursor_stack.valid_for_read then
@@ -194,3 +196,5 @@ beacon_dialog.misc_events = {
         end
     end)
 }
+
+return { listeners }

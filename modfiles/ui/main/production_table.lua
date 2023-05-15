@@ -447,3 +447,7 @@ function production_table.refresh(player)
 
     render_lines(ui_state.context.floor, 0)
 end
+
+
+local listeners = {}
+return { listeners }

@@ -300,7 +300,9 @@ end
 
 
 -- ** EVENTS **
-modal_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "re-layer_interface_dimmer",
@@ -370,7 +372,7 @@ modal_dialog.gui_events = {
     }
 }
 
-modal_dialog.misc_events = {
+listeners.misc = {
     fp_confirm_dialog = (function(player, _)
         if not data_util.flags(player).selection_mode then
             modal_dialog.exit(player, "submit")
@@ -392,3 +394,5 @@ modal_dialog.misc_events = {
         end
     end)
 }
+
+return { listeners }

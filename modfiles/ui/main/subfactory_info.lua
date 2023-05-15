@@ -248,7 +248,9 @@ end
 
 
 -- ** EVENTS **
-subfactory_info.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "repair_subfactory",
@@ -305,3 +307,5 @@ subfactory_info.gui_events = {
         }
     }
 }
+
+return { listeners }

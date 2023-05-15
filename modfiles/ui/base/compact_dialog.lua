@@ -93,7 +93,9 @@ end
 
 
 -- ** EVENTS **
-compact_dialog.gui_events = {
+local dialog_listeners = {}
+
+dialog_listeners.gui = {
     on_gui_click = {
         {
             name = "switch_to_main_view",
@@ -124,7 +126,7 @@ compact_dialog.gui_events = {
     }
 }
 
-compact_dialog.misc_events = {
+dialog_listeners.misc = {
     on_player_display_resolution_changed = (function(player, _)
         rebuild_compact_dialog(player, false)
     end),
@@ -573,7 +575,9 @@ end
 
 
 -- ** EVENTS **
-compact_subfactory.gui_events = {
+local subfactory_listeners = {}
+
+subfactory_listeners.gui = {
     on_gui_click = {
         {
             name = "change_compact_floor",
@@ -646,3 +650,5 @@ compact_subfactory.gui_events = {
         }
     }
 }
+
+return { dialog_listeners, subfactory_listeners }

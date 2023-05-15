@@ -8,6 +8,11 @@
 
 local mod_gui = require("mod-gui")
 
+local handler_requires = {"ui.base.compact_dialog", "ui.base.modal_dialog", "ui.main.title_bar",
+    "ui.dialogs.picker_dialog", "ui.dialogs.porter_dialog"}
+local handlers = {} -- Need to require these here since it can't be done inside an event
+for _, path in pairs(handler_requires) do handlers[path] = require(path) end
+
 local function return_dimensions(scene, frame)
     local dimensions = {actual_size=frame.actual_size, location=frame.location}
     -- We do this on teardown so the frame has time to adjust all its sizes
@@ -26,8 +31,9 @@ local function modal_teardown(player, scene)
 end
 
 
-local function get_handler(table, name)
-    for _, handler_table in pairs(table) do
+local function get_handler(path, index, event, name)
+    local gui_handlers = handlers[path][index].gui[event]
+    for _, handler_table in pairs(gui_handlers) do
         if handler_table.name == name then return handler_table.handler end
     end
 end
@@ -107,13 +113,13 @@ local actions = {
     setup_02_compact_interface = function(player)
         data_util.main_elements(player).main_frame.location = player.display_resolution  -- hack city
         view_state.select(player, 2)
-        local toggle_handler = get_handler(title_bar.gui_events.on_gui_click, "switch_to_compact_view")
+        local toggle_handler = get_handler("ui.main.title_bar", 1, "on_gui_click", "switch_to_compact_view")
         toggle_handler(player, nil, nil)
     end,
     teardown_02_compact_interface = function(player)
         local compact_frame = data_util.ui_state(player).compact_elements.compact_frame
         return_dimensions("02_compact_interface", compact_frame)
-        local toggle_handler = get_handler(compact_dialog.gui_events.on_gui_click, "switch_to_main_view")
+        local toggle_handler = get_handler("ui.base.compact_dialog", 1, "on_gui_click", "switch_to_main_view")
         toggle_handler(player, nil, nil)
     end,
 
@@ -123,16 +129,16 @@ local actions = {
 
         local modal_elements = data_util.modal_elements(player)
         modal_elements.search_textfield.text = "f"
-        local search_handler = get_handler(modal_dialog.gui_events.on_gui_text_changed, "modal_searchfield")
+        local search_handler = get_handler("ui.base.modal_dialog", 1, "on_gui_text_changed", "modal_searchfield")
         search_handler(player, nil, {text="f"})
 
-        local group_handler = get_handler(picker_dialog.gui_events.on_gui_click, "select_picker_item_group")
+        local group_handler = get_handler("ui.dialogs.picker_dialog", 1, "on_gui_click", "select_picker_item_group")
         group_handler(player, {group_id=3}, nil)
 
         modal_elements.item_choice_button.sprite = "item/raw-fish"
         modal_elements.belt_amount_textfield.text = "0.5"
         modal_elements.belt_choice_button.elem_value = "fast-transport-belt"
-        local belt_handler = get_handler(picker_dialog.gui_events.on_gui_elem_changed, "picker_choose_belt")
+        local belt_handler = get_handler("ui.dialogs.picker_dialog", 1, "on_gui_elem_changed", "picker_choose_belt")
         belt_handler(player, nil, {element=modal_elements.belt_choice_button, elem_value="fast-transport-belt"})
 
         modal_elements.search_textfield.focus()
@@ -161,10 +167,10 @@ local actions = {
         local modal_elements = data_util.modal_elements(player)
         modal_elements.import_textfield.text = export_string
 
-        local textfield_handler = get_handler(import_dialog.gui_events.on_gui_text_changed, "import_string")
+        local textfield_handler = get_handler("ui.dialogs.porter_dialog", 1, "on_gui_text_changed", "import_string")
         textfield_handler(player, nil, {element=modal_elements.import_textfield, text=export_string})
 
-        local import_handler = get_handler(import_dialog.gui_events.on_gui_click, "import_subfactories")
+        local import_handler = get_handler("ui.dialogs.porter_dialog", 1, "on_gui_click", "import_subfactories")
         import_handler(player, nil, nil)
 
         modal_elements.subfactory_checkboxes["tmp_1"].state = false

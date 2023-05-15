@@ -325,7 +325,9 @@ end
 
 
 -- ** EVENTS **
-subfactory_list.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "toggle_archive",
@@ -375,3 +377,5 @@ subfactory_list.gui_events = {
         }
     }
 }
+
+return { listeners }

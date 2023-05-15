@@ -267,7 +267,9 @@ function import_dialog.close(player, action)
     end
 end
 
-import_dialog.gui_events = {
+local import_listeners = {}
+
+import_listeners.gui = {
     on_gui_click = {
         {
             name = "import_subfactories",
@@ -326,7 +328,9 @@ function export_dialog.open(player, modal_data)
     modal_elements.export_textfield.parent.style.top_margin = 6
 end
 
-export_dialog.gui_events = {
+local export_listeners = {}
+
+export_listeners.gui = {
     on_gui_click = {
         {
             name = "export_subfactories",
@@ -338,7 +342,9 @@ export_dialog.gui_events = {
 
 
 -- ** SHARED **
-porter_dialog.gui_events = {
+local porter_listeners = {}
+
+porter_listeners.gui = {
     on_gui_checked_state_changed = {
         {
             name = "toggle_porter_master_checkbox",
@@ -352,3 +358,5 @@ porter_dialog.gui_events = {
         }
     }
 }
+
+return { import_listeners, export_listeners, porter_listeners }

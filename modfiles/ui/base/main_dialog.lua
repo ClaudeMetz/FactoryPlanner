@@ -197,7 +197,9 @@ end
 
 
 -- ** EVENTS **
-main_dialog.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_closed = {
         {
             name = "close_main_dialog",
@@ -224,7 +226,7 @@ main_dialog.gui_events = {
     }
 }
 
-main_dialog.misc_events = {
+listeners.misc = {
     -- Makes sure that another GUI can open properly while a modal dialog is open.
     -- The FP interface can have at most 3 layers of GUI: main interface, modal dialog, selection mode.
     -- We need to make sure opening the technology screen (for example) from any of those layers behaves properly.
@@ -290,3 +292,5 @@ main_dialog.misc_events = {
         end
     end)
 }
+
+return { listeners }

@@ -297,7 +297,9 @@ end
 
 
 -- ** EVENTS **
-item_boxes.gui_events = {
+local listeners = {}
+
+listeners.gui = {
     on_gui_click = {
         {
             name = "add_top_level_item",
@@ -353,3 +355,5 @@ item_boxes.gui_events = {
         }
     }
 }
+
+return { listeners }
