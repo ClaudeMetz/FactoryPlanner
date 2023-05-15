@@ -178,7 +178,7 @@ listeners.gui = {
         {
             name = "title_bar_open_dialog",
             handler = (function(player, tags, _)
-                modal_dialog.enter(player, {type=tags.type})
+                ui_util.raise_open_dialog(player, {dialog=tags.type})
             end)
         }
     }

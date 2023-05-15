@@ -96,7 +96,7 @@ local function handle_machine_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={object=line.machine, line=line}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, line.machine)
@@ -127,7 +127,7 @@ local function handle_machine_module_add(player, tags, event)
     if event.shift then  -- paste
         ui_util.clipboard.paste(player, line.machine)
     else
-        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={object=line.machine, line=line}})
     end
 end
 
@@ -143,7 +143,7 @@ local function handle_beacon_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        modal_dialog.enter(player, {type="beacon", modal_data={object=line.beacon, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={object=line.beacon, line=line}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, line.beacon)
@@ -171,7 +171,7 @@ local function handle_beacon_add(player, tags, event)
         local fake_beacon = {parent=line, class="Beacon"}
         ui_util.clipboard.paste(player, fake_beacon)
     else
-        modal_dialog.enter(player, {type="beacon", modal_data={object=nil, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={object=nil, line=line}})
     end
 end
 
@@ -185,7 +185,7 @@ local function handle_module_click(player, tags, action)
     local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
 
     if action == "edit" then
-        modal_dialog.enter(player, {type=tags.parent_type, modal_data={object=parent_entity, line=line}})
+        ui_util.raise_open_dialog(player, {dialog=tags.parent_type, modal_data={object=parent_entity, line=line}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, module)
@@ -260,7 +260,7 @@ local function handle_item_click(player, tags, action)
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.class == "Byproduct") and "consume" or "produce"
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item.proto, floor_id=floor.id,
+        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=item.proto, floor_id=floor.id,
             production_type=production_type, add_after_position=add_after_position}})
 
     elseif action == "specify_amount" then
@@ -288,7 +288,7 @@ local function handle_item_click(player, tags, action)
                 }
             }
         }
-        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+        ui_util.raise_open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, item)
@@ -308,11 +308,12 @@ local function handle_fuel_click(player, tags, action)
     local fuel = line.machine.fuel  -- must exist to be able to get here
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
-        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=fuel.proto, floor_id=floor.id,
-            production_type="produce", add_after_position=((action == "add_recipe_below") and line.gui_position or nil)}})
+        local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
+        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=fuel.proto, floor_id=floor.id,
+            production_type="produce", add_after_position=add_after_position}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
-        modal_dialog.enter(player, {type="machine", modal_data={object=line.machine, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={object=line.machine, line=line}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, fuel)

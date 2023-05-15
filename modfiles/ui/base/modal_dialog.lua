@@ -137,66 +137,45 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     return frame_modal_dialog
 end
 
-local function apply_setting_overrides(base, overrides)
-    for k, v in pairs(overrides) do
-        local base_v = base[k]
-        if type(base_v) == "table" and type(v) == "table" then
-            apply_setting_overrides(base_v, v)
-        else
-            base[k] = v
-        end
-    end
-end
-
 
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
-function modal_dialog.enter(player, dialog_settings)
+function modal_dialog.enter(player, metadata, dialog_open, early_abort_check)
     local ui_state = data_util.ui_state(player)
 
     if ui_state.modal_dialog_type ~= nil then
         -- If a dialog is currently open, and this one wants to be queued, do so
-        if dialog_settings.allow_queueing then ui_state.queued_dialog_settings = dialog_settings end
+        if metadata.allow_queueing then ui_state.queued_dialog_metadata = metadata end
         return
     end
 
-    ui_state.modal_data = dialog_settings.modal_data or {}
-
-    local dialog_object = _G[dialog_settings.type .. "_dialog"]
-    if dialog_object.dialog_settings ~= nil then  -- collect additional settings
-        local additional_settings = dialog_object.dialog_settings(ui_state.modal_data)
-        apply_setting_overrides(dialog_settings, additional_settings)
-    end
-
-    local early_abort = dialog_object.early_abort_check  -- abort early if necessary
-    if early_abort ~= nil and early_abort(player, ui_state.modal_data) then
-        --ui_state.modal_data = nil  -- TODO this should be reset, but that breaks the stupid queueing stuff .........
+    if early_abort_check ~= nil and early_abort_check(player, ui_state.modal_data) then  -- abort early if need be
+        --ui_state.modal_data = nil  -- this should be reset, but that breaks the stupid queueing stuff .........
         title_bar.refresh_message(player)  -- make sure eventual messages are shown
         return
     end
 
-    ui_state.modal_dialog_type = dialog_settings.type
+    ui_state.modal_dialog_type = metadata.dialog
     ui_state.modal_data.modal_elements = {}
     ui_state.modal_data.confirmed_dialog = false
 
     -- Create interface_dimmer first so the layering works out correctly
     local interface_dimmer = player.gui.screen.add{type="frame", style="fp_frame_semitransparent",
-        tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=(not dialog_settings.skip_dimmer)}
+        tags={mod="fp", on_gui_click="re-layer_interface_dimmer"}, visible=(not metadata.skip_dimmer)}
     interface_dimmer.style.size = ui_state.main_dialog_dimensions
     interface_dimmer.location = ui_state.main_elements.main_frame.location
     ui_state.modal_data.modal_elements.interface_dimmer = interface_dimmer
 
     -- Create modal dialog framework and let the dialog itself fill it out
-    local frame_modal_dialog = create_base_modal_dialog(player, dialog_settings, ui_state.modal_data)
-    dialog_object.open(player, ui_state.modal_data)
+    local frame_modal_dialog = create_base_modal_dialog(player, metadata, ui_state.modal_data)
+    dialog_open(player, ui_state.modal_data)
     player.opened = frame_modal_dialog
     frame_modal_dialog.force_auto_center()  -- seems to be necessary now, not sure why
 end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
-function modal_dialog.exit(player, action, skip_player_opened)
-    local ui_state = data_util.ui_state(player)
-    if ui_state.modal_dialog_type == nil then return end
+function modal_dialog.exit(player, action, skip_opened, dialog_close)
+    local ui_state = data_util.ui_state(player)  -- dialog guaranteed to be open
 
     local modal_elements = ui_state.modal_data.modal_elements
     local submit_button = modal_elements.dialog_submit_button
@@ -204,9 +183,8 @@ function modal_dialog.exit(player, action, skip_player_opened)
     -- Stop exiting if trying to submit while submission is disabled
     if action == "submit" and (submit_button and not submit_button.enabled) then return end
 
-    -- Call the closing function for this dialog, if it exists
-    local closing_function = _G[ui_state.modal_dialog_type .. "_dialog"].close
-    if closing_function ~= nil then closing_function(player, action) end
+    -- Call the closing function for this dialog, if it has one
+    if dialog_close ~= nil then dialog_close(player, action) end
 
     -- Unregister the delayed search handler if present
     local search_tick = ui_state.modal_data.next_search_tick
@@ -219,12 +197,12 @@ function modal_dialog.exit(player, action, skip_player_opened)
     modal_elements.modal_frame.destroy()
     ui_state.modal_elements = nil
 
-    if not skip_player_opened then player.opened = ui_state.main_elements.main_frame end
+    if not skip_opened then player.opened = ui_state.main_elements.main_frame end
     title_bar.refresh_message(player)
 
-    if ui_state.queued_dialog_settings ~= nil then
-        modal_dialog.enter(player, ui_state.queued_dialog_settings)
-        ui_state.queued_dialog_settings = nil
+    if ui_state.queued_dialog_metadata ~= nil then
+        ui_util.raise_open_dialog(player, ui_state.queued_dialog_metadata)
+        ui_state.queued_dialog_metadata = nil
     end
 end
 
@@ -322,7 +300,7 @@ listeners.gui = {
         {
             name = "close_modal_dialog",
             handler = (function(player, tags, _)
-                modal_dialog.exit(player, tags.action)
+                ui_util.raise_close_dialog(player, tags.action)
             end)
         },
         {
@@ -360,7 +338,7 @@ listeners.gui = {
                     modal_dialog.leave_selection_mode(player)
                 else
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
-                    modal_dialog.exit(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
+                    ui_util.raise_close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
                     -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
                     if event.element.valid then player.opened = event.element end
                 end
@@ -375,7 +353,7 @@ listeners.gui = {
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
         if not data_util.flags(player).selection_mode then
-            modal_dialog.exit(player, "submit")
+            ui_util.raise_close_dialog(player, "submit")
         end
     end),
 

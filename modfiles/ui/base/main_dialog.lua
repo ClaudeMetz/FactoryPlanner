@@ -112,7 +112,7 @@ function main_dialog.rebuild(player, default_visibility)
     main_dialog.set_pause_state(player, frame_main_dialog)
 end
 
-function main_dialog.toggle(player, skip_player_opened)
+function main_dialog.toggle(player, skip_opened)
     local ui_state = data_util.ui_state(player)
     local frame_main_dialog = ui_state.main_elements.main_frame
 
@@ -122,7 +122,7 @@ function main_dialog.toggle(player, skip_player_opened)
     elseif ui_state.modal_dialog_type == nil then  -- don't toggle if modal dialog is open
         local new_dialog_visibility = not frame_main_dialog.visible
         frame_main_dialog.visible = new_dialog_visibility
-        if not skip_player_opened then  -- flag used only for hacky internal reasons
+        if not skip_opened then  -- flag used only for hacky internal reasons
             player.opened = (new_dialog_visibility) and frame_main_dialog or nil
         end
 
@@ -202,7 +202,7 @@ listeners.misc = {
         local ui_state = data_util.ui_state(player)
 
         -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-        if ui_state.modal_dialog_type ~= nil then modal_dialog.exit(player, "cancel", true) end
+        if ui_state.modal_dialog_type ~= nil then ui_util.raise_close_dialog(player, "cancel", true) end
 
         -- Then, at this point we're at most at the stage where the main dialog is open, so close it
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end

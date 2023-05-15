@@ -1,8 +1,6 @@
 -- This file contains general-purpose dialogs that are generic and used in several places
 -- Note: This system seems to have a problem, as references to functions stored in global
 -- break when reloading the game. In that case, just close the dialog without changes
-chooser_dialog = {}
-options_dialog = {}
 
 -- ** CHOOSER **
 local function add_chooser_button(modal_elements, definition)
@@ -29,21 +27,11 @@ local function handler_chooser_button_click(player, tags, event)
     local handler_name = data_util.modal_data(player).click_handler_name
     GENERIC_HANDLERS[handler_name](player, tags.element_id, event)
 
-    modal_dialog.exit(player, "cancel")
+    ui_util.raise_close_dialog(player, "cancel")
 end
 
-chooser_dialog.dialog_settings = (function(modal_data)
-    local info_tag = (modal_data.text_tooltip) and "[img=info]" or ""
-    return {
-        caption = {"", {"fp.choose"}, " ", modal_data.title},
-        subheader_text = {"", modal_data.text, " ", info_tag},
-        subheader_tooltip = (modal_data.text_tooltip or ""),
-        create_content_frame = true
-    }
-end)
-
 -- Handles populating the chooser dialog
-function chooser_dialog.open(_, modal_data)
+local function open_chooser_dialog(_, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
 
@@ -55,6 +43,8 @@ function chooser_dialog.open(_, modal_data)
     end
 end
 
+
+-- ** EVENTS **
 local chooser_listeners = {}
 
 chooser_listeners.gui = {
@@ -65,6 +55,20 @@ chooser_listeners.gui = {
             handler = handler_chooser_button_click
         }
     }
+}
+
+chooser_listeners.dialog = {
+    dialog = "chooser",
+    metadata = (function(modal_data)
+        local info_tag = (modal_data.text_tooltip) and "[img=info]" or ""
+        return {
+            caption = {"", {"fp.choose"}, " ", modal_data.title},
+            subheader_text = {"", modal_data.text, " ", info_tag},
+            subheader_tooltip = (modal_data.text_tooltip or ""),
+            create_content_frame = true
+        }
+    end),
+    open = open_chooser_dialog
 }
 
 
@@ -170,15 +174,7 @@ function elements.choose_elem_button.read(choose_elem_button)
 end
 
 
-options_dialog.dialog_settings = (function(modal_data) return {
-    caption = modal_data.title,
-    subheader_text = modal_data.text,
-    create_content_frame = true,
-    show_submit_button = true,
-    show_delete_button = modal_data.allow_deletion
-} end)
-
-function options_dialog.open(_, modal_data)
+local function open_options_dialog(_, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
 
@@ -202,7 +198,7 @@ function options_dialog.open(_, modal_data)
     end
 end
 
-function options_dialog.close(player, action)
+local function close_options_dialog(player, action)
     local modal_data = data_util.modal_data(player)
 
     local options_data = {}
@@ -214,5 +210,18 @@ function options_dialog.close(player, action)
     local handler_name = modal_data.submission_handler_name
     GENERIC_HANDLERS[handler_name](player, options_data, action)
 end
+
+options_listeners.dialog = {
+    dialog = "options",
+    metadata = (function(modal_data) return {
+        caption = modal_data.title,
+        subheader_text = modal_data.text,
+        create_content_frame = true,
+        show_submit_button = true,
+        show_delete_button = modal_data.allow_deletion
+    } end),
+    open = open_options_dialog,
+    close = close_options_dialog
+}
 
 return { chooser_listeners, options_listeners }

@@ -1,7 +1,3 @@
-recipe_dialog = {}
-
-local recipes_per_row = 6
-
 -- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
@@ -158,7 +154,7 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
     group_sprite.style.right_margin = 12
 
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
-    local table_recipes = frame_recipes.add{type="table", column_count=recipes_per_row, style="filter_slot_table"}
+    local table_recipes = frame_recipes.add{type="table", column_count=RECIPES_PER_ROW, style="filter_slot_table"}
 
     for _, recipe in pairs(relevant_group.recipes) do
         local recipe_proto = recipe.proto
@@ -233,7 +229,7 @@ function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
         group.frame.visible = any_group_recipe_visible
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
 
-        local button_table_height = math.ceil(table_size(group.recipe_buttons) / recipes_per_row) * 36
+        local button_table_height = math.ceil(table_size(group.recipe_buttons) / RECIPES_PER_ROW) * 36
         local additional_height = math.max(88, button_table_height + 24) + 4
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end
@@ -254,17 +250,8 @@ local function handle_filter_change(player, tags, event)
 end
 
 
--- ** TOP LEVEL **
-recipe_dialog.dialog_settings = (function(modal_data) return {
-    caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
-    subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
-        modal_data.product_proto.localised_name},
-    search_handler_name = "apply_recipe_filter",
-    create_content_frame = true
-} end)
-
 -- Checks whether the dialog needs to be created at all
-function recipe_dialog.early_abort_check(player, modal_data)
+local function recipe_early_abort_check(player, modal_data)
     -- Result is either the single possible recipe_id, or a table of relevant recipes
     local result, error, show = run_preliminary_checks(player, modal_data.product_proto, modal_data.production_type)
 
@@ -287,7 +274,7 @@ function recipe_dialog.early_abort_check(player, modal_data)
 end
 
 -- Handles populating the recipe dialog
-function recipe_dialog.open(player, modal_data)
+local function open_recipe_dialog(player, modal_data)
     -- At this point, we're sure the dialog should be opened
     local recipe_groups = {}
     for _, recipe in pairs(modal_data.result) do
@@ -320,7 +307,7 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, tags, _)
                 attempt_adding_line(player, tags.recipe_proto_id)
-                modal_dialog.exit(player, "cancel")
+                ui_util.raise_close_dialog(player, "cancel")
             end)
         }
     },
@@ -330,6 +317,19 @@ listeners.gui = {
             handler = handle_filter_change
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "recipe",
+    metadata = (function(modal_data) return {
+        caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
+        subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
+            modal_data.product_proto.localised_name},
+        search_handler_name = "apply_recipe_filter",
+        create_content_frame = true
+    } end),
+    early_abort_check = recipe_early_abort_check,
+    open = open_recipe_dialog
 }
 
 return { listeners }

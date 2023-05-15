@@ -204,7 +204,7 @@ function solver.update(player, subfactory)
 
                     -- Don't open the dialog if calculations are run during migration etc.
                     if main_dialog.is_in_focus(player) or player_table.ui_state.modal_dialog_type ~= nil then
-                        modal_dialog.enter(player, {type="matrix", allow_queueing=true})
+                        ui_util.raise_open_dialog(player, {dialog="matrix", allow_queueing=true})
                     end
                 end
             else  -- reset top level items

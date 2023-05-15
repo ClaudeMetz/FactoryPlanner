@@ -1,7 +1,5 @@
 require("ui.elements.module_configurator")
 
-beacon_dialog = {}
-
 -- ** LOCAL UTIL **
 local function add_beacon_frame(parent_flow, modal_data)
     local modal_elements = modal_data.modal_elements
@@ -88,20 +86,7 @@ local function handle_beacon_selection(player, entities)
 end
 
 
--- ** TOP LEVEL **
-beacon_dialog.dialog_settings = (function(modal_data)
-    local action = (modal_data.object) and "edit" or "add"
-    local machine_name = modal_data.line.machine.proto.localised_name
-    return {
-        caption = {"", {"fp." .. action}, " ", {"fp.pl_beacon", 1}},
-        subheader_text = {("fp.beacon_dialog_description_" .. action), machine_name},
-        create_content_frame = true,
-        show_submit_button = true,
-        show_delete_button = (modal_data.object ~= nil)
-    }
-end)
-
-function beacon_dialog.open(player, modal_data)
+local function open_beacon_dialog(player, modal_data)
     if modal_data.object ~= nil then
         modal_data.backup_beacon = Beacon.clone(modal_data.object)
     else
@@ -127,7 +112,7 @@ function beacon_dialog.open(player, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 end
 
-function beacon_dialog.close(player, action)
+local function close_beacon_dialog(player, action)
     local modal_data = data_util.modal_data(player)
     local subfactory = data_util.context(player).subfactory
 
@@ -181,6 +166,23 @@ listeners.gui = {
             end)
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "beacon",
+    metadata = (function(modal_data)
+        local action = (modal_data.object) and "edit" or "add"
+        local machine_name = modal_data.line.machine.proto.localised_name
+        return {
+            caption = {"", {"fp." .. action}, " ", {"fp.pl_beacon", 1}},
+            subheader_text = {("fp.beacon_dialog_description_" .. action), machine_name},
+            create_content_frame = true,
+            show_submit_button = true,
+            show_delete_button = (modal_data.object ~= nil)
+        }
+    end),
+    open = open_beacon_dialog,
+    close = close_beacon_dialog
 }
 
 listeners.misc = {

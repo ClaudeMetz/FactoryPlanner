@@ -1,5 +1,3 @@
-tutorial_dialog = {}
-
 -- ** LOCAL UTIL **
 local tab_definitions = {"interface", "usage", "matrix_solver"}
 
@@ -65,13 +63,7 @@ function tab_definitions.matrix_solver(_, tab, tab_pane)
 end
 
 
--- ** TOP LEVEL **
-tutorial_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.tutorial"},
-    create_content_frame = false
-} end)
-
-function tutorial_dialog.open(player, modal_data)
+local function open_tutorial_dialog(player, modal_data)
     local frame_tabs = modal_data.modal_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
 
     local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
@@ -100,7 +92,7 @@ listeners.gui = {
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
                 data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING)
                 ui_util.raise_refresh(player, "all", nil)
-                modal_dialog.exit(player, "cancel")
+                ui_util.raise_close_dialog(player, "cancel")
             end)
         }
     },
@@ -114,6 +106,15 @@ listeners.gui = {
             end)
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "tutorial",
+    metadata = (function(_) return {
+        caption = {"fp.tutorial"},
+        create_content_frame = false
+    } end),
+    open = open_tutorial_dialog
 }
 
 return { listeners }

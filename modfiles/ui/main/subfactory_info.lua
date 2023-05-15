@@ -272,7 +272,7 @@ listeners.gui = {
         {
             name = "configure_matrix_solver",
             handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="matrix", modal_data={configuration=true}})
+                ui_util.raise_open_dialog(player, {dialog="matrix", modal_data={configuration=true}})
             end)
         }
     },

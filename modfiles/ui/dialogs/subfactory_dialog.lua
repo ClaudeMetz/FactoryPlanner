@@ -1,5 +1,3 @@
-subfactory_dialog = {}
-
 -- ** LOCAL UTIL **
 local function update_submit_button(player, _, _)
     local modal_elements = data_util.modal_elements(player)
@@ -30,18 +28,7 @@ local function add_rich_text(player, tags, event)
 end
 
 
--- ** TOP LEVEL **
-subfactory_dialog.dialog_settings = (function(modal_data)
-    return {
-        caption = {"", {"fp." .. modal_data.action}, " ", {"fp.pl_subfactory", 1}},
-        subheader_text = {"fp.subfactory_dialog_description"},
-        create_content_frame = true,
-        show_submit_button = true,
-        show_delete_button = (modal_data.action == "edit")
-    }
-end)
-
-function subfactory_dialog.open(player, modal_data)
+local function open_subfactory_dialog(player, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
 
@@ -77,7 +64,7 @@ function subfactory_dialog.open(player, modal_data)
     update_submit_button(player)
 end
 
-function subfactory_dialog.close(player, action)
+local function close_subfactory_dialog(player, action)
     local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.modal_data.subfactory
 
@@ -112,6 +99,19 @@ listeners.gui = {
             handler = add_rich_text
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "subfactory",
+    metadata = (function(modal_data) return {
+        caption = {"", {"fp." .. modal_data.action}, " ", {"fp.pl_subfactory", 1}},
+        subheader_text = {"fp.subfactory_dialog_description"},
+        create_content_frame = true,
+        show_submit_button = true,
+        show_delete_button = (modal_data.action == "edit")
+    } end),
+    open = open_subfactory_dialog,
+    close = close_subfactory_dialog
 }
 
 return { listeners }

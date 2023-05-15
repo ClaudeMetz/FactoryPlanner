@@ -509,3 +509,16 @@ end
 function ui_util.raise_refresh(player, trigger, element)
     script.raise_event(REFRESH_GUI_ELEMENT, {player_index=player.index, trigger=trigger, element=element})
 end
+
+---@param player LuaPlayer
+---@param metadata table
+function ui_util.raise_open_dialog(player, metadata)
+    script.raise_event(OPEN_MODAL_DIALOG, {player_index=player.index, metadata=metadata})
+end
+
+---@param player LuaPlayer
+---@param action "submit" | "cancel" | "delete"
+---@param skip_opened boolean?
+function ui_util.raise_close_dialog(player, action, skip_opened)
+    script.raise_event(CLOSE_MODAL_DIALOG, {player_index=player.index, action=action, skip_opened=skip_opened})
+end

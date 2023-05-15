@@ -55,11 +55,11 @@ local function add_subfactory(player, _, event)
     local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
-        modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category="product",
+        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={object=nil, item_category="product",
             create_subfactory=true}})
 
     else  -- otherwise, have the user pick a subfactory name first
-        modal_dialog.enter(player, {type="subfactory", modal_data={action="add", subfactory=nil}})
+        ui_util.raise_open_dialog(player, {dialog="subfactory", modal_data={action="add", subfactory=nil}})
     end
 end
 
@@ -112,7 +112,8 @@ local function handle_subfactory_click(player, tags, action)
 
     elseif action == "edit" then
         ui_util.raise_refresh(player, "all", nil)  -- refresh to update the selected subfactory
-        modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=selected_subfactory}})
+        ui_util.raise_open_dialog(player, {dialog="subfactory",
+            modal_data={action="edit", subfactory=selected_subfactory}})
 
     elseif action == "delete" then
         subfactory_list.delete_subfactory(player)
@@ -344,7 +345,7 @@ listeners.gui = {
         {  -- import/export buttons
             name = "subfactory_list_open_dialog",
             handler = (function(player, tags, _)
-                modal_dialog.enter(player, {type=tags.type})
+                ui_util.raise_open_dialog(player, {dialog=tags.type})
             end)
         },
         {
@@ -355,7 +356,8 @@ listeners.gui = {
             name = "edit_subfactory",
             handler = (function(player, _, _)
                 local subfactory = data_util.context(player).subfactory
-                modal_dialog.enter(player, {type="subfactory", modal_data={action="edit", subfactory=subfactory}})
+                ui_util.raise_open_dialog(player, {dialog="subfactory",
+                    modal_data={action="edit", subfactory=subfactory}})
             end)
         },
         {

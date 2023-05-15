@@ -1,6 +1,4 @@
 -- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
-picker_dialog = {}
-
 -- ** ITEM PICKER **
 local function select_item_group(modal_data, new_group_id)
     modal_data.selected_group_id = new_group_id
@@ -346,18 +344,7 @@ local function handle_belt_pick(player, _, event)
 end
 
 
--- ** TOP LEVEL **
-picker_dialog.dialog_settings = (function(modal_data)
-    local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
-    return {
-        caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
-        search_handler_name = (not modal_data.object) and "search_picker_items" or nil,
-        show_submit_button = true,
-        show_delete_button = (modal_data.object ~= nil)
-    }
-end)
-
-function picker_dialog.open(player, modal_data)
+local function open_picker_dialog(player, modal_data)
     -- Create a blank subfactory if requested
     local settings = data_util.settings(player)
     modal_data.timescale = settings.default_timescale
@@ -378,7 +365,7 @@ function picker_dialog.open(player, modal_data)
     end
 end
 
-function picker_dialog.close(player, action)
+local function close_picker_dialog(player, action)
     local player_table = data_util.player_table(player)
     local ui_state = player_table.ui_state
     local modal_data = ui_state.modal_data
@@ -465,6 +452,21 @@ listeners.gui = {
             end)
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "picker",
+    metadata = (function(modal_data)
+        local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
+        return {
+            caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
+            search_handler_name = (not modal_data.object) and "search_picker_items" or nil,
+            show_submit_button = true,
+            show_delete_button = (modal_data.object ~= nil)
+        }
+    end),
+    open = open_picker_dialog,
+    close = close_picker_dialog
 }
 
 return { listeners }

@@ -79,9 +79,22 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
 end
 
 
+local function apply_metadata_overrides(base, overrides)
+    for k, v in pairs(overrides) do
+        local base_v = base[k]
+        if type(base_v) == "table" and type(v) == "table" then
+            apply_metadata_overrides(base_v, v)
+        else
+            base[k] = v
+        end
+    end
+end
+
+
+
 -- ** GUI EVENTS **
--- These handlers go out to the first thing that it finds that registered for it
--- They can register either by element name or by a pattern matching element names
+-- These handlers go out to the first thing that it finds that registered for it.
+-- They can register either by element name or by a pattern matching element names.
 local gui_identifier_map = {
     [defines.events.on_gui_click] = "on_gui_click",
     [defines.events.on_gui_closed] = "on_gui_closed",
@@ -113,7 +126,7 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
 
     -- Otherwise, close the currently open modal dialog if possible
     if data_util.ui_state(player).modal_dialog_type ~= nil then
-        modal_dialog.exit(player, "submit")
+        ui_util.raise_close_dialog(player, "submit")
     end
     return false
 end)
@@ -223,9 +236,61 @@ for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle
 
 
 
+-- ** DIALOG EVENTS **
+-- These custom events handle opening and closing modal dialogs
+
+OPEN_MODAL_DIALOG = script.generate_event_name()
+CLOSE_MODAL_DIALOG = script.generate_event_name()
+
+local dialog_event_cache = {}
+-- Compile the list of dialog actions
+for _, listener in pairs(event_listeners) do
+    if listener.dialog then
+        dialog_event_cache[listener.dialog.dialog] = listener.dialog
+    end
+end
+
+local function handle_dialog_event(event)
+    -- Guard against an event being called before the player is initialized
+    if not global.players[event.player_index] then return end
+
+    -- These custom events always have an associated player
+    local player = game.get_player(event.player_index)
+    local ui_state = data_util.ui_state(player)
+
+    -- Check if the action is allowed to be carried out by rate limiting
+    if rate_limiting_active(player, event.tick, event.name, 20) then return end
+
+    if event.name == OPEN_MODAL_DIALOG then
+        local listener = dialog_event_cache[event.metadata.dialog]
+
+        local metadata = event.metadata
+        ui_state.modal_data = metadata.modal_data or {}
+
+        if listener.metadata ~= nil then  -- collect additional metadata
+            local additional_metadata = listener.metadata(ui_state.modal_data)
+            apply_metadata_overrides(metadata, additional_metadata)
+        end
+
+        modal_dialog.enter(player, metadata, listener.open, listener.early_abort_check)
+
+    elseif event.name == CLOSE_MODAL_DIALOG then
+        local modal_dialog_type = ui_state.modal_dialog_type
+        if modal_dialog_type == nil then return end
+
+        local listener = dialog_event_cache[modal_dialog_type]
+        modal_dialog.exit(player, event.action, event.skip_opened, listener.close)
+    end
+end
+
+-- Register all the misc events from the identifier map
+for _, event_id in pairs({OPEN_MODAL_DIALOG, CLOSE_MODAL_DIALOG}) do script.on_event(event_id, handle_dialog_event) end
+
+
+
 -- ** MISC EVENTS **
 -- These events call every handler that has subscribed to it by id or name. The difference to GUI events
--- is that multiple handlers can be registered to the same event, and there is no standard handler
+-- is that multiple handlers can be registered to the same event, and there is no standard handler.
 
 BUILD_GUI_ELEMENT = script.generate_event_name()
 REFRESH_GUI_ELEMENT = script.generate_event_name()

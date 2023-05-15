@@ -57,6 +57,7 @@ ITEM_BOX_MAX_ROWS = 5
 -- The scroll pane style used for the item boxes is hardcoded at 12 for this reason
 ITEM_BOX_PADDING = 12
 
+RECIPES_PER_ROW = 6
 PICKER_ITEM_COLUMN_COUNT = 10
 PICKER_GROUP_COUNT = 6
 UTILITY_BLUEPRINT_LIMIT = 12
