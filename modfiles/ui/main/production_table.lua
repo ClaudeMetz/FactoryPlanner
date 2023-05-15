@@ -368,8 +368,7 @@ local all_production_columns = {
 }
 
 
--- ** TOP LEVEL **
-function production_table.build(player)
+local function build_production_table(player)
     local main_elements = data_util.main_elements(player)
     main_elements.production_table = {}
 
@@ -383,6 +382,8 @@ function production_table.build(player)
     production_table.refresh(player)
 end
 
+
+-- ** TOP LEVEL **
 function production_table.refresh(player)
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = data_util.preferences(player)
@@ -449,5 +450,15 @@ function production_table.refresh(player)
 end
 
 
+-- ** EVENTS **
 local listeners = {}
+
+listeners.misc = {
+    build_gui_element = (function(player, event)
+        if event.context == "main_dialog" then
+            build_production_table(player)
+        end
+    end)
+}
+
 return { listeners }

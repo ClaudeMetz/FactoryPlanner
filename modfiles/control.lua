@@ -22,6 +22,7 @@ BEACON_OVERLOAD_ACTIVE = (
     or active_mods["wret-beacon-rebalance-mod"]
     or active_mods["beacon-overhaul"]
 ) and true
+DEBUGGER_ATTACHED = active_mods["debugadapter"]
 
 
 llog = require("llog")

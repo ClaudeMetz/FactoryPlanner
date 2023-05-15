@@ -70,8 +70,7 @@ local function handle_solver_change(player, _, event)
 end
 
 
--- ** TOP LEVEL **
-function subfactory_info.build(player)
+local function build_subfactory_info(player)
     local main_elements = data_util.main_elements(player)
     main_elements.subfactory_info = {}
 
@@ -181,6 +180,8 @@ function subfactory_info.build(player)
     subfactory_info.refresh(player)
 end
 
+
+-- ** TOP LEVEL **
 function subfactory_info.refresh(player)
     local ui_state = data_util.ui_state(player)
     local subfactory_info_elements = ui_state.main_elements.subfactory_info
@@ -306,6 +307,14 @@ listeners.gui = {
             end)
         }
     }
+}
+
+listeners.misc = {
+    build_gui_element = (function(player, event)
+        if event.context == "main_dialog" then
+            build_subfactory_info(player)
+        end
+    end)
 }
 
 return { listeners }

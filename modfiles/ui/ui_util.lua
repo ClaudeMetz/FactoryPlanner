@@ -494,3 +494,17 @@ end
 function ui_util.switch.convert_to_state(boolean)
     return boolean and "left" or "right"
 end
+
+
+---@param player LuaPlayer
+---@param context string
+---@param parent LuaGuiElement?
+function ui_util.raise_build(player, context, parent)
+    script.raise_event(BUILD_GUI_ELEMENT, {player_index=player.index, context=context, parent=parent})
+end
+
+--[[ ---@param player LuaPlayer
+---@param context string
+function ui_util.raise_refresh(player, context)
+    script.raise_event(REFRESH_GUI_ELEMENT, {player_index=player.index, context=context})
+end ]]

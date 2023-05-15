@@ -18,7 +18,7 @@ end
 
 
 local function guarded_event(handler, arguments)
-    if DEVMODE then
+    if DEVMODE and not DEBUGGER_ATTACHED then
         local status, ret = xpcall(handler, debug.traceback, table.unpack(arguments))
         if status then
             return ret
@@ -227,6 +227,9 @@ for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle
 -- These events call every handler that has subscribed to it by id or name. The difference to GUI events
 -- is that multiple handlers can be registered to the same event, and there is no standard handler
 
+BUILD_GUI_ELEMENT = script.generate_event_name()
+--REFRESH_GUI_ELEMENT = script.generate_event_name()
+
 local misc_identifier_map = {
     -- Standard events
     [defines.events.on_gui_opened] = "on_gui_opened",
@@ -248,7 +251,10 @@ local misc_identifier_map = {
     ["fp_reverse_cycle_production_views"] = "fp_reverse_cycle_production_views",
     ["fp_confirm_dialog"] = "fp_confirm_dialog",
     ["fp_confirm_gui"] = "fp_confirm_gui",
-    ["fp_focus_searchfield"] = "fp_focus_searchfield"
+    ["fp_focus_searchfield"] = "fp_focus_searchfield",
+
+    [BUILD_GUI_ELEMENT] = "build_gui_element",
+    --[REFRESH_GUI_ELEMENT] = "refresh_gui_element"
 }
 
 local misc_timeouts = {

@@ -82,6 +82,20 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
 end
 
 
+local function build_view_state(player, parent_element)
+    local view_states = data_util.ui_state(player).view_states
+
+    local table_view_state = parent_element.add{type="table", name="table_view_state", column_count=#view_states}
+    table_view_state.style.horizontal_spacing = 0
+
+    -- Using ipairs is important as we only want to iterate the array-part
+    for view_id, _ in ipairs(view_states) do
+        table_view_state.add{type="button", tags={mod="fp", on_gui_click="change_view_state", view_id=view_id},
+            style="fp_button_push", mouse_button_filter={"left"}}
+    end
+end
+
+
 -- ** TOP LEVEL **
 -- Creates metadata relevant for a whole batch of items
 function view_state.generate_metadata(player, subfactory)
@@ -167,21 +181,6 @@ function view_state.rebuild_state(player)
     view_state.select(player, selected_view_id)
 end
 
-function view_state.build(player, parent_element)
-    local view_states = data_util.ui_state(player).view_states
-
-    local table_view_state = parent_element.add{type="table", column_count=#view_states}
-    table_view_state.style.horizontal_spacing = 0
-
-    -- Using ipairs is important as we only want to iterate the array-part
-    for view_id, _ in ipairs(view_states) do
-        table_view_state.add{type="button", tags={mod="fp", on_gui_click="change_view_state", view_id=view_id},
-            style="fp_button_push", mouse_button_filter={"left"}}
-    end
-
-    return table_view_state
-end
-
 function view_state.refresh(player, table_view_state)
     local ui_state = data_util.ui_state(player)
 
@@ -254,6 +253,12 @@ listeners.misc = {
     end),
     fp_reverse_cycle_production_views = (function(player, _)
         cycle_views(player, "reverse")
+    end),
+
+    build_gui_element = (function(player, event)
+        if event.context == "view_state" then
+            build_view_state(player, event.parent)
+        end
     end)
 }
 

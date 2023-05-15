@@ -89,8 +89,8 @@ function main_dialog.rebuild(player, default_visibility)
     -- Create the actual dialog structure
     main_elements.flows = {}
 
-    view_state.rebuild_state(player)  -- initializes the view_state
-    title_bar.build(player)
+    local top_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
+    main_elements.flows["top_horizontal"] = top_horizontal
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
     main_horizontal.style.horizontal_spacing = FRAME_SPACING
@@ -99,16 +99,13 @@ function main_dialog.rebuild(player, default_visibility)
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
     left_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["left_vertical"] = left_vertical
-    subfactory_list.build(player)
-    subfactory_info.build(player)
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
     right_vertical.style.vertical_spacing = FRAME_SPACING
     main_elements.flows["right_vertical"] = right_vertical
-    item_boxes.build(player)
-    production_box.build(player)
-    production_table.build(player)
 
+    view_state.rebuild_state(player)  -- initializes the view_state
+    ui_util.raise_build(player, "main_dialog", nil)  -- tells all elements to build themselves
     title_bar.refresh_message(player)
 
     if interface_visible then player.opened = frame_main_dialog end
