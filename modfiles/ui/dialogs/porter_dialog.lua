@@ -1,6 +1,3 @@
-import_dialog = {}
-export_dialog = {}
-
 -- ** LOCAL UTIL **
 local function set_tool_button_state(button, dialog_type, enabled)
     button.enabled = enabled
@@ -222,16 +219,7 @@ local function export_subfactories(player, _, _)
 end
 
 
--- ** IMPORT DIALOG **
-import_dialog.dialog_settings = (function(_) return {
-    caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
-    subheader_text = {"fp.import_instruction_1"},
-    create_content_frame = true,
-    disable_scroll_pane = true,
-    show_submit_button = true
-} end)
-
-function import_dialog.open(_, modal_data)
+local function open_import_dialog(_, modal_data)
     local modal_elements = modal_data.modal_elements
     set_dialog_submit_button(modal_elements, false, "import_string")
 
@@ -240,7 +228,7 @@ function import_dialog.open(_, modal_data)
 end
 
 -- Imports the selected subfactories into the player's main factory
-function import_dialog.close(player, action)
+local function close_import_dialog(player, action)
     if action == "submit" then
         local ui_state = data_util.ui_state(player)
         local modal_data = ui_state.modal_data
@@ -266,6 +254,8 @@ function import_dialog.close(player, action)
     end
 end
 
+
+-- ** EVENTS **
 local import_listeners = {}
 
 import_listeners.gui = {
@@ -295,17 +285,21 @@ import_listeners.gui = {
     }
 }
 
+import_listeners.dialog = {
+    dialog = "import",
+    metadata = (function(_) return {
+        caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
+        subheader_text = {"fp.import_instruction_1"},
+        create_content_frame = true,
+        disable_scroll_pane = true,
+        show_submit_button = true
+    } end),
+    open = open_import_dialog,
+    close = close_import_dialog
+}
 
--- ** EXPORT DIALOG **
-export_dialog.dialog_settings = (function(_) return {
-    caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
-    subheader_text = {"fp.info_label", {"fp.export_instruction"}},
-    subheader_tooltip = {"fp.export_instruction_tt"},
-    create_content_frame = true,
-    disable_scroll_pane = true
-} end)
 
-function export_dialog.open(player, modal_data)
+local function open_export_dialog(player, modal_data)
     local player_table = data_util.player_table(player)
     local attach_subfactory_products = player_table.preferences.attach_subfactory_products
     local modal_elements = modal_data.modal_elements
@@ -327,6 +321,8 @@ function export_dialog.open(player, modal_data)
     modal_elements.export_textfield.parent.style.top_margin = 6
 end
 
+
+-- ** EVENTS **
 local export_listeners = {}
 
 export_listeners.gui = {
@@ -337,6 +333,18 @@ export_listeners.gui = {
             handler = export_subfactories
         }
     }
+}
+
+export_listeners.dialog = {
+    dialog = "export",
+    metadata = (function(_) return {
+        caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
+        subheader_text = {"fp.info_label", {"fp.export_instruction"}},
+        subheader_tooltip = {"fp.export_instruction_tt"},
+        create_content_frame = true,
+        disable_scroll_pane = true
+    } end),
+    open = open_export_dialog
 }
 
 

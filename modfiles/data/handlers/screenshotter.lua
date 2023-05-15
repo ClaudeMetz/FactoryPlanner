@@ -19,15 +19,15 @@ local function return_dimensions(scene, frame)
     remote.call("screenshotter_output", "return_dimensions", scene, dimensions)
 end
 
-local function open_modal(player, type, modal_data)
+local function open_modal(player, dialog, modal_data)
     main_dialog.toggle(player)
     data_util.main_elements(player).main_frame.location = player.display_resolution  -- hack city
-    modal_dialog.enter(player, {type=type, modal_data=modal_data, skip_dimmer=true})
+    ui_util.raise_open_dialog(player, {dialog=dialog, modal_data=modal_data, skip_dimmer=true})
 end
 
 local function modal_teardown(player, scene)
     return_dimensions(scene, data_util.modal_elements(player).modal_frame)
-    modal_dialog.exit(player, "cancel")
+    ui_util.raise_close_dialog(player, "cancel")
 end
 
 

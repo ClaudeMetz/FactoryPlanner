@@ -1,5 +1,3 @@
-utility_dialog = {}
-
 -- ** LOCAL UTIL **
 -- Adds a box with title and optional scope switch for the given type of utility
 local function add_utility_box(player, modal_elements, type, show_tooltip, show_switch)
@@ -328,7 +326,7 @@ local function handle_blueprint_click(player, tags, action)
 
     if action == "pick_up" then
         player.cursor_stack.import_stack(blueprints[tags.index])
-        modal_dialog.exit(player, "cancel")
+        ui_util.raise_close_dialog(player, "cancel")
         main_dialog.toggle(player)
 
     elseif action == "delete" then
@@ -338,13 +336,7 @@ local function handle_blueprint_click(player, tags, action)
 end
 
 
--- ** TOP LEVEL **
-utility_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.utilities"},
-    create_content_frame = true
-} end)
-
-function utility_dialog.open(player, modal_data)
+local function open_utility_dialog(player, modal_data)
     -- Add the players' relevant inventory components to modal_data
     modal_data.inventory_contents = player.get_main_inventory().get_contents()
     modal_data.utility_inventory = game.create_inventory(1)  -- used for blueprint decoding
@@ -354,7 +346,7 @@ function utility_dialog.open(player, modal_data)
     utility_structures.notes(player, modal_data)
 end
 
-function utility_dialog.close(player, _)
+local function close_utility_dialog(player, _)
     data_util.modal_data(player).utility_inventory.destroy()
     ui_util.raise_refresh(player, "subfactory_info", nil)
 end
@@ -371,7 +363,7 @@ listeners.gui = {
             handler = (function(player, _, _)
                 local missing_items = data_util.modal_data(player).missing_items
                 local success = ui_util.put_item_combinator_into_cursor(player, missing_items)
-                if success then modal_dialog.exit(player, "cancel"); main_dialog.toggle(player) end
+                if success then ui_util.raise_close_dialog(player, "cancel"); main_dialog.toggle(player) end
             end)
         },
         {
@@ -410,6 +402,16 @@ listeners.gui = {
             end)
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "utility",
+    metadata = (function(_) return {
+        caption = {"fp.utilities"},
+        create_content_frame = true
+    } end),
+    open = open_utility_dialog,
+    close = close_utility_dialog
 }
 
 listeners.misc = {

@@ -10,7 +10,7 @@ local function add_recipe(player, context, type, item_proto)
         title_bar.enqueue_message(player, message, "error", 1, true)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
-        modal_dialog.enter(player, {type="recipe", modal_data={product_proto=item_proto,
+        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=item_proto,
             floor_id=context.floor.id, production_type=production_type}})
     end
 end
@@ -135,7 +135,7 @@ local function handle_item_add(player, tags, event)
         local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
         ui_util.clipboard.paste(player, fake_item)
     else
-        modal_dialog.enter(player, {type="picker", modal_data={object=nil, item_category=tags.category}})
+        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={object=nil, item_category=tags.category}})
     end
 end
 
@@ -152,7 +152,7 @@ local function handle_item_button_click(player, tags, action)
         add_recipe(player, context, tags.category, item.proto)
 
     elseif action == "edit" then
-        modal_dialog.enter(player, {type="picker", modal_data={object=item, item_category="product"}})
+        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={object=item, item_category="product"}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, item)
@@ -187,7 +187,7 @@ local function handle_item_button_click(player, tags, action)
                 }
             }
         }
-        modal_dialog.enter(player, {type="options", modal_data=modal_data})
+        ui_util.raise_open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "put_into_cursor" then
         local amount = (not floor_items_active and tags.category == "product")

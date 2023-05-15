@@ -1,7 +1,5 @@
 require("ui.elements.module_configurator")
 
-machine_dialog = {}
-
 -- ** LOCAL UTIL **
 local function refresh_machine_frame(player)
     local modal_data = data_util.modal_data(player)
@@ -166,18 +164,7 @@ local function change_machine_force_limit(player, _, event)
 end
 
 
--- ** TOP LEVEL **
-machine_dialog.dialog_settings = (function(modal_data)
-    local recipe_name = modal_data.line.recipe.proto.localised_name
-    return {
-        caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
-        subheader_text = {"fp.machine_dialog_description", recipe_name},
-        create_content_frame = true,
-        show_submit_button = true
-    }
-end)
-
-function machine_dialog.open(player, modal_data)
+local function open_machine_dialog(player, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = MODULE_DIALOG_WIDTH
@@ -203,7 +190,7 @@ function machine_dialog.open(player, modal_data)
     module_configurator.refresh_modules_flow(player, false)
 end
 
-function machine_dialog.close(player, action)
+local function close_machine_dialog(player, action)
     local modal_data = data_util.modal_data(player)
     local machine, line = modal_data.object, modal_data.line
 
@@ -248,6 +235,21 @@ listeners.gui = {
             handler = change_machine_force_limit
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "machine",
+    metadata = (function(modal_data)
+        local recipe_name = modal_data.line.recipe.proto.localised_name
+        return {
+            caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
+            subheader_text = {"fp.machine_dialog_description", recipe_name},
+            create_content_frame = true,
+            show_submit_button = true
+        }
+    end),
+    open = open_machine_dialog,
+    close = close_machine_dialog
 }
 
 return { listeners }

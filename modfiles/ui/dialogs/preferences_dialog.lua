@@ -1,5 +1,3 @@
-preferences_dialog = {}
-
 -- ** LOCAL UTIL **
 local function add_preference_box(content_frame, type)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
@@ -208,13 +206,7 @@ local function handle_default_prototype_change(player, tags, event)
 end
 
 
--- ** TOP LEVEL **
-preferences_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.preferences"},
-    create_content_frame = false
-} end)
-
-function preferences_dialog.open(player, modal_data)
+local function open_preferences_dialog(player, modal_data)
     local preferences = data_util.preferences(player)
     local modal_elements = modal_data.modal_elements
     modal_data.refresh = {}
@@ -257,7 +249,7 @@ function preferences_dialog.open(player, modal_data)
     preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
 end
 
-function preferences_dialog.close(player, _)
+local function close_preferences_dialog(player, _)
     -- We refresh all these things only when closing to avoid duplicate refreshes
     local refresh = data_util.modal_data(player).refresh
 
@@ -327,6 +319,16 @@ listeners.gui = {
             handler = handle_mb_default_change
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "preferences",
+    metadata = (function(_) return {
+        caption = {"fp.preferences"},
+        create_content_frame = false
+    } end),
+    open = open_preferences_dialog,
+    close = close_preferences_dialog
 }
 
 return { listeners }

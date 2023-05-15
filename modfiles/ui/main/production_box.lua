@@ -158,7 +158,7 @@ listeners.gui = {
         {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
-                modal_dialog.enter(player, {type="utility"})
+                ui_util.raise_open_dialog(player, {dialog="utility"})
             end)
         },
         {

@@ -1,5 +1,3 @@
-matrix_dialog = {}
-
 -- ** LOCAL UTIL **
 local function show_linearly_dependent_recipes(modal_data, recipe_protos)
     local flow_recipes = modal_data.modal_elements.content_frame.add{type="flow", direction="vertical"}
@@ -99,14 +97,7 @@ local function swap_item_category(player, tags, _)
 end
 
 
--- ** TOP LEVEL **
-matrix_dialog.dialog_settings = (function(_) return {
-    caption = {"fp.matrix_solver"},
-    create_content_frame = true,
-    show_submit_button = true
-} end)
-
-function matrix_dialog.early_abort_check(player, modal_data)
+local function matrix_early_abort_check(player, modal_data)
     local ui_state = data_util.ui_state(player)
     local subfactory = ui_state.context.subfactory
 
@@ -143,7 +134,7 @@ function matrix_dialog.early_abort_check(player, modal_data)
     return false
 end
 
-function matrix_dialog.open(player, modal_data)
+local function open_matrix_dialog(player, modal_data)
     if data_util.context(player).subfactory.linearly_dependant then
         show_linearly_dependent_recipes(modal_data, modal_data.linearly_dependent_recipes)
         modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
@@ -161,7 +152,7 @@ function matrix_dialog.open(player, modal_data)
     end
 end
 
-function matrix_dialog.close(player, action)
+local function close_matrix_dialog(player, action)
     if action == "submit" then
         local ui_state = data_util.ui_state(player)
         local subfactory = ui_state.context.subfactory
@@ -186,6 +177,18 @@ listeners.gui = {
             handler = swap_item_category
         }
     }
+}
+
+listeners.dialog = {
+    dialog = "matrix",
+    metadata = (function(_) return {
+        caption = {"fp.matrix_solver"},
+        create_content_frame = true,
+        show_submit_button = true
+    } end),
+    early_abort_check = matrix_early_abort_check,
+    open = open_matrix_dialog,
+    close = close_matrix_dialog
 }
 
 return { listeners }
