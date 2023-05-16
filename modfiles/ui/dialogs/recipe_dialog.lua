@@ -92,9 +92,9 @@ local function attempt_adding_line(player, recipe_id)
     local recipe = Recipe.init_by_id(recipe_id, modal_data.production_type)
     local line = Line.init(recipe)
 
-    -- If finding a machine fails, this line is invalid
-    if Line.change_machine_to_default(line, player) == false then  -- not sure this can even happen because generator
-        title_bar.enqueue_message(player, {"fp.error_no_compatible_machine"}, "error", 1, false)
+    -- If finding a machine fails, this line is invalid. Generator should avoid this case though
+    if Line.change_machine_to_default(line, player) == false then
+        ui_util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
 
     else
         local floor = Subfactory.get(ui_state.context.subfactory, "Floor", modal_data.floor_id)
@@ -107,14 +107,14 @@ local function attempt_adding_line(player, recipe_id)
 
         local message = nil
         if not (recipe.proto.custom or player.force.recipes[recipe.proto.name].enabled) then
-            message = {text={"fp.warning_recipe_disabled"}, type="warning"}
+            message = {text={"fp.warning_recipe_disabled"}, category="warning"}
         end
         local defaults_message = Line.apply_mb_defaults(line, player)
         if not message then message = defaults_message end  -- a bit silly
 
         solver.update(player, ui_state.context.subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
-        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, false) end
+        if message ~= nil then ui_util.messages.raise(player, message.category, message.text, 1) end
     end
 end
 
@@ -256,7 +256,7 @@ local function recipe_early_abort_check(player, modal_data)
     local result, error, show = run_preliminary_checks(player, modal_data.product_proto, modal_data.production_type)
 
     if error ~= nil then
-        title_bar.enqueue_message(player, error, "error", 1, false)
+        ui_util.messages.raise(player, "error", error, 1)
         return true  -- signal that the dialog does not need to actually be opened
 
     else

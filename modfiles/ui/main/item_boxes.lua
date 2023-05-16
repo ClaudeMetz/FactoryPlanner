@@ -1,13 +1,8 @@
 -- ** LOCAL UTIL **
 local function add_recipe(player, context, type, item_proto)
-    if type == "byproduct" and context.subfactory.matrix_free_items == nil then
-        title_bar.enqueue_message(player, {"fp.error_cant_add_byproduct_recipe"}, "error", 1, true)
-        return
-    end
-
     if context.floor.level > 1 then
         local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
-        title_bar.enqueue_message(player, message, "error", 1, true)
+        ui_util.messages.raise(player, "error", message, 1)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
         ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=item_proto,

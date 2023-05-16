@@ -125,6 +125,18 @@ styles["fp_frame_transparent"] = {
     }
 }
 
+styles["fp_frame_messages"] = {
+    type = "frame_style",
+    parent = "subfooter_frame",
+    graphical_set = {
+        base = styles.subfooter_frame.graphical_set.base,
+        shadow = top_shadow,
+    },
+    left_padding = 12,
+    bottom_padding = 4,
+    horizontally_stretchable = "on",
+}
+
 
 styles["fp_table_production"] = {
     type = "table_style",

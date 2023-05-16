@@ -3,6 +3,7 @@ local mod_gui = require("mod-gui")
 ui_util = {
     context = {},
     clipboard = {},
+    messages = {},
     switch = {}
 }
 
@@ -190,7 +191,7 @@ function ui_util.open_in_recipebook(player, type, name)
         if not was_opened then message = {"fp.error_recipebook_lookup_failed", {"fp.pl_" .. type, 1}} end
     end
 
-    if message then title_bar.enqueue_message(player, message, "error", 1, true) end
+    if message then ui_util.messages.raise(player, "error", message, 1) end
 end
 
 
@@ -442,6 +443,39 @@ function ui_util.clipboard.paste(player, target)
                 ui_util.create_flying_text(player, {"fp.clipboard_recipe_irrelevant"})
             end
         end
+    end
+end
+
+
+---@param player LuaPlayer
+---@param category "error" | "warning" | "hint"
+---@param message LocalisedString
+---@param lifetime integer
+function ui_util.messages.raise(player, category, message, lifetime)
+    local messages = data_util.ui_state(player).messages
+    table.insert(messages, {category=category, text=message, lifetime=lifetime})
+end
+
+---@param player LuaPlayer
+function ui_util.messages.refresh(player)
+    -- Only refresh messages if the user is actually looking at them
+    if not main_dialog.is_in_focus(player) then return end
+
+    local ui_state = data_util.ui_state(player)
+    local message_frame = ui_state.main_elements["messages_frame"]
+    if not message_frame or not message_frame.valid then return end
+
+    local messages = ui_state.messages
+    message_frame.visible = (next(messages) ~= nil)
+    message_frame.clear()
+
+    for i=#messages, 1, -1 do
+        local message = messages[i]
+        local caption = {"", "[img=warning-white]  ", {"fp." .. message.category .. "_message", message.text}}
+        message_frame.add{type="label", caption=caption, style="bold_label"}
+
+        message.lifetime = message.lifetime - 1
+        if message.lifetime == 0 then table.remove(messages, i) end
     end
 end
 

@@ -49,12 +49,6 @@ local function build_title_bar(player)
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
         ignored_by_interaction=true}
 
-    local label_hint = flow_title_bar.add{type="label", ignored_by_interaction=true}
-    label_hint.style.font = "heading-2"
-    label_hint.style.margin = {0, 0, 0, 8}
-    label_hint.style.horizontally_squashable = true
-    main_elements.title_bar["hint_label"] = label_hint
-
     local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
         ignored_by_interaction=true}
     drag_handle.style.minimal_width = 80
@@ -79,65 +73,6 @@ local function build_title_bar(player)
         sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
         tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
-end
-
-
--- ** TOP LEVEL **
-title_bar = {}
-
--- Enqueues the given message into the message queue; Possible types: error, warning, hint
-function title_bar.enqueue_message(player, message, type, lifetime, instant_refresh)
-    local message_queue = data_util.ui_state(player).message_queue
-    table.insert(message_queue, {text=message, type=type, lifetime=lifetime})
-
-    if instant_refresh then title_bar.refresh_message(player) end
-end
-
--- Refreshes the current message, taking into account priotities and lifetimes
--- The messages are displayed in enqueued order, displaying higher priorities first
--- The lifetime is decreased for every message on every refresh
--- (The algorithm(s) could be more efficient, but it doesn't matter for the small dataset)
-function title_bar.refresh_message(player)
-    local ui_state = data_util.ui_state(player)
-    local message_queue = ui_state.message_queue
-
-    local title_bar_elements = ui_state.main_elements.title_bar
-    if not title_bar_elements then return end
-
-    -- The message types are ordered by priority
-    local types = {"error", "warning", "hint"}
-
-    -- TODO this is not the proper way to do this probably, but it works
-    local subfactory = ui_state.context.subfactory
-    if subfactory and subfactory.valid and subfactory.linearly_dependant then
-        title_bar.enqueue_message(player, {"fp.error_linearly_dependant_recipes"}, "error", 1, false)
-    end
-
-    local new_message = nil
-    -- Go over the all types and messages, trying to find one that should be shown
-    for _, type in ipairs(types) do
-        -- All messages will have lifetime > 0 at this point
-        for _, message in pairs(message_queue) do
-            -- Find first message of this type, then break
-            if message.type == type then
-                new_message = message
-                break
-            end
-        end
-        -- If a message is found, break because no messages of lower ranked type should be considered
-        if new_message ~= nil then break end
-    end
-
-    -- Set caption and hide if no message is shown so that the margins work out
-    title_bar_elements.hint_label.caption = (new_message)
-        and {"fp." .. new_message.type .. "_message", new_message.text} or ""
-    title_bar_elements.hint_label.visible = (new_message)
-
-    -- Decrease the lifetime of every queued message
-    for index, message in pairs(message_queue) do
-        message.lifetime = message.lifetime - 1
-        if message.lifetime <= 0 then message_queue[index] = nil end
-    end
 end
 
 
