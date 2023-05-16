@@ -213,7 +213,7 @@ function Line.apply_mb_defaults(self, player)
         ModuleSet.add(module_set, secondary_module, module_limit)
 
     elseif machine_module then  -- only show an error if any module default is actually set
-        message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, type="warning"}
+        message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}
     end
     ModuleSet.summarize_effects(self.machine.module_set)
 
@@ -230,7 +230,7 @@ function Line.apply_mb_defaults(self, player)
             Line.set_beacon(self, blank_beacon)  -- summarizes effects on its own
 
         elseif message == nil then  -- don't overwrite previous message, if it exists
-            message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, type="warning"}
+            message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, category="warning"}
         end
     end
 

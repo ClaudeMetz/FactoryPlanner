@@ -78,7 +78,7 @@ local function reset_ui_state(player)
     ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
     ui_state_table.last_action = nil  -- The last user action (used for rate limiting)
     ui_state_table.view_states = nil  -- The state of the production views
-    ui_state_table.message_queue = {}  -- The general message queue
+    ui_state_table.messages = {}  -- The general message/warning list
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
@@ -116,7 +116,7 @@ local function create_player_table(player)
     reload_settings(player)
     reset_ui_state(player)
 
-    title_bar.enqueue_message(player, {"fp.hint_tutorial"}, "hint", 5, false)
+    ui_util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 12)
 end
 
 local function refresh_player_table(player)

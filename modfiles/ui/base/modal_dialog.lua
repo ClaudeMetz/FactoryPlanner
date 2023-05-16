@@ -139,7 +139,6 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort_check)
 
     if early_abort_check ~= nil and early_abort_check(player, ui_state.modal_data) then  -- abort early if need be
         --ui_state.modal_data = nil  -- this should be reset, but that breaks the stupid queueing stuff .........
-        title_bar.refresh_message(player)  -- make sure eventual messages are shown
         return
     end
 
@@ -186,7 +185,6 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
     ui_state.modal_elements = nil
 
     if not skip_opened then player.opened = ui_state.main_elements.main_frame end
-    title_bar.refresh_message(player)
 
     if ui_state.queued_dialog_metadata ~= nil then
         ui_util.raise_open_dialog(player, ui_state.queued_dialog_metadata)

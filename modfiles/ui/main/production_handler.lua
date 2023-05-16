@@ -21,14 +21,14 @@ local function handle_recipe_click(player, tags, action)
 
     if action == "open_subfloor" then
         if relevant_line.recipe.production_type == "consume" then
-            title_bar.enqueue_message(player, {"fp.error_no_subfloor_on_byproduct_recipes"}, "error", 1, true)
+            ui_util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
 
         local subfloor = line.subfloor
         if subfloor == nil then
             if data_util.flags(player).archive_open then
-                title_bar.enqueue_message(player, {"fp.error_no_new_subfloors_in_archive"}, "error", 1, true)
+                ui_util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
 
@@ -112,7 +112,7 @@ local function handle_machine_click(player, tags, action)
 
         solver.update(player, context.subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
-        if message ~= nil then title_bar.enqueue_message(player, message.text, message.type, 1, true) end
+        if message ~= nil then ui_util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
@@ -248,7 +248,7 @@ local function handle_item_click(player, tags, action)
 
     if action == "prioritize" then
         if line.Product.count < 2 then
-            title_bar.enqueue_message(player, {"fp.warning_no_prioritizing_single_product"}, "warning", 1, true)
+            ui_util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
             line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil

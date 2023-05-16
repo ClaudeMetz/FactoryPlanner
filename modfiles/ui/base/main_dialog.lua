@@ -1,4 +1,3 @@
-require("ui.main.title_bar")
 require("ui.main.subfactory_list")
 require("ui.base.view_state")
 
@@ -101,7 +100,6 @@ function main_dialog.rebuild(player, default_visibility)
 
     view_state.rebuild_state(player)  -- initializes the view_state
     ui_util.raise_build(player, "main_dialog", nil)  -- tells all elements to build themselves
-    title_bar.refresh_message(player)
 
     if interface_visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
@@ -122,7 +120,6 @@ function main_dialog.toggle(player, skip_opened)
         end
 
         main_dialog.set_pause_state(player, frame_main_dialog)
-        title_bar.refresh_message(player)
 
         -- Make sure FP is not behind some vanilla interfaces
         if new_dialog_visibility then frame_main_dialog.bring_to_front() end
@@ -249,12 +246,6 @@ listeners.misc = {
             compact_dialog.toggle(player)  -- toggle also refreshes
             flags.compact_view = true
         end
-    end),
-
-    refresh_gui_element = (function(player, event)
-        -- TODO refreshes no matter the context, which isn't correct really
-        -- Will be removed with the messages system refactor
-        title_bar.refresh_message(player)
     end)
 }
 

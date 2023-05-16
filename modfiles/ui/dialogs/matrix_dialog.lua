@@ -123,7 +123,7 @@ local function matrix_early_abort_check(player, modal_data)
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
     if num_needed_free_items == 0 then  -- User doesn't need to select any free items, just run the matrix solver
         if modal_data.configuration then
-            title_bar.enqueue_message(player, {"fp.warning_no_matrix_configuration_needed"}, "warning", 1, false)
+            ui_util.messages.raise(player, "warning", {"fp.warning_no_matrix_configuration_needed"}, 1)
         end
         return true
     end

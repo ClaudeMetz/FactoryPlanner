@@ -195,7 +195,7 @@ local function handle_gui_event(event)
     if not global.players[event.player_index] then return end
 
     -- GUI events always have an associated player
-    local player = game.get_player(event.player_index)
+    local player = game.get_player(event.player_index)  ---@cast player -nil
 
     -- The event table actually contains its identifier, not its name
     local event_name = gui_identifier_map[event.name]
@@ -228,7 +228,10 @@ local function handle_gui_event(event)
         third_parameter = modifier_action.name
     end
 
+    -- Send the actual event, potentially guarding it if in DEVMODE
     guarded_event(action_table.handler, {player, tags, third_parameter})
+
+    ui_util.messages.refresh(player)  -- give messages a chance to update themselves
 end
 
 -- Register all the GUI events from the identifier map
@@ -255,7 +258,7 @@ local function handle_dialog_event(event)
     if not global.players[event.player_index] then return end
 
     -- These custom events always have an associated player
-    local player = game.get_player(event.player_index)
+    local player = game.get_player(event.player_index)  ---@cast player -nil
     local ui_state = data_util.ui_state(player)
 
     -- Check if the action is allowed to be carried out by rate limiting
@@ -294,6 +297,7 @@ for _, event_id in pairs({OPEN_MODAL_DIALOG, CLOSE_MODAL_DIALOG}) do script.on_e
 
 BUILD_GUI_ELEMENT = script.generate_event_name()
 REFRESH_GUI_ELEMENT = script.generate_event_name()
+local internal_events = {BUILD_GUI_ELEMENT=true, REFRESH_GUI_ELEMENT=true}
 
 local misc_identifier_map = {
     -- Standard events
@@ -363,7 +367,7 @@ local function handle_misc_event(event)
     if not global.players[event.player_index] then return end
 
     -- We'll assume every one of the events has a player attached
-    local player = game.get_player(event.player_index)
+    local player = game.get_player(event.player_index)   ---@cast player -nil
 
     -- Check if the action is allowed to be carried out by rate limiting
     if rate_limiting_active(player, event.tick, event_name, event_handlers.timeout) then return end
@@ -372,9 +376,13 @@ local function handle_misc_event(event)
     local special_handler = event_handlers.special_handler
     if special_handler and guarded_event(special_handler, {event}) == false then return end
 
+    -- Send the actual events, potentially guarding them if in DEVMODE
     for _, registered_handler in pairs(event_handlers.registered_handlers) do
         guarded_event(registered_handler, {player, event})
     end
+
+    if internal_events[event_name] then return end  -- don't refresh message for events inside other events
+    ui_util.messages.refresh(player)  -- give messages a chance to update themselves
 end
 
 -- Register all the misc events from the identifier map
