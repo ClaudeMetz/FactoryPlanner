@@ -1,4 +1,4 @@
-generator_util = {
+local generator_util = {
     data_structure = {}
 }
 
@@ -575,3 +575,5 @@ end
 function generator_util.generate_group_table(group)
     return {name=group.name, localised_name=group.localised_name, order=group.order, valid=true}
 end
+
+return generator_util

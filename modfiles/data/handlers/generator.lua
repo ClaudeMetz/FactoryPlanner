@@ -1,6 +1,6 @@
-require("data.handlers.generator_util")
+local generator_util = require("data.handlers.generator_util")
 
-generator = {}
+local generator = {}
 
 ---@class FPRecipePrototype
 ---@field name string
@@ -899,3 +899,5 @@ function generator.all_wagons()
     generator_util.data_structure.generate_map(false)
     return generator_util.data_structure.get()
 end
+
+return generator

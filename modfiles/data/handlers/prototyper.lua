@@ -1,3 +1,6 @@
+local loader = require("data.handlers.loader")
+local generator = require("data.handlers.generator")
+
 prototyper = {
     util = {},
     defaults = {}

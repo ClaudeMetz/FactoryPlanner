@@ -11,9 +11,8 @@ require("data.classes.Module")
 require("data.classes.Item")
 require("data.classes.Fuel")
 
-require("data.handlers.generator")
-require("data.handlers.loader")
-require("data.handlers.migrator")
+local loader = require("data.handlers.loader")
+local migrator = require("data.handlers.migrator")
 require("data.handlers.prototyper")
 require("data.handlers.screenshotter")
 

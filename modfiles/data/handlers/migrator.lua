@@ -1,7 +1,7 @@
 -- This code handles the general migration process of the mod's global table
 -- It decides whether and which migrations should be applied, in appropriate order
 
-migrator = {}
+local migrator = {}
 
 -- Returns a table containing all existing migrations in order
 local migration_masterlist = {
@@ -114,7 +114,7 @@ function migrator.migrate_player_table(player)
             end
 
             --[[ -- Remove subfactories who weren't migrated along properly for some reason
-            -- This is likely due to an old, now-fixed bug that left them behind
+            -- TODO This is likely due to an old, now-fixed bug that left them behind
             for _, subfactory in pairs(outdated_subfactories) do
                 Factory.remove(player_table[factory_name], subfactory)
             end ]]
@@ -132,3 +132,5 @@ function migrator.migrate_export_table(export_table)
     end
     export_table.mod_version = global.mod_version
 end
+
+return migrator

@@ -1,5 +1,7 @@
+local structures = require("data.calculation.structures")
+
 -- Contains the 'meat and potatoes' calculation model that struggles with some more complex setups
-sequential_engine = {}
+local sequential_engine = {}
 
 -- ** LOCAL UTIL **
 local function update_line(line_data, aggregate)
@@ -276,3 +278,5 @@ function sequential_engine.update_subfactory(subfactory_data)
         Ingredient = aggregate.Ingredient
     }
 end
+
+return sequential_engine

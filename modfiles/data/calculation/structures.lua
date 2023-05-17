@@ -1,5 +1,5 @@
 -- Contains some structures and their 'methods' that are helpful during the calculation process
-structures = {
+local structures = {
     aggregate = {},
     class = {}
 }
@@ -118,3 +118,5 @@ function structures.class.count(class)
     end
     return n
 end
+
+return structures
