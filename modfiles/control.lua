@@ -47,10 +47,9 @@ CUSTOM_EVENTS = {
 }
 
 
-fancytable = require('__flib__.table')  -- has more functionality than built-in table
+fancytable = require("__flib__.table")  -- has more functionality than built-in table
 translator = require("__flib__.dictionary-lite")  -- translation module for localised search
 
-require("util")  -- core.lualib
 require("data.data_util")
 require("ui.ui_util")
 

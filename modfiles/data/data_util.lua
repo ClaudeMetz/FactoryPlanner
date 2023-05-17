@@ -32,6 +32,16 @@ function data_util.flags(player) return global.players[player.index].ui_state.fl
 
 
 -- ** MISC **
+-- Still can't believe this is not a thing in Lua
+-- This has the added feature of turning any number strings into actual numbers
+function data_util.split_string(s, separator)
+    local result = {}
+    for token in string.gmatch(s, "[^" .. separator .. "]+") do
+        table.insert(result, (tonumber(token) or token))
+    end
+    return result
+end
+
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string)
     local context = data_util.context(player)
