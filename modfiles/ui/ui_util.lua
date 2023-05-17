@@ -486,9 +486,9 @@ end
 ---@param action string
 ---@param additional_tags Tags
 ---@param state SwitchState
----@param caption LocalisedString
----@param tooltip LocalisedString
----@param label_first boolean
+---@param caption LocalisedString?
+---@param tooltip LocalisedString?
+---@param label_first boolean?
 ---@return LuaGuiElement created_switch
 function ui_util.switch.add_on_off(parent_flow, action, additional_tags, state, caption, tooltip, label_first)
     if type(state) == "boolean" then state = ui_util.switch.convert_to_state(state) end
