@@ -37,7 +37,7 @@ local function build_title_bar(player)
     flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
     -- The separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
-    flow_title_bar.style.height = TITLE_BAR_HEIGHT
+    flow_title_bar.style.height = MAGIC_NUMBERS.title_bar_height
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},

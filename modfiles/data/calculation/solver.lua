@@ -308,7 +308,7 @@ end
 -- **** UTIL ****
 -- Speed can't go lower than 20%, or higher than 32676% due to the engine limit
 local function cap_effect(value)
-    return math.min(math.max(value, EFFECTS_LOWER_BOUND), EFFECTS_UPPER_BOUND)
+    return math.min(math.max(value, MAGIC_NUMBERS.effects_lower_bound), MAGIC_NUMBERS.effects_upper_bound)
 end
 
 -- Determines the number of crafts per tick for the given data

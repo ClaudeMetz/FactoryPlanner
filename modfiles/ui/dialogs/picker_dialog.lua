@@ -58,8 +58,9 @@ local function add_item_picker(parent_flow, player)
     modal_elements["warning_label"] = label_warning
 
     -- Item picker (optimized for performance, so not everything is done in the obvious way)
-    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=PICKER_GROUP_COUNT}
-    table_item_groups.style.width = 71 * PICKER_GROUP_COUNT
+    local groups_per_row = MAGIC_NUMBERS.groups_per_row
+    local table_item_groups = parent_flow.add{type="table", style="filter_group_table", column_count=groups_per_row}
+    table_item_groups.style.width = 71 * groups_per_row
     table_item_groups.style.horizontal_spacing = 0
     table_item_groups.style.vertical_spacing = 0
 
@@ -76,7 +77,7 @@ local function add_item_picker(parent_flow, player)
         end
     end
 
-    local items_per_column = PICKER_ITEM_COLUMN_COUNT
+    local items_per_row = MAGIC_NUMBERS.items_per_row
     local current_item_rows, max_item_rows = 0, 0
     local current_items_in_table_count = 0
     for _, item_proto in ipairs(SORTED_ITEMS) do
@@ -117,7 +118,7 @@ local function add_item_picker(parent_flow, player)
                 subgroup_tables = modal_elements.groups[group_id].subgroup_tables
 
                 -- Catch up on adding the last item flow's row count
-                current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
+                current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
                 current_items_in_table_count = 0
 
                 max_item_rows = math.max(current_item_rows, max_item_rows)
@@ -132,7 +133,7 @@ local function add_item_picker(parent_flow, player)
             local subgroup_table = nil
 
             if table_subgroup == nil then
-                table_subgroup = flow_subgroups.add{type="table", column_count=items_per_column,
+                table_subgroup = flow_subgroups.add{type="table", column_count=items_per_row,
                     style="filter_slot_table"}
                 table_subgroup.style.horizontally_stretchable = true
                 subgroup_table_cache[subgroup_name] = table_subgroup
@@ -140,7 +141,7 @@ local function add_item_picker(parent_flow, player)
                 subgroup_tables[subgroup_name] = {}
                 subgroup_table = subgroup_tables[subgroup_name]
 
-                current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
+                current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
                 current_items_in_table_count = 0
             else
                 subgroup_table = subgroup_tables[subgroup_name]
@@ -164,7 +165,7 @@ local function add_item_picker(parent_flow, player)
     end
 
     -- Catch up on addding the last item flow and groups row counts
-    current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_column)
+    current_item_rows = current_item_rows + math.ceil(current_items_in_table_count / items_per_row)
     max_item_rows = math.max(current_item_rows, max_item_rows)
     frame_filters.style.natural_height = max_item_rows * 40 + (2*12)
 

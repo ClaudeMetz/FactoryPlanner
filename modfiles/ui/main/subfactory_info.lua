@@ -140,7 +140,7 @@ local function build_subfactory_info(player)
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame_with_padding"}
-    frame_vertical.style.size = {SUBFACTORY_LIST_WIDTH, SUBFACTORY_INFO_HEIGHT}
+    frame_vertical.style.size = {MAGIC_NUMBERS.list_width, MAGIC_NUMBERS.info_height}
 
     local flow_title = frame_vertical.add{type="flow", direction="horizontal"}
     flow_title.style.margin = {-4, 0, 8, 0}
@@ -183,11 +183,13 @@ local function build_subfactory_info(player)
     flow_timescale.add{type="label", caption={"fp.info_label", {"fp.timescale"}}, tooltip={"fp.timescale_tt"}}
     flow_timescale.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local table_timescales = flow_timescale.add{type="table", column_count=table_size(TIMESCALE_MAP)}
+
+    local timescale_map = {[1] = "second", [60] = "minute", [3600] = "hour"}
+    local table_timescales = flow_timescale.add{type="table", column_count=table_size(timescale_map)}
     table_timescales.style.horizontal_spacing = 0
     main_elements.subfactory_info["timescales_table"] = table_timescales
 
-    for scale, name in pairs(TIMESCALE_MAP) do
+    for scale, name in pairs(timescale_map) do
         table_timescales.add{type="button", tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
             style="fp_button_push", caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}
     end

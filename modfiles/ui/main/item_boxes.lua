@@ -16,13 +16,13 @@ local function build_item_box(player, category, column_count)
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
     window_frame.style.top_padding = 6
-    window_frame.style.bottom_padding = ITEM_BOX_PADDING
+    window_frame.style.bottom_padding = MAGIC_NUMBERS.frame_spacing
 
     local title_flow = window_frame.add{type="flow", direction="horizontal"}
     title_flow.style.vertical_align = "center"
 
     local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
-    label.style.left_padding = ITEM_BOX_PADDING
+    label.style.left_padding = MAGIC_NUMBERS.frame_spacing
     label.style.bottom_margin = 4
 
     if category == "ingredient" then
@@ -36,12 +36,12 @@ local function build_item_box(player, category, column_count)
     end
 
     local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
-    scroll_pane.style.maximal_height = ITEM_BOX_MAX_ROWS * ITEM_BOX_BUTTON_SIZE
+    scroll_pane.style.maximal_height = MAGIC_NUMBERS.item_box_max_rows * MAGIC_NUMBERS.item_button_size
     scroll_pane.style.horizontally_stretchable = false
     scroll_pane.style.vertically_stretchable = false
 
     local item_frame = scroll_pane.add{type="frame", style="slot_button_deep_frame"}
-    item_frame.style.width = column_count * ITEM_BOX_BUTTON_SIZE
+    item_frame.style.width = column_count * MAGIC_NUMBERS.item_button_size
 
     local table_items = item_frame.add{type="table", column_count=column_count, style="filter_slot_table"}
     item_boxes_elements[category .. "_item_table"] = table_items
@@ -262,7 +262,8 @@ local function refresh_item_boxes(player)
     end
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
-    local item_table_height = math.min(math.max(maxrow_count, 1), ITEM_BOX_MAX_ROWS) * ITEM_BOX_BUTTON_SIZE
+    local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)
+    local item_table_height = actual_row_count * MAGIC_NUMBERS.item_button_size
 
     -- set the heights for both the visible frame and the scroll pane containing it
     local item_boxes_elements = player_table.ui_state.main_elements.item_boxes
@@ -280,7 +281,7 @@ local function build_item_boxes(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local flow_horizontal = parent_flow.add{type="flow", direction="horizontal"}
-    flow_horizontal.style.horizontal_spacing = FRAME_SPACING
+    flow_horizontal.style.horizontal_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
     local products_per_row = data_util.settings(player).products_per_row

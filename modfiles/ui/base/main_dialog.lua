@@ -9,15 +9,18 @@ local function determine_main_dimensions(player, products_per_row, subfactory_li
     local settings = data_util.settings(player)
     products_per_row = products_per_row or settings.products_per_row
     subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
+    local frame_spacing = MAGIC_NUMBERS.frame_spacing
 
     -- Width of the larger ingredients-box, which has twice the buttons per row
-    local boxes_width_1 = (products_per_row * 2 * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING)
+    local boxes_width_1 = (products_per_row * 2 * MAGIC_NUMBERS.item_button_size) + (2 * frame_spacing)
     -- Width of the two smaller product+byproduct-boxes
-    local boxes_width_2 = 2 * ((products_per_row * ITEM_BOX_BUTTON_SIZE) + (2 * ITEM_BOX_PADDING))
-    local width = SUBFACTORY_LIST_WIDTH + boxes_width_1 + boxes_width_2 + ((2+3) * FRAME_SPACING)
+    local boxes_width_2 = 2 * ((products_per_row * MAGIC_NUMBERS.item_button_size) + (2 * frame_spacing))
+    local width = MAGIC_NUMBERS.list_width + boxes_width_1 + boxes_width_2 + ((2+3) * frame_spacing)
 
-    local subfactory_list_height = SUBFACTORY_SUBHEADER_HEIGHT + (subfactory_list_rows * SUBFACTORY_LIST_ELEMENT_HEIGHT)
-    local height = TITLE_BAR_HEIGHT + subfactory_list_height + SUBFACTORY_INFO_HEIGHT + ((2+1) * FRAME_SPACING)
+    local subfactory_list_height = (subfactory_list_rows * MAGIC_NUMBERS.list_element_height)
+        + MAGIC_NUMBERS.subheader_height
+    local height = MAGIC_NUMBERS.title_bar_height + subfactory_list_height + MAGIC_NUMBERS.info_height
+        + ((2+1) * frame_spacing)
 
     return {width=width, height=height}
 end
@@ -81,21 +84,22 @@ function main_dialog.rebuild(player, default_visibility)
 
 
     -- Create the actual dialog structure
+    local frame_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.flows = {}
 
     local top_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
     main_elements.flows["top_horizontal"] = top_horizontal
 
     local main_horizontal = frame_main_dialog.add{type="flow", direction="horizontal"}
-    main_horizontal.style.horizontal_spacing = FRAME_SPACING
+    main_horizontal.style.horizontal_spacing = frame_spacing
     main_elements.flows["main_horizontal"] = main_horizontal
 
     local left_vertical = main_horizontal.add{type="flow", direction="vertical"}
-    left_vertical.style.vertical_spacing = FRAME_SPACING
+    left_vertical.style.vertical_spacing = frame_spacing
     main_elements.flows["left_vertical"] = left_vertical
 
     local right_vertical = main_horizontal.add{type="flow", direction="vertical"}
-    right_vertical.style.vertical_spacing = FRAME_SPACING
+    right_vertical.style.vertical_spacing = frame_spacing
     main_elements.flows["right_vertical"] = right_vertical
 
     view_state.rebuild_state(player)  -- initializes the view_state

@@ -480,8 +480,6 @@ function ui_util.messages.refresh(player)
 end
 
 
----@alias SwitchState "left" | "right"
-
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 ---@param parent_flow LuaGuiElement
@@ -534,25 +532,26 @@ end
 ---@param trigger "main_dialog" | "compact_subfactory" | "view_state"
 ---@param parent LuaGuiElement?
 function ui_util.raise_build(player, trigger, parent)
-    script.raise_event(BUILD_GUI_ELEMENT, {player_index=player.index, trigger=trigger, parent=parent})
+    script.raise_event(CUSTOM_EVENTS.build_gui_element, {player_index=player.index, trigger=trigger, parent=parent})
 end
 
 ---@param player LuaPlayer
 ---@param trigger "all" | "subfactory" | "production" | "production_detail" | "title_bar" | "subfactory_list" | "subfactory_info" | "item_boxes" | "production_box" | "production_table" | "compact_subfactory" | "view_state"
 ---@param element LuaGuiElement?
 function ui_util.raise_refresh(player, trigger, element)
-    script.raise_event(REFRESH_GUI_ELEMENT, {player_index=player.index, trigger=trigger, element=element})
+    script.raise_event(CUSTOM_EVENTS.refresh_gui_element, {player_index=player.index, trigger=trigger, element=element})
 end
 
 ---@param player LuaPlayer
 ---@param metadata table
 function ui_util.raise_open_dialog(player, metadata)
-    script.raise_event(OPEN_MODAL_DIALOG, {player_index=player.index, metadata=metadata})
+    script.raise_event(CUSTOM_EVENTS.open_modal_dialog, {player_index=player.index, metadata=metadata})
 end
 
 ---@param player LuaPlayer
 ---@param action "submit" | "cancel" | "delete"
 ---@param skip_opened boolean?
 function ui_util.raise_close_dialog(player, action, skip_opened)
-    script.raise_event(CLOSE_MODAL_DIALOG, {player_index=player.index, action=action, skip_opened=skip_opened})
+    script.raise_event(CUSTOM_EVENTS.close_modal_dialog,
+        {player_index=player.index, action=action, skip_opened=skip_opened})
 end

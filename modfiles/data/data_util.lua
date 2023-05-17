@@ -74,6 +74,7 @@ end
 -- Formats the given effects for use in a tooltip
 function data_util.format_module_effects(effects, limit_effects)
     local tooltip_lines, effect_applies = {"", "\n"}, false
+    local lower_bound, upper_bound = MAGIC_NUMBERS.effects_lower_bound, MAGIC_NUMBERS.effects_upper_bound
 
     for effect_name, effect_value in pairs(effects) do
         if effect_value ~= 0 then
@@ -83,10 +84,10 @@ function data_util.format_module_effects(effects, limit_effects)
             if limit_effects then
                 if effect_name == "productivity" and effect_value < 0 then
                     effect_value, capped_indication = 0, {"fp.effect_maxed"}
-                elseif effect_value < EFFECTS_LOWER_BOUND then
-                    effect_value, capped_indication = EFFECTS_LOWER_BOUND, {"fp.effect_maxed"}
-                elseif effect_value > EFFECTS_UPPER_BOUND then
-                    effect_value, capped_indication = EFFECTS_UPPER_BOUND, {"fp.effect_maxed"}
+                elseif effect_value < lower_bound then
+                    effect_value, capped_indication = lower_bound, {"fp.effect_maxed"}
+                elseif effect_value > upper_bound then
+                    effect_value, capped_indication = upper_bound, {"fp.effect_maxed"}
                 end
             end
 
