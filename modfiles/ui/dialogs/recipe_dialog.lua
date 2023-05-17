@@ -205,7 +205,7 @@ local function create_dialog_structure(modal_data, translations)
     end
 end
 
-function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
+local function apply_recipe_filter(player, search_term)
     local modal_data = data_util.modal_data(player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
@@ -247,7 +247,7 @@ local function handle_filter_change(player, tags, event)
     data_util.modal_data(player).filters[tags.filter_name] = boolean_state
     data_util.preferences(player).recipe_filters[tags.filter_name] = boolean_state
 
-    SEARCH_HANDLERS.apply_recipe_filter(player, "")
+    apply_recipe_filter(player, "")
 end
 
 
@@ -289,7 +289,7 @@ local function open_recipe_dialog(player, modal_data)
 
     local translations = data_util.player_table(player).translation_tables
     create_dialog_structure(modal_data, translations)
-    SEARCH_HANDLERS.apply_recipe_filter(player, "")
+    apply_recipe_filter(player, "")
     modal_data.modal_elements.search_textfield.focus()
 
     -- Dispose of the temporary GUI-opening variables
@@ -331,6 +331,10 @@ listeners.dialog = {
     } end),
     early_abort_check = recipe_early_abort_check,
     open = open_recipe_dialog
+}
+
+listeners.global = {
+    apply_recipe_filter = apply_recipe_filter
 }
 
 return { listeners }

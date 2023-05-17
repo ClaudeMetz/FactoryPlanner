@@ -125,6 +125,16 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     return frame_modal_dialog
 end
 
+local function run_delayed_modal_search(metadata)
+    local player = game.get_player(metadata.player_index)
+    local modal_data = data_util.modal_data(player)
+    if not modal_data or not modal_data.modal_elements then return end
+
+    local searchfield = modal_data.modal_elements.search_textfield
+    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
+    GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
+end
+
 
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
@@ -252,17 +262,6 @@ function modal_dialog.leave_selection_mode(player)
 end
 
 
-function NTH_TICK_HANDLERS.run_delayed_modal_search(metadata)
-    local player = game.get_player(metadata.player_index)
-    local modal_data = data_util.modal_data(player)
-    if not modal_data or not modal_data.modal_elements then return end
-
-    local searchfield = modal_data.modal_elements.search_textfield
-    local search_term = searchfield.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-    SEARCH_HANDLERS[modal_data.search_handler_name](player, search_term)
-end
-
-
 -- ** EVENTS **
 local listeners = {}
 
@@ -306,7 +305,7 @@ listeners.gui = {
                 if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
 
                 local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
-                SEARCH_HANDLERS[modal_data.search_handler_name](player, search_term)
+                GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
@@ -358,6 +357,10 @@ listeners.misc = {
             if textfield_search then ui_util.select_all(textfield_search) end
         end
     end)
+}
+
+listeners.global = {
+    run_delayed_modal_search = run_delayed_modal_search
 }
 
 return { listeners }

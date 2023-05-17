@@ -211,7 +211,7 @@ local function handle_module_click(player, tags, action)
 end
 
 
-function GENERIC_HANDLERS.apply_item_options(player, options, action)
+local function apply_item_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.ui_state(player)
         local item = ui_state.modal_data.object
@@ -475,6 +475,10 @@ listeners.gui = {
             handler = handle_percentage_confirmation
         }
     }
+}
+
+listeners.global = {
+    apply_item_options = apply_item_options
 }
 
 return { listeners }

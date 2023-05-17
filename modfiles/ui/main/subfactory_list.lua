@@ -29,6 +29,21 @@ local function refresh_after_subfactory_deletion(player, factory, removed_gui_po
     end
 end
 
+-- Delete subfactory for good and refresh interface if necessary
+local function delete_subfactory_for_good(metadata)
+    local archive = metadata.subfactory.parent
+    local removed_gui_position = Factory.remove(archive, metadata.subfactory)
+
+    local player = game.get_player(metadata.player_index)  ---@cast player -nil
+    if data_util.main_elements(player).main_frame == nil then return end
+
+    if data_util.flags(player).archive_open then
+        refresh_after_subfactory_deletion(player, archive, removed_gui_position)
+    else  -- only need to refresh the archive button enabled state really
+        ui_util.raise_refresh(player, "subfactory_list", nil)
+    end
+end
+
 
 local function archive_subfactory(player, _, _)
     local player_table = data_util.player_table(player)
@@ -313,22 +328,6 @@ function subfactory_list.delete_subfactory(player)
 end
 
 
--- Delete subfactory for good and refresh interface if necessary
-function NTH_TICK_HANDLERS.delete_subfactory_for_good(metadata)
-    local archive = metadata.subfactory.parent
-    local removed_gui_position = Factory.remove(archive, metadata.subfactory)
-
-    local player = game.get_player(metadata.player_index)  ---@cast player -nil
-    if data_util.main_elements(player).main_frame == nil then return end
-
-    if data_util.flags(player).archive_open then
-        refresh_after_subfactory_deletion(player, archive, removed_gui_position)
-    else  -- only need to refresh the archive button enabled state really
-        ui_util.raise_refresh(player, "subfactory_list", nil)
-    end
-end
-
-
 -- ** EVENTS **
 local listeners = {}
 
@@ -394,6 +393,10 @@ listeners.misc = {
         local triggers = {subfactory_list=true, all=true}
         if triggers[event.trigger] then refresh_subfactory_list(player) end
     end)
+}
+
+listeners.global = {
+    delete_subfactory_for_good = delete_subfactory_for_good
 }
 
 return { listeners }
