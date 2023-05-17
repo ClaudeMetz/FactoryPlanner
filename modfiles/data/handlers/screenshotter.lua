@@ -119,7 +119,7 @@ local actions = {
     teardown_02_compact_interface = function(player)
         local compact_frame = data_util.ui_state(player).compact_elements.compact_frame
         return_dimensions("02_compact_interface", compact_frame)
-        local toggle_handler = get_handler("ui.base.compact_dialog", 1, "on_gui_click", "switch_to_main_view")
+        local toggle_handler = get_handler("ui.base.compact_dialog", 2, "on_gui_click", "switch_to_main_view")
         toggle_handler(player, nil, nil)
     end,
 
