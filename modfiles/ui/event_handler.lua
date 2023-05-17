@@ -79,19 +79,6 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
 end
 
 
-local function apply_metadata_overrides(base, overrides)
-    for k, v in pairs(overrides) do
-        local base_v = base[k]
-        if type(base_v) == "table" and type(v) == "table" then
-            apply_metadata_overrides(base_v, v)
-        else
-            base[k] = v
-        end
-    end
-end
-
-
-
 -- ** GUI EVENTS **
 -- These handlers go out to the first thing that it finds that registered for it.
 -- They can register either by element name or by a pattern matching element names.
@@ -241,15 +228,22 @@ for event_id, _ in pairs(gui_identifier_map) do script.on_event(event_id, handle
 
 -- ** DIALOG EVENTS **
 -- These custom events handle opening and closing modal dialogs
-
-OPEN_MODAL_DIALOG = script.generate_event_name()
-CLOSE_MODAL_DIALOG = script.generate_event_name()
-
 local dialog_event_cache = {}
 -- Compile the list of dialog actions
 for _, listener in pairs(event_listeners) do
     if listener.dialog then
         dialog_event_cache[listener.dialog.dialog] = listener.dialog
+    end
+end
+
+local function apply_metadata_overrides(base, overrides)
+    for k, v in pairs(overrides) do
+        local base_v = base[k]
+        if type(base_v) == "table" and type(v) == "table" then
+            apply_metadata_overrides(base_v, v)
+        else
+            base[k] = v
+        end
     end
 end
 
@@ -264,7 +258,7 @@ local function handle_dialog_event(event)
     -- Check if the action is allowed to be carried out by rate limiting
     if rate_limiting_active(player, event.tick, event.name, 20) then return end
 
-    if event.name == OPEN_MODAL_DIALOG then
+    if event.name == CUSTOM_EVENTS.open_modal_dialog then
         local listener = dialog_event_cache[event.metadata.dialog]
 
         local metadata = event.metadata
@@ -277,7 +271,7 @@ local function handle_dialog_event(event)
 
         modal_dialog.enter(player, metadata, listener.open, listener.early_abort_check)
 
-    elseif event.name == CLOSE_MODAL_DIALOG then
+    elseif event.name == CUSTOM_EVENTS.close_modal_dialog then
         local modal_dialog_type = ui_state.modal_dialog_type
         if modal_dialog_type == nil then return end
 
@@ -287,18 +281,14 @@ local function handle_dialog_event(event)
 end
 
 -- Register all the misc events from the identifier map
-for _, event_id in pairs({OPEN_MODAL_DIALOG, CLOSE_MODAL_DIALOG}) do script.on_event(event_id, handle_dialog_event) end
+local dialog_events = {CUSTOM_EVENTS.open_modal_dialog, CUSTOM_EVENTS.close_modal_dialog}
+for _, event_id in pairs(dialog_events) do script.on_event(event_id, handle_dialog_event) end
 
 
 
 -- ** MISC EVENTS **
 -- These events call every handler that has subscribed to it by id or name. The difference to GUI events
 -- is that multiple handlers can be registered to the same event, and there is no standard handler.
-
-BUILD_GUI_ELEMENT = script.generate_event_name()
-REFRESH_GUI_ELEMENT = script.generate_event_name()
-local internal_events = {BUILD_GUI_ELEMENT=true, REFRESH_GUI_ELEMENT=true}
-
 local misc_identifier_map = {
     -- Standard events
     [defines.events.on_gui_opened] = "on_gui_opened",
@@ -322,8 +312,8 @@ local misc_identifier_map = {
     ["fp_confirm_gui"] = "fp_confirm_gui",
     ["fp_focus_searchfield"] = "fp_focus_searchfield",
 
-    [BUILD_GUI_ELEMENT] = "build_gui_element",
-    [REFRESH_GUI_ELEMENT] = "refresh_gui_element"
+    [CUSTOM_EVENTS.build_gui_element] = "build_gui_element",
+    [CUSTOM_EVENTS.refresh_gui_element] = "refresh_gui_element"
 }
 
 local misc_timeouts = {
@@ -360,7 +350,8 @@ end
 
 local function handle_misc_event(event)
     local event_name = event.input_name or event.name -- also handles keyboard shortcuts
-    local event_handlers = misc_event_cache[misc_identifier_map[event_name]]
+    local string_name = misc_identifier_map[event_name]
+    local event_handlers = misc_event_cache[string_name]
     if not event_handlers then return end  -- make sure the given event is even handled
 
     -- Guard against an event being called before the player is initialized
@@ -381,7 +372,7 @@ local function handle_misc_event(event)
         guarded_event(registered_handler, {player, event})
     end
 
-    if internal_events[event_name] then return end  -- don't refresh message for events inside other events
+    if CUSTOM_EVENTS[string_name] then return end  -- don't refresh message for events inside other events
     ui_util.messages.refresh(player)  -- give messages a chance to update themselves
 end
 

@@ -43,7 +43,7 @@ end
 local function add_effects_section(parent_flow, object, modal_elements)
     local frame_effects = parent_flow.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     frame_effects.style.vertically_stretchable = true
-    frame_effects.style.width = (MODULE_DIALOG_WIDTH / 2) - 14
+    frame_effects.style.width = (460 / 2) - 14
 
     local class_lower = object.class:lower()
     local caption = {"", {"fp.pu_" .. class_lower, 1}, " ", {"fp.effects"}}

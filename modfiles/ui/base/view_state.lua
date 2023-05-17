@@ -1,5 +1,7 @@
 -- This contains both the UI handling for view states, as well as the amount conversions
 
+local timescale_map = {[1] = "second", [60] = "minute", [3600] = "hour"}
+
 -- ** LOCAL UTIL **
 local function cycle_views(player, direction)
     local ui_state = data_util.ui_state(player)
@@ -135,8 +137,8 @@ function view_state.generate_metadata(player, subfactory)
     return {
         processor = processors[current_view_name],
         timescale_inverse = 1 / subfactory.timescale,
-        timescale_string = {"fp." .. TIMESCALE_MAP[subfactory.timescale]},
-        adjusted_margin_of_error = MARGIN_OF_ERROR * subfactory.timescale,
+        timescale_string = {"fp." .. timescale_map[subfactory.timescale]},
+        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * subfactory.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
@@ -161,7 +163,7 @@ function view_state.rebuild_state(player)
     local subfactory = ui_state.context.subfactory
 
     -- If no subfactory exists yet, choose a default timescale so the UI can build properly
-    local timescale = (subfactory) and TIMESCALE_MAP[subfactory.timescale] or "second"
+    local timescale = (subfactory) and timescale_map[subfactory.timescale] or "second"
     local singular_bol = data_util.settings(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
     local cargo_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"])

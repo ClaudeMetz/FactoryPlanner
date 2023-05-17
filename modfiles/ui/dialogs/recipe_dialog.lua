@@ -154,7 +154,8 @@ local function create_recipe_group_box(modal_data, relevant_group, translations)
     group_sprite.style.right_margin = 12
 
     local frame_recipes = flow_group.add{type="frame", direction="horizontal", style="fp_frame_deep_slots_small"}
-    local table_recipes = frame_recipes.add{type="table", column_count=RECIPES_PER_ROW, style="filter_slot_table"}
+    local table_recipes = frame_recipes.add{type="table", column_count=MAGIC_NUMBERS.recipes_per_row,
+        style="filter_slot_table"}
 
     for _, recipe in pairs(relevant_group.recipes) do
         local recipe_proto = recipe.proto
@@ -229,7 +230,7 @@ function SEARCH_HANDLERS.apply_recipe_filter(player, search_term)
         group.frame.visible = any_group_recipe_visible
         any_recipe_visible = any_recipe_visible or any_group_recipe_visible
 
-        local button_table_height = math.ceil(table_size(group.recipe_buttons) / RECIPES_PER_ROW) * 36
+        local button_table_height = math.ceil(table_size(group.recipe_buttons) / MAGIC_NUMBERS.recipes_per_row) * 36
         local additional_height = math.max(88, button_table_height + 24) + 4
         desired_scroll_pane_height = desired_scroll_pane_height + additional_height
     end

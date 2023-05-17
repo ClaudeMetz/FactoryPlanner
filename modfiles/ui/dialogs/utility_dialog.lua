@@ -177,7 +177,7 @@ function utility_structures.blueprints(player, modal_data)
         modal_elements["blueprints_box"] = blueprints_box
 
         local frame_blueprints = blueprints_box.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
-        local table_blueprints = frame_blueprints.add{type="table", column_count=UTILITY_BLUEPRINT_LIMIT,
+        local table_blueprints = frame_blueprints.add{type="table", column_count=MAGIC_NUMBERS.blueprint_limit,
             style="filter_slot_table"}
         modal_elements["blueprints_table"] = table_blueprints
     end
@@ -227,7 +227,7 @@ function utility_structures.blueprints(player, modal_data)
         blueprint.clear()
     end
 
-    if #blueprints < UTILITY_BLUEPRINT_LIMIT then
+    if #blueprints < MAGIC_NUMBERS.blueprint_limit then
         table_blueprints.add{type="sprite-button", tags={mod="fp", on_gui_click="utility_store_blueprint"},
             sprite="utility/add", style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
     end

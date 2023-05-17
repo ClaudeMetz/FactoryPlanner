@@ -207,7 +207,7 @@ local function refresh_subfactory_list(player)
     subfactory_list_elements.duplicate_button.enabled = (selected_subfactory ~= nil and selected_subfactory.valid)
 
     subfactory_list_elements.delete_button.enabled = (subfactory_exists)
-    local delay_in_minutes = math.floor(SUBFACTORY_DELETION_DELAY / 3600)
+    local delay_in_minutes = math.floor(MAGIC_NUMBERS.subfactory_deletion_delay / 3600)
     subfactory_list_elements.delete_button.tooltip = (archive_open)
         and {"fp.action_delete_subfactory"} or {"fp.action_trash_subfactory", delay_in_minutes}
 end
@@ -219,7 +219,7 @@ local function build_subfactory_list(player)
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
     local row_count = data_util.settings(player).subfactory_list_rows
-    frame_vertical.style.height = SUBFACTORY_SUBHEADER_HEIGHT + (row_count * SUBFACTORY_LIST_ELEMENT_HEIGHT)
+    frame_vertical.style.height = MAGIC_NUMBERS.subheader_height + (row_count * MAGIC_NUMBERS.list_element_height)
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 
@@ -265,7 +265,7 @@ local function build_subfactory_list(player)
 
     -- This is not really a list-box, but it imitates one and allows additional features
     local listbox_subfactories = frame_vertical.add{type="scroll-pane", style="fp_scroll-pane_fake_listbox"}
-    listbox_subfactories.style.width = SUBFACTORY_LIST_WIDTH
+    listbox_subfactories.style.width = MAGIC_NUMBERS.list_width
     main_elements.subfactory_list["subfactory_listbox"] = listbox_subfactories
 
     refresh_subfactory_list(player)
@@ -303,7 +303,7 @@ function subfactory_list.delete_subfactory(player)
         local removed_gui_position = Factory.remove(factory, subfactory)
         refresh_after_subfactory_deletion(player, factory, removed_gui_position)
     else
-        local desired_tick_of_deletion = game.tick + SUBFACTORY_DELETION_DELAY
+        local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.subfactory_deletion_delay
         local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
             "delete_subfactory_for_good", {player_index=player.index, subfactory=subfactory})
         subfactory.tick_of_deletion = actual_tick_of_deletion

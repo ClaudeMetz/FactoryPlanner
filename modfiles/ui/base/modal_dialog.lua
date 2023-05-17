@@ -299,7 +299,7 @@ listeners.gui = {
     on_gui_text_changed = {
         {
             name = "modal_searchfield",
-            timeout = MODAL_SEARCH_LIMITING,
+            timeout = MAGIC_NUMBERS.modal_search_rate_limit,
             handler = (function(player, _, metadata)
                 local modal_data = data_util.modal_data(player)
                 local search_tick = modal_data.search_tick
@@ -309,7 +309,8 @@ listeners.gui = {
                 SEARCH_HANDLERS[modal_data.search_handler_name](player, search_term)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
-                modal_data.next_search_tick = data_util.nth_tick.add((game.tick + MODAL_SEARCH_LIMITING),
+                local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
+                modal_data.next_search_tick = data_util.nth_tick.add(desired_tick,
                     "run_delayed_modal_search", {player_index=player.index})
             end)
         }

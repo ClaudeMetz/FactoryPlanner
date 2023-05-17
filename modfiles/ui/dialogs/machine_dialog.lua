@@ -167,7 +167,7 @@ end
 local function open_machine_dialog(player, modal_data)
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
-    content_frame.style.minimal_width = MODULE_DIALOG_WIDTH
+    content_frame.style.minimal_width = 460
 
     modal_data.machine_backup = Machine.clone(modal_data.object)
     modal_data.beacon_backup = Beacon.clone(modal_data.line.beacon)

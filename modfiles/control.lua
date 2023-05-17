@@ -6,64 +6,68 @@ GENERIC_HANDLERS = {}
 SEARCH_HANDLERS = {}
 TUTORIAL_TOOLTIPS = {}
 
-MARGIN_OF_ERROR = 1e-6  -- the margin of error for floating point calculations
-EFFECTS_LOWER_BOUND, EFFECTS_UPPER_BOUND = -0.8, 327.67  -- no magic numbers
-TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
-SUBFACTORY_DELETION_DELAY = 15 * 60 * 60 -- ticks to deletion after subfactory trashing
-MODAL_SEARCH_LIMITING = 10  -- ticks between modal search runs
-RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
-NEW = nil  -- global variable used to store new prototype data temporarily for migration
-
-
-DEV_ACTIVE = true  -- enables certain conveniences for development
-
 local active_mods = script.active_mods
+
 RECIPEBOOK_ACTIVE = (active_mods["RecipeBook"] ~= nil)
+RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
+
 BEACON_OVERLOAD_ACTIVE = (
     active_mods["space-exploration"]
     or active_mods["wret-beacon-rebalance-mod"]
     or active_mods["beacon-overhaul"]
 ) and true
+
 DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
-
-
+DEV_ACTIVE = true  -- enables certain conveniences for development
 llog = require("llog")
-LLOG_EXCLUDES = {}
 
-require("util")  -- core.lualib
+
+MAGIC_NUMBERS = {
+    margin_of_error = 1e-6,  -- the margin of error for floating point calculations
+    subfactory_deletion_delay = 15 * 60 * 60,  -- ticks to deletion after subfactory trashing
+    modal_search_rate_limit = 10,  -- ticks between modal search runs
+    effects_lower_bound = -0.8,
+    effects_upper_bound = 327.67,
+
+    -- Some magic numbers to determine and calculate the dimensions of the main dialog
+    frame_spacing = 12,  -- Spacing between the base frames in the main dialog
+    title_bar_height = 28,  -- Height of the main dialog title bar
+    subheader_height = 36,  -- Height of the subfactory list subheader
+    list_width = 300,  -- Width of the subfactory list
+    list_element_height = 28,  -- Height of an individual subfactory list element
+    info_height = 138,  -- Height of the subfactory info frame
+    item_button_size = 40,  -- Size of item box buttons
+    item_box_max_rows = 4,  -- Maximum number of rows in an item box
+
+    -- Various other UI-related magic numbers
+    recipes_per_row = 6,  -- Number of recipes per row in the recipe picker
+    items_per_row = 10,  -- Number of items per row in the item picker
+    groups_per_row = 6,  -- Number of groups in a row in the item picker
+    blueprint_limit = 12  -- Maxmimum number of blueprints allowed per subfactory
+}
+
+
+CUSTOM_EVENTS = {
+    open_modal_dialog = script.generate_event_name(),
+    close_modal_dialog = script.generate_event_name(),
+    build_gui_element = script.generate_event_name(),
+    refresh_gui_element = script.generate_event_name()
+}
+
+
 fancytable = require('__flib__.table')  -- has more functionality than built-in table
 translator = require("__flib__.dictionary-lite")  -- translation module for localised search
 
-require("data.init")
+require("util")  -- core.lualib
 require("data.data_util")
-
 require("ui.ui_util")
+
 require("ui.base.main_dialog")
 require("ui.base.compact_dialog")
 require("ui.base.modal_dialog")
+
+require("data.init")
 require("ui.event_handler")
-
-
--- Some magic numbers to determine and calculate the dimensions of the main dialog
-FRAME_SPACING = 12
-
-TITLE_BAR_HEIGHT = 28
-SUBFACTORY_SUBHEADER_HEIGHT = 36
-SUBFACTORY_LIST_ELEMENT_HEIGHT = 28
-SUBFACTORY_INFO_HEIGHT = 138
-
-SUBFACTORY_LIST_WIDTH = 300
-ITEM_BOX_BUTTON_SIZE = 40
-ITEM_BOX_MAX_ROWS = 5
--- The following must remain 12, otherwise the scrollbar will not fit
--- The scroll pane style used for the item boxes is hardcoded at 12 for this reason
-ITEM_BOX_PADDING = 12
-
-RECIPES_PER_ROW = 6
-PICKER_ITEM_COLUMN_COUNT = 10
-PICKER_GROUP_COUNT = 6
-UTILITY_BLUEPRINT_LIMIT = 12
-MODULE_DIALOG_WIDTH = 460
 
 
 TUTORIAL_EXPORT_STRING = "eNrtGdtq2zD0V4ae4y7OutEF9rKxwmCDsT6WYmT5ONUmWZokh4bgf9+RLScmSUncpk3LDHmwj879LmdJpMqSORjLVUGmJD6Lz84nZETgTivjEjy14Mh0SVJqISC8/4gIueApvo/PYvz5d8qcMgstaFGAWbOqRsSWaXPKwZLp9ZIUVHpe11zOPnEH8q02KiuZQx0iyzgUDCJN2Z+bN1/vqNQCkL/jEiyj+Dz9MB6RQjnPjODJz4bYK6nS38BcIwR5OuWBQdo9MpCB5SiD5xwyMnWmBBS20J7E6+YNoFKVBQqIL1Cygb8lN5AlLXRJMsh5gZB0gUQBvEGVgnBJUCmnwgKydUonAuYgWrFMUOuNai2qbkbBpKQ9+uZVWmN+UUJAbRQJDHOhlPFKfUeVNn3SktVnTWB6oBtgXNdIj/Etow5mmClIxgzNHS9mXvc1iyR4v4FAx9pfjQI+Iog5h5ZlprzutVuRERgGhaMzBMVjdL2k7DYYt6k3sgWZClQhCljRuz5K5wplJYJL7lbysWRKAUkom+bNHpqcc+4WUUOzX5MuUTdNz9ce+1Gz2pVI4eS+VApWsBVHkNotEiuUt2C8KeEKra06wODyyic+Zb61bNscTvYYmeskIHYsvHigm60GyA72b43dFTs5umMnPR37ObiiGvWoTkO5eI2lOHn6UlxWj4vfeCN+k0MLo1cAufGN1fHn7qjN8xDF40QRvHzDWZSXpqB1GIaSfK3B3DGwh3g+aAxPXuEYXufMtuCQOrvFhnW/Y8FlvYD3Sz6azSnu2FnEuGEld8OePezZw5598j27GfCqwBF/ksIc1rVjTnimNLoyYjR97tE+xPGYcbQOQERaoOV7G5EEcdI52feK0FX4Zc7IF7SrDTPyBcxI67A2otQc8C3juNXYv6k2jeNIlZiXfu/fIUQJnkX16b5+fQuSMyq6Ibj0dNUpevX4aT50Sa0wQ0xUp8k+j6TUYqusPXiqHFk1bMkLP30zw4Xoqff/c62On/haHW9dq9eAq/ZPSBxPN9U/38n8Xw=="
@@ -78,5 +82,7 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 ---@class GuiEvent : Event
 ---@field player_index uint
 
+
 ---@alias Timescale 1 | 60 | 3600
 ---@alias FPCopyableObject FPLine | FPMachine | FPBeacon | FPModule | FPItem | FPFuel
+---@alias SwitchState "left" | "right"

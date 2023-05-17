@@ -100,7 +100,7 @@ local function open_beacon_dialog(player, modal_data)
     modal_data.module_set = modal_data.object.module_set
 
     local content_frame = modal_data.modal_elements.content_frame
-    content_frame.style.minimal_width = MODULE_DIALOG_WIDTH
+    content_frame.style.minimal_width = 460
 
     -- Beacon
     add_beacon_frame(content_frame, modal_data)
