@@ -552,7 +552,7 @@ function generator.all_machines()
                         generator_util.data_structure.insert(machine)
 
                         -- Add every boiler to the general steam category (steam without temperature)
-                        local general_machine = util.table.deepcopy(machine)
+                        local general_machine = fancytable.deep_copy(machine)
                         general_machine.category = "general-steam"
                         generator_util.data_structure.insert(general_machine)
                     end

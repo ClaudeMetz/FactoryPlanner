@@ -98,7 +98,7 @@ function structures.class.to_array(class)
     return array
 end
 
--- 'Deepcopies' the given class, with better performance than the generic util.table.deepcopy
+-- 'Deepcopies' the given class, with better performance than the generic deep copy
 function structures.class.copy(class)
     local copy = structures.class.init()
     for type_name, type in pairs(class) do

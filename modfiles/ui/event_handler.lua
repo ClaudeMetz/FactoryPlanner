@@ -24,7 +24,7 @@ local function guarded_event(handler, arguments)
             return ret
         else
             llog(ret)
-            game.print(util.split(ret, "\n")[1])
+            game.print(data_util.split_string(ret, "\n")[1])
             game.reload_mods()
         end
     else
@@ -63,7 +63,7 @@ local function generate_tutorial_tooltip_lines(modifier_actions)
     local action_lines = {}
 
     for modifier_click, modifier_action in pairs(modifier_actions) do
-        local split_modifiers = util.split(modifier_click, "-")
+        local split_modifiers = data_util.split_string(modifier_click, "-")
 
         local modifier_string = {""}
         for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
