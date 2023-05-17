@@ -3,7 +3,6 @@ require("ui.base.view_state")
 
 main_dialog = {}
 
--- ** LOCAL UTIL **
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
 local function determine_main_dimensions(player, products_per_row, subfactory_list_rows)
     local settings = data_util.settings(player)
@@ -53,7 +52,14 @@ function main_dialog.shrinkwrap_interface(player)
 end
 
 
--- ** TOP LEVEL **
+local function interface_toggle(metadata)
+    local player = game.get_player(metadata.player_index)
+    local compact_view = data_util.flags(player).compact_view
+    if compact_view then compact_dialog.toggle(player)
+    else main_dialog.toggle(player) end
+end
+
+
 function main_dialog.rebuild(player, default_visibility)
     local ui_state = data_util.ui_state(player)
     local main_elements = ui_state.main_elements
@@ -148,14 +154,6 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
 end
 
 
-function NTH_TICK_HANDLERS.interface_toggle(metadata)
-    local player = game.get_player(metadata.player_index)
-    local compact_view = data_util.flags(player).compact_view
-    if compact_view then compact_dialog.toggle(player)
-    else main_dialog.toggle(player) end
-end
-
-
 -- ** EVENTS **
 local listeners = {}
 
@@ -179,7 +177,7 @@ listeners.gui = {
                     game.print("Mods reloaded")
                     data_util.nth_tick.add((game.tick + 1), "interface_toggle", {player_index=player.index})
                 else  -- call the interface toggle function directly
-                    NTH_TICK_HANDLERS.interface_toggle({player_index=player.index})
+                    interface_toggle({player_index=player.index})
                 end
             end)
         }
@@ -251,6 +249,10 @@ listeners.misc = {
             flags.compact_view = true
         end
     end)
+}
+
+listeners.global = {
+    interface_toggle = interface_toggle
 }
 
 return { listeners }

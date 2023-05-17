@@ -211,8 +211,7 @@ local function put_ingredients_into_cursor(player, _, _)
 end
 
 
-
-function GENERIC_HANDLERS.scale_subfactory_by_ingredient_amount(player, options, action)
+local function scale_subfactory_by_ingredient_amount(player, options, action)
     if action == "submit" then
         local ui_state = data_util.ui_state(player)
         local item = ui_state.modal_data.object
@@ -363,6 +362,10 @@ listeners.misc = {
         local triggers = {item_boxes=true, production=true, subfactory=true, all=true}
         if triggers[event.trigger] then refresh_item_boxes(player) end
     end)
+}
+
+listeners.global = {
+    scale_subfactory_by_ingredient_amount = scale_subfactory_by_ingredient_amount
 }
 
 return { listeners }

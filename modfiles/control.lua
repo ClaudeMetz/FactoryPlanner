@@ -1,11 +1,3 @@
--- As functions can't be stored in global, references to them can't be stored in modal_data
--- for some of the mod's generic interfaces. Instead, a name needs to be passed, and the
--- function needs to be stored (on file parse) in one of these tables.
-NTH_TICK_HANDLERS = {}
-GENERIC_HANDLERS = {}
-SEARCH_HANDLERS = {}
-TUTORIAL_TOOLTIPS = {}
-
 local active_mods = script.active_mods
 
 RECIPEBOOK_ACTIVE = (active_mods["RecipeBook"] ~= nil)
@@ -65,6 +57,10 @@ require("ui.ui_util")
 require("ui.base.main_dialog")
 require("ui.base.compact_dialog")
 require("ui.base.modal_dialog")
+
+-- Not sure yet how to make these not global variables (filled via event_handler)
+TUTORIAL_TOOLTIPS = {}
+GLOBAL_HANDLERS = {}
 
 require("data.init")
 require("ui.event_handler")

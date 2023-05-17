@@ -165,7 +165,7 @@ end
 local function register_nth_tick_handler(tick)
     script.on_nth_tick(tick, function(nth_tick_data)
         local event_data = global.nth_tick_events[nth_tick_data.nth_tick]
-        local handler = NTH_TICK_HANDLERS[event_data.handler_name]
+        local handler = GLOBAL_HANDLERS[event_data.handler_name]
         handler(event_data.metadata)
         data_util.nth_tick.remove(tick)
     end)

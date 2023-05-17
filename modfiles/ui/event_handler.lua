@@ -378,3 +378,18 @@ end
 
 -- Register all the misc events from the identifier map
 for event_id, _ in pairs(misc_identifier_map) do script.on_event(event_id, handle_misc_event) end
+
+
+-- ** GLOBAL HANDLERS **
+-- In some situations, you need to be able to refer to a function indirectly by string name.
+-- As functions can't be stored in global, these need to be collected and stored in a central placem
+-- so code that wants to call them knows where to find them. This collects and stores these functions.
+for _, listener in pairs(event_listeners) do
+    if listener.global then
+        for name, handler in pairs(listener.global) do
+            GLOBAL_HANDLERS[name] = handler
+        end
+    end
+end
+
+-- These are not registered as events, instead just made available to call directly

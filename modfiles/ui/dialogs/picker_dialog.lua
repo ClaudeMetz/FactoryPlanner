@@ -10,7 +10,7 @@ local function select_item_group(modal_data, new_group_id)
     end
 end
 
-function SEARCH_HANDLERS.search_picker_items(player, search_term)
+local function search_picker_items(player, search_term)
     local modal_data = data_util.modal_data(player)
     local modal_elements = modal_data.modal_elements
 
@@ -468,6 +468,10 @@ listeners.dialog = {
     end),
     open = open_picker_dialog,
     close = close_picker_dialog
+}
+
+listeners.global = {
+    search_picker_items = search_picker_items
 }
 
 return { listeners }

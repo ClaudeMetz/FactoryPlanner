@@ -25,7 +25,7 @@ end
 
 local function handler_chooser_button_click(player, tags, event)
     local handler_name = data_util.modal_data(player).click_handler_name
-    GENERIC_HANDLERS[handler_name](player, tags.element_id, event)
+    GLOBAL_HANDLERS[handler_name](player, tags.element_id, event)
 
     ui_util.raise_close_dialog(player, "cancel")
 end
@@ -79,7 +79,7 @@ local options_listeners = {}
 local function call_change_handler(player, tags, event)
     local modal_data = data_util.modal_data(player)
     local handler_name = modal_data.field_handlers[tags.field_name]
-    if handler_name then GENERIC_HANDLERS[handler_name](modal_data, event) end
+    if handler_name then GLOBAL_HANDLERS[handler_name](modal_data, event) end
 end
 
 -- ** ELEMENTS **
@@ -194,7 +194,7 @@ local function open_options_dialog(_, modal_data)
 
     -- Call all the change handlers once to set the initial state correctly
     for field_name, handler_name in pairs(modal_data.field_handlers) do
-        GENERIC_HANDLERS[handler_name](modal_data, modal_elements[field_name])
+        GLOBAL_HANDLERS[handler_name](modal_data, modal_elements[field_name])
     end
 end
 
@@ -208,7 +208,7 @@ local function close_options_dialog(player, action)
     end
 
     local handler_name = modal_data.submission_handler_name
-    GENERIC_HANDLERS[handler_name](player, options_data, action)
+    GLOBAL_HANDLERS[handler_name](player, options_data, action)
 end
 
 options_listeners.dialog = {
