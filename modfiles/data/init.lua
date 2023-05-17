@@ -148,7 +148,7 @@ end
 local function global_init()
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
-    if DEVMODE and freeplay then  -- Disable freeplay popup-message
+    if DEV_ACTIVE and freeplay then  -- Disable freeplay popup-message
         if freeplay["set_skip_intro"] then remote.call("freeplay", "set_skip_intro", true) end
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
@@ -235,7 +235,7 @@ script.on_event(defines.events.on_player_created, function(event)
     ui_util.toggle_mod_gui(player)
 
     -- Add the subfactories that are handy for development
-    if DEVMODE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
+    if DEV_ACTIVE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
