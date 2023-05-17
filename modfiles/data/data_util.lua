@@ -1,3 +1,5 @@
+local migrate_export_table = require("data.handlers.migrator").migrate_export_table
+
 data_util = {
     nth_tick = {},
     porter = {}
@@ -225,7 +227,7 @@ function data_util.porter.get_subfactories(export_string)
     end) then return nil, "decoding_failure" end
 
     if not pcall(function()
-        migrator.migrate_export_table(export_table)
+        migrate_export_table(export_table)
     end) then return nil, "migration_failure" end
 
     local import_factory = Factory.init()

@@ -25,7 +25,9 @@ Currently the algorithm assumes any item which is part of at least one input and
 If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 
-matrix_engine = {}
+local structures = require("data.calculation.structures")
+
+local matrix_engine = {}
 
 local function split_string(s, separator)
     local result = {}
@@ -895,3 +897,5 @@ function matrix_engine.shallowcopy(table)
     end
     return copy
 end
+
+return matrix_engine

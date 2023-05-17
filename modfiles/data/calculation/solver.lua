@@ -1,6 +1,6 @@
-require("data.calculation.sequential_engine")
-require("data.calculation.matrix_engine")
-require("data.calculation.structures")
+local sequential_engine = require("data.calculation.sequential_engine")
+local matrix_engine = require("data.calculation.matrix_engine")
+local structures = require("data.calculation.structures")
 
 solver, solver_util = {}, {}
 

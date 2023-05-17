@@ -1,5 +1,5 @@
 -- The loader contains the code that runs on_load, pre-caching some data structures that are needed later
-loader = {}
+local loader = {}
 
 -- ** LOCAL UTIL **
 -- Returns a list of recipe groups in their proper order
@@ -185,3 +185,5 @@ function loader.run()
 
     PROTOTYPE_ATTRIBUTES = prototype_attributes()
 end
+
+return loader
