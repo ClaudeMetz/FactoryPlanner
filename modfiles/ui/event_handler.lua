@@ -18,7 +18,7 @@ end
 
 
 local function guarded_event(handler, arguments)
-    if DEVMODE and not DEBUGGER_ATTACHED then
+    if DEV_ACTIVE and not DEBUGGER_ACTIVE then
         local status, ret = xpcall(handler, debug.traceback, table.unpack(arguments))
         if status then
             return ret
@@ -228,7 +228,7 @@ local function handle_gui_event(event)
         third_parameter = modifier_action.name
     end
 
-    -- Send the actual event, potentially guarding it if in DEVMODE
+    -- Send the actual event, potentially guarding it if DEV_ACTIVE
     guarded_event(action_table.handler, {player, tags, third_parameter})
 
     ui_util.messages.refresh(player)  -- give messages a chance to update themselves
@@ -376,7 +376,7 @@ local function handle_misc_event(event)
     local special_handler = event_handlers.special_handler
     if special_handler and guarded_event(special_handler, {event}) == false then return end
 
-    -- Send the actual events, potentially guarding them if in DEVMODE
+    -- Send the actual events, potentially guarding them if DEV_ACTIVE
     for _, registered_handler in pairs(event_handlers.registered_handlers) do
         guarded_event(registered_handler, {player, event})
     end

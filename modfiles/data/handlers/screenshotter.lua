@@ -191,7 +191,7 @@ local actions = {
 }
 
 local function initial_setup()
-    DEVMODE = false  -- desync city, but it's fiiine. Avoids any accidental artifacts.
+    DEV_ACTIVE = false  -- desync city, but it's fiiine. Avoids any accidental artifacts.
     return {"09_settings"}
 end
 

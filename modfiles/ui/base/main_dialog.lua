@@ -168,7 +168,7 @@ listeners.gui = {
         {
             name = "mod_gui_toggle_interface",
             handler = (function(player, _, _)
-                if DEVMODE then  -- implicit mod reload for easier development
+                if DEV_ACTIVE then  -- implicit mod reload for easier development
                     ui_util.reset_player_gui(player)  -- destroys all FP GUIs
                     ui_util.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
