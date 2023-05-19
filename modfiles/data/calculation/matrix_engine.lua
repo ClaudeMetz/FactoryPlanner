@@ -50,9 +50,8 @@ end
 
 -- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_key"
 function matrix_engine.get_item_key(item_type_name, item_name)
-    local item_category = PROTOTYPE_MAPS.items[item_type_name]
-    local item_id = item_category.members[item_name].id
-    return tostring(item_category.id)..'_'..tostring(item_id)
+    local item = prototyper.util.find_prototype("items", item_name, item_type_name)
+    return tostring(item.category_id) .. '_' .. tostring(item.id)
 end
 
 function matrix_engine.get_item(item_key)

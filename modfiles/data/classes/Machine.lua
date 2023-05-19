@@ -93,10 +93,9 @@ end
 
 function Machine.paste(self, object)
     if object.class == "Machine" then
-        local new_machine_map = PROTOTYPE_MAPS.machines[self.proto.category].members
+        local found_machine = prototyper.util.find_prototype("machines", object.proto.name, self.proto.category)
 
-        if new_machine_map[object.proto.name] ~= nil
-                and Line.is_machine_applicable(self.parent, object.proto) then
+        if found_machine and Line.is_machine_applicable(self.parent, object.proto) then
             self.parent.machine = object
             object.parent = self.parent
 

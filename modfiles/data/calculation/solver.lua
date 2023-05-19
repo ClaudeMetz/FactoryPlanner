@@ -107,7 +107,7 @@ local function update_object_items(object, item_class, item_results)
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
         local required_amount = (object.class == "Subfactory") and 0 or nil
-        local item_proto = PROTOTYPE_MAPS.items[item_result.type].members[item_result.name]
+        local item_proto = prototyper.util.find_prototype("items", item_result.name, item_result.type)
         local item = Item.init(item_proto, item_class, item_result.amount, required_amount)
         object_class.add(object, item)
     end
@@ -117,7 +117,7 @@ local function set_zeroed_items(line, item_class, items)
     Line.clear(line, item_class)
 
     for _, item in pairs(items) do
-        local item_proto = PROTOTYPE_MAPS.items[item.type].members[item.name]
+        local item_proto = prototyper.util.find_prototype("items", item.name, item.type)
         Line.add(line, Item.init(item_proto, item_class, 0))
     end
 end

@@ -70,7 +70,7 @@ local function handle_beacon_change(player, _, _)
     end
 
     -- Change the beacon to the new type
-    beacon.proto = PROTOTYPE_MAPS.beacons[beacon_button.elem_value]
+    beacon.proto = prototyper.util.find_prototype("beacons", beacon_button.elem_value, nil)
     ModuleSet.normalize(beacon.module_set, {compatibility=true, trim=true, effects=true})
 
     module_configurator.refresh_modules_flow(player, false)
