@@ -85,7 +85,7 @@ function Factory.update_ingredient_satisfactions(self)
     end
 end
 
-function Factory.update_calculations(self)
+function Factory.update_calculations(self, player)
     for _, subfactory in ipairs(Factory.get_in_order(self, "Subfactory")) do
         solver.update(player, subfactory)
     end
