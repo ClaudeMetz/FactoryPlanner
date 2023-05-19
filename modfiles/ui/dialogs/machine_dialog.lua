@@ -160,6 +160,11 @@ end
 
 
 local function open_machine_dialog(player, modal_data)
+    local context = data_util.context(player)
+    local floor = Subfactory.get(context.subfactory, "Floor", modal_data.floor_id)
+    modal_data.line = Floor.get(floor, "Line", modal_data.line_id)
+    modal_data.object = modal_data.line.machine
+
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = 460
@@ -234,15 +239,12 @@ listeners.gui = {
 
 listeners.dialog = {
     dialog = "machine",
-    metadata = (function(modal_data)
-        local recipe_name = modal_data.line.recipe.proto.localised_name
-        return {
-            caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
-            subheader_text = {"fp.machine_dialog_description", recipe_name},
-            create_content_frame = true,
-            show_submit_button = true
-        }
-    end),
+    metadata = (function(modal_data) return {
+        caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
+        subheader_text = {"fp.machine_dialog_description", modal_data.recipe_name},
+        create_content_frame = true,
+        show_submit_button = true
+    } end),
     open = open_machine_dialog,
     close = close_machine_dialog
 }

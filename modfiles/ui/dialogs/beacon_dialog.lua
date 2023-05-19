@@ -86,13 +86,19 @@ end
 
 
 local function open_beacon_dialog(player, modal_data)
-    if modal_data.object ~= nil then
-        modal_data.backup_beacon = Beacon.clone(modal_data.object)
+    local context = data_util.context(player)
+    local floor = Subfactory.get(context.subfactory, "Floor", modal_data.floor_id)
+    local line = Floor.get(floor, "Line", modal_data.line_id)
+    modal_data.line = line
+
+    if line.beacon ~= nil then
+        modal_data.backup_beacon = Beacon.clone(line.beacon)
+        modal_data.object = line.beacon
     else
         local beacon_proto = prototyper.defaults.get(player, "beacons")
         local beacon_count = data_util.preferences(player).mb_defaults.beacon_count
-        modal_data.object = Beacon.init(beacon_proto, beacon_count, nil, modal_data.line)
-        Line.set_beacon(modal_data.line, modal_data.object)
+        modal_data.object = Beacon.init(beacon_proto, beacon_count, nil, line)
+        Line.set_beacon(line, modal_data.object)
     end
 
     if BEACON_OVERLOAD_ACTIVE then modal_data.object.amount = 1 end
@@ -170,14 +176,13 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "beacon",
     metadata = (function(modal_data)
-        local action = (modal_data.object) and "edit" or "add"
-        local machine_name = modal_data.line.machine.proto.localised_name
+        local action = (modal_data.edit) and "edit" or "add"
         return {
             caption = {"", {"fp." .. action}, " ", {"fp.pl_beacon", 1}},
-            subheader_text = {("fp.beacon_dialog_description_" .. action), machine_name},
+            subheader_text = {("fp.beacon_dialog_description_" .. action), modal_data.machine_name},
             create_content_frame = true,
             show_submit_button = true,
-            show_delete_button = (modal_data.object ~= nil)
+            show_delete_button = (modal_data.edit)
         }
     end),
     open = open_beacon_dialog,

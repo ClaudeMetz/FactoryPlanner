@@ -5,7 +5,8 @@ local function add_recipe(player, context, type, item_proto)
         ui_util.messages.raise(player, "error", message, 1)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
-        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=item_proto,
+        ui_util.raise_open_dialog(player, {dialog="recipe",
+            modal_data={category_id=item_proto.category_id, product_id=item_proto.id,
             floor_id=context.floor.id, production_type=production_type}})
     end
 end
@@ -130,7 +131,7 @@ local function handle_item_add(player, tags, event)
         local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
         ui_util.clipboard.paste(player, fake_item)
     else
-        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={object=nil, item_category=tags.category}})
+        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.category}})
     end
 end
 
@@ -147,7 +148,7 @@ local function handle_item_button_click(player, tags, action)
         add_recipe(player, context, tags.category, item.proto)
 
     elseif action == "edit" then
-        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={object=item, item_category="product"}})
+        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=item.id, item_category="product"}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, item)
@@ -169,7 +170,7 @@ local function handle_item_button_click(player, tags, action)
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
             text = {"fp.options_item_text", item.proto.localised_name},
             submission_handler_name = "scale_subfactory_by_ingredient_amount",
-            object = item,
+            item_id = item.id,
             fields = {
                 {
                     type = "numeric_textfield",
@@ -214,8 +215,8 @@ end
 local function scale_subfactory_by_ingredient_amount(player, options, action)
     if action == "submit" then
         local ui_state = data_util.ui_state(player)
-        local item = ui_state.modal_data.object
-        local subfactory = item.parent
+        local subfactory = ui_state.context.subfactory
+        local item = Subfactory.get(subfactory, "Ingredient", ui_state.modal_data.item_id)
 
         if options.item_amount then
             -- The division is not pre-calculated to avoid precision errors in some cases
@@ -226,7 +227,7 @@ local function scale_subfactory_by_ingredient_amount(player, options, action)
             end
         end
 
-        solver.update(player, ui_state.context.subfactory)
+        solver.update(player, subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
     end
 end
