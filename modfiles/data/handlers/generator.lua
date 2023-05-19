@@ -21,11 +21,11 @@ local function insert_prototype(list, prototype, category)
     end
 end
 
-local function remove_prototype(list, prototype, category)
+local function remove_prototype(list, name, category)
     if category == nil then
-        list[prototype.name] = nil
+        list[name] = nil
     else
-        list[category].members[prototype.name] = nil
+        list[category].members[name] = nil
         if next(list[category].members) == nil then list[category] = nil end
     end
 end
@@ -237,7 +237,7 @@ function generator.machines.second_pass(machines)
                 for fuel_category in pairs(machine_proto.burner.categories) do
                     if global.prototypes.fuels[fuel_category] then category_found = true; break end
                 end
-                if not category_found then remove_prototype(machines, machine_proto, machine_category.name) end
+                if not category_found then remove_prototype(machines, machine_proto.name, machine_category.name) end
             end
         end
 
@@ -553,9 +553,9 @@ end
 function generator.recipes.second_pass(recipes)
     local machines = global.prototypes.machines
     -- Check again if all recipes still have a machine to produce them after machine second pass
-    for name, recipe in pairs(recipes) do
+    for _, recipe in pairs(recipes) do
         if not machines[recipe.category] then
-            remove_prototype(recipes, name, nil)
+            remove_prototype(recipes, recipe.name, nil)
         end
     end
 end
