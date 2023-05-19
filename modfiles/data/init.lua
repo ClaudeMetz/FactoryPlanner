@@ -211,8 +211,8 @@ local function handle_configuration_change()
 
         -- Update factory and archive calculations in case prototypes changed in a relevant way
         local player_table = global.players[index]
-        Factory.update_calculations(player_table.factory)
-        Factory.update_calculations(player_table.archive)
+        Factory.update_calculations(player_table.factory, player)
+        Factory.update_calculations(player_table.archive, player)
     end
 end
 
