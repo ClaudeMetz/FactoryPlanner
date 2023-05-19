@@ -46,7 +46,7 @@ function Machine.normalize_fuel(self, player)
     if self.fuel == nil then
         -- Use the first category of this machine's burner as the default one
         local fuel_category_name, _ = next(burner.categories, nil)
-        local fuel_category_id = global.all_fuels.map[fuel_category_name]
+        local fuel_category_id = PROTOTYPE_MAPS.fuels[fuel_category_name].id
 
         local default_fuel_proto = prototyper.defaults.get(player, "fuels", fuel_category_id)
         self.fuel = Fuel.init(default_fuel_proto)
@@ -93,8 +93,7 @@ end
 
 function Machine.paste(self, object)
     if object.class == "Machine" then
-        local new_category_id = global.all_machines.map[self.proto.category]
-        local new_machine_map = global.all_machines.categories[new_category_id].map
+        local new_machine_map = PROTOTYPE_MAPS.machines[self.proto.category].members
 
         if new_machine_map[object.proto.name] ~= nil
                 and Line.is_machine_applicable(self.parent, object.proto) then
@@ -125,7 +124,7 @@ end
 
 function Machine.pack(self)
     return {
-        proto = prototyper.util.simplify_prototype(self.proto),
+        proto = prototyper.util.simplify_prototype(self.proto, self.proto.category),
         limit = self.limit,
         force_limit = self.force_limit,
         fuel = (self.fuel) and Fuel.pack(self.fuel) or nil,
@@ -149,7 +148,8 @@ end
 
 -- Needs validation: proto, fuel, module_set
 function Machine.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "proto", "machines", "category")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+    self.valid = (not self.proto.simplified)
 
     local parent_line = self.parent
     if self.valid and parent_line.valid and parent_line.recipe.valid then

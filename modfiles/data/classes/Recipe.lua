@@ -9,7 +9,7 @@ Recipe = {}
 
 function Recipe.init_by_id(recipe_id, production_type)
     return {
-        proto = global.all_recipes.recipes[recipe_id],
+        proto = global.prototypes.recipes[recipe_id],
         production_type = production_type,
         valid = true,
         class = "Recipe"
@@ -19,7 +19,7 @@ end
 
 function Recipe.pack(self)
     return {
-        proto = prototyper.util.simplify_prototype(self.proto),
+        proto = prototyper.util.simplify_prototype(self.proto, nil),
         production_type = self.production_type,
         class = self.class
     }
@@ -32,7 +32,8 @@ end
 
 -- Needs validation: proto
 function Recipe.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "proto", "recipes", nil)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
+    self.valid = (not self.proto.simplified)
     return self.valid
 end
 

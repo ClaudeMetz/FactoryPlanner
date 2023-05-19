@@ -159,6 +159,7 @@ local function build_subfactory_info(player)
 
     -- Repair flow
     local flow_repair = frame_vertical.add{type="flow", direction="vertical"}
+    flow_repair.style.top_margin = -2
     main_elements.subfactory_info["repair_flow"] = flow_repair
 
     local label_repair = flow_repair.add{type="label", caption={"fp.warning_with_icon", {"fp.subfactory_needs_repair"}}}

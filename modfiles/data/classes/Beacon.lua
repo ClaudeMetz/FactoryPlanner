@@ -90,7 +90,7 @@ end
 
 function Beacon.pack(self)
     return {
-        proto = prototyper.util.simplify_prototype(self.proto),
+        proto = prototyper.util.simplify_prototype(self.proto, nil),
         amount = self.amount,
         total_amount = self.total_amount,
         module_set = ModuleSet.pack(self.module_set),
@@ -110,7 +110,8 @@ end
 
 -- Needs validation: proto, module_set
 function Beacon.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "proto", "beacons", nil)
+    self.proto = prototyper.util.validate_prototype_object(self.proto, nil)
+    self.valid = (not self.proto.simplified)
 
     local machine = self.parent.machine  -- make sure the machine can still be influenced by beacons
     if machine.valid then self.valid = (machine.proto.allowed_effects ~= nil) and self.valid end

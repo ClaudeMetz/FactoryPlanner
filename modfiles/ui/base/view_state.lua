@@ -131,8 +131,8 @@ function view_state.generate_metadata(player, subfactory)
     local round_button_numbers = player_table.preferences.round_button_numbers
     local throughput = prototyper.defaults.get(player, "belts").throughput
     local throughput_divisor = (belts_or_lanes == "belts") and throughput or (throughput / 2)
-    local cargo_wagon_capactiy = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"]).storage
-    local fluid_wagon_capacity = prototyper.defaults.get(player, "wagons", global.all_wagons.map["fluid-wagon"]).storage
+    local default_cargo_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["cargo-wagon"].id)
+    local default_fluid_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["fluid-wagon"].id)
 
     return {
         processor = processors[current_view_name],
@@ -143,8 +143,8 @@ function view_state.generate_metadata(player, subfactory)
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
         formatting_precision = 4,
-        cargo_wagon_capactiy = cargo_wagon_capactiy,
-        fluid_wagon_capacity = fluid_wagon_capacity
+        cargo_wagon_capactiy = default_cargo_wagon.storage,
+        fluid_wagon_capacity = default_fluid_wagon.storage
     }
 end
 
@@ -166,8 +166,8 @@ function view_state.rebuild_state(player)
     local timescale = (subfactory) and timescale_map[subfactory.timescale] or "second"
     local singular_bol = data_util.settings(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
-    local cargo_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["cargo-wagon"])
-    local fluid_train_proto = prototyper.defaults.get(player, "wagons", global.all_wagons.map["fluid-wagon"])
+    local default_cargo_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["cargo-wagon"].id)
+    local default_fluid_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["fluid-wagon"].id)
 
     local new_view_states = {
         [1] = {
@@ -185,8 +185,8 @@ function view_state.rebuild_state(player)
             name = "wagons_per_timescale",
             caption = {"", {"fp.pu_wagon", 2}, "/", {"fp.unit_" .. timescale}},
             tooltip = {"fp.view_state_tt", {"fp.wagons_per_timescale", {"fp." .. timescale},
-                cargo_train_proto.rich_text, cargo_train_proto.localised_name,
-                fluid_train_proto.rich_text, fluid_train_proto.localised_name}}
+                default_cargo_wagon.rich_text, default_cargo_wagon.localised_name,
+                default_fluid_wagon.rich_text, default_fluid_wagon.localised_name}}
         },
         [4] = {
             name = "items_per_second_per_machine",

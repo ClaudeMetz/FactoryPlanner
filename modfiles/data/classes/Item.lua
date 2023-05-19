@@ -102,13 +102,13 @@ end
 
 function Item.pack(self)
     return {
-        proto = prototyper.util.simplify_prototype(self.proto),
+        proto = prototyper.util.simplify_prototype(self.proto, self.proto.type),
         amount = self.amount,  -- conserve for cloning non-product items
         required_amount = (self.top_level) and {
             defined_by = self.required_amount.defined_by,
             amount = self.required_amount.amount,
             belt_proto = (self.required_amount.defined_by ~= "amount")
-                and prototyper.util.simplify_prototype(self.required_amount.belt_proto)
+                and prototyper.util.simplify_prototype(self.required_amount.belt_proto, nil)
         } or nil,
         top_level = self.top_level,
         class = self.class
@@ -122,13 +122,15 @@ end
 
 -- Needs validation: proto, required_amount
 function Item.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "proto", "items", "type")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "type")
+    self.valid = (not self.proto.simplified)
 
     -- Validate the belt_proto if the item proto is still valid, ie not simplified
     local req_amount = self.required_amount
     if req_amount and req_amount.defined_by ~= "amount" then
         local belt_throughput = req_amount.belt_proto.throughput
-        self.valid = prototyper.util.validate_prototype_object(req_amount, "belt_proto", "belts", nil) and self.valid
+        req_amount.belt_proto = prototyper.util.validate_prototype_object(req_amount.belt_proto, nil)
+        self.valid = (not req_amount.belt_proto.simplified) and self.valid
 
         -- If the proto has to be simplified, conserve the throughput, so repair can convert it to an amount-spec
         if req_amount.belt_proto.simplified then req_amount.belt_proto.throughput = belt_throughput end

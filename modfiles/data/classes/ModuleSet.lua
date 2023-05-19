@@ -133,8 +133,8 @@ function ModuleSet.sort(self)
     end
 
     local next_position = 1
-    for _, category in ipairs(global.all_modules.categories) do
-        for _, module_proto in ipairs(category.modules) do
+    for _, category in ipairs(global.prototypes.modules) do
+        for _, module_proto in ipairs(category.members) do
             local module = modules_by_name[module_proto.name]
             if module then
                 module.gui_position = next_position

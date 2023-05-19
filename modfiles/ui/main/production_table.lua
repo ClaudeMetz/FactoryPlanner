@@ -12,7 +12,7 @@ local function generate_metadata(player)
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         view_state_metadata = view_state.generate_metadata(player, subfactory),
-        any_beacons_available = (next(global.all_beacons.map) ~= nil),
+        any_beacons_available = (next(global.prototypes.beacons) ~= nil),
         line_count = nil, level = nil  -- set dynamically per floor
     }
 

@@ -22,6 +22,10 @@ local function migrate_packed_modules(packed_object)
     packed_object.module_set = module_set
 end
 
+function migration.global()
+    global.alt_actions = nil
+end
+
 function migration.player_table(player_table)
     player_table.clipboard = nil
     player_table.preferences.tutorial_mode = true

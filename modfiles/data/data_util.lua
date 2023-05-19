@@ -54,17 +54,9 @@ function data_util.add_subfactories_by_string(player, export_string)
     end
 end
 
--- Returns the attribute string for the given prototype
-function data_util.get_attributes(type, prototype)
-    local all_prototypes = global["all_" .. type]
-
-    -- Could figure out structure type itself, but that's slower
-    if all_prototypes.structure_type == "simple" then
-        return PROTOTYPE_ATTRIBUTES[type][prototype.id]
-    else  -- structure_type == "complex"
-        local category_id = all_prototypes.map[prototype.category]
-        return PROTOTYPE_ATTRIBUTES[type][category_id][prototype.id]
-    end
+function data_util.import_tutorial_subfactory()
+    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)
+    return (not error) and Factory.get(imported_tutorial_factory, "Subfactory", 1) or nil
 end
 
 -- Checks whether the given recipe's products are used on the given floor

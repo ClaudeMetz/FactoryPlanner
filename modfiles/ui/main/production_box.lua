@@ -135,7 +135,8 @@ local function build_production_box(player)
     label_instruction.style.margin = 20
     main_elements.production_box["instruction_label"] = label_instruction
 
-    local frame_messages = frame_vertical.add{type="frame", direction="vertical", style="fp_frame_messages"}
+    local frame_messages = frame_vertical.add{type="frame", direction="vertical",
+        visible=false, style="fp_frame_messages"}
     main_elements["messages_frame"] = frame_messages
 
     refresh_production_box(player)

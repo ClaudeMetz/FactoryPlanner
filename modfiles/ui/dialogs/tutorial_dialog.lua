@@ -23,10 +23,10 @@ function tab_definitions.interface(player, tab, tab_pane)
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- If the tutorial subfactory is valid, it can be imported regardless of the current modset
-    local subfactory_compatible = global.tutorial_subfactory_validity
-    local button_tooltip = (not subfactory_compatible) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    local subfactory_valid = (global.tutorial_subfactory ~= nil and global.tutorial_subfactory.valid)
+    local button_tooltip = (not subfactory_valid) and {"fp.warning_message", {"fp.create_example_error"}} or nil
     flow_interactive.add{type="button", tags={mod="fp", on_gui_click="add_example_subfactory"},
-        caption={"fp.create_example"}, tooltip=button_tooltip, enabled=subfactory_compatible, mouse_button_filter={"left"}}
+        caption={"fp.create_example"}, tooltip=button_tooltip, enabled=subfactory_valid, mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -90,7 +90,11 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
-                data_util.add_subfactories_by_string(player, TUTORIAL_EXPORT_STRING)
+                local player_table = data_util.player_table(player)
+                local subfactory = Factory.add(player_table.factory, global.tutorial_subfactory)
+                solver.update(player, subfactory)
+                ui_util.context.set_subfactory(player, subfactory)
+
                 ui_util.raise_refresh(player, "all", nil)
                 ui_util.raise_close_dialog(player, "cancel")
             end)

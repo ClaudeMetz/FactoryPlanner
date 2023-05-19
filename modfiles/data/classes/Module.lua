@@ -71,7 +71,7 @@ end
 
 function Module.pack(self)
     return {
-        proto = prototyper.util.simplify_prototype(self.proto),
+        proto = prototyper.util.simplify_prototype(self.proto, self.proto.category),
         amount = self.amount,
         class = self.class
     }
@@ -84,7 +84,8 @@ end
 
 -- Needs validation: proto
 function Module.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "proto", "modules", "category")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+    self.valid = (not self.proto.simplified)
 
     -- Check whether the module is still compatible with its machine or beacon
     if self.valid and self.parent.valid then
