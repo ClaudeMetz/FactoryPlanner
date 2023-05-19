@@ -122,7 +122,7 @@ local actions = {
     end,
 
     setup_03_item_picker = function(player)
-        local modal_data = {object=nil, item_category="product"}
+        local modal_data = {item_id=nil, item_category="product"}
         open_modal(player, "picker", modal_data)
 
         local modal_elements = data_util.modal_elements(player)
@@ -145,15 +145,16 @@ local actions = {
 
     setup_04_recipe_picker = function(player)
         local product_proto = prototyper.util.find_prototype("items", "petroleum-gas", "fluid")
-        local modal_data = {product_proto=product_proto, production_type="produce"}
-        open_modal(player, "recipe", modal_data)
+        ---@cast product_proto -nil
+        open_modal(player, "recipe", {category_id=product_proto.category_id,
+            product_id=product_proto.id, production_type="produce"})
     end,
     teardown_04_recipe_picker = (function(player) modal_teardown(player, "04_recipe_picker") end),
 
     setup_05_machine = function(player)
         local floor = data_util.context(player).floor
         local line = Collection.get_by_gui_position(floor.Line, 2)  ---@cast line -nil
-        local modal_data = {object=line.machine, line=line}
+        local modal_data = {floor_id=floor.id, line_id=line.id, recipe_name=line.recipe.proto.localised_name}
         open_modal(player, "machine", modal_data)
     end,
     teardown_05_machine = (function(player) modal_teardown(player, "05_machine") end),

@@ -88,7 +88,7 @@ function prototyper.util.get_attributes(prototype)
     end
 end
 
--- Finds the given prototype by name. Can use the loader cache since it'll exist at this point
+-- Finds the given prototype by name. Can use the loader cache since it'll exist at this point.
 function prototyper.util.find_prototype(data_type, prototype_name, category_name)
     local prototype_map = PROTOTYPE_MAPS[data_type]
 

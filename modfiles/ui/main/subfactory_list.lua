@@ -70,11 +70,11 @@ local function add_subfactory(player, _, event)
     local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
-        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={object=nil, item_category="product",
+        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_subfactory=true}})
 
     else  -- otherwise, have the user pick a subfactory name first
-        ui_util.raise_open_dialog(player, {dialog="subfactory", modal_data={action="add", subfactory=nil}})
+        ui_util.raise_open_dialog(player, {dialog="subfactory", modal_data={subfactory_id=nil}})
     end
 end
 
@@ -128,7 +128,7 @@ local function handle_subfactory_click(player, tags, action)
     elseif action == "edit" then
         ui_util.raise_refresh(player, "all", nil)  -- refresh to update the selected subfactory
         ui_util.raise_open_dialog(player, {dialog="subfactory",
-            modal_data={action="edit", subfactory=selected_subfactory}})
+            modal_data={subfactory_id=selected_subfactory.id}})
 
     elseif action == "delete" then
         subfactory_list.delete_subfactory(player)
@@ -356,7 +356,7 @@ listeners.gui = {
             handler = (function(player, _, _)
                 local subfactory = data_util.context(player).subfactory
                 ui_util.raise_open_dialog(player, {dialog="subfactory",
-                    modal_data={action="edit", subfactory=subfactory}})
+                    modal_data={subfactory_id=subfactory.id}})
             end)
         },
         {

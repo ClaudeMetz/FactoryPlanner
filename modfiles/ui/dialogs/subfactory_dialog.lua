@@ -29,6 +29,9 @@ end
 
 
 local function open_subfactory_dialog(player, modal_data)
+    local factory = data_util.context(player).factory
+    modal_data.subfactory = Factory.get(factory, "Subfactory", modal_data.subfactory_id)
+
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
 
@@ -36,7 +39,7 @@ local function open_subfactory_dialog(player, modal_data)
     flow_name.add{type="label", caption={"fp.info_label", {"fp.subfactory_dialog_name"}},
         tooltip={"fp.subfactory_dialog_name_tt"}}
 
-    local subfactory_name = (modal_data.action == "edit") and modal_data.subfactory.name or ""
+    local subfactory_name = (modal_data.subfactory ~= nil) and modal_data.subfactory.name or ""
     local textfield_name = flow_name.add{type="textfield", text=subfactory_name,
         tags={mod="fp", on_gui_text_changed="subfactory_name"}}
     textfield_name.style.rich_text_setting = defines.rich_text_setting.enabled
@@ -65,14 +68,13 @@ local function open_subfactory_dialog(player, modal_data)
 end
 
 local function close_subfactory_dialog(player, action)
-    local ui_state = data_util.ui_state(player)
-    local subfactory = ui_state.modal_data.subfactory
+    local modal_data = data_util.modal_data(player)
 
     if action == "submit" then
-        local name_textfield = ui_state.modal_data.modal_elements.subfactory_name
+        local name_textfield = modal_data.modal_elements.subfactory_name
         local subfactory_name = name_textfield.text:gsub("^%s*(.-)%s*$", "%1")
 
-        if subfactory ~= nil then subfactory.name = subfactory_name
+        if modal_data.subfactory ~= nil then modal_data.subfactory.name = subfactory_name
         else subfactory_list.add_subfactory(player, subfactory_name) end
 
         ui_util.raise_refresh(player, "all", nil)
@@ -103,13 +105,16 @@ listeners.gui = {
 
 listeners.dialog = {
     dialog = "subfactory",
-    metadata = (function(modal_data) return {
-        caption = {"", {"fp." .. modal_data.action}, " ", {"fp.pl_subfactory", 1}},
-        subheader_text = {"fp.subfactory_dialog_description"},
-        create_content_frame = true,
-        show_submit_button = true,
-        show_delete_button = (modal_data.action == "edit")
-    } end),
+    metadata = (function(modal_data)
+        local action = (modal_data.subfactory_id) and {"fp.edit"} or {"fp.add"}
+        return {
+            caption = {"", action, " ", {"fp.pl_subfactory", 1}},
+            subheader_text = {"fp.subfactory_dialog_description"},
+            create_content_frame = true,
+            show_submit_button = true,
+            show_delete_button = (modal_data.subfactory_id ~= nil)
+        }
+    end),
     open = open_subfactory_dialog,
     close = close_subfactory_dialog
 }

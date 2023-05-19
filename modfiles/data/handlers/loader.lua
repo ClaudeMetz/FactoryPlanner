@@ -35,9 +35,10 @@ local function recipe_map_from(item_type)
 
     for _, recipe in pairs(global.prototypes.recipes) do
         for _, item in ipairs(recipe[item_type]) do
-            map[item.type] = map[item.type] or {}
-            map[item.type][item.name] = map[item.type][item.name] or {}
-            map[item.type][item.name][recipe.id] = true
+            local item_proto = prototyper.util.find_prototype("items", item.name, item.type)  ---@cast item_proto -nil
+            map[item_proto.category_id] = map[item_proto.category_id] or {}
+            map[item_proto.category_id][item_proto.id] = map[item_proto.category_id][item_proto.id] or {}
+            map[item_proto.category_id][item_proto.id][recipe.id] = true
         end
     end
 

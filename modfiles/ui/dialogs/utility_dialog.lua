@@ -139,9 +139,10 @@ function utility_structures.components(player, modal_data)
                 local tooltip = {"fp.components_needed_tt", {"fp.tt_title", proto.localised_name},
                     amount_in_inventory, required_amount}
 
-                local item_type = proto.type or "item"  -- modules and beacons are always of type 'item'
+                local category_id = (proto.data_type == "items") and proto.category_id
+                    or PROTOTYPE_MAPS.items["item"].id  -- modules/beacons are always an 'item'
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
-                    tags={mod="fp", on_gui_click="utility_craft_items", type=item_type, name=proto.name,
+                    tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto.id,
                     missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
@@ -280,7 +281,7 @@ local function handle_item_handcraft(player, tags, event)
 
     if amount_to_craft <= 0 then fly_text(player, {"fp.utility_no_demand"}); return end
 
-    local recipes = RECIPE_MAPS["produce"][tags.type][tags.name]
+    local recipes = RECIPE_MAPS["produce"][tags.category_id][tags.item_id]
     if not recipes then fly_text(player, {"fp.utility_no_recipe"}); return end
 
     for recipe_id, _ in pairs(recipes) do

@@ -1,7 +1,7 @@
 -- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
-local function run_preliminary_checks(player, product_proto, production_type)
+local function run_preliminary_checks(player, modal_data)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
     local preferences = data_util.preferences(player)
 
@@ -9,7 +9,7 @@ local function run_preliminary_checks(player, product_proto, production_type)
     local user_disabled_recipe = false
     local counts = {disabled = 0, hidden = 0, disabled_hidden = 0}
 
-    local map = RECIPE_MAPS[production_type][product_proto.type][product_proto.name]
+    local map = RECIPE_MAPS[modal_data.production_type][modal_data.category_id][modal_data.product_id]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
             local recipe = global.prototypes.recipes[recipe_id]
@@ -254,7 +254,7 @@ end
 -- Checks whether the dialog needs to be created at all
 local function recipe_early_abort_check(player, modal_data)
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, modal_data.product_proto, modal_data.production_type)
+    local result, error, show = run_preliminary_checks(player, modal_data)
 
     if error ~= nil then
         ui_util.messages.raise(player, "error", error, 1)
@@ -322,13 +322,16 @@ listeners.gui = {
 
 listeners.dialog = {
     dialog = "recipe",
-    metadata = (function(modal_data) return {
-        caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
-        subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
-            modal_data.product_proto.localised_name},
-        search_handler_name = "apply_recipe_filter",
-        create_content_frame = true
-    } end),
+    metadata = (function(modal_data)
+        local product_proto = global.prototypes.items[modal_data.category_id].members[modal_data.product_id]
+        return {
+            caption = {"", {"fp.add"}, " ", {"fp.pl_recipe", 1}},
+            subheader_text = {"fp.recipe_instruction", {"fp." .. modal_data.production_type},
+                product_proto.localised_name},
+            search_handler_name = "apply_recipe_filter",
+            create_content_frame = true
+        }
+    end),
     early_abort_check = recipe_early_abort_check,
     open = open_recipe_dialog
 }

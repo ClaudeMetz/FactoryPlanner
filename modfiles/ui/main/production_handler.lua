@@ -96,7 +96,8 @@ local function handle_machine_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={object=line.machine, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
+            recipe_name=line.recipe.proto.localised_name}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, line.machine)
@@ -127,7 +128,8 @@ local function handle_machine_module_add(player, tags, event)
     if event.shift then  -- paste
         ui_util.clipboard.paste(player, line.machine)
     else
-        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={object=line.machine, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
+            recipe_name=line.recipe.proto.localised_name}})
     end
 end
 
@@ -143,7 +145,8 @@ local function handle_beacon_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={object=line.beacon, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={floor_id=floor.id, line_id=line.id,
+            machine_name=line.machine.proto.localised_name, edit=true}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, line.beacon)
@@ -171,7 +174,8 @@ local function handle_beacon_add(player, tags, event)
         local fake_beacon = {parent=line, class="Beacon"}
         ui_util.clipboard.paste(player, fake_beacon)
     else
-        ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={object=nil, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={floor_id=floor.id, line_id=line.id,
+            machine_name=line.machine.proto.localised_name, edit=false}})
     end
 end
 
@@ -185,7 +189,8 @@ local function handle_module_click(player, tags, action)
     local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
 
     if action == "edit" then
-        ui_util.raise_open_dialog(player, {dialog=tags.parent_type, modal_data={object=parent_entity, line=line}})
+        ui_util.raise_open_dialog(player, {dialog=tags.parent_type, modal_data={floor_id=floor.id, line_id=line.id,
+            recipe_name=line.recipe.proto.localised_name, machine_name=line.machine.proto.localised_name, edit=true}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, module)
@@ -214,8 +219,13 @@ end
 local function apply_item_options(player, options, action)
     if action == "submit" then
         local ui_state = data_util.ui_state(player)
-        local item = ui_state.modal_data.object
-        local relevant_line = (item.parent.subfloor) and item.parent.subfloor.defining_line or item.parent
+        local modal_data = ui_state.modal_data
+
+        local subfactory = ui_state.context.subfactory
+        local floor = Subfactory.get(subfactory, "Floor", modal_data.floor_id)
+        local line = Floor.get(floor, "Line", modal_data.line_id)
+        local item = Line.get(line, modal_data.item_class, modal_data.item_id)
+        local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
 
         local current_amount, item_amount = item.amount, options.item_amount or item.amount
         if item.class ~= "Ingredient" then
@@ -235,7 +245,7 @@ local function apply_item_options(player, options, action)
         relevant_line.percentage = (current_amount == 0) and 100
             or (relevant_line.percentage * item_amount) / current_amount
 
-        solver.update(player, ui_state.context.subfactory)
+        solver.update(player, subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
     end
 end
@@ -260,8 +270,9 @@ local function handle_item_click(player, tags, action)
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.class == "Byproduct") and "consume" or "produce"
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=item.proto, floor_id=floor.id,
-            production_type=production_type, add_after_position=add_after_position}})
+        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={category_id=item.proto.category_id,
+            product_id=item.proto.id, floor_id=floor.id, production_type=production_type,
+            add_after_position=add_after_position}})
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
@@ -275,7 +286,8 @@ local function handle_item_click(player, tags, action)
             title = {"fp.options_item_title", type_localised_string},
             text = {"fp.options_item_text", item.proto.localised_name},
             submission_handler_name = "apply_item_options",
-            object = item,
+            item_class = item.class, item_id = item.id,
+            floor_id = floor.id, line_id = line.id,
             fields = {
                 {
                     type = "numeric_textfield",
@@ -309,11 +321,14 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={product_proto=fuel.proto, floor_id=floor.id,
-            production_type="produce", add_after_position=add_after_position}})
+        local category_id = PROTOTYPE_MAPS.items[fuel.proto.type].id
+        ui_util.raise_open_dialog(player, {dialog="recipe", modal_data={category_id=category_id,
+            product_id=fuel.proto.id, floor_id=floor.id, production_type="produce",
+            add_after_position=add_after_position}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
-        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={object=line.machine, line=line}})
+        ui_util.raise_open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
+            recipe_name=line.recipe.proto.localised_name}})
 
     elseif action == "copy" then
         ui_util.clipboard.copy(player, fuel)

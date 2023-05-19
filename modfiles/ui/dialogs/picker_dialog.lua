@@ -353,16 +353,20 @@ local function open_picker_dialog(player, modal_data)
     modal_data.timescale = settings.default_timescale
     modal_data.lob = settings.belts_or_lanes
 
+    local subfactory = data_util.context(player).subfactory
+    local class_name = modal_data.item_category:gsub("^%l", string.upper)
+    modal_data.item = Subfactory.get(subfactory, class_name, modal_data.item_id)
+
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
 
     local item_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_shallow_frame"}
     item_content_frame.style.minimal_width = 325
     item_content_frame.style.padding = {12, 12, 6, 12}
-    add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.object)
+    add_item_pane(item_content_frame, modal_data, modal_data.item_category, modal_data.item)
 
     -- The item picker only needs to show when adding a new item
-    if modal_data.object == nil then
+    if modal_data.item == nil then
         local picker_content_frame = dialog_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
         add_item_picker(picker_content_frame, player)
     end
@@ -382,10 +386,10 @@ local function close_picker_dialog(player, action)
         local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
 
         local refresh_scope = "subfactory"
-        if modal_data.object ~= nil then  -- ie. this is an edit
-            modal_data.object.required_amount = req_amount
+        if modal_data.item ~= nil then  -- ie. this is an edit
+            modal_data.item.required_amount = req_amount
         else
-            local class_name = (modal_data.item_category:gsub("^%l", string.upper))
+            local class_name = modal_data.item_category:gsub("^%l", string.upper)
             local item_proto = modal_data.item_proto
             local top_level_item = Item.init(item_proto, class_name, 0, req_amount)
 
@@ -405,7 +409,7 @@ local function close_picker_dialog(player, action)
         ui_util.raise_refresh(player, refresh_scope, nil)
 
     elseif action == "delete" then
-        Subfactory.remove(subfactory, modal_data.object)
+        Subfactory.remove(subfactory, modal_data.item)
         solver.update(player, subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
     end
@@ -460,12 +464,12 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "picker",
     metadata = (function(modal_data)
-        local action = (modal_data.object) and {"fp.edit"} or {"fp.add"}
+        local action = (modal_data.item_id) and {"fp.edit"} or {"fp.add"}
         return {
             caption = {"", action, " ", {"fp.pl_" .. modal_data.item_category, 1}},
-            search_handler_name = (not modal_data.object) and "search_picker_items" or nil,
+            search_handler_name = (not modal_data.item_id) and "search_picker_items" or nil,
             show_submit_button = true,
-            show_delete_button = (modal_data.object ~= nil)
+            show_delete_button = (modal_data.item_id ~= nil)
         }
     end),
     open = open_picker_dialog,
