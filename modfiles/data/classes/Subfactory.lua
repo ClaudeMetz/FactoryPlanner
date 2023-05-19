@@ -199,7 +199,7 @@ end
 function Subfactory.pack(self)
     local packed_free_items = (self.matrix_free_items) and {} or nil
     for index, proto in pairs(self.matrix_free_items or {}) do
-        packed_free_items[index] = prototyper.util.simplify_prototype(proto)
+        packed_free_items[index] = prototyper.util.simplify_prototype(proto, proto.type)
     end
 
     return {
@@ -255,8 +255,8 @@ function Subfactory.validate(self)
     -- Validating matrix_free_items is a bit messy with the current functions,
     -- it might be worth it to change it into a Collection at some point
     for index, _ in pairs(self.matrix_free_items or {}) do
-        self.valid = prototyper.util.validate_prototype_object(self.matrix_free_items, index, "items", "type")
-            and self.valid
+        self.matrix_free_items[index] = prototyper.util.validate_prototype_object(self.matrix_free_items[index], "type")
+        self.valid = (not self.matrix_free_items[index].simplified) and self.valid
     end
 
     -- Floor validation is called on the top floor, which recursively goes through its subfloors
@@ -286,10 +286,9 @@ function Subfactory.repair(self, player)
     Subfactory.clear(self, "Ingredient")
 
     -- Remove any unrepairable free item so the subfactory remains valid
-    -- (Not sure if this removing-while-iterating actually works)
-    local free_items = self.matrix_free_items
-    for index, item_proto in pairs(free_items or {}) do
-        if item_proto.simplified then table.remove(free_items, index) end
+    local free_items = self.matrix_free_items or {}
+    for index = #free_items, 1, -1 do
+        if free_items[index].simplified then table.remove(free_items, index) end
     end
 
     -- Floor repair is called on the top floor, which recursively goes through its subfloors

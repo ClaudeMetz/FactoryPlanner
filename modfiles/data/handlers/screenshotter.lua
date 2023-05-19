@@ -39,9 +39,8 @@ local function get_handler(path, index, event, name)
 end
 
 local function set_machine_default(player, proto_name, category_name)
-    local category_id = global.all_machines.map[category_name]
-    local proto_id = global.all_machines.categories[category_id].map[proto_name]
-    prototyper.defaults.set(player, "machines", proto_id, category_id)
+    local proto = PROTOTYPE_MAPS.machines[category_name].members[proto_name]
+    prototyper.defaults.set(player, "machines", proto.id, proto.category_id)
 end
 
 
@@ -60,14 +59,13 @@ local actions = {
         player_table.preferences.ignore_recycling_recipes = true
         player_table.preferences.done_column = true
         player_table.preferences.mb_defaults = {  -- naughty use of the prototyper function
-            machine = prototyper.util.get_new_prototype_by_name("modules", "productivity-module-3", "productivity"),
+            machine = prototyper.util.find_prototype("modules", "productivity-module-3", "productivity"),
             machine_secondary = nil,
-            beacon = prototyper.util.get_new_prototype_by_name("modules", "speed-module-3", "speed"),
+            beacon = prototyper.util.find_prototype("modules", "speed-module-3", "speed"),
             beacon_count = 8
         }
 
-        local proto_id = global.all_belts.map["fast-transport-belt"]
-        prototyper.defaults.set(player, "belts", proto_id)
+        prototyper.defaults.set(player, "belts", PROTOTYPE_MAPS.belts["fast-transport-belt"].id)
         set_machine_default(player, "electric-mining-drill", "basic-solid")
         set_machine_default(player, "steel-furnace", "smelting")
         set_machine_default(player, "assembling-machine-2", "crafting")
@@ -146,7 +144,7 @@ local actions = {
     teardown_03_item_picker = (function(player) modal_teardown(player, "03_item_picker") end),
 
     setup_04_recipe_picker = function(player)
-        local product_proto = prototyper.util.get_new_prototype_by_name("items", "petroleum-gas", "fluid")
+        local product_proto = prototyper.util.find_prototype("items", "petroleum-gas", "fluid")
         local modal_data = {product_proto=product_proto, production_type="produce"}
         open_modal(player, "recipe", modal_data)
     end,

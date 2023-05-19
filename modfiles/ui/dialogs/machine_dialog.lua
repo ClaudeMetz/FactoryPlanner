@@ -8,12 +8,9 @@ local function refresh_machine_frame(player)
     table_machine.clear()
 
     local current_proto = modal_data.object.proto
-    local machine_category_id = global.all_machines.map[current_proto.category]
-    local category_prototypes = global.all_machines.categories[machine_category_id].machines
-
-    for _, machine_proto in ipairs(category_prototypes) do
+    for _, machine_proto in pairs(PROTOTYPE_MAPS.machines[current_proto.category].members) do
         if Line.is_machine_applicable(modal_data.line, machine_proto) then
-            local attributes = data_util.get_attributes("machines", machine_proto)
+            local attributes = prototyper.util.get_attributes(machine_proto)
             local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", attributes}
 
             local selected = (machine_proto.id == current_proto.id)
@@ -42,17 +39,17 @@ local function refresh_fuel_frame(player)
 
     -- Applicable fuels come from all categories that this burner supports
     for category_name, _ in pairs(machine_burner.categories) do
-        local category_id = global.all_fuels.map[category_name]
-        if category_id ~= nil then
-            for _, fuel_proto in pairs(global.all_fuels.categories[category_id].fuels) do
-                local attributes = data_util.get_attributes("fuels", fuel_proto)
+        local category = PROTOTYPE_MAPS.fuels[category_name]
+        if category ~= nil then
+            for _, fuel_proto in pairs(category.members) do
+                local attributes = prototyper.util.get_attributes(fuel_proto)
                 local tooltip = {"", {"fp.tt_title", fuel_proto.localised_name}, "\n", attributes}
 
                 local selected = (current_proto.category == fuel_proto.category and current_proto.id == fuel_proto.id)
                 local button_style = (selected) and "flib_slot_button_green" or "flib_slot_button_default"
 
                 modal_elements.fuel_table.add{type="sprite-button", sprite=fuel_proto.sprite,
-                    tags={mod="fp", on_gui_click="choose_fuel", proto_id=(category_id .. "_" .. fuel_proto.id)},
+                    tags={mod="fp", on_gui_click="choose_fuel", proto_id=(category.id .. "_" .. fuel_proto.id)},
                     tooltip=tooltip, style=button_style, mouse_button_filter={"left"}}
             end
         end
@@ -117,8 +114,8 @@ local function handle_machine_choice(player, tags, _)
     local modal_data = data_util.modal_data(player)
     local machine = modal_data.object
 
-    local machine_category_id = global.all_machines.map[machine.proto.category]
-    local machine_proto = global.all_machines.categories[machine_category_id].machines[tags.proto_id]
+    local machine_category_id = PROTOTYPE_MAPS.machines[machine.proto.category].id
+    local machine_proto = global.prototypes.machines[machine_category_id].members[tags.proto_id]
 
     -- This can't use Line.change_machine_to_proto() as that modifies the line, which we can't do
     machine.proto = machine_proto
@@ -137,8 +134,7 @@ local function handle_fuel_choice(player, tags, _)
     local modal_data = data_util.modal_data(player)
 
     local split_id = data_util.split_string(tags.proto_id, "_")
-    local new_fuel_proto = global.all_fuels.categories[split_id[1]].fuels[split_id[2]]
-    modal_data.object.fuel.proto = new_fuel_proto
+    modal_data.object.fuel.proto = global.prototypes.fuels[split_id[1]].members[split_id[2]]
 
     refresh_fuel_frame(player)
 end

@@ -133,8 +133,7 @@ end
 -- Returns false if no compatible machine can be found, true otherwise
 function Line.change_machine_by_action(self, player, action, current_proto)
     local current_machine_proto = current_proto or self.machine.proto
-    local machine_category_id = global.all_machines.map[current_machine_proto.category]
-    local category_machines = global.all_machines.categories[machine_category_id].machines
+    local category_machines = PROTOTYPE_MAPS.machines[current_machine_proto.category].members
 
     if action == "upgrade" then
         local max_machine_id = #category_machines
@@ -164,7 +163,7 @@ end
 -- Changes this line's machine to its default, if possible
 -- Returns false if no compatible machine can be found, true otherwise
 function Line.change_machine_to_default(self, player)
-    local machine_category_id = global.all_machines.map[self.recipe.proto.category]
+    local machine_category_id = PROTOTYPE_MAPS.machines[self.recipe.proto.category].id
     -- All categories are guaranteed to have at least one machine, so this is never nil
     local default_machine_proto = prototyper.defaults.get(player, "machines", machine_category_id)
 
@@ -293,7 +292,10 @@ function Line.pack(self)
         packed_line.beacon = (self.beacon) and Beacon.pack(self.beacon) or nil
 
         -- If this line has no priority_product, the function will return nil
-        packed_line.priority_product_proto = prototyper.util.simplify_prototype(self.priority_product_proto)
+        local priority_proto = self.priority_product_proto
+        if priority_proto ~= nil then
+            packed_line.priority_product_proto = prototyper.util.simplify_prototype(priority_proto, priority_proto.type)
+        end
 
         packed_line.Product = Collection.pack(self.Product, Item)  -- conserve for cloning
     end
@@ -354,8 +356,8 @@ function Line.validate(self)
         if self.beacon then self.valid = Beacon.validate(self.beacon) and self.valid end
 
         if self.priority_product_proto then
-            self.valid = prototyper.util.validate_prototype_object(self, "priority_product_proto", "items", "type")
-                and self.valid
+            self.priority_product_proto = prototyper.util.validate_prototype_object(self.priority_product_proto, "type")
+            self.valid = (not self.priority_product_proto.simplified) and self.valid
         end
 
         self.valid = Collection.validate_datasets(self.Product, Item) and self.valid  -- conserved for cloning

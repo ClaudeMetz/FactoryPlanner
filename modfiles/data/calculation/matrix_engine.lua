@@ -33,7 +33,7 @@ local matrix_engine = {}
 function matrix_engine.get_recipe_protos(recipe_ids)
     local recipe_protos = {}
     for i, recipe_id in ipairs(recipe_ids) do
-        local recipe_proto = global.all_recipes.recipes[recipe_id]
+        local recipe_proto = global.prototypes.recipes[recipe_id]
         recipe_protos[i] = recipe_proto
     end
     return recipe_protos
@@ -50,24 +50,22 @@ end
 
 -- for our purposes the string "(item type id)_(item id)" is what we're calling the "item_key"
 function matrix_engine.get_item_key(item_type_name, item_name)
-    local item_type_id = global.all_items.map[item_type_name]
-    local item_id = global.all_items.types[item_type_id].map[item_name]
-    return tostring(item_type_id)..'_'..tostring(item_id)
+    local item_category = PROTOTYPE_MAPS.items[item_type_name]
+    local item_id = item_category.members[item_name].id
+    return tostring(item_category.id)..'_'..tostring(item_id)
 end
 
 function matrix_engine.get_item(item_key)
     local split_str = data_util.split_string(item_key, "_")
-    local item_type_id = split_str[1]
-    local item_id = split_str[2]
-    return global.all_items.types[item_type_id].items[item_id]
+    local item_type_id, item_id = split_str[1], split_str[2]
+    return global.prototypes.items[item_type_id].members[item_id]
 end
 
 -- this is really only used for debugging
 function matrix_engine.get_item_name(item_key)
     local split_str = data_util.split_string(item_key, "_")
-    local item_type_id = split_str[1]
-    local item_id = split_str[2]
-    local item_info = global.all_items.types[item_type_id].items[item_id]
+    local item_type_id, item_id = split_str[1], split_str[2]
+    local item_info = global.prototypes.items[item_type_id].members[item_id]
     return item_info.type.."_"..item_info.name
 end
 
@@ -185,7 +183,8 @@ function matrix_engine.get_matrix_solver_metadata(subfactory_data)
         -- by default when a subfactory is updated, add any new variables to eliminated and let the user select free.
         local free_items_list = subfactory_data.matrix_free_items
         for _, free_item in ipairs(free_items_list) do
-            free_items[free_item["identifier"]] = true
+            local identifier = free_item.category_id.."_"..free_item.id
+            free_items[identifier] = true
         end
         -- make sure that any items that no longer exist are removed
         free_items = matrix_engine.intersect_sets(free_items, intermediate_items)
@@ -596,7 +595,7 @@ function matrix_engine.get_matrix(subfactory_data, rows, columns)
     -- final column for desired output. Don't have to explicitly set constrained vars to zero
     -- since matrix is initialized with zeros.
     for _, product in ipairs(subfactory_data.top_level_products) do
-        local item_id = product.proto.identifier
+        local item_id = product.proto.category_id .. "_" .. product.proto.id
         local row_num = rows.map[item_id]
         -- will be nil for unproduced outputs
         if row_num ~= nil then

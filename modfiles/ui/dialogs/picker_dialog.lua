@@ -154,8 +154,9 @@ local function add_item_picker(parent_flow, player)
             local button_style = (existing_product) and "flib_slot_button_red" or "flib_slot_button_default"
 
             local button_item = table_subgroup.add{type="sprite-button", sprite=item_proto.sprite, style=button_style,
-                tags={mod="fp", on_gui_click="select_picker_item", identifier=item_proto.identifier},
-                enabled=(existing_product == nil), tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
+                tags={mod="fp", on_gui_click="select_picker_item", item_id=item_proto.id,
+                category_id=item_proto.category_id}, enabled=(existing_product == nil),
+                tooltip=item_proto.localised_name, mouse_button_filter={"left"}}
 
             -- Figure out the translated name here so search doesn't have to repeat the work for every character
             local translated_name = (translations) and translations[item_proto.type][item_name] or nil
@@ -304,7 +305,8 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_belts.add{type="label", caption="x"}
 
-    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden", invert=true, mode="and"}}
+    local belt_filter = {{filter="type", type="transport-belt"}, {filter="flag", flag="hidden",
+        invert=true, mode="and"}}
     local choose_belt_button = flow_belts.add{type="choose-elem-button", elem_type="entity",
         tags={mod="fp", on_gui_elem_changed="picker_choose_belt"}, elem_filters=belt_filter,
         style="fp_sprite-button_inset_tiny"}
@@ -326,7 +328,7 @@ end
 local function handle_item_pick(player, tags, _)
     local modal_data = data_util.modal_data(player)
 
-    local item_proto = IDENTIFIER_ITEM_MAP[tags.identifier]
+    local item_proto = global.prototypes.items[tags.category_id].members[tags.item_id]
     set_item_proto(modal_data, item_proto)  -- no need for sync in this case
 
     set_appropriate_focus(modal_data)
@@ -335,7 +337,7 @@ end
 
 local function handle_belt_pick(player, _, event)
     local belt_name = event.element.elem_value
-    local belt_proto = prototyper.util.get_new_prototype_by_name("belts", belt_name, nil)
+    local belt_proto = prototyper.util.find_prototype("belts", belt_name, nil)
 
     local modal_data = data_util.modal_data(player)
     set_belt_proto(modal_data, belt_proto)  -- syncs amounts itself

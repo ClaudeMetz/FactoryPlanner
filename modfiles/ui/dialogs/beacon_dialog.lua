@@ -70,8 +70,7 @@ local function handle_beacon_change(player, _, _)
     end
 
     -- Change the beacon to the new type
-    local beacon_id = global.all_beacons.map[beacon_button.elem_value]
-    beacon.proto = global.all_beacons.beacons[beacon_id]
+    beacon.proto = PROTOTYPE_MAPS.beacons[beacon_button.elem_value]
     ModuleSet.normalize(beacon.module_set, {compatibility=true, trim=true, effects=true})
 
     module_configurator.refresh_modules_flow(player, false)

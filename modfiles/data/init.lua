@@ -45,11 +45,11 @@ local function reload_preferences(player)
 
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {
-        belts = preferences.default_prototypes.belts or prototyper.defaults.get_fallback("belts"),
-        beacons = preferences.default_prototypes.beacons or prototyper.defaults.get_fallback("beacons"),
-        wagons = preferences.default_prototypes.wagons or prototyper.defaults.get_fallback("wagons"),
+        machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines"),
         fuels = preferences.default_prototypes.fuels or prototyper.defaults.get_fallback("fuels"),
-        machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines")
+        belts = preferences.default_prototypes.belts or prototyper.defaults.get_fallback("belts"),
+        wagons = preferences.default_prototypes.wagons or prototyper.defaults.get_fallback("wagons"),
+        beacons = preferences.default_prototypes.beacons or prototyper.defaults.get_fallback("beacons")
     }
 end
 
@@ -159,12 +159,13 @@ local function global_init()
     -- Save metadata about currently registered on_nth_tick events
     global.nth_tick_events = {}
 
-    -- Run through the prototyper without the need to apply (run) it on any player
-    global.tutorial_subfactory_validity = nil
-    global.installed_mods = nil
+    prototyper.build()  -- Generate all relevant prototypes and save them in global
+    loader.run(true)  -- Run loader which creates useful caches of prototype data
 
-    prototyper.setup()
-    prototyper.finish()
+    -- Retain current modset to detect mod changes for subfactories that became invalid
+    global.installed_mods = script.active_mods
+    -- Import the tutorial subfactory so it's 'cached'
+    global.tutorial_subfactory = data_util.import_tutorial_subfactory()
 
     -- Initialize flib's translation module
     translator.on_init()
@@ -176,7 +177,9 @@ end
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all subfactories
 local function handle_configuration_change()
-    prototyper.setup()  -- Setup prototyper
+    prototyper.build()  -- Run prototyper
+    loader.run(true)  -- Re-run the loader to update with the new prototypes
+
     migrator.migrate_global()  -- Migrate global
 
     -- Runs through all players, even new ones without player_table
@@ -188,18 +191,17 @@ local function handle_configuration_change()
         refresh_player_table(player)
         local player_table = global.players[player.index]
 
-        -- Migrate the default prototypes for the player
-        prototyper.run(player_table)
+        -- Migrate the player's default prototype choices
+        prototyper.defaults.migrate(player_table)
 
         -- Update the validity of the entire factory and archive
         Factory.validate(player_table.factory)
         Factory.validate(player_table.archive)
     end
 
-    -- Complete prototyper process by saving new data to global
-    prototyper.finish()
+    global.installed_mods = script.active_mods
+    global.tutorial_subfactory = data_util.import_tutorial_subfactory()
 
-    -- Re-initialize flib's translation module
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
 

@@ -12,7 +12,7 @@ local function run_preliminary_checks(player, product_proto, production_type)
     local map = RECIPE_MAPS[production_type][product_proto.type][product_proto.name]
     if map ~= nil then  -- this being nil means that the item has no recipes
         for recipe_id, _ in pairs(map) do
-            local recipe = global.all_recipes.recipes[recipe_id]
+            local recipe = global.prototypes.recipes[recipe_id]
             local force_recipe = force_recipes[recipe.name]
 
             if recipe.custom then  -- Add custom recipes by default

@@ -10,25 +10,25 @@ local function add_preference_box(content_frame, type)
 end
 
 local function refresh_defaults_table(player, modal_elements, type, category_id)
-    local table_prototypes, all_prototypes
+    local table_prototypes, prototypes
 
     if not category_id then
         table_prototypes = modal_elements[type]
-        all_prototypes = global["all_" .. type][type]
+        prototypes = global.prototypes[type]
     else
         table_prototypes = modal_elements[type][category_id]
-        all_prototypes = global["all_" .. type].categories[category_id][type]
+        prototypes = global.prototypes[type][category_id].members
     end
 
     table_prototypes.clear()
     local default_proto = prototyper.defaults.get(player, type, category_id)
 
-    for prototype_id, prototype in ipairs(all_prototypes) do
+    for prototype_id, prototype in ipairs(prototypes) do
         local selected = (default_proto.id == prototype_id)
         local style = (selected) and "flib_slot_button_green_small" or "flib_slot_button_default_small"
         local first_line = (selected) and {"fp.tt_title_with_note", prototype.localised_name, {"fp.selected"}}
             or {"fp.tt_title", prototype.localised_name}
-        local tooltip = {"", first_line, "\n", data_util.get_attributes(type, prototype)}
+        local tooltip = {"", first_line, "\n", prototyper.util.get_attributes(prototype)}
 
         table_prototypes.add{type="sprite-button", sprite=prototype.sprite, tooltip=tooltip, style=style,
             tags={mod="fp", on_gui_click="select_preference_default", type=type, prototype_id=prototype_id,
@@ -116,25 +116,23 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
         end
     end
 
-    local preferences = data_util.preferences(player)
-    local default_prototypes = preferences.default_prototypes[type]
-    if default_prototypes.structure_type == "simple" then
-        local all_prototypes = global["all_" .. type][type]
-        if #all_prototypes < 2 then preference_box.visible = false; return end
+    if not prototyper.data_types[type] then
+        local prototypes = global.prototypes[type]
+        if #prototypes < 2 then preference_box.visible = false; return end
 
         table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
         add_defaults_table(8, nil)
         refresh_defaults_table(player, modal_elements, type, nil)
 
-    else  -- structure_type == "complex"
-        local all_categories = global["all_" .. type].categories
-        if not next(all_categories) then preference_box.visible = false; return end
+    else
+        local categories = global.prototypes[type]
+        if not next(categories) then preference_box.visible = false; return end
 
         local any_category_visible = false
-        for category_id, category in ipairs(all_categories) do
-            local all_prototypes = category[type]
+        for category_id, category in ipairs(categories) do
+            local prototypes = category.members
 
-            if #all_prototypes > 1 then
+            if #prototypes > 1 then
                 any_category_visible = true
 
                 table_prototypes.add{type="label", caption=("'" .. category.name .. "'")}
@@ -192,13 +190,13 @@ local function handle_default_prototype_change(player, tags, event)
     if event.shift and type == "machines" then
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
-        for secondary_category_id, category in pairs(global["all_" .. type].categories) do
-            if #category[type] > 1 then  -- don't attempt to change categories with only one machine
-                local secondary_prototype_id = category.map[new_default_prototype.name]
+        for _, secondary_category in pairs(PROTOTYPE_MAPS[type]) do
+            if #secondary_category.members > 1 then  -- don't attempt to change categories with only one machine
+                local secondary_prototype_id = secondary_category.members[new_default_prototype.name].id
 
                 if secondary_prototype_id ~= nil then
-                    prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category_id)
-                    refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category_id)
+                    prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category.id)
+                    refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category.id)
                 end
             end
         end

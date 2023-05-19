@@ -39,7 +39,7 @@ end
 
 function Fuel.pack(self)
     return {
-        proto = prototyper.util.simplify_prototype(self.proto),
+        proto = prototyper.util.simplify_prototype(self.proto, self.proto.category),
         amount = self.amount,  -- conserve for cloning
         class = self.class
     }
@@ -52,7 +52,8 @@ end
 
 -- Needs validation: proto
 function Fuel.validate(self)
-    self.valid = prototyper.util.validate_prototype_object(self, "proto", "fuels", "category")
+    self.proto = prototyper.util.validate_prototype_object(self.proto, "category")
+    self.valid = (not self.proto.simplified)
 
     -- Make sure the fuel categories are still compatible
     if self.valid and self.parent.valid then
