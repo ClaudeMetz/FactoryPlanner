@@ -39,7 +39,7 @@ local function get_handler(path, index, event, name)
 end
 
 local function set_machine_default(player, proto_name, category_name)
-    local proto = PROTOTYPE_MAPS.machines[category_name].members[proto_name]
+    local proto = prototyper.util.find_prototype("machines", proto_name, category_name)
     prototyper.defaults.set(player, "machines", proto.id, proto.category_id)
 end
 
