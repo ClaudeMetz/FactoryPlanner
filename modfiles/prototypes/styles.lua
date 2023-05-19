@@ -273,8 +273,8 @@ styles["fp_button_fake_listbox_item_active"] = {
     type = "button_style",
     parent = "fp_button_fake_listbox_item",
     default_graphical_set = styles.button.selected_graphical_set,
-    disabled_graphical_set = styles.button.selected_graphical_set,
-    disabled_font_color = {},  -- black
+    hovered_graphical_set = styles.button.selected_graphical_set,
+    default_font_color = {},  -- black
     default_vertical_offset = styles.button.selected_vertical_offset
 }
 

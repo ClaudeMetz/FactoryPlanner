@@ -165,7 +165,7 @@ local function refresh_subfactory_list(player)
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
             local subfactory_button = listbox.add{type="button", tags={mod="fp", on_gui_click="act_on_subfactory",
                 subfactory_id=subfactory.id}, caption=padded_caption, tooltip=tooltip, style=style,
-                enabled=(not selected), mouse_button_filter={"left-and-right"}}
+                mouse_button_filter={"left-and-right"}}
 
             local function create_move_button(flow, direction)
                 local enabled = (direction == "up" and subfactory.gui_position ~= 1)
