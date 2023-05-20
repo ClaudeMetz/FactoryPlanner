@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local migration = {}
 
 local function migrate_collection(collection, object_class)

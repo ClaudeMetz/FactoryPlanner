@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local migration = {}
 
 function migration.packed_subfactory(packed_subfactory)

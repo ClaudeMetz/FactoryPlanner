@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local migration = {}
 
 function migration.player_table(player_table)

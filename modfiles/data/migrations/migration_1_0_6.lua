@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local migration = {}  -- same migration as 0.18.51, not sure why that one didn't take
 
 function migration.subfactory(subfactory)
