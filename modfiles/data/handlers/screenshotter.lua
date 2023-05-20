@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 -- This file contains functionality to rig the interface for various setups
 -- that make for good screenshots. It provides a remote interface that its
 -- companion scenario calls to actually take the screenshots.
