@@ -9,12 +9,15 @@ local function _llog(table_to_print)
     local tab_width, super_space = 2, ""
     for _=0, tab_width-1, 1 do super_space = super_space .. " " end
 
+    ---@param table_part { [AnyBasic]: AnyBasic }
+    ---@param depth number
+    ---@return string
     local function format(table_part, depth)
         if not next(table_part) then return "{}" end
 
         local spacing = ""
         for _=0, depth-1, 1 do spacing = spacing .. " " end
-        local super_spacing = spacing .. super_space
+        local super_spacing = spacing .. super_space  ---@type string
 
         local out, first_element = "{", true
         local preceding_name = 0
@@ -36,7 +39,7 @@ local function _llog(table_to_print)
 
             -- Print string and discontinuous numerical keys only
             local key = (type(name) == "number" and preceding_name+1 == name) and "" or (name .. " = ")
-            preceding_name = name
+            preceding_name = name  --[[@as number]]
 
             out = out .. comma .. "\n" .. super_spacing .. key .. element
         end
