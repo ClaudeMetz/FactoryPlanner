@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Moved the info/warning/error messages from the top to the bottom
+    - Changed locale to use the controller-compatible button names versions where possible
   Bugfixes:
     - Fixed that deleting the last recipe on a folded out subfloor would not remove said subfloor
 
