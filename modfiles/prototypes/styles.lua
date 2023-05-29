@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local styles = data.raw["gui-style"].default
 
 -- Nomenclature: small = size 36; tiny = size 32

@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local framework = {}
 
 function framework.check_top_level_product(subfactory, name, expected_amount)

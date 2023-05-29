@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local parts = require("solver.parts")
 local framework = require("solver.framework")
 -- TODO doing the following is really bad, but writing a proper interface kinda is as well

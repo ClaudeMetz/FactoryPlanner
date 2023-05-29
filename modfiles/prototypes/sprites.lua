@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 data:extend({
     {
         type = "sprite",

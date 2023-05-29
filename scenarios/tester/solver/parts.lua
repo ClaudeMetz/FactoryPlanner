@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local parts = {}
 
 -- TODO This likely requires a system to define custom prototypes as well, since the vanilla ones
