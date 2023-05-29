@@ -191,11 +191,11 @@ local function handle_default_prototype_change(player, tags, event)
         local new_default_prototype = prototyper.defaults.get(player, type, category_id)
 
         for _, secondary_category in pairs(PROTOTYPE_MAPS[type]) do
-            if #secondary_category.members > 1 then  -- don't attempt to change categories with only one machine
-                local secondary_prototype_id = secondary_category.members[new_default_prototype.name].id
+            if table_size(secondary_category.members) > 1 then  -- don't attempt to change categories with only one machine
+                local secondary_prototype = secondary_category.members[new_default_prototype.name]
 
-                if secondary_prototype_id ~= nil then
-                    prototyper.defaults.set(player, type, secondary_prototype_id, secondary_category.id)
+                if secondary_prototype ~= nil then
+                    prototyper.defaults.set(player, type, secondary_prototype.id, secondary_category.id)
                     refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category.id)
                 end
             end
