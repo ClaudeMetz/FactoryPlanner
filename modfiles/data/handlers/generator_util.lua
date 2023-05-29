@@ -1,7 +1,22 @@
 local generator_util = {}
 
 -- ** LOCAL UTIL **
+---@class FormattedRecipeItem
+---@field name string
+---@field type string
+---@field amount number
+---@field proddable_amount number?
+---@field temperature number?
+---@field ignore_productivity boolean?
+
+---@class IndexedItemList: { [ItemType]: { [ItemName]: { index: number, item: FormattedRecipeItem } } }
+---@class ItemList: { [ItemType]: { [ItemName]: FormattedRecipeItem } }
+---@class ItemTypeCounts: { items: number, fluids: number }
+
 -- Determines the actual amount of items that a recipe product or ingredient equates to
+---@param base_item Ingredient | Product
+---@param type "ingredient" | "product"
+---@return FormattedRecipeItem
 local function generate_formatted_item(base_item, type)
     local base_amount = 0
     if base_item.amount_max ~= nil and base_item.amount_min ~= nil then
@@ -10,10 +25,9 @@ local function generate_formatted_item(base_item, type)
         base_amount = base_item.amount
     end
 
-    local probability, proddable_amount = (base_item.probability or 1), nil
-    if type == "product" then
-        proddable_amount = (base_amount - (base_item.catalyst_amount or 0)) * probability
-    end
+    local probability = (base_item.probability or 1)
+    local proddable_amount = (type == "product")
+        and (base_amount - (base_item.catalyst_amount or 0)) * probability or nil
 
     -- This will probably screw up the main_product detection down the line
     if base_item.temperature ~= nil then
@@ -30,8 +44,9 @@ local function generate_formatted_item(base_item, type)
 end
 
 -- Combines items that occur more than once into one entry
+---@param item_list FormattedRecipeItem[]
 local function combine_identical_products(item_list)
-    local touched_items = {item = {}, fluid = {}, entity = {}}
+    local touched_items = {item = {}, fluid = {}, entity = {}}  ---@type ItemList
 
     for index=#item_list, 1, -1 do
         local item = item_list[index]
@@ -52,9 +67,10 @@ local function combine_identical_products(item_list)
     end
 end
 
--- Converts the given list to a list[type][name]-format
+---@param item_list FormattedRecipeItem[]
+---@return IndexedItemList
 local function create_type_indexed_list(item_list)
-    local indexed_list = {item = {}, fluid = {}, entity = {}}
+    local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
         indexed_list[item.type][item.name] = {index = index, item = fancytable.shallow_copy(item)}
@@ -63,7 +79,8 @@ local function create_type_indexed_list(item_list)
     return indexed_list
 end
 
--- Determines the type_count for the given recipe prototype
+---@param indexed_items IndexedItemList
+---@return ItemTypeCounts
 local function determine_item_type_counts(indexed_items)
     return {
         items = table_size(indexed_items.item),
@@ -74,8 +91,9 @@ end
 
 -- ** TOP LEVEL **
 -- Formats the products/ingredients of a recipe for more convenient use
+---@param recipe_proto FPUnformattedRecipePrototype
 function generator_util.format_recipe_products_and_ingredients(recipe_proto)
-    local ingredients = {}
+    local ingredients = {}  ---@type FormattedRecipeItem[]
     for _, base_ingredient in pairs(recipe_proto.ingredients) do
         local formatted_ingredient = generate_formatted_item(base_ingredient, "ingredient")
 
@@ -95,7 +113,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
     recipe_proto.type_counts.ingredients = determine_item_type_counts(indexed_ingredients)
 
 
-    local products = {}
+    local products = {}  ---@type FormattedRecipeItem[]
     for _, base_product in pairs(recipe_proto.products) do
         local formatted_product = generate_formatted_item(base_product, "product")
 
@@ -106,7 +124,7 @@ function generator_util.format_recipe_products_and_ingredients(recipe_proto)
             if recipe_proto.main_product ~= nil
                     and formatted_product.type == recipe_proto.main_product.type
                     and formatted_product.name == recipe_proto.main_product.name then
-                recipe_proto.main_product = formatted_product
+                recipe_proto.main_product = formatted_product  --[[@as Product]]
             end
         end
     end
@@ -151,7 +169,10 @@ end
 
 
 -- Multiplies recipe products and ingredients by the given amount
+---@param recipe_proto FPRecipePrototype
+---@param factor number
 function generator_util.multiply_recipe(recipe_proto, factor)
+    ---@param item_list FormattedRecipeItem[]
     local function multiply_items(item_list)
         for _, item in pairs(item_list) do
             item.amount = item.amount * factor
@@ -167,9 +188,13 @@ function generator_util.multiply_recipe(recipe_proto, factor)
 end
 
 -- Adds the additional proto's ingredients, products and energy to the main proto
+---@param main_proto FPRecipePrototype
+---@param additional_proto FPRecipePrototype
 function generator_util.combine_recipes(main_proto, additional_proto)
+    ---@param item_category "products" | "ingredients"
     local function add_items_to_main_proto(item_category)
-        for _, item in pairs(additional_proto[item_category]) do
+        local additional_items = additional_proto[item_category]  ---@type FormattedRecipeItem[]
+        for _, item in pairs(additional_items) do
             table.insert(main_proto[item_category], item)
         end
         combine_identical_products(main_proto[item_category])
@@ -193,7 +218,7 @@ local recycling_recipe_mods = {
     ["ZRecycling"] = {"^dry411srev%-.*"}
 }
 
-local active_recycling_recipe_mods = {}
+local active_recycling_recipe_mods = {}  ---@type string[]
 for modname, patterns in pairs(recycling_recipe_mods) do
     for _, pattern in pairs(patterns) do
         if active_mods[modname] then
@@ -202,6 +227,8 @@ for modname, patterns in pairs(recycling_recipe_mods) do
     end
 end
 
+---@param proto LuaRecipePrototype
+---@return boolean
 function generator_util.is_recycling_recipe(proto)
     for _, pattern in pairs(active_recycling_recipe_mods) do
         if string.match(proto.name, pattern) then return true end
@@ -221,7 +248,7 @@ local compacting_recipe_mods = {
     ["Satisfactorio"] = {"^packaged%-.*", "^unpack%-.*"}
 }
 
-local active_compacting_recipe_mods = {}
+local active_compacting_recipe_mods = {}  ---@type string[]
 for modname, patterns in pairs(compacting_recipe_mods) do
     for _, pattern in pairs(patterns) do
         if active_mods[modname] then
@@ -230,6 +257,8 @@ for modname, patterns in pairs(compacting_recipe_mods) do
     end
 end
 
+---@param proto LuaRecipePrototype
+---@return boolean
 function generator_util.is_compacting_recipe(proto)
     for _, pattern in pairs(active_compacting_recipe_mods) do
         if string.match(proto.name, pattern) then return true end
@@ -250,7 +279,7 @@ local irrelevant_recipe_categories = {
                              "hub-progressing", "space-elevator", "mam"}
 }
 
-local irrelevant_recipe_categories_lookup = {}
+local irrelevant_recipe_categories_lookup = {}  ---@type { [string] : true }
 for mod, categories in pairs(irrelevant_recipe_categories) do
     for _, category in pairs(categories) do
         if active_mods[mod] then
@@ -259,6 +288,8 @@ for mod, categories in pairs(irrelevant_recipe_categories) do
     end
 end
 
+---@param recipe LuaRecipePrototype
+---@return boolean
 function generator_util.is_irrelevant_recipe(recipe)
     return irrelevant_recipe_categories_lookup[recipe.category]
 end
@@ -269,7 +300,7 @@ local irrelevant_machine_mods = {
     ["GhostOnWater"] = {"waterGhost%-.*"}
 }
 
-local irrelevant_machines_lookup = {}
+local irrelevant_machines_lookup = {}  ---@type string[]
 for modname, patterns in pairs(irrelevant_machine_mods) do
     for _, pattern in pairs(patterns) do
         if active_mods[modname] then
@@ -278,6 +309,8 @@ for modname, patterns in pairs(irrelevant_machine_mods) do
     end
 end
 
+---@param proto LuaEntityPrototype
+---@return boolean
 function generator_util.is_irrelevant_machine(proto)
     for _, pattern in pairs(irrelevant_machines_lookup) do
         if string.match(proto.name, pattern) then return true end
@@ -287,15 +320,17 @@ end
 
 
 -- Finds a sprite for the given entity prototype
+---@param proto LuaEntityPrototype
+---@return SpritePath | nil
 function generator_util.determine_entity_sprite(proto)
-    local entity_sprite = "entity/" .. proto.name
+    local entity_sprite = "entity/" .. proto.name  ---@type SpritePath
     if game.is_valid_sprite_path(entity_sprite) then
         return entity_sprite
     end
 
     local items_to_place_this = proto.items_to_place_this
     if items_to_place_this and next(items_to_place_this) then
-        local item_sprite = "item/" .. items_to_place_this[1].name
+        local item_sprite = "item/" .. items_to_place_this[1].name  ---@type SpritePath
         if game.is_valid_sprite_path(item_sprite) then
             return item_sprite
         end
@@ -338,8 +373,6 @@ function generator_util.determine_launch_sequence_time(silo_proto)
     return (total_ticks / 60)  -- retured value is in seconds
 end
 
----@alias AllowedEffects { [string]: boolean }?
-
 -- Returns nil if no effect is true, returns the effects otherwise
 ---@param allowed_effects AllowedEffects
 ---@return AllowedEffects? allowed_effects
@@ -353,12 +386,18 @@ end
 
 
 -- Returns the appropriate prototype name for the given item, incorporating temperature
+---@param item FormattedRecipeItem | RelevantItem
+---@param name string
+---@return string
 function generator_util.format_temperature_name(item, name)
     -- Optionally two dashes to account for negative temperatures
     return (item.temperature) and string.gsub(name, "%-+[0-9]+$", "") or name
 end
 
 -- Returns the appropriate localised string for the given item, incorporating temperature
+---@param item FormattedRecipeItem | RelevantItem
+---@param proto LuaItemPrototype | LuaFluidPrototype
+---@return LocalisedString
 function generator_util.format_temperature_localised_name(item, proto)
     if item.temperature then
         return {"", proto.localised_name, " (", item.temperature, " ", {"fp.unit_celsius"}, ")"}
@@ -371,7 +410,7 @@ end
 -- Adds the tooltip for the given recipe
 ---@param recipe FPRecipePrototype
 function generator_util.add_recipe_tooltip(recipe)
-    local tooltip = {"", {"fp.tt_title", recipe.localised_name}}
+    local tooltip = {"", {"fp.tt_title", recipe.localised_name}}  ---@type LocalisedString
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
@@ -387,9 +426,10 @@ function generator_util.add_recipe_tooltip(recipe)
             current_table, next_index = data_util.build_localised_string({
                 "\n    ", {"fp.none"}}, current_table, next_index)
         else
-            for _, item in ipairs(recipe[item_type]) do
+            local items = recipe[item_type]  ---@type FormattedRecipeItem[]
+            for _, item in ipairs(items) do
                 local name = generator_util.format_temperature_name(item, item.name)
-                local proto = game[item.type .. "_prototypes"][name]
+                local proto = game[item.type .. "_prototypes"][name]  ---@type LuaItemPrototype | LuaFluidPrototype
                 local localised_name = generator_util.format_temperature_localised_name(item, proto)
                 current_table, next_index = data_util.build_localised_string({("\n    " .. "[" .. item.type .. "="
                     .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)

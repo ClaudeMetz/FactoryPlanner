@@ -23,6 +23,8 @@
 ---@field parent FPFactory
 ---@field class "Subfactory"
 
+---@class FPPackedSubfactory
+
 -- 'Class' representing a independent part of the factory with in- and outputs
 Subfactory = {}
 

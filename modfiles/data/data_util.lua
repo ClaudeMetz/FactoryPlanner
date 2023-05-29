@@ -5,25 +5,23 @@ data_util = {
     porter = {}
 }
 
-local getter_functions = {
-    table = (function(index) return global.players[index] end),
-    settings = (function(index) return global.players[index].settings end),
-    preferences = (function(index) return global.players[index].preferences end),
-    ui_state = (function(index) return global.players[index].ui_state end),
-    main_elements = (function(index) return global.players[index].ui_state.main_elements end),
-
-    compact_elements = (function(index) return global.players[index].ui_state.compact_elements end),
-
-    context = (function(index) return global.players[index].ui_state.context end),
-    modal_data = (function(index) return global.players[index].ui_state.modal_data end),
-    modal_elements = (function(index) return global.players[index].ui_state.modal_data.modal_elements end),
-    flags = (function(index) return global.players[index].ui_state.flags end)
-}
-
+---@param player LuaPlayer
+---@return PlayerTable
 function data_util.player_table(player) return global.players[player.index] end
+
+---@param player LuaPlayer
+---@return SettingsTable
 function data_util.settings(player) return global.players[player.index].settings end
+
+---@param player LuaPlayer
+---@return PreferencesTable
 function data_util.preferences(player) return global.players[player.index].preferences end
+
+---@param player LuaPlayer
+---@return UIStateTable
 function data_util.ui_state(player) return global.players[player.index].ui_state end
+
+
 function data_util.main_elements(player) return global.players[player.index].ui_state.main_elements end
 function data_util.context(player) return global.players[player.index].ui_state.context end
 function data_util.modal_data(player) return global.players[player.index].ui_state.modal_data end
@@ -107,6 +105,10 @@ end
 -- Fills up the localised table in a smart way to avoid the limit of 20 strings per level
 -- To make it stateless, it needs its return values passed back as arguments
 -- Uses state to avoid needing to call table_size() because that function is slow
+---@param strings_to_insert LocalisedString[]
+---@param current_table LocalisedString
+---@param next_index integer
+---@return LocalisedString, integer
 function data_util.build_localised_string(strings_to_insert, current_table, next_index)
     current_table = current_table or {""}
     next_index = next_index or 2
@@ -166,6 +168,8 @@ end
 
 
 -- ** NTH_TICK **
+---@class NthTickEvent: { handler_name: string, metadata: table }
+
 local function register_nth_tick_handler(tick)
     script.on_nth_tick(tick, function(nth_tick_data)
         local event_data = global.nth_tick_events[nth_tick_data.nth_tick]
@@ -218,6 +222,10 @@ function data_util.porter.get_export_string(subfactories)
     local export_string = game.encode_string(game.table_to_json(export_table))
     return export_string
 end
+
+---@class ExportTable
+---@field mod_version VersionString
+---@field subfactories FPPackedSubfactory[]
 
 -- Converts the given factory exchange string into a temporary Factory
 function data_util.porter.get_subfactories(export_string)
