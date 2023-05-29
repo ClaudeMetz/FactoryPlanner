@@ -164,7 +164,7 @@ end
 -- Validates given object with prototype, which includes trying to find the correct
 -- new reference for its prototype, if able. Returns valid-status at the end.
 ---@param prototype AnyFPPrototype | FPPackedPrototype
----@param category_designation "category" | "type"
+---@param category_designation ("category" | "type")?
 ---@return AnyFPPrototype | FPPackedPrototype
 function prototyper.util.validate_prototype_object(prototype, category_designation)
     local updated_proto = prototype
@@ -254,6 +254,10 @@ function prototyper.defaults.get_fallback(data_type)
     return fallback
 end
 
+-- Kinda unclean that I have to do this, but it's better than storing it elsewhere
+local category_designations = {machines="category", items="type",
+    fuels="category", wagons="category", modules="category"}
+
 -- Migrates the default_prototypes preferences, trying to preserve the users choices
 -- When this is called, the loader cache will already exist
 ---@param player_table PlayerTable
@@ -274,8 +278,9 @@ function prototyper.defaults.migrate(player_table)
                 local fallback = prototyper.defaults.get_fallback(data_type)
 
                 local default_map = {}  ---@type { [string]: FPPrototype }
-                for _, default_category in pairs(default_prototypes[data_type]--[[@as PrototypeWithCategoryDefault]]) do
-                    default_map[default_category.name] = default_category
+                for _, default_proto in pairs(default_prototypes[data_type]--[[@as PrototypeWithCategoryDefault]]) do
+                    local category_name = default_proto[category_designations[data_type]]
+                    default_map[category_name] = default_proto
                 end
 
                 ---@type IndexedPrototypesWithCategory<FPPrototypeWithCategory>

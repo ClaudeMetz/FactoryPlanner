@@ -894,7 +894,7 @@ function generator.modules.generate()
 
         local sprite = "item/" .. proto.name
         if game.is_valid_sprite_path(sprite) then
-            local belt = {
+            local module = {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = sprite,
@@ -903,7 +903,7 @@ function generator.modules.generate()
                 effects = proto.module_effects or {},
                 limitations = limitations
             }
-            insert_prototype(modules, belt, belt.category)
+            insert_prototype(modules, module, module.category)
         end
     end
 
