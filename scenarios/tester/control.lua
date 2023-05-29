@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 -- ** LLOG **
 llog = require("__factoryplanner__.llog")
 LLOG_EXCLUDES = {}

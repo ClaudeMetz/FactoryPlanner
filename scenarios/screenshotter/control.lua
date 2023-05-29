@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 -- Runs through a series of steps, taking screenshots of various FP windows
 
 script.on_event(defines.events.on_game_created_from_scenario, function()

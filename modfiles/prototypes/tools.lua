@@ -1,3 +1,5 @@
+---@diagnostic disable
+
 local beacon_selector = {
     type = "selection-tool",
     name = "fp_beacon_selector",
