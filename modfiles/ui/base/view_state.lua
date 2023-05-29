@@ -2,6 +2,8 @@
 
 local timescale_map = {[1] = "second", [60] = "minute", [3600] = "hour"}
 
+---@class ViewStates: table
+
 -- ** LOCAL UTIL **
 local function cycle_views(player, direction)
     local ui_state = data_util.ui_state(player)

@@ -329,6 +329,9 @@ function ui_util.format_machine_count(count, active, round_number)
 end
 
 
+---@class Context: table
+---@field subfactory FPSubfactory
+
 -- Creates a blank context referencing which part of the Factory is currently displayed
 ---@param player LuaPlayer
 ---@return table context
@@ -395,6 +398,8 @@ function ui_util.context.change_floor(player, destination)
 end
 
 
+---@class ClipboardEntry: table
+
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
 ---@param object FPCopyableObject
@@ -446,6 +451,7 @@ function ui_util.clipboard.paste(player, target)
     end
 end
 
+---@class PlayerMessages: table
 
 ---@param player LuaPlayer
 ---@param category "error" | "warning" | "hint"

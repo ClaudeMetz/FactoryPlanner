@@ -18,7 +18,51 @@ require("data.handlers.screenshotter")
 
 require("data.calculation.solver")
 
+---@class PlayerTable
+---@field preferences PreferencesTable
+---@field settings SettingsTable
+---@field ui_state UIStateTable
+---@field mod_version VersionString
+---@field index PlayerIndex
+---@field factory FPFactory
+---@field archive FPFactory
+---@field translation_tables { [string]: TranslatedDictionary }?
+---@field clipboard ClipboardEntry?
+
+---@class PreferencesTable
+---@field pause_on_interface boolean
+---@field tutorial_mode boolean
+---@field utility_scopes { components: "Subfactory" | "Floor" }
+---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field attach_subfactory_products boolean
+---@field show_floor_items boolean
+---@field fold_out_subfloors boolean
+---@field ingredient_satisfaction boolean
+---@field round_button_numbers boolean
+---@field ignore_barreling_recipes boolean
+---@field ignore_recycling_recipes boolean
+---@field done_column boolean
+---@field pollution_column boolean
+---@field line_comment_column boolean
+---@field mb_defaults MBDefaults
+---@field default_prototypes DefaultPrototypes
+
+---@class MBDefaults
+---@field machine FPModulePrototype
+---@field machine_secondary FPModulePrototype
+---@field beacon FPBeaconPrototype
+---@field beacon_count number
+
+---@class DefaultPrototypes
+---@field machines PrototypeWithCategoryDefault
+---@field fuels PrototypeWithCategoryDefault
+---@field belts PrototypeDefault
+---@field wagons PrototypeWithCategoryDefault
+---@field beacons PrototypeDefault
+
+
 -- ** LOCAL UTIL **
+---@param player LuaPlayer
 local function reload_preferences(player)
     -- Reloads the user preferences, incorporating previous preferences if possible
     local preferences = global.players[player.index].preferences
@@ -53,6 +97,16 @@ local function reload_preferences(player)
     }
 end
 
+---@class SettingsTable
+---@field show_gui_button boolean
+---@field products_per_row integer
+---@field subfactory_list_rows integer
+---@field default_timescale integer
+---@field belts_or_lanes string
+---@field prefer_product_picker boolean
+---@field prefer_matrix_solver boolean
+
+---@param player LuaPlayer
 local function reload_settings(player)
     -- Writes the current user mod settings to their player_table, for read-performance
     local settings = settings.get_player_settings(player)
@@ -63,7 +117,7 @@ local function reload_settings(player)
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
     settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
-    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]
+    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]  ---@type integer
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
     settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
@@ -71,21 +125,42 @@ local function reload_settings(player)
     global.players[player.index].settings = settings_table
 end
 
+---@class UIStateTable
+---@field main_dialog_dimensions DisplayResolution
+---@field last_action string
+---@field view_states ViewStates
+---@field messages PlayerMessages
+---@field main_elements { [string]: LuaGuiElement }
+---@field compact_elements { [string]: LuaGuiElement }
+---@field context Context
+---@field last_selected_picker_group integer?
+---@field modal_dialog_type ModalDialogType?
+---@field modal_data ModalData?
+---@field queued_dialog_metadata ModalData?
+---@field flags UIStateFlags
+
+---@class UIStateFlags
+---@field archive_open boolean
+---@field selection_mode boolean
+---@field compact_view boolean
+---@field recalculate_on_subfactory_change boolean
+
+---@param player LuaPlayer
 local function reset_ui_state(player)
     local ui_state_table = {}
 
-    ui_state_table.main_dialog_dimensions = nil  -- Can only be calculated after on_init
-    ui_state_table.last_action = nil  -- The last user action (used for rate limiting)
-    ui_state_table.view_states = nil  -- The state of the production views
-    ui_state_table.messages = {}  -- The general message/warning list
+    ui_state_table.main_dialog_dimensions = nil  ---@type DisplayResolution Can only be calculated after on_init
+    ui_state_table.last_action = nil  ---@type string The last user action (used for rate limiting)
+    ui_state_table.view_states = nil  ---@type ViewStates The state of the production views
+    ui_state_table.messages = {}  ---@type PlayerMessages  The general message/warning list
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
     ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
-    ui_state_table.last_selected_picker_group = nil  -- The item picker category that was last selected
+    ui_state_table.last_selected_picker_group = nil  ---@type integer The item picker category that was last selected
 
-    ui_state_table.modal_dialog_type = nil  -- The internal modal dialog type
-    ui_state_table.modal_data = nil  -- Data that can be set for a modal dialog to use
-    ui_state_table.queued_dialog_metadata = nil  -- Info on dialog to open after the current one closes
+    ui_state_table.modal_dialog_type = nil  ---@type ModalDialogType The internal modal dialog type
+    ui_state_table.modal_data = nil  ---@type ModalData Data that can be set for a modal dialog to use
+    ui_state_table.queued_dialog_metadata = nil  ---@type ModalData Info on dialog to open after the current one closes
 
     ui_state_table.flags = {
         archive_open = false,  -- Wether the players subfactory archive is currently open
@@ -99,6 +174,7 @@ local function reset_ui_state(player)
 end
 
 
+---@param player LuaPlayer
 local function create_player_table(player)
     global.players[player.index] = {}
     local player_table = global.players[player.index]
@@ -118,6 +194,7 @@ local function create_player_table(player)
     ui_util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 12)
 end
 
+---@param player LuaPlayer
 local function refresh_player_table(player)
     local player_table = global.players[player.index]
 
@@ -153,17 +230,17 @@ local function global_init()
     end
 
     -- Initiates all factorio-global variables
-    global.mod_version = script.active_mods["factoryplanner"]
-    global.players = {}
+    global.mod_version = script.active_mods["factoryplanner"]  ---@type VersionString
+    global.players = {}  ---@type { [PlayerIndex]: PlayerTable }
 
     -- Save metadata about currently registered on_nth_tick events
-    global.nth_tick_events = {}
+    global.nth_tick_events = {}  ---@type { [Tick]: NthTickEvent }
 
     prototyper.build()  -- Generate all relevant prototypes and save them in global
     loader.run(true)  -- Run loader which creates useful caches of prototype data
 
     -- Retain current modset to detect mod changes for subfactories that became invalid
-    global.installed_mods = script.active_mods
+    global.installed_mods = script.active_mods  ---@type ModToVersion
     -- Import the tutorial subfactory so it's 'cached'
     global.tutorial_subfactory = data_util.import_tutorial_subfactory()
 
@@ -210,7 +287,7 @@ local function handle_configuration_change()
         ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
 
         -- Update factory and archive calculations in case prototypes changed in a relevant way
-        local player_table = global.players[index]
+        local player_table = global.players[index]  ---@type PlayerTable
         Factory.update_calculations(player_table.factory, player)
         Factory.update_calculations(player_table.archive, player)
     end
@@ -227,7 +304,7 @@ script.on_load(loader.run)
 
 -- ** PLAYER DATA **
 script.on_event(defines.events.on_player_created, function(event)
-    local player = game.get_player(event.player_index)
+    local player = game.get_player(event.player_index)  ---@cast player -nil
 
     -- Sets up the player_table for the new player
     create_player_table(player)
@@ -248,7 +325,7 @@ script.on_event(defines.events.on_player_joined_game, translator.on_player_joine
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
-        local player = game.get_player(event.player_index)
+        local player = game.get_player(event.player_index)  ---@cast player -nil
         reload_settings(player)
 
         if event.setting == "fp_display_gui_button" then
@@ -284,7 +361,7 @@ script.on_event(defines.events.on_string_translated, translator.on_string_transl
 
 ---@param event GuiEvent
 local function dictionaries_ready(event)
-    local player = game.get_player(event.player_index)
+    local player = game.get_player(event.player_index)  ---@cast player -nil
     local player_table = data_util.player_table(player)
 
     player_table.translation_tables = translator.get_all(event.player_index)
