@@ -24,7 +24,7 @@ local function guarded_event(handler, arguments)
             return ret
         else
             llog(ret)
-            game.print(data_util.split_string(ret, "\n")[1])
+            game.print({"fp.error_message", "Error: " .. data_util.split_string(ret, "\n")[1]})
             game.reload_mods()
         end
     else
