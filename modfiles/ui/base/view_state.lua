@@ -98,10 +98,9 @@ local function refresh_view_state(player, table_view_state)
 
     for _, view_button in ipairs(table_view_state.children) do
         local view_state = ui_state.view_states[view_button.tags.view_id]
-        view_button.caption, view_button.tooltip = view_state.caption, view_state.tooltip
-        view_button.style = (view_state.selected) and "fp_button_push_active" or "fp_button_push"
-        view_button.style.padding = {0, 12}  -- needs to be re-set when changing the style
-        view_button.enabled = (not view_state.selected)
+        view_button.caption = view_state.caption
+        view_button.tooltip = view_state.tooltip
+        view_button.toggled = (view_state.selected)
     end
 end
 
@@ -114,8 +113,9 @@ local function build_view_state(player, parent_element)
 
     -- Using ipairs is important as we only want to iterate the array-part
     for view_id, _ in ipairs(view_states) do
-        table_view_state.add{type="button", tags={mod="fp", on_gui_click="change_view_state", view_id=view_id},
-            style="fp_button_push", mouse_button_filter={"left"}}
+        local button = table_view_state.add{type="button", style="fp_button_push", mouse_button_filter={"left"},
+            tags={mod="fp", on_gui_click="change_view_state", view_id=view_id}}
+        button.style.padding = {0, 12}
     end
 end
 

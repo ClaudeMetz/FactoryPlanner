@@ -1,8 +1,4 @@
 -- ** LOCAL UTIL **
-local function configure_pause_button_style(button, pause_on_interface)
-    button.style = (pause_on_interface) and "fp_button_frame_tool_active" or "fp_button_frame_tool"
-end
-
 local function toggle_paused_state(player, _, _)
     if not game.is_multiplayer() then
         local preferences = data_util.preferences(player)
@@ -10,7 +6,7 @@ local function toggle_paused_state(player, _, _)
 
         local main_elements = data_util.main_elements(player)
         local button_pause = main_elements.title_bar.pause_button
-        configure_pause_button_style(button_pause, preferences.pause_on_interface)
+        button_pause.toggled = (preferences.pause_on_interface)
 
         main_dialog.set_pause_state(player, main_elements.main_frame)
     end
@@ -67,7 +63,7 @@ local function build_title_bar(player)
     main_elements.title_bar["pause_button"] = button_pause
 
     local preferences = data_util.preferences(player)
-    configure_pause_button_style(button_pause, preferences.pause_on_interface)
+    button_pause.toggled = (preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
         sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",

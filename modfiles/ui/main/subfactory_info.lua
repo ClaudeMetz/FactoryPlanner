@@ -100,10 +100,7 @@ local function refresh_subfactory_info(player)
 
         -- Timescale
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
-            local selected = (subfactory.timescale == button.tags.timescale)
-            button.style = (selected) and "fp_button_push_active" or "fp_button_push"
-            button.style.width = 42  -- needs to be re-set when changing the style
-            button.enabled = not (selected or archive_open)
+            button.toggled = (subfactory.timescale == button.tags.timescale)
         end
 
         -- Mining Productivity
@@ -191,8 +188,10 @@ local function build_subfactory_info(player)
     main_elements.subfactory_info["timescales_table"] = table_timescales
 
     for scale, name in pairs(timescale_map) do
-        table_timescales.add{type="button", tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
-            style="fp_button_push", caption={"", "1", {"fp.unit_" .. name}}, mouse_button_filter={"left"}}
+        local button = table_timescales.add{type="button", caption={"", "1", {"fp.unit_" .. name}},
+            tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
+            style="fp_button_push", mouse_button_filter={"left"}}
+        button.style.width = 42
     end
 
     -- Mining productivity
