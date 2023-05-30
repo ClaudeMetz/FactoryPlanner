@@ -1,7 +1,7 @@
 -- ** LOCAL UTIL **
 local function repair_subfactory(player, _, _)
     -- This function can only run is a subfactory is selected and invalid
-    local subfactory = data_util.context(player).subfactory
+    local subfactory = util.globals.context(player).subfactory
 
     Subfactory.repair(subfactory, player)
 
@@ -10,7 +10,7 @@ local function repair_subfactory(player, _, _)
 end
 
 local function change_timescale(player, new_timescale)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     local subfactory = ui_state.context.subfactory
 
     local old_timescale = subfactory.timescale
@@ -32,7 +32,7 @@ local function change_timescale(player, new_timescale)
 end
 
 local function handle_solver_change(player, _, event)
-    local subfactory = data_util.context(player).subfactory
+    local subfactory = util.globals.context(player).subfactory
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
 
     if new_solver == "matrix" then
@@ -69,7 +69,7 @@ end
 
 
 local function refresh_subfactory_info(player)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
     local subfactory_info_elements = ui_state.main_elements.subfactory_info
@@ -131,7 +131,7 @@ local function refresh_subfactory_info(player)
 end
 
 local function build_subfactory_info(player)
-    local main_elements = data_util.main_elements(player)
+    local main_elements = util.globals.main_elements(player)
     main_elements.subfactory_info = {}
 
     local parent_flow = main_elements.flows.left_vertical
@@ -265,7 +265,7 @@ listeners.gui = {
         {
             name = "override_mining_prod",
             handler = (function(player, _, _)
-                local subfactory = data_util.context(player).subfactory
+                local subfactory = util.globals.context(player).subfactory
                 subfactory.mining_productivity = 0
                 solver.update(player, subfactory)
                 ui_util.raise_refresh(player, "subfactory", nil)
@@ -282,7 +282,7 @@ listeners.gui = {
         {
             name = "mining_prod_override",
             handler = (function(player, _, event)
-                local ui_state = data_util.ui_state(player)
+                local ui_state = util.globals.ui_state(player)
                 ui_state.context.subfactory.mining_productivity = tonumber(event.element.text)
                 ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
             end)
@@ -298,7 +298,7 @@ listeners.gui = {
         {
             name = "mining_prod_override",
             handler = (function(player, _, _)
-                local ui_state = data_util.ui_state(player)
+                local ui_state = util.globals.ui_state(player)
                 ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
                 solver.update(player, ui_state.context.subfactory)
                 ui_util.raise_refresh(player, "subfactory", nil)

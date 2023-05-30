@@ -174,7 +174,7 @@ end
 -- Updates the whole subfactory calculations from top to bottom
 function solver.update(player, subfactory)
     if subfactory ~= nil and subfactory.valid then
-        local player_table = data_util.player_table(player)
+        local player_table = util.globals.player_table(player)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
         player_table.active_subfactory = subfactory
 

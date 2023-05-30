@@ -5,7 +5,7 @@ main_dialog = {}
 
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
 local function determine_main_dimensions(player, products_per_row, subfactory_list_rows)
-    local settings = data_util.settings(player)
+    local settings = util.globals.settings(player)
     products_per_row = products_per_row or settings.products_per_row
     subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
     local frame_spacing = MAGIC_NUMBERS.frame_spacing
@@ -29,7 +29,7 @@ function main_dialog.shrinkwrap_interface(player)
     local resolution, scale = player.display_resolution, player.display_scale
     local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
 
-    local mod_settings = data_util.settings(player)
+    local mod_settings = util.globals.settings(player)
     local products_per_row = mod_settings.products_per_row
     local subfactory_list_rows = mod_settings.subfactory_list_rows
 
@@ -54,14 +54,14 @@ end
 
 local function interface_toggle(metadata)
     local player = game.get_player(metadata.player_index)
-    local compact_view = data_util.flags(player).compact_view
+    local compact_view = util.globals.flags(player).compact_view
     if compact_view then compact_dialog.toggle(player)
     else main_dialog.toggle(player) end
 end
 
 
 function main_dialog.rebuild(player, default_visibility)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     local main_elements = ui_state.main_elements
 
     local interface_visible = default_visibility
@@ -116,7 +116,7 @@ function main_dialog.rebuild(player, default_visibility)
 end
 
 function main_dialog.toggle(player, skip_opened)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     local frame_main_dialog = ui_state.main_elements.main_frame
 
     if frame_main_dialog == nil or not frame_main_dialog.valid then
@@ -139,9 +139,9 @@ end
 
 -- Returns true when the main dialog is open while no modal dialogs are
 function main_dialog.is_in_focus(player)
-    local frame_main_dialog = data_util.main_elements(player).main_frame
+    local frame_main_dialog = util.globals.main_elements(player).main_frame
     return (frame_main_dialog ~= nil and frame_main_dialog.valid and frame_main_dialog.visible
-        and data_util.ui_state(player).modal_dialog_type == nil)
+        and util.globals.ui_state(player).modal_dialog_type == nil)
 end
 
 -- Sets the game.paused-state as is appropriate
@@ -149,7 +149,7 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
     -- Don't touch paused-state if this is a multiplayer session or the editor is active
     if game.is_multiplayer() or player.controller_type == defines.controllers.editor then return end
 
-    game.tick_paused = (data_util.preferences(player).pause_on_interface and not force_false)
+    game.tick_paused = (util.globals.preferences(player).pause_on_interface and not force_false)
         and frame_main_dialog.visible or false
 end
 
@@ -193,7 +193,7 @@ listeners.misc = {
     -- that's open at that stage is closed already when we get here. So we're at most at the modal dialog
     -- layer at this point and need to close the things below, if there are any.
     on_gui_opened = (function(player, _)
-        local ui_state = data_util.ui_state(player)
+        local ui_state = util.globals.ui_state(player)
 
         -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
         if ui_state.modal_dialog_type ~= nil then ui_util.raise_close_dialog(player, "cancel", true) end
@@ -213,18 +213,18 @@ listeners.misc = {
     end),
 
     on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" and not data_util.flags(player).compact_view then
+        if event.prototype_name == "fp_open_interface" and not util.globals.flags(player).compact_view then
             main_dialog.toggle(player)
         end
     end),
 
     fp_toggle_interface = (function(player, _)
-        if not data_util.flags(player).compact_view then main_dialog.toggle(player) end
+        if not util.globals.flags(player).compact_view then main_dialog.toggle(player) end
     end),
 
     -- This needs to be in a single place, otherwise the events cancel each other out
     fp_toggle_compact_view = (function(player, _)
-        local ui_state = data_util.ui_state(player)
+        local ui_state = util.globals.ui_state(player)
         local flags = ui_state.flags
         local subfactory = ui_state.context.subfactory
 

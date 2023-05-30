@@ -1,10 +1,10 @@
 -- ** LOCAL UTIL **
 local function toggle_paused_state(player, _, _)
     if not game.is_multiplayer() then
-        local preferences = data_util.preferences(player)
+        local preferences = util.globals.preferences(player)
         preferences.pause_on_interface = not preferences.pause_on_interface
 
-        local main_elements = data_util.main_elements(player)
+        local main_elements = util.globals.main_elements(player)
         local button_pause = main_elements.title_bar.pause_button
         button_pause.toggled = (preferences.pause_on_interface)
 
@@ -14,7 +14,7 @@ end
 
 
 local function refresh_title_bar(player)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
     local subfactory = ui_state.context.subfactory
@@ -24,7 +24,7 @@ local function refresh_title_bar(player)
 end
 
 local function build_title_bar(player)
-    local main_elements = data_util.main_elements(player)
+    local main_elements = util.globals.main_elements(player)
     main_elements.title_bar = {}
 
     local parent_flow = main_elements.flows.top_horizontal
@@ -62,7 +62,7 @@ local function build_title_bar(player)
         style="fp_button_frame_tool", mouse_button_filter={"left"}}
     main_elements.title_bar["pause_button"] = button_pause
 
-    local preferences = data_util.preferences(player)
+    local preferences = util.globals.preferences(player)
     button_pause.toggled = (preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
@@ -81,7 +81,7 @@ listeners.gui = {
             name = "re-center_main_dialog",
             handler = (function(player, _, event)
                 if event.button == defines.mouse_button_type.middle then
-                    local ui_state = data_util.ui_state(player)
+                    local ui_state = util.globals.ui_state(player)
                     local main_frame = ui_state.main_elements.main_frame
                     ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
                 end
@@ -91,7 +91,7 @@ listeners.gui = {
             name = "switch_to_compact_view",
             handler = (function(player, _, _)
                 main_dialog.toggle(player)
-                data_util.flags(player).compact_view = true
+                util.globals.flags(player).compact_view = true
 
                 compact_dialog.toggle(player)
             end)

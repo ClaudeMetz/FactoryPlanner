@@ -211,7 +211,7 @@ end
 ---@return AnyPrototypeDefault
 function prototyper.defaults.get(player, data_type, category_id)
     ---@type AnyPrototypeDefault
-    local default = data_util.preferences(player).default_prototypes[data_type]
+    local default = util.globals.preferences(player).default_prototypes[data_type]
     return (category_id == nil) and default or default[category_id]
 end
 
@@ -221,7 +221,7 @@ end
 ---@param prototype_id integer
 ---@param category_id integer?
 function prototyper.defaults.set(player, data_type, prototype_id, category_id)
-    local default_prototypes = data_util.preferences(player).default_prototypes
+    local default_prototypes = util.globals.preferences(player).default_prototypes
     local prototypes = global.prototypes[data_type]  ---@type AnyIndexedPrototypes
 
     if category_id == nil then
@@ -279,7 +279,7 @@ function prototyper.defaults.migrate(player_table)
 
                 local default_map = {}  ---@type { [string]: FPPrototype }
                 for _, default_proto in pairs(default_prototypes[data_type]--[[@as PrototypeWithCategoryDefault]]) do
-                    local category_name = default_proto[category_designations[data_type]]
+                    local category_name = default_proto[category_designations[data_type]]  ---@type string
                     default_map[category_name] = default_proto
                 end
 

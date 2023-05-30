@@ -2,7 +2,7 @@ require("ui.elements.module_configurator")
 
 -- ** LOCAL UTIL **
 local function refresh_machine_frame(player)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
 
     local table_machine = modal_data.modal_elements.machine_table
     table_machine.clear()
@@ -24,7 +24,7 @@ local function refresh_machine_frame(player)
 end
 
 local function refresh_fuel_frame(player)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local machine = modal_data.object
 
     local modal_elements = modal_data.modal_elements
@@ -57,7 +57,7 @@ local function refresh_fuel_frame(player)
 end
 
 local function refresh_limit_elements(player)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local textfield = modal_data.modal_elements.limit_textfield
     local switch = modal_data.modal_elements.force_limit_switch
 
@@ -111,7 +111,7 @@ end
 
 
 local function handle_machine_choice(player, tags, _)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local machine = modal_data.object
 
     local machine_category_id = PROTOTYPE_MAPS.machines[machine.proto.category].id
@@ -131,7 +131,7 @@ local function handle_machine_choice(player, tags, _)
 end
 
 local function handle_fuel_choice(player, tags, _)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
 
     local split_id = data_util.split_string(tags.proto_id, "_")
     modal_data.object.fuel.proto = global.prototypes.fuels[split_id[1]].members[split_id[2]]
@@ -140,7 +140,7 @@ local function handle_fuel_choice(player, tags, _)
 end
 
 local function change_machine_limit(player, _, event)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local machine = modal_data.object
 
     machine.limit = tonumber(event.element.text)
@@ -150,7 +150,7 @@ local function change_machine_limit(player, _, event)
 end
 
 local function change_machine_force_limit(player, _, event)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
 
     local switch_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
     modal_data.object.force_limit = switch_state
@@ -160,7 +160,7 @@ end
 
 
 local function open_machine_dialog(player, modal_data)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", modal_data.floor_id)
     modal_data.line = Floor.get(floor, "Line", modal_data.line_id)
     modal_data.object = modal_data.line.machine
@@ -191,13 +191,13 @@ local function open_machine_dialog(player, modal_data)
 end
 
 local function close_machine_dialog(player, action)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local machine, line = modal_data.object, modal_data.line
 
     if action == "submit" then
         ModuleSet.normalize(machine.module_set, {sort=true})
 
-        local subfactory = data_util.context(player).subfactory
+        local subfactory = util.globals.context(player).subfactory
         solver.update(player, subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
 

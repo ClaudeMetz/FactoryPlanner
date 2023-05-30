@@ -216,7 +216,7 @@ end
 -- Toggles the visibility of the toggle-main-dialog-button
 ---@param player LuaPlayer
 function ui_util.toggle_mod_gui(player)
-    local enable = data_util.settings(player).show_gui_button
+    local enable = util.globals.settings(player).show_gui_button
 
     local frame_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]
@@ -335,7 +335,7 @@ end
 ---@param player LuaPlayer
 ---@param object FPCopyableObject
 function ui_util.clipboard.copy(player, object)
-    local player_table = data_util.player_table(player)
+    local player_table = util.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
         object = _G[object.class].pack(object),
@@ -348,7 +348,7 @@ end
 ---@param player LuaPlayer
 ---@param target FPCopyableObject
 function ui_util.clipboard.paste(player, target)
-    local player_table = data_util.player_table(player)
+    local player_table = util.globals.player_table(player)
     local clip = player_table.clipboard
 
     if clip == nil then
@@ -389,7 +389,7 @@ end
 ---@param message LocalisedString
 ---@param lifetime integer
 function ui_util.messages.raise(player, category, message, lifetime)
-    local messages = data_util.ui_state(player).messages
+    local messages = util.globals.ui_state(player).messages
     table.insert(messages, {category=category, text=message, lifetime=lifetime})
 end
 
@@ -398,7 +398,7 @@ function ui_util.messages.refresh(player)
     -- Only refresh messages if the user is actually looking at them
     if not main_dialog.is_in_focus(player) then return end
 
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     local message_frame = ui_state.main_elements["messages_frame"]
     if not message_frame or not message_frame.valid then return end
 

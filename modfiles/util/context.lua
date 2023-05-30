@@ -20,7 +20,7 @@ end
 ---@param player LuaPlayer
 ---@param factory FPFactory
 function _context.set_factory(player, factory)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     context.factory = factory
     local subfactory = factory.selected_subfactory
         or Factory.get_by_gui_position(factory, "Subfactory", 1)  -- might be nil
@@ -31,7 +31,7 @@ end
 ---@param player LuaPlayer
 ---@param subfactory FPSubfactory?
 function _context.set_subfactory(player, subfactory)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     context.factory.selected_subfactory = subfactory
     context.subfactory = subfactory
     context.floor = (subfactory ~= nil) and subfactory.selected_floor or nil
@@ -41,7 +41,7 @@ end
 ---@param player LuaPlayer
 ---@param floor FPFloor
 function _context.set_floor(player, floor)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     context.subfactory.selected_floor = floor
     context.floor = floor
 end
@@ -51,7 +51,7 @@ end
 ---@param destination "up" | "down"
 ---@return boolean success
 function _context.change_floor(player, destination)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     local subfactory, floor = context.subfactory, context.floor
     if subfactory == nil or floor == nil then return false end
 
