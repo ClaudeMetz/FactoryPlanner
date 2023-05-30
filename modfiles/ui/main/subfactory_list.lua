@@ -5,7 +5,7 @@ local function toggle_archive(player, _, _)
     flags.archive_open = not flags.archive_open
 
     local factory = flags.archive_open and player_table.archive or player_table.factory
-    ui_util.context.set_factory(player, factory)
+    util.context.set_factory(player, factory)
     ui_util.raise_refresh(player, "all", nil)
 end
 
@@ -13,7 +13,7 @@ end
 local function refresh_after_subfactory_deletion(player, factory, removed_gui_position)
     if removed_gui_position > factory.Subfactory.count then removed_gui_position = removed_gui_position - 1 end
     local subfactory = Factory.get_by_gui_position(factory, "Subfactory", removed_gui_position)
-    ui_util.context.set_subfactory(player, subfactory)
+    util.context.set_subfactory(player, subfactory)
 
     local archive_open = data_util.flags(player).archive_open
     if archive_open and Factory.count(factory, "Subfactory") == 0 then
@@ -93,7 +93,7 @@ local function duplicate_subfactory(player, _, _)
         inserted_clone = Factory.insert_at(factory, context.subfactory.gui_position+1, clone)
     end
 
-    ui_util.context.set_subfactory(player, inserted_clone)
+    util.context.set_subfactory(player, inserted_clone)
     solver.update(player, inserted_clone)
     ui_util.raise_refresh(player, "all", nil)
 end
@@ -115,7 +115,7 @@ local function handle_subfactory_click(player, tags, action)
     local previous_subfactory = ui_state.context.subfactory
 
     local selected_subfactory = Factory.get(ui_state.context.factory, "Subfactory", tags.subfactory_id)
-    ui_util.context.set_subfactory(player, selected_subfactory)
+    util.context.set_subfactory(player, selected_subfactory)
 
     if action == "select" then
         if ui_state.flags.recalculate_on_subfactory_change then
@@ -299,7 +299,7 @@ function subfactory_list.add_subfactory(player, name)
 
     local context = data_util.context(player)
     Factory.add(context.factory, subfactory)
-    ui_util.context.set_subfactory(player, subfactory)
+    util.context.set_subfactory(player, subfactory)
 
     return subfactory
 end

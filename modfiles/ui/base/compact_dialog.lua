@@ -350,7 +350,7 @@ local function handle_recipe_click(player, tags, action)
 
     if action == "open_subfloor" then
         if line.subfloor then
-            ui_util.context.set_floor(player, line.subfloor)
+            util.context.set_floor(player, line.subfloor)
             refresh_compact_subfactory(player)
         end
 
@@ -431,7 +431,7 @@ subfactory_listeners.gui = {
         {
             name = "change_compact_floor",
             handler = (function(player, tags, _)
-                local floor_changed = ui_util.context.change_floor(player, tags.destination)
+                local floor_changed = util.context.change_floor(player, tags.destination)
                 if floor_changed then refresh_compact_subfactory(player) end
             end)
         },

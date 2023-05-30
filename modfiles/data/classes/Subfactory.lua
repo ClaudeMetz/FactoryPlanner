@@ -114,7 +114,6 @@ function Subfactory.clear(self, class)
     self[class] = Collection.init()
 end
 
-
 function Subfactory.get(self, class, dataset_id)
     return Collection.get(self[class], dataset_id)
 end

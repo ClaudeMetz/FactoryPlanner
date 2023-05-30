@@ -24,7 +24,7 @@ end
 
 -- Changes the floor to either be the top one or the one above the current one
 local function change_floor(player, destination)
-    if ui_util.context.change_floor(player, destination) then
+    if util.context.change_floor(player, destination) then
         -- Only refresh if the floor was indeed changed
         ui_util.raise_refresh(player, "production", nil)
     end

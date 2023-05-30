@@ -93,7 +93,7 @@ listeners.gui = {
                 local player_table = data_util.player_table(player)
                 local subfactory = Factory.add(player_table.factory, global.tutorial_subfactory)
                 solver.update(player, subfactory)
-                ui_util.context.set_subfactory(player, subfactory)
+                util.context.set_subfactory(player, subfactory)
 
                 ui_util.raise_refresh(player, "all", nil)
                 ui_util.raise_close_dialog(player, "cancel")

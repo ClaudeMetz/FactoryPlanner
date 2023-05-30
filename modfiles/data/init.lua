@@ -155,7 +155,7 @@ local function reset_ui_state(player)
     ui_state_table.messages = {}  ---@type PlayerMessages  The general message/warning list
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
-    ui_state_table.context = ui_util.context.create(player)  -- The currently displayed set of data
+    ui_state_table.context = util.context.create(player)  -- The currently displayed set of data
     ui_state_table.last_selected_picker_group = nil  ---@type integer The item picker category that was last selected
 
     ui_state_table.modal_dialog_type = nil  ---@type ModalDialogType The internal modal dialog type
@@ -214,7 +214,7 @@ local function refresh_player_table(player)
         local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
         if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
     end
-    ui_util.context.set_subfactory(player, subfactory_to_select)
+    util.context.set_subfactory(player, subfactory_to_select)
 
     player_table.translation_tables = nil
     player_table.clipboard = nil

@@ -83,7 +83,7 @@ local actions = {
         Factory.add(player_table.archive, trash)
 
         local hotness = Factory.get_by_gui_position(player_table.factory, "Subfactory", 3)
-        ui_util.context.set_subfactory(player, hotness)
+        util.context.set_subfactory(player, hotness)
         solver.update(player, hotness)
         ui_util.raise_refresh(player, "all", nil)
 

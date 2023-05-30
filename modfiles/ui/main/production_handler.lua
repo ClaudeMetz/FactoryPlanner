@@ -37,7 +37,7 @@ local function handle_recipe_click(player, tags, action)
             solver.update(player, context.subfactory)
         end
 
-        ui_util.context.set_floor(player, subfloor)
+        util.context.set_floor(player, subfloor)
         ui_util.raise_refresh(player, "production", nil)
 
     elseif action == "copy" then
