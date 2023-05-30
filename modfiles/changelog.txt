@@ -4,11 +4,13 @@ Date: 00. 00. 0000
   Features:
     -
   Changes:
+    - Changed the blueprint storage to support blueprint books as well
     - Moved the info/warning/error messages from the top to the bottom
     - Changed locale to use the controller-compatible button names versions where possible
     - Bumped the required Factorio version to 1.1.82
   Bugfixes:
     - Fixed that deleting the last recipe on a folded out subfloor would not remove said subfloor
+    - Fixed some crashes and weirdness around storing blueprints
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.66

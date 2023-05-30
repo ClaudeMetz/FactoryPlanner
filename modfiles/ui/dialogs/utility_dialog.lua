@@ -200,25 +200,28 @@ function utility_structures.blueprints(player, modal_data)
     local blueprint = modal_data.utility_inventory[1]  -- re-usable inventory slot
     for index, blueprint_string in pairs(blueprints) do
         blueprint.import_stack(blueprint_string)
+        local blueprint_book = blueprint.is_blueprint_book
 
         local tooltip = {"", (blueprint.label or "Blueprint"), tutorial_tt}
-        local button = table_blueprints.add{type="sprite-button", sprite="item/blueprint", tooltip=tooltip,
+        local sprite = (blueprint_book) and "item/blueprint-book" or "item/blueprint"
+        local button = table_blueprints.add{type="sprite-button", sprite=sprite, tooltip=tooltip,
             tags={mod="fp", on_gui_click="act_on_blueprint", index=index}, mouse_button_filter={"left-and-right"}}
 
-        local icons = blueprint.blueprint_icons
-        if icons then
+        local icons = (not blueprint_book) and blueprint.blueprint_icons
+            or blueprint.get_inventory(defines.inventory.item_main)[1].blueprint_icons
+        if icons then  -- this is jank-hell
             local icon_count = #icons
             local flow = button.add{type="flow", direction="horizontal", ignored_by_interaction=true}
+            local top_margin = (blueprint_book) and 4 or 7
 
-            if icon_count == 1 then  -- this is jank-hell
-                local signal = blueprint.blueprint_icons[1].signal
-                local sprite_icon = flow.add{type="sprite", sprite=format_signal(signal)}
-                sprite_icon.style.margin = {7, 0, 0, 7}
+            if icon_count == 1 then
+                local sprite_icon = flow.add{type="sprite", sprite=format_signal(icons[1].signal)}
+                sprite_icon.style.margin = {top_margin, 0, 0, 7}
             else
                 flow.style.padding = {4, 0, 0, 3}
                 local table = flow.add{type="table", column_count=2}
                 table.style.cell_padding = -4
-                if icon_count == 2 then table.style.top_margin = 7 end
+                if icon_count == 2 then table.style.top_margin = top_margin end
                 for _, icon in pairs(icons) do
                     table.add{type="sprite", sprite=format_signal(icon.signal)}
                 end
@@ -310,9 +313,23 @@ local function store_blueprint(player, _, _)
     local ui_state = data_util.ui_state(player)
     local fly_text = ui_util.create_flying_text
 
-    if not player.is_cursor_blueprint() then fly_text(player, {"fp.utility_no_blueprint"}); return end
+    if player.is_cursor_empty() then
+        fly_text(player, {"fp.utility_cursor_empty"}); return
+    end
     local cursor = player.cursor_stack
-    if not cursor.is_blueprint_setup() then fly_text(player, {"fp.utility_blueprint_not_setup"}); return end
+    if not (cursor.is_blueprint or cursor.is_blueprint_book) then
+        if cursor.valid_for_read then
+            fly_text(player, {"fp.utility_no_blueprint"}); return
+        else
+            fly_text(player, {"fp.utility_blueprint_from_library"}); return
+        end
+    end
+    if cursor.is_blueprint then
+        if not cursor.is_blueprint_setup() then fly_text(player, {"fp.utility_blueprint_not_setup"}); return end
+    else -- blueprint book
+        local inventory = cursor.get_inventory(defines.inventory.item_main)
+        if inventory.is_empty() then fly_text(player, {"fp.utility_blueprint_book_empty"}); return end
+    end
 
     table.insert(ui_state.context.subfactory.blueprints, cursor.export_stack())
     fly_text(player, {"fp.utility_blueprint_stored"});
