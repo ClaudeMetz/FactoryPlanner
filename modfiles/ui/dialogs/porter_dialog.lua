@@ -249,7 +249,7 @@ local function close_import_dialog(player, action)
             end
         end
 
-        ui_util.context.set_subfactory(player, first_subfactory)
+        util.context.set_subfactory(player, first_subfactory)
         ui_util.raise_refresh(player, "all", nil)
     end
 end
