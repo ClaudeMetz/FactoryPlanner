@@ -80,7 +80,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
     end
 
     -- Set the maximum height of the main content element
-    local dialog_max_height = (data_util.ui_state(player).main_dialog_dimensions.height - 80) * 0.95
+    local dialog_max_height = (util.globals.ui_state(player).main_dialog_dimensions.height - 80) * 0.95
     modal_data.dialog_maximal_height = dialog_max_height
     main_content_element.style.maximal_height = dialog_max_height
 
@@ -131,7 +131,7 @@ end
 
 local function run_delayed_modal_search(metadata)
     local player = game.get_player(metadata.player_index)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     if not modal_data or not modal_data.modal_elements then return end
 
     local searchfield = modal_data.modal_elements.search_textfield
@@ -143,7 +143,7 @@ end
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
 function modal_dialog.enter(player, metadata, dialog_open, early_abort_check)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
 
     if ui_state.modal_dialog_type ~= nil then
         -- If a dialog is currently open, and this one wants to be queued, do so
@@ -176,7 +176,7 @@ end
 
 -- Handles the closing process of a modal dialog, reopening the main dialog thereafter
 function modal_dialog.exit(player, action, skip_opened, dialog_close)
-    local ui_state = data_util.ui_state(player)  -- dialog guaranteed to be open
+    local ui_state = util.globals.ui_state(player)  -- dialog guaranteed to be open
 
     local modal_elements = ui_state.modal_data.modal_elements
     local submit_button = modal_elements.dialog_submit_button
@@ -208,7 +208,7 @@ end
 
 
 function modal_dialog.set_searchfield_state(player)
-    local player_table = data_util.player_table(player)
+    local player_table = util.globals.player_table(player)
     if not player_table.ui_state.modal_dialog_type then return end
     local searchfield = player_table.ui_state.modal_data.modal_elements.search_textfield
     if not searchfield then return end
@@ -231,7 +231,7 @@ end
 
 
 function modal_dialog.enter_selection_mode(player, selector_name)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     ui_state.flags.selection_mode = true
     player.cursor_stack.set_stack(selector_name)
 
@@ -247,7 +247,7 @@ function modal_dialog.enter_selection_mode(player, selector_name)
 end
 
 function modal_dialog.leave_selection_mode(player)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     ui_state.flags.selection_mode = false
     player.cursor_stack.set_stack(nil)
 
@@ -274,14 +274,14 @@ listeners.gui = {
         {
             name = "re-layer_interface_dimmer",
             handler = (function(player, _, _)
-                data_util.modal_elements(player).modal_frame.bring_to_front()
+                util.globals.modal_elements(player).modal_frame.bring_to_front()
             end)
         },
         {
             name = "re-center_modal_dialog",
             handler = (function(player, _, event)
                 if event.button == defines.mouse_button_type.middle then
-                    local modal_elements = data_util.modal_elements(player)
+                    local modal_elements = util.globals.modal_elements(player)
                     modal_elements.modal_frame.force_auto_center()
                 end
             end)
@@ -295,7 +295,7 @@ listeners.gui = {
         {
             name = "focus_modal_searchfield",
             handler = (function(player, _, _)
-                ui_util.select_all(data_util.modal_elements(player).search_textfield)
+                ui_util.select_all(util.globals.modal_elements(player).search_textfield)
             end)
         }
     },
@@ -304,7 +304,7 @@ listeners.gui = {
             name = "modal_searchfield",
             timeout = MAGIC_NUMBERS.modal_search_rate_limit,
             handler = (function(player, _, metadata)
-                local modal_data = data_util.modal_data(player)
+                local modal_data = util.globals.modal_data(player)
                 local search_tick = modal_data.search_tick
                 if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
 
@@ -322,7 +322,7 @@ listeners.gui = {
         {
             name = "close_modal_dialog",
             handler = (function(player, _, event)
-                local ui_state = data_util.ui_state(player)
+                local ui_state = util.globals.ui_state(player)
 
                 if ui_state.flags.selection_mode then
                     modal_dialog.leave_selection_mode(player)
@@ -342,19 +342,19 @@ listeners.gui = {
 
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
-        if not data_util.flags(player).selection_mode then
+        if not util.globals.flags(player).selection_mode then
             ui_util.raise_close_dialog(player, "submit")
         end
     end),
 
     fp_confirm_gui = (function(player, _)
         -- Note that a GUI was closed by confirming, so it'll try submitting on_gui_closed
-        local modal_data = data_util.modal_data(player)
+        local modal_data = util.globals.modal_data(player)
         if modal_data ~= nil then modal_data.confirmed_dialog = true end
     end),
 
     fp_focus_searchfield = (function(player, _)
-        local ui_state = data_util.ui_state(player)
+        local ui_state = util.globals.ui_state(player)
 
         if ui_state.modal_dialog_type ~= nil then
             local textfield_search = ui_state.modal_data.modal_elements.search_textfield

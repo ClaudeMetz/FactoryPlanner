@@ -106,7 +106,7 @@ end
 -- Applies any appropriate migrations to the given factory
 ---@param player LuaPlayer
 function migrator.migrate_player_table(player)
-    local player_table = data_util.player_table(player)
+    local player_table = util.globals.player_table(player)
     if player_table ~= nil then  -- don't apply migrations to new players
         local migrations = determine_migrations(player_table.mod_version)
 

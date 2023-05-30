@@ -1,7 +1,7 @@
 -- ** LOCAL UTIL **
 local function generate_metadata(player)
-    local ui_state = data_util.ui_state(player)
-    local preferences = data_util.preferences(player)
+    local ui_state = util.globals.ui_state(player)
+    local preferences = util.globals.preferences(player)
     local subfactory = ui_state.context.subfactory
 
     local metadata = {
@@ -366,11 +366,11 @@ local all_production_columns = {
 }
 
 local function refresh_production_table(player)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
     -- Determine the column_count first, because not all columns are nessecarily shown
-    local preferences = data_util.preferences(player)
+    local preferences = util.globals.preferences(player)
     local subfactory = ui_state.context.subfactory
 
     local production_table_elements = ui_state.main_elements.production_table
@@ -433,7 +433,7 @@ local function refresh_production_table(player)
 end
 
 local function build_production_table(player)
-    local main_elements = data_util.main_elements(player)
+    local main_elements = util.globals.main_elements(player)
     main_elements.production_table = {}
 
     -- Can't do much here since the table needs to be destroyed on refresh anyways

@@ -30,7 +30,7 @@ function tab_definitions.interface(player, tab, tab_pane)
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local tutorial_mode = data_util.preferences(player).tutorial_mode
+    local tutorial_mode = util.globals.preferences(player).tutorial_mode
     ui_util.switch.add_on_off(flow_interactive, "toggle_tutorial_mode", {}, tutorial_mode,
         {"fp.tutorial_mode"}, nil, true)
 
@@ -90,7 +90,7 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
-                local player_table = data_util.player_table(player)
+                local player_table = util.globals.player_table(player)
                 local subfactory = Factory.add(player_table.factory, global.tutorial_subfactory)
                 solver.update(player, subfactory)
                 util.context.set_subfactory(player, subfactory)
@@ -104,7 +104,7 @@ listeners.gui = {
         {
             name = "toggle_tutorial_mode",
             handler = (function(player, _, event)
-                local preferences = data_util.preferences(player)
+                local preferences = util.globals.preferences(player)
                 preferences.tutorial_mode = ui_util.switch.convert_to_boolean(event.element.switch_state)
                 ui_util.raise_refresh(player, "all", nil)
             end)

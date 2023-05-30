@@ -57,7 +57,7 @@ local function update_dialog_submit_button(modal_data)
 end
 
 local function handle_beacon_change(player, _, _)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local beacon_button = modal_data.modal_elements.beacon_button
     local beacon = modal_data.object
 
@@ -77,7 +77,7 @@ local function handle_beacon_change(player, _, _)
 end
 
 local function handle_beacon_selection(player, entities)
-    local modal_elements = data_util.modal_elements(player)
+    local modal_elements = util.globals.modal_elements(player)
     modal_elements.beacon_total.text = tostring(table_size(entities))
     modal_elements.beacon_total.focus()
 
@@ -86,7 +86,7 @@ end
 
 
 local function open_beacon_dialog(player, modal_data)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     local floor = Subfactory.get(context.subfactory, "Floor", modal_data.floor_id)
     local line = Floor.get(floor, "Line", modal_data.line_id)
     modal_data.line = line
@@ -96,7 +96,7 @@ local function open_beacon_dialog(player, modal_data)
         modal_data.object = line.beacon
     else
         local beacon_proto = prototyper.defaults.get(player, "beacons")
-        local beacon_count = data_util.preferences(player).mb_defaults.beacon_count
+        local beacon_count = util.globals.preferences(player).mb_defaults.beacon_count
         modal_data.object = Beacon.init(beacon_proto, beacon_count, nil, line)
         Line.set_beacon(line, modal_data.object)
     end
@@ -118,8 +118,8 @@ local function open_beacon_dialog(player, modal_data)
 end
 
 local function close_beacon_dialog(player, action)
-    local modal_data = data_util.modal_data(player)
-    local subfactory = data_util.context(player).subfactory
+    local modal_data = util.globals.modal_data(player)
+    local subfactory = util.globals.context(player).subfactory
 
     if action == "submit" then
         local beacon = modal_data.object
@@ -154,7 +154,7 @@ listeners.gui = {
         {
             name = "beacon_amount",
             handler = (function(player, _, _)
-                local modal_data = data_util.modal_data(player)
+                local modal_data = util.globals.modal_data(player)
                 modal_data.object.amount = tonumber(modal_data.modal_elements.beacon_amount.text) or 0
                 ModuleSet.normalize(modal_data.object.module_set, {effects=true})
                 module_configurator.refresh_effects_flow(modal_data)
@@ -192,12 +192,12 @@ listeners.dialog = {
 listeners.misc = {
     on_player_cursor_stack_changed = (function(player, _)
         -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-        if data_util.flags(player).selection_mode and not player.cursor_stack.valid_for_read then
+        if util.globals.flags(player).selection_mode and not player.cursor_stack.valid_for_read then
             modal_dialog.leave_selection_mode(player)
         end
     end),
     on_player_selected_area = (function(player, event)
-        if event.item == "fp_beacon_selector" and data_util.flags(player).selection_mode then
+        if event.item == "fp_beacon_selector" and util.globals.flags(player).selection_mode then
             handle_beacon_selection(player, event.entities)
         end
     end)

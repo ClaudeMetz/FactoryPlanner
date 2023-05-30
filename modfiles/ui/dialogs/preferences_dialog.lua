@@ -149,9 +149,9 @@ end
 
 local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
-    data_util.preferences(player)[preference_name] = event.element.state
+    util.globals.preferences(player)[preference_name] = event.element.state
 
-    local refresh = data_util.modal_data(player).refresh
+    local refresh = util.globals.modal_data(player).refresh
 
     if tags.type == "production" or preference_name == "round_button_numbers"
             or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
@@ -169,7 +169,7 @@ local function handle_checkbox_preference_change(player, tags, event)
 end
 
 local function handle_mb_default_change(player, tags, event)
-    local mb_defaults = data_util.preferences(player).mb_defaults
+    local mb_defaults = util.globals.preferences(player).mb_defaults
     local module_name = event.element.elem_value
 
     mb_defaults[tags.type] = (module_name ~= nil) and MODULE_NAME_MAP[module_name] or nil
@@ -179,7 +179,7 @@ local function handle_default_prototype_change(player, tags, event)
     local type = tags.type
     local category_id = tags.category_id
 
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     if type == "belts" then modal_data.refresh.view_state = true end
     if type == "wagons" then modal_data.refresh.production = true end
 
@@ -205,7 +205,7 @@ end
 
 
 local function open_preferences_dialog(player, modal_data)
-    local preferences = data_util.preferences(player)
+    local preferences = util.globals.preferences(player)
     local modal_elements = modal_data.modal_elements
     modal_data.refresh = {}
 
@@ -249,10 +249,10 @@ end
 
 local function close_preferences_dialog(player, _)
     -- We refresh all these things only when closing to avoid duplicate refreshes
-    local refresh = data_util.modal_data(player).refresh
+    local refresh = util.globals.modal_data(player).refresh
 
     if refresh.update_ingredient_satisfaction then
-        local player_table = data_util.player_table(player)
+        local player_table = util.globals.player_table(player)
         Factory.update_ingredient_satisfactions(player_table.factory)
         Factory.update_ingredient_satisfactions(player_table.archive)
     end
@@ -275,7 +275,7 @@ local function close_preferences_dialog(player, _)
     end
 
     if refresh.calculations then
-        local context = data_util.context(player)
+        local context = util.globals.context(player)
         solver.update(player, context.subfactory)
         context_to_refresh = "subfactory"
     end
@@ -300,7 +300,7 @@ listeners.gui = {
         {
             name = "mb_default_beacon_amount",
             handler = (function(player, _, event)
-                local mb_defaults = data_util.preferences(player).mb_defaults
+                local mb_defaults = util.globals.preferences(player).mb_defaults
                 mb_defaults.beacon_count = tonumber(event.element.text)
             end)
         }

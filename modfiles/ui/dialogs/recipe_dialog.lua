@@ -3,7 +3,7 @@
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
 local function run_preliminary_checks(player, modal_data)
     local force_recipes, force_technologies = player.force.recipes, player.force.technologies
-    local preferences = data_util.preferences(player)
+    local preferences = util.globals.preferences(player)
 
     local relevant_recipes = {}
     local user_disabled_recipe = false
@@ -87,7 +87,7 @@ end
 
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     local modal_data = ui_state.modal_data
     local recipe = Recipe.init_by_id(recipe_id, modal_data.production_type)
     local line = Line.init(recipe)
@@ -206,7 +206,7 @@ local function create_dialog_structure(modal_data, translations)
 end
 
 local function apply_recipe_filter(player, search_term)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
     local any_recipe_visible, desired_scroll_pane_height = false, 64+24
@@ -244,8 +244,8 @@ end
 
 local function handle_filter_change(player, tags, event)
     local boolean_state = ui_util.switch.convert_to_boolean(event.element.switch_state)
-    data_util.modal_data(player).filters[tags.filter_name] = boolean_state
-    data_util.preferences(player).recipe_filters[tags.filter_name] = boolean_state
+    util.globals.modal_data(player).filters[tags.filter_name] = boolean_state
+    util.globals.preferences(player).recipe_filters[tags.filter_name] = boolean_state
 
     apply_recipe_filter(player, "")
 end
@@ -287,7 +287,7 @@ local function open_recipe_dialog(player, modal_data)
     modal_data.recipe_groups = recipe_groups
     modal_data.filters = modal_data.show.filters
 
-    local translations = data_util.player_table(player).translation_tables
+    local translations = util.globals.player_table(player).translation_tables
     create_dialog_structure(modal_data, translations)
     apply_recipe_filter(player, "")
     modal_data.modal_elements.search_textfield.focus()

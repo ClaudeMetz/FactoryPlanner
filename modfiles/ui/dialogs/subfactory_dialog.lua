@@ -1,13 +1,13 @@
 -- ** LOCAL UTIL **
 local function update_submit_button(player, _, _)
-    local modal_elements = data_util.modal_elements(player)
+    local modal_elements = util.globals.modal_elements(player)
     local name_length = string.len(modal_elements["subfactory_name"].text:gsub("^%s*(.-)%s*$", "%1"))
     local issue_message = {"fp.subfactory_dialog_name_empty"}
     modal_dialog.set_submit_button_state(modal_elements, (name_length > 0), issue_message)
 end
 
 local function add_rich_text(player, tags, event)
-    local modal_elements = data_util.modal_elements(player)
+    local modal_elements = util.globals.modal_elements(player)
     local subfactory_name = modal_elements.subfactory_name.text
     local type, elem_value = tags.type, event.element.elem_value
     if elem_value == nil then return end  -- no need to do anything here
@@ -29,7 +29,7 @@ end
 
 
 local function open_subfactory_dialog(player, modal_data)
-    local factory = data_util.context(player).factory
+    local factory = util.globals.context(player).factory
     modal_data.subfactory = Factory.get(factory, "Subfactory", modal_data.subfactory_id)
 
     local modal_elements = modal_data.modal_elements
@@ -68,7 +68,7 @@ local function open_subfactory_dialog(player, modal_data)
 end
 
 local function close_subfactory_dialog(player, action)
-    local modal_data = data_util.modal_data(player)
+    local modal_data = util.globals.modal_data(player)
 
     if action == "submit" then
         local name_textfield = modal_data.modal_elements.subfactory_name

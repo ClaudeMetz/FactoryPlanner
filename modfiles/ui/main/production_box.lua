@@ -1,6 +1,6 @@
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
-    local subfactory = data_util.context(player).subfactory
+    local subfactory = util.globals.context(player).subfactory
     if subfactory and subfactory.valid then
         solver.update(player, subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
@@ -9,7 +9,7 @@ end
 
 local function paste_line(player, _, event)
     if event.button == defines.mouse_button_type.left and event.shift then
-        local context = data_util.context(player)
+        local context = util.globals.context(player)
         local line_count = context.floor.Line.count
         local last_line = Floor.get_by_gui_position(context.floor, "Line", line_count)
         -- Use a fake first line to paste below if no actual line exists
@@ -32,7 +32,7 @@ end
 
 
 local function refresh_production_box(player)
-    local player_table = data_util.player_table(player)
+    local player_table = util.globals.player_table(player)
     local ui_state = player_table.ui_state
 
     if ui_state.main_elements.main_frame == nil then return end
@@ -80,7 +80,7 @@ local function refresh_production_box(player)
 end
 
 local function build_production_box(player)
-    local main_elements = data_util.main_elements(player)
+    local main_elements = util.globals.main_elements(player)
     main_elements.production_box = {}
 
     local parent_flow = main_elements.flows.right_vertical

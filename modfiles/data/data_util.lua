@@ -5,29 +5,6 @@ data_util = {
     porter = {}
 }
 
----@param player LuaPlayer
----@return PlayerTable
-function data_util.player_table(player) return global.players[player.index] end
-
----@param player LuaPlayer
----@return SettingsTable
-function data_util.settings(player) return global.players[player.index].settings end
-
----@param player LuaPlayer
----@return PreferencesTable
-function data_util.preferences(player) return global.players[player.index].preferences end
-
----@param player LuaPlayer
----@return UIStateTable
-function data_util.ui_state(player) return global.players[player.index].ui_state end
-
-
-function data_util.main_elements(player) return global.players[player.index].ui_state.main_elements end
-function data_util.context(player) return global.players[player.index].ui_state.context end
-function data_util.modal_data(player) return global.players[player.index].ui_state.modal_data end
-function data_util.modal_elements(player) return global.players[player.index].ui_state.modal_data.modal_elements end
-function data_util.flags(player) return global.players[player.index].ui_state.flags end
-
 
 -- ** MISC **
 -- Still can't believe this is not a thing in Lua
@@ -42,7 +19,7 @@ end
 
 -- Adds given export_string-subfactories to the current factory
 function data_util.add_subfactories_by_string(player, export_string)
-    local context = data_util.context(player)
+    local context = util.globals.context(player)
     local first_subfactory = Factory.import_by_string(context.factory, export_string)
     util.context.set_subfactory(player, first_subfactory)
 
@@ -129,7 +106,7 @@ end
 
 
 function data_util.current_limitations(player)
-    local ui_state = data_util.ui_state(player)
+    local ui_state = util.globals.ui_state(player)
     return {
         archive_open = ui_state.flags.archive_open,
         matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil),
