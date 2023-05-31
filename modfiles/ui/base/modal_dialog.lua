@@ -201,7 +201,7 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
     if not skip_opened then player.opened = ui_state.main_elements.main_frame end
 
     if ui_state.queued_dialog_metadata ~= nil then
-        ui_util.raise_open_dialog(player, ui_state.queued_dialog_metadata)
+        util.raise.open_dialog(player, ui_state.queued_dialog_metadata)
         ui_state.queued_dialog_metadata = nil
     end
 end
@@ -289,7 +289,7 @@ listeners.gui = {
         {
             name = "close_modal_dialog",
             handler = (function(player, tags, _)
-                ui_util.raise_close_dialog(player, tags.action)
+                util.raise.close_dialog(player, tags.action)
             end)
         },
         {
@@ -328,7 +328,7 @@ listeners.gui = {
                     modal_dialog.leave_selection_mode(player)
                 else
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
-                    ui_util.raise_close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
+                    util.raise.close_dialog(player, (ui_state.modal_data.confirmed_dialog) and "submit" or "cancel")
                     -- If the dialog was not closed, it means submission was disabled, and we need to re-set .opened
                     if event.element.valid then player.opened = event.element end
                 end
@@ -343,7 +343,7 @@ listeners.gui = {
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
         if not util.globals.flags(player).selection_mode then
-            ui_util.raise_close_dialog(player, "submit")
+            util.raise.close_dialog(player, "submit")
         end
     end),
 

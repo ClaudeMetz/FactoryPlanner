@@ -6,7 +6,7 @@ local function toggle_archive(player, _, _)
 
     local factory = flags.archive_open and player_table.archive or player_table.factory
     util.context.set_factory(player, factory)
-    ui_util.raise_refresh(player, "all", nil)
+    util.raise.refresh(player, "all", nil)
 end
 
 -- Refresh the dialog, quitting archive view if it has become empty
@@ -25,7 +25,7 @@ local function refresh_after_subfactory_deletion(player, factory, removed_gui_po
 
         toggle_archive(player)  -- does refreshing on its own
     else
-        ui_util.raise_refresh(player, "all", nil)
+        util.raise.refresh(player, "all", nil)
     end
 end
 
@@ -40,7 +40,7 @@ local function delete_subfactory_for_good(metadata)
     if util.globals.flags(player).archive_open then
         refresh_after_subfactory_deletion(player, archive, removed_gui_position)
     else  -- only need to refresh the archive button enabled state really
-        ui_util.raise_refresh(player, "subfactory_list", nil)
+        util.raise.refresh(player, "subfactory_list", nil)
     end
 end
 
@@ -70,11 +70,11 @@ local function add_subfactory(player, _, event)
     local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic subfactory naming
-        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
+        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_subfactory=true}})
 
     else  -- otherwise, have the user pick a subfactory name first
-        ui_util.raise_open_dialog(player, {dialog="subfactory", modal_data={subfactory_id=nil}})
+        util.raise.open_dialog(player, {dialog="subfactory", modal_data={subfactory_id=nil}})
     end
 end
 
@@ -95,7 +95,7 @@ local function duplicate_subfactory(player, _, _)
 
     util.context.set_subfactory(player, inserted_clone)
     solver.update(player, inserted_clone)
-    ui_util.raise_refresh(player, "all", nil)
+    util.raise.refresh(player, "all", nil)
 end
 
 
@@ -107,7 +107,7 @@ local function handle_move_subfactory_click(player, tags, event)
     local translated_direction = (tags.direction == "up") and "negative" or "positive"
     Factory.shift(context.factory, subfactory, 1, translated_direction, spots_to_shift)
 
-    ui_util.raise_refresh(player, "subfactory_list", nil)
+    util.raise.refresh(player, "subfactory_list", nil)
 end
 
 local function handle_subfactory_click(player, tags, action)
@@ -123,11 +123,11 @@ local function handle_subfactory_click(player, tags, action)
             ui_state.flags.recalculate_on_subfactory_change = false
             solver.update(player, previous_subfactory)
         end
-        ui_util.raise_refresh(player, "all", nil)
+        util.raise.refresh(player, "all", nil)
 
     elseif action == "edit" then
-        ui_util.raise_refresh(player, "all", nil)  -- refresh to update the selected subfactory
-        ui_util.raise_open_dialog(player, {dialog="subfactory",
+        util.raise.refresh(player, "all", nil)  -- refresh to update the selected subfactory
+        util.raise.open_dialog(player, {dialog="subfactory",
             modal_data={subfactory_id=selected_subfactory.id}})
 
     elseif action == "delete" then
@@ -343,7 +343,7 @@ listeners.gui = {
         {  -- import/export buttons
             name = "subfactory_list_open_dialog",
             handler = (function(player, tags, _)
-                ui_util.raise_open_dialog(player, {dialog=tags.type})
+                util.raise.open_dialog(player, {dialog=tags.type})
             end)
         },
         {
@@ -354,7 +354,7 @@ listeners.gui = {
             name = "edit_subfactory",
             handler = (function(player, _, _)
                 local subfactory = util.globals.context(player).subfactory
-                ui_util.raise_open_dialog(player, {dialog="subfactory",
+                util.raise.open_dialog(player, {dialog="subfactory",
                     modal_data={subfactory_id=subfactory.id}})
             end)
         },

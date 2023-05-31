@@ -113,7 +113,7 @@ special_gui_handlers.on_gui_confirmed = (function(_, player, action_name)
 
     -- Otherwise, close the currently open modal dialog if possible
     if util.globals.ui_state(player).modal_dialog_type ~= nil then
-        ui_util.raise_close_dialog(player, "submit")
+        util.raise.close_dialog(player, "submit")
     end
     return false
 end)

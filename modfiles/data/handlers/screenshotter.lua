@@ -24,12 +24,12 @@ end
 local function open_modal(player, dialog, modal_data)
     main_dialog.toggle(player)
     util.globals.main_elements(player).main_frame.location = player.display_resolution  -- hack city
-    ui_util.raise_open_dialog(player, {dialog=dialog, modal_data=modal_data, skip_dimmer=true})
+    util.raise.open_dialog(player, {dialog=dialog, modal_data=modal_data, skip_dimmer=true})
 end
 
 local function modal_teardown(player, scene)
     return_dimensions(scene, util.globals.modal_elements(player).modal_frame)
-    ui_util.raise_close_dialog(player, "cancel")
+    util.raise.close_dialog(player, "cancel")
 end
 
 
@@ -85,7 +85,7 @@ local actions = {
         local hotness = Factory.get_by_gui_position(player_table.factory, "Subfactory", 3)
         util.context.set_subfactory(player, hotness)
         solver.update(player, hotness)
-        ui_util.raise_refresh(player, "all", nil)
+        util.raise.refresh(player, "all", nil)
 
         -- Research
         player.force.technologies["oil-processing"].researched=true

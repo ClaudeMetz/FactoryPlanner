@@ -3,7 +3,7 @@ local function refresh_production(player, _, _)
     local subfactory = util.globals.context(player).subfactory
     if subfactory and subfactory.valid then
         solver.update(player, subfactory)
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
     end
 end
 
@@ -17,7 +17,7 @@ local function paste_line(player, _, event)
 
         if util.clipboard.paste(player, last_line) then
             solver.update(player, context.subfactory)
-            ui_util.raise_refresh(player, "subfactory", nil)
+            util.raise.refresh(player, "subfactory", nil)
         end
     end
 end
@@ -26,7 +26,7 @@ end
 local function change_floor(player, destination)
     if util.context.change_floor(player, destination) then
         -- Only refresh if the floor was indeed changed
-        ui_util.raise_refresh(player, "production", nil)
+        util.raise.refresh(player, "production", nil)
     end
 end
 
@@ -58,7 +58,7 @@ local function refresh_production_box(player)
     production_box_elements.separator_line.visible = (subfactory_valid)
     production_box_elements.utility_dialog_button.visible = (subfactory_valid)
 
-    ui_util.raise_refresh(player, "view_state", production_box_elements.view_state_table)
+    util.raise.refresh(player, "view_state", production_box_elements.view_state_table)
     production_box_elements.view_state_table.visible = (subfactory_valid)
 
     -- This structure is stupid and huge, but not sure how to do it more elegantly
@@ -128,7 +128,7 @@ local function build_production_box(player)
 
     subheader.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    ui_util.raise_build(player, "view_state", subheader)
+    util.raise.build(player, "view_state", subheader)
     main_elements.production_box["view_state_table"] = subheader["table_view_state"]
 
     local label_instruction = click_flow.add{type="label", style="bold_label"}
@@ -162,7 +162,7 @@ listeners.gui = {
         {
             name = "open_utility_dialog",
             handler = (function(player, _, _)
-                ui_util.raise_open_dialog(player, {dialog="utility"})
+                util.raise.open_dialog(player, {dialog="utility"})
             end)
         },
         {

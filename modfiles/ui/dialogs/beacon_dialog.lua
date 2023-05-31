@@ -127,12 +127,12 @@ local function close_beacon_dialog(player, action)
         beacon.total_amount = (total_amount > 0) and total_amount or nil
 
         solver.update(player, subfactory)
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "delete" then
         Line.set_beacon(modal_data.line, nil)
         solver.update(player, subfactory)
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
 
     else -- action == "cancel"
         Line.set_beacon(modal_data.line, modal_data.backup_beacon)  -- can write nil

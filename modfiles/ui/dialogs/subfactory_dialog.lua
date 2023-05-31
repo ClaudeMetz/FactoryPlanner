@@ -77,7 +77,7 @@ local function close_subfactory_dialog(player, action)
         if modal_data.subfactory ~= nil then modal_data.subfactory.name = subfactory_name
         else subfactory_list.add_subfactory(player, subfactory_name) end
 
-        ui_util.raise_refresh(player, "all", nil)
+        util.raise.refresh(player, "all", nil)
 
     elseif action == "delete" then
         subfactory_list.delete_subfactory(player)  -- handles archiving if necessary

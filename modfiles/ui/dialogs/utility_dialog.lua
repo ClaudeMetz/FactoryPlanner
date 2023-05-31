@@ -344,7 +344,7 @@ local function handle_blueprint_click(player, tags, action)
 
     if action == "pick_up" then
         player.cursor_stack.import_stack(blueprints[tags.index])
-        ui_util.raise_close_dialog(player, "cancel")
+        util.raise.close_dialog(player, "cancel")
         main_dialog.toggle(player)
 
     elseif action == "delete" then
@@ -366,7 +366,7 @@ end
 
 local function close_utility_dialog(player, _)
     util.globals.modal_data(player).utility_inventory.destroy()
-    ui_util.raise_refresh(player, "subfactory_info", nil)
+    util.raise.refresh(player, "subfactory_info", nil)
 end
 
 
@@ -381,7 +381,7 @@ listeners.gui = {
             handler = (function(player, _, _)
                 local missing_items = util.globals.modal_data(player).missing_items
                 local success = ui_util.put_item_combinator_into_cursor(player, missing_items)
-                if success then ui_util.raise_close_dialog(player, "cancel"); main_dialog.toggle(player) end
+                if success then util.raise.close_dialog(player, "cancel"); main_dialog.toggle(player) end
             end)
         },
         {
