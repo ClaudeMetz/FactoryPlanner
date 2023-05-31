@@ -191,7 +191,7 @@ function ui_util.open_in_recipebook(player, type, name)
         if not was_opened then message = {"fp.error_recipebook_lookup_failed", {"fp.pl_" .. type, 1}} end
     end
 
-    if message then ui_util.messages.raise(player, "error", message, 1) end
+    if message then util.messages.raise(player, "error", message, 1) end
 end
 
 
@@ -326,94 +326,6 @@ function ui_util.format_machine_count(count, active, round_number)
     local tooltip_line = {"", tooltip_count, " ", {"fp.pl_machine", plural_parameter}}
 
     return formatted_count, tooltip_line
-end
-
-
----@class ClipboardEntry: table
-
--- Copies the given object into the player's clipboard as a packed object
----@param player LuaPlayer
----@param object FPCopyableObject
-function ui_util.clipboard.copy(player, object)
-    local player_table = util.globals.player_table(player)
-    player_table.clipboard = {
-        class = object.class,
-        object = _G[object.class].pack(object),
-        parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
-    }
-    ui_util.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
-end
-
--- Tries pasting the player's clipboard content onto the given target
----@param player LuaPlayer
----@param target FPCopyableObject
-function ui_util.clipboard.paste(player, target)
-    local player_table = util.globals.player_table(player)
-    local clip = player_table.clipboard
-
-    if clip == nil then
-        ui_util.create_flying_text(player, {"fp.clipboard_empty"})
-    else
-        local level = (clip.class == "Line") and (target.parent.level or 1) or nil
-        local clone = _G[clip.class].unpack(fancytable.deep_copy(clip.object), level)
-        clone.parent = clip.parent  -- not very elegant to retain the parent here, but it's an easy solution
-        _G[clip.class].validate(clone)
-
-        local success, error = _G[target.class].paste(target, clone)
-        if success then  -- objects in the clipboard are always valid since it resets on_config_changed
-            ui_util.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
-
-            solver.update(player, player_table.ui_state.context.subfactory)
-            ui_util.raise_refresh(player, "subfactory", nil)
-        else
-            local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
-            if error == "incompatible_class" then
-                ui_util.create_flying_text(player, {"fp.clipboard_incompatible_class", object_lower, target_lower})
-            elseif error == "incompatible" then
-                ui_util.create_flying_text(player, {"fp.clipboard_incompatible", object_lower})
-            elseif error == "already_exists" then
-                ui_util.create_flying_text(player, {"fp.clipboard_already_exists", target_lower})
-            elseif error == "no_empty_slots" then
-                ui_util.create_flying_text(player, {"fp.clipboard_no_empty_slots"})
-            elseif error == "recipe_irrelevant" then
-                ui_util.create_flying_text(player, {"fp.clipboard_recipe_irrelevant"})
-            end
-        end
-    end
-end
-
----@class PlayerMessages: table
-
----@param player LuaPlayer
----@param category "error" | "warning" | "hint"
----@param message LocalisedString
----@param lifetime integer
-function ui_util.messages.raise(player, category, message, lifetime)
-    local messages = util.globals.ui_state(player).messages
-    table.insert(messages, {category=category, text=message, lifetime=lifetime})
-end
-
----@param player LuaPlayer
-function ui_util.messages.refresh(player)
-    -- Only refresh messages if the user is actually looking at them
-    if not main_dialog.is_in_focus(player) then return end
-
-    local ui_state = util.globals.ui_state(player)
-    local message_frame = ui_state.main_elements["messages_frame"]
-    if not message_frame or not message_frame.valid then return end
-
-    local messages = ui_state.messages
-    message_frame.visible = (next(messages) ~= nil)
-    message_frame.clear()
-
-    for i=#messages, 1, -1 do
-        local message = messages[i]
-        local caption = {"", "[img=warning-white]  ", {"fp." .. message.category .. "_message", message.text}}
-        message_frame.add{type="label", caption=caption, style="bold_label"}
-
-        message.lifetime = message.lifetime - 1
-        if message.lifetime == 0 then table.remove(messages, i) end
-    end
 end
 
 

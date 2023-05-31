@@ -129,7 +129,7 @@ end
 ---@field main_dialog_dimensions DisplayResolution
 ---@field last_action string
 ---@field view_states ViewStates
----@field messages PlayerMessages
+---@field messages PlayerMessage[]
 ---@field main_elements { [string]: LuaGuiElement }
 ---@field compact_elements { [string]: LuaGuiElement }
 ---@field context Context
@@ -152,7 +152,7 @@ local function reset_ui_state(player)
     ui_state_table.main_dialog_dimensions = nil  ---@type DisplayResolution Can only be calculated after on_init
     ui_state_table.last_action = nil  ---@type string The last user action (used for rate limiting)
     ui_state_table.view_states = nil  ---@type ViewStates The state of the production views
-    ui_state_table.messages = {}  ---@type PlayerMessages  The general message/warning list
+    ui_state_table.messages = {}  ---@type PlayerMessage[]  The general message/warning list
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
     ui_state_table.context = util.context.create(player)  -- The currently displayed set of data
@@ -191,7 +191,7 @@ local function create_player_table(player)
     reload_settings(player)
     reset_ui_state(player)
 
-    ui_util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 12)
+    util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 12)
 end
 
 ---@param player LuaPlayer

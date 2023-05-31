@@ -15,7 +15,7 @@ local function paste_line(player, _, event)
         -- Use a fake first line to paste below if no actual line exists
         if not last_line then last_line = {parent=context.floor, class="Line", gui_position=0} end
 
-        if ui_util.clipboard.paste(player, last_line) then
+        if util.clipboard.paste(player, last_line) then
             solver.update(player, context.subfactory)
             ui_util.raise_refresh(player, "subfactory", nil)
         end

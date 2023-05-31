@@ -218,7 +218,7 @@ local function handle_gui_event(event)
     -- Send the actual event, potentially guarding it if DEV_ACTIVE
     guarded_event(action_table.handler, {player, tags, third_parameter})
 
-    ui_util.messages.refresh(player)  -- give messages a chance to update themselves
+    util.messages.refresh(player)  -- give messages a chance to update themselves
 end
 
 -- Register all the GUI events from the identifier map
@@ -373,7 +373,7 @@ local function handle_misc_event(event)
     end
 
     if CUSTOM_EVENTS[string_name] then return end  -- don't refresh message for events inside other events
-    ui_util.messages.refresh(player)  -- give messages a chance to update themselves
+    util.messages.refresh(player)  -- give messages a chance to update themselves
 end
 
 -- Register all the misc events from the identifier map

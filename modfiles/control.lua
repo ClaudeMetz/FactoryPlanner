@@ -81,6 +81,7 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 
 ---@alias Timescale 1 | 60 | 3600
 ---@alias FPCopyableObject FPLine | FPMachine | FPBeacon | FPModule | FPItem | FPFuel
+---@alias FPParentObject FPFactory | FPSubfactory | FPFloor | FPLine | FPModuleSet
 ---@alias SwitchState "left" | "right"
 
 ---@alias PlayerIndex uint
