@@ -94,7 +94,7 @@ local function attempt_adding_line(player, recipe_id)
 
     -- If finding a machine fails, this line is invalid. Generator should avoid this case though
     if Line.change_machine_to_default(line, player) == false then
-        ui_util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
+        util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
 
     else
         local floor = Subfactory.get(ui_state.context.subfactory, "Floor", modal_data.floor_id)
@@ -114,7 +114,7 @@ local function attempt_adding_line(player, recipe_id)
 
         solver.update(player, ui_state.context.subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
-        if message ~= nil then ui_util.messages.raise(player, message.category, message.text, 1) end
+        if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
     end
 end
 
@@ -257,7 +257,7 @@ local function recipe_early_abort_check(player, modal_data)
     local result, error, show = run_preliminary_checks(player, modal_data)
 
     if error ~= nil then
-        ui_util.messages.raise(player, "error", error, 1)
+        util.messages.raise(player, "error", error, 1)
         return true  -- signal that the dialog does not need to actually be opened
 
     else

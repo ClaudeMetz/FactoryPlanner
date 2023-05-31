@@ -21,14 +21,14 @@ local function handle_recipe_click(player, tags, action)
 
     if action == "open_subfloor" then
         if relevant_line.recipe.production_type == "consume" then
-            ui_util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
+            util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
 
         local subfloor = line.subfloor
         if subfloor == nil then
             if util.globals.flags(player).archive_open then
-                ui_util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
+                util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
 
@@ -41,10 +41,10 @@ local function handle_recipe_click(player, tags, action)
         ui_util.raise_refresh(player, "production", nil)
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, line)  -- use actual line
+        util.clipboard.copy(player, line)  -- use actual line
 
     elseif action == "paste" then
-        ui_util.clipboard.paste(player, line)  -- use actual line
+        util.clipboard.paste(player, line)  -- use actual line
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
@@ -100,10 +100,10 @@ local function handle_machine_click(player, tags, action)
             recipe_name=line.recipe.proto.localised_name}})
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, line.machine)
+        util.clipboard.copy(player, line.machine)
 
     elseif action == "paste" then
-        ui_util.clipboard.paste(player, line.machine)
+        util.clipboard.paste(player, line.machine)
 
     elseif action == "reset_to_default" then
         Line.change_machine_to_default(line, player)  -- guaranteed to find something
@@ -113,7 +113,7 @@ local function handle_machine_click(player, tags, action)
 
         solver.update(player, context.subfactory)
         ui_util.raise_refresh(player, "subfactory", nil)
-        if message ~= nil then ui_util.messages.raise(player, message.category, message.text, 1) end
+        if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
@@ -126,7 +126,7 @@ local function handle_machine_module_add(player, tags, event)
     local line = Floor.get(floor, "Line", tags.line_id)
 
     if event.shift then  -- paste
-        ui_util.clipboard.paste(player, line.machine)
+        util.clipboard.paste(player, line.machine)
     else
         ui_util.raise_open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
             recipe_name=line.recipe.proto.localised_name}})
@@ -149,10 +149,10 @@ local function handle_beacon_click(player, tags, action)
             machine_name=line.machine.proto.localised_name, edit=true}})
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, line.beacon)
+        util.clipboard.copy(player, line.beacon)
 
     elseif action == "paste" then
-        ui_util.clipboard.paste(player, line.beacon)
+        util.clipboard.paste(player, line.beacon)
 
     elseif action == "delete" then
         Line.set_beacon(line, nil)
@@ -172,7 +172,7 @@ local function handle_beacon_add(player, tags, event)
     if event.shift then  -- paste
         -- Use a fake beacon to paste on top of
         local fake_beacon = {parent=line, class="Beacon"}
-        ui_util.clipboard.paste(player, fake_beacon)
+        util.clipboard.paste(player, fake_beacon)
     else
         ui_util.raise_open_dialog(player, {dialog="beacon", modal_data={floor_id=floor.id, line_id=line.id,
             machine_name=line.machine.proto.localised_name, edit=false}})
@@ -193,10 +193,10 @@ local function handle_module_click(player, tags, action)
             recipe_name=line.recipe.proto.localised_name, machine_name=line.machine.proto.localised_name, edit=true}})
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, module)
+        util.clipboard.copy(player, module)
 
     elseif action == "paste" then
-        ui_util.clipboard.paste(player, module)
+        util.clipboard.paste(player, module)
 
     elseif action == "delete" then
         local module_set = parent_entity.module_set
@@ -258,7 +258,7 @@ local function handle_item_click(player, tags, action)
 
     if action == "prioritize" then
         if line.Product.count < 2 then
-            ui_util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
+            util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
             line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
@@ -303,7 +303,7 @@ local function handle_item_click(player, tags, action)
         ui_util.raise_open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, item)
+        util.clipboard.copy(player, item)
 
     elseif action == "put_into_cursor" then
         ui_util.add_item_to_cursor_combinator(player, item.proto, item.amount)
@@ -331,10 +331,10 @@ local function handle_fuel_click(player, tags, action)
             recipe_name=line.recipe.proto.localised_name}})
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, fuel)
+        util.clipboard.copy(player, fuel)
 
     elseif action == "paste" then
-        ui_util.clipboard.paste(player, fuel)
+        util.clipboard.paste(player, fuel)
 
     elseif action == "put_into_cursor" then
         ui_util.add_item_to_cursor_combinator(player, fuel.proto, fuel.amount)

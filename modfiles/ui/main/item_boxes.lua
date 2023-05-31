@@ -2,7 +2,7 @@
 local function add_recipe(player, context, type, item_proto)
     if context.floor.level > 1 then
         local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
-        ui_util.messages.raise(player, "error", message, 1)
+        util.messages.raise(player, "error", message, 1)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
         ui_util.raise_open_dialog(player, {dialog="recipe",
@@ -129,7 +129,7 @@ local function handle_item_add(player, tags, event)
         -- Use a fake item to paste on top of
         local class = tags.category:gsub("^%l", string.upper)
         local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
-        ui_util.clipboard.paste(player, fake_item)
+        util.clipboard.paste(player, fake_item)
     else
         ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.category}})
     end
@@ -151,10 +151,10 @@ local function handle_item_button_click(player, tags, action)
         ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=item.id, item_category="product"}})
 
     elseif action == "copy" then
-        ui_util.clipboard.copy(player, item)
+        util.clipboard.copy(player, item)
 
     elseif action == "paste" then
-        ui_util.clipboard.paste(player, item)
+        util.clipboard.paste(player, item)
 
     elseif action == "delete" then
         Subfactory.remove(context.subfactory, item)

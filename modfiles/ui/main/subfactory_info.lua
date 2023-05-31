@@ -59,7 +59,7 @@ local function handle_solver_change(player, _, event)
         remove_consuming_recipes(top_floor)
 
         if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
-            ui_util.messages.raise(player, "hint", {"fp.hint_byproducts_removed"}, 1)
+            util.messages.raise(player, "hint", {"fp.hint_byproducts_removed"}, 1)
         end
     end
 
