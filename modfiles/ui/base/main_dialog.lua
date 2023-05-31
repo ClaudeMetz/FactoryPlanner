@@ -109,7 +109,7 @@ function main_dialog.rebuild(player, default_visibility)
     main_elements.flows["right_vertical"] = right_vertical
 
     view_state.rebuild_state(player)  -- initializes the view_state
-    ui_util.raise_build(player, "main_dialog", nil)  -- tells all elements to build themselves
+    util.raise.build(player, "main_dialog", nil)  -- tells all elements to build themselves
 
     if interface_visible then player.opened = frame_main_dialog end
     main_dialog.set_pause_state(player, frame_main_dialog)
@@ -196,7 +196,7 @@ listeners.misc = {
         local ui_state = util.globals.ui_state(player)
 
         -- With that in mind, if there's a modal dialog open, we were in selection mode, and need to close the dialog
-        if ui_state.modal_dialog_type ~= nil then ui_util.raise_close_dialog(player, "cancel", true) end
+        if ui_state.modal_dialog_type ~= nil then util.raise.close_dialog(player, "cancel", true) end
 
         -- Then, at this point we're at most at the stage where the main dialog is open, so close it
         if main_dialog.is_in_focus(player) then main_dialog.toggle(player, true) end
@@ -240,7 +240,7 @@ listeners.misc = {
         elseif flags.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
-            ui_util.raise_refresh(player, "production", nil)
+            util.raise.refresh(player, "production", nil)
             flags.compact_view = false
 
         elseif main_focus and subfactory ~= nil and subfactory.valid then

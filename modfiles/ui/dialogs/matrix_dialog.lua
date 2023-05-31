@@ -161,10 +161,10 @@ local function close_matrix_dialog(player, action)
         subfactory.matrix_free_items = ui_state.modal_data.free_items
 
         solver.update(player, subfactory)
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "cancel" then
-        ui_util.raise_refresh(player, "production_detail", nil)
+        util.raise.refresh(player, "production_detail", nil)
     end
 end
 

@@ -5,7 +5,7 @@ local function add_recipe(player, context, type, item_proto)
         util.messages.raise(player, "error", message, 1)
     else
         local production_type = (type == "byproduct") and "consume" or "produce"
-        ui_util.raise_open_dialog(player, {dialog="recipe",
+        util.raise.open_dialog(player, {dialog="recipe",
             modal_data={category_id=item_proto.category_id, product_id=item_proto.id,
             floor_id=context.floor.id, production_type=production_type}})
     end
@@ -131,7 +131,7 @@ local function handle_item_add(player, tags, event)
         local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
         util.clipboard.paste(player, fake_item)
     else
-        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.category}})
+        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.category}})
     end
 end
 
@@ -148,7 +148,7 @@ local function handle_item_button_click(player, tags, action)
         add_recipe(player, context, tags.category, item.proto)
 
     elseif action == "edit" then
-        ui_util.raise_open_dialog(player, {dialog="picker", modal_data={item_id=item.id, item_category="product"}})
+        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=item.id, item_category="product"}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, item)
@@ -159,12 +159,12 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "delete" then
         Subfactory.remove(context.subfactory, item)
         solver.update(player, context.subfactory)
-        ui_util.raise_refresh(player, "all", nil)  -- make sure product icons are updated
+        util.raise.refresh(player, "all", nil)  -- make sure product icons are updated
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
 
         local modal_data = {
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
@@ -183,7 +183,7 @@ local function handle_item_button_click(player, tags, action)
                 }
             }
         }
-        ui_util.raise_open_dialog(player, {dialog="options", modal_data=modal_data})
+        util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "put_into_cursor" then
         local amount = (not floor_items_active and tags.category == "product")
@@ -228,7 +228,7 @@ local function scale_subfactory_by_ingredient_amount(player, options, action)
         end
 
         solver.update(player, subfactory)
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
     end
 end
 

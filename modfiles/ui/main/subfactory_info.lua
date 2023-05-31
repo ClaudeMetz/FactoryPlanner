@@ -6,7 +6,7 @@ local function repair_subfactory(player, _, _)
     Subfactory.repair(subfactory, player)
 
     solver.update(player, subfactory)
-    ui_util.raise_refresh(player, "all", nil)  -- needs the full refresh to reset subfactory list buttons
+    util.raise.refresh(player, "all", nil)  -- needs the full refresh to reset subfactory list buttons
 end
 
 local function change_timescale(player, new_timescale)
@@ -28,7 +28,7 @@ local function change_timescale(player, new_timescale)
 
     solver.update(player, subfactory)
     -- View state updates itself automatically if it detects a timescale change
-        ui_util.raise_refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "subfactory", nil)
 end
 
 local function handle_solver_change(player, _, event)
@@ -64,7 +64,7 @@ local function handle_solver_change(player, _, event)
     end
 
     solver.update(player, subfactory)
-    ui_util.raise_refresh(player, "subfactory", nil)
+    util.raise.refresh(player, "subfactory", nil)
 end
 
 
@@ -268,13 +268,13 @@ listeners.gui = {
                 local subfactory = util.globals.context(player).subfactory
                 subfactory.mining_productivity = 0
                 solver.update(player, subfactory)
-                ui_util.raise_refresh(player, "subfactory", nil)
+                util.raise.refresh(player, "subfactory", nil)
             end)
         },
         {
             name = "configure_matrix_solver",
             handler = (function(player, _, _)
-                ui_util.raise_open_dialog(player, {dialog="matrix", modal_data={configuration=true}})
+                util.raise.open_dialog(player, {dialog="matrix", modal_data={configuration=true}})
             end)
         }
     },
@@ -301,7 +301,7 @@ listeners.gui = {
                 local ui_state = util.globals.ui_state(player)
                 ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
                 solver.update(player, ui_state.context.subfactory)
-                ui_util.raise_refresh(player, "subfactory", nil)
+                util.raise.refresh(player, "subfactory", nil)
             end)
         }
     }

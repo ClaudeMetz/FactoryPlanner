@@ -109,7 +109,7 @@ listeners.gui = {
         {
             name = "title_bar_open_dialog",
             handler = (function(player, tags, _)
-                ui_util.raise_open_dialog(player, {dialog=tags.type})
+                util.raise.open_dialog(player, {dialog=tags.type})
             end)
         }
     }

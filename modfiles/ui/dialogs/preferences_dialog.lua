@@ -258,7 +258,7 @@ local function close_preferences_dialog(player, _)
     end
 
     if refresh.subfactory_list then
-        ui_util.raise_refresh(player, "subfactory_list", nil)
+        util.raise.refresh(player, "subfactory_list", nil)
     end
 
     local context_to_refresh = nil  -- don't refresh by default
@@ -281,7 +281,7 @@ local function close_preferences_dialog(player, _)
     end
 
     if context_to_refresh then
-        ui_util.raise_refresh(player, context_to_refresh, nil)
+        util.raise.refresh(player, context_to_refresh, nil)
     end
 end
 

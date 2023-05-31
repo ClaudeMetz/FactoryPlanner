@@ -216,7 +216,7 @@ local function refresh_compact_subfactory(player)
     local current_level = subfactory.selected_floor.level
     local lines = Floor.get_in_order(context.floor, "Line")
 
-    ui_util.raise_refresh(player, "view_state", compact_elements.view_state_table)
+    util.raise.refresh(player, "view_state", compact_elements.view_state_table)
 
     local attach_subfactory_products = player_table.preferences.attach_subfactory_products
     compact_elements.name_label.caption = Subfactory.tostring(subfactory, attach_subfactory_products, true)
@@ -297,7 +297,7 @@ local function build_compact_subfactory(player)
     flow_view_state.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     view_state.rebuild_state(player)  -- initializes the view_state
-    ui_util.raise_build(player, "view_state", flow_view_state)
+    util.raise.build(player, "view_state", flow_view_state)
     compact_elements["view_state_table"] = flow_view_state["table_view_state"]
 
     subheader.add{type="line", direction="horizontal"}
@@ -578,7 +578,7 @@ local function rebuild_compact_dialog(player, default_visibility)
         tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
-    ui_util.raise_build(player, "compact_subfactory", nil)
+    util.raise.build(player, "compact_subfactory", nil)
 
     return frame_compact_dialog
 end
@@ -620,7 +620,7 @@ dialog_listeners.gui = {
                 compact_dialog.toggle(player)
 
                 main_dialog.toggle(player)
-                ui_util.raise_refresh(player, "production", nil)
+                util.raise.refresh(player, "production", nil)
             end)
         },
         {
