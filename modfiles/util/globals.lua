@@ -26,7 +26,7 @@ function _globals.flags(player) return global.players[player.index].ui_state.fla
 
 ---@param player LuaPlayer
 ---@return ModalData
-function _globals.modal_globals(player) return global.players[player.index].ui_state.modal_globals end
+function _globals.modal_data(player) return global.players[player.index].ui_state.modal_data end
 
 ---@param player LuaPlayer
 ---@return LuaGuiElement[]
@@ -34,6 +34,6 @@ function _globals.main_elements(player) return global.players[player.index].ui_s
 
 ---@param player LuaPlayer
 ---@return LuaGuiElement[]
-function _globals.modal_elements(player) return global.players[player.index].ui_state.modal_globals.modal_elements end
+function _globals.modal_elements(player) return global.players[player.index].ui_state.modal_data.modal_elements end
 
 return _globals
