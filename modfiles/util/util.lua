@@ -5,6 +5,7 @@ local util = {
     messages = require("util.messages"),
     switch_helper = require("util.switch_helper"),
     raise = require("util.raise"),
+    mod_gui = require("util.mod_gui")
 }
 
 return util
