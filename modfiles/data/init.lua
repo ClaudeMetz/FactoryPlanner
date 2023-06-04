@@ -284,7 +284,7 @@ local function handle_configuration_change()
 
     for index, player in pairs(game.players) do
         ui_util.reset_player_gui(player)  -- Destroys all existing GUI's
-        ui_util.toggle_mod_gui(player)  -- Recreates the mod-GUI if necessary
+        util.mod_gui.toggle(player)  -- Recreates the mod-GUI if necessary
 
         -- Update factory and archive calculations in case prototypes changed in a relevant way
         local player_table = global.players[index]  ---@type PlayerTable
@@ -310,7 +310,7 @@ script.on_event(defines.events.on_player_created, function(event)
     create_player_table(player)
 
     -- Sets up the mod-GUI for the new player if necessary
-    ui_util.toggle_mod_gui(player)
+    util.mod_gui.toggle(player)
 
     -- Add the subfactories that are handy for development
     if DEV_ACTIVE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
@@ -329,7 +329,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
         reload_settings(player)
 
         if event.setting == "fp_display_gui_button" then
-            ui_util.toggle_mod_gui(player)
+            util.mod_gui.toggle(player)
 
         elseif event.setting == "fp_products_per_row"
                 or event.setting == "fp_subfactory_list_rows"
