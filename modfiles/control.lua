@@ -51,8 +51,6 @@ fancytable = require("__flib__.table")  -- has more functionality than built-in 
 translator = require("__flib__.dictionary-lite")  -- translation module for localised search
 
 util = require("util.util")  -- LuaLS doesn't like this being called 'util'
-require("data.data_util")
-require("ui.ui_util")
 
 require("ui.base.main_dialog")
 require("ui.base.compact_dialog")
@@ -60,7 +58,7 @@ require("ui.base.modal_dialog")
 
 -- Not sure yet how to make these not global variables (filled via event_handler)
 TUTORIAL_TOOLTIPS = {}  ---@type { [string]: LocalisedString }
-GLOBAL_HANDLERS = {}
+GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
 require("data.init")
 require("ui.event_handler")

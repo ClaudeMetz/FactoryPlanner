@@ -414,16 +414,16 @@ function generator_util.add_recipe_tooltip(recipe)
     local current_table, next_index = tooltip, 3
 
     if recipe.energy ~= nil then
-        current_table, next_index = data_util.build_localised_string(
+        current_table, next_index = util.build_localised_string(
             {"", "\n  ", {"fp.crafting_time"}, ": ", recipe.energy}, current_table, next_index)
     end
 
     for _, item_type in ipairs{"ingredients", "products"} do
         local locale_key = (item_type == "ingredients") and "fp.pu_ingredient" or "fp.pu_product"
-        current_table, next_index = data_util.build_localised_string(
+        current_table, next_index = util.build_localised_string(
             {"", "\n  ", {locale_key, 2}, ":"}, current_table, next_index)
         if not next(recipe[item_type]) then
-            current_table, next_index = data_util.build_localised_string({
+            current_table, next_index = util.build_localised_string({
                 "\n    ", {"fp.none"}}, current_table, next_index)
         else
             local items = recipe[item_type]  ---@type FormattedRecipeItem[]
@@ -431,7 +431,7 @@ function generator_util.add_recipe_tooltip(recipe)
                 local name = generator_util.format_temperature_name(item, item.name)
                 local proto = game[item.type .. "_prototypes"][name]  ---@type LuaItemPrototype | LuaFluidPrototype
                 local localised_name = generator_util.format_temperature_localised_name(item, proto)
-                current_table, next_index = data_util.build_localised_string({("\n    " .. "[" .. item.type .. "="
+                current_table, next_index = util.build_localised_string({("\n    " .. "[" .. item.type .. "="
                     .. name .. "] " .. item.amount .. "x "), localised_name}, current_table, next_index)
             end
         end

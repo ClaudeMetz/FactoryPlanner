@@ -44,8 +44,8 @@ local migration_masterlist = {  ---@type MigrationMasterList
 ---@param v2 VersionString
 ---@return boolean
 local function compare_versions(v1, v2)
-    local split_v1 = data_util.split_string(v1, ".")
-    local split_v2 = data_util.split_string(v2, ".")
+    local split_v1 = util.split_string(v1, ".")
+    local split_v2 = util.split_string(v2, ".")
 
     for i = 1, #split_v1 do
         if split_v1[i] == split_v2[i] then
