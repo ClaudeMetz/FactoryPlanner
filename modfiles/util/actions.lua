@@ -15,7 +15,7 @@ function _actions.current_limitations(player)
     }
 end
 
----@param action_limitations ActionLimitations
+---@param action_limitations ActionLimitations[]
 ---@param active_limitations ActiveLimitations
 ---@return boolean
 function _actions.allowed(action_limitations, active_limitations)
