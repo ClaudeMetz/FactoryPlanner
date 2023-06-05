@@ -2,7 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
+  Changes:
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.67
+Date: 05. 06. 2023
   Changes:
     - Changed the blueprint storage to support blueprint books as well
     - Moved the info/warning/error messages from the top to the bottom
