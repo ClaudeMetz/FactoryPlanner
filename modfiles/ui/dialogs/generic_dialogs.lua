@@ -138,7 +138,7 @@ options_listeners.gui.on_gui_switch_state_changed = {
 }
 
 function elements.on_off_switch.create(table, field, modal_elements)
-    local state = util.switch_helper.convert_to_state(field.state)
+    local state = util.gui.switch.convert_to_state(field.state)
     local switch = table.add{type="switch", switch_state=state,
         tags={mod="fp", on_gui_switch_state_changed="change_option", field_name=field.name},
         left_label_caption={"fp.on"}, right_label_caption={"fp.off"}}
@@ -147,7 +147,7 @@ function elements.on_off_switch.create(table, field, modal_elements)
 end
 
 function elements.on_off_switch.read(switch)
-    return util.switch_helper.convert_to_boolean(switch.switch_state)
+    return util.gui.switch.convert_to_boolean(switch.switch_state)
 end
 
 -- ** CHOOSE ELEM BUTTON **

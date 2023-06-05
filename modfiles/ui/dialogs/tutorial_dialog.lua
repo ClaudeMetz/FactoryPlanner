@@ -31,7 +31,7 @@ function tab_definitions.interface(player, tab, tab_pane)
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local tutorial_mode = util.globals.preferences(player).tutorial_mode
-    util.switch_helper.add_on_off(flow_interactive, "toggle_tutorial_mode", {}, tutorial_mode,
+    util.gui.switch.add_on_off(flow_interactive, "toggle_tutorial_mode", {}, tutorial_mode,
         {"fp.tutorial_mode"}, nil, true)
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
@@ -105,7 +105,7 @@ listeners.gui = {
             name = "toggle_tutorial_mode",
             handler = (function(player, _, event)
                 local preferences = util.globals.preferences(player)
-                preferences.tutorial_mode = util.switch_helper.convert_to_boolean(event.element.switch_state)
+                preferences.tutorial_mode = util.gui.switch.convert_to_boolean(event.element.switch_state)
                 util.raise.refresh(player, "all", nil)
             end)
         }
