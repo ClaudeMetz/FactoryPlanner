@@ -137,7 +137,7 @@ function builders.machine(line, parent_flow, metadata)
             enabled=false, number=machine_count, tooltip=tooltip}
     else
         local active, round_number = (line.production_ratio > 0), metadata.round_button_numbers
-        local count, tooltip_line = ui_util.format_machine_count(machine_count, active, round_number)
+        local count, tooltip_line = util.format.machine_count(machine_count, active, round_number)
 
         local machine_limit = line.machine.limit
         local style, note = "flib_slot_button_default_small", nil
@@ -209,14 +209,14 @@ end
 
 function builders.power(line, parent_flow, metadata)
     local pollution_line = (metadata.pollution_column) and ""
-        or {"", "\n", {"fp.pollution"}, ": ", ui_util.format_SI_value(line.pollution, "P/m", 5)}
-    parent_flow.add{type="label", caption=ui_util.format_SI_value(line.energy_consumption, "W", 3),
-        tooltip={"", ui_util.format_SI_value(line.energy_consumption, "W", 5), pollution_line}}
+        or {"", "\n", {"fp.pollution"}, ": ", util.format.SI_value(line.pollution, "P/m", 5)}
+    parent_flow.add{type="label", caption=util.format.SI_value(line.energy_consumption, "W", 3),
+        tooltip={"", util.format.SI_value(line.energy_consumption, "W", 5), pollution_line}}
 end
 
 function builders.pollution(line, parent_flow, _)
-    parent_flow.add{type="label", caption=ui_util.format_SI_value(line.pollution, "P/m", 3),
-        tooltip=ui_util.format_SI_value(line.pollution, "P/m", 5)}
+    parent_flow.add{type="label", caption=util.format.SI_value(line.pollution, "P/m", 3),
+        tooltip=util.format.SI_value(line.pollution, "P/m", 5)}
 end
 
 function builders.products(line, parent_flow, metadata)
@@ -289,7 +289,7 @@ function builders.ingredients(line, parent_flow, metadata)
 
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
-            local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
+            local formatted_percentage = util.format.number(satisfaction_percentage, 3)
 
             -- We use the formatted percentage here because it smooths out the number to 3 places
             local satisfaction = tonumber(formatted_percentage)
@@ -329,7 +329,7 @@ function builders.fuel(line, parent_flow, metadata)
     local satisfaction_line = ""  ---@type LocalisedString
     if metadata.ingredient_satisfaction and fuel.amount > 0 then
         local satisfaction_percentage = (fuel.satisfied_amount / fuel.amount) * 100
-        local formatted_percentage = ui_util.format_number(satisfaction_percentage, 3)
+        local formatted_percentage = util.format.number(satisfaction_percentage, 3)
         satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
     end
 

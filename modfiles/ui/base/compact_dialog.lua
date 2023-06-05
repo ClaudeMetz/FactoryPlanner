@@ -118,7 +118,7 @@ local function add_machine_flow(parent_flow, line, metadata)
         local machine_flow = parent_flow.add{type="flow", direction="horizontal"}
         local machine_proto = line.machine.proto
 
-        local count, tooltip_line = ui_util.format_machine_count(line.machine.count, (line.production_ratio > 0), true)
+        local count, tooltip_line = util.format.machine_count(line.machine.count, (line.production_ratio > 0), true)
         local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", tooltip_line,
             metadata.machine_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"

@@ -199,7 +199,7 @@ local function sync_amounts(modal_data)
         local belt_proto = modal_data.belt_proto
         local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
         local item_amount = belt_amount * throughput * modal_data.timescale
-        modal_elements.item_amount_textfield.text = ui_util.format_number(item_amount, 6)
+        modal_elements.item_amount_textfield.text = util.format.number(item_amount, 6)
     end
 end
 
@@ -223,7 +223,7 @@ local function set_belt_proto(modal_data, belt_proto)
         if item_amount ~= nil then
             local throughput = belt_proto.throughput * ((modal_data.lob == "belts") and 1 or 0.5)
             local belt_amount = item_amount / throughput / modal_data.timescale
-            modal_elements.belt_amount_textfield.text = ui_util.format_number(belt_amount, 6)
+            modal_elements.belt_amount_textfield.text = util.format.number(belt_amount, 6)
         end
         sync_amounts(modal_data)
     end
