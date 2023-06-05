@@ -17,68 +17,6 @@ for _, listener_path in ipairs(event_listener_names) do
 end
 
 
-local function guarded_event(handler, arguments)
-    if DEV_ACTIVE and not DEBUGGER_ACTIVE then
-        local status, ret = xpcall(handler, debug.traceback, table.unpack(arguments))
-        if status then
-            return ret
-        else
-            llog(ret)
-            game.print({"fp.error_message", "Error: " .. data_util.split_string(ret, "\n")[1]})
-            game.reload_mods()
-        end
-    else
-        return handler(table.unpack(arguments))
-    end
-end
-
-
--- Returns whether rate limiting is active for the given action, stopping it from proceeding
--- This is essentially to prevent duplicate commands in quick succession, enabled by lag
-local function rate_limiting_active(player, tick, action_name, timeout)
-    local ui_state = util.globals.ui_state(player)
-
-    -- If this action has no timeout, reset the last action and allow it
-    if timeout == nil or game.tick_paused then
-        ui_state.last_action = nil
-        return false
-    end
-
-    local last_action = ui_state.last_action
-    -- Only disallow action under these specific circumstances
-    if last_action and last_action.action_name == action_name and (tick - last_action.tick) < timeout then
-        return true
-
-    else  -- set the last action if this action will actually be carried out
-        ui_state.last_action = {
-            action_name = action_name,
-            tick = tick
-        }
-        return false
-    end
-end
-
-
-local function generate_tutorial_tooltip_lines(modifier_actions)
-    local action_lines = {}
-
-    for modifier_click, modifier_action in pairs(modifier_actions) do
-        local split_modifiers = data_util.split_string(modifier_click, "-")
-
-        local modifier_string = {""}
-        for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
-            table.insert(modifier_string, {"", {"fp.tut_" .. modifier}, " + "})
-        end
-        table.insert(modifier_string, {"fp.tut_" .. split_modifiers[#split_modifiers]})
-
-        local action_string = {"fp.tut_action_line", modifier_string, {"fp.tut_" .. modifier_action.name}}
-        table.insert(action_lines, {string=action_string, limitations=modifier_action.limitations})
-    end
-
-    return action_lines
-end
-
-
 -- ** GUI EVENTS **
 -- These handlers go out to the first thing that it finds that registered for it.
 -- They can register either by element name or by a pattern matching element names.
@@ -150,7 +88,8 @@ for _, listener in pairs(event_listeners) do
                     end
 
                     -- Generate all the tooltip lines for these modifier actions
-                    TUTORIAL_TOOLTIPS[action.name] = generate_tutorial_tooltip_lines(action_table.modifier_actions)
+                    local tooltip = util.actions.all_tutorial_tooltips(action_table.modifier_actions)
+                    TUTORIAL_TOOLTIPS[action.name] = tooltip
                 end
 
                 event_table.actions[action.name] = action_table
@@ -191,7 +130,7 @@ local function handle_gui_event(event)
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_table.special_handler
-    if special_handler and guarded_event(special_handler, {event, player, action_name}) == false then return end
+    if special_handler and util.actions.guard(special_handler, {event, player, action_name}) == false then return end
 
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
@@ -199,7 +138,7 @@ local function handle_gui_event(event)
     local action_table = event_table.actions[action_name]
 
     -- Check if rate limiting allows this action to proceed
-    if rate_limiting_active(player, event.tick, action_name, action_table.timeout) then return end
+    if util.actions.rate_limited(player, event.tick, action_name, action_table.timeout) then return end
 
     local third_parameter = event  -- all GUI events except on_gui_click have the event as the third parameter
 
@@ -208,15 +147,15 @@ local function handle_gui_event(event)
         local modifier_action = action_table.modifier_actions[convert_click_to_string(event)]
         if not modifier_action then return end  -- meaning the used modifiers do not have an associated action
 
-        local active_limitations = data_util.current_limitations(player)
+        local active_limitations = util.actions.current_limitations(player)
         -- Check whether the selected action is allowed according to its limitations
-        if not data_util.action_allowed(modifier_action.limitations, active_limitations) then return end
+        if not util.actions.allowed(modifier_action.limitations, active_limitations) then return end
 
         third_parameter = modifier_action.name
     end
 
     -- Send the actual event, potentially guarding it if DEV_ACTIVE
-    guarded_event(action_table.handler, {player, tags, third_parameter})
+    util.actions.guard(action_table.handler, {player, tags, third_parameter})
 
     util.messages.refresh(player)  -- give messages a chance to update themselves
 end
@@ -256,7 +195,7 @@ local function handle_dialog_event(event)
     local ui_state = util.globals.ui_state(player)
 
     -- Check if the action is allowed to be carried out by rate limiting
-    if rate_limiting_active(player, event.tick, event.name, 20) then return end
+    if util.actions.rate_limited(player, event.tick, event.name, 20) then return end
 
     if event.name == CUSTOM_EVENTS.open_modal_dialog then
         local listener = dialog_event_cache[event.metadata.dialog]
@@ -361,15 +300,15 @@ local function handle_misc_event(event)
     local player = game.get_player(event.player_index)   ---@cast player -nil
 
     -- Check if the action is allowed to be carried out by rate limiting
-    if rate_limiting_active(player, event.tick, event_name, event_handlers.timeout) then return end
+    if util.actions.rate_limited(player, event.tick, event_name, event_handlers.timeout) then return end
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_handlers.special_handler
-    if special_handler and guarded_event(special_handler, {event}) == false then return end
+    if special_handler and util.actions.guard(special_handler, {event}) == false then return end
 
     -- Send the actual events, potentially guarding them if DEV_ACTIVE
     for _, registered_handler in pairs(event_handlers.registered_handlers) do
-        guarded_event(registered_handler, {player, event})
+        util.actions.guard(registered_handler, {player, event})
     end
 
     if CUSTOM_EVENTS[string_name] then return end  -- don't refresh message for events inside other events

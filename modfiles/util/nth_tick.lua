@@ -1,6 +1,6 @@
 local _nth_tick = {}
 
----@class NthTickEvent: { handler_name: string, metadata: table }
+---@alias NthTickEvent { handler_name: string, metadata: table }
 
 ---@param tick Tick
 local function register_nth_tick_handler(tick)

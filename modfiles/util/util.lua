@@ -9,7 +9,8 @@ local _util = {
     gui = require("util.gui"),
     format = require("util.format"),
     nth_tick = require("util.nth_tick"),
-    porter = require("util.porter")
+    porter = require("util.porter"),
+    actions = require("util.actions")
 }
 
 return _util

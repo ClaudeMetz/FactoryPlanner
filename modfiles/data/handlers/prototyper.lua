@@ -21,14 +21,14 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 
 ---@alias DataType "machines" | "recipes" | "items" | "fuels" | "belts" | "wagons" | "modules" | "beacons"
 
----@class NamedPrototypes<T>: { [string]: T }
----@class NamedPrototypesWithCategory<T>: { [string]: { name: string, members: { [string]: T } } } }
----@class NamedCategory: { name: string, members: { [string]: table } }
+---@alias NamedPrototypes<T> { [string]: T }
+---@alias NamedPrototypesWithCategory<T> { [string]: { name: string, members: { [string]: T } } } }
+---@alias NamedCategory { name: string, members: { [string]: table } }
 ---@alias AnyNamedPrototypes NamedPrototypes | NamedPrototypesWithCategory
 
----@class IndexedPrototypes<T>: { [integer]: T }
----@class IndexedPrototypesWithCategory<T>: { [integer]: { id: integer, name: string, members: { [integer]: T } } }
----@class IndexedCategory: { id: integer, name: string, members: { [integer]: table } }
+---@alias IndexedPrototypes<T> { [integer]: T }
+---@alias IndexedPrototypesWithCategory<T> { [integer]: { id: integer, name: string, members: { [integer]: T } } }
+---@alias IndexedCategory { id: integer, name: string, members: { [integer]: table } }
 ---@alias AnyIndexedPrototypes IndexedPrototypes | IndexedPrototypesWithCategory
 
 ---@class PrototypeLists: { [DataType]: table }
@@ -200,8 +200,8 @@ end
 
 
 -- ** DEFAULTS **
----@class PrototypeDefault: FPPrototype
----@class PrototypeWithCategoryDefault: { [integer]: FPPrototypeWithCategory }
+---@alias PrototypeDefault FPPrototype
+---@alias PrototypeWithCategoryDefault { [integer]: FPPrototypeWithCategory }
 ---@alias AnyPrototypeDefault PrototypeDefault | PrototypeWithCategoryDefault
 
 -- Returns the default prototype for the given type, incorporating the category, if given

@@ -1,12 +1,12 @@
 -- The loader contains the code that runs on_load, pre-caching some data structures that are needed later
 local loader = {}
 
----@class RecipeMap: { [ItemCategoryID]: { [ItemID]: { [RecipeID]: true } } }
+---@alias RecipeMap { [ItemCategoryID]: { [ItemID]: { [RecipeID]: true } } }
 ---@alias ItemCategoryID integer
 ---@alias ItemID integer
 ---@alias RecipeID integer
 
----@class ModuleMap: { [string]: FPModulePrototype }
+---@alias ModuleMap { [string]: FPModulePrototype }
 
 -- ** LOCAL UTIL **
 -- Returns a list of recipe groups in their proper order
@@ -147,8 +147,8 @@ function attribute_generators.machines(machine)
 end
 
 
----@class PrototypeAttributes: { [DataType]: { [integer]: LocalisedString } }
----@class PrototypeAttributesWithCategory: { [DataType]: { [integer]: { [integer]: LocalisedString } } }
+---@alias PrototypeAttributes { [DataType]: { [integer]: LocalisedString } }
+---@alias PrototypeAttributesWithCategory { [DataType]: { [integer]: { [integer]: LocalisedString } } }
 
 -- Generates the attribute strings for some types of prototypes
 ---@return PrototypeAttributes | PrototypeAttributesWithCategory
@@ -187,9 +187,9 @@ local function prototype_attributes()
 end
 
 
----@class MappedPrototypes<T>: { [string]: T }
----@class MappedPrototypesWithCategory<T>: { [string]: { id: integer, name: string, members: { [string]: T } } }
----@class MappedCategory: { id: integer, name: string, members: { [string]: table } }
+---@alias MappedPrototypes<T> { [string]: T }
+---@alias MappedPrototypesWithCategory<T> { [string]: { id: integer, name: string, members: { [string]: T } } }
+---@alias MappedCategory { id: integer, name: string, members: { [string]: table } }
 
 ---@class PrototypeMaps: { [DataType]: table }
 ---@field machines MappedPrototypesWithCategory<FPMachinePrototype>

@@ -153,7 +153,7 @@ local function refresh_subfactory_list(player)
 
         local subfactory_count = Factory.count(context.factory, "Subfactory")
         local tutorial_tt = (player_table.preferences.tutorial_mode)
-            and data_util.generate_tutorial_tooltip("act_on_subfactory", nil, player) or nil
+            and util.actions.tutorial_tooltip("act_on_subfactory", nil, player) or nil
 
         for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
             local selected = (selected_subfactory.id == subfactory.id)
