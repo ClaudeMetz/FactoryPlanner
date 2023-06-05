@@ -61,7 +61,7 @@ function Machine.summarize_effects(self, mining_prod)
     effects["mining_prod"] = mining_prod or nil
 
     self.total_effects = effects
-    self.effects_tooltip = data_util.format_module_effects(effects, false)
+    self.effects_tooltip = util.gui.format_module_effects(effects, false)
 
     Line.summarize_effects(self.parent)
 end

@@ -1,4 +1,4 @@
-local util = {
+local _util = {
     globals = require("util.globals"),
     context = require("util.context"),
     clipboard = require("util.clipboard"),
@@ -13,4 +13,4 @@ local util = {
     porter = require("util.porter")
 }
 
-return util
+return _util

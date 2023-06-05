@@ -220,6 +220,13 @@ local function refresh_player_table(player)
     player_table.clipboard = nil
 end
 
+---@return FPSubfactory?
+local function import_tutorial_subfactory()
+    local imported_tutorial_factory, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
+    if error then return nil end
+    return Factory.get(imported_tutorial_factory --[[@as FPSubfactory]], "Subfactory", 1)
+end
+
 
 local function global_init()
     -- Set up a new save for development if necessary
@@ -242,7 +249,7 @@ local function global_init()
     -- Retain current modset to detect mod changes for subfactories that became invalid
     global.installed_mods = script.active_mods  ---@type ModToVersion
     -- Import the tutorial subfactory so it's 'cached'
-    global.tutorial_subfactory = data_util.import_tutorial_subfactory()
+    global.tutorial_subfactory = import_tutorial_subfactory()
 
     -- Initialize flib's translation module
     translator.on_init()
@@ -277,7 +284,7 @@ local function handle_configuration_change()
     end
 
     global.installed_mods = script.active_mods
-    global.tutorial_subfactory = data_util.import_tutorial_subfactory()
+    global.tutorial_subfactory = import_tutorial_subfactory()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
@@ -313,7 +320,7 @@ script.on_event(defines.events.on_player_created, function(event)
     util.mod_gui.toggle(player)
 
     -- Add the subfactories that are handy for development
-    if DEV_ACTIVE then data_util.add_subfactories_by_string(player, DEV_EXPORT_STRING) end
+    if DEV_ACTIVE then util.porter.add_by_string(player, DEV_EXPORT_STRING) end
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
