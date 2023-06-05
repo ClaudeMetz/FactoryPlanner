@@ -83,7 +83,7 @@ listeners.gui = {
                 if event.button == defines.mouse_button_type.middle then
                     local ui_state = util.globals.ui_state(player)
                     local main_frame = ui_state.main_elements.main_frame
-                    ui_util.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
+                    util.gui.properly_center_frame(player, main_frame, ui_state.main_dialog_dimensions)
                 end
             end)
         },

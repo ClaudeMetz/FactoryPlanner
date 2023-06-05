@@ -107,7 +107,7 @@ function builders.percentage(line, parent_flow, metadata)
     local textfield_percentage = parent_flow.add{type="textfield", text=tostring(relevant_line.percentage),
         tags={mod="fp", on_gui_text_changed="line_percentage", on_gui_confirmed="line_percentage",
         floor_id=line.parent.id, line_id=line.id}, enabled=enabled}
-    ui_util.setup_numeric_textfield(textfield_percentage, true, false)
+    util.gui.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
 end
@@ -346,7 +346,7 @@ function builders.line_comment(line, parent_flow, _)
     local textfield_comment = parent_flow.add{type="textfield", tags={mod="fp", on_gui_text_changed="line_comment",
         floor_id=line.parent.id, line_id=line.id}, text=(line.comment or "")}
         textfield_comment.style.width = 250
-    ui_util.setup_textfield(textfield_comment)
+    util.gui.setup_textfield(textfield_comment)
 end
 
 

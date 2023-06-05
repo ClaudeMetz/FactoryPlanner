@@ -93,7 +93,7 @@ function preference_structures.mb_defaults(preferences, content_frame)
     local beacon_amount = (BEACON_OVERLOAD_ACTIVE) and "1" or tostring(mb_defaults.beacon_count or "")
     local textfield_amount = beacon_amount_flow.add{type="textfield", text=beacon_amount,
         enabled=(not BEACON_OVERLOAD_ACTIVE), tags={mod="fp", on_gui_text_changed="mb_default_beacon_amount"}}
-    ui_util.setup_numeric_textfield(textfield_amount, true, false)
+    util.gui.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 42
 end
 

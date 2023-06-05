@@ -5,39 +5,7 @@ ui_util = {
     switch = {}
 }
 
--- Properly centers the given frame (need width/height parameters cause no API-read exists)
----@param player LuaPlayer
----@param frame LuaGuiElement
----@param dimensions DisplayResolution
-function ui_util.properly_center_frame(player, frame, dimensions)
-    local resolution, scale = player.display_resolution, player.display_scale
-    local x_offset = ((resolution.width - (dimensions.width * scale)) / 2)
-    local y_offset = ((resolution.height - (dimensions.height * scale)) / 2)
-    frame.location = {x_offset, y_offset}
-end
 
----@param textfield LuaGuiElement
-function ui_util.setup_textfield(textfield)
-    textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
-end
-
----@param textfield LuaGuiElement
----@param decimal boolean
----@param negative boolean
-function ui_util.setup_numeric_textfield(textfield, decimal, negative)
-    textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
-    textfield.numeric = true
-    textfield.allow_decimal = (decimal or false)
-    textfield.allow_negative = (negative or false)
-end
-
----@param textfield LuaGuiElement
-function ui_util.select_all(textfield)
-    textfield.focus()
-    textfield.select_all()
-end
 
 
 -- This function is only called when Recipe Book is active, so no need to check for the mod
@@ -55,18 +23,6 @@ function ui_util.open_in_recipebook(player, type, name)
     end
 
     if message then util.messages.raise(player, "error", message, 1) end
-end
-
--- Destroys all GUIs so they are loaded anew the next time they are shown
----@param player LuaPlayer
-function ui_util.reset_player_gui(player)
-    util.mod_gui.destroy(player)  -- mod_gui button
-
-    for _, gui_element in pairs(player.gui.screen.children) do  -- all mod frames
-        if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
-            gui_element.destroy()
-        end
-    end
 end
 
 

@@ -182,9 +182,9 @@ end
 -- ** PICKER DIALOG **
 local function set_appropriate_focus(modal_data)
     if modal_data.amount_defined_by == "amount" then
-        ui_util.select_all(modal_data.modal_elements["item_amount_textfield"])
+        util.gui.select_all(modal_data.modal_elements["item_amount_textfield"])
     else  -- "belts"/"lanes"
-        ui_util.select_all(modal_data.modal_elements["belt_amount_textfield"])
+        util.gui.select_all(modal_data.modal_elements["belt_amount_textfield"])
     end
 end
 
@@ -287,7 +287,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local item_amount = (item and defined_by == "amount") and tostring(item.required_amount.amount) or ""
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
         tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
-    ui_util.setup_numeric_textfield(textfield_amount, true, false)
+    util.gui.setup_numeric_textfield(textfield_amount, true, false)
     textfield_amount.style.width = 90
     modal_elements["item_amount_textfield"] = textfield_amount
 
@@ -298,7 +298,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount.amount) or ""
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
         tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
-    ui_util.setup_numeric_textfield(textfield_belts, true, false)
+    util.gui.setup_numeric_textfield(textfield_belts, true, false)
     textfield_belts.style.width = 85
     textfield_belts.style.left_margin = 4
     modal_elements["belt_amount_textfield"] = textfield_belts
