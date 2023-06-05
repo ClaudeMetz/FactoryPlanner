@@ -61,7 +61,7 @@ local function handle_recipe_click(player, tags, action)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
+        util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
     end
 end
 
@@ -116,7 +116,7 @@ local function handle_machine_click(player, tags, action)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
+        util.open_in_recipebook(player, "entity", line.machine.proto.name)
     end
 end
 
@@ -160,7 +160,7 @@ local function handle_beacon_click(player, tags, action)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+        util.open_in_recipebook(player, "entity", line.beacon.proto.name)
     end
 end
 
@@ -211,7 +211,7 @@ local function handle_module_click(player, tags, action)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "item", module.proto.name)
+        util.open_in_recipebook(player, "item", module.proto.name)
     end
 end
 
@@ -309,7 +309,7 @@ local function handle_item_click(player, tags, action)
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
+        util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -340,7 +340,7 @@ local function handle_fuel_click(player, tags, action)
         util.cursor.add_to_item_combinator(player, fuel.proto, fuel.amount)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
+        util.open_in_recipebook(player, fuel.proto.type, fuel.proto.name)
     end
 end
 

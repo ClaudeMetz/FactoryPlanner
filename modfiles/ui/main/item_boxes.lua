@@ -191,7 +191,7 @@ local function handle_item_button_click(player, tags, action)
         util.cursor.add_to_item_combinator(player, item.proto, amount)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
+        util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 

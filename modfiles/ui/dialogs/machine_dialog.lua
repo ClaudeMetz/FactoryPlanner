@@ -133,7 +133,7 @@ end
 local function handle_fuel_choice(player, tags, _)
     local modal_data = util.globals.modal_data(player)
 
-    local split_id = data_util.split_string(tags.proto_id, "_")
+    local split_id = util.split_string(tags.proto_id, "_")
     modal_data.object.fuel.proto = global.prototypes.fuels[split_id[1]].members[split_id[2]]
 
     refresh_fuel_frame(player)

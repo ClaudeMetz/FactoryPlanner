@@ -58,7 +58,7 @@ function _actions.all_tutorial_tooltips(modifier_actions)
     local action_lines = {}
 
     for modifier_click, modifier_action in pairs(modifier_actions) do
-        local split_modifiers = data_util.split_string(modifier_click, "-")
+        local split_modifiers = util.split_string(modifier_click, "-")
 
         local modifier_string = {""}
         for _, modifier in pairs(fancytable.slice(split_modifiers, 1, -1)) do
@@ -105,7 +105,7 @@ function _actions.guard(handler, arguments)
             return result
         else
             llog(result)
-            game.print({"fp.error_message", "Error: " .. data_util.split_string(result, "\n")[1]})
+            game.print({"fp.error_message", "Error: " .. util.split_string(result, "\n")[1]})
             game.reload_mods()
         end
     else

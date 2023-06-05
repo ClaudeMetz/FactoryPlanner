@@ -355,7 +355,7 @@ local function handle_recipe_click(player, tags, action)
         end
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "recipe", recipe.proto.name)
+        util.open_in_recipebook(player, "recipe", recipe.proto.name)
     end
 end
 
@@ -367,7 +367,7 @@ local function handle_module_click(player, tags, action)
     local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
 
     if action == "recipebook" then
-        ui_util.open_in_recipebook(player, "item", module.proto.name)
+        util.open_in_recipebook(player, "item", module.proto.name)
     end
 end
 
@@ -380,7 +380,7 @@ local function handle_machine_click(player, tags, action)
         util.cursor.set_entity(player, line, line.machine)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
+        util.open_in_recipebook(player, "entity", line.machine.proto.name)
     end
 end
 
@@ -393,7 +393,7 @@ local function handle_beacon_click(player, tags, action)
         util.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+        util.open_in_recipebook(player, "entity", line.beacon.proto.name)
     end
 end
 
@@ -406,7 +406,7 @@ local function handle_item_click(player, tags, action)
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)
 
     elseif action == "recipebook" then
-        ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
+        util.open_in_recipebook(player, item.proto.type, item.proto.name)
     end
 end
 
