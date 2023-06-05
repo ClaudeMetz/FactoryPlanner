@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash when shift-clicking the add subfactory button with no existing subfactories
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.67

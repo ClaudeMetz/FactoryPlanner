@@ -354,8 +354,10 @@ local function open_picker_dialog(player, modal_data)
     modal_data.lob = settings.belts_or_lanes
 
     local subfactory = util.globals.context(player).subfactory
-    local class_name = modal_data.item_category:gsub("^%l", string.upper)
-    modal_data.item = Subfactory.get(subfactory, class_name, modal_data.item_id)
+    if subfactory then
+        local class_name = modal_data.item_category:gsub("^%l", string.upper)
+        modal_data.item = Subfactory.get(subfactory, class_name, modal_data.item_id)
+    end
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
