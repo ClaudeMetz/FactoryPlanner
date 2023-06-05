@@ -377,7 +377,7 @@ local function handle_machine_click(player, tags, action)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if action == "put_into_cursor" then
-        ui_util.put_entity_into_cursor(player, line, line.machine)
+        util.cursor.set_entity(player, line, line.machine)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.machine.proto.name)
@@ -390,7 +390,7 @@ local function handle_beacon_click(player, tags, action)
     -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
 
     if action == "put_into_cursor" then
-        ui_util.put_entity_into_cursor(player, line, line.beacon)
+        util.cursor.set_entity(player, line, line.beacon)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, "entity", line.beacon.proto.name)
@@ -403,7 +403,7 @@ local function handle_item_click(player, tags, action)
     local item = (tags.class == "Fuel") and line.machine.fuel or Line.get(line, tags.class, tags.item_id)
 
     if action == "put_into_cursor" then
-        ui_util.add_item_to_cursor_combinator(player, item.proto, item.amount)
+        util.cursor.add_to_item_combinator(player, item.proto, item.amount)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)

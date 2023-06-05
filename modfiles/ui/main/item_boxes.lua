@@ -188,7 +188,7 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "put_into_cursor" then
         local amount = (not floor_items_active and tags.category == "product")
             and Item.required_amount(item) or item.amount
-        ui_util.add_item_to_cursor_combinator(player, item.proto, amount)
+        util.cursor.add_to_item_combinator(player, item.proto, amount)
 
     elseif action == "recipebook" then
         ui_util.open_in_recipebook(player, item.proto.type, item.proto.name)
@@ -207,7 +207,7 @@ local function put_ingredients_into_cursor(player, _, _)
         if ingredient.proto.type == "item" then ingredients[ingredient.proto.name] = ingredient.amount end
     end
 
-    local success = ui_util.put_item_combinator_into_cursor(player, ingredients)
+    local success = util.cursor.set_item_combinator(player, ingredients)
     if success then main_dialog.toggle(player) end
 end
 
