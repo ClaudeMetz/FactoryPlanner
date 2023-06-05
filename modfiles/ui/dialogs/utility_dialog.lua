@@ -276,7 +276,7 @@ local function handle_item_request(player, _, _)
 end
 
 local function handle_item_handcraft(player, tags, event)
-    local fly_text = ui_util.create_flying_text
+    local fly_text = util.cursor.create_flying_text
     if not player.character then fly_text(player, {"fp.utility_no_character"}); return end
 
     local desired_amount = (event.button == defines.mouse_button_type.right) and 5 or 1
@@ -311,7 +311,7 @@ end
 
 local function store_blueprint(player, _, _)
     local ui_state = util.globals.ui_state(player)
-    local fly_text = ui_util.create_flying_text
+    local fly_text = util.cursor.create_flying_text
 
     if player.is_cursor_empty() then
         fly_text(player, {"fp.utility_cursor_empty"}); return
@@ -380,7 +380,7 @@ listeners.gui = {
             timeout = 20,
             handler = (function(player, _, _)
                 local missing_items = util.globals.modal_data(player).missing_items
-                local success = ui_util.put_item_combinator_into_cursor(player, missing_items)
+                local success = util.cursor.set_item_combinator(player, missing_items)
                 if success then util.raise.close_dialog(player, "cancel"); main_dialog.toggle(player) end
             end)
         },
