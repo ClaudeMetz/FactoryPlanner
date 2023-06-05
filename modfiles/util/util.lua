@@ -8,6 +8,7 @@ local util = {
     mod_gui = require("util.mod_gui"),
     cursor = require("util.cursor"),
     gui = require("util.gui"),
+    format = require("util.format"),
 }
 
 return util

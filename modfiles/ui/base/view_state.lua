@@ -31,7 +31,7 @@ end
 
 local processors = {}  -- individual functions for each kind of view state
 function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
-    local number = ui_util.format_number(raw_amount, metadata.formatting_precision)
+    local number = util.format.number(raw_amount, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
     local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}
@@ -45,7 +45,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
 
     local divisor = (item_proto.type == "fluid") and 50 or 1
     local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
-    local number = ui_util.format_number(raw_number, metadata.formatting_precision)
+    local number = util.format.number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
     local tooltip = {"", number, " ", {"fp.pl_" .. metadata.belt_or_lane, plural_parameter}}
@@ -60,7 +60,7 @@ function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
     local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
         or metadata.cargo_wagon_capactiy * item_proto.stack_size
     local wagon_count = raw_amount / wagon_capacity
-    local number = ui_util.format_number(wagon_count, metadata.formatting_precision)
+    local number = util.format.number(wagon_count, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
     local tooltip = {"", number, " ", {"fp.pl_wagon", plural_parameter}, "/", metadata.timescale_string}
@@ -73,7 +73,7 @@ function processors.items_per_second_per_machine(metadata, raw_amount, item_prot
     if item_proto.type == "entity" then return nil, nil end  -- raw ores don't make sense here
 
     local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil((machine_count or 1) - 0.001))
-    local number = ui_util.format_number(raw_number, metadata.formatting_precision)
+    local number = util.format.number(raw_number, metadata.formatting_precision)
 
     local plural_parameter = (number == "1") and 1 or 2
     local type_string = (item_proto.type == "fluid") and {"fp.l_fluid"} or {"fp.pl_item", plural_parameter}

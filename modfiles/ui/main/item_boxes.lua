@@ -77,7 +77,7 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
         local satisfaction_line = ""  ---@type LocalisedString
         if not shows_floor_items and category == "product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
-            local percentage_string = ui_util.format_number(satisfied_percentage, 3)
+            local percentage_string = util.format.number(satisfied_percentage, 3)
             satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
 
             if satisfied_percentage <= 0 then style = "flib_slot_button_red"

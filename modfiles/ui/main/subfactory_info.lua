@@ -91,12 +91,12 @@ local function refresh_subfactory_info(player)
 
         -- Power + Pollution
         local label_power = subfactory_info_elements.power_label
-        label_power.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.energy_consumption, "W", 3)}
-        label_power.tooltip = ui_util.format_SI_value(subfactory.energy_consumption, "W", 5)
+        label_power.caption = {"fp.bold_label", util.format.SI_value(subfactory.energy_consumption, "W", 3)}
+        label_power.tooltip = util.format.SI_value(subfactory.energy_consumption, "W", 5)
 
         local label_pollution = subfactory_info_elements.pollution_label
-        label_pollution.caption = {"fp.bold_label", ui_util.format_SI_value(subfactory.pollution, "P/m", 3)}
-        label_pollution.tooltip = ui_util.format_SI_value(subfactory.pollution, "P/m", 5)
+        label_pollution.caption = {"fp.bold_label", util.format.SI_value(subfactory.pollution, "P/m", 3)}
+        label_pollution.tooltip = util.format.SI_value(subfactory.pollution, "P/m", 5)
 
         -- Timescale
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
@@ -107,7 +107,7 @@ local function refresh_subfactory_info(player)
         local custom_prod_set = subfactory.mining_productivity
 
         if not custom_prod_set then  -- only do this calculation when it'll actually be shown
-            local prod_bonus = ui_util.format_number((player.force.mining_drill_productivity_bonus * 100), 4)
+            local prod_bonus = util.format.number((player.force.mining_drill_productivity_bonus * 100), 4)
             subfactory_info_elements.prod_bonus_label.caption = {"fp.bold_label", prod_bonus .. "%"}
         end
         subfactory_info_elements.prod_bonus_label.visible = not custom_prod_set
