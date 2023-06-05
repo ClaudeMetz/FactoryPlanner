@@ -59,7 +59,7 @@ require("ui.base.compact_dialog")
 require("ui.base.modal_dialog")
 
 -- Not sure yet how to make these not global variables (filled via event_handler)
-TUTORIAL_TOOLTIPS = {}
+TUTORIAL_TOOLTIPS = {}  ---@type { [string]: LocalisedString }
 GLOBAL_HANDLERS = {}
 
 require("data.init")
@@ -73,10 +73,10 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 
 ---@class Event
 ---@field name defines.events
----@field tick uint
+---@field tick Tick
 
 ---@class GuiEvent : Event
----@field player_index uint
+---@field player_index PlayerIndex
 
 
 ---@alias Timescale 1 | 60 | 3600

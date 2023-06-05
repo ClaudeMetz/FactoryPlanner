@@ -3,8 +3,8 @@
 
 local migrator = {}
 
----@class MigrationMasterList: { [integer]: { version: VersionString, migration: Migration } }
----@class Migration: { global: function, player_table: function, subfactory: function, packed_subfactory: function }
+---@alias MigrationMasterList { [integer]: { version: VersionString, migration: Migration } }
+---@alias Migration { global: function, player_table: function, subfactory: function, packed_subfactory: function }
 ---@alias MigrationObject PlayerTable | FPSubfactory | FPPackedSubfactory
 
 -- Returns a table containing all existing migrations in order

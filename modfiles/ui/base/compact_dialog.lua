@@ -244,7 +244,7 @@ local function refresh_compact_subfactory(player)
     local item_buttons = compact_elements.item_buttons
 
     if util.globals.preferences(player).tutorial_mode then
-        data_util.add_tutorial_tooltips(metadata, player, {
+        util.actions.tutorial_tooltip_list(metadata, player, {
             recipe_tutorial_tt = "act_on_compact_recipe",
             module_tutorial_tt = "act_on_compact_module",
             machine_tutorial_tt = "act_on_compact_machine",

@@ -617,7 +617,7 @@ end
 ---@field is_rocket_part boolean
 ---@field temperature number?
 
----@class RelevantItems: { [ItemType]: { [ItemName]: RelevantItem } }
+---@alias RelevantItems { [ItemType]: { [ItemName]: RelevantItem } }
 
 -- Returns all relevant items and fluids
 ---@return NamedPrototypesWithCategory<FPItemPrototype>

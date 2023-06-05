@@ -9,9 +9,9 @@ local generator_util = {}
 ---@field temperature number?
 ---@field ignore_productivity boolean?
 
----@class IndexedItemList: { [ItemType]: { [ItemName]: { index: number, item: FormattedRecipeItem } } }
----@class ItemList: { [ItemType]: { [ItemName]: FormattedRecipeItem } }
----@class ItemTypeCounts: { items: number, fluids: number }
+---@alias IndexedItemList { [ItemType]: { [ItemName]: { index: number, item: FormattedRecipeItem } } }
+---@alias ItemList { [ItemType]: { [ItemName]: FormattedRecipeItem } }
+---@alias ItemTypeCounts { items: number, fluids: number }
 
 -- Determines the actual amount of items that a recipe product or ingredient equates to
 ---@param base_item Ingredient | Product

@@ -190,7 +190,7 @@ function utility_structures.blueprints(player, modal_data)
     table_blueprints.clear()
 
     local tutorial_tt = (util.globals.preferences(player).tutorial_mode)
-        and data_util.generate_tutorial_tooltip("act_on_blueprint", nil, player) or nil
+        and util.actions.tutorial_tooltip("act_on_blueprint", nil, player) or nil
 
     local function format_signal(signal)
         local type = (signal.type == "virtual") and "virtual-signal" or signal.type

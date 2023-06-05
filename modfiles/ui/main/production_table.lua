@@ -17,7 +17,7 @@ local function generate_metadata(player)
     }
 
     if preferences.tutorial_mode then
-        data_util.add_tutorial_tooltips(metadata, player, {
+        util.actions.tutorial_tooltip_list(metadata, player, {
             recipe_tutorial_tt = "act_on_line_recipe",
             machine_tutorial_tt = "act_on_line_machine",
             beacon_tutorial_tt = "act_on_line_beacon",
