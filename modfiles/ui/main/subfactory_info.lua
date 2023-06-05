@@ -215,7 +215,7 @@ local function build_subfactory_info(player)
     local textfield_prod_bonus = flow_mining_prod.add{type="textfield",
         tags={mod="fp", on_gui_text_changed="mining_prod_override", on_gui_confirmed="mining_prod_override"}}
     textfield_prod_bonus.style.size = {60, 26}
-    ui_util.setup_numeric_textfield(textfield_prod_bonus, true, true)
+    util.gui.setup_numeric_textfield(textfield_prod_bonus, true, true)
     main_elements.subfactory_info["prod_bonus_override_textfield"] = textfield_prod_bonus
 
     local label_percentage = flow_mining_prod.add{type="label", caption={"fp.bold_label", "%"}}

@@ -283,7 +283,7 @@ local function handle_configuration_change()
     prototyper.util.build_translation_dictionaries()
 
     for index, player in pairs(game.players) do
-        ui_util.reset_player_gui(player)  -- Destroys all existing GUI's
+        util.gui.reset_player(player)  -- Destroys all existing GUI's
         util.mod_gui.toggle(player)  -- Recreates the mod-GUI if necessary
 
         -- Update factory and archive calculations in case prototypes changed in a relevant way

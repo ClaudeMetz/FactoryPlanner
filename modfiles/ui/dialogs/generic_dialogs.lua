@@ -93,7 +93,7 @@ function elements.textfield.create(table, field, modal_elements)
     local textfield = table.add{type="textfield", text=field.text,
         tags={mod="fp", on_gui_text_changed="change_option", field_name=field.name}}
     textfield.style.width = (field.width or 180)
-    if field.focus then ui_util.select_all(textfield) end
+    if field.focus then util.gui.select_all(textfield) end
 
     modal_elements[field.name] = textfield
 end
@@ -109,8 +109,8 @@ function elements.numeric_textfield.create(table, field, modal_elements)
     local textfield = table.add{type="textfield", text=tostring(field.text or ""),
         tags={mod="fp", on_gui_text_changed="change_option", field_name=field.name}}
     textfield.style.width = (field.width or 75)
-    ui_util.setup_numeric_textfield(textfield, true, false)
-    if field.focus then ui_util.select_all(textfield) end
+    util.gui.setup_numeric_textfield(textfield, true, false)
+    if field.focus then util.gui.select_all(textfield) end
 
     modal_elements[field.name] = textfield
 end

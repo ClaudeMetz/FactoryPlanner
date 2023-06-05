@@ -36,7 +36,7 @@ local function add_module_frame(parent_flow, module, module_filters, empty_slots
 
     local textfield = frame_module.add{type="textfield", name="fp_textfield_module_amount", enabled=(maximum_value ~= 1),
         text=tostring(slider_value), tags={mod="fp", on_gui_text_changed="module_amount", module_id=module_id}}
-    ui_util.setup_numeric_textfield(textfield, false, false)
+    util.gui.setup_numeric_textfield(textfield, false, false)
     textfield.style.width = 40
 end
 

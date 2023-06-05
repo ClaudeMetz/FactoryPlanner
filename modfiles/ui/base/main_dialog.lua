@@ -86,7 +86,7 @@ function main_dialog.rebuild(player, default_visibility)
     local dimensions = determine_main_dimensions(player)
     ui_state.main_dialog_dimensions = dimensions
     frame_main_dialog.style.size = dimensions
-    ui_util.properly_center_frame(player, frame_main_dialog, dimensions)
+    util.gui.properly_center_frame(player, frame_main_dialog, dimensions)
 
 
     -- Create the actual dialog structure
@@ -171,7 +171,7 @@ listeners.gui = {
             name = "mod_gui_toggle_interface",
             handler = (function(player, _, _)
                 if DEV_ACTIVE then  -- implicit mod reload for easier development
-                    ui_util.reset_player_gui(player)  -- destroys all FP GUIs
+                    util.gui.reset_player(player)  -- destroys all FP GUIs
                     util.mod_gui.toggle(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
                     game.print("Mods reloaded")

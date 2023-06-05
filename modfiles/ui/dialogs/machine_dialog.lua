@@ -99,7 +99,7 @@ local function add_limit_frame(parent_frame, modal_elements)
         tooltip={"fp.machine_limit_tt"}, style="heading_3_label"}
     local textfield_limit = flow_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit"}}
     textfield_limit.style.width = 45
-    ui_util.setup_numeric_textfield(textfield_limit, true, false)
+    util.gui.setup_numeric_textfield(textfield_limit, true, false)
     modal_elements["limit_textfield"] = textfield_limit
 
     local flow_force_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}

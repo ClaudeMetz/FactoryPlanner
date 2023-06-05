@@ -65,7 +65,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
         local tags = (dialog_type == "import")
             and {mod="fp", on_gui_text_changed="import_string", on_gui_confirmed="import_string"} or nil
         local textfield = flow.add{type="textfield", tags=tags}
-        ui_util.setup_textfield(textfield)
+        util.gui.setup_textfield(textfield)
         textfield.style.width = 0  -- needs to be set to 0 so stretching works
         textfield.style.minimal_width = 280
         textfield.style.horizontally_stretchable = true
@@ -167,7 +167,7 @@ local function import_subfactories(player, _, _)
 
     if error ~= nil then
         add_info_label({"fp.error_message", {"fp.importer_" .. error}})
-        ui_util.select_all(textfield_export_string)
+        util.gui.select_all(textfield_export_string)
     else
         ---@cast import_factory -nil
 
@@ -215,7 +215,7 @@ local function export_subfactories(player, _, _)
     local export_string = data_util.porter.get_export_string(subfactories_to_export)
 
     modal_elements.export_textfield.text = export_string
-    ui_util.select_all(modal_elements.export_textfield)
+    util.gui.select_all(modal_elements.export_textfield)
 end
 
 
@@ -224,7 +224,7 @@ local function open_import_dialog(_, modal_data)
     set_dialog_submit_button(modal_elements, false, "import_string")
 
     add_textfield_and_button(modal_elements, "import", false, false)
-    ui_util.select_all(modal_elements.import_textfield)
+    util.gui.select_all(modal_elements.import_textfield)
 end
 
 -- Imports the selected subfactories into the player's main factory

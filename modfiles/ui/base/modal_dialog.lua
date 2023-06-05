@@ -31,7 +31,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
                 tags={mod="fp", on_gui_text_changed="modal_searchfield"}}
             searchfield.style.width = 140
             searchfield.style.top_margin = -3
-            ui_util.setup_textfield(searchfield)
+            util.gui.setup_textfield(searchfield)
             modal_elements.search_textfield = searchfield
             modal_dialog.set_searchfield_state(player)
 
@@ -295,7 +295,7 @@ listeners.gui = {
         {
             name = "focus_modal_searchfield",
             handler = (function(player, _, _)
-                ui_util.select_all(util.globals.modal_elements(player).search_textfield)
+                util.gui.select_all(util.globals.modal_elements(player).search_textfield)
             end)
         }
     },
@@ -358,7 +358,7 @@ listeners.misc = {
 
         if ui_state.modal_dialog_type ~= nil then
             local textfield_search = ui_state.modal_data.modal_elements.search_textfield
-            if textfield_search then ui_util.select_all(textfield_search) end
+            if textfield_search then util.gui.select_all(textfield_search) end
         end
     end)
 }
