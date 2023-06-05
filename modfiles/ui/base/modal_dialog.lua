@@ -189,7 +189,7 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
 
     -- Unregister the delayed search handler if present
     local search_tick = ui_state.modal_data.next_search_tick
-    if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
+    if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
 
     ui_state.modal_dialog_type = nil
     ui_state.modal_data = nil
@@ -306,14 +306,14 @@ listeners.gui = {
             handler = (function(player, _, metadata)
                 local modal_data = util.globals.modal_data(player)
                 local search_tick = modal_data.search_tick
-                if search_tick ~= nil then data_util.nth_tick.remove(search_tick) end
+                if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
 
                 local search_term = metadata.text:gsub("^%s*(.-)%s*$", "%1"):lower()
                 GLOBAL_HANDLERS[modal_data.search_handler_name](player, search_term)
 
                 -- Set up delayed search update to circumvent issues caused by rate limiting
                 local desired_tick = game.tick + MAGIC_NUMBERS.modal_search_rate_limit
-                modal_data.next_search_tick = data_util.nth_tick.add(desired_tick,
+                modal_data.next_search_tick = util.nth_tick.register(desired_tick,
                     "run_delayed_modal_search", {player_index=player.index})
             end)
         }
