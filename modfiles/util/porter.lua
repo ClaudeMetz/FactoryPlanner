@@ -133,4 +133,18 @@ function _porter.format_modset_diff(old_modset)
     return (table_size(tooltip) == 2) and "" or tooltip
 end
 
+-- Adds given export_string-subfactories to the current factory
+---@param player LuaPlayer
+---@param export_string ExportString
+function _porter.add_by_string(player, export_string)
+    local context = util.globals.context(player)
+    local first_subfactory = Factory.import_by_string(context.factory, export_string)
+    util.context.set_subfactory(player, first_subfactory)
+
+    for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
+        if not subfactory.valid then Subfactory.repair(subfactory, player) end
+        solver.update(player, subfactory)
+    end
+end
+
 return _porter

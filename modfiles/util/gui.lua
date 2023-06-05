@@ -46,4 +46,36 @@ function _gui.reset_player(player)
     end
 end
 
+-- Formats the given effects for use in a tooltip
+---@param effects ModuleEffects
+---@param limit_effects boolean
+---@return LocalisedString
+function _gui.format_module_effects(effects, limit_effects)
+    local tooltip_lines, effect_applies = {"", "\n"}, false
+    local lower_bound, upper_bound = MAGIC_NUMBERS.effects_lower_bound, MAGIC_NUMBERS.effects_upper_bound
+
+    for effect_name, effect_value in pairs(effects) do
+        if effect_value ~= 0 then
+            effect_applies = true
+            local capped_indication = ""  ---@type LocalisedString
+
+            if limit_effects then
+                if effect_name == "productivity" and effect_value < 0 then
+                    effect_value, capped_indication = 0, {"fp.effect_maxed"}
+                elseif effect_value < lower_bound then
+                    effect_value, capped_indication = lower_bound, {"fp.effect_maxed"}
+                elseif effect_value > upper_bound then
+                    effect_value, capped_indication = upper_bound, {"fp.effect_maxed"}
+                end
+            end
+
+            -- Force display of either a '+' or '-', also round the result
+            local display_value = ("%+d"):format(math.floor((effect_value * 100) + 0.5))
+            table.insert(tooltip_lines, {"fp.effect_line", {"fp." .. effect_name}, display_value, capped_indication})
+        end
+    end
+
+    return (effect_applies) and tooltip_lines or ""
+end
+
 return _gui

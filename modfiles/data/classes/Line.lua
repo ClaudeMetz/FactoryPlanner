@@ -251,15 +251,30 @@ function Line.summarize_effects(self)
         end
     end
     self.total_effects = effects
-    self.effects_tooltip = data_util.format_module_effects(effects, true)
+    self.effects_tooltip = util.gui.format_module_effects(effects, true)
 end
 
+
+-- Checks whether the given recipe's products are used on the given floor
+-- The triple loop is crappy, but it's the simplest way to check
+local function check_product_compatibiltiy(floor, recipe)
+    for _, product in pairs(recipe.proto.products) do
+        for _, line in pairs(Floor.get_all(floor, "Line")) do
+            for _, ingredient in pairs(Line.get_all(line, "Ingredient")) do
+                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
 
 function Line.paste(self, object)
     if object.class == "Line" then
         if self.parent.level > 1 then  -- make sure the recipe is allowed on this floor
             local relevant_line = (object.subfloor) and object.subfloor.defining_line or object
-            if not data_util.check_product_compatibiltiy(self.parent, relevant_line.recipe) then
+            if not check_product_compatibiltiy(self.parent, relevant_line.recipe) then
                 return false, "recipe_irrelevant"  -- found no use for the recipe's products
             end
         end

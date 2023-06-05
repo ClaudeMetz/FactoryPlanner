@@ -43,7 +43,7 @@ function Module.summarize_effects(self)
         effects[name] = effect.bonus * self.amount
     end
     self.total_effects = effects
-    self.effects_tooltip = data_util.format_module_effects(effects, false)
+    self.effects_tooltip = util.gui.format_module_effects(effects, false)
 end
 
 
