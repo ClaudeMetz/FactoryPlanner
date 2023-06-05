@@ -130,9 +130,9 @@ local function create_filter_box(modal_data)
     label_filters.style.left_margin = 4
 
     local flow_filter_switches = table_filters.add{type="flow", direction="vertical"}
-    util.switch_helper.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
+    util.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="disabled"},
         modal_data.filters.disabled, {"fp.unresearched_recipes"}, nil, false)
-    util.switch_helper.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
+    util.gui.switch.add_on_off(flow_filter_switches, "toggle_recipe_filter", {filter_name="hidden"},
         modal_data.filters.hidden, {"fp.hidden_recipes"}, nil, false)
 end
 
@@ -243,7 +243,7 @@ end
 
 
 local function handle_filter_change(player, tags, event)
-    local boolean_state = util.switch_helper.convert_to_boolean(event.element.switch_state)
+    local boolean_state = util.gui.switch.convert_to_boolean(event.element.switch_state)
     util.globals.modal_data(player).filters[tags.filter_name] = boolean_state
     util.globals.preferences(player).recipe_filters[tags.filter_name] = boolean_state
 

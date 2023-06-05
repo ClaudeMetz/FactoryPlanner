@@ -63,7 +63,7 @@ local function refresh_limit_elements(player)
 
     local machine = modal_data.object
     textfield.text = tostring(machine.limit or "")
-    switch.switch_state = util.switch_helper.convert_to_state(machine.force_limit)
+    switch.switch_state = util.gui.switch.convert_to_state(machine.force_limit)
     switch.enabled = (machine.limit ~= nil)
 end
 
@@ -105,7 +105,7 @@ local function add_limit_frame(parent_frame, modal_elements)
     local flow_force_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     flow_force_limit.add{type="label", caption={"fp.info_label", {"fp.machine_force_limit"}},
         tooltip={"fp.machine_force_limit_tt"}, style="heading_3_label"}
-    local switch_force_limit = util.switch_helper.add_on_off(flow_force_limit, "machine_force_limit", {}, "left")
+    local switch_force_limit = util.gui.switch.add_on_off(flow_force_limit, "machine_force_limit", {}, "left")
     modal_elements["force_limit_switch"] = switch_force_limit
 end
 
@@ -152,7 +152,7 @@ end
 local function change_machine_force_limit(player, _, event)
     local modal_data = util.globals.modal_data(player)
 
-    local switch_state = util.switch_helper.convert_to_boolean(event.element.switch_state)
+    local switch_state = util.gui.switch.convert_to_boolean(event.element.switch_state)
     modal_data.object.force_limit = switch_state
 
     refresh_limit_elements(player)
