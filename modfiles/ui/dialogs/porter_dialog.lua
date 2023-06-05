@@ -146,7 +146,7 @@ local function import_subfactories(player, _, _)
     local textfield_export_string = modal_elements.import_textfield
 
     -- The imported subfactories will be temporarily contained in a factory object
-    local import_factory, error = data_util.porter.get_subfactories(textfield_export_string.text)
+    local import_factory, error = util.porter.process_export_string(textfield_export_string.text)
 
     local function add_info_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
@@ -185,7 +185,7 @@ local function import_subfactories(player, _, _)
         if any_invalid_subfactories then
             modal_data.export_modset = import_factory.export_modset
 
-            local diff_tooltip = data_util.porter.format_modset_diff(import_factory.export_modset)
+            local diff_tooltip = util.porter.format_modset_diff(import_factory.export_modset)
             if diff_tooltip ~= "" then
                 modal_elements.info_label.caption = {"fp.info_label", {"fp.import_instruction_2"}}
                 modal_elements.info_label.tooltip = diff_tooltip
@@ -212,7 +212,7 @@ local function export_subfactories(player, _, _)
             table.insert(subfactories_to_export, subfactory)
         end
     end
-    local export_string = data_util.porter.get_export_string(subfactories_to_export)
+    local export_string = util.porter.generate_export_string(subfactories_to_export)
 
     modal_elements.export_textfield.text = export_string
     util.gui.select_all(modal_elements.export_textfield)

@@ -175,7 +175,7 @@ listeners.gui = {
                     util.mod_gui.toggle(player)  -- fixes the mod gui button after its been destroyed
                     game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
                     game.print("Mods reloaded")
-                    data_util.nth_tick.add((game.tick + 1), "interface_toggle", {player_index=player.index})
+                    util.nth_tick.register((game.tick + 1), "interface_toggle", {player_index=player.index})
                 else  -- call the interface toggle function directly
                     interface_toggle({player_index=player.index})
                 end

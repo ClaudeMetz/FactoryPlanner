@@ -56,7 +56,7 @@ local function archive_subfactory(player, _, _)
 
     -- Reset deletion if a deleted subfactory is un-archived
     if archive_open and subfactory.tick_of_deletion then
-        data_util.nth_tick.remove(subfactory.tick_of_deletion)
+        util.nth_tick.cancel(subfactory.tick_of_deletion)
         subfactory.tick_of_deletion = nil
     end
 
@@ -311,14 +311,14 @@ function subfactory_list.delete_subfactory(player)
     if subfactory == nil then return end  -- prevent crashes due to multiplayer latency
 
     if ui_state.flags.archive_open then
-        if subfactory.tick_of_deletion then data_util.nth_tick.remove(subfactory.tick_of_deletion) end
+        if subfactory.tick_of_deletion then util.nth_tick.cancel(subfactory.tick_of_deletion) end
 
         local factory = ui_state.context.factory
         local removed_gui_position = Factory.remove(factory, subfactory)
         refresh_after_subfactory_deletion(player, factory, removed_gui_position)
     else
         local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.subfactory_deletion_delay
-        local actual_tick_of_deletion = data_util.nth_tick.add(desired_tick_of_deletion,
+        local actual_tick_of_deletion = util.nth_tick.register(desired_tick_of_deletion,
             "delete_subfactory_for_good", {player_index=player.index, subfactory=subfactory})
         subfactory.tick_of_deletion = actual_tick_of_deletion
 

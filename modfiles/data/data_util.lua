@@ -1,8 +1,4 @@
-local migrate_export_table = require("data.handlers.migrator").migrate_export_table
-
 data_util = {
-    nth_tick = {},
-    porter = {}
 }
 
 
@@ -30,7 +26,7 @@ function data_util.add_subfactories_by_string(player, export_string)
 end
 
 function data_util.import_tutorial_subfactory()
-    local imported_tutorial_factory, error = data_util.porter.get_subfactories(TUTORIAL_EXPORT_STRING)
+    local imported_tutorial_factory, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
     return (not error) and Factory.get(imported_tutorial_factory, "Subfactory", 1) or nil
 end
 
@@ -141,161 +137,4 @@ function data_util.add_tutorial_tooltips(data, player, action_list)
     for reference_name, action_name in pairs(action_list) do
         data[reference_name] = data_util.generate_tutorial_tooltip(action_name, active_limitations, nil)
     end
-end
-
-
--- ** NTH_TICK **
----@class NthTickEvent: { handler_name: string, metadata: table }
-
-local function register_nth_tick_handler(tick)
-    script.on_nth_tick(tick, function(nth_tick_data)
-        local event_data = global.nth_tick_events[nth_tick_data.nth_tick]
-        local handler = GLOBAL_HANDLERS[event_data.handler_name]
-        handler(event_data.metadata)
-        data_util.nth_tick.remove(tick)
-    end)
-end
-
-function data_util.nth_tick.add(desired_tick, handler_name, metadata)
-    local actual_tick = desired_tick
-    -- Search until the next free nth_tick is found
-    while (global.nth_tick_events[actual_tick] ~= nil) do
-        actual_tick = actual_tick + 1
-    end
-
-    global.nth_tick_events[actual_tick] = {handler_name=handler_name, metadata=metadata}
-    register_nth_tick_handler(actual_tick)
-
-    return actual_tick  -- let caller know which tick they actually got
-end
-
-function data_util.nth_tick.remove(tick)
-    script.on_nth_tick(tick, nil)
-    global.nth_tick_events[tick] = nil
-end
-
-function data_util.nth_tick.register_all()
-    if not global.nth_tick_events then return end
-    for tick, _ in pairs(global.nth_tick_events) do
-        register_nth_tick_handler(tick)
-    end
-end
-
-
--- ** PORTER **
--- Converts the given subfactories into a factory exchange string
-function data_util.porter.get_export_string(subfactories)
-    local export_table = {
-        -- This can use the global mod_version since it's only called for migrated, valid subfactories
-        mod_version = global.mod_version,
-        export_modset = global.installed_mods,
-        subfactories = {}
-    }
-
-    for _, subfactory in pairs(subfactories) do
-        table.insert(export_table.subfactories, Subfactory.pack(subfactory))
-    end
-
-    local export_string = game.encode_string(game.table_to_json(export_table))
-    return export_string
-end
-
----@class ExportTable
----@field mod_version VersionString
----@field subfactories FPPackedSubfactory[]
-
--- Converts the given factory exchange string into a temporary Factory
-function data_util.porter.get_subfactories(export_string)
-    local export_table = nil
-
-    if not pcall(function()
-        export_table = game.json_to_table(game.decode_string(export_string) --[[@as string]])
-        assert(type(export_table) == "table")
-    end) then return nil, "decoding_failure" end
-
-    if not pcall(function()
-        migrate_export_table(export_table)
-    end) then return nil, "migration_failure" end
-
-    local import_factory = Factory.init()
-    if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that's too many slow pcalls
-        for _, packed_subfactory in pairs(export_table.subfactories) do
-            local unpacked_subfactory = Subfactory.unpack(packed_subfactory)
-
-            -- The imported subfactories will be temporarily contained in a factory, so they
-            -- can be validated and moved to the appropriate 'real' factory easily
-            Factory.add(import_factory, unpacked_subfactory)
-
-            -- Validate the subfactory to both add the valid-attributes to all the objects
-            -- and potentially un-simplify the prototypes that came in packed
-            Subfactory.validate(unpacked_subfactory)
-        end
-
-        -- Include the modset at export time to be displayed to the user if a subfactory is invalid
-        import_factory.export_modset = export_table.export_modset
-
-    end) then return nil, "unpacking_failure" end
-
-    -- This is not strictly a decoding failure, but close enough
-    if Factory.count(import_factory, "Subfactory") == 0 then return nil, "decoding_failure" end
-
-    return import_factory, nil
-end
-
--- Creates a nice tooltip laying out which mods were added, removed and updated since the subfactory became invalid
-function data_util.porter.format_modset_diff(old_modset)
-    if not old_modset then return "" end
-
-    local changes = {added={}, removed={}, updated={}}
-    local new_modset = script.active_mods
-
-    -- Determine changes by running through both sets of mods once each
-    for name, current_version in pairs(new_modset) do
-        local old_version = old_modset[name]
-        if not old_version then
-            changes.added[name] = current_version
-        elseif old_version ~= current_version then
-            changes.updated[name] = {old=old_version, current=current_version}
-        end
-    end
-
-    for name, old_version in pairs(old_modset) do
-        if not new_modset[name] then
-            changes.removed[name] = old_version
-        end
-    end
-
-    -- Compose tooltip from all three types of changes
-    local tooltip = {"", {"fp.subfactory_modset_changes"}}
-    local current_table, next_index = tooltip, 3
-
-    if next(changes.added) then
-        current_table, next_index = data_util.build_localised_string({
-            {"fp.subfactory_mod_added"}}, current_table, next_index)
-        for name, version in pairs(changes.added) do
-            current_table, next_index = data_util.build_localised_string({
-                {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
-        end
-    end
-
-    if next(changes.removed) then
-        current_table, next_index = data_util.build_localised_string({
-            {"fp.subfactory_mod_removed"}}, current_table, next_index)
-        for name, version in pairs(changes.removed) do
-            current_table, next_index = data_util.build_localised_string({
-                {"fp.subfactory_mod_and_version", name, version}}, current_table, next_index)
-        end
-    end
-
-    if next(changes.updated) then
-        current_table, next_index = data_util.build_localised_string({
-            {"fp.subfactory_mod_updated"}}, current_table, next_index)
-        for name, versions in pairs(changes.updated) do
-            current_table, next_index = data_util.build_localised_string({
-                {"fp.subfactory_mod_and_versions", name, versions.old, versions.current}}, current_table, next_index)
-        end
-    end
-
-    -- Return an empty string if no changes were found, ie. the tooltip is still only the header
-    return (table_size(tooltip) == 2) and "" or tooltip
 end

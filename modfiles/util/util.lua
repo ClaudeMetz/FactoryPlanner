@@ -9,6 +9,8 @@ local util = {
     cursor = require("util.cursor"),
     gui = require("util.gui"),
     format = require("util.format"),
+    nth_tick = require("util.nth_tick"),
+    porter = require("util.porter")
 }
 
 return util

@@ -245,7 +245,7 @@ function loader.run(skip_check)
     -- If the mod version changed, the loader will be re-run after migration anyways
     if not skip_check and script.active_mods["factoryplanner"] ~= global.mod_version then return end
 
-    data_util.nth_tick.register_all()
+    util.nth_tick.register_all()
 
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     PROTOTYPE_ATTRIBUTES = prototype_attributes()

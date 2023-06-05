@@ -83,7 +83,7 @@ local function refresh_subfactory_info(player)
     subfactory_info_elements.info_flow.visible = valid_subfactory_selected
 
     if invalid_subfactory_selected then
-        subfactory_info_elements.repair_label.tooltip = data_util.porter.format_modset_diff(subfactory.last_valid_modset)
+        subfactory_info_elements.repair_label.tooltip = util.porter.format_modset_diff(subfactory.last_valid_modset)
 
     elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
         local archive_open = ui_state.flags.archive_open
