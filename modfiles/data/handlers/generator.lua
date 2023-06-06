@@ -875,7 +875,7 @@ function generator.wagons.sorting_function(a, b)
 end
 
 
----@class FPModulePrototype:FPPrototypeWithCategory
+---@class FPModulePrototype: FPPrototypeWithCategory
 ---@field data_type "modules"
 ---@field category string
 ---@field tier uint

@@ -135,6 +135,7 @@ end
 ---@param category_name string?
 ---@return AnyFPPrototype?
 function prototyper.util.find_prototype(data_type, prototype_name, category_name)
+    --if data_type == nil then llog(prototype_name, category_name) end
     local prototype_map = PROTOTYPE_MAPS[data_type]
 
     if category_name == nil then
@@ -158,6 +159,10 @@ end
 ---@param category string?
 ---@return FPPackedPrototype
 function prototyper.util.simplify_prototype(proto, category)
+    --[[ if not proto.data_type then
+        llog(proto)
+        llog(PROTOTYPE_MAPS.modules[proto.category].members[proto.name])
+    end ]]
     return { name = proto.name, category = category, data_type = proto.data_type, simplified = true }
 end
 
@@ -195,6 +200,28 @@ function prototyper.util.build_translation_dictionaries()
     translator.new("recipe")
     for _, proto in pairs(global.prototypes.recipes) do
         translator.add("recipe", proto.name, proto.localised_name)
+    end
+end
+
+-- Migrates the prototypes for default beacons and modules
+---@param player_table PlayerTable
+function prototyper.util.migrate_mb_defaults(player_table)
+    local mb_defaults = player_table.preferences.mb_defaults
+    local find = prototyper.util.find_prototype
+
+    local machine = mb_defaults.machine
+    if machine then
+        mb_defaults.machine = find("modules", machine.name, machine.category)  --[[@as FPModulePrototype ]]
+    end
+
+    local second = mb_defaults.machine_secondary
+    if second then
+        mb_defaults.machine_secondary = find("modules", second.name, second.category)  --[[@as FPModulePrototype ]]
+    end
+
+    local beacon = mb_defaults.beacon
+    if beacon then
+        mb_defaults.beacon = find("beacons", beacon.name, nil)  --[[@as FPBeaconPrototype ]]
     end
 end
 

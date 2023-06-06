@@ -275,8 +275,9 @@ local function handle_configuration_change()
         refresh_player_table(player)
         local player_table = global.players[player.index]
 
-        -- Migrate the player's default prototype choices
+        -- Migrate the prototypes used in the player's preferences
         prototyper.defaults.migrate(player_table)
+        prototyper.util.migrate_mb_defaults(player_table)
 
         -- Update the validity of the entire factory and archive
         Factory.validate(player_table.factory)
