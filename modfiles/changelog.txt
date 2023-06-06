@@ -6,8 +6,9 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    - Fixed a crash when shift-clicking the add subfactory button with no existing subfactories
     - Fixed that trying to pick a recipe for fuel would add an unrelated recipe
+    - Fixed a crash when shift-clicking the add subfactory button with no existing subfactories
+    - Fixed crash when trying to edit certain machines due to a missing migration of machine&beacon defaults
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.67
