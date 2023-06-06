@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.68
+Date: 06. 06. 2023
   Bugfixes:
     - Fixed that trying to pick a recipe for fuel would add an unrelated recipe
     - Fixed a crash when shift-clicking the add subfactory button with no existing subfactories
