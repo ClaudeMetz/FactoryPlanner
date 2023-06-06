@@ -9,6 +9,7 @@ Date: 00. 00. 0000
     - Fixed that trying to pick a recipe for fuel would add an unrelated recipe
     - Fixed a crash when shift-clicking the add subfactory button with no existing subfactories
     - Fixed crash when trying to edit certain machines due to a missing migration of machine&beacon defaults
+    - Fixed a crash when the matrix dialog would automatically open
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.67
