@@ -602,7 +602,7 @@ end
 
 ---@class FPItemPrototype: FPPrototypeWithCategory
 ---@field data_type "items"
----@field type string
+---@field type "item" | "fluid" | "entity"
 ---@field hidden boolean
 ---@field stack_size uint?
 ---@field ingredient_only boolean
