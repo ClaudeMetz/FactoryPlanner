@@ -151,6 +151,8 @@ function modal_dialog.enter(player, metadata, dialog_open, early_abort_check)
         return
     end
 
+    ui_state.modal_data = metadata.modal_data or {}
+
     if early_abort_check ~= nil and early_abort_check(player, ui_state.modal_data) then  -- abort early if need be
         --ui_state.modal_data = nil  -- this should be reset, but that breaks the stupid queueing stuff .........
         return

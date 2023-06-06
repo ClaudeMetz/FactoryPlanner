@@ -201,10 +201,8 @@ local function handle_dialog_event(event)
         local listener = dialog_event_cache[event.metadata.dialog]
 
         local metadata = event.metadata
-        ui_state.modal_data = metadata.modal_data or {}
-
         if listener.metadata ~= nil then  -- collect additional metadata
-            local additional_metadata = listener.metadata(ui_state.modal_data)
+            local additional_metadata = listener.metadata(metadata.modal_data)
             apply_metadata_overrides(metadata, additional_metadata)
         end
 
