@@ -321,9 +321,10 @@ local function handle_fuel_click(player, tags, action)
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        local category_id = PROTOTYPE_MAPS.items[fuel.proto.type].id
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=category_id,
-            product_id=fuel.proto.id, floor_id=floor.id, production_type="produce",
+        local category = PROTOTYPE_MAPS.items[fuel.proto.type]
+        local proto_id = category.members[fuel.proto.name].id
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=category.id,
+            product_id=proto_id, floor_id=floor.id, production_type="produce",
             add_after_position=add_after_position}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
