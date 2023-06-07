@@ -130,7 +130,7 @@ local function handle_gui_event(event)
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_table.special_handler
-    if special_handler and util.actions.guard(special_handler, {event, player, action_name}) == false then return end
+    if special_handler and special_handler(event, player, action_name) == false then return end
 
     -- Special handlers need to run even without an action handler, so we
     -- wait until this point to check whether there is an associated action
@@ -154,8 +154,7 @@ local function handle_gui_event(event)
         third_parameter = modifier_action.name
     end
 
-    -- Send the actual event, potentially guarding it if DEV_ACTIVE
-    util.actions.guard(action_table.handler, {player, tags, third_parameter})
+    action_table.handler(player, tags, third_parameter)  -- send the actual event
 
     util.messages.refresh(player)  -- give messages a chance to update themselves
 end
@@ -302,11 +301,10 @@ local function handle_misc_event(event)
 
     -- If a special handler is set, it needs to return true before proceeding with the registered handlers
     local special_handler = event_handlers.special_handler
-    if special_handler and util.actions.guard(special_handler, {event}) == false then return end
+    if special_handler and special_handler(event) == false then return end
 
-    -- Send the actual events, potentially guarding them if DEV_ACTIVE
     for _, registered_handler in pairs(event_handlers.registered_handlers) do
-        util.actions.guard(registered_handler, {player, event})
+        registered_handler(player, event)  -- send actual event
     end
 
     if CUSTOM_EVENTS[string_name] then return end  -- don't refresh message for events inside other events
