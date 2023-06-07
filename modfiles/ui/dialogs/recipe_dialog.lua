@@ -92,7 +92,7 @@ local function attempt_adding_line(player, recipe_id)
     local recipe = Recipe.init_by_id(recipe_id, modal_data.production_type)
     local line = Line.init(recipe)
 
-    -- If finding a machine fails, this line is invalid. Generator should avoid this case though
+    -- If finding a machine fails, this line is invalid
     if Line.change_machine_to_default(line, player) == false then
         util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
 

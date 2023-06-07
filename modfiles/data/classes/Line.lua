@@ -133,7 +133,8 @@ end
 -- Returns false if no compatible machine can be found, true otherwise
 function Line.change_machine_by_action(self, player, action, current_proto)
     local current_machine_proto = current_proto or self.machine.proto
-    local category_machines = PROTOTYPE_MAPS.machines[current_machine_proto.category].members
+    local machines_category = PROTOTYPE_MAPS.machines[current_machine_proto.category]
+    local category_machines = global.prototypes.machines[machines_category.id].members
 
     if action == "upgrade" then
         local max_machine_id = #category_machines
