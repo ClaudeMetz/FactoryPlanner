@@ -98,19 +98,4 @@ function _actions.rate_limited(player, tick, action_name, timeout)
     end
 end
 
-function _actions.guard(handler, arguments)
-    if DEV_ACTIVE and not DEBUGGER_ACTIVE then
-        local status, result = xpcall(handler, debug.traceback, table.unpack(arguments))
-        if status then
-            return result
-        else
-            llog(result)
-            game.print({"fp.error_message", "Error: " .. util.split_string(result, "\n")[1]})
-            game.reload_mods()
-        end
-    else
-        return handler(table.unpack(arguments))
-    end
-end
-
 return _actions
