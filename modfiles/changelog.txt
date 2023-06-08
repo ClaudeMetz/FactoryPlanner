@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.69
+Date: 08. 06. 2023
   Bugfixes:
     - Fixed that recipes would not correctly find the proper machine to use in some cases
 
