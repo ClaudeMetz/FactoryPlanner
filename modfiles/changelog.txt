@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.70
+Date: 12. 06. 2023
   Bugfixes:
     - Fixed a crash when trying to delete a recipe in certain situations with the foldout subfloors-option enabled
 
