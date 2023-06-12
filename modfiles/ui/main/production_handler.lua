@@ -54,8 +54,8 @@ local function handle_recipe_click(player, tags, action)
     elseif action == "delete" then
         Floor.remove(floor, line)
 
-        local fold_out_subfloors = util.globals.preferences(player).fold_out_subfloors
-        if fold_out_subfloors and Floor.count(floor, "Line") < 2 then Floor.reset(floor) end
+        -- If this recipe is deleted from a lower level floor (folded out subfloor), reset  if necessary
+        if context.floor.level < floor.level and Floor.count(floor, "Line") < 2 then Floor.reset(floor) end
 
         solver.update(player, context.subfactory)
         util.raise.refresh(player, "subfactory", nil)
