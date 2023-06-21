@@ -1,4 +1,4 @@
-local structures = require("data.calculation.structures")
+local structures = require("backend.calculation.structures")
 
 -- Contains the 'meat and potatoes' calculation model that struggles with some more complex setups
 local sequential_engine = {}

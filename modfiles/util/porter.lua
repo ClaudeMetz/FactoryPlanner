@@ -1,4 +1,4 @@
-local migrator = require("data.handlers.migrator")
+local migrator = require("backend.handlers.migrator")
 
 local _porter = {}
 
