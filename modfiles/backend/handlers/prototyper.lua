@@ -1,4 +1,4 @@
-local generator = require("data.handlers.generator")
+local generator = require("backend.handlers.generator")
 
 prototyper = {
     util = {},

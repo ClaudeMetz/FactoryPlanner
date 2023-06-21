@@ -60,7 +60,7 @@ require("ui.base.modal_dialog")
 TUTORIAL_TOOLTIPS = {}  ---@type { [string]: LocalisedString }
 GLOBAL_HANDLERS = {}  ---@type { [string]: function }
 
-require("data.init")
+require("backend.init")
 require("ui.event_handler")
 
 

@@ -1,4 +1,4 @@
-local matrix_engine = require("data.calculation.matrix_engine")
+local matrix_engine = require("backend.calculation.matrix_engine")
 
 -- ** LOCAL UTIL **
 local function show_linearly_dependent_recipes(modal_data, recipe_protos)

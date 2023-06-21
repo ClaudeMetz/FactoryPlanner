@@ -25,7 +25,7 @@ Currently the algorithm assumes any item which is part of at least one input and
 If a recipe has loops, typically the user needs to make voids or free variables.
 --]]
 
-local structures = require("data.calculation.structures")
+local structures = require("backend.calculation.structures")
 
 local matrix_engine = {}
 

@@ -1,4 +1,4 @@
-local generator_util = require("data.handlers.generator_util")
+local generator_util = require("backend.handlers.generator_util")
 
 local generator = {
     machines = {},
