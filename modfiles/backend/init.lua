@@ -191,8 +191,8 @@ local function refresh_player_table(player)
     reload_settings(player)
     reset_ui_state(player)
 
-    -- This whole reset thing will be moved ...
-    local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
+    -- TODO replace with proper version
+    --[[ local archive_subfactories = Factory.get_in_order(player_table.archive, "Subfactory")
     player_table.archive.selected_subfactory = archive_subfactories[1]  -- can be nil
 
     local factory = player_table.factory
@@ -203,7 +203,7 @@ local function refresh_player_table(player)
         local selected_subfactory = Factory.get(factory, "Subfactory", factory.selected_subfactory.id)
         if selected_subfactory ~= nil then subfactory_to_select = selected_subfactory end
     end
-    util.context.set_subfactory(player, subfactory_to_select)
+    util.context.set_subfactory(player, subfactory_to_select) ]]
 
     player_table.translation_tables = nil
     player_table.clipboard = nil

@@ -238,6 +238,21 @@ local function prototype_maps(data_types)
     return maps
 end
 
+---@return { [ObjectID]: Object }
+local function generate_object_index()
+    local index = {}
+    for _, player_table in pairs(global.players) do
+        local district = player_table.district
+        index[district.id] = district
+
+        for _, factory in district:iterator() do
+            index[factory.id] = factory
+            -- TODO more
+        end
+    end
+    return index
+end
+
 
 -- ** TOP LEVEL **
 ---@param skip_check boolean Whether the mod version check is skipped
@@ -246,6 +261,8 @@ function loader.run(skip_check)
     if not skip_check and script.active_mods["factoryplanner"] ~= global.mod_version then return end
 
     util.nth_tick.register_all()
+
+    OBJECT_INDEX = generate_object_index()
 
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     PROTOTYPE_ATTRIBUTES = prototype_attributes()
