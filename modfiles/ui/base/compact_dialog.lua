@@ -503,12 +503,12 @@ subfactory_listeners.gui = {
 subfactory_listeners.misc = {
     build_gui_element = (function(player, event)
         if event.trigger == "compact_subfactory" then
-            build_compact_subfactory(player)
+            --build_compact_subfactory(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         if event.trigger == "compact_subfactory" then
-            refresh_compact_subfactory(player)
+            --refresh_compact_subfactory(player)
         end
     end)
 }

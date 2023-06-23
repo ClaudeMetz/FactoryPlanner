@@ -263,12 +263,12 @@ listeners.misc = {
 
     build_gui_element = (function(player, event)
         if event.trigger == "view_state" then
-            build_view_state(player, event.parent)
+            --build_view_state(player, event.parent)
         end
     end),
     refresh_gui_element = (function(player, event)
         if event.trigger == "view_state" then
-            refresh_view_state(player, event.element)
+            --refresh_view_state(player, event.element)
         end
     end)
 }

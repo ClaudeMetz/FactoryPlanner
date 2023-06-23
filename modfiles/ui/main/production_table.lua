@@ -453,12 +453,12 @@ local listeners = {}
 listeners.misc = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
-            build_production_table(player)
+            --build_production_table(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {production_table=true, production_detail=true, production=true, subfactory=true, all=true}
-        if triggers[event.trigger] then refresh_production_table(player) end
+        --if triggers[event.trigger] then refresh_production_table(player) end
     end)
 }
 
