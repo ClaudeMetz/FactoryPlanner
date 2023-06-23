@@ -17,10 +17,6 @@ function _globals.preferences(player) return global.players[player.index].prefer
 function _globals.ui_state(player) return global.players[player.index].ui_state end
 
 ---@param player LuaPlayer
----@return Context
-function _globals.context(player) return global.players[player.index].ui_state.context end
-
----@param player LuaPlayer
 ---@return UIStateFlags
 function _globals.flags(player) return global.players[player.index].ui_state.flags end
 
