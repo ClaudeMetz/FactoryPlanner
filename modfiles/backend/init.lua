@@ -1,20 +1,9 @@
-require("backend.classes.Collection")
-require("backend.classes.Factory")
-require("backend.classes.Subfactory")
-require("backend.classes.Floor")
-require("backend.classes.Line")
-require("backend.classes.Recipe")
-require("backend.classes.Machine")
-require("backend.classes.Beacon")
-require("backend.classes.ModuleSet")
-require("backend.classes.Module")
-require("backend.classes.Item")
-require("backend.classes.Fuel")
+
 
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
 require("backend.handlers.prototyper")
-require("backend.handlers.screenshotter")
+--require("backend.handlers.screenshotter")
 
 require("backend.calculation.solver")
 
@@ -155,7 +144,7 @@ local function reset_ui_state(player)
     ui_state_table.messages = {}  ---@type PlayerMessage[]  The general message/warning list
     ui_state_table.main_elements = {}  -- References to UI elements in the main interface
     ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
-    ui_state_table.context = util.context.create(player)  -- The currently displayed set of data
+    ui_state_table.context = nil  ---@type ObjectID The id of the currently selected object
     ui_state_table.last_selected_picker_group = nil  ---@type integer The item picker category that was last selected
 
     ui_state_table.modal_dialog_type = nil  ---@type ModalDialogType The internal modal dialog type
@@ -248,8 +237,8 @@ local function global_init()
 
     -- Retain current modset to detect mod changes for subfactories that became invalid
     global.installed_mods = script.active_mods  ---@type ModToVersion
-    -- Import the tutorial subfactory so it's 'cached'
-    global.tutorial_subfactory = import_tutorial_subfactory()
+    -- Import the tutorial subfactory to validate and cache it
+    global.tutorial_subfactory = nil--import_tutorial_subfactory() TODO uncomment
 
     -- Initialize flib's translation module
     translator.on_init()
@@ -320,8 +309,8 @@ script.on_event(defines.events.on_player_created, function(event)
     -- Sets up the mod-GUI for the new player if necessary
     util.gui.toggle_mod_gui(player)
 
-    -- Add the subfactories that are handy for development
-    if DEV_ACTIVE then util.porter.add_by_string(player, DEV_EXPORT_STRING) end
+    -- Add the factories that are handy for development
+    --if DEV_ACTIVE then util.porter.add_by_string(player, DEV_EXPORT_STRING) end TODO uncomment
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)

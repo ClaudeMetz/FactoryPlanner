@@ -385,12 +385,12 @@ listeners.gui = {
 listeners.misc = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
-            build_subfactory_list(player)
+            --build_subfactory_list(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {subfactory_list=true, all=true}
-        if triggers[event.trigger] then refresh_subfactory_list(player) end
+        --if triggers[event.trigger] then refresh_subfactory_list(player) end
     end)
 }
 
