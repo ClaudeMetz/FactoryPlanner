@@ -7,10 +7,10 @@ local _actions = {}
 ---@param player LuaPlayer
 ---@return ActiveLimitations
 function _actions.current_limitations(player)
-    local ui_state = util.globals.ui_state(player)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     return {
-        archive_open = ui_state.flags.archive_open,
-        matrix_active = (ui_state.context.subfactory.matrix_free_items ~= nil),
+        archive_open = (factory ~= nil) and factory.archived or false,
+        matrix_active = (factory ~= nil) and (factory.matrix_free_items ~= nil) or false,
         recipebook = RECIPEBOOK_ACTIVE
     }
 end
@@ -28,7 +28,7 @@ function _actions.allowed(action_limitations, active_limitations)
 end
 
 ---@param action_name string
----@param active_limitations ActiveLimitations
+---@param active_limitations ActiveLimitations?
 ---@param player LuaPlayer?
 ---@return LocalisedString
 function _actions.tutorial_tooltip(action_name, active_limitations, player)

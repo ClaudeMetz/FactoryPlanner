@@ -25,11 +25,11 @@ function _globals.flags(player) return global.players[player.index].ui_state.fla
 function _globals.modal_data(player) return global.players[player.index].ui_state.modal_data end
 
 ---@param player LuaPlayer
----@return LuaGuiElement[]
+---@return table
 function _globals.main_elements(player) return global.players[player.index].ui_state.main_elements end
 
 ---@param player LuaPlayer
----@return LuaGuiElement[]
+---@return table
 function _globals.modal_elements(player) return global.players[player.index].ui_state.modal_data.modal_elements end
 
 return _globals
