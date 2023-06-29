@@ -245,7 +245,7 @@ local function generate_object_index()
         local district = player_table.district
         index[district.id] = district
 
-        for _, factory in district:iterator() do
+        for factory in district:iterator() do
             index[factory.id] = factory
             -- TODO more
         end

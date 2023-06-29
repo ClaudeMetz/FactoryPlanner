@@ -67,7 +67,7 @@ function District:count(filter, direction, pivot)
 end
 
 
--- Districts can't be invalid, this just cleanly validates the factories
+--- Districts can't be invalid, this just cleanly validates the factories
 function District:validate()
     self:_validate(self.first_factory)
 end
