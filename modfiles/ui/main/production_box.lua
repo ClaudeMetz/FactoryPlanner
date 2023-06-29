@@ -1,10 +1,11 @@
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
-    local subfactory = util.globals.context(player).subfactory
+    return  -- TODO remove early return
+    --[[ local subfactory = util.context.get(player, "Factory")
     if subfactory and subfactory.valid then
         solver.update(player, subfactory)
         util.raise.refresh(player, "subfactory", nil)
-    end
+    end ]]
 end
 
 local function paste_line(player, _, event)

@@ -30,7 +30,7 @@ end
 
 -- Converts the given factory exchange string into a temporary Factory
 ---@param export_string ExportString
----@return FPFactory?
+---@return District?
 ---@return string?
 function _porter.process_export_string(export_string)
     local export_table = nil  ---@type AnyBasic?

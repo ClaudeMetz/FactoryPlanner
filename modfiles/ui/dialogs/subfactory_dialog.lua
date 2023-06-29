@@ -29,8 +29,8 @@ end
 
 
 local function open_subfactory_dialog(player, modal_data)
-    local factory = util.globals.context(player).factory
-    modal_data.subfactory = Factory.get(factory, "Subfactory", modal_data.subfactory_id)
+    local id = modal_data.subfactory_id
+    modal_data.subfactory = (id ~= nil) and OBJECT_INDEX[id] or nil
 
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
