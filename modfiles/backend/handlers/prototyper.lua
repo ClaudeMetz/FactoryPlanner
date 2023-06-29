@@ -159,10 +159,6 @@ end
 ---@param category string?
 ---@return FPPackedPrototype
 function prototyper.util.simplify_prototype(proto, category)
-    --[[ if not proto.data_type then
-        llog(proto)
-        llog(PROTOTYPE_MAPS.modules[proto.category].members[proto.name])
-    end ]]
     return { name = proto.name, category = category, data_type = proto.data_type, simplified = true }
 end
 
