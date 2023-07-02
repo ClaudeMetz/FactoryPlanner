@@ -155,18 +155,33 @@ end
 ---@field simplified boolean
 
 -- Returns a new table that only contains the given prototypes' identifiers
----@param proto AnyFPPrototype
+---@param prototypes AnyFPPrototype
 ---@param category string?
 ---@return FPPackedPrototype
-function prototyper.util.simplify_prototype(proto, category)
-    return { name = proto.name, category = category, data_type = proto.data_type, simplified = true }
+function prototyper.util.simplify_prototype(prototypes, category)
+    return { name = prototypes.name, category = category, data_type = prototypes.data_type, simplified = true }
 end
+
+---@param prototypes FPPrototype[]
+---@return FPPackedPrototype[]?
+function prototyper.util.simplify_prototypes(prototypes, category_designation)
+    if not prototypes then return nil end
+
+    local simplified_prototypes = {}
+    for index, proto in pairs(prototypes) do
+        simplified_prototypes[index] = prototyper.util.simplify_prototype(proto, proto[category_designation])
+    end
+    return simplified_prototypes
+end
+
+
+---@alias AnyPrototype (AnyFPPrototype | FPPackedPrototype)
 
 -- Validates given object with prototype, which includes trying to find the correct
 -- new reference for its prototype, if able. Returns valid-status at the end.
----@param prototype AnyFPPrototype | FPPackedPrototype
+---@param prototype AnyPrototype
 ---@param category_designation ("category" | "type")?
----@return AnyFPPrototype | FPPackedPrototype
+---@return AnyPrototype
 function prototyper.util.validate_prototype_object(prototype, category_designation)
     local updated_proto = prototype
 
@@ -183,6 +198,21 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
 
     return updated_proto
 end
+
+---@param prototypes AnyPrototype[]?
+---@return AnyPrototype[]?
+---@return boolean valid
+function prototyper.util.validate_prototype_objects(prototypes, category_designation)
+    if not prototypes then return nil, true end
+
+    local validated_prototypes, valid = {}, true
+    for index, proto in pairs(prototypes) do
+        validated_prototypes[index] = prototyper.util.validate_prototype_object(proto, category_designation)
+        valid = (not validated_prototypes[index].simplified) and valid
+    end
+    return validated_prototypes, valid
+end
+
 
 -- Build the necessary RawDictionaries for translation
 function prototyper.util.build_translation_dictionaries()

@@ -51,10 +51,10 @@ local function add_subfactory(player, _, event)
     end
 end
 
-local function duplicate_subfactory(player, _, _)  -- TODO test
+local function duplicate_subfactory(player, _, _)
     local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
     local clone = subfactory:clone()
-    clone.archived = false  -- always clone unarchived
+    clone.archived = false  -- always clone as unarchived
     subfactory.parent:insert(clone)
 
     solver.update(player, clone)

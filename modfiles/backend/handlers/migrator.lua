@@ -5,7 +5,7 @@ local migrator = {}
 
 ---@alias MigrationMasterList { [integer]: { version: VersionString, migration: Migration } }
 ---@alias Migration { global: function, player_table: function, subfactory: function, packed_subfactory: function }
----@alias MigrationObject PlayerTable | FPSubfactory | FPPackedSubfactory
+---@alias MigrationObject PlayerTable | Factory | PackedFactory
 
 -- Returns a table containing all existing migrations in order
 local migration_masterlist = {  ---@type MigrationMasterList
@@ -97,10 +97,8 @@ end
 -- ** TOP LEVEL **
 -- Applies any appropriate migrations to the global table
 function migrator.migrate_global()
-    local migrations = determine_migrations(global.mod_version)
-
+    local migrations = determine_migrations(global.installed_mods["factoryplanner"])
     apply_migrations(migrations, "global", nil, nil)
-    global.mod_version = script.active_mods["factoryplanner"]
 end
 
 -- Applies any appropriate migrations to the given factory
@@ -108,31 +106,12 @@ end
 function migrator.migrate_player_table(player)
     local player_table = util.globals.player_table(player)
     if player_table ~= nil then  -- don't apply migrations to new players
-        local migrations = determine_migrations(player_table.mod_version)
+        local migrations = determine_migrations(global.installed_mods["factoryplanner"])
 
-        -- General migrations
-        local old_version = player_table.mod_version  -- keep for comparison below
         apply_migrations(migrations, "player_table", player_table, player)
-        player_table.mod_version = global.mod_version
 
-        -- Subfactory migrations
-        for _, factory_name in pairs({"factory", "archive"}) do
-            --local outdated_subfactories = {}
-            for _, subfactory in pairs(Factory.get_all(player_table[factory_name], "Subfactory")) do
-                if subfactory.mod_version ~= old_version then  -- out-of-sync subfactory
-                    error("Out of date subfactory, please report this to the mod author including the save file")
-                    --table.insert(outdated_subfactories, subfactory)
-                else
-                    apply_migrations(migrations, "subfactory", subfactory, player)
-                    subfactory.mod_version = global.mod_version
-                end
-            end
-
-            --[[ -- Remove subfactories who weren't migrated along properly for some reason
-            -- TODO This is likely due to an old, now-fixed bug that left them behind
-            for _, subfactory in pairs(outdated_subfactories) do
-                Factory.remove(player_table[factory_name], subfactory)
-            end ]]
+        for subfactory in player_table.district:iterator() do
+            apply_migrations(migrations, "subfactory", subfactory, player)
         end
     end
 end
@@ -140,13 +119,12 @@ end
 -- Applies any appropriate migrations to the given export_table's subfactories
 ---@param export_table ExportTable
 function migrator.migrate_export_table(export_table)
-    local migrations = determine_migrations(export_table.mod_version)
+    local migrations = determine_migrations(export_table.export_modset["factoryplanner"])
     for _, packed_subfactory in pairs(export_table.subfactories) do
         -- This migration type won't need the player argument, and removing it allows
         -- us to run imports without having a player attached
         apply_migrations(migrations, "packed_subfactory", packed_subfactory, nil)
     end
-    export_table.mod_version = global.mod_version
 end
 
 return migrator

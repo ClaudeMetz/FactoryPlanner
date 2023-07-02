@@ -116,23 +116,25 @@ local function setup_subfactories_table(modal_elements, add_location)
 end
 
 -- Adds a row to the subfactories table
-local function add_to_subfactories_table(modal_elements, subfactory, location_name, enable_checkbox, attach_products)
+local function add_to_subfactories_table(modal_elements, subfactory, enable_checkbox, attach_products)
     local table_subfactories = modal_elements.subfactories_table
 
     local checkbox = table_subfactories.add{type="checkbox", state=false, enabled=(enable_checkbox or subfactory.valid),
         tags={mod="fp", on_gui_checked_state_changed="toggle_porter_checkbox"}}
 
-    local label = table_subfactories.add{type="label", caption=Subfactory.tostring(subfactory, attach_products, true)}
+    local label = table_subfactories.add{type="label", caption=subfactory:tostring(attach_products, true)}
     label.style.maximal_width = 350
     label.style.right_margin = 4
 
     local validity_caption = (subfactory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
     table_subfactories.add{type="label", caption=validity_caption}
 
-    if location_name then table_subfactories.add{type="label", caption={"fp." .. location_name}} end
+    if table_subfactories.column_count == 4 then  -- if location column is present
+        local location = (subfactory.archived) and "archive" or "factory"
+        table_subfactories.add{type="label", caption={"fp." .. location}}
+    end
 
-    local identifier = (location_name or "tmp") .. "_" .. subfactory.id
-    modal_elements.subfactory_checkboxes[identifier] = checkbox
+    modal_elements.subfactory_checkboxes[subfactory.id] = checkbox
 end
 
 
@@ -140,13 +142,13 @@ end
 local function import_subfactories(player, _, _)
     local player_table = util.globals.player_table(player)
     local attach_subfactory_products = player_table.preferences.attach_subfactory_products
-    local modal_data = player_table.ui_state.modal_data
+    local modal_data = player_table.ui_state.modal_data  ---@cast modal_data -nil
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     local textfield_export_string = modal_elements.import_textfield
 
     -- The imported subfactories will be temporarily contained in a factory object
-    local import_factory, error = util.porter.process_export_string(textfield_export_string.text)
+    local import_table, error = util.porter.process_export_string(textfield_export_string.text)
 
     local function add_info_label(caption)
         local label_info = content_frame.add{type="label", caption=caption}
@@ -169,23 +171,24 @@ local function import_subfactories(player, _, _)
         add_info_label({"fp.error_message", {"fp.importer_" .. error}})
         util.gui.select_all(textfield_export_string)
     else
-        ---@cast import_factory -nil
+        ---@cast import_table -nil
 
         add_info_label({"fp.import_instruction_2"})
         setup_subfactories_table(modal_elements, false)
         modal_data.subfactories = {}
 
         local any_invalid_subfactories = true
-        for _, subfactory in ipairs(Factory.get_in_order(import_factory, "Subfactory")) do
-            add_to_subfactories_table(modal_elements, subfactory, nil, true, attach_subfactory_products)
-            modal_data.subfactories["tmp_" .. subfactory.id] = subfactory
+        for _, subfactory in ipairs(import_table.subfactories) do
+            subfactory.archived = false
+            add_to_subfactories_table(modal_elements, subfactory, true, attach_subfactory_products)
+            modal_data.subfactories[subfactory.id] = subfactory
             any_invalid_subfactories = any_invalid_subfactories or (not subfactory.valid)
         end
 
         if any_invalid_subfactories then
-            modal_data.export_modset = import_factory.export_modset
+            modal_data.export_modset = import_table.export_modset
 
-            local diff_tooltip = util.porter.format_modset_diff(import_factory.export_modset)
+            local diff_tooltip = util.porter.format_modset_diff(import_table.export_modset)
             if diff_tooltip ~= "" then
                 modal_elements.info_label.caption = {"fp.info_label", {"fp.import_instruction_2"}}
                 modal_elements.info_label.tooltip = diff_tooltip
@@ -206,9 +209,9 @@ local function export_subfactories(player, _, _)
     local modal_elements = modal_data.modal_elements
     local subfactories_to_export = {}
 
-    for subfactory_identifier, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+    for subfactory_id, checkbox in pairs(modal_elements.subfactory_checkboxes) do
         if checkbox.state == true then
-            local subfactory = modal_data.subfactories[subfactory_identifier]
+            local subfactory = modal_data.subfactories[subfactory_id]
             table.insert(subfactories_to_export, subfactory)
         end
     end
@@ -230,26 +233,22 @@ end
 -- Imports the selected subfactories into the player's main factory
 local function close_import_dialog(player, action)
     if action == "submit" then
-        local ui_state = util.globals.ui_state(player)
-        local modal_data = ui_state.modal_data
-        local factory = ui_state.context.factory
+        local modal_data = util.globals.modal_data(player)  ---@cast modal_data -nil
+        local district = util.context.get(player, "District")  --[[@as District]]
 
         local first_subfactory = nil
-        for subfactory_identifier, checkbox in pairs(modal_data.modal_elements.subfactory_checkboxes) do
+        for subfactory_id, checkbox in pairs(modal_data.modal_elements.subfactory_checkboxes) do
             if checkbox.state == true then
-                local subfactory = modal_data.subfactories[subfactory_identifier]
-                local imported_subfactory = Factory.add(factory, subfactory)
+                local subfactory = modal_data.subfactories[subfactory_id]
+                if not subfactory.valid then subfactory.last_valid_modset = modal_data.export_modset end
+                district:insert(subfactory)
 
-                if not imported_subfactory.valid then  -- carry over modset if need be
-                    imported_subfactory.last_valid_modset = modal_data.export_modset
-                end
-
-                solver.update(player, imported_subfactory)
-                first_subfactory = first_subfactory or imported_subfactory
+                solver.update(player, subfactory)
+                first_subfactory = first_subfactory or subfactory
             end
         end
 
-        util.context.set_subfactory(player, first_subfactory)
+        util.context.set(player, first_subfactory)
         util.raise.refresh(player, "all", nil)
     end
 end
@@ -300,20 +299,18 @@ import_listeners.dialog = {
 
 
 local function open_export_dialog(player, modal_data)
-    local player_table = util.globals.player_table(player)
-    local attach_subfactory_products = player_table.preferences.attach_subfactory_products
+    local attach_subfactory_products = util.globals.preferences(player).attach_subfactory_products
+    local district = util.context.get(player, "District")  --[[@as District]]
     local modal_elements = modal_data.modal_elements
 
     setup_subfactories_table(modal_elements, true)
     modal_data.subfactories = {}
 
     local valid_subfactory_found = false
-    for _, factory_name in ipairs{"factory", "archive"} do
-        for _, subfactory in ipairs(Factory.get_in_order(player_table[factory_name], "Subfactory")) do
-            add_to_subfactories_table(modal_elements, subfactory, factory_name, false, attach_subfactory_products)
-            modal_data.subfactories[factory_name .. "_" .. subfactory.id] = subfactory
-            valid_subfactory_found = valid_subfactory_found or subfactory.valid
-        end
+    for subfactory in district:iterator() do
+        add_to_subfactories_table(modal_elements, subfactory, false, attach_subfactory_products)
+        modal_data.subfactories[subfactory.id] = subfactory
+        valid_subfactory_found = valid_subfactory_found or subfactory.valid
     end
     modal_elements.master_checkbox.enabled = valid_subfactory_found
 

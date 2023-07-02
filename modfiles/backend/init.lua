@@ -12,7 +12,6 @@ require("backend.calculation.solver")
 ---@field preferences PreferencesTable
 ---@field settings SettingsTable
 ---@field ui_state UIStateTable
----@field mod_version VersionString
 ---@field index PlayerIndex
 ---@field district District
 ---@field context ContextTable
@@ -124,8 +123,8 @@ end
 ---@field compact_elements table
 ---@field last_selected_picker_group integer?
 ---@field modal_dialog_type ModalDialogType?
----@field modal_data ModalData?
----@field queued_dialog_metadata ModalData?
+---@field modal_data table?
+---@field queued_dialog_metadata table?
 ---@field flags UIStateFlags
 
 ---@class UIStateFlags
@@ -146,8 +145,8 @@ local function reset_ui_state(player)
     ui_state_table.last_selected_picker_group = nil  ---@type integer The item picker category that was last selected
 
     ui_state_table.modal_dialog_type = nil  ---@type ModalDialogType The internal modal dialog type
-    ui_state_table.modal_data = nil  ---@type ModalData Data that can be set for a modal dialog to use
-    ui_state_table.queued_dialog_metadata = nil  ---@type ModalData Info on dialog to open after the current one closes
+    ui_state_table.modal_data = nil  ---@type table? Data that can be set for a modal dialog to use
+    ui_state_table.queued_dialog_metadata = nil  ---@type table? Info on dialog to open after the current one closes
 
     ui_state_table.flags = {  -- TODO do away with, make them just ui_state variables
         selection_mode = false,  -- Whether the player is currently using a selector
@@ -164,11 +163,10 @@ end
 local function create_player_table(player)
     global.players[player.index] = {}
     local player_table = global.players[player.index]
+    --player_table.index = player.index  TODO not needed? migration
+    -- TODO migration player_table.mod_version removal
 
-    player_table.mod_version = global.mod_version
-    player_table.index = player.index
-
-    player_table.district = District()  -- TODO migration
+    player_table.district = District.init()  -- TODO migration
     util.context.init(player)  -- TODO migration?
 
     player_table.preferences = {}
@@ -197,10 +195,14 @@ local function refresh_player_table(player)
 end
 
 ---@return Factory?
-local function import_tutorial_subfactory()
-    local imported_tutorial_factory, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
-    if error then return nil end  ---@cast imported_tutorial_factory -nil
-    return imported_tutorial_factory:find()  -- TODO why is this a whole District, not just a list
+local function import_tutorial_subfactory()  -- TODO verify
+    local import_table, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
+    if error then
+        return nil
+    else
+        ---@cast import_table -nil
+        return import_table.subfactories[1]
+    end
 end
 
 
@@ -212,21 +214,20 @@ local function global_init()
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
 
-    -- Initiates all factorio-global variables
-    global.mod_version = script.active_mods["factoryplanner"]  ---@type VersionString
+    -- TODO migration global.mod_version removal
     global.players = {}  ---@type { [PlayerIndex]: PlayerTable }
-    global.current_ID = 0  -- counter used for assigning incrementing IDs to all objects TODO migration
+    global.current_ID = 0  -- Counter used for assigning incrementing IDs to all objects TODO migration
 
     -- Save metadata about currently registered on_nth_tick events
     global.nth_tick_events = {}  ---@type { [Tick]: NthTickEvent }
 
     prototyper.build()  -- Generate all relevant prototypes and save them in global
-    loader.run(true)  -- Run loader which creates useful caches of prototype data
+    loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
     -- Retain current modset to detect mod changes for subfactories that became invalid
     global.installed_mods = script.active_mods  ---@type ModToVersion
     -- Import the tutorial subfactory to validate and cache it
-    global.tutorial_subfactory = nil--import_tutorial_subfactory() TODO uncomment
+    global.tutorial_subfactory = nil--import_tutorial_subfactory()
 
     -- Initialize flib's translation module
     translator.on_init()
@@ -259,7 +260,7 @@ local function handle_configuration_change()
     end
 
     global.installed_mods = script.active_mods
-    global.tutorial_subfactory = nil--import_tutorial_subfactory()  TODO uncomment
+    global.tutorial_subfactory = nil--import_tutorial_subfactory()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
@@ -294,21 +295,22 @@ script.on_event(defines.events.on_player_created, function(event)
     util.gui.toggle_mod_gui(player)
 
     -- Add the factories that are handy for development
-    --if DEV_ACTIVE then util.porter.add_by_string(player, DEV_EXPORT_STRING) end TODO uncomment
+    --if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end TODO uncomment
 
     -- TODO delete
     local district = global.players[event.player_index].district
-    local factory = Factory("Fun")
+    local factory = Factory.init("Fun")
     district:insert(factory)
-    local factory2 = Factory("Stuff")
+    local factory2 = Factory.init("Stuff")
     district:insert(factory2)
-    local factory3 = Factory("Despair")
-    --district:insert(factory3)
+    local factory3 = Factory.init("Despair")
+    district:insert(factory3)
     util.context.set(player, factory)
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
     global.players[event.player_index] = nil
+    -- TODO clear any on_ticks, maybe other stuff?
 end)
 
 
