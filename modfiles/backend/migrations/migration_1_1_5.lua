@@ -8,10 +8,10 @@ function migration.player_table(player_table)
 end
 
 function migration.subfactory(subfactory)
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
         if floor.level > 1 then floor.defining_line = floor.Line.datasets[1] end
 
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+        for _, line in pairs(floor.Line.datasets) do
             if not line.subfloor then
                 line.machine.effects_tooltip = ""
                 for _, module in pairs(line.machine.Module.datasets) do

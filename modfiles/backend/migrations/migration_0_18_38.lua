@@ -9,20 +9,21 @@ end
 
 function migration.subfactory(subfactory)
     if not subfactory.valid then
-        Factory.remove(subfactory.parent, subfactory)
-        return "removed"
+        subfactory.parent.Subfactory.count = subfactory.parent.Subfactory.count - 1
+        subfactory.parent.Subfactory.datasets[subfactory.id] = nil
+        return
     end
 
-    for _, item in pairs(Subfactory.get_in_order(subfactory, "Ingredient")) do item.type = nil end
-    for _, item in pairs(Subfactory.get_in_order(subfactory, "Product")) do item.type = nil end
-    for _, item in pairs(Subfactory.get_in_order(subfactory, "Byproduct")) do item.type = nil end
+    for _, item in pairs(subfactory.Ingredient.datasets) do item.type = nil end
+    for _, item in pairs(subfactory.Product.datasets) do item.type = nil end
+    for _, item in pairs(subfactory.Byproduct.datasets) do item.type = nil end
 
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
             line.machine.parent = line
 
             local module_count = 0
-            for _, module in pairs(Line.get_in_order(line, "Module")) do
+            for _, module in pairs(line.Module.datasets) do
                 module_count = module_count + module.amount
                 module.category = nil
                 module.parent = line.machine

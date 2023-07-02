@@ -69,10 +69,7 @@ local function apply_migrations(migrations, function_name, object, player)
         local migration_function = migration[function_name]
 
         if migration_function ~= nil then
-            local migration_message = migration_function(object, player)  ---@type string
-
-            -- If no message is returned, everything went fine
-            if migration_message == "removed" then break end
+            migration_function(object, player)  ---@type string
         end
     end
 end

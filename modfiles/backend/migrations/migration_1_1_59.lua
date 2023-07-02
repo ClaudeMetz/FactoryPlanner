@@ -2,6 +2,8 @@
 
 local migration = {}
 
+-- Already broken due to Item.pack using the new prototyper
+
 function migration.packed_subfactory(packed_subfactory)
     local function update_lines(floor)
         for _, packed_line in ipairs(floor.Line.objects) do
