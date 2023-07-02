@@ -2,8 +2,6 @@ modal_dialog = {}
 
 ---@alias ModalDialogType string
 
----@class ModalData: table
-
 -- ** LOCAL UTIL **
 local function create_base_modal_dialog(player, dialog_settings, modal_data)
     local modal_elements = modal_data.modal_elements

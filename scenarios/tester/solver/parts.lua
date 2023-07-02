@@ -12,7 +12,6 @@ local parts = {}
 
 function parts.export_string(setup)
     return game.table_to_json({
-        mod_version = "1.1.64",
         export_modset = {
             base = "1.1.80",
             flib = "0.12.6",

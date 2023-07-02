@@ -247,7 +247,8 @@ local function generate_object_index()
 
         for factory in district:iterator() do
             index[factory.id] = factory
-            -- TODO more
+            index[factory.top_floor.id] = factory.top_floor
+            -- TODO come up with solution to iterate all floors
         end
     end
     return index
@@ -257,8 +258,9 @@ end
 -- ** TOP LEVEL **
 ---@param skip_check boolean Whether the mod version check is skipped
 function loader.run(skip_check)
-    -- If the mod version changed, the loader will be re-run after migration anyways
-    if not skip_check and script.active_mods["factoryplanner"] ~= global.mod_version then return end
+    if not skip_check and script.active_mods["factoryplanner"] ~= global.installed_mods["factoryplanner"] then
+        return  -- if the mod version changed, the loader will be re-run after migration anyways
+    end
 
     util.nth_tick.register_all()
 

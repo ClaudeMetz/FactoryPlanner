@@ -1,6 +1,7 @@
 local Object = require("backend.data.Object")
 
 ---@class District: Object, ObjectMethods
+---@field class "District"
 ---@field first_factory Factory?
 local District = Object.methods()
 District.__index = District
@@ -72,4 +73,4 @@ function District:validate()
     self:_validate(self.first_factory)
 end
 
-return init
+return {init = init}

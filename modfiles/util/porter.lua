@@ -1,36 +1,37 @@
 local migrator = require("backend.handlers.migrator")
+local Factory = require("backend.data.Factory")
 
 local _porter = {}
 
 ---@class ExportTable
----@field mod_version VersionString
 ---@field export_modset ModToVersion
----@field subfactories FPPackedSubfactory[]
+---@field subfactories PackedFactory[]
+
+---@class ImportTable
+---@field export_modset ModToVersion
+---@field subfactories Factory[]
 
 ---@alias ExportString string
 
 -- Converts the given subfactories into a factory exchange string
----@param subfactories FPSubfactory[]
+---@param subfactories Factory[]
 ---@return ExportString
 function _porter.generate_export_string(subfactories)
     local export_table = {
-        -- This can use the global mod_version since it's only called for migrated, valid subfactories
-        mod_version = global.mod_version,
         export_modset = global.installed_mods,
         subfactories = {}
     }
 
     for _, subfactory in pairs(subfactories) do
-        table.insert(export_table.subfactories, Subfactory.pack(subfactory))
+        table.insert(export_table.subfactories, subfactory:pack())
     end
 
-    local export_string = game.encode_string(game.table_to_json(export_table))  ---@cast export_string -nil
-    return export_string
+    return game.encode_string(game.table_to_json(export_table))  --[[@as ExportString]]
 end
 
 -- Converts the given factory exchange string into a temporary Factory
 ---@param export_string ExportString
----@return District?
+---@return ImportTable?
 ---@return string?
 function _porter.process_export_string(export_string)
     local export_table = nil  ---@type AnyBasic?
@@ -45,29 +46,21 @@ function _porter.process_export_string(export_string)
         migrator.migrate_export_table(export_table)
     end) then return nil, "migration_failure" end
 
-    local import_factory = Factory.init()
+    -- Include the modset at export time to be displayed to the user if a subfactory is invalid
+    local import_table = {export_modset = export_table.export_modset, subfactories = {}}  ---@type ImportTable
+
     if not pcall(function()  -- Unpacking and validating could be pcall-ed separately, but that's too many slow pcalls
         for _, packed_subfactory in pairs(export_table.subfactories) do
-            local unpacked_subfactory = Subfactory.unpack(packed_subfactory)
-
-            -- The imported subfactories will be temporarily contained in a factory, so they
-            -- can be validated and moved to the appropriate 'real' factory easily
-            Factory.add(import_factory, unpacked_subfactory)
-
-            -- Validate the subfactory to both add the valid-attributes to all the objects
-            -- and potentially un-simplify the prototypes that came in packed
-            Subfactory.validate(unpacked_subfactory)
+            local unpacked_subfactory = Factory.unpack(packed_subfactory)
+            unpacked_subfactory:validate()
+            table.insert(import_table.subfactories, unpacked_subfactory)
         end
-
-        -- Include the modset at export time to be displayed to the user if a subfactory is invalid
-        import_factory.export_modset = export_table.export_modset
-
     end) then return nil, "unpacking_failure" end
 
     -- This is not strictly a decoding failure, but close enough
-    if Factory.count(import_factory, "Subfactory") == 0 then return nil, "decoding_failure" end
+    if #import_table.subfactories == 0 then return nil, "decoding_failure" end
 
-    return import_factory, nil
+    return import_table, nil
 end
 
 ---@alias UpdatedMods { [string]: { old: VersionString, current: VersionString } }
@@ -136,15 +129,21 @@ end
 -- Adds given export_string-subfactories to the current factory
 ---@param player LuaPlayer
 ---@param export_string ExportString
-function _porter.add_by_string(player, export_string)
-    local context = util.globals.context(player)
-    local first_subfactory = Factory.import_by_string(context.factory, export_string)
-    util.context.set_subfactory(player, first_subfactory)
+function _porter.add_subfactories(player, export_string)
+    local import_table = util.porter.process_export_string(export_string)  ---@cast import_table -nil
+    -- No error handling here, as the export_string for this will always be known to work
 
-    for _, subfactory in pairs(Factory.get_in_order(context.factory, "Subfactory")) do
-        if not subfactory.valid then Subfactory.repair(subfactory, player) end
+    local district = util.context.get(player, "District")  --[[@as District]]
+    local first_subfactory = nil
+
+    for _, subfactory in pairs(import_table.subfactories) do
+        district:insert(subfactory)
+        if not subfactory.valid then subfactory:repair(player) end
         solver.update(player, subfactory)
+        first_subfactory = first_subfactory or subfactory
     end
+
+    util.context.set(player, first_subfactory)
 end
 
 return _porter

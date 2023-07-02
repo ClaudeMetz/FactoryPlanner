@@ -15,4 +15,4 @@ local function init()
     return object
 end
 
-return init
+return {init = init--[[ , unpack = unpack ]]}

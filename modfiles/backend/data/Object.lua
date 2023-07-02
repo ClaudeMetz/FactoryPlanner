@@ -69,14 +69,14 @@ end
 ---@protected
 ---@param direction NeighbourDirection?
 ---@param pivot Object?
----@param first Object?
+---@param first_object Object?
 ---@return Object? pivot
-function methods:_determine_pivot(direction, pivot, first)
+function methods:_determine_pivot(direction, pivot, first_object)
     if direction ~= nil and pivot ~= nil then
         if pivot[direction] ~= nil then return pivot[direction]
         else return nil end  -- nothing exists in this direction
     else
-        return first
+        return first_object
     end
 end
 
@@ -169,12 +169,12 @@ end
 
 
 ---@protected
----@param first_object Object?
+---@param pivot Object?
 ---@param filter ObjectFilter?
 ---@param direction NeighbourDirection?
 ---@return function iterator
-function methods:_iterator(first_object, filter, direction)
-    local next_object = first_object
+function methods:_iterator(pivot, filter, direction)
+    local next_object = pivot
     return function()
         while next_object ~= nil do
             local matched = match(next_object, filter)
@@ -186,25 +186,74 @@ function methods:_iterator(first_object, filter, direction)
 end
 
 ---@protected
----@param first_object Object?
+---@param pivot Object?
 ---@param filter ObjectFilter?
 ---@param direction NeighbourDirection?
 ---@return number count
-function methods:_count(first_object, filter, direction)
+function methods:_count(pivot, filter, direction)
     local count = 0
-    for _ in self:_iterator(first_object, filter, direction) do
+    for _ in self:_iterator(pivot, filter, direction) do
         count = count + 1
     end
     return count
 end
 
 
+---@class PackedObject
+---@field class string
+
 ---@protected
 ---@param first_object Object?
----@param filter ObjectFilter?
-function methods:_validate(first_object, filter)
-    for object in self:_iterator(first_object, filter) do
-        object:validate()
+---@return PackedObject[] packed_objects
+function methods:_pack(first_object)
+    local packed_objects = {}
+    for object in self:_iterator(first_object) do
+        packed_objects:insert(object:pack())
+    end
+    return packed_objects
+end
+
+---@protected
+---@param packed_objects PackedObject[]
+---@param unpack function
+---@return Object? first_object
+function Object.unpack(packed_objects, unpack, parent)
+    local first_object, latest_object = nil, nil
+    for _, packed_object in pairs(packed_objects) do
+        local object = unpack(packed_object)
+        object.parent = parent
+
+        if not first_object then
+            first_object = object
+        else
+            latest_object.next = object
+            object.previous = latest_object
+        end
+        latest_object = object
+    end
+    return first_object
+end
+
+
+---@protected
+---@param first_object Object?
+---@return boolean valid
+function methods:_validate(first_object)
+    local valid = true
+    for object in self:_iterator(first_object) do
+        -- Stays true until a single dataset is invalid, then stays false
+        valid = object:validate() and valid
+    end
+    return valid
+end
+
+---@protected
+---@param first_object Object?
+function methods:_repair(first_object, player)
+    for object in self:_iterator(first_object) do
+        if not object.valid and not object:repair(player) then
+            object.parent:remove(object)
+        end
     end
 end
 
