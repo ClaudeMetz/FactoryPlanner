@@ -19,7 +19,7 @@ function migration.player_table(player_table)
 end
 
 function migration.subfactory(subfactory)
-    for _, product in pairs(Subfactory.get_all(subfactory, "Product")) do
+    for _, product in pairs(subfactory.Product.datasets) do
         if product.proto.simplified then
             product.proto = {name=product.proto.name, category=product.proto.type, data_type="items", simplified=true}
         else
@@ -45,8 +45,8 @@ function migration.subfactory(subfactory)
         end
     end
 
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_all(floor, "Line")) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
             if line.subfloor then goto skip end
             local recipe_proto = line.recipe.proto
             if recipe_proto.simplified then

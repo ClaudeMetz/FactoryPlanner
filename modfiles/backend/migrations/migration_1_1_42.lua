@@ -2,6 +2,8 @@
 
 local migration = {}
 
+-- Hard to fix migration
+
 local function migrate_modules(object)
     object.module_count = nil
     if object.proto.simplified then object.proto = {module_limit = 0} end
@@ -40,8 +42,8 @@ function migration.subfactory(subfactory)
         subfactory.icon = nil
     end
 
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_all(floor, "Line")) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
             line.effects_tooltip = ""
             if not line.subfloor then migrate_modules(line.machine) end
             if line.beacon then migrate_modules(line.beacon) end

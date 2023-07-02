@@ -7,13 +7,14 @@ function migration.player_table(player_table)
 end
 
 function migration.subfactory(subfactory)
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
             if line.machine and line.machine.fuel then line.machine.fuel.satisfied_amount = 0 end
 
-            line.Product = Collection.init()
-            line.Byproduct = Collection.init()
-            line.Ingredient = Collection.init()
+            local function init() return {datasets={}, index=0, count=0, class="Collection"} end
+            line.Product = init()
+            line.Byproduct = init()
+            line.Ingredient = init()
         end
     end
 end

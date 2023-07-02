@@ -15,9 +15,10 @@ function migration.player_table(player_table)
 end
 
 function migration.subfactory(subfactory)
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-            local fuel = Line.get_by_gui_position(line, "Fuel", 1)
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
+            local fuel = nil
+            for _, f in pairs(line.Fuel.datasets) do fuel = f end
             if fuel ~= nil and fuel.valid and fuel.proto ~= nil then
                 fuel.category = fuel.proto.fuel_category
                 line.fuel = fuel

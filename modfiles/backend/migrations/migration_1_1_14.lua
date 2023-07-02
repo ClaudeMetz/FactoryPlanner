@@ -3,8 +3,8 @@
 local migration = {}
 
 function migration.subfactory(subfactory)
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
             if not line.subfloor then
                 line.done = false
 

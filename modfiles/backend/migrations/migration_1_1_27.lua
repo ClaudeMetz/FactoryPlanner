@@ -2,12 +2,14 @@
 
 local migration = {}
 
+-- Hard to fix migration
+
 function migration.subfactory(subfactory)
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_all(floor, "Line")) do
+    for _, floor in pairs(subfactory.Floor.datasets) do
+        for _, line in pairs(floor.Line.datasets) do
             local beacon = line.beacon
             if beacon and beacon.module then
-                beacon.Module = Collection.init()
+                beacon.Module = {datasets={}, index=0, count=0, class="Collection"}
                 beacon.module_count = 0
                 beacon.module.parent = beacon
                 Collection.add(beacon.Module, beacon.module)
@@ -26,7 +28,7 @@ function migration.packed_subfactory(packed_subfactory)
             elseif packed_line.beacon and packed_line.beacon.module then
                 local beacon = packed_line.beacon
                 local module = Module.unpack(beacon.module)
-                local modules = Collection.init()
+                local modules = {datasets={}, index=0, count=0, class="Collection"}
                 Collection.add(modules, module)
                 beacon.Module = Collection.pack(modules, Module)
                 beacon.module_count = module.amount
