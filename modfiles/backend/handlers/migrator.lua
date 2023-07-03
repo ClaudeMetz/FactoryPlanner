@@ -4,7 +4,7 @@
 local migrator = {}
 
 ---@alias MigrationMasterList { [integer]: { version: VersionString, migration: Migration } }
----@alias Migration { global: function, player_table: function, subfactory: function, packed_subfactory: function }
+---@alias Migration { global: function, player_table: function, packed_subfactory: function? }
 ---@alias MigrationObject PlayerTable | Factory | PackedFactory
 
 -- Returns a table containing all existing migrations in order
@@ -19,9 +19,10 @@ local migration_masterlist = {  ---@type MigrationMasterList
     [8] = {version="1.1.65", migration=require("backend.migrations.migration_1_1_65")},
     [9] = {version="1.1.66", migration=require("backend.migrations.migration_1_1_66")},
     [10] = {version="1.1.67", migration=require("backend.migrations.migration_1_1_67")},
+    [11] = {version="1.1.71", migration=require("backend.migrations.migration_1_1_71")},
 }
 
--- ** LOCAL UTIL **
+
 -- Compares two mod versions, returns true if v1 is an earlier version than v2 (v1 < v2)
 -- Version numbers have to be of the same structure: same amount of numbers, separated by a '.'
 ---@param v1 VersionString
@@ -58,16 +59,23 @@ local function apply_migrations(migrations, function_name, object, player)
     end
 end
 
+
 -- Determines whether a migration needs to take place, and if so, returns the appropriate range of the
 -- migration_masterlist. If the version changed, but no migrations apply, it returns an empty array.
----@param previous_version VersionString
----@return Migration[]
-local function determine_migrations(previous_version)
-    local migrations = {}
+---@param comparison_version VersionString?
+---@return Migration[]?
+function migrator.determine_migrations(comparison_version)
+    local previous_version = global.installed_mods["factoryplanner"]
 
+    -- 1.1.60 is the first version that can be properly migrated (doesn't apply to export strings)
+    if not comparison_version and not compare_versions("1.1.59", previous_version) then return nil end
+    comparison_version = comparison_version or previous_version
+
+    local migrations = {}
     local found = false
+
     for _, migration in ipairs(migration_masterlist) do
-        if compare_versions(previous_version, migration.version) then found = true end
+        if compare_versions(comparison_version, migration.version) then found = true end
         if found then table.insert(migrations, migration.migration) end
     end
 
@@ -75,42 +83,26 @@ local function determine_migrations(previous_version)
 end
 
 
--- ** TOP LEVEL **
----@return boolean
-function migrator.migration_possible()
-    -- 1.1.60 is the first version that can be properly migrated
-    return compare_versions("1.1.59", global.installed_mods["factoryplanner"])
-end
-
-
--- Applies any appropriate migrations to the global table
-function migrator.migrate_global()
-    local migrations = determine_migrations(global.installed_mods["factoryplanner"])
+---@param migrations Migration[]
+function migrator.migrate_global(migrations)
     apply_migrations(migrations, "global", nil, nil)
 end
 
--- Applies any appropriate migrations to the given factory
 ---@param player LuaPlayer
-function migrator.migrate_player_table(player)
+---@param migrations Migration[]
+function migrator.migrate_player_table(player, migrations)
     local player_table = util.globals.player_table(player)
-    if player_table ~= nil then  -- don't apply migrations to new players
-        local migrations = determine_migrations(global.installed_mods["factoryplanner"])
-
-        apply_migrations(migrations, "player_table", player_table, player)
-
-        for subfactory in player_table.district:iterator() do
-            apply_migrations(migrations, "subfactory", subfactory, player)
-        end
-    end
+    apply_migrations(migrations, "player_table", player_table, player)
 end
+
 
 -- Applies any appropriate migrations to the given export_table's subfactories
 ---@param export_table ExportTable
 function migrator.migrate_export_table(export_table)
-    local migrations = determine_migrations(export_table.export_modset["factoryplanner"])
+    local export_version = export_table.export_modset["factoryplanner"]
+    local migrations = migrator.determine_migrations(export_version)  ---@cast migrations -nil
+
     for _, packed_subfactory in pairs(export_table.subfactories) do
-        -- This migration type won't need the player argument, and removing it allows
-        -- us to run imports without having a player attached
         apply_migrations(migrations, "packed_subfactory", packed_subfactory, nil)
     end
 end

@@ -243,11 +243,14 @@ local function generate_object_index()
     local index = {}
     for _, player_table in pairs(global.players) do
         local district = player_table.district
+        if not player_table.district then return {} end  -- migration issue mitigation
+
         index[district.id] = district
 
         for factory in district:iterator() do
             index[factory.id] = factory
             index[factory.top_floor.id] = factory.top_floor
+
             -- TODO come up with solution to iterate all floors
         end
     end
