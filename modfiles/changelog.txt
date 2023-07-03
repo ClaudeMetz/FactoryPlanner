@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    - Due to far-reaching technical changes, the minimum migratable version of the mod is 1.1.60 from here on out. This means any save from before 1.1.60 can not be correctly loaded with any new versions of the mod anymore. Old saves can be brought forward by first loading them with 1.1.60, saving them, then loading them with a recent version. Export strings are not affected by this.
   Bugfixes:
-    - 
+    -
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.70

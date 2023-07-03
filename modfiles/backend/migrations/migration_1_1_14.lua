@@ -2,19 +2,6 @@
 
 local migration = {}
 
-function migration.subfactory(subfactory)
-    for _, floor in pairs(subfactory.Floor.datasets) do
-        for _, line in pairs(floor.Line.datasets) do
-            if not line.subfloor then
-                line.done = false
-
-                line.machine.force_limit = line.machine.hard_limit
-                line.machine.hard_limit = nil
-            end
-        end
-    end
-end
-
 function migration.packed_subfactory(packed_subfactory)
     local function update_lines(floor)
         for _, packed_line in ipairs(floor.Line.objects) do

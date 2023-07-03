@@ -253,7 +253,7 @@ subfactory_list = {}  -- TODO try to move elsewhere or smth to get rid of global
 -- Utility function to centralize subfactory creation behavior
 function subfactory_list.add_subfactory(player, name)
     local settings = util.globals.settings(player)
-    local subfactory = Factory(name, settings.default_timescale)
+    local subfactory = Factory.init(name, settings.default_timescale)
     if settings.prefer_matrix_solver then subfactory.matrix_free_items = {} end
 
     local district = util.context.get(player, "District")  --[[@as District]]

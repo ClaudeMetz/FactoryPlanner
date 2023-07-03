@@ -2,19 +2,6 @@
 
 local migration = {}
 
--- Hard to fix migration
-
-local function migrate_modules(object)
-    object.module_count = nil
-    if object.proto.simplified then object.proto = {module_limit = 0} end
-    local module_set = ModuleSet.init(object)
-    for _, module in pairs(object.Module.datasets) do
-        ModuleSet.add(module_set, module.proto, module.amount)
-    end
-    object.Module = nil
-    object.module_set = module_set
-end
-
 local function migrate_packed_modules(packed_object)
     local module_set = {
         modules = packed_object.Module,
@@ -24,31 +11,6 @@ local function migrate_packed_modules(packed_object)
     }
     packed_object.Module = nil
     packed_object.module_set = module_set
-end
-
-function migration.global()
-    global.alt_actions = nil
-end
-
-function migration.player_table(player_table)
-    player_table.clipboard = nil
-    player_table.preferences.tutorial_mode = true
-end
-
-function migration.subfactory(subfactory)
-    if subfactory.icon then
-        local icon_path = subfactory.icon.type .. "/" .. subfactory.icon.name
-        subfactory.name = "[img=" .. icon_path .. "] " .. subfactory.name
-        subfactory.icon = nil
-    end
-
-    for _, floor in pairs(subfactory.Floor.datasets) do
-        for _, line in pairs(floor.Line.datasets) do
-            line.effects_tooltip = ""
-            if not line.subfloor then migrate_modules(line.machine) end
-            if line.beacon then migrate_modules(line.beacon) end
-        end
-    end
 end
 
 function migration.packed_subfactory(packed_subfactory)
