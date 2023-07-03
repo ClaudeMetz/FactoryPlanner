@@ -7,7 +7,7 @@ local _gui = { switch = {}, mod = {} }
 ---@param parent_flow LuaGuiElement
 ---@param action string
 ---@param additional_tags Tags
----@param state SwitchState
+---@param state SwitchState | boolean
 ---@param caption LocalisedString?
 ---@param tooltip LocalisedString?
 ---@param label_first boolean?

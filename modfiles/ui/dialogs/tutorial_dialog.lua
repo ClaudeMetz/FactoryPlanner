@@ -91,9 +91,10 @@ listeners.gui = {
             handler = (function(player, _, _)
                 -- If this button can be pressed, the tutorial subfactory is valid implicitly
                 local player_table = util.globals.player_table(player)
-                local subfactory = Factory.add(player_table.factory, global.tutorial_subfactory)
-                solver.update(player, subfactory)
-                util.context.set_subfactory(player, subfactory)
+                local clone = global.tutorial_subfactory:clone()
+                player_table.district:insert(clone)
+                solver.update(player, clone)
+                util.context.set(player, clone)
 
                 util.raise.refresh(player, "all", nil)
                 util.raise.close_dialog(player, "cancel")

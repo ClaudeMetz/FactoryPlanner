@@ -34,6 +34,7 @@ local function init(name, timescale)
         archived = false,
         --owner = nil,
         --shared = false,
+
         name = name,
         timescale = timescale,
         mining_productivity = nil,
@@ -48,6 +49,7 @@ local function init(name, timescale)
         energy_consumption = 0,
         pollution = 0,
         linearly_dependant = false,
+
         tick_of_deletion = nil,
         item_request_proxy = nil,
         last_valid_modset = nil

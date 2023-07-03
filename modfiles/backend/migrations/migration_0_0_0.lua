@@ -8,10 +8,7 @@ end
 function migration.player_table(player_table)
 end
 
-function migration.subfactory(subfactory)
-end
-
-function migration.packed_subfactory(packed_subfactory)
+function migration.packed_factory(packed_factory)
 end
 
 return migration

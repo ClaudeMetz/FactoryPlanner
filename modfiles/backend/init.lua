@@ -1,5 +1,4 @@
 local District = require("backend.data.District")
-local Factory = require("backend.data.Factory")  -- TODO delete, just for testing
 
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
@@ -12,7 +11,6 @@ require("backend.calculation.solver")
 ---@field preferences PreferencesTable
 ---@field settings SettingsTable
 ---@field ui_state UIStateTable
----@field index PlayerIndex
 ---@field district District
 ---@field context ContextTable
 ---@field translation_tables { [string]: TranslatedDictionary }?
@@ -160,14 +158,12 @@ end
 
 
 ---@param player LuaPlayer
-local function create_player_table(player)
+local function player_init(player)
     global.players[player.index] = {}
     local player_table = global.players[player.index]
-    --player_table.index = player.index  TODO not needed? migration
-    -- TODO migration player_table.mod_version removal
 
-    player_table.district = District.init()  -- TODO migration
-    util.context.init(player)  -- TODO migration?
+    player_table.district = District.init()
+    util.context.init(player)
 
     player_table.preferences = {}
     reload_preferences(player)
@@ -175,7 +171,10 @@ local function create_player_table(player)
     reload_settings(player)
     reset_ui_state(player)
 
+    util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 12)
+
+    if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end
 end
 
 ---@param player LuaPlayer
@@ -191,8 +190,13 @@ local function refresh_player_table(player)
     player_table.translation_tables = nil
     player_table.clipboard = nil
 
-    return player_table
+    -- Migrate the prototypes used in the player's preferences
+    prototyper.defaults.migrate(player_table)
+    prototyper.util.migrate_mb_defaults(player_table)
+
+    player_table.district:validate()
 end
+
 
 ---@return Factory?
 local function import_tutorial_subfactory()
@@ -205,7 +209,6 @@ local function import_tutorial_subfactory()
     end
 end
 
-
 local function global_init()
     -- Set up a new save for development if necessary
     local freeplay = remote.interfaces["freeplay"]
@@ -214,9 +217,8 @@ local function global_init()
         if freeplay["set_disable_crashsite"] then remote.call("freeplay", "set_disable_crashsite", true) end
     end
 
-    -- TODO migration global.mod_version removal
     global.players = {}  ---@type { [PlayerIndex]: PlayerTable }
-    global.current_ID = 0  -- Counter used for assigning incrementing IDs to all objects TODO migration
+    global.current_ID = 0  -- Counter used for assigning incrementing IDs to all objects
 
     -- Save metadata about currently registered on_nth_tick events
     global.nth_tick_events = {}  ---@type { [Tick]: NthTickEvent }
@@ -227,50 +229,37 @@ local function global_init()
     -- Retain current modset to detect mod changes for subfactories that became invalid
     global.installed_mods = script.active_mods  ---@type ModToVersion
     -- Import the tutorial subfactory to validate and cache it
-    global.tutorial_subfactory = nil--import_tutorial_subfactory()
+    global.tutorial_subfactory = import_tutorial_subfactory()
 
     -- Initialize flib's translation module
     translator.on_init()
     prototyper.util.build_translation_dictionaries()
 
-    for _, player in pairs(game.players) do
-        create_player_table(player)
-        util.gui.toggle_mod_gui(player)
-    end
+    for _, player in pairs(game.players) do player_init(player) end
 end
-
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories
 local function handle_configuration_change()
-    if not migrator.migration_possible() then
+    local migrations = migrator.determine_migrations()
+
+    if not migrations then  -- implies this save can't be migrated anymore
         for _, player in pairs(game.players) do util.gui.reset_player(player) end
         global = {}; global_init()
-        game.print({"fp.mod_reset"});
+        game.print{"fp.mod_reset"};
         return
     end
 
     prototyper.build()
-    loader.run(true)  -- Re-run the loader to update with the new prototypes
+    loader.run(true)
 
-    migrator.migrate_global()
-
-    -- Runs through all players, even new ones without player_table
+    migrator.migrate_global(migrations)
     for _, player in pairs(game.players) do
-        -- Migrate player_table data if it exists
-        migrator.migrate_player_table(player)
-
-        local player_table = refresh_player_table(player)
-
-        -- Migrate the prototypes used in the player's preferences
-        prototyper.defaults.migrate(player_table)
-        prototyper.util.migrate_mb_defaults(player_table)
-
-        -- Update the validity of the entire district
-        player_table.district:validate()
+        migrator.migrate_player_table(player, migrations)
+        refresh_player_table(player)
     end
 
     global.installed_mods = script.active_mods
-    global.tutorial_subfactory = nil--import_tutorial_subfactory()
+    global.tutorial_subfactory = import_tutorial_subfactory()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
@@ -289,33 +278,15 @@ end
 -- ** TOP LEVEL **
 script.on_init(global_init)
 
-script.on_load(loader.run)
-
 script.on_configuration_changed(handle_configuration_change)
+
+script.on_load(loader.run)
 
 
 -- ** PLAYER DATA **
-script.on_event(defines.events.on_player_created, function(event)  -- TODO cleanup, combine with above stuff
+script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)  ---@cast player -nil
-
-    -- Sets up the player_table for the new player
-    create_player_table(player)
-
-    -- Sets up the mod-GUI for the new player if necessary
-    util.gui.toggle_mod_gui(player)
-
-    -- Add the factories that are handy for development
-    --if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end
-
-    -- TODO delete
-    --[[ local district = global.players[event.player_index].district
-    local factory = Factory.init("Fun")
-    district:insert(factory)
-    local factory2 = Factory.init("Stuff")
-    district:insert(factory2)
-    local factory3 = Factory.init("Despair")
-    district:insert(factory3)
-    util.context.set(player, factory) ]]
+    player_init(player)
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)

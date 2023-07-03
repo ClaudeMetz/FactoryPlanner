@@ -208,7 +208,7 @@ end
 function methods:_pack(first_object)
     local packed_objects = {}
     for object in self:_iterator(first_object) do
-        packed_objects:insert(object:pack())
+        table.insert(packed_objects, object:pack())
     end
     return packed_objects
 end
