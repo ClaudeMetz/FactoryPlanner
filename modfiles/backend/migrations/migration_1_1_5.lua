@@ -2,33 +2,6 @@
 
 local migration = {}
 
-function migration.player_table(player_table)
-    player_table.ui_state.view_states = player_table.ui_state.view_state
-    player_table.preferences.toggle_column = false
-end
-
-function migration.subfactory(subfactory)
-    for _, floor in pairs(subfactory.Floor.datasets) do
-        if floor.level > 1 then floor.defining_line = floor.Line.datasets[1] end
-
-        for _, line in pairs(floor.Line.datasets) do
-            if not line.subfloor then
-                line.machine.effects_tooltip = ""
-                for _, module in pairs(line.machine.Module.datasets) do
-                    module.effects_tooltip = ""
-                end
-
-                line.active = true
-            end
-
-            if line.beacon then
-                line.beacon.effects_tooltip = ""
-                line.beacon.module.effects_tooltip = ""  -- not strictly necessary yet
-            end
-        end
-    end
-end
-
 function migration.packed_subfactory(packed_subfactory)
     local function update_lines(floor)
         for _, packed_line in ipairs(floor.Line.objects) do

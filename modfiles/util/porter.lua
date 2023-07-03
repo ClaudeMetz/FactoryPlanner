@@ -43,6 +43,7 @@ function _porter.process_export_string(export_string)
     ---@cast export_table ExportTable
 
     if not pcall(function()
+        -- Works for any old version of the mod, which is not the case for other migrations
         migrator.migrate_export_table(export_table)
     end) then return nil, "migration_failure" end
 

@@ -195,7 +195,7 @@ local function refresh_player_table(player)
 end
 
 ---@return Factory?
-local function import_tutorial_subfactory()  -- TODO verify
+local function import_tutorial_subfactory()
     local import_table, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
     if error then
         return nil
@@ -233,12 +233,22 @@ local function global_init()
     translator.on_init()
     prototyper.util.build_translation_dictionaries()
 
-    -- Create player tables for all existing players
-    for _, player in pairs(game.players) do create_player_table(player) end
+    for _, player in pairs(game.players) do
+        create_player_table(player)
+        util.gui.toggle_mod_gui(player)
+    end
 end
+
 
 -- Prompts migrations, a GUI and prototype reload, and a validity check on all factories
 local function handle_configuration_change()
+    if not migrator.migration_possible() then
+        for _, player in pairs(game.players) do util.gui.reset_player(player) end
+        global = {}; global_init()
+        game.print({"fp.mod_reset"});
+        return
+    end
+
     prototyper.build()
     loader.run(true)  -- Re-run the loader to update with the new prototypes
 
@@ -279,13 +289,13 @@ end
 -- ** TOP LEVEL **
 script.on_init(global_init)
 
-script.on_configuration_changed(handle_configuration_change)
-
 script.on_load(loader.run)
+
+script.on_configuration_changed(handle_configuration_change)
 
 
 -- ** PLAYER DATA **
-script.on_event(defines.events.on_player_created, function(event)
+script.on_event(defines.events.on_player_created, function(event)  -- TODO cleanup, combine with above stuff
     local player = game.get_player(event.player_index)  ---@cast player -nil
 
     -- Sets up the player_table for the new player
@@ -295,17 +305,17 @@ script.on_event(defines.events.on_player_created, function(event)
     util.gui.toggle_mod_gui(player)
 
     -- Add the factories that are handy for development
-    --if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end TODO uncomment
+    --if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end
 
     -- TODO delete
-    local district = global.players[event.player_index].district
+    --[[ local district = global.players[event.player_index].district
     local factory = Factory.init("Fun")
     district:insert(factory)
     local factory2 = Factory.init("Stuff")
     district:insert(factory2)
     local factory3 = Factory.init("Despair")
     district:insert(factory3)
-    util.context.set(player, factory)
+    util.context.set(player, factory) ]]
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
@@ -313,8 +323,6 @@ script.on_event(defines.events.on_player_removed, function(event)
     -- TODO clear any on_ticks, maybe other stuff?
 end)
 
-
-script.on_event(defines.events.on_player_joined_game, translator.on_player_joined_game)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
@@ -349,8 +357,7 @@ end)
 -- ** TRANSLATION **
 -- Required by flib's translation module
 script.on_event(defines.events.on_tick, translator.on_tick)
-
--- Keep translation going
+script.on_event(defines.events.on_player_joined_game, translator.on_player_joined_game)
 script.on_event(defines.events.on_string_translated, translator.on_string_translated)
 
 ---@param event GuiEvent
