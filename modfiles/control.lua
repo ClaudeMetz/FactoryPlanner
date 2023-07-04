@@ -11,7 +11,7 @@ BEACON_OVERLOAD_ACTIVE = (
 
 DEBUGGER_ACTIVE = (active_mods["debugadapter"] ~= nil)
 DEV_ACTIVE = true  -- enables certain conveniences for development
-llog = require("llog")
+llog = require("util.llog")
 
 
 MAGIC_NUMBERS = {
