@@ -35,10 +35,10 @@ require("backend.calculation.solver")
 ---@field default_prototypes DefaultPrototypes
 
 ---@class MBDefaults
----@field machine FPModulePrototype
----@field machine_secondary FPModulePrototype
----@field beacon FPBeaconPrototype
----@field beacon_count number
+---@field machine FPModulePrototype?
+---@field machine_secondary FPModulePrototype?
+---@field beacon FPBeaconPrototype?
+---@field beacon_count number?
 
 ---@class DefaultPrototypes
 ---@field machines PrototypeWithCategoryDefault
