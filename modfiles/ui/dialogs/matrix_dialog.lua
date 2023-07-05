@@ -75,9 +75,8 @@ local function create_item_category(modal_data, type, label_arg)
 end
 
 local function swap_item_category(player, tags, _)
-    local ui_state = util.globals.ui_state(player)
-    local subfactory = ui_state.context.subfactory
-    local modal_data = ui_state.modal_data
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
 
     -- update the free items here, set the constrained items based on linear dependence data
     if tags.type == "free" then
@@ -100,10 +99,9 @@ end
 
 
 local function matrix_early_abort_check(player, modal_data)
-    local ui_state = util.globals.ui_state(player)
-    local subfactory = ui_state.context.subfactory
+    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    if subfactory.selected_floor.Line.count == 0 then return true end
+    if subfactory.top_floor.first_line == nil then return true end
 
     local subfactory_data = solver.generate_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
@@ -156,9 +154,8 @@ end
 
 local function close_matrix_dialog(player, action)
     if action == "submit" then
-        local ui_state = util.globals.ui_state(player)
-        local subfactory = ui_state.context.subfactory
-        subfactory.matrix_free_items = ui_state.modal_data.free_items
+        local subfactory = util.context.get(player, "Factory")
+        subfactory.matrix_free_items = util.globals.modal_data(player).free_items
 
         solver.update(player, subfactory)
         util.raise.refresh(player, "subfactory", nil)

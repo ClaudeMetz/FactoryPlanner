@@ -252,9 +252,9 @@ local function close_preferences_dialog(player, _)
     local refresh = util.globals.modal_data(player).refresh
 
     if refresh.update_ingredient_satisfaction then
-        local player_table = util.globals.player_table(player)
-        Factory.update_ingredient_satisfactions(player_table.factory)
-        Factory.update_ingredient_satisfactions(player_table.archive)
+        for factory in util.context.get(player, "District"):iterator() do
+            solver.determine_ingredient_satisfaction(factory)
+        end
     end
 
     if refresh.subfactory_list then
@@ -275,8 +275,7 @@ local function close_preferences_dialog(player, _)
     end
 
     if refresh.calculations then
-        local context = util.globals.context(player)
-        solver.update(player, context.subfactory)
+        solver.update(player, util.context.get(player, "Factory"))
         context_to_refresh = "subfactory"
     end
 
