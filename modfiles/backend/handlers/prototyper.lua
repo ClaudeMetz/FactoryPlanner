@@ -41,16 +41,18 @@ prototyper.data_types = {machines = true, recipes = false, items = true, fuels =
 ---@field modules IndexedPrototypesWithCategory<FPModulePrototype>
 ---@field beacons IndexedPrototypes<FPBeaconPrototype>
 
+---@alias SortingFunction fun(a: table, b: table): boolean
+
 
 -- Converts given prototype list to use ids as keys, and sorts it if desired
 ---@param data_type DataType
----@param prototype_sorting_function function
+---@param prototype_sorting_function SortingFunction
 ---@return AnyIndexedPrototypes
 local function convert_and_sort(data_type, prototype_sorting_function)
     local final_list = {}
 
     ---@param list AnyNamedPrototypes[]
-    ---@param sorting_function function
+    ---@param sorting_function SortingFunction
     ---@param category_id integer?
     ---@return AnyIndexedPrototypes
     local function apply(list, sorting_function, category_id)
@@ -103,13 +105,13 @@ function prototyper.build()
 
     -- Second pass to do some things that can't be done in the first pass due to the strict sequencing
     for data_type, _ in pairs(prototyper.data_types) do
-        local second_pass = generator[data_type].second_pass  ---@type function
+        local second_pass = generator[data_type].second_pass  ---@type fun(prototypes: NamedPrototypes)
         if second_pass ~= nil then second_pass(prototypes[data_type]) end
     end
 
     -- Finish up generation by converting lists to use ids as keys, and sort if desired
     for data_type, _ in pairs(prototyper.data_types) do
-        local sorting_function = generator[data_type].sorting_function  ---@type function
+        local sorting_function = generator[data_type].sorting_function  ---@type SortingFunction
         prototypes[data_type] = convert_and_sort(data_type, sorting_function)  ---@type AnyIndexedPrototypes
     end
 end

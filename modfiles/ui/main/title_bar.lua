@@ -17,7 +17,7 @@ local function refresh_title_bar(player)
     local ui_state = util.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local subfactory = util.context.get(player, "Factory")
+    local subfactory = util.context.get(player, "Factory")   --[[@as Factory?]]
     local title_bar_elements = ui_state.main_elements.title_bar
     -- Disallow switching to compact view if the selected subfactory is nil or invalid
     title_bar_elements.switch_button.enabled = (subfactory and subfactory.valid or false)
