@@ -105,17 +105,17 @@ local function module_name_map()
 end
 
 
-local attribute_generators = {}  ---@type { [string]: function }
+local attribute_generators = {}  ---@type { [string]: fun(proto: AnyFPPrototype): LocalisedString }
 
 ---@param belt FPBeltPrototype
----@return LocalisedString[]
+---@return LocalisedString
 function attribute_generators.belts(belt)
     local throughput_string = {"", belt.throughput .. " ", {"fp.pl_item", 2}, "/", {"fp.unit_second"}}
     return {"fp.attribute_line", {"fp.throughput"}, throughput_string}
 end
 
 ---@param beacon FPBeaconPrototype
----@return LocalisedString[]
+---@return LocalisedString
 function attribute_generators.beacons(beacon)
     return {"", {"fp.attribute_line", {"fp.module_slots"}, beacon.module_limit},
            {"fp.attribute_line", {"fp.effectivity"}, (beacon.effectivity * 100) .. "%"},
@@ -123,21 +123,21 @@ function attribute_generators.beacons(beacon)
 end
 
 ---@param wagon FPWagonPrototype
----@return LocalisedString[]
+---@return LocalisedString
 function attribute_generators.wagons(wagon)
     local storage_unit = (wagon.category == "cargo-wagon") and {"fp.pl_stack", wagon.storage} or {"fp.l_fluid"}
     return {"fp.attribute_line", {"fp.storage"}, {"", util.format.number(wagon.storage, 3) .. " ", storage_unit}}
 end
 
 ---@param fuel FPFuelPrototype
----@return LocalisedString[]
+---@return LocalisedString
 function attribute_generators.fuels(fuel)
     return {"", {"fp.attribute_line", {"fp.fuel_value"}, util.format.SI_value(fuel.fuel_value, "J", 3)},
            {"fp.attribute_line", {"fp.emissions_multiplier"}, fuel.emissions_multiplier}}
 end
 
 ---@param machine FPMachinePrototype
----@return LocalisedString[]
+---@return LocalisedString
 function attribute_generators.machines(machine)
     local pollution = machine.energy_usage * (machine.emissions * 60) * 60
     return {"", {"fp.attribute_line", {"fp.crafting_speed"}, util.format.number(machine.speed, 3)},
@@ -238,23 +238,14 @@ local function prototype_maps(data_types)
     return maps
 end
 
----@return { [ObjectID]: Object }
+
 local function generate_object_index()
-    local index = {}
+    OBJECT_INDEX = {}
     for _, player_table in pairs(global.players) do
         local district = player_table.district
         if not player_table.district then return {} end  -- migration issue mitigation
-
-        index[district.id] = district
-
-        for factory in district:iterator() do
-            index[factory.id] = factory
-            index[factory.top_floor.id] = factory.top_floor
-
-            -- TODO come up with solution to iterate all floors
-        end
+        district:index()  -- recursively indexes all objects
     end
-    return index
 end
 
 
@@ -266,8 +257,7 @@ function loader.run(skip_check)
     end
 
     util.nth_tick.register_all()
-
-    OBJECT_INDEX = generate_object_index()
+    generate_object_index()
 
     PROTOTYPE_MAPS = prototype_maps(prototyper.data_types)
     PROTOTYPE_ATTRIBUTES = prototype_attributes()

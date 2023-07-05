@@ -1,63 +1,43 @@
 -- ** LOCAL UTIL **
 local function repair_subfactory(player, _, _)
     -- This function can only run is a subfactory is selected and invalid
-    local subfactory = util.globals.context(player).subfactory
-
-    Subfactory.repair(subfactory, player)
+    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
+    subfactory:repair(player)
 
     solver.update(player, subfactory)
     util.raise.refresh(player, "all", nil)  -- needs the full refresh to reset subfactory list buttons
 end
 
 local function change_timescale(player, new_timescale)
-    local ui_state = util.globals.ui_state(player)
-    local subfactory = ui_state.context.subfactory
+    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    local old_timescale = subfactory.timescale
+    local timescale_ratio = (new_timescale / subfactory.timescale)
     subfactory.timescale = new_timescale
 
     -- Adjust the required_amount according to the new timescale
-    local timescale_ratio = (new_timescale / old_timescale)
-    for _, top_level_product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
-        local required_amount = top_level_product.required_amount
+    for product in subfactory:iterator() do
         -- No need to change amounts for belts/lanes, as timescale change does that implicitly
-        if required_amount.defined_by == "amount" then
-            required_amount.amount = required_amount.amount * timescale_ratio
+        if product.defined_by == "amount" then
+            product.amount = product.amount * timescale_ratio
         end
     end
 
     solver.update(player, subfactory)
     -- View state updates itself automatically if it detects a timescale change
-        util.raise.refresh(player, "subfactory", nil)
+    util.raise.refresh(player, "subfactory", nil)
 end
 
 local function handle_solver_change(player, _, event)
-    local subfactory = util.globals.context(player).subfactory
+    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
     local new_solver = (event.element.switch_state == "left") and "traditional" or "matrix"
 
     if new_solver == "matrix" then
-        subfactory.matrix_free_items = {}  -- 'activate' the matrix solver
+        subfactory.matrix_free_items = {}  -- activate the matrix solver
     else
         subfactory.matrix_free_items = nil  -- disable the matrix solver
         subfactory.linearly_dependant = false
 
-        -- This function works its way through subfloors. Consuming recipes can't have subfloors though.
-        local any_lines_removed = false
-        local function remove_consuming_recipes(floor)
-            for _, line in pairs(Floor.get_in_order(floor, "Line")) do
-                if line.subfloor then
-                    remove_consuming_recipes(line.subfloor)
-                elseif line.recipe.production_type == "consume" then
-                    Floor.remove(floor, line)
-                    any_lines_removed = true
-                end
-            end
-        end
-
-        -- The sequential solver doesn't like byproducts yet, so remove those lines
-        local top_floor = Subfactory.get(subfactory, "Floor", 1)
-        remove_consuming_recipes(top_floor)
-
+        local any_lines_removed = subfactory.top_floor:remove_consuming_lines()
         if any_lines_removed then  -- inform the user if any byproduct recipes are being removed
             util.messages.raise(player, "hint", {"fp.hint_byproducts_removed"}, 1)
         end
@@ -69,11 +49,11 @@ end
 
 
 local function refresh_subfactory_info(player)
-    local ui_state = util.globals.ui_state(player)
-    if ui_state.main_elements.main_frame == nil then return end
+    local main_elements = util.globals.main_elements(player)
+    if main_elements.main_frame == nil then return end
 
-    local subfactory_info_elements = ui_state.main_elements.subfactory_info
-    local subfactory = ui_state.context.subfactory
+    local subfactory_info_elements = main_elements.subfactory_info
+    local subfactory = util.context.get(player, "Factory")  --[[@as Factory?]]
 
     local invalid_subfactory_selected = (subfactory and not subfactory.valid)
     subfactory_info_elements.repair_flow.visible = invalid_subfactory_selected
@@ -82,21 +62,21 @@ local function refresh_subfactory_info(player)
     subfactory_info_elements.power_pollution_flow.visible = valid_subfactory_selected
     subfactory_info_elements.info_flow.visible = valid_subfactory_selected
 
+    if subfactory == nil then return end
+
     if invalid_subfactory_selected then
         subfactory_info_elements.repair_label.tooltip = util.porter.format_modset_diff(subfactory.last_valid_modset)
 
     elseif valid_subfactory_selected then  -- we need to refresh some stuff in this case
-        local archive_open = ui_state.flags.archive_open
-        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
-
         -- Power + Pollution
+        local top_floor = subfactory.top_floor
         local label_power = subfactory_info_elements.power_label
-        label_power.caption = {"fp.bold_label", util.format.SI_value(subfactory.energy_consumption, "W", 3)}
-        label_power.tooltip = util.format.SI_value(subfactory.energy_consumption, "W", 5)
+        label_power.caption = {"fp.bold_label", util.format.SI_value(top_floor.energy_consumption, "W", 3)}
+        label_power.tooltip = util.format.SI_value(top_floor.energy_consumption, "W", 5)
 
         local label_pollution = subfactory_info_elements.pollution_label
-        label_pollution.caption = {"fp.bold_label", util.format.SI_value(subfactory.pollution, "P/m", 3)}
-        label_pollution.tooltip = util.format.SI_value(subfactory.pollution, "P/m", 5)
+        label_pollution.caption = {"fp.bold_label", util.format.SI_value(top_floor.pollution, "P/m", 3)}
+        label_pollution.tooltip = util.format.SI_value(top_floor.pollution, "P/m", 5)
 
         -- Timescale
         for _, button in pairs(subfactory_info_elements.timescales_table.children) do
@@ -104,6 +84,7 @@ local function refresh_subfactory_info(player)
         end
 
         -- Mining Productivity
+        local archive_open = subfactory.archived
         local custom_prod_set = subfactory.mining_productivity
 
         if not custom_prod_set then  -- only do this calculation when it'll actually be shown
@@ -123,6 +104,7 @@ local function refresh_subfactory_info(player)
         subfactory_info_elements.percentage_label.visible = custom_prod_set
 
         -- Solver Choice
+        local matrix_solver_active = (subfactory.matrix_free_items ~= nil)
         local switch_state = (matrix_solver_active) and "right" or "left"
         subfactory_info_elements.solver_choice_switch.switch_state = switch_state
         subfactory_info_elements.solver_choice_switch.enabled = (not archive_open)
@@ -265,7 +247,7 @@ listeners.gui = {
         {
             name = "override_mining_prod",
             handler = (function(player, _, _)
-                local subfactory = util.globals.context(player).subfactory
+                local subfactory = util.context.get(player, "Factory")
                 subfactory.mining_productivity = 0
                 solver.update(player, subfactory)
                 util.raise.refresh(player, "subfactory", nil)
@@ -282,9 +264,8 @@ listeners.gui = {
         {
             name = "mining_prod_override",
             handler = (function(player, _, event)
-                local ui_state = util.globals.ui_state(player)
-                ui_state.context.subfactory.mining_productivity = tonumber(event.element.text)
-                ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
+                util.context.get(player, "Factory").mining_productivity = tonumber(event.element.text)
+                util.globals.flags(player).recalculate_on_subfactory_change = true  -- set flag to recalculate
             end)
         }
     },
@@ -298,9 +279,9 @@ listeners.gui = {
         {
             name = "mining_prod_override",
             handler = (function(player, _, _)
-                local ui_state = util.globals.ui_state(player)
-                ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
-                solver.update(player, ui_state.context.subfactory)
+                -- Reset the recalculation flag as we re-solve below
+                util.globals.flags(player).recalculate_on_subfactory_change = false
+                solver.update(player, util.context.get(player, "Factory"))
                 util.raise.refresh(player, "subfactory", nil)
             end)
         }
@@ -310,12 +291,12 @@ listeners.gui = {
 listeners.misc = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
-            --build_subfactory_info(player)
+            build_subfactory_info(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {subfactory_info=true, subfactory=true, all=true}
-        --if triggers[event.trigger] then refresh_subfactory_info(player) end
+        if triggers[event.trigger] then refresh_subfactory_info(player) end
     end)
 }
 

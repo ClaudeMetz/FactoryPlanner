@@ -5,12 +5,15 @@
 -- this is there ever is a large change related to this again.
 local District = require("backend.data.District")
 local Factory = require("backend.data.Factory")
+local Floor = require("backend.data.Floor")
+local Line = require("backend.data.Line")
+local Product = require("backend.data.Product")
 
 local migration = {}
 
 function migration.global()
-    global.mod_version = nil
     global.current_ID = 0
+    global.mod_version = nil
 end
 
 function migration.player_table(player_table)
@@ -24,6 +27,7 @@ function migration.player_table(player_table)
         for _, subfactory in pairs(player_table[factory_name].Subfactory.datasets) do
             local factory = Factory.init(subfactory.name, subfactory.timescale)
             factory.archived = (factory_name == "archive")
+
             factory.mining_productivity = subfactory.mining_productivity
             factory.matrix_free_items = subfactory.matrix_free_items
             factory.blueprints = subfactory.blueprints
@@ -34,9 +38,28 @@ function migration.player_table(player_table)
             factory.last_valid_modset = subfactory.last_valid_modset
 
             for _, product in pairs(subfactory.Product.datasets) do
-                -- TODO product stuff
+                local new_product = Product.init(product.proto)
+                new_product.defined_by = product.required_amount.defined_by
+                new_product.amount = product.required_amount.amount
+                new_product.belt_proto = product.required_amount.belt_proto
+                factory:insert(new_product)
             end
-            -- TODO floor stuff
+
+            local function convert_floor(floor)
+                local new_floor = Floor.init(floor.level)
+                for _, line in pairs(floor.Line.datasets) do
+                    if line.subfloor then
+                        local subfloor = convert_floor(line.subfloor)
+                        new_floor:insert(subfloor)
+                    else
+                        local new_line = Line.init(line.recipe.proto, line.recipe.production_type)
+                        -- TODO more Line stuff
+                        new_floor:insert(new_line)
+                    end
+                end
+                return new_floor
+            end
+            factory.top_floor = convert_floor(subfactory.Floor.datasets[1])
 
             player_table.district:insert(factory)
         end
@@ -51,8 +74,36 @@ end
 function migration.packed_subfactory(packed_subfactory)
     -- Most things just carry over as-is here, only the structure changes
 
-    packed_subfactory.products = packed_subfactory.Product.objects
-    -- TODO Floor stuff
+    packed_subfactory.products = {}
+    for _, product in pairs(packed_subfactory.Product.objects) do
+        table.insert(packed_subfactory.products, {
+            proto = product.proto,
+            defined_by = product.required_amount.defined_by,
+            amount = product.required_amount.amount,
+            belt_proto = product.required_amount.belt_proto,
+            class = "Product"
+        })
+    end
+
+    local function convert_floor(packed_floor)
+        local new_floor = {level = packed_floor.level, lines = {}, class = "Floor"}
+        for _, line in pairs(packed_floor.Line.objects) do
+            if line.subfloor then
+                table.insert(new_floor.lines, convert_floor(line.subfloor))
+            else
+                table.insert(new_floor.lines, {
+                    recipe_proto = line.recipe.proto,
+                    production_type = line.recipe.production_type,
+                    -- TODO more Line stuff
+                    class = "Line"
+                })
+            end
+        end
+        return new_floor
+    end
+    packed_subfactory.top_floor = convert_floor(packed_subfactory.top_floor)
+
+    -- TODO Line stuff
 end
 
 return migration

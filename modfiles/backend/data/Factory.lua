@@ -1,6 +1,6 @@
 local Object = require("backend.data.Object")
 local Floor = require("backend.data.Floor")
-local Item = require("backend.data.Item")
+local Product = require("backend.data.Product")
 
 ---@class Factory: Object, ObjectMethods
 ---@field class "Factory"
@@ -14,15 +14,11 @@ local Item = require("backend.data.Item")
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field first_product Item?
+---@field first_product Product?
 ---@field top_floor Floor
----@field first_byproduct SimpleItem?
----@field first_ingredient SimpleItem?
----@field energy_consumption number
----@field pollution number
+---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
 ---@field item_request_proxy LuaEntity?
----@field linearly_dependant boolean?
 ---@field last_valid_modset ModToVersion?
 local Factory = Object.methods()
 Factory.__index = Factory
@@ -44,12 +40,7 @@ local function init(name, timescale)
         first_product = nil,
         top_floor = Floor.init(),
 
-        first_byproduct = nil,
-        first_ingredient = nil,
-        energy_consumption = 0,
-        pollution = 0,
         linearly_dependant = false,
-
         tick_of_deletion = nil,
         item_request_proxy = nil,
         last_valid_modset = nil
@@ -59,10 +50,41 @@ local function init(name, timescale)
 end
 
 
----@param item_class "Product" | "Byproduct" | "Ingredient"
----@return function iterator Iterator over all items of the given class
-function Factory:iterator(item_class)
-    return self:_iterator(self["first_" .. item_class:lower()])
+function Factory:index()
+    OBJECT_INDEX[self.id] = self
+    for product in self:iterator() do product:index() end
+    self.top_floor:index()
+end
+
+function Factory:cleanup()
+    OBJECT_INDEX[self.id] = nil
+    for product in self:iterator() do product:cleanup() end
+    self.top_floor:cleanup()
+end
+
+
+---@param product Product
+---@param relative_object Product?
+---@param direction NeighbourDirection?
+function Factory:insert(product, relative_object, direction)
+    product.parent = self
+    self:_insert(product, relative_object, direction)
+end
+
+---@param product Product
+function Factory:remove(product)
+    product:cleanup()
+    self:_remove(product)
+end
+
+
+---@param filter ObjectFilter?
+---@param direction NeighbourDirection?
+---@param pivot Product?
+---@return fun(): Product?
+function Factory:iterator(filter, direction, pivot)
+    local pivot_object = self:_determine_pivot(direction, pivot, self.first_product)
+    return self:_iterator(pivot_object, filter, direction)
 end
 
 
@@ -75,7 +97,7 @@ function Factory:tostring(attach_products, export_format)
 
     if attach_products and self.valid then
         local product_string = ""
-        for item in self:iterator("Product") do
+        for item in self:iterator() do
             product_string = product_string .. "[img=" .. item.proto.sprite .. "]"
         end
         if product_string ~= "" then product_string = product_string .. "  " end
@@ -102,17 +124,12 @@ function Factory:tostring(attach_products, export_format)
     return caption, tooltip
 end
 
----@param new_defined_by "belts" | "lanes"
-function Factory:update_product_definitions(new_defined_by)
-    for product in self:iterator("Product") do
-        local req_amount = product.required_amount
-        local current_defined_by = req_amount.defined_by
-        if current_defined_by ~= "amount" and new_defined_by ~= current_defined_by then
-            req_amount.defined_by = new_defined_by
 
-            local multiplier = (new_defined_by == "belts") and 0.5 or 2
-            req_amount.amount = req_amount.amount * multiplier
-        end
+-- Only used when switching between belts and lanes
+---@param new_defined_by ProductDefinedBy
+function Factory:update_product_definitions(new_defined_by)
+    for product in self:iterator() do
+        product:update_definition(new_defined_by)
     end
 end
 
@@ -138,12 +155,13 @@ end
 ---@field matrix_free_items FPPackedPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field products PackedItem[]?
+---@field products PackedProduct[]?
 ---@field top_floor PackedFloor
 
 ---@return PackedFactory packed_self
 function Factory:pack()
     return {
+        class = self.class,
         name = self.name,
         timescale = self.timescale,
         mining_productivity = self.mining_productivity,
@@ -151,8 +169,7 @@ function Factory:pack()
         blueprints = self.blueprints,
         notes = self.notes,
         products = self:_pack(self.first_product),
-        top_floor = self.top_floor:pack(),
-        class = self.class
+        top_floor = self.top_floor:pack()
     }
 end
 
@@ -162,12 +179,14 @@ local function unpack(packed_self)
     local unpacked_self = init(packed_self.name, packed_self.timescale)
 
     unpacked_self.mining_productivity = packed_self.mining_productivity
-    -- Item prototypes will be automatically unpacked by the validation process
+    -- Product prototypes will be automatically unpacked by the validation process
     unpacked_self.matrix_free_items = packed_self.matrix_free_items
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
 
-    unpacked_self.first_product = Object.unpack(packed_self.products, Item.unpack, unpacked_self)  --[[@as Item]]
+    local function unpacker(item) return Product.unpack(item) end
+    unpacked_self.first_product = Object.unpack(packed_self.products, unpacker, unpacked_self)  --[[@as Product]]
+
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self
 
@@ -186,8 +205,8 @@ end
 ---@return boolean valid
 function Factory:validate()
     local previous_validity = self.valid
-
     self.valid = true
+
     self.valid = self:_validate(self.first_product) and self.valid
     self.valid = self.top_floor:validate() and self.valid
 
@@ -206,6 +225,7 @@ function Factory:validate()
 end
 
 ---@param player LuaPlayer
+---@return boolean success
 function Factory:repair(player)
     self:_repair(self.first_product, player)
     self.top_floor:repair(player)
@@ -220,6 +240,7 @@ function Factory:repair(player)
 
     self.last_valid_modset = nil
     self.valid = true
+    return self.valid
 end
 
 return {init = init, unpack = unpack}

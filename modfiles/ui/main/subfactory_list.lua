@@ -5,7 +5,7 @@ local function delete_subfactory_for_good(metadata)
     local player = game.get_player(metadata.player_index)  ---@cast player -nil
     util.context.remove(player, metadata.subfactory)
 
-    local selected_subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local selected_subfactory = util.context.get(player, "Factory")  --[[@as Factory?]]
     if selected_subfactory and selected_subfactory.id == metadata.subfactory.id then
         util.context.set_adjacent(player, selected_subfactory)
     end
@@ -102,7 +102,7 @@ local function refresh_subfactory_list(player)
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
 
-    local selected_subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local selected_subfactory = util.context.get(player, "Factory")  --[[@as Factory?]]
     local archived = (selected_subfactory) and selected_subfactory.archived or false
 
     local subfactory_list_elements = main_elements.subfactory_list
@@ -294,7 +294,7 @@ listeners.gui = {
             name = "toggle_archive",
             handler = (function(player, _, _)
                 local archive = true
-                local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+                local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
                 if factory ~= nil then archive = (not factory.archived) end
                 util.context.set_default(player, archive)
                 util.raise.refresh(player, "all", nil)

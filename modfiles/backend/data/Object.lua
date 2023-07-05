@@ -111,6 +111,7 @@ function methods:_insert(new_object, relative_object, direction)
             new_object[direction] = relative_object[direction]
             relative_object[direction][other_direction] = new_object
         end
+
         new_object[other_direction] = relative_object
         relative_object[direction] = new_object
     end
@@ -172,7 +173,7 @@ end
 ---@param pivot Object?
 ---@param filter ObjectFilter?
 ---@param direction NeighbourDirection?
----@return function iterator
+---@return fun(): Object?
 function methods:_iterator(pivot, filter, direction)
     local next_object = pivot
     return function()
@@ -215,12 +216,12 @@ end
 
 ---@protected
 ---@param packed_objects PackedObject[]
----@param unpack function
+---@param unpacker fun(item: PackedObject): Object
 ---@return Object? first_object
-function Object.unpack(packed_objects, unpack, parent)
+function Object.unpack(packed_objects, unpacker, parent)
     local first_object, latest_object = nil, nil
     for _, packed_object in pairs(packed_objects) do
-        local object = unpack(packed_object)
+        local object = unpacker(packed_object)
         object.parent = parent
 
         if not first_object then

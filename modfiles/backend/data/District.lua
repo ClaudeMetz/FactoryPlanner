@@ -16,6 +16,12 @@ local function init()
 end
 
 
+function District:index()
+    OBJECT_INDEX[self.id] = self
+    self.first_factory:index()
+end
+
+
 ---@param factory Factory
 ---@param relative_object Factory?
 ---@param direction NeighbourDirection?
@@ -26,8 +32,8 @@ end
 
 ---@param factory Factory
 function District:remove(factory)
+    factory:cleanup()
     self:_remove(factory)
-    OBJECT_INDEX[factory.id] = nil
 end
 
 ---@param factory Factory
@@ -52,7 +58,7 @@ end
 ---@param filter ObjectFilter?
 ---@param direction NeighbourDirection?
 ---@param pivot Factory?
----@return function iterator
+---@return fun(): Factory?
 function District:iterator(filter, direction, pivot)
     local pivot_object = self:_determine_pivot(direction, pivot, self.first_factory)
     return self:_iterator(pivot_object, filter, direction)
