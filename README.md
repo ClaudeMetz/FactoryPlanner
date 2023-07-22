@@ -6,9 +6,7 @@ It enables players to plan out their production in detail, specifying the recipe
 
 My focus when creating the interface for this mod was on making it as clear and intuitive as possible while offering all the features that power users need. To that end, users should be able to get started on their first plans relatively easily, after which they can gradually explore all the functionality that is offered. The interface was created with all the modern design standards and interaction paradigms in mind, making it conform well to both user's expectations and the rest of the game.
 
-There is a public [project board](https://github.com/users/ClaudeMetz/projects/1) organizing what's on my radar. Suggestions and bug reports are centralized here on Github. 
-
-Feel free to join the Factory Planner [Discord](https://discord.gg/ABqNEQc) to talk to me and others in a more casual way.
+There is a public [project board](https://github.com/users/ClaudeMetz/projects/1) organizing what's on my radar. Suggestions and bug reports are centralized here on Github. Feel free to join the Factory Planner [Discord](https://discord.gg/ABqNEQc) to talk to me and others in a more casual way.
 
 ## Contribute
 
