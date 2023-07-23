@@ -1,0 +1,29 @@
+name: Bug report
+description: Encounter any crash or other issue? I'd like to fix that.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        *Before filing a bug, please have a look if it wasn't already reported previously.*
+  - type: textarea
+    attributes:
+      label: Problem Description
+      description: |
+        What went wrong? What did you expect to happen?
+        Please include any context you can, like the crash message, screenshots, or relevant mods.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        **Including the `factorio-current.log` file and a copy of your save is very helpful.**
+        They can be dropped right into the above textfield, if below 25MB in size.
+  - type: textarea
+    attributes:
+      label: Reproduction
+      description: Let me know the exact steps you took to get the crash to happen, if possible.
+      placeholder: |
+        1. Start a new game
+        2. Open the mod's interface
+        3. Bug appears!
