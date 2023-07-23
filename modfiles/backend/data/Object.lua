@@ -20,7 +20,7 @@ local Object = {}  -- class annotation purposefully not attached
 function Object.init(data, class, metatable)
     global.current_ID = global.current_ID + 1
 
-    local object = fancytable.shallow_merge{
+    local object = ftable.shallow_merge{
         {
             id = global.current_ID,
             class = class,
@@ -40,7 +40,7 @@ end
 
 ---@return ObjectMethods
 function Object.methods()
-    return fancytable.shallow_copy(methods)
+    return ftable.shallow_copy(methods)
 end
 
 
