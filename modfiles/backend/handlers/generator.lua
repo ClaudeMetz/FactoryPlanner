@@ -225,7 +225,7 @@ function generator.machines.generate()
                         insert_prototype(machines, machine, machine.category)
 
                         -- Add every boiler to the general steam category (steam without temperature)
-                        local general_machine = fancytable.deep_copy(machine)
+                        local general_machine = ftable.deep_copy(machine)
                         general_machine.category = "general-steam"
                         insert_prototype(machines, general_machine, general_machine.category)
                     end
@@ -720,7 +720,7 @@ function generator.fuels.generate()
 
     -- Add solid fuels
     local item_list = global.prototypes.items["item"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
-    local item_fuel_filter = fancytable.shallow_copy(fuel_filter)
+    local item_fuel_filter = ftable.shallow_copy(fuel_filter)
     table.insert(item_fuel_filter, {filter="flag", flag="hidden", invert=true, mode="and"})
 
     for _, proto in pairs(game.get_filtered_item_prototypes(item_fuel_filter)) do
@@ -742,7 +742,7 @@ function generator.fuels.generate()
 
     -- Add liquid fuels
     local fluid_list = global.prototypes.items["fluid"].members  ---@type NamedPrototypesWithCategory<FPItemPrototype>
-    local fluid_fuel_filter = fancytable.shallow_copy(fuel_filter)
+    local fluid_fuel_filter = ftable.shallow_copy(fuel_filter)
     table.insert(fluid_fuel_filter, {filter="hidden", invert=true, mode="and"})
 
     for _, proto in pairs(game.get_filtered_fluid_prototypes(fluid_fuel_filter)) do

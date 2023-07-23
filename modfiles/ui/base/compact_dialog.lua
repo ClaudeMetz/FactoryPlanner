@@ -57,7 +57,7 @@ local function determine_column_counts(lines, available_columns)
         local table_heights, minimal_height = {}, math.huge
 
         for column, count in pairs(column_counts) do
-            local potential_column_counts = fancytable.shallow_copy(column_counts)
+            local potential_column_counts = ftable.shallow_copy(column_counts)
             potential_column_counts[column] = count + increment
             local new_height = determine_table_height(lines, potential_column_counts)
             table_heights[column] = new_height

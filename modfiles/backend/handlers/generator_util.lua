@@ -73,7 +73,7 @@ local function create_type_indexed_list(item_list)
     local indexed_list = {item = {}, fluid = {}, entity = {}}  ---@type IndexedItemList
 
     for index, item in pairs(item_list) do
-        indexed_list[item.type][item.name] = {index = index, item = fancytable.shallow_copy(item)}
+        indexed_list[item.type][item.name] = {index = index, item = ftable.shallow_copy(item)}
     end
 
     return indexed_list
