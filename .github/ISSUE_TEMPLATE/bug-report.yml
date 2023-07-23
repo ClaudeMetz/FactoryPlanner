@@ -4,7 +4,8 @@ labels: ["bug"]
 body:
   - type: markdown
     attributes:
-      value: *Before filing a bug, please have a look if it wasn't already reported previously.*
+      value: |
+        *Before filing a bug, please have a look if it wasn't already reported previously.*
   - type: textarea
     attributes:
       label: Problem Description
