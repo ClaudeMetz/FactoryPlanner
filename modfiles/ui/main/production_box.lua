@@ -104,7 +104,7 @@ local function build_production_box(player)
     label_title.style.padding = {0, 8}
 
     local label_level = subheader.add{type="label"}
-    label_level.style.width = 50
+    label_level.style.right_margin = 8
     main_elements.production_box["level_label"] = label_level
 
     local button_floor_up = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
