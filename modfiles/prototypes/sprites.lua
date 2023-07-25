@@ -10,6 +10,13 @@ data:extend({
     },
     {
         type = "sprite",
+        name = "fp_mod_gui",
+        filename = "__factoryplanner__/graphics/shortcut_open_x32.png",
+        size = 32,
+        flags = {"gui-icon"}
+    },
+    {
+        type = "sprite",
         name = "fp_zone_selection",
         filename = "__factoryplanner__/graphics/zone_selection.png",
         size = 32,
