@@ -93,11 +93,13 @@ end
 
 function Machine.paste(self, object)
     if object.class == "Machine" then
+        -- See if the pasted machine also exists in this machine's category, and use it if compatible
         local found_machine = prototyper.util.find_prototype("machines", object.proto.name, self.proto.category)
 
-        if found_machine and Line.is_machine_applicable(self.parent, object.proto) then
+        if found_machine and Line.is_machine_applicable(self.parent, found_machine) then
             self.parent.machine = object
             object.parent = self.parent
+            object.proto = found_machine  -- make sure to set this to the right category machine
 
             ModuleSet.normalize(object.module_set, {compatibility=true, effects=true})
             Line.summarize_effects(object.parent)
