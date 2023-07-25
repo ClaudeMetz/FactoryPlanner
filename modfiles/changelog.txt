@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     - Changed the mod shortcut and mod-gui icons to a proper icon instead of the 'FP' text
   Bugfixes:
+    - Fixed that copy-pasting a machine could make the target have the wrong recipe category
     - Fixed a crash when loading a machine that doesn't have a sprite defined
     - Fixed utility dialog handcrafting trying to craft the wrong items
     - Fixed utility dialog handcrafting allowing the player to craft even if they didn't have the right permission
