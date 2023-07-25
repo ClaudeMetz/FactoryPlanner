@@ -77,9 +77,11 @@ function _gui.toggle_mod_gui(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]
 
     if enable and not mod_gui_button then
-        frame_flow.add{type="button", name="fp_button_toggle_interface", caption={"fp.toggle_interface"},
-            tooltip={"fp.toggle_interface_tt"}, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
+        local tooltip = {"", {"shortcut-name.fp_open_interface"}, " (", {"fp.toggle_interface"}, ")"}
+        local button = frame_flow.add{type="sprite-button", name="fp_button_toggle_interface",
+            sprite="fp_mod_gui", tooltip=tooltip, tags={mod="fp", on_gui_click="mod_gui_toggle_interface"},
             style=mod_gui.button_style, mouse_button_filter={"left"}}
+        button.style.padding = 6
     elseif mod_gui_button then  -- use the destroy function for possible cleanup reasons
         destroy_mod_gui(player)
     end
