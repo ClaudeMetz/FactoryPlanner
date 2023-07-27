@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Potentially fixed a crash caused by a migration issue
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.71
