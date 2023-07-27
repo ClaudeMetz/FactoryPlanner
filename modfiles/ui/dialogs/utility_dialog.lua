@@ -141,8 +141,10 @@ function utility_structures.components(player, modal_data)
 
                 local category_id = (proto.data_type == "items") and proto.category_id
                     or PROTOTYPE_MAPS.items["item"].id  -- modules/beacons are always an 'item'
+                local proto_id = (proto.data_Type == "items") and proto.id or
+                    PROTOTYPE_MAPS.items["item"].members[proto.name].id
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
-                    tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto.id,
+                    tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto_id,
                     missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
             end
         end
@@ -279,6 +281,10 @@ local function handle_item_handcraft(player, tags, event)
     local fly_text = util.cursor.create_flying_text
     if not player.character then fly_text(player, {"fp.utility_no_character"}); return end
 
+    local permissions = player.permission_group
+    local forbidden = (permissions and not permissions.allows_action(defines.input_action.craft))
+    if forbidden then fly_text(player, {"fp.utility_no_crafting"}); return end
+
     local desired_amount = (event.button == defines.mouse_button_type.right) and 5 or 1
     local amount_to_craft = math.min(desired_amount, tags.missing_amount)
 
@@ -287,16 +293,20 @@ local function handle_item_handcraft(player, tags, event)
     local recipes = RECIPE_MAPS["produce"][tags.category_id][tags.item_id]
     if not recipes then fly_text(player, {"fp.utility_no_recipe"}); return end
 
+    local success = false
     for recipe_id, _ in pairs(recipes) do
         local recipe_name = global.prototypes.recipes[recipe_id].name
         local craftable_amount = player.get_craftable_count(recipe_name)
 
-        if craftable_amount <= 0 then fly_text(player, {"fp.utility_no_resources"}); end
-
-        local crafted_amount = math.min(amount_to_craft, craftable_amount)
-        player.begin_crafting{count=crafted_amount, recipe=recipe_name, silent=true}
-        amount_to_craft = amount_to_craft - crafted_amount
+        if craftable_amount > 0 then
+            success = true
+            local crafted_amount = math.min(amount_to_craft, craftable_amount)
+            player.begin_crafting{count=crafted_amount, recipe=recipe_name, silent=true}
+            amount_to_craft = amount_to_craft - crafted_amount
+            break
+        end
     end
+    if not success then fly_text(player, {"fp.utility_no_resources"}); end
 end
 
 local function handle_inventory_change(player)

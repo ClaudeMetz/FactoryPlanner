@@ -1,0 +1,14 @@
+name: Improvement or feature suggestion
+description: Have an idea for how to improve the mod? Let me know!
+labels: ["improvement"]
+body:
+  - type: textarea
+    attributes:
+      label: Suggestion
+      description: What's your idea for something to improve on? What problem of yours does it solve?
+      placeholder: I'd like the mod to be able to read my mind.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: I appreciate any and all suggestions, but be aware that it might take me quite a while to get to them.

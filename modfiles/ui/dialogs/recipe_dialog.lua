@@ -54,24 +54,22 @@ local function run_preliminary_checks(player, modal_data)
     end
 
     -- Set filters to try and show at least one recipe, should one exist, incorporating user preferences
-    local show = { filters={} }
+    local filters = {}
     local user_prefs = preferences.recipe_filters
     local relevant_recipes_count = #relevant_recipes
 
     if relevant_recipes_count - counts.disabled - counts.hidden - counts.disabled_hidden > 0 then
-        show.filters.disabled = user_prefs.disabled or false
-        show.filters.hidden = user_prefs.hidden or false
-
+        filters.disabled = user_prefs.disabled or false
+        filters.hidden = user_prefs.hidden or false
     elseif relevant_recipes_count - counts.hidden - counts.disabled_hidden > 0 then
-        show.filters.disabled = true
-        show.filters.hidden = user_prefs.hidden or false
-
+        filters.disabled = true
+        filters.hidden = user_prefs.hidden or false
     else
-        show.filters.disabled = true
-        show.filters.hidden = true
+        filters.disabled = true
+        filters.hidden = true
     end
 
-    -- Return result, format: return recipe, error-message, show
+    -- Return result, format: return recipe, error-message, filters
     if relevant_recipes_count == 0 then
         local error = (user_disabled_recipe) and {"fp.error_no_enabled_recipe"} or {"fp.error_no_relevant_recipe"}
         return nil, error, nil
@@ -81,7 +79,7 @@ local function run_preliminary_checks(player, modal_data)
         return chosen_recipe.proto.id, nil, nil
 
     else  -- 2+ relevant recipes
-        return relevant_recipes, nil, show
+        return relevant_recipes, nil, filters
     end
 end
 
@@ -254,7 +252,7 @@ end
 -- Checks whether the dialog needs to be created at all
 local function recipe_early_abort_check(player, modal_data)
     -- Result is either the single possible recipe_id, or a table of relevant recipes
-    local result, error, show = run_preliminary_checks(player, modal_data)
+    local result, error, filters = run_preliminary_checks(player, modal_data)
 
     if error ~= nil then
         util.messages.raise(player, "error", error, 1)
@@ -268,7 +266,7 @@ local function recipe_early_abort_check(player, modal_data)
 
         else  -- Otherwise, save the relevant data for the dialog opener
             modal_data.result = result
-            modal_data.show = show
+            modal_data.filters = filters
             return false  -- signal that the dialog should be opened
         end
     end
@@ -283,9 +281,7 @@ local function open_recipe_dialog(player, modal_data)
         recipe_groups[group_name] = recipe_groups[group_name] or {proto=recipe.proto.group, recipes={}}
         recipe_groups[group_name].recipes[recipe.proto.name] = recipe
     end
-
     modal_data.recipe_groups = recipe_groups
-    modal_data.filters = modal_data.show.filters
 
     local translations = util.globals.player_table(player).translation_tables
     create_dialog_structure(modal_data, translations)
@@ -294,7 +290,6 @@ local function open_recipe_dialog(player, modal_data)
 
     -- Dispose of the temporary GUI-opening variables
     modal_data.result = nil
-    modal_data.show = nil
 end
 
 
