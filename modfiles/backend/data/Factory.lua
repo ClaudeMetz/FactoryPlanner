@@ -73,8 +73,26 @@ end
 
 ---@param product Product
 function Factory:remove(product)
+    product.parent = nil
     product:cleanup()
     self:_remove(product)
+end
+
+---@param product Product
+---@param new_product Product
+function Factory:replace(product, new_product)
+    new_product.parent = self
+    self:_replace(product, new_product)
+end
+
+
+---@param filter ObjectFilter?
+---@param direction NeighbourDirection?
+---@param pivot Product?
+---@return Product? product
+function Factory:find(filter, direction, pivot)
+    local pivot_object = self:_determine_pivot(direction, pivot, self.first_product)
+    return self:_find(pivot_object, filter, direction)  --[[@as Product?]]
 end
 
 

@@ -108,7 +108,7 @@ function main_dialog.rebuild(player, default_visibility)
     right_vertical.style.vertical_spacing = frame_spacing
     main_elements.flows["right_vertical"] = right_vertical
 
-    --view_state.rebuild_state(player)  -- initializes the view_state
+    view_state.rebuild_state(player)  -- initializes the view_state
     util.raise.build(player, "main_dialog", nil)  -- tells all elements to build themselves
 
     if interface_visible then player.opened = frame_main_dialog end

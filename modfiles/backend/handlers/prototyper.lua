@@ -137,7 +137,6 @@ end
 ---@param category_name string?
 ---@return AnyFPPrototype?
 function prototyper.util.find_prototype(data_type, prototype_name, category_name)
-    --if data_type == nil then llog(prototype_name, category_name) end
     local prototype_map = PROTOTYPE_MAPS[data_type]
 
     if category_name == nil then

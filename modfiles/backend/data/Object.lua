@@ -44,11 +44,8 @@ function Object.methods()
 end
 
 
----@alias NeighbourDirection "next" | "previous"
-
-
 ---@alias ObjectFilter {id: integer, archived: boolean}
-local filter_options = {"id", "archived"}
+local filter_options = {"id", "archived", "proto"}
 
 ---@param object Object
 ---@param filter ObjectFilter?
@@ -65,6 +62,9 @@ local function match(object, filter)
 
     return true
 end
+
+
+---@alias NeighbourDirection "next" | "previous"
 
 ---@protected
 ---@param direction NeighbourDirection?
@@ -127,7 +127,24 @@ function methods:_remove(object)
         object.previous.next = object.next
         if object.next then object.next.previous = object.previous end
     end
-    object.next, object.previous = nil, nil
+    object.next, object.previous = nil, nil  -- so the object can be re-used elsewhere
+end
+
+---@protected
+---@param object Object
+---@param new_object Object
+function methods:_replace(object, new_object)
+    if object.previous == nil then
+        self["first_" .. object.class:lower()] = new_object
+    else
+        new_object.previous = object.previous
+        object.previous.next = new_object
+    end
+    if object.next then
+        new_object.next = object.next
+        object.next.previous = new_object
+    end
+    object.next, object.previous = nil, nil  -- so the object can be re-used elsewhere
 end
 
 

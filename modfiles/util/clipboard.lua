@@ -1,43 +1,52 @@
+local unpackers = {
+    Product = require("backend.data.Product").unpack
+}
+
 local _clipboard = {}
+
+-- TODO clean up
+
+---@alias CopyableObject Product | Line | Machine | Beacon | Module | Fuel
+--@alias FPParentObject District | Factory | Floor | Line | ModuleSet
 
 ---@class ClipboardEntry
 ---@field class string
----@field object FPCopyableObject
----@field parent FPParentObject
+---@field packed_object PackedObject
+--@field parent FPParentObject
 
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
----@param object FPCopyableObject
+---@param object CopyableObject
 function _clipboard.copy(player, object)
     local player_table = util.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
-        object = _G[object.class].pack(object),
-        parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
+        packed_object = object:pack(),
+        --parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
     util.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
 end
 
 -- Tries pasting the player's clipboard content onto the given target
 ---@param player LuaPlayer
----@param target FPCopyableObject
+---@param target CopyableObject
 function _clipboard.paste(player, target)
-    local player_table = util.globals.player_table(player)
-    local clip = player_table.clipboard
+    local clip = util.globals.player_table(player).clipboard
 
     if clip == nil then
         util.cursor.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local level = (clip.class == "Line") and (target.parent.level or 1) or nil
-        local clone = _G[clip.class].unpack(ftable.deep_copy(clip.object), level)
-        clone.parent = clip.parent  -- not very elegant to retain the parent here, but it's an easy solution
-        _G[clip.class].validate(clone)
+        --local level = (clip.class == "Line") and (target.parent.level or 1) or nil
+        --local clone = _G[clip.class].unpack(ftable.deep_copy(clip.object), level)
+        local clone = unpackers[clip.class](clip.packed_object)  -- always returns fresh object
+        --clone.parent = clip.parent  -- not very elegant to retain the parent here, but it's an easy solution
+        clone:validate()
 
-        local success, error = _G[target.class].paste(target, clone)
+        local success, error = target:paste(clone)
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
-            solver.update(player, player_table.ui_state.context.subfactory)
+            solver.update(player, util.context.get(player, "Factory"))
             util.raise.refresh(player, "subfactory", nil)
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}

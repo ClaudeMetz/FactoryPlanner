@@ -32,6 +32,7 @@ end
 
 ---@param factory Factory
 function District:remove(factory)
+    factory.parent = nil
     factory:cleanup()
     self:_remove(factory)
 end

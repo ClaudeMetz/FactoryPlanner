@@ -1,25 +1,15 @@
 local Object = require("backend.data.Object")
 
--- TODO might move this to the solver at some point
--- Not a class, just a simple data structure for items
--- that are not user data, just solver results
----@class SimpleItem
----@field proto FPItemPrototype
----@field amount number
-
-
 ---@alias ProductDefinedBy "amount" | "belts" | "lanes"
-
----@class RequiredAmount
 
 ---@class Product: Object, ObjectMethods
 ---@field class "Product"
----@field parent Factory | Line
+---@field parent Factory
 ---@field proto FPItemPrototype | FPPackedPrototype
 ---@field defined_by ProductDefinedBy
----@field amount number
+---@field required_amount number
 ---@field belt_proto FPBeltPrototype | FPPackedPrototype
----@field satisfied_amount number?
+---@field amount number
 local Product = Object.methods()
 Product.__index = Product
 script.register_metatable("Product", Product)
@@ -29,10 +19,10 @@ local function init(proto)
     local object = Object.init({
         proto = proto,
         defined_by = "amount",
-        amount = 0,
+        required_amount = 0,
         belt_proto = nil,
 
-        satisfied_amount = 0
+        amount = 0  -- the amount satisfied by the solver
     }, "Product", Product)  --[[@as Product]]
     return object
 end
@@ -49,12 +39,12 @@ end
 
 -- Returns the amount needed to satisfy this item
 ---@return number required_amount
-function Product:required_amount()
+function Product:get_required_amount()
     if self.defined_by == "amount" then
-        return self.amount
+        return self.required_amount
     else   -- defined_by == "belts" | "lanes"
         local multiplier = (self.defined_by == "belts") and 1 or 0.5
-        return self.amount * (self.belt_proto.throughput * multiplier) * self.parent.timescale
+        return self.required_amount * (self.belt_proto.throughput * multiplier) * self.parent.timescale
     end
 end
 
@@ -66,7 +56,50 @@ function Product:update_definition(new_defined_by)
         self.defined_by = new_defined_by
 
         local multiplier = (new_defined_by == "belts") and 0.5 or 2
-        self.amount = self.amount * multiplier
+        self.required_amount = self.required_amount * multiplier
+    end
+end
+
+
+function Product.paste(self, object)
+    if object.class == "Product" or object.class == "SimpleItem" or object.class == "Fuel" then
+        -- Avoid duplicate items, but allow pasting over the same item proto
+        local existing_item = self.parent:find({proto=object.proto})
+        if existing_item and not (self.proto.name == object.proto.name) then
+            return false, "already_exists"
+        end
+
+        if object.class == "Product" then
+            self.parent:replace(self, object)
+        elseif object.class == "SimpleItem" or object.class == "Fuel" then
+            local product = init(object.proto)
+            product.required_amount = object.amount
+            self.parent:replace(self, product)
+        end
+
+        return true, nil
+
+    elseif object.class == "Line" then
+        --[[ local relevant_line = (object.subfloor) and object.subfloor.defining_line or object
+        for _, product in pairs(Line.get_in_order(relevant_line, "Product")) do
+            local fake_item = {proto={name=""}, parent=self.parent, class=self.class}
+            Item.paste(fake_item, product)  -- avoid duplicating existing items
+        end
+
+        local top_floor = Subfactory.get(self.parent, "Floor", 1)  -- line count can be 0
+        if object.subfloor then  -- if the line has a subfloor, paste its contents on the top floor
+            local fake_line = {parent=top_floor, class="Line", gui_position=top_floor.Line.count}
+            for _, line in pairs(Floor.get_in_order(object.subfloor, "Line")) do
+                Line.paste(fake_line, line)
+                fake_line.gui_position = fake_line.gui_position + 1
+            end
+        else  -- if the line has no subfloor, just straight paste it onto the top floor
+            local fake_line = {parent=top_floor, class="Line", gui_position=top_floor.Line.count}
+            Line.paste(fake_line, object)
+        end ]]
+        return true, nil
+    else
+        return false, "incompatible_class"
     end
 end
 
@@ -75,9 +108,8 @@ end
 ---@field class "Product"
 ---@field proto FPPackedPrototype
 ---@field defined_by ProductDefinedBy
----@field amount number
+---@field required_amount number
 ---@field belt_proto FPPackedPrototype?
-
 
 ---@return PackedProduct packed_self
 function Product:pack()
@@ -85,7 +117,7 @@ function Product:pack()
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, self.proto.type),
         defined_by = self.defined_by,
-        amount = self.amount,
+        required_amount = self.required_amount,
         belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil)
     }
 end
@@ -96,7 +128,7 @@ local function unpack(packed_self)
     local unpacked_self = init(packed_self.proto)
 
     unpacked_self.defined_by = packed_self.defined_by
-    unpacked_self.amount = packed_self.amount
+    unpacked_self.required_amount = packed_self.required_amount
     unpacked_self.belt_proto = packed_self.belt_proto
 
     return unpacked_self
