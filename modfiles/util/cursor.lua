@@ -21,8 +21,8 @@ function _cursor.create_flying_text(player, text)
 end
 
 ---@param player LuaPlayer
----@param line FPLine
----@param object FPMachine | FPBeacon
+---@param line Line
+---@param object Machine | Beacon
 ---@return boolean success
 function _cursor.set_entity(player, line, object)
     local entity_prototype = game.entity_prototypes[object.proto.name]
@@ -33,7 +33,7 @@ function _cursor.set_entity(player, line, object)
     end
 
     local module_list = {}
-    for _, module in pairs(ModuleSet.get_in_order(object.module_set)) do
+    for  module in object.module_set:iterator() do
         module_list[module.proto.name] = module.amount
     end
 
@@ -42,7 +42,7 @@ function _cursor.set_entity(player, line, object)
         name = object.proto.name,
         position = {0, 0},
         items = module_list,
-        recipe = (object.class == "Machine") and line.recipe.proto.name or nil
+        recipe = (object.class == "Machine") and line.recipe_proto.name or nil
     }
 
     set_cursor_blueprint(player, {blueprint_entity})

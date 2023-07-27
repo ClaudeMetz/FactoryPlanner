@@ -1,3 +1,5 @@
+local Product = require("backend.data.Product")
+
 -- This dialog works as the product picker currently, but could also work as an ingredient picker down the line
 -- ** ITEM PICKER **
 local function select_item_group(modal_data, new_group_id)
@@ -72,7 +74,8 @@ local function add_item_picker(parent_flow, player)
 
     local existing_products = {}
     if not ui_state.modal_data.create_subfactory then  -- check if this is for a new subfactory or not
-        for _, product in pairs(Subfactory.get_in_order(ui_state.context.subfactory, "Product")) do
+        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+        for product in factory:iterator() do
             existing_products[product.proto.name] = true
         end
     end
@@ -271,7 +274,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     end
 
     local modal_elements = modal_data.modal_elements
-    local defined_by = (item) and item.required_amount.defined_by or "amount"
+    local defined_by = (item) and item.defined_by or "amount"
     modal_data.amount_defined_by = defined_by
 
 
@@ -284,7 +287,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
 
     flow_amount.add{type="label", caption={"fp.amount"}}
 
-    local item_amount = (item and defined_by == "amount") and tostring(item.required_amount.amount) or ""
+    local item_amount = (item and defined_by == "amount") and tostring(item.required_amount) or ""
     local textfield_amount = flow_amount.add{type="textfield", text=item_amount,
         tags={mod="fp", on_gui_text_changed="picker_item_amount"}}
     util.gui.setup_numeric_textfield(textfield_amount, true, false)
@@ -295,7 +298,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local flow_belts = create_flow()
     flow_belts.add{type="label", caption={"fp.amount_by", {"fp.pl_" .. modal_data.lob:sub(1, -2), 2}}}
 
-    local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount.amount) or ""
+    local belt_amount = (item and defined_by ~= "amount") and tostring(item.required_amount) or ""
     local textfield_belts = flow_belts.add{type="textfield", text=belt_amount,
         tags={mod="fp", on_gui_text_changed="picker_belt_amount"}}
     util.gui.setup_numeric_textfield(textfield_belts, true, false)
@@ -316,7 +319,7 @@ local function add_item_pane(parent_flow, modal_data, item_category, item)
     local item_proto = (item) and item.proto or nil
     set_item_proto(modal_data, item_proto)
 
-    local belt_proto = (defined_by ~= "amount") and item.required_amount.belt_proto or nil
+    local belt_proto = (defined_by ~= "amount") and item.belt_proto or nil
     set_belt_proto(modal_data, belt_proto)
 
     if (item) then set_appropriate_focus(modal_data)
@@ -353,11 +356,7 @@ local function open_picker_dialog(player, modal_data)
     modal_data.timescale = settings.default_timescale
     modal_data.lob = settings.belts_or_lanes
 
-    local subfactory = util.globals.context(player).subfactory
-    if subfactory then
-        local class_name = modal_data.item_category:gsub("^%l", string.upper)
-        modal_data.item = Subfactory.get(subfactory, class_name, modal_data.item_id)
-    end
+    if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
 
     local dialog_flow = modal_data.modal_elements.dialog_flow
     dialog_flow.style.vertical_spacing = 12
@@ -377,42 +376,44 @@ end
 local function close_picker_dialog(player, action)
     local player_table = util.globals.player_table(player)
     local ui_state = player_table.ui_state
-    local modal_data = ui_state.modal_data
-    local subfactory = ui_state.context.subfactory
+    local modal_data = ui_state.modal_data  --[[@as table]]
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
     if action == "submit" then
         local defined_by = modal_data.amount_defined_by
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
-        local relevant_amount = tonumber(modal_data.modal_elements[relevant_textfield_name].text)
-
-        local req_amount = {defined_by=defined_by, amount=relevant_amount, belt_proto=modal_data.belt_proto}
+        local relevant_amount = tonumber(modal_data.modal_elements[relevant_textfield_name].text) or 0
 
         local refresh_scope = "subfactory"
         if modal_data.item ~= nil then  -- ie. this is an edit
-            modal_data.item.required_amount = req_amount
+            modal_data.item.defined_by = defined_by
+            modal_data.item.required_amount = relevant_amount
+            modal_data.item.belt_proto = modal_data.belt_proto
         else
-            local class_name = modal_data.item_category:gsub("^%l", string.upper)
             local item_proto = modal_data.item_proto
-            local top_level_item = Item.init(item_proto, class_name, 0, req_amount)
+            local top_level_item = Product.init(item_proto)
+            top_level_item.defined_by = defined_by
+            top_level_item.required_amount = relevant_amount
+            top_level_item.belt_proto = modal_data.belt_proto
 
-            if modal_data.create_subfactory then  -- if this flag is set, create a subfactory to put the item into
+            if modal_data.create_subfactory then  -- if this flag is set, create a factory to put the item into
                 local translations = player_table.translation_tables
                 local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
                 local icon = (not player_table.preferences.attach_subfactory_products)
                     and "[img=" .. top_level_item.proto.sprite .. "] " or ""
-                subfactory = subfactory_list.add_subfactory(player, (icon .. translated_name))
+                factory = subfactory_list.add_subfactory(player, (icon .. translated_name))
             end
 
-            Subfactory.add(subfactory, top_level_item)
+            factory:insert(top_level_item)
             refresh_scope = "all"  -- need to refresh subfactory list too
         end
 
-        solver.update(player, subfactory)
+        solver.update(player, factory)
         util.raise.refresh(player, refresh_scope, nil)
 
     elseif action == "delete" then
-        Subfactory.remove(subfactory, modal_data.item)
-        solver.update(player, subfactory)
+        factory:remove(modal_data.item)
+        solver.update(player, factory)
         util.raise.refresh(player, "subfactory", nil)
     end
 

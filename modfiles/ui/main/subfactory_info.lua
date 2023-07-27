@@ -9,20 +9,20 @@ local function repair_subfactory(player, _, _)
 end
 
 local function change_timescale(player, new_timescale)
-    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    local timescale_ratio = (new_timescale / subfactory.timescale)
-    subfactory.timescale = new_timescale
+    local timescale_ratio = (new_timescale / factory.timescale)
+    factory.timescale = new_timescale
 
     -- Adjust the required_amount according to the new timescale
-    for product in subfactory:iterator() do
+    for product in factory:iterator() do
         -- No need to change amounts for belts/lanes, as timescale change does that implicitly
         if product.defined_by == "amount" then
-            product.amount = product.amount * timescale_ratio
+            product.required_amount = product.required_amount * timescale_ratio
         end
     end
 
-    solver.update(player, subfactory)
+    solver.update(player, factory)
     -- View state updates itself automatically if it detects a timescale change
     util.raise.refresh(player, "subfactory", nil)
 end

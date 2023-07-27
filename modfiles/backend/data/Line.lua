@@ -7,6 +7,11 @@ local Object = require("backend.data.Object")
 ---@field parent Floor
 ---@field recipe_proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type ProductionType
+---@field first_product SimpleItem?
+---@field first_byproduct SimpleItem?
+---@field first_ingredient SimpleItem?
+---@field energy_consumption number
+---@field pollution number
 local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
@@ -16,6 +21,12 @@ local function init(recipe_proto, production_type)
     local object = Object.init({
         recipe_proto = recipe_proto,
         production_type = production_type,
+
+        first_product = nil,
+        first_byproduct = nil,
+        first_ingredient = nil,
+        energy_consumption = 0,
+        pollution = 0,
     }, "Line", Line)  --[[@as Line]]
     return object
 end

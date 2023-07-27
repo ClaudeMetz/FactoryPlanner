@@ -89,10 +89,10 @@ local function refresh_view_state(player, table_view_state)
     local ui_state = util.globals.ui_state(player)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
-    local subfactory = ui_state.context.subfactory
-    if not subfactory then
+    local factory = util.context.get(player, "Factory")
+    if not factory then
         return
-    elseif subfactory.current_timescale ~= ui_state.view_states.timescale then
+    elseif factory.current_timescale ~= ui_state.view_states.timescale then
         view_state.rebuild_state(player)
     end
 
@@ -162,10 +162,10 @@ end
 
 function view_state.rebuild_state(player)
     local ui_state = util.globals.ui_state(player)
-    local subfactory = ui_state.context.subfactory
+    local factory = util.context.get(player, "Factory")
 
     -- If no subfactory exists yet, choose a default timescale so the UI can build properly
-    local timescale = (subfactory) and timescale_map[subfactory.timescale] or "second"
+    local timescale = (factory) and timescale_map[factory.timescale] or "second"
     local singular_bol = util.globals.settings(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
     local default_cargo_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["cargo-wagon"].id)
@@ -263,12 +263,12 @@ listeners.misc = {
 
     build_gui_element = (function(player, event)
         if event.trigger == "view_state" then
-            --build_view_state(player, event.parent)
+            build_view_state(player, event.parent)
         end
     end),
     refresh_gui_element = (function(player, event)
         if event.trigger == "view_state" then
-            --refresh_view_state(player, event.element)
+            refresh_view_state(player, event.element)
         end
     end)
 }

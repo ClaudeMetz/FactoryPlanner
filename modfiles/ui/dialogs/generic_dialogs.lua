@@ -77,7 +77,7 @@ local options_listeners = {}
 
 -- ** LOCAL UTIL **
 local function call_change_handler(player, tags, event)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local handler_name = modal_data.field_handlers[tags.field_name]
     if handler_name then GLOBAL_HANDLERS[handler_name](modal_data, event) end
 end
@@ -199,7 +199,7 @@ local function open_options_dialog(_, modal_data)
 end
 
 local function close_options_dialog(player, action)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
 
     local options_data = {}
     for _, field in pairs(modal_data.fields) do

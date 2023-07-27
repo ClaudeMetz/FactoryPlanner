@@ -40,7 +40,7 @@ function migration.player_table(player_table)
             for _, product in pairs(subfactory.Product.datasets) do
                 local new_product = Product.init(product.proto)
                 new_product.defined_by = product.required_amount.defined_by
-                new_product.amount = product.required_amount.amount
+                new_product.required_amount = product.required_amount.amount
                 new_product.belt_proto = product.required_amount.belt_proto
                 factory:insert(new_product)
             end
@@ -79,7 +79,7 @@ function migration.packed_subfactory(packed_subfactory)
         table.insert(packed_subfactory.products, {
             proto = product.proto,
             defined_by = product.required_amount.defined_by,
-            amount = product.required_amount.amount,
+            required_amount = product.required_amount.amount,
             belt_proto = product.required_amount.belt_proto,
             class = "Product"
         })

@@ -1,13 +1,16 @@
+local Product = require("backend.data.Product")
+
 -- ** LOCAL UTIL **
-local function add_recipe(player, context, type, item_proto)
-    if context.floor.level > 1 then
-        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. type, 1}}
+local function add_recipe(player, item_category, item_proto)
+    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+    if floor.level > 1 then
+        local message = {"fp.error_recipe_wrong_floor", {"fp.pu_" .. item_category, 1}}
         util.messages.raise(player, "error", message, 1)
     else
-        local production_type = (type == "byproduct") and "consume" or "produce"
+        local production_type = (item_category == "byproduct") and "consume" or "produce"
         util.raise.open_dialog(player, {dialog="recipe",
             modal_data={category_id=item_proto.category_id, product_id=item_proto.id,
-            floor_id=context.floor.id, production_type=production_type}})
+            floor_id=floor.id, production_type=production_type}})
     end
 end
 
@@ -48,34 +51,37 @@ local function build_item_box(player, category, column_count)
     item_boxes_elements[category .. "_item_table"] = table_items
 end
 
-local function refresh_item_box(player, items, category, subfactory, shows_floor_items)
-    local ui_state = util.globals.ui_state(player)
-    local item_boxes_elements = ui_state.main_elements.item_boxes
+local function refresh_item_box(player, factory, floor, item_category)
+    local item_boxes_elements = util.globals.main_elements(player).item_boxes
 
-    local table_items = item_boxes_elements[category .. "_item_table"]
+    local table_items = item_boxes_elements[item_category .. "_item_table"]
     table_items.clear()
 
-    if not subfactory or not subfactory.valid then
+    if not factory or not factory.valid then
         item_boxes_elements["ingredient_combinator_button"].visible = false
         return 0
     end
 
     local table_item_count = 0
-    local metadata = view_state.generate_metadata(player, subfactory)
-    local default_style = (category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
+    local metadata = view_state.generate_metadata(player, factory)
+    local default_style = (item_category == "byproduct") and "flib_slot_button_red" or "flib_slot_button_default"
 
-    local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. category)
+    local shows_floor_items = (floor.parent.class ~= "Factory")
+    local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. item_category)
     local tutorial_tt = (util.globals.preferences(player).tutorial_mode)
         and util.actions.tutorial_tooltip(action, nil, player) or nil
 
-    for _, item in ipairs(items) do
-        local required_amount = (not shows_floor_items and category == "product") and Item.required_amount(item) or nil
+    local real_products = (not shows_floor_items and item_category == "product")
+    local item_iterator = (real_products) and factory:iterator() or floor:item_iterator(item_category)
+
+    for item in item_iterator do
+        local required_amount = (item.class == "Product") and item:get_required_amount() or nil
         local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
         local style = default_style
         local satisfaction_line = ""  ---@type LocalisedString
-        if not shows_floor_items and category == "product" and amount ~= nil and amount ~= "0" then
+        if item.class == "Product" and amount ~= nil and amount ~= "0" then
             local satisfied_percentage = (item.amount / required_amount) * 100
             local percentage_string = util.format.number(satisfied_percentage, 3)
             satisfaction_line = {"", "\n", {"fp.bold_label", (percentage_string .. "%")}, " ", {"fp.satisfied"}}
@@ -98,22 +104,22 @@ local function refresh_item_box(player, items, category, subfactory, shows_floor
         end
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-            tags={mod="fp", on_gui_click=action, category=category, item_id=item.id}, enabled=enabled,
+            tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id}, enabled=enabled,
             mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
 
         ::skip_item::  -- goto for fun, wooohoo
     end
 
-    if category == "product" and not shows_floor_items then  -- meaning allow the user to add items of this type
-        table_items.add{type="sprite-button", enabled=(not ui_state.flags.archive_open),
-            tags={mod="fp", on_gui_click="add_top_level_item", category=category}, sprite="utility/add",
-            tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. category, 1}, "\n", {"fp.shift_to_paste"}},
+    if real_products then  -- meaning allow the user to add items of this type
+        table_items.add{type="sprite-button", sprite="utility/add", enabled=(not factory.archived),
+            tags={mod="fp", on_gui_click="add_top_level_item", item_category=item_category},
+            tooltip={"", {"fp.add"}, " ", {"fp.pl_" .. item_category, 1}, "\n", {"fp.shift_to_paste"}},
             style="fp_sprite-button_inset_add_slot", mouse_button_filter={"left"}}
         table_item_count = table_item_count + 1
     end
 
-    if category == "ingredient" then
+    if item_category == "ingredient" then
         item_boxes_elements["ingredient_combinator_button"].visible = (table_item_count > 0)
     end
 
@@ -123,32 +129,26 @@ end
 
 
 local function handle_item_add(player, tags, event)
-    local context = util.globals.context(player)
-
     if event.shift then  -- paste
-        -- Use a fake item to paste on top of
-        local class = tags.category:gsub("^%l", string.upper)
-        local fake_item = {proto={name=""}, parent=context.subfactory, class=class}
-        util.clipboard.paste(player, fake_item)
+        -- Add a temporary item that can then be replaced
+        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+        local product = Product.init({})
+        factory:insert(product)
+        util.clipboard.paste(player, product)
     else
-        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.category}})
+        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
     end
 end
 
 local function handle_item_button_click(player, tags, action)
-    local player_table = util.globals.player_table(player)
-    local context = player_table.ui_state.context
-    local floor_items_active = (player_table.preferences.show_floor_items and context.floor.level > 1)
-
-    local class = (tags.category:gsub("^%l", string.upper))
-    local item = (floor_items_active) and Line.get(context.floor.origin_line, class, tags.item_id)
-        or Subfactory.get(context.subfactory, class, tags.item_id)
+    local item = OBJECT_INDEX[tags.item_id]
 
     if action == "add_recipe" then
-        add_recipe(player, context, tags.category, item.proto)
+        add_recipe(player, tags.item_category, item.proto)
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=item.id, item_category="product"}})
+        util.raise.open_dialog(player, {dialog="picker",
+            modal_data={item_id=item.id, item_category=tags.item_category}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, item)
@@ -157,8 +157,9 @@ local function handle_item_button_click(player, tags, action)
         util.clipboard.paste(player, item)
 
     elseif action == "delete" then
-        Subfactory.remove(context.subfactory, item)
-        solver.update(player, context.subfactory)
+        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+        factory:remove(item)
+        solver.update(player, factory)
         util.raise.refresh(player, "all", nil)  -- make sure product icons are updated
 
     elseif action == "specify_amount" then
@@ -186,8 +187,7 @@ local function handle_item_button_click(player, tags, action)
         util.raise.open_dialog(player, {dialog="options", modal_data=modal_data})
 
     elseif action == "put_into_cursor" then
-        local amount = (not floor_items_active and tags.category == "product")
-            and Item.required_amount(item) or item.amount
+        local amount = (item.class == "Product") and item:get_required_amount() or item.amount
         util.cursor.add_to_item_combinator(player, item.proto, amount)
 
     elseif action == "recipebook" then
@@ -197,14 +197,15 @@ end
 
 
 local function put_ingredients_into_cursor(player, _, _)
-    local context = util.globals.context(player)
-    local floor = context.floor
     local show_floor_items = util.globals.preferences(player).show_floor_items
-    local container = (show_floor_items and floor.level > 1) and floor.origin_line or context.subfactory
+    local relevant_floor = (show_floor_items) and util.context.get(player, "Floor")
+        or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
     local ingredients = {}
-    for _, ingredient in pairs(_G[container.class].get_all(container, "Ingredient")) do
-        if ingredient.proto.type == "item" then ingredients[ingredient.proto.name] = ingredient.amount end
+    for ingredient in relevant_floor:item_iterator("ingredient") do
+        if ingredient.proto.type == "item" then
+            ingredients[ingredient.proto.name] = ingredient.amount
+        end
     end
 
     local success = util.cursor.set_item_combinator(player, ingredients)
@@ -214,20 +215,18 @@ end
 
 local function scale_subfactory_by_ingredient_amount(player, options, action)
     if action == "submit" then
-        local ui_state = util.globals.ui_state(player)
-        local subfactory = ui_state.context.subfactory
-        local item = Subfactory.get(subfactory, "Ingredient", ui_state.modal_data.item_id)
+        local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+        local item = OBJECT_INDEX[util.globals.modal_data(player).item_id]
 
         if options.item_amount then
             -- The division is not pre-calculated to avoid precision errors in some cases
             local current_amount, target_amount = item.amount, options.item_amount
-            for _, product in pairs(Subfactory.get_all(subfactory, "Product")) do
-                local requirement = product.required_amount
-                requirement.amount = requirement.amount * target_amount / current_amount
+            for product in factory:iterator() do
+                product.required_amount = product.required_amount * target_amount / current_amount
             end
         end
 
-        solver.update(player, subfactory)
+        solver.update(player, factory)
         util.raise.refresh(player, "subfactory", nil)
     end
 end
@@ -239,34 +238,21 @@ local function refresh_item_boxes(player)
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
 
-    local context = player_table.ui_state.context
-    local subfactory = context.subfactory
-    local floor = context.floor
+    -- If I get the Factory this way, it goes up the subfloors for me
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    -- This is all kinds of stupid, but the mob wishes the feature to exist
-    local function refresh(parent, class, shows_floor_items)
-        local items = (parent) and _G[parent.class].get_in_order(parent, class) or {}
-        return refresh_item_box(player, items, class:lower(), subfactory, shows_floor_items)
-    end
-
-    local prow_count, brow_count, irow_count = 0, 0, 0
-    if player_table.preferences.show_floor_items and floor and floor.level > 1 then
-        local line = floor.origin_line
-        prow_count = refresh(line, "Product", true)
-        brow_count = refresh(line, "Byproduct", true)
-        irow_count = refresh(line, "Ingredient", true)
-    else
-        prow_count = refresh(subfactory, "Product", false)
-        brow_count = refresh(subfactory, "Byproduct", false)
-        irow_count = refresh(subfactory, "Ingredient", false)
-    end
+    local relevant_floor = (player_table.preferences.show_floor_items) and
+        util.context.get(player, "Floor") or factory.top_floor
+    local prow_count = refresh_item_box(player, factory, relevant_floor, "product")
+    local brow_count = refresh_item_box(player, factory, relevant_floor, "byproduct")
+    local irow_count = refresh_item_box(player, factory, relevant_floor, "ingredient")
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
     local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)
     local item_table_height = actual_row_count * MAGIC_NUMBERS.item_button_size
 
-    -- set the heights for both the visible frame and the scroll pane containing it
-    local item_boxes_elements = player_table.ui_state.main_elements.item_boxes
+    -- Set the heights for both the visible frame and the scroll pane containing it
+    local item_boxes_elements = main_elements.item_boxes
     item_boxes_elements.product_item_table.parent.style.minimal_height = item_table_height
     item_boxes_elements.product_item_table.parent.parent.style.minimal_height = item_table_height
     item_boxes_elements.byproduct_item_table.parent.style.minimal_height = item_table_height
@@ -356,12 +342,12 @@ listeners.gui = {
 listeners.misc = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
-            --build_item_boxes(player)
+            build_item_boxes(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {item_boxes=true, production=true, subfactory=true, all=true}
-        --if triggers[event.trigger] then refresh_item_boxes(player) end
+        if triggers[event.trigger] then refresh_item_boxes(player) end
     end)
 }
 

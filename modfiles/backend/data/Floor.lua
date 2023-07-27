@@ -55,6 +55,7 @@ end
 
 ---@param line LineObject
 function Floor:remove(line)
+    line.parent = nil
     line:cleanup()
     self:_remove(line)
 
@@ -76,12 +77,18 @@ function Floor:iterator(filter, direction, pivot)
     return self:_iterator(pivot_object, filter, direction)
 end
 
+---@param item_category SimpleItemCategory
+---@return fun(): SimpleItem?
+function Floor:item_iterator(item_category)
+    return self:_iterator(self["first_" .. item_category])
+end
+
 
 ---@return boolean any_removed
 function Floor:remove_consuming_lines()
     local any_removed = false
     for line in self:iterator() do
-        if line.class == "Floor" then
+        if line.class == "Floor" then  ---@cast line Floor
             any_removed = line:remove_consuming_lines() or any_removed
         elseif line.production_type == "consume" then
             self:remove(line)

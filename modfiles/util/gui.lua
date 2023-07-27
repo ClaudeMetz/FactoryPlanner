@@ -2,6 +2,9 @@ local mod_gui = require("mod-gui")
 
 local _gui = { switch = {}, mod = {} }
 
+
+---@alias SwitchState "left" | "right"
+
 -- Adds an on/off-switch including a label with tooltip to the given flow
 -- Automatically converts boolean state to the appropriate switch_state
 ---@param parent_flow LuaGuiElement
