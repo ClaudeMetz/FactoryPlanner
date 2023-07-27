@@ -86,11 +86,11 @@ function generator.machines.generate()
 
     ---@param category string
     ---@param proto LuaEntityPrototype
-    ---@return FPMachinePrototype
+    ---@return FPMachinePrototype?
     local function generate_category_entry(category, proto)
         -- First, determine if there is a valid sprite for this machine
         local sprite = generator_util.determine_entity_sprite(proto)
-        if sprite == nil then return {} end
+        if sprite == nil then return end
 
         -- If it is a miner, set speed to mining_speed so the machine_count-formula works out
         local speed = proto.crafting_categories and proto.crafting_speed or proto.mining_speed
@@ -174,7 +174,7 @@ function generator.machines.generate()
                 and not generator_util.is_irrelevant_machine(proto) then
             for category, _ in pairs(proto.crafting_categories) do
                 local machine = generate_category_entry(category, proto)
-                insert_prototype(machines, machine, machine.category)
+                if machine then insert_prototype(machines, machine, machine.category) end
             end
 
         -- Add mining machines
@@ -184,8 +184,10 @@ function generator.machines.generate()
                     -- Only supports solid mining recipes for now (no oil, etc.)
                     if enabled and category ~= "basic-fluid" then
                         local machine = generate_category_entry(category, proto)
-                        machine.mining = true
-                        insert_prototype(machines, machine, machine.category)
+                        if machine then
+                            machine.mining = true
+                            insert_prototype(machines, machine, machine.category)
+                        end
                     end
                 end
             end
@@ -193,9 +195,11 @@ function generator.machines.generate()
         -- Add offshore pumps
         elseif proto.fluid then
             local machine = generate_category_entry(proto.name, proto)
-            machine.speed = 1  -- pumping speed included in the recipe product-amount
-            machine.category = proto.name  -- unique category for every offshore pump
-            insert_prototype(machines, machine, machine.category)
+            if machine then
+                machine.speed = 1  -- pumping speed included in the recipe product-amount
+                machine.category = proto.name  -- unique category for every offshore pump
+                insert_prototype(machines, machine, machine.category)
+            end
         end
 
         -- Add machines that produce steam (ie. boilers)
@@ -217,17 +221,18 @@ function generator.machines.generate()
                     if input_fluidbox ~= nil then
                         local category = "steam-" .. proto.target_temperature
                         local machine = generate_category_entry(category, proto)
+                        if machine then
+                            local temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
+                            local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
+                            machine.speed = machine.energy_usage / energy_per_unit
 
-                        local temp_diff = proto.target_temperature - input_fluidbox.filter.default_temperature
-                        local energy_per_unit = input_fluidbox.filter.heat_capacity * temp_diff
-                        machine.speed = machine.energy_usage / energy_per_unit
+                            insert_prototype(machines, machine, machine.category)
 
-                        insert_prototype(machines, machine, machine.category)
-
-                        -- Add every boiler to the general steam category (steam without temperature)
-                        local general_machine = ftable.deep_copy(machine)
-                        general_machine.category = "general-steam"
-                        insert_prototype(machines, general_machine, general_machine.category)
+                            -- Add every boiler to the general steam category (steam without temperature)
+                            local general_machine = ftable.deep_copy(machine)
+                            general_machine.category = "general-steam"
+                            insert_prototype(machines, general_machine, general_machine.category)
+                        end
                     end
                 end
             end

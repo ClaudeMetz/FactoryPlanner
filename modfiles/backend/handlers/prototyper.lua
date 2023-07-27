@@ -156,11 +156,11 @@ end
 ---@field simplified boolean
 
 -- Returns a new table that only contains the given prototypes' identifiers
----@param prototypes AnyFPPrototype
+---@param prototype AnyFPPrototype
 ---@param category string?
 ---@return FPPackedPrototype
-function prototyper.util.simplify_prototype(prototypes, category)
-    return { name = prototypes.name, category = category, data_type = prototypes.data_type, simplified = true }
+function prototyper.util.simplify_prototype(prototype, category)
+    return { name = prototype.name, category = category, data_type = prototype.data_type, simplified = true }
 end
 
 ---@param prototypes FPPrototype[]
