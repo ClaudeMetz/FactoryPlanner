@@ -120,7 +120,7 @@ function migrator.migrate_player_table(player)
             --local outdated_subfactories = {}
             for _, subfactory in pairs(Factory.get_all(player_table[factory_name], "Subfactory")) do
                 if subfactory.mod_version ~= old_version then  -- out-of-sync subfactory
-                    error("Out of date subfactory, please report this to the mod author including the save file")
+                    --error("Out of date subfactory, please report this to the mod author including the save file")
                     --table.insert(outdated_subfactories, subfactory)
                 else
                     apply_migrations(migrations, "subfactory", subfactory, player)
