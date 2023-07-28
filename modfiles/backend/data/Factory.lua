@@ -105,6 +105,15 @@ function Factory:iterator(filter, direction, pivot)
     return self:_iterator(pivot_object, filter, direction)
 end
 
+---@param filter ObjectFilter?
+---@param direction NeighbourDirection?
+---@param pivot Product?
+---@return number count
+function Factory:count(filter, direction, pivot)
+    local pivot_object = self:_determine_pivot(direction, pivot, self.first_product)
+    return self:_count(pivot_object, filter, direction)
+end
+
 
 ---@param attach_products boolean
 ---@param export_format boolean

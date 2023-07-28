@@ -41,6 +41,45 @@ function Line:cleanup()
 end
 
 
+---@param item_category SimpleItemCategory
+---@return fun(): SimpleItem?
+function Line:item_iterator(item_category)
+    return self:_iterator(self["first_" .. item_category])
+end
+
+
+-- Checks whether the given recipe's products are used on the given floor
+-- The triple loop is crappy, but it's the simplest way to check
+local function check_product_compatibiltiy(floor, recipe_proto)
+    for _, product in pairs(recipe_proto.products) do
+        for line in floor:iterator() do
+            for ingredient in line:item_iterator("ingredient") do
+                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+function Line:paste(object)
+    if object.class == "Line" or object.class == "Floor" then
+        if self.parent.level > 1 then  -- make sure the recipe is allowed on this floor
+            local relevant_line = (object.class == "Floor") and object.first_line or object
+            if not check_product_compatibiltiy(self.parent, relevant_line.recipe_proto) then
+                return false, "recipe_irrelevant"  -- found no use for the recipe's products
+            end
+        end
+
+        self.parent:replace(self, object)
+        return true, nil
+    else
+        return false, "incompatible_class"
+    end
+end
+
+
 ---@class PackedLine: PackedObject
 ---@field class "Line"
 ---@field recipe_proto FPPackedPrototype

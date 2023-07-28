@@ -185,6 +185,17 @@ function methods:_find(pivot, filter, direction)
     return nil
 end
 
+---@protected
+---@param first_object Object?
+---@return Object? last_object
+function methods:_find_last(first_object)
+    local last_object = first_object
+    while last_object ~= nil do
+        last_object = last_object.next
+    end
+    return last_object
+end
+
 
 ---@protected
 ---@param pivot Object?
