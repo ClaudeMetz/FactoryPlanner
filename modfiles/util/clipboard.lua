@@ -6,7 +6,7 @@ local _clipboard = {}
 
 -- TODO clean up
 
----@alias CopyableObject Product | Line | Machine | Beacon | Module | Fuel
+---@alias CopyableObject Product | LineObject | Machine | Beacon | Module | Fuel
 --@alias FPParentObject District | Factory | Floor | Line | ModuleSet
 
 ---@class ClipboardEntry

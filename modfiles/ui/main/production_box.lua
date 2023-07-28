@@ -1,23 +1,22 @@
+local Line = require("backend.data.Line")
+
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
-    if true then return end  -- TODO remove
-    local subfactory = util.context.get(player, "Factory")
-    if subfactory and subfactory.valid then
-        solver.update(player, subfactory)
+    local factory = util.context.get(player, "Factory")
+    if factory and factory.valid then
+        solver.update(player, factory)
         util.raise.refresh(player, "subfactory", nil)
     end
 end
 
 local function paste_line(player, _, event)
     if event.button == defines.mouse_button_type.left and event.shift then
-        local context = util.globals.context(player)
-        local line_count = context.floor.Line.count
-        local last_line = Floor.get_by_gui_position(context.floor, "Line", line_count)
-        -- Use a fake first line to paste below if no actual line exists
-        if not last_line then last_line = {parent=context.floor, class="Line", gui_position=0} end
+        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        -- Use a fake first line to paste over if no actual line exists
+        local last_line = floor:find_last() or Line.init({}, "produce")
 
         if util.clipboard.paste(player, last_line) then
-            solver.update(player, context.subfactory)
+            solver.update(player, util.context.get(player, "Factory"))
             util.raise.refresh(player, "subfactory", nil)
         end
     end
@@ -25,7 +24,7 @@ end
 
 -- Changes the floor to either be the top one or the one above the current one
 local function change_floor(player, destination)
-    if util.context.change_floor(player, destination) then
+    if util.context.descend_floors(player, destination) then
         -- Only refresh if the floor was indeed changed
         util.raise.refresh(player, "production", nil)
     end
@@ -33,20 +32,19 @@ end
 
 
 local function refresh_production_box(player)
-    local player_table = util.globals.player_table(player)
-    local ui_state = player_table.ui_state
+    local ui_state = util.globals.ui_state(player)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
     if ui_state.main_elements.main_frame == nil then return end
     local production_box_elements = ui_state.main_elements.production_box
 
-    local subfactory = ui_state.context.subfactory
-    local subfactory_valid = subfactory and subfactory.valid
+    local subfactory_valid = factory and factory.valid
+    local current_level = (subfactory_valid) and floor.level or 1
+    local any_lines_present = (subfactory_valid) and (floor:count() > 0) or false
 
-    local current_level = (subfactory_valid) and subfactory.selected_floor.level or 1
-    local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
-    local archive_open = (ui_state.flags.archive_open)
-
-    production_box_elements.refresh_button.enabled = (not archive_open and subfactory_valid and any_lines_present)
+    production_box_elements.refresh_button.enabled =
+        (not factory.archived and subfactory_valid and any_lines_present)
     production_box_elements.level_label.caption = (not subfactory_valid) and ""
         or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
@@ -64,12 +62,12 @@ local function refresh_production_box(player)
 
     -- This structure is stupid and huge, but not sure how to do it more elegantly
     production_box_elements.instruction_label.visible = false
-    if not archive_open then
-        if subfactory == nil then
+    if not factory.archived then
+        if factory == nil then
             production_box_elements.instruction_label.caption = {"fp.production_instruction_subfactory"}
             production_box_elements.instruction_label.visible = true
         elseif subfactory_valid then
-            if subfactory.Product.count == 0 then
+            if factory:count() == 0 then
                 production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
                 production_box_elements.instruction_label.visible = true
             elseif not any_lines_present then
@@ -186,12 +184,12 @@ listeners.misc = {
 
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
-            --build_production_box(player)
+            build_production_box(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {production_box=true, production_detail=true, production=true, subfactory=true, all=true}
-        --if triggers[event.trigger] then refresh_production_box(player) end
+        if triggers[event.trigger] then refresh_production_box(player) end
     end)
 }
 

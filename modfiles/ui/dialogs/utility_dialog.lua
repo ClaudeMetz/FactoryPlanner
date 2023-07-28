@@ -75,8 +75,6 @@ end
 
 function utility_structures.components(player, modal_data)
     local scope = util.globals.preferences(player).utility_scopes.components
-    local lower_scope = scope:lower()
-    local context = util.globals.context(player)
     local modal_elements = modal_data.modal_elements
 
     if modal_elements.components_box == nil then
@@ -117,8 +115,12 @@ function utility_structures.components(player, modal_data)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local inventory_contents = modal_data.inventory_contents
-        local component_data = _G[scope].get_component_data(context[lower_scope], nil)
+        local inventory_contents, component_data = modal_data.inventory_contents, nil
+        if scope == "Subfactory" then
+            component_data = util.context.get(player, "Factory").top_floor:get_component_data()
+        elseif scope == "Floor" then
+            component_data = util.context.get(player, "Floor")--[[@as Floor]]:get_component_data()
+        end
 
         local frame_components = component_row.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
@@ -141,8 +143,8 @@ function utility_structures.components(player, modal_data)
 
                 local category_id = (proto.data_type == "items") and proto.category_id
                     or PROTOTYPE_MAPS.items["item"].id  -- modules/beacons are always an 'item'
-                local proto_id = (proto.data_Type == "items") and proto.id or
-                    PROTOTYPE_MAPS.items["item"].members[proto.name].id
+                local proto_id = (proto.data_Type == "items") and proto.id
+                    or PROTOTYPE_MAPS.items["item"].members[proto.name].id
                 table_components.add{type="sprite-button", sprite=proto.sprite, number=required_amount, tooltip=tooltip,
                     tags={mod="fp", on_gui_click="utility_craft_items", category_id=category_id, item_id=proto_id,
                     missing_amount=missing_amount}, style=button_style, mouse_button_filter={"left-and-right"}}
@@ -161,19 +163,20 @@ function utility_structures.components(player, modal_data)
     refresh_component_flow("module")
 
 
-    local subfactory = util.globals.context(player).subfactory
-    Subfactory.validate_item_request_proxy(subfactory)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    factory:validate_item_request_proxy()
 
     local any_missing_items = (next(modal_data.missing_items) ~= nil)
     modal_elements.combinator_button.enabled = any_missing_items
     modal_elements.combinator_button.tooltip = (any_missing_items) and {"fp.utility_combinator_tt"}
-        or {"fp.warning_with_icon", {"fp.utility_no_items_necessary", {"fp.pl_" .. lower_scope, 1}}}
+        or {"fp.warning_with_icon", {"fp.utility_no_items_necessary", {"fp.pl_" .. scope:lower(), 1}}}
 
-    update_request_button(player, modal_data, subfactory)
+    update_request_button(player, modal_data, factory)
 end
 
 function utility_structures.blueprints(player, modal_data)
     local modal_elements = modal_data.modal_elements
+    local blueprints = util.context.get(player, "Factory").blueprints
 
     if modal_elements.blueprints_box == nil then
         local blueprints_box = add_utility_box(player, modal_data.modal_elements, "blueprints", true, false)
@@ -184,9 +187,6 @@ function utility_structures.blueprints(player, modal_data)
             style="filter_slot_table"}
         modal_elements["blueprints_table"] = table_blueprints
     end
-
-    local subfactory = util.globals.context(player).subfactory
-    local blueprints = subfactory.blueprints
 
     local table_blueprints =  modal_elements["blueprints_table"]
     table_blueprints.clear()
@@ -242,7 +242,7 @@ end
 function utility_structures.notes(player, modal_data)
     local utility_box = add_utility_box(player, modal_data.modal_elements, "notes", false, false)
 
-    local notes = util.globals.context(player).subfactory.notes
+    local notes = util.context.get(player, "Factory").notes
     local text_box = utility_box.add{type="text-box", text=notes,
         tags={mod="fp", on_gui_text_changed="subfactory_notes"}}
     text_box.style.size = {500, 250}
@@ -260,21 +260,21 @@ local function handle_scope_change(player, tags, event)
 end
 
 local function handle_item_request(player, _, _)
-    local ui_state = util.globals.ui_state(player)
-    local subfactory = ui_state.context.subfactory
+    local modal_data = util.globals.modal_data(player)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    if subfactory.item_request_proxy then  -- if an item_proxy is set, cancel it
-        Subfactory.destroy_item_request_proxy(subfactory)
+    if factory.item_request_proxy then  -- if an item_proxy is set, cancel it
+        factory:destroy_item_request_proxy()
     else
         -- This crazy way to request items actually works, and is way easier than setting logistic requests
         -- The advantage that is has is that the delivery is one-time, not a constant request
         -- The disadvantage is that it's weird to have construction bots bring you stuff
-        subfactory.item_request_proxy = player.surface.create_entity{name="item-request-proxy",
+        factory.item_request_proxy = player.surface.create_entity{name="item-request-proxy",
             position=player.position, force=player.force, target=player.character,
-            modules=ui_state.modal_data.missing_items}
+            modules=modal_data.missing_items}
     end
 
-    update_request_button(player, ui_state.modal_data, subfactory)
+    update_request_button(player, modal_data, factory)
 end
 
 local function handle_item_handcraft(player, tags, event)
@@ -320,7 +320,6 @@ end
 
 
 local function store_blueprint(player, _, _)
-    local ui_state = util.globals.ui_state(player)
     local fly_text = util.cursor.create_flying_text
 
     if player.is_cursor_empty() then
@@ -341,16 +340,16 @@ local function store_blueprint(player, _, _)
         if inventory.is_empty() then fly_text(player, {"fp.utility_blueprint_book_empty"}); return end
     end
 
-    table.insert(ui_state.context.subfactory.blueprints, cursor.export_stack())
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    table.insert(factory.blueprints, cursor.export_stack())
     fly_text(player, {"fp.utility_blueprint_stored"});
     player.clear_cursor()  -- doesn't delete blueprint, but puts it back in the inventory
 
-    utility_structures.blueprints(player, ui_state.modal_data)
+    utility_structures.blueprints(player, util.globals.modal_data(player))
 end
 
 local function handle_blueprint_click(player, tags, action)
-    local ui_state = util.globals.ui_state(player)
-    local blueprints = ui_state.context.subfactory.blueprints
+    local blueprints = util.context.get(player, "Factory").blueprints
 
     if action == "pick_up" then
         player.cursor_stack.import_stack(blueprints[tags.index])
@@ -359,7 +358,7 @@ local function handle_blueprint_click(player, tags, action)
 
     elseif action == "delete" then
         table.remove(blueprints, tags.index)
-        utility_structures.blueprints(player, ui_state.modal_data)
+        utility_structures.blueprints(player, util.globals.modal_data(player))
     end
 end
 
@@ -426,7 +425,7 @@ listeners.gui = {
         {
             name = "subfactory_notes",
             handler = (function(player, _, event)
-                util.globals.context(player).subfactory.notes = event.element.text
+                util.context.get(player, "Factory").notes = event.element.text
             end)
         }
     }

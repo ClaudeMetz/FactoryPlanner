@@ -122,6 +122,33 @@ function _context.remove(player, object)
     end
 end
 
+---@alias FloorDestination "up" | "top"
+
+---@param player LuaPlayer
+---@param destination FloorDestination
+---@return boolean success
+function _context.descend_floors(player, destination)
+    local floor = _context.get(player, "Floor")  --[[@as Floor?]]
+    if floor == nil then return false end
+
+    local selected_floor = nil
+    if destination == "up" and floor.level > 1 then
+        selected_floor = floor.parent
+    elseif destination == "top" then
+        local top_floor = _context.get(player, "Factory").top_floor
+        if top_floor ~= floor then selected_floor = top_floor end
+    end
+
+    if selected_floor ~= nil then
+        util.context.set(player, selected_floor)
+        -- Reset the subfloor we moved from if it doesn't have any additional recipes
+        if floor:count() < 2 then floor:reset() end
+        return true
+    else
+        return false
+    end
+end
+
 ---@param player LuaPlayer
 function _context.validate(player)
     local context = util.globals.player_table(player).context
