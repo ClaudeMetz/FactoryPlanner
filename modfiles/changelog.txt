@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed that an empty frame could stay around in the top left corner in certain situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.72
