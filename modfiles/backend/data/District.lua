@@ -2,7 +2,7 @@ local Object = require("backend.data.Object")
 
 ---@class District: Object, ObjectMethods
 ---@field class "District"
----@field first_factory Factory?
+---@field first Factory?
 local District = Object.methods()
 District.__index = District
 script.register_metatable("District", District)
@@ -10,7 +10,6 @@ script.register_metatable("District", District)
 ---@return District
 local function init()
     local object = Object.init({
-        first_factory = nil
     }, "District", District)  --[[@as District]]
     return object
 end
@@ -18,7 +17,7 @@ end
 
 function District:index()
     OBJECT_INDEX[self.id] = self
-    self.first_factory:index()
+    for factory in self:iterator() do factory:index() end
 end
 
 
@@ -47,37 +46,34 @@ end
 
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot Factory?
+---@param direction NeighbourDirection?
 ---@return Factory? factory
-function District:find(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_factory)
-    return self:_find(pivot_object, filter, direction)  --[[@as Factory?]]
+function District:find(filter, pivot, direction)
+    return self:_find(filter, pivot, direction)  --[[@as Factory?]]
 end
 
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot Factory?
+---@param direction NeighbourDirection?
 ---@return fun(): Factory?
-function District:iterator(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_factory)
-    return self:_iterator(pivot_object, filter, direction)
+function District:iterator(filter, pivot, direction)
+    return self:_iterator(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
 ---@param direction NeighbourDirection?
 ---@param pivot Factory?
 ---@return number count
-function District:count(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_factory)
-    return self:_count(pivot_object, filter, direction)
+function District:count(filter, pivot, direction)
+    return self:_count(filter, pivot, direction)
 end
 
 
 --- Districts can't be invalid, this just cleanly validates the factories
 function District:validate()
-    self:_validate(self.first_factory)
+    self:_validate(self.first)
 end
 
 return {init = init}

@@ -101,7 +101,7 @@ end
 local function matrix_early_abort_check(player, modal_data)
     local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    if subfactory.top_floor.first_line == nil then return true end
+    if subfactory.top_floor.first == nil then return true end
 
     local subfactory_data = solver.generate_subfactory_data(player, subfactory)
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)

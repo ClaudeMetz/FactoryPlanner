@@ -5,6 +5,7 @@
 ---@field class string
 ---@field valid boolean
 ---@field parent Object?
+---@field first Object?
 ---@field next Object?
 ---@field previous Object?
 
@@ -66,17 +67,16 @@ end
 
 ---@alias NeighbourDirection "next" | "previous"
 
----@protected
----@param direction NeighbourDirection?
+---@private
 ---@param pivot Object?
----@param first_object Object?
+---@param direction NeighbourDirection?
 ---@return Object? pivot
-function methods:_determine_pivot(direction, pivot, first_object)
+function methods:_actual_pivot(pivot, direction)
     if direction ~= nil and pivot ~= nil then
         if pivot[direction] ~= nil then return pivot[direction]
         else return nil end  -- nothing exists in this direction
     else
-        return first_object
+        return self.first
     end
 end
 
@@ -86,13 +86,11 @@ end
 ---@param relative_object Object?
 ---@param direction NeighbourDirection?
 function methods:_insert(new_object, relative_object, direction)
-    local first = "first_" .. new_object.class:lower()
-
-    if self[first] == nil then
-        self[first] = new_object
+    if self.first == nil then
+        self.first = new_object
     else
         if relative_object == nil then  -- no relative object means append
-            relative_object, direction = self[first], "next"
+            relative_object, direction = self.first, "next"
             while relative_object.next ~= nil do
                 relative_object = relative_object.next
             end
@@ -102,7 +100,7 @@ function methods:_insert(new_object, relative_object, direction)
 
         -- Make sure list header is adjusted if necessary
         if direction == "previous" and relative_object.previous == nil then
-            self[first] = new_object
+            self.first = new_object
         end
 
         -- Don't ask how I got to this, but it checks out
@@ -121,7 +119,7 @@ end
 ---@param object Object
 function methods:_remove(object)
     if object.previous == nil then
-        self["first_" .. object.class:lower()] = object.next
+        self.first = object.next
         if object.next then object.next.previous = nil end
     else
         object.previous.next = object.next
@@ -135,7 +133,7 @@ end
 ---@param new_object Object
 function methods:_replace(object, new_object)
     if object.previous == nil then
-        self["first_" .. object.class:lower()] = new_object
+        self.first = new_object
     else
         new_object.previous = object.previous
         object.previous.next = new_object
@@ -144,7 +142,6 @@ function methods:_replace(object, new_object)
         new_object.next = object.next
         object.next.previous = new_object
     end
-    object.next, object.previous = nil, nil  -- so the object can be re-used elsewhere
 end
 
 
@@ -172,12 +169,12 @@ end
 
 
 ---@protected
----@param pivot Object?
 ---@param filter ObjectFilter?
+---@param pivot Object?
 ---@param direction NeighbourDirection?
 ---@return Object? object
-function methods:_find(pivot, filter, direction)
-    local next_object = pivot
+function methods:_find(filter, pivot, direction)
+    local next_object = self:_actual_pivot(pivot, direction)
     while next_object ~= nil do
         if match(next_object, filter) then return next_object end
         next_object = next_object[direction or "next"]
@@ -186,24 +183,27 @@ function methods:_find(pivot, filter, direction)
 end
 
 ---@protected
----@param first_object Object?
+---@param filter ObjectFilter?
+---@param pivot Object?
+---@param direction NeighbourDirection?
 ---@return Object? last_object
-function methods:_find_last(first_object)
-    local last_object = first_object
+function methods:_find_last(filter, pivot, direction)
+    local last_object = self:_actual_pivot(pivot, direction)
     while last_object ~= nil do
-        last_object = last_object.next
+        local matched = match(last_object, filter)
+        if matched then last_object = last_object[direction or "next"] end
     end
     return last_object
 end
 
 
 ---@protected
----@param pivot Object?
 ---@param filter ObjectFilter?
+---@param pivot Object?
 ---@param direction NeighbourDirection?
 ---@return fun(): Object?
-function methods:_iterator(pivot, filter, direction)
-    local next_object = pivot
+function methods:_iterator(filter, pivot, direction)
+    local next_object = self:_actual_pivot(pivot, direction)
     return function()
         while next_object ~= nil do
             local matched = match(next_object, filter)
@@ -215,13 +215,13 @@ function methods:_iterator(pivot, filter, direction)
 end
 
 ---@protected
----@param pivot Object?
 ---@param filter ObjectFilter?
+---@param pivot Object?
 ---@param direction NeighbourDirection?
 ---@return number count
-function methods:_count(pivot, filter, direction)
+function methods:_count(filter, pivot, direction)
     local count = 0
-    for _ in self:_iterator(pivot, filter, direction) do
+    for _ in self:_iterator(filter, pivot, direction) do
         count = count + 1
     end
     return count
@@ -236,7 +236,7 @@ end
 ---@return PackedObject[] packed_objects
 function methods:_pack(first_object)
     local packed_objects = {}
-    for object in self:_iterator(first_object) do
+    for object in self:_iterator(nil, first_object) do
         table.insert(packed_objects, object:pack())
     end
     return packed_objects
@@ -269,7 +269,7 @@ end
 ---@return boolean valid
 function methods:_validate(first_object)
     local valid = true
-    for object in self:_iterator(first_object) do
+    for object in self:_iterator(nil, first_object) do
         -- Stays true until a single dataset is invalid, then stays false
         valid = object:validate() and valid
     end
@@ -279,7 +279,7 @@ end
 ---@protected
 ---@param first_object Object?
 function methods:_repair(first_object, player)
-    for object in self:_iterator(first_object) do
+    for object in self:_iterator(nil, first_object) do
         if not object.valid and not object:repair(player) then
             object.parent:remove(object)
         end

@@ -7,6 +7,7 @@ local Product = require("backend.data.Product")
 ---@field parent District
 ---@field next Factory?
 ---@field previous Factory?
+---@field first Product?
 ---@field archived boolean
 ---@field name string
 ---@field timescale Timescale
@@ -14,7 +15,6 @@ local Product = require("backend.data.Product")
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
----@field first_product Product?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
@@ -37,7 +37,6 @@ local function init(name, timescale)
         matrix_free_items = nil,
         blueprints = {},
         notes = "",
-        first_product = nil,
         top_floor = Floor.init(),
 
         linearly_dependant = false,
@@ -87,31 +86,28 @@ end
 
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot Product?
+---@param direction NeighbourDirection?
 ---@return Product? product
-function Factory:find(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_product)
-    return self:_find(pivot_object, filter, direction)  --[[@as Product?]]
+function Factory:find(filter, pivot, direction)
+    return self:_find(filter, pivot, direction)  --[[@as Product?]]
 end
 
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot Product?
+---@param direction NeighbourDirection?
 ---@return fun(): Product?
-function Factory:iterator(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_product)
-    return self:_iterator(pivot_object, filter, direction)
+function Factory:iterator(filter, pivot, direction)
+    return self:_iterator(filter, pivot, direction)
 end
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot Product?
+---@param direction NeighbourDirection?
 ---@return number count
-function Factory:count(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_product)
-    return self:_count(pivot_object, filter, direction)
+function Factory:count(filter, pivot, direction)
+    return self:_count(filter, pivot, direction)
 end
 
 
@@ -195,7 +191,7 @@ function Factory:pack()
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
-        products = self:_pack(self.first_product),
+        products = self:_pack(self.first),
         top_floor = self.top_floor:pack()
     }
 end
@@ -212,7 +208,7 @@ local function unpack(packed_self)
     unpacked_self.notes = packed_self.notes
 
     local function unpacker(item) return Product.unpack(item) end
-    unpacked_self.first_product = Object.unpack(packed_self.products, unpacker, unpacked_self)  --[[@as Product]]
+    unpacked_self.first = Object.unpack(packed_self.products, unpacker, unpacked_self)  --[[@as Product]]
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self
@@ -234,7 +230,7 @@ function Factory:validate()
     local previous_validity = self.valid
     self.valid = true
 
-    self.valid = self:_validate(self.first_product) and self.valid
+    self.valid = self:_validate(self.first) and self.valid
     self.valid = self.top_floor:validate() and self.valid
 
     local matrix_free_items, valid = prototyper.util.validate_prototype_objects(self.matrix_free_items, "type")
@@ -254,7 +250,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Factory:repair(player)
-    self:_repair(self.first_product, player)
+    self:_repair(self.first, player)
     self.top_floor:repair(player)
 
     -- Remove any unrepairable free items so the factory remains valid

@@ -10,15 +10,14 @@ local function refresh_production(player, _, _)
 end
 
 local function paste_line(player, _, event)
-    if event.button == defines.mouse_button_type.left and event.shift then
-        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-        -- Use a fake first line to paste over if no actual line exists
-        local last_line = floor:find_last() or Line.init({}, "produce")
+    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
-        if util.clipboard.paste(player, last_line) then
-            solver.update(player, util.context.get(player, "Factory"))
-            util.raise.refresh(player, "subfactory", nil)
-        end
+    local dummy_line = Line.init({}, "produce")
+    floor:insert(dummy_line)
+
+    if util.clipboard.paste(player, dummy_line) then
+        solver.update(player, util.context.get(player, "Factory"))
+        util.raise.refresh(player, "subfactory", nil)
     end
 end
 
@@ -28,6 +27,15 @@ local function change_floor(player, destination)
         -- Only refresh if the floor was indeed changed
         util.raise.refresh(player, "production", nil)
     end
+end
+
+
+local function refresh_paste_button(player)
+    local main_elements = util.globals.main_elements(player)
+    if not main_elements.production_box then return end
+
+    local line_copied = util.clipboard.check_classes(player, {Floor=true, Line=true})
+    main_elements.production_box.paste_button.visible = line_copied
 end
 
 
@@ -66,16 +74,18 @@ local function refresh_production_box(player)
         if factory == nil then
             production_box_elements.instruction_label.caption = {"fp.production_instruction_subfactory"}
             production_box_elements.instruction_label.visible = true
-        elseif subfactory_valid then
+        elseif subfactory_valid and not any_lines_present then
             if factory:count() == 0 then
                 production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
                 production_box_elements.instruction_label.visible = true
-            elseif not any_lines_present then
+            else
                 production_box_elements.instruction_label.caption = {"fp.production_instruction_recipe"}
                 production_box_elements.instruction_label.visible = true
             end
         end
     end
+
+    refresh_paste_button(player)
 end
 
 local function build_production_box(player)
@@ -84,14 +94,8 @@ local function build_production_box(player)
 
     local parent_flow = main_elements.flows.right_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    -- Insert a 'superfluous' flow for the sole purpose of detecting clicks on it
-    local click_flow = frame_vertical.add{type="flow", direction="vertical",
-        tags={mod="fp", on_gui_click="paste_line"}}
-    click_flow.style.vertically_stretchable = true
-    click_flow.style.horizontally_stretchable = true
-    main_elements.production_box["vertical_frame"] = click_flow
 
-    local subheader = click_flow.add{type="frame", direction="horizontal", style="subheader_frame"}
+    local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
     subheader.style.maximal_height = 100  -- large value to nullify maximal_height
     subheader.style.padding = {8, 8, 6, 8}
 
@@ -130,9 +134,19 @@ local function build_production_box(player)
     util.raise.build(player, "view_state", subheader)
     main_elements.production_box["view_state_table"] = subheader["table_view_state"]
 
-    local label_instruction = click_flow.add{type="label", style="bold_label"}
+    local label_instruction = frame_vertical.add{type="label", style="bold_label"}
     label_instruction.style.margin = 20
     main_elements.production_box["instruction_label"] = label_instruction
+
+    local flow_production_table = frame_vertical.add{type="flow", direction="horizontal"}
+    main_elements.production_box["production_table_flow"] = flow_production_table
+
+    local button_paste = frame_vertical.add{type="button", caption={"fp.paste_line"}, tooltip={"fp.paste_line_tt"},
+        style="fp_button_rounded_mini", tags={mod="fp", on_gui_click="paste_line"}, mouse_button_filter={"left"}}
+    button_paste.style.margin = {6, 12}
+    main_elements.production_box["paste_button"] = button_paste
+
+    frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
 
     local frame_messages = frame_vertical.add{type="frame", direction="vertical",
         visible=false, style="fp_frame_messages"}
@@ -189,7 +203,8 @@ listeners.misc = {
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {production_box=true, production_detail=true, production=true, subfactory=true, all=true}
-        if triggers[event.trigger] then refresh_production_box(player) end
+        if triggers[event.trigger] then refresh_production_box(player)
+        elseif event.trigger == "paste_button" then refresh_paste_button(player) end
     end)
 }
 

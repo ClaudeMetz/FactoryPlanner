@@ -61,7 +61,10 @@ function Product:update_definition(new_defined_by)
 end
 
 
-function Product.paste(self, object)
+---@param object CopyableObject
+---@return boolean success
+---@return string? error
+function Product:paste(object)
     if object.class == "Product" or object.class == "SimpleItem" or object.class == "Fuel" then
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=object.proto})
