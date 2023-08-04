@@ -1,19 +1,16 @@
 -- ** LOCAL UTIL **
-local function generate_metadata(player)
-    local ui_state = util.globals.ui_state(player)
+local function generate_metadata(player, factory)
     local preferences = util.globals.preferences(player)
-    local subfactory = ui_state.context.subfactory
 
     local metadata = {
-        archive_open = ui_state.flags.archive_open,
-        matrix_solver_active = (subfactory.matrix_free_items ~= nil),
+        archive_open = factory.archived,
+        matrix_solver_active = (factory.matrix_free_items ~= nil),
         fold_out_subfloors = preferences.fold_out_subfloors,
         round_button_numbers = preferences.round_button_numbers,
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
-        view_state_metadata = view_state.generate_metadata(player, subfactory),
-        any_beacons_available = (next(global.prototypes.beacons) ~= nil),
-        line_count = nil, level = nil  -- set dynamically per floor
+        view_state_metadata = view_state.generate_metadata(player, factory),
+        any_beacons_available = (next(global.prototypes.beacons) ~= nil)
     }
 
     if preferences.tutorial_mode then
@@ -37,30 +34,35 @@ end
 local builders = {}
 
 function builders.done(line, parent_flow, _)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    local relevant_line = (line.class == "Floor") and line.first or line
 
     parent_flow.add{type="checkbox", state=relevant_line.done, mouse_button_filter={"left"},
-        tags={mod="fp", on_gui_checked_state_changed="checkmark_line", floor_id=line.parent.id, line_id=line.id}}
+        tags={mod="fp", on_gui_checked_state_changed="checkmark_line", line_id=line.id}}
 end
 
 function builders.recipe(line, parent_flow, metadata, indent)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
-    local recipe_proto = relevant_line.recipe.proto
+    local relevant_line = (line.class == "Floor") and line.first or line
+    local recipe_proto = relevant_line.recipe_proto
 
     parent_flow.style.vertical_align = "center"
     parent_flow.style.horizontal_spacing = 3
 
     if indent > 0 then parent_flow.style.left_margin = indent * 18 end
 
-    local function create_move_button(flow, direction, disable)
-        local direction_enabled = (direction == "up" and line.gui_position ~= ((metadata.level > 1) and 2 or 1))
-            or (direction == "down" and line.gui_position < metadata.line_count)
-        local enabled = direction_enabled and (not metadata.archive_open and not disable)
-        local endpoint = (direction == "up") and {"fp.top"} or {"fp.bottom"}
-        local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. direction}, endpoint} or ""
+    local function create_move_button(flow, direction, first_subfloor_line)
+        local enabled = not (first_subfloor_line or metadata.archive_open)
+        if direction == "next" and line.next == nil then enabled = false
+        elseif direction == "previous" then
+            if line.previous == nil then enabled = false
+            elseif line.parent.level > 1 and line.previous == line.parent.first then enabled = false end
+        end
 
-        flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. direction,
-            tags={mod="fp", on_gui_click="move_line", direction=direction, floor_id=line.parent.id, line_id=line.id},
+        local endpoint = (direction == "previous") and {"fp.top"} or {"fp.bottom"}
+        local up_down = (direction == "previous") and "up" or "down"
+        local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
+
+        flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. up_down,
+            tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id},
             tooltip=move_tooltip, enabled=enabled, mouse_button_filter={"left"}}
     end
 
@@ -68,9 +70,9 @@ function builders.recipe(line, parent_flow, metadata, indent)
     move_flow.style.vertical_spacing = 0
     move_flow.style.top_padding = 2
 
-    local first_subfloor_line = (line.parent.level > 1 and line.gui_position == 1)
-    create_move_button(move_flow, "up", first_subfloor_line)
-    create_move_button(move_flow, "down", first_subfloor_line)
+    local first_subfloor_line = (line.parent.level > 1 and line.previous == nil)
+    create_move_button(move_flow, "previous", first_subfloor_line)
+    create_move_button(move_flow, "next", first_subfloor_line)
 
     local style, enabled, tutorial_tooltip = nil, true, ""
     local note = ""  ---@type LocalisedString
@@ -82,11 +84,11 @@ function builders.recipe(line, parent_flow, metadata, indent)
         note = (relevant_line.active) and "" or {"fp.recipe_inactive"}
         tutorial_tooltip = metadata.recipe_tutorial_tt
 
-        if line.subfloor then
+        if line.class == "Floor" then
             style = (relevant_line.active) and "flib_slot_button_blue_small" or "flib_slot_button_purple_small"
             note = {"fp.recipe_subfloor_attached"}
 
-        elseif line.recipe.production_type == "consume" then
+        elseif line.production_type == "input" then
             style = (relevant_line.active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
             note = {"fp.recipe_consumes_byproduct"}
         end
@@ -94,9 +96,9 @@ function builders.recipe(line, parent_flow, metadata, indent)
 
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
-    local tooltip = {"", first_line, line.effects_tooltip, tutorial_tooltip}
-    parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_recipe", floor_id=line.parent.id,
-        line_id=line.id}, enabled=enabled, sprite=recipe_proto.sprite, tooltip=tooltip, style=style,
+    local tooltip = {"", first_line, relevant_line.effects_tooltip, tutorial_tooltip}
+    parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id},
+        enabled=enabled, sprite=recipe_proto.sprite, tooltip=tooltip, style=style,
         mouse_button_filter={"left-and-right"}}
 end
 
@@ -354,7 +356,7 @@ local all_production_columns = {
     -- name, caption, tooltip, alignment
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
-    {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
+    --[[ {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
@@ -362,23 +364,26 @@ local all_production_columns = {
     {name="products", caption={"fp.pu_product", 2}, alignment="left"},
     {name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
     {name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},
-    {name="line_comment", caption={"fp.column_comment"}, alignment="left"}
+    {name="line_comment", caption={"fp.column_comment"}, alignment="left"} ]]
 }
 
 local function refresh_production_table(player)
-    local ui_state = util.globals.ui_state(player)
-    if ui_state.main_elements.main_frame == nil then return end
+    local main_elements = util.globals.main_elements(player)
+    if main_elements.main_frame == nil then return end
 
     -- Determine the column_count first, because not all columns are nessecarily shown
     local preferences = util.globals.preferences(player)
-    local subfactory = ui_state.context.subfactory
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
-    local production_table_elements = ui_state.main_elements.production_table
-    local subfactory_valid = (subfactory and subfactory.valid)
-    local any_lines_present = (subfactory_valid) and (subfactory.selected_floor.Line.count > 0) or false
+    local production_table_elements = main_elements.production_table
+    local subfactory_valid = (factory and factory.valid)
+    local any_lines_present = (subfactory_valid) and (floor:count() > 0) or false
 
-    production_table_elements.production_scroll_pane.visible = (subfactory_valid and any_lines_present)
+    local scroll_pane_production = production_table_elements.production_scroll_pane
+    scroll_pane_production.visible = (subfactory_valid and any_lines_present)
     if not subfactory_valid then return end
+    scroll_pane_production.clear()
 
     local production_columns = {}
     for _, column_data in ipairs(all_production_columns) do
@@ -387,9 +392,6 @@ local function refresh_production_table(player)
             table.insert(production_columns, column_data)
         end
     end
-
-    local scroll_pane_production = production_table_elements.production_scroll_pane
-    scroll_pane_production.clear()
 
     local table_production = scroll_pane_production.add{type="table", column_count=(#production_columns+1),
         style="fp_table_production"}
@@ -411,25 +413,22 @@ local function refresh_production_table(player)
     flow_pusher.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     -- Generates some data that is relevant to several different builders
-    local metadata = generate_metadata(player)
+    local metadata = generate_metadata(player, factory)
 
     -- Production lines
-    local function render_lines(floor, indent)
-        for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
-            metadata.line_count = Floor.count(floor, "Line")
-            metadata.level = floor.level
-
+    local function render_lines(render_floor, indent)
+        for line in render_floor:iterator() do
             for _, column_data in ipairs(production_columns) do
                 local flow = table_production.add{type="flow", direction="horizontal"}
                 builders[column_data.name](line, flow, metadata, indent)
             end
             table_production.add{type="empty-widget"}
 
-            if line.subfloor and metadata.fold_out_subfloors then render_lines(line.subfloor, indent + 1) end
+            if line.class == "Floor" and metadata.fold_out_subfloors then render_lines(line, indent + 1) end
         end
     end
 
-    render_lines(ui_state.context.floor, 0)
+    render_lines(floor, 0)
 end
 
 local function build_production_table(player)
@@ -437,10 +436,11 @@ local function build_production_table(player)
     main_elements.production_table = {}
 
     -- Can't do much here since the table needs to be destroyed on refresh anyways
-    local frame_vertical = main_elements.production_box.vertical_frame
-    local scroll_pane_production = frame_vertical.add{type="scroll-pane", direction="vertical",
+    local flow_production_table = main_elements.production_box.production_table_flow
+    local scroll_pane_production = flow_production_table.add{type="scroll-pane", direction="vertical",
         style="flib_naked_scroll_pane_no_padding"}
     scroll_pane_production.style.horizontally_stretchable = true
+    scroll_pane_production.style.vertically_stretchable = false
     main_elements.production_table["production_scroll_pane"] = scroll_pane_production
 
     refresh_production_table(player)
@@ -453,12 +453,12 @@ local listeners = {}
 listeners.misc = {
     build_gui_element = (function(player, event)
         if event.trigger == "main_dialog" then
-            --build_production_table(player)
+            build_production_table(player)
         end
     end),
     refresh_gui_element = (function(player, event)
         local triggers = {production_table=true, production_detail=true, production=true, subfactory=true, all=true}
-        --if triggers[event.trigger] then refresh_production_table(player) end
+        if triggers[event.trigger] then refresh_production_table(player) end
     end)
 }
 

@@ -80,15 +80,16 @@ function _context.set(player, object)
         if object.archived then cache.archive = object.id
         else cache.main = object.id end
 
-        if cache.factory[object.id] then context.object_id = cache.factory[object.id].id
+        if cache.factory[object.id] then context.object_id = cache.factory[object.id]
         else context.object_id = object.top_floor.id end
 
     elseif object.class == "Floor" then
         context.object_id = object.id
-        cache.factory[object.parent.id] = object.id
+        local factory = _context.get(player, "Factory")  --[[@as Factory]]
+        cache.factory[factory.id] = object.id
 
-        if object.parent.archived then cache.archive = object.parent.id
-        else cache.main = object.parent.id end
+        if factory.archived then cache.archive = factory.id
+        else cache.main = factory.id end
     end
 end
 
@@ -99,9 +100,9 @@ function _context.set_adjacent(player, object, archived)
     if archived == nil then archived = object.archived end
     local filter = { archived = archived }
 
-    local previous = object.parent:find(filter, "previous", object)
+    local previous = object.parent:find(filter, object, "previous")
     if previous then _context.set(player, previous); return end
-    local next = object.parent:find(filter, "next", object)
+    local next = object.parent:find(filter, object, "next")
     if next then _context.set(player, next); return end
 
     _context.set_default(player, false)
@@ -140,9 +141,13 @@ function _context.descend_floors(player, destination)
     end
 
     if selected_floor ~= nil then
-        util.context.set(player, selected_floor)
         -- Reset the subfloor we moved from if it doesn't have any additional recipes
-        if floor:count() < 2 then floor:reset() end
+        if floor:count() == 1 then
+            floor.parent:replace(floor, floor.first)
+            _context.remove(player, floor)
+        end
+
+        util.context.set(player, selected_floor)
         return true
     else
         return false

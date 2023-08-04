@@ -1,5 +1,7 @@
 local unpackers = {
-    Product = require("backend.data.Product").unpack
+    Product = require("backend.data.Product").unpack,
+    Floor = require("backend.data.Floor").unpack,
+    Line = require("backend.data.Line").unpack
 }
 
 local _clipboard = {}
@@ -25,6 +27,7 @@ function _clipboard.copy(player, object)
         --parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
     util.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
+    util.raise.refresh(player, "paste_button", nil)
 end
 
 -- Tries pasting the player's clipboard content onto the given target
@@ -63,6 +66,14 @@ function _clipboard.paste(player, target)
             end
         end
     end
+end
+
+---@param player LuaPlayer
+---@param classes { [CopyableObject]: boolean }
+---@return boolean present
+function _clipboard.check_classes(player, classes)
+    local clip = util.globals.player_table(player).clipboard
+    return (clip ~= nil and classes[clip.class])
 end
 
 return _clipboard

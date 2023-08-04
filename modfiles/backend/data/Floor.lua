@@ -7,8 +7,10 @@ local Line = require("backend.data.Line")
 ---@class Floor: Object, ObjectMethods
 ---@field class "Floor"
 ---@field parent LineParent
+---@field next LineObject?
+---@field previous LineObject?
+---@field first LineObject?
 ---@field level integer
----@field first_line LineObject?
 ---@field first_product SimpleItem?
 ---@field first_byproduct SimpleItem?
 ---@field first_ingredient SimpleItem?
@@ -22,7 +24,6 @@ script.register_metatable("Floor", Floor)
 local function init(level)
     local object = Object.init({
         level = level,
-        first_line = nil,
 
         first_product = nil,
         first_byproduct = nil,
@@ -60,10 +61,8 @@ function Floor:remove(line)
     self:_remove(line)
 
     -- Convert floor to line in parent if only defining line remains
-    if self.level > 1 and self.first_line.next == nil then
-        local parent_floor = self.parent  --[[@as Floor]]
-        parent_floor:insert(self.first_line, self, "next")
-        parent_floor:remove(self)
+    if self.level > 1 and self.first.next == nil then
+        self.parent:replace(self, self.first)
     end
 end
 
@@ -71,27 +70,32 @@ end
 ---@param new_line LineObject
 function Floor:replace(line, new_line)
     new_line.parent = self
-    self:_replace(line, line)
+    self:_replace(line, new_line)
 end
 
--- Replace this subfloor with a line in the parent floor
-function Floor:reset()
-    if self.level == 1 then error("Can't reset the top floor") end
-    self.parent:replace(self, self.first_line)
+
+---@param line LineObject
+---@param direction NeighbourDirection
+---@param spots integer?
+function Floor:shift(line, direction, spots)
+    self:_shift(line, direction, spots)
 end
 
+
+---@param filter ObjectFilter?
+---@param pivot LineObject?
+---@param direction NeighbourDirection?
 ---@return LineObject?
-function Floor:find_last()
-    return self:_find_last(self.first_line)  --[[@as LineObject?]]
+function Floor:find_last(filter, pivot, direction)
+    return self:_find_last(filter, pivot, direction)  --[[@as LineObject?]]
 end
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot LineObject?
+---@param direction NeighbourDirection?
 ---@return fun(): LineObject?
-function Floor:iterator(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_line)
-    return self:_iterator(pivot_object, filter, direction)
+function Floor:iterator(filter, pivot, direction)
+    return self:_iterator(filter, pivot, direction)
 end
 
 ---@param item_category SimpleItemCategory
@@ -101,12 +105,11 @@ function Floor:item_iterator(item_category)
 end
 
 ---@param filter ObjectFilter?
----@param direction NeighbourDirection?
 ---@param pivot LineObject?
+---@param direction NeighbourDirection?
 ---@return number count
-function Floor:count(filter, direction, pivot)
-    local pivot_object = self:_determine_pivot(direction, pivot, self.first_line)
-    return self:_count(pivot_object, filter, direction)
+function Floor:count(filter, pivot, direction)
+    return self:_count(filter, pivot, direction)
 end
 
 
@@ -179,6 +182,43 @@ function Floor:get_component_data(component_table)
 end
 
 
+---@param object LineObject
+---@return boolean compatible
+function Floor:check_product_compatibility(object)  -- TODO test once solver is set up again
+    if self.level == 1 then return true end
+
+    local relevant_line = (object.class == "Floor") and object.first or object
+    -- The triple loop is crappy, but it's the simplest way to check
+    for _, product in pairs(relevant_line.recipe_proto.products) do
+        for line in self:iterator() do
+            for ingredient in line:item_iterator("ingredient") do
+                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+---@param object CopyableObject
+---@return boolean success
+---@return string? error
+function Floor:paste(object)
+    if object.class == "Line" or object.class == "Floor" then
+        ---@cast object LineObject
+        if not self:check_product_compatibility(object) then
+            return false, "recipe_irrelevant"  -- found no use for the recipe's products
+        end
+
+        self.parent:replace(self, object)
+        return true, nil
+    else
+        return false, "incompatible_class"
+    end
+end
+
+
 ---@alias PackedLineObject PackedLine | PackedFloor
 
 ---@class PackedFloor: PackedObject
@@ -191,7 +231,7 @@ function Floor:pack()
     return {
         class = self.class,
         level = self.level,
-        lines = self:_pack(self.first_line)
+        lines = self:_pack(self.first)
     }
 end
 
@@ -201,14 +241,14 @@ local function unpack(packed_self)
     local unpacked_self = init(packed_self.level)
 
     local function unpacker(line) return (line.class == "Floor") and unpack(line) or Line.unpack(line) end
-    unpacked_self.first_line = Object.unpack(packed_self.lines, unpacker, unpacked_self)  --[[@as LineObject]]
+    unpacked_self.first = Object.unpack(packed_self.lines, unpacker, unpacked_self)  --[[@as LineObject]]
 
     return unpacked_self
 end
 
 ---@return boolean valid
 function Floor:validate()
-    self.valid = self:_validate(self.first_line)
+    self.valid = self:_validate(self.first)
     return self.valid
 end
 
@@ -216,7 +256,7 @@ end
 ---@return boolean success
 function Floor:repair(player)
     -- TODO check how this works with subfloors, and the first line being invalid
-    self:_repair(self.first_line, player)  -- always makes it valid
+    self:_repair(self.first, player)  -- always makes it valid
 
     self.valid = true
     return self.valid

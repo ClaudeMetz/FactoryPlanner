@@ -1,43 +1,43 @@
+local Floor = require("backend.data.Floor")
+
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-
+    local line = OBJECT_INDEX[tags.line_id]
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
-    local translated_direction = (tags.direction == "up") and "negative" or "positive"
-    local first_position = (floor.level > 1) and 2 or 1
-    Floor.shift(floor, line, first_position, translated_direction, spots_to_shift)
+    line.parent:shift(line, tags.direction, spots_to_shift)
 
-    solver.update(player, context.subfactory)
+    solver.update(player, util.context.get(player, "Factory"))
     util.raise.refresh(player, "subfactory", nil)
 end
 
 local function handle_recipe_click(player, tags, action)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local line = OBJECT_INDEX[tags.line_id]
+    local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if relevant_line.recipe.production_type == "consume" then
+        if relevant_line.production_type == "input" then
             util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
 
-        local subfloor = line.subfloor
-        if subfloor == nil then
-            if util.globals.flags(player).archive_open then
+        local new_context = line
+        if line.class == "Line" then
+            if factory.archived then
                 util.messages.raise(player, "error", {"fp.error_no_new_subfloors_in_archive"}, 1)
                 return
             end
 
-            subfloor = Floor.init(line)  -- attaches itself to the given line automatically
-            Subfactory.add(context.subfactory, subfloor)
-            solver.update(player, context.subfactory)
+            local subfloor = Floor.init(line.parent.level + 1)
+            line.parent:replace(line, subfloor)
+            line.next, line.previous = nil, nil
+            subfloor:insert(line)
+
+            new_context = subfloor
+            solver.update(player, factory)
         end
 
-        util.context.set_floor(player, subfloor)
+        util.context.set(player, new_context)
         util.raise.refresh(player, "production", nil)
 
     elseif action == "copy" then
@@ -48,20 +48,18 @@ local function handle_recipe_click(player, tags, action)
 
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
-        solver.update(player, context.subfactory)
+        solver.update(player, factory)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "delete" then
-        Floor.remove(floor, line)
+        util.context.remove(player, line)
+        line.parent:remove(line)
 
-        -- If this recipe is deleted from a lower level floor (folded out subfloor), reset  if necessary
-        if context.floor.level < floor.level and Floor.count(floor, "Line") < 2 then Floor.reset(floor) end
-
-        solver.update(player, context.subfactory)
+        solver.update(player, factory)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
-        util.open_in_recipebook(player, "recipe", relevant_line.recipe.proto.name)
+        util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
     end
 end
 
@@ -463,10 +461,8 @@ listeners.gui = {
         {
             name = "checkmark_line",
             handler = (function(player, tags, _)
-                local context = util.globals.context(player)
-                local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-                local line = Floor.get(floor, "Line", tags.line_id)
-                local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+                local line = OBJECT_INDEX[tags.line_id]
+                local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.done = not relevant_line.done
             end)
         }

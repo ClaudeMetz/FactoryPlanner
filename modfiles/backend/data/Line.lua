@@ -7,6 +7,8 @@ local Object = require("backend.data.Object")
 ---@field parent Floor
 ---@field recipe_proto FPRecipePrototype | FPPackedPrototype
 ---@field production_type ProductionType
+---@field done boolean
+---@field active boolean
 ---@field first_product SimpleItem?
 ---@field first_byproduct SimpleItem?
 ---@field first_ingredient SimpleItem?
@@ -21,7 +23,10 @@ local function init(recipe_proto, production_type)
     local object = Object.init({
         recipe_proto = recipe_proto,
         production_type = production_type,
+        done = false,
+        active = false,
 
+        effects_tooltip = "",  -- TODO
         first_product = nil,
         first_byproduct = nil,
         first_ingredient = nil,
@@ -48,28 +53,14 @@ function Line:item_iterator(item_category)
 end
 
 
--- Checks whether the given recipe's products are used on the given floor
--- The triple loop is crappy, but it's the simplest way to check
-local function check_product_compatibiltiy(floor, recipe_proto)
-    for _, product in pairs(recipe_proto.products) do
-        for line in floor:iterator() do
-            for ingredient in line:item_iterator("ingredient") do
-                if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
-                    return true
-                end
-            end
-        end
-    end
-    return false
-end
-
+---@param object CopyableObject
+---@return boolean success
+---@return string? error
 function Line:paste(object)
     if object.class == "Line" or object.class == "Floor" then
-        if self.parent.level > 1 then  -- make sure the recipe is allowed on this floor
-            local relevant_line = (object.class == "Floor") and object.first_line or object
-            if not check_product_compatibiltiy(self.parent, relevant_line.recipe_proto) then
-                return false, "recipe_irrelevant"  -- found no use for the recipe's products
-            end
+        ---@cast object LineObject
+        if not self.parent:check_product_compatibility(object) then
+            return false, "recipe_irrelevant"  -- found no use for the recipe's products
         end
 
         self.parent:replace(self, object)
@@ -84,13 +75,17 @@ end
 ---@field class "Line"
 ---@field recipe_proto FPPackedPrototype
 ---@field production_type ProductionType
+---@field done boolean
+---@field active boolean
 
 ---@return PackedLine packed_self
 function Line:pack()
     return {
         class = self.class,
         recipe_proto = prototyper.util.simplify_prototype(self.recipe_proto, nil),
-        production_type = self.production_type
+        production_type = self.production_type,
+        done = self.done,
+        active = self.active
     }
 end
 
@@ -98,7 +93,8 @@ end
 ---@return Line floor
 local function unpack(packed_self)
     local unpacked_self = init(packed_self.recipe_proto, packed_self.production_type)
-
+    unpacked_self.done = packed_self.done
+    unpacked_self.active = packed_self.active
 
     return unpacked_self
 end

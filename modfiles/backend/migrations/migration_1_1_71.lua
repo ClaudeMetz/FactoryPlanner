@@ -53,6 +53,8 @@ function migration.player_table(player_table)
                         new_floor:insert(subfloor)
                     else
                         local new_line = Line.init(line.recipe.proto, line.recipe.production_type)
+                        new_line.done = line.done
+                        new_line.active = line.active
                         -- TODO more Line stuff
                         new_floor:insert(new_line)
                     end
@@ -94,6 +96,8 @@ function migration.packed_subfactory(packed_subfactory)
                 table.insert(new_floor.lines, {
                     recipe_proto = line.recipe.proto,
                     production_type = line.recipe.production_type,
+                    done = line.done,
+                    active = line.active,
                     -- TODO more Line stuff
                     class = "Line"
                 })
@@ -102,8 +106,6 @@ function migration.packed_subfactory(packed_subfactory)
         return new_floor
     end
     packed_subfactory.top_floor = convert_floor(packed_subfactory.top_floor)
-
-    -- TODO Line stuff
 end
 
 return migration
