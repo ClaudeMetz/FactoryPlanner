@@ -9,10 +9,13 @@ local Object = require("backend.data.Object")
 ---@field production_type ProductionType
 ---@field done boolean
 ---@field active boolean
+---@field percentage number
+---@field comment string
+---@field effects_tooltip LocalisedString
 ---@field first_product SimpleItem?
 ---@field first_byproduct SimpleItem?
 ---@field first_ingredient SimpleItem?
----@field energy_consumption number
+---@field power number
 ---@field pollution number
 local Line = Object.methods()
 Line.__index = Line
@@ -25,12 +28,14 @@ local function init(recipe_proto, production_type)
         production_type = production_type,
         done = false,
         active = false,
+        percentage = 100,
+        comment = "",
 
         effects_tooltip = "",  -- TODO
         first_product = nil,
         first_byproduct = nil,
         first_ingredient = nil,
-        energy_consumption = 0,
+        power = 0,
         pollution = 0,
     }, "Line", Line)  --[[@as Line]]
     return object
@@ -77,6 +82,8 @@ end
 ---@field production_type ProductionType
 ---@field done boolean
 ---@field active boolean
+---@field percentage number
+---@field comment string
 
 ---@return PackedLine packed_self
 function Line:pack()
@@ -85,7 +92,9 @@ function Line:pack()
         recipe_proto = prototyper.util.simplify_prototype(self.recipe_proto, nil),
         production_type = self.production_type,
         done = self.done,
-        active = self.active
+        active = self.active,
+        percentage = self.percentage,
+        comment = self.comment
     }
 end
 
@@ -95,6 +104,8 @@ local function unpack(packed_self)
     local unpacked_self = init(packed_self.recipe_proto, packed_self.production_type)
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
+    unpacked_self.percentage = packed_self.percentage
+    unpacked_self.comment = packed_self.comment
 
     return unpacked_self
 end

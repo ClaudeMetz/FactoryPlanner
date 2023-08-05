@@ -14,7 +14,7 @@ local Line = require("backend.data.Line")
 ---@field first_product SimpleItem?
 ---@field first_byproduct SimpleItem?
 ---@field first_ingredient SimpleItem?
----@field energy_consumption number
+---@field power number
 ---@field pollution number
 local Floor = Object.methods()
 Floor.__index = Floor
@@ -28,7 +28,7 @@ local function init(level)
         first_product = nil,
         first_byproduct = nil,
         first_ingredient = nil,
-        energy_consumption = 0,
+        power = 0,
         pollution = 0,
     }, "Floor", Floor)  --[[@as Floor]]
     return object

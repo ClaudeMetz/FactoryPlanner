@@ -71,8 +71,8 @@ local function refresh_subfactory_info(player)
         -- Power + Pollution
         local top_floor = subfactory.top_floor
         local label_power = subfactory_info_elements.power_label
-        label_power.caption = {"fp.bold_label", util.format.SI_value(top_floor.energy_consumption, "W", 3)}
-        label_power.tooltip = util.format.SI_value(top_floor.energy_consumption, "W", 5)
+        label_power.caption = {"fp.bold_label", util.format.SI_value(top_floor.power, "W", 3)}
+        label_power.tooltip = util.format.SI_value(top_floor.power, "W", 5)
 
         local label_pollution = subfactory_info_elements.pollution_label
         label_pollution.caption = {"fp.bold_label", util.format.SI_value(top_floor.pollution, "P/m", 3)}

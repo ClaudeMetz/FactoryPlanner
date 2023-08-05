@@ -65,20 +65,16 @@ end
 
 
 local function handle_percentage_change(player, tags, event)
-    local ui_state = util.globals.ui_state(player)
-    local floor = Subfactory.get(ui_state.context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    local line = OBJECT_INDEX[tags.line_id]
+    local relevant_line = (line.class == "Floor") and line.first or line
     relevant_line.percentage = tonumber(event.element.text) or 100
 
-    ui_state.flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
+    util.globals.ui_state(player).flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
 end
 
 local function handle_percentage_confirmation(player, _, _)
-    local ui_state = util.globals.ui_state(player)
-    ui_state.flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
-    solver.update(player, ui_state.context.subfactory)
+    util.globals.ui_state(player).flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
+    solver.update(player, util.context.get(player, "Factory"))
     util.raise.refresh(player, "subfactory", nil)
 end
 
@@ -460,7 +456,7 @@ listeners.gui = {
     on_gui_checked_state_changed = {
         {
             name = "checkmark_line",
-            handler = (function(player, tags, _)
+            handler = (function(_, tags, _)
                 local line = OBJECT_INDEX[tags.line_id]
                 local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.done = not relevant_line.done
@@ -474,10 +470,10 @@ listeners.gui = {
         },
         {
             name = "line_comment",
-            handler = (function(player, tags, event)
-                local context = util.globals.context(player)
-                local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-                Floor.get(floor, "Line", tags.line_id).comment = event.element.text
+            handler = (function(_, tags, event)
+                local line = OBJECT_INDEX[tags.line_id]
+                local relevant_line = (line.class == "Floor") and line.first or line
+                relevant_line.comment = event.element.text
             end)
         }
     },
