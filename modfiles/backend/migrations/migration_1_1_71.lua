@@ -55,6 +55,8 @@ function migration.player_table(player_table)
                         local new_line = Line.init(line.recipe.proto, line.recipe.production_type)
                         new_line.done = line.done
                         new_line.active = line.active
+                        new_line.percentage = line.percentage
+                        new_line.comment = line.comment
                         -- TODO more Line stuff
                         new_floor:insert(new_line)
                     end
@@ -98,6 +100,8 @@ function migration.packed_subfactory(packed_subfactory)
                     production_type = line.recipe.production_type,
                     done = line.done,
                     active = line.active,
+                    percentage = line.percentage,
+                    comment = line.comment,
                     -- TODO more Line stuff
                     class = "Line"
                 })

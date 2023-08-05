@@ -103,12 +103,12 @@ function builders.recipe(line, parent_flow, metadata, indent)
 end
 
 function builders.percentage(line, parent_flow, metadata)
-    local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+    local relevant_line = (line.class == "Floor") and line.first or line
 
     local enabled = (not metadata.archive_open and not metadata.matrix_solver_active)
     local textfield_percentage = parent_flow.add{type="textfield", text=tostring(relevant_line.percentage),
-        tags={mod="fp", on_gui_text_changed="line_percentage", on_gui_confirmed="line_percentage",
-        floor_id=line.parent.id, line_id=line.id}, enabled=enabled}
+        tags={mod="fp", on_gui_text_changed="line_percentage", on_gui_confirmed="line_percentage", line_id=line.id},
+        enabled=enabled}
     util.gui.setup_numeric_textfield(textfield_percentage, true, false)
     textfield_percentage.style.horizontal_align = "center"
     textfield_percentage.style.width = 55
@@ -212,8 +212,8 @@ end
 function builders.power(line, parent_flow, metadata)
     local pollution_line = (metadata.pollution_column) and ""
         or {"", "\n", {"fp.pollution"}, ": ", util.format.SI_value(line.pollution, "P/m", 5)}
-    parent_flow.add{type="label", caption=util.format.SI_value(line.energy_consumption, "W", 3),
-        tooltip={"", util.format.SI_value(line.energy_consumption, "W", 5), pollution_line}}
+    parent_flow.add{type="label", caption=util.format.SI_value(line.power, "W", 3),
+        tooltip={"", util.format.SI_value(line.power, "W", 5), pollution_line}}
 end
 
 function builders.pollution(line, parent_flow, _)
@@ -345,9 +345,10 @@ function builders.fuel(line, parent_flow, metadata)
 end
 
 function builders.line_comment(line, parent_flow, _)
-    local textfield_comment = parent_flow.add{type="textfield", tags={mod="fp", on_gui_text_changed="line_comment",
-        floor_id=line.parent.id, line_id=line.id}, text=(line.comment or "")}
-        textfield_comment.style.width = 250
+    local relevant_line = (line.class == "Floor") and line.first or line
+    local textfield_comment = parent_flow.add{type="textfield", text=(relevant_line.comment or ""),
+        tags={mod="fp", on_gui_text_changed="line_comment", line_id=line.id}}
+    textfield_comment.style.width = 250
     util.gui.setup_textfield(textfield_comment)
 end
 
@@ -356,15 +357,15 @@ local all_production_columns = {
     -- name, caption, tooltip, alignment
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
-    --[[ {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
-    {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
-    {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
+    {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
+    --{name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
+    --{name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
     {name="pollution", caption={"fp.pollution"}, alignment="center"},
-    {name="products", caption={"fp.pu_product", 2}, alignment="left"},
-    {name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
-    {name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},
-    {name="line_comment", caption={"fp.column_comment"}, alignment="left"} ]]
+    --{name="products", caption={"fp.pu_product", 2}, alignment="left"},
+    --{name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
+    --{name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},
+    {name="line_comment", caption={"fp.column_comment"}, alignment="left"}
 }
 
 local function refresh_production_table(player)
