@@ -1,7 +1,8 @@
 local unpackers = {
     Product = require("backend.data.Product").unpack,
     Floor = require("backend.data.Floor").unpack,
-    Line = require("backend.data.Line").unpack
+    Line = require("backend.data.Line").unpack,
+    Machine = require("backend.data.Machine").unpack,
 }
 
 local _clipboard = {}

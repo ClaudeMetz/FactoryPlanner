@@ -216,7 +216,6 @@ local function unpack(packed_self)
     return unpacked_self
 end
 
-
 ---@return Factory clone
 function Factory:clone()
     local clone = unpack(self:pack())

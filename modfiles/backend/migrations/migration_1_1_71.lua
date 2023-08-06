@@ -5,9 +5,10 @@
 -- this is there ever is a large change related to this again.
 local District = require("backend.data.District")
 local Factory = require("backend.data.Factory")
+local Product = require("backend.data.Product")
 local Floor = require("backend.data.Floor")
 local Line = require("backend.data.Line")
-local Product = require("backend.data.Product")
+local Machine = require("backend.data.Machine")
 
 local migration = {}
 
@@ -56,9 +57,16 @@ function migration.player_table(player_table)
                         new_line.done = line.done
                         new_line.active = line.active
                         new_line.percentage = line.percentage
+
+                        local new_machine = Machine.init(line.machine.proto)
+                        new_machine.limit = line.machine.limit
+                        new_machine.force_limit = line.machine.force_limit
+                        new_machine.parent = new_line
+                        new_line.machine = new_machine
+
                         new_line.priority_product = line.priority_product_proto
                         new_line.comment = line.comment
-                        -- TODO more Line stuff
+
                         new_floor:insert(new_line)
                     end
                 end
@@ -102,9 +110,14 @@ function migration.packed_subfactory(packed_subfactory)
                     done = line.done,
                     active = line.active,
                     percentage = line.percentage,
+                    machine = {
+                        proto = line.machine.proto,
+                        limit = line.machine.limit,
+                        force_limit = line.machine.force_limit,
+                        class = "Machine"
+                    },
                     priority_product = line.priority_product_proto,
                     comment = line.comment,
-                    -- TODO more Line stuff
                     class = "Line"
                 })
             end

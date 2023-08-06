@@ -137,6 +137,7 @@ local function unpack(packed_self)
     return unpacked_self
 end
 
+
 ---@return boolean valid
 function Product:validate()
     self.valid = true

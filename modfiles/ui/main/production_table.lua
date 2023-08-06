@@ -129,17 +129,17 @@ local function add_module_flow(parent_flow, line, parent_type, metadata)
 end
 
 function builders.machine(line, parent_flow, metadata)
-    local machine_count = line.machine.count
     parent_flow.style.horizontal_spacing = 2
 
-    if line.subfloor then  -- add a button that shows the total of all machines on the subfloor
+    if line.class == "Floor" then  -- add a button that shows the total of all machines on the subfloor
         -- Machine count doesn't need any special formatting in this case because it'll always be an integer
+        local machine_count = line.machine_count
         local tooltip = {"fp.subfloor_machine_count", machine_count, {"fp.pl_machine", machine_count}}
         parent_flow.add{type="sprite-button", sprite="fp_generic_assembler", style="flib_slot_button_default_small",
             enabled=false, number=machine_count, tooltip=tooltip}
     else
         local active, round_number = (line.production_ratio > 0), metadata.round_button_numbers
-        local count, tooltip_line = util.format.machine_count(machine_count, active, round_number)
+        local count, tooltip_line = util.format.machine_count(line.machine.amount, active, round_number)
 
         local machine_limit = line.machine.limit
         local style, note = "flib_slot_button_default_small", nil
@@ -161,15 +161,16 @@ function builders.machine(line, parent_flow, metadata)
             line.machine.effects_tooltip, metadata.machine_tutorial_tt}
 
         parent_flow.add{type="sprite-button", style=style, sprite=line.machine.proto.sprite, number=count,
-            tags={mod="fp", on_gui_click="act_on_line_machine", floor_id=line.parent.id, line_id=line.id,
-            type="machine"}, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=line.machine.id}, tooltip=tooltip,
+            mouse_button_filter={"left-and-right"}}
 
+        if true then return end -- TODO
         add_module_flow(parent_flow, line, "machine", metadata)
         local module_set = line.machine.module_set
         if module_set.module_limit > module_set.module_count then
             local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
             local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=module_tooltip,
-                tags={mod="fp", on_gui_click="add_machine_module", floor_id=line.parent.id, line_id=line.id},
+                tags={mod="fp", on_gui_click="add_machine_module", line_id=line.id},
                 style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
             button.style.margin = 2
         end
@@ -314,8 +315,7 @@ function builders.ingredients(line, parent_flow, metadata)
         ::skip_ingredient::
     end
 
-    -- TODO
-    --if line.class ~= "Floor" and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
+    --if line.class ~= "Floor" and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end TODO
 end
 
 -- This is not a standard builder function, as it gets called indirectly by the ingredient builder
@@ -355,7 +355,7 @@ local all_production_columns = {
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
-    --{name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
+    {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     --{name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
     {name="pollution", caption={"fp.pollution"}, alignment="center"},
