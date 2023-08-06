@@ -56,6 +56,7 @@ function migration.player_table(player_table)
                         new_line.done = line.done
                         new_line.active = line.active
                         new_line.percentage = line.percentage
+                        new_line.priority_product = line.priority_product_proto
                         new_line.comment = line.comment
                         -- TODO more Line stuff
                         new_floor:insert(new_line)
@@ -101,6 +102,7 @@ function migration.packed_subfactory(packed_subfactory)
                     done = line.done,
                     active = line.active,
                     percentage = line.percentage,
+                    priority_product = line.priority_product_proto,
                     comment = line.comment,
                     -- TODO more Line stuff
                     class = "Line"

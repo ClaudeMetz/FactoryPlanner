@@ -169,7 +169,7 @@ end
 
 
 ---@protected
----@param filter ObjectFilter?
+---@param filter ObjectFilter
 ---@param pivot Object?
 ---@param direction NeighbourDirection?
 ---@return Object? object

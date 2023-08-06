@@ -10,6 +10,7 @@ local Object = require("backend.data.Object")
 ---@field done boolean
 ---@field active boolean
 ---@field percentage number
+---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field comment string
 ---@field effects_tooltip LocalisedString
 ---@field first_product SimpleItem?
@@ -29,6 +30,7 @@ local function init(recipe_proto, production_type)
         done = false,
         active = false,
         percentage = 100,
+        priority_product = nil,  -- set by the user
         comment = "",
 
         effects_tooltip = "",  -- TODO
@@ -54,7 +56,13 @@ end
 ---@param item_category SimpleItemCategory
 ---@return fun(): SimpleItem?
 function Line:item_iterator(item_category)
-    return self:_iterator(self["first_" .. item_category])
+    return self:_iterator(nil, self["first_" .. item_category])
+end
+
+---@param item_category SimpleItemCategory
+---@param filter ObjectFilter
+function Line:find_item(item_category, filter)
+    return self:_find(filter, self["first_" .. item_category])
 end
 
 
@@ -83,6 +91,7 @@ end
 ---@field done boolean
 ---@field active boolean
 ---@field percentage number
+---@field priority_product FPPackedPrototype?
 ---@field comment string
 
 ---@return PackedLine packed_self
@@ -94,6 +103,7 @@ function Line:pack()
         done = self.done,
         active = self.active,
         percentage = self.percentage,
+        priority_product = prototyper.util.simplify_prototype(self.priority_product, "type"),
         comment = self.comment
     }
 end
@@ -105,6 +115,8 @@ local function unpack(packed_self)
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
+    -- The prototype will be automatically unpacked by the validation process
+    unpacked_self.priority_product = packed_self.priority_product
     unpacked_self.comment = packed_self.comment
 
     return unpacked_self
@@ -115,6 +127,10 @@ function Line:validate()
     self.recipe_proto = prototyper.util.validate_prototype_object(self.recipe_proto, nil)
     self.valid = (not self.recipe_proto.simplified)
 
+    if self.priority_product ~= nil then
+        self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
+        self.valid = (not self.priority_product.simplified) and self.valid
+    end
 
     return self.valid
 end
@@ -124,6 +140,10 @@ end
 function Line:repair(player)
     -- An invalid recipe_proto is unrepairable and means this line should be removed
     if self.recipe_proto.simplified then return false end
+
+    if self.valid and self.priority_product and self.priority_product.simplified then
+        self.priority_product = nil
+    end
 
 
     self.valid = true

@@ -8,7 +8,7 @@ local function add_recipe(player, item_category, item_proto)
         util.messages.raise(player, "error", message, 1)
     else
         local production_type = (item_category == "byproduct") and "consume" or "produce"
-        util.raise.open_dialog(player, {dialog="recipe",
+        util.raise.open_dialog(player, {dialog="recipe",  -- TODO
             modal_data={category_id=item_proto.category_id, product_id=item_proto.id,
             floor_id=floor.id, production_type=production_type}})
     end

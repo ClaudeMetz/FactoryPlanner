@@ -212,59 +212,51 @@ end
 
 local function apply_item_options(player, options, action)
     if action == "submit" then
-        local ui_state = util.globals.ui_state(player)
-        local modal_data = ui_state.modal_data
-
-        local subfactory = ui_state.context.subfactory
-        local floor = Subfactory.get(subfactory, "Floor", modal_data.floor_id)
-        local line = Floor.get(floor, "Line", modal_data.line_id)
-        local item = Line.get(line, modal_data.item_class, modal_data.item_id)
-        local relevant_line = (line.subfloor) and line.subfloor.defining_line or line
+        local item = OBJECT_INDEX[options.item_id]
+        local relevant_line = (item.parent.class == "Floor") and item.parent.first or item.parent
+        local item_category = util.globals.modal_data(player).item_category
 
         local current_amount, item_amount = item.amount, options.item_amount or item.amount
-        if item.class ~= "Ingredient" then
-            local other_class = (item.class == "Product") and "Byproduct" or "Product"
-            local corresponding_item = Line.get_by_type_and_name(relevant_line, other_class,
-                item.proto.type, item.proto.name)
+        if item_category ~= "ingredient" then
+            local other_category = (item_category == "product") and "byproduct" or "product"
+            local corresponding_item = relevant_line:find_item(other_category, {proto=item.proto})
 
             if corresponding_item then  -- Further adjustments if item is both product and byproduct
                 -- In either case, we need to consider the sum of both types as the current amount
                 current_amount = current_amount + corresponding_item.amount
 
                 -- If it's a byproduct, we want to set its amount to the exact number entered, which this does
-                if item.class == "Byproduct" then item_amount = item_amount + corresponding_item.amount end
+                if item_category == "byproduct" then item_amount = item_amount + corresponding_item.amount end
             end
         end
 
         relevant_line.percentage = (current_amount == 0) and 100
             or (relevant_line.percentage * item_amount) / current_amount
 
-        solver.update(player, subfactory)
+        solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
     end
 end
 
 local function handle_item_click(player, tags, action)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-    local item = Line.get(line, tags.class, tags.item_id)
+    local item = OBJECT_INDEX[tags.item_id]
+    local line = item.parent
 
     if action == "prioritize" then
         if line.Product.count < 2 then
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
-            line.priority_product_proto = (line.priority_product_proto ~= item.proto) and item.proto or nil
+            line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
 
-            solver.update(player, context.subfactory)
+            solver.update(player, util.context.get(player, "Factory"))
             util.raise.refresh(player, "subfactory", nil)
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
-        local production_type = (tags.class == "Byproduct") and "consume" or "produce"
+        local production_type = (tags.item_category == "byproduct") and "input" or "output"
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=item.proto.category_id,
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=item.proto.category_id,  -- TODO
             product_id=item.proto.id, floor_id=floor.id, production_type=production_type,
             add_after_position=add_after_position}})
 
@@ -273,15 +265,15 @@ local function handle_item_click(player, tags, action)
         view_state.select(player, "items_per_timescale")
         util.raise.refresh(player, "subfactory", nil)
 
-        local type_localised_string = {"fp.pl_" .. tags.class:lower(), 1}
-        local produce_consume = (tags.class == "Ingredient") and {"fp.consume"} or {"fp.produce"}
+        local type_localised_string = {"fp.pl_" .. tags.item_category, 1}
+        local produce_consume = (tags.item_category == "ingredient") and {"fp.consume"} or {"fp.produce"}
 
         local modal_data = {
             title = {"fp.options_item_title", type_localised_string},
             text = {"fp.options_item_text", item.proto.localised_name},
             submission_handler_name = "apply_item_options",
-            item_class = item.class, item_id = item.id,
-            floor_id = floor.id, line_id = line.id,
+            item_category = tags.item_category,
+            item_id = item.id,
             fields = {
                 {
                     type = "numeric_textfield",

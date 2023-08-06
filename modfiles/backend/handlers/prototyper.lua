@@ -155,22 +155,26 @@ end
 ---@field data_type DataType
 ---@field simplified boolean
 
+---@alias CategoryDesignation ("category" | "type")
+
 -- Returns a new table that only contains the given prototypes' identifiers
 ---@param prototype AnyFPPrototype
----@param category string?
+---@param category_designation CategoryDesignation?
 ---@return FPPackedPrototype
-function prototyper.util.simplify_prototype(prototype, category)
-    return { name = prototype.name, category = category, data_type = prototype.data_type, simplified = true }
+function prototyper.util.simplify_prototype(prototype, category_designation)
+    return { name = prototype.name, category = prototype[category_designation],
+        data_type = prototype.data_type, simplified = true }
 end
 
 ---@param prototypes FPPrototype[]
+---@param category_designation CategoryDesignation?
 ---@return FPPackedPrototype[]?
 function prototyper.util.simplify_prototypes(prototypes, category_designation)
     if not prototypes then return nil end
 
     local simplified_prototypes = {}
     for index, proto in pairs(prototypes) do
-        simplified_prototypes[index] = prototyper.util.simplify_prototype(proto, proto[category_designation])
+        simplified_prototypes[index] = prototyper.util.simplify_prototype(proto, category_designation)
     end
     return simplified_prototypes
 end
@@ -181,7 +185,7 @@ end
 -- Validates given object with prototype, which includes trying to find the correct
 -- new reference for its prototype, if able. Returns valid-status at the end.
 ---@param prototype AnyPrototype
----@param category_designation ("category" | "type")?
+---@param category_designation CategoryDesignation?
 ---@return AnyPrototype
 function prototyper.util.validate_prototype_object(prototype, category_designation)
     local updated_proto = prototype
@@ -201,6 +205,7 @@ function prototyper.util.validate_prototype_object(prototype, category_designati
 end
 
 ---@param prototypes AnyPrototype[]?
+---@param category_designation CategoryDesignation
 ---@return AnyPrototype[]?
 ---@return boolean valid
 function prototyper.util.validate_prototype_objects(prototypes, category_designation)
