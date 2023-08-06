@@ -118,7 +118,7 @@ end
 function Product:pack()
     return {
         class = self.class,
-        proto = prototyper.util.simplify_prototype(self.proto, self.proto.type),
+        proto = prototyper.util.simplify_prototype(self.proto, "type"),
         defined_by = self.defined_by,
         required_amount = self.required_amount,
         belt_proto = (self.belt_proto) and prototyper.util.simplify_prototype(self.belt_proto, nil)

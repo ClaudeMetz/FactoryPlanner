@@ -45,7 +45,7 @@ function District:shift(factory, direction, spots)
 end
 
 
----@param filter ObjectFilter?
+---@param filter ObjectFilter
 ---@param pivot Factory?
 ---@param direction NeighbourDirection?
 ---@return Factory? factory

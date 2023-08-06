@@ -85,7 +85,7 @@ function Factory:replace(product, new_product)
 end
 
 
----@param filter ObjectFilter?
+---@param filter ObjectFilter
 ---@param pivot Product?
 ---@param direction NeighbourDirection?
 ---@return Product? product

@@ -101,7 +101,7 @@ end
 ---@param item_category SimpleItemCategory
 ---@return fun(): SimpleItem?
 function Floor:item_iterator(item_category)
-    return self:_iterator(self["first_" .. item_category])
+    return self:_iterator(nil, self["first_" .. item_category])
 end
 
 ---@param filter ObjectFilter?

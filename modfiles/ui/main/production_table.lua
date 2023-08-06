@@ -222,17 +222,16 @@ function builders.pollution(line, parent_flow, _)
 end
 
 function builders.products(line, parent_flow, metadata)
-    for _, product in ipairs(Line.get_in_order(line, "Product")) do
+    for product in line:item_iterator("product") do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
             product, nil, machine_count)
         if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
 
         local style, note = "flib_slot_button_default_small", nil
-        if not line.subfloor and not metadata.matrix_solver_active then
-            -- We can check for identity because they reference the same table
-            if line.Product.count > 1 and line.priority_product_proto == product.proto then
+        if line.class ~= "Floor" and not metadata.matrix_solver_active then
+            if line.priority_product == product.proto then
                 style = "flib_slot_button_pink_small"
                 note = {"fp.priority_product"}
             end
@@ -243,19 +242,18 @@ function builders.products(line, parent_flow, metadata)
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, metadata.product_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_product",
-            floor_id=line.parent.id, line_id=line.id, class="Product", item_id=product.id},
-            sprite=product.proto.sprite, style=style, number=amount,
-            tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+        parent_flow.add{type="sprite-button", sprite=product.proto.sprite, style=style,
+            tags={mod="fp", on_gui_click="act_on_line_product", item_category="product", item_id=product.id},
+            number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_product::
     end
 end
 
 function builders.byproducts(line, parent_flow, metadata)
-    for _, byproduct in ipairs(Line.get_in_order(line, "Byproduct")) do
+    for byproduct in line:item_iterator("byproduct") do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
             byproduct, nil, machine_count)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
@@ -264,19 +262,18 @@ function builders.byproducts(line, parent_flow, metadata)
         local tooltip = {"", {"fp.tt_title", byproduct.proto.localised_name}, number_line,
             metadata.byproduct_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_byproduct",
-            floor_id=line.parent.id, line_id=line.id, class="Byproduct", item_id=byproduct.id},
-            sprite=byproduct.proto.sprite, style="flib_slot_button_red_small", number=amount,
-            tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+        parent_flow.add{type="sprite-button", sprite=byproduct.proto.sprite, style="flib_slot_button_red_small",
+            tags={mod="fp", on_gui_click="act_on_line_byproduct", item_category="byproduct", item_id=byproduct.id},
+            number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_byproduct::
     end
 end
 
 function builders.ingredients(line, parent_flow, metadata)
-    for _, ingredient in ipairs(Line.get_in_order(line, "Ingredient")) do
+    for ingredient in line:item_iterator("ingredient") do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (not line.subfloor) and line.machine.count or nil
+        local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
             ingredient, nil, machine_count)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
@@ -310,15 +307,15 @@ function builders.ingredients(line, parent_flow, metadata)
         local tutorial_tt = (enabled) and metadata.ingredient_tutorial_tt or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
 
-        parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_ingredient",
-            floor_id=line.parent.id, line_id=line.id, class="Ingredient", item_id=ingredient.id},
-            sprite=ingredient.proto.sprite, style=style, number=amount, tooltip=tooltip,
-            enabled=enabled, mouse_button_filter={"left-and-right"}}
+        parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
+            tags={mod="fp", on_gui_click="act_on_line_ingredient", item_category="Iigredient", item_id=ingredient.id},
+            number=amount, tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
 
         ::skip_ingredient::
     end
 
-    if not line.subfloor and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
+    -- TODO
+    --if line.class ~= "Floor" and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
 end
 
 -- This is not a standard builder function, as it gets called indirectly by the ingredient builder
@@ -340,7 +337,7 @@ function builders.fuel(line, parent_flow, metadata)
     local tooltip = {"", name_line, number_line, satisfaction_line, metadata.fuel_tutorial_tt}
 
     parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
-        tags={mod="fp", on_gui_click="act_on_line_fuel", floor_id=line.parent.id, line_id=line.id},
+        tags={mod="fp", on_gui_click="act_on_line_fuel", item_id=fuel.id},
         number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 end
 
@@ -362,9 +359,9 @@ local all_production_columns = {
     --{name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
     {name="pollution", caption={"fp.pollution"}, alignment="center"},
-    --{name="products", caption={"fp.pu_product", 2}, alignment="left"},
-    --{name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
-    --{name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},
+    {name="products", caption={"fp.pu_product", 2}, alignment="left"},
+    {name="byproducts", caption={"fp.pu_byproduct", 2}, alignment="left"},
+    {name="ingredients", caption={"fp.pu_ingredient", 2}, alignment="left"},
     {name="line_comment", caption={"fp.column_comment"}, alignment="left"}
 }
 
