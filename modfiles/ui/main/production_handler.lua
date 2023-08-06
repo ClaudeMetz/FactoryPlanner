@@ -80,37 +80,35 @@ end
 
 
 local function handle_machine_click(player, tags, action)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local machine = OBJECT_INDEX[tags.machine_id]
+    local line = machine.parent
 
     if action == "put_into_cursor" then
-        local success = util.cursor.set_entity(player, line, line.machine)
+        local success = util.cursor.set_entity(player, line, machine)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id,
             recipe_name=line.recipe.proto.localised_name}})
 
     elseif action == "copy" then
-        util.clipboard.copy(player, line.machine)
+        util.clipboard.copy(player, machine)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, line.machine)
+        util.clipboard.paste(player, machine)
 
     elseif action == "reset_to_default" then
-        Line.change_machine_to_default(line, player)  -- guaranteed to find something
-        line.machine.limit = nil
-        line.machine.force_limit = true
-        local message = Line.apply_mb_defaults(line, player)
+        line:change_machine_to_default(player)  -- guaranteed to find something
+        machine.limit = nil
+        machine.force_limit = true
+        local message = line:apply_mb_defaults(player)
 
-        solver.update(player, context.subfactory)
+        solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", line.machine.proto.name)
+        util.open_in_recipebook(player, "entity", machine.proto.name)
     end
 end
 

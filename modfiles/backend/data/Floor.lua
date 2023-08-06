@@ -16,6 +16,7 @@ local Line = require("backend.data.Line")
 ---@field first_ingredient SimpleItem?
 ---@field power number
 ---@field pollution number
+---@field machine_count integer
 local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
@@ -30,6 +31,7 @@ local function init(level)
         first_ingredient = nil,
         power = 0,
         pollution = 0,
+        machine_count = 0
     }, "Floor", Floor)  --[[@as Floor]]
     return object
 end
@@ -245,6 +247,7 @@ local function unpack(packed_self)
 
     return unpacked_self
 end
+
 
 ---@return boolean valid
 function Floor:validate()
