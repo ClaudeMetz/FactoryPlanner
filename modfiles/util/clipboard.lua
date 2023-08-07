@@ -3,6 +3,7 @@ local unpackers = {
     Floor = require("backend.data.Floor").unpack,
     Line = require("backend.data.Line").unpack,
     Machine = require("backend.data.Machine").unpack,
+    Beacon = require("backend.data.Beacon").unpack,
     Fuel = require("backend.data.Fuel").unpack
 }
 

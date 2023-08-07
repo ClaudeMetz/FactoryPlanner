@@ -33,7 +33,7 @@ function _cursor.set_entity(player, line, object)
     end
 
     local module_list = {}
-    for  module in object.module_set:iterator() do
+    for module in object.module_set:iterator() do
         module_list[module.proto.name] = module.amount
     end
 
