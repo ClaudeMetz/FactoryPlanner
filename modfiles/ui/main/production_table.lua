@@ -181,14 +181,14 @@ function builders.beacon(line, parent_flow, metadata)
     -- Some mods might remove all beacons, in which case no beacon buttons should be added
     if not metadata.any_beacons_available then return end
     -- Beacons only work on machines that have some allowed_effects
-    if line.subfloor ~= nil or line.machine.proto.allowed_effects == nil then return end
+    if line.class == "Floor" or line.machine.proto.allowed_effects == nil then return end
 
     local beacon = line.beacon
     if beacon == nil then
         local tooltip = {"", {"fp.add_beacon"}, "\n", {"fp.shift_to_paste"}}
         local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=tooltip,
-            tags={mod="fp", on_gui_click="add_line_beacon", floor_id=line.parent.id, line_id=line.id},
-            style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
+            tags={mod="fp", on_gui_click="add_line_beacon", line_id=line.id}, style="fp_sprite-button_inset_add",
+            mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
         button.style.margin = 2
     else
         local plural_parameter = (beacon.amount == 1) and 1 or 2  -- needed because the amount can be decimal
@@ -198,7 +198,7 @@ function builders.beacon(line, parent_flow, metadata)
             metadata.beacon_tutorial_tt}
 
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
-            tags={mod="fp", on_gui_click="act_on_line_beacon", floor_id=line.parent.id, line_id=line.id, type="beacon"},
+            tags={mod="fp", on_gui_click="act_on_line_beacon", beacon_id=beacon.id},
             style="flib_slot_button_default_small", tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
@@ -206,7 +206,7 @@ function builders.beacon(line, parent_flow, metadata)
             sprite_overlay.ignored_by_interaction = true
         end
 
-        add_module_flow(parent_flow, line, "beacon", metadata)
+        --add_module_flow(parent_flow, line, "beacon", metadata) TODO
     end
 end
 
@@ -356,7 +356,7 @@ local all_production_columns = {
     {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
-    --{name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
+    {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},
     {name="power", caption={"fp.u_power"}, alignment="center"},
     {name="pollution", caption={"fp.pollution"}, alignment="center"},
     {name="products", caption={"fp.pu_product", 2}, alignment="left"},

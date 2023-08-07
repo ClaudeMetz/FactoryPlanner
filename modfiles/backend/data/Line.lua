@@ -1,5 +1,6 @@
 local Object = require("backend.data.Object")
 local Machine = require("backend.data.Machine")
+local Beacon = require("backend.data.Beacon")
 
 ---@alias ProductionType "input" | "output"
 
@@ -12,6 +13,7 @@ local Machine = require("backend.data.Machine")
 ---@field active boolean
 ---@field percentage number
 ---@field machine Machine
+---@field beacon Beacon?
 ---@field priority_product (FPItemPrototype | FPPackedPrototype)?
 ---@field comment string
 ---@field total_effects ModuleEffects
@@ -38,6 +40,7 @@ local function init(recipe_proto, production_type)
         active = false,
         percentage = 100,
         machine = nil,
+        beacon = nil,
         priority_product = nil,
         comment = "",
 
@@ -102,7 +105,7 @@ function Line:change_machine_to_proto(player, proto)
         self.machine.proto = proto
 
         --ModuleSet.normalize(self.machine.module_set, {compatibility=true, trim=true, effects=true})
-        --if self.machine.proto.allowed_effects == nil then Line.set_beacon(self, nil) end
+        if self.machine.proto.allowed_effects == nil then self:set_beacon(nil) end
     end
 
     -- Make sure the machine's fuel still applies
@@ -170,6 +173,19 @@ function Line:change_machine_to_default(player)
 end
 
 
+---@param beacon Beacon?
+function Line:set_beacon(beacon)
+    self.beacon = beacon  -- can be nil
+
+    if beacon ~= nil then
+        self.beacon.parent = self
+        --beacon.module_set:normalize({sort=true, effects=true})
+    else
+        --self:summarize_effects()
+    end
+end
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
@@ -196,6 +212,7 @@ end
 ---@field active boolean
 ---@field percentage number
 ---@field machine PackedMachine
+---@field beacon PackedBeacon?
 ---@field priority_product FPPackedPrototype?
 ---@field comment string
 
@@ -209,6 +226,7 @@ function Line:pack()
         active = self.active,
         percentage = self.percentage,
         machine = self.machine:pack(),
+        beacon = self.beacon and self.beacon:pack(),
         priority_product = prototyper.util.simplify_prototype(self.priority_product, "type"),
         comment = self.comment
     }
@@ -222,6 +240,7 @@ local function unpack(packed_self)
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
     unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  --[[@as Machine]]
+    unpacked_self.beacon = packed_self.beacon and Beacon.unpack(packed_self.beacon, unpacked_self)  --[[@as Beacon]]
     -- The prototype will be automatically unpacked by the validation process
     unpacked_self.priority_product = packed_self.priority_product
     unpacked_self.comment = packed_self.comment
@@ -236,6 +255,8 @@ function Line:validate()
     self.valid = (not self.recipe_proto.simplified)
 
     self.valid = self.machine:validate() and self.valid
+
+    if self.beacon then self.valid = self.beacon:validate() and self.valid end
 
     if self.priority_product ~= nil then
         self.priority_product = prototyper.util.validate_prototype_object(self.priority_product, "type")
@@ -253,6 +274,11 @@ function Line:repair(player)
 
     if self.valid and not self.machine.valid then
         self.valid = self.machine:repair(player)
+    end
+
+    if self.valid and self.beacon and not self.beacon.valid then
+        -- Repairing a beacon always either fixes or gets it removed, so no influence on validity
+        if not self.beacon:repair(player) then self.beacon = nil end
     end
 
     if self.valid and self.priority_product and self.priority_product.simplified then

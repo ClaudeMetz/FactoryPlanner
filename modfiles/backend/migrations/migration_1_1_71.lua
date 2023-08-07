@@ -65,8 +65,14 @@ function migration.player_table(player_table)
                         if line.machine.fuel then
                             new_machine.fuel = Fuel.init(line.machine.fuel.proto, new_machine)
                         end
-                        new_machine.parent = new_line
                         new_line.machine = new_machine
+
+                        if line.beacon then
+                            local new_beacon = Beacon.init(line.beacon.proto, new_line)
+                            new_beacon.amount = line.beacon.amount
+                            new_beacon.total_amount = line.beacon.total_amount
+                            new_line.beacon = new_beacon
+                        end
 
                         new_line.priority_product = line.priority_product_proto
                         new_line.comment = line.comment
@@ -120,6 +126,12 @@ function migration.packed_subfactory(packed_subfactory)
                         force_limit = line.machine.force_limit,
                         fuel = line.machine.fuel,
                         class = "Machine"
+                    },
+                    beacon = line.beacon and {
+                        proto = line.beacon.proto,
+                        amount = line.beacon.amount,
+                        total_amount = line.beacon.total_amount,
+                        class = "Beacon"
                     },
                     priority_product = line.priority_product_proto,
                     comment = line.comment,

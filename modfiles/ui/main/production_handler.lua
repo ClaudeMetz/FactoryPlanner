@@ -1,4 +1,5 @@
 local Floor = require("backend.data.Floor")
+local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **
 local function handle_line_move_click(player, tags, event)
@@ -127,46 +128,41 @@ end
 
 
 local function handle_beacon_click(player, tags, action)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
+    local beacon = OBJECT_INDEX[tags.beacon_id]
+    local line = beacon.parent
 
     if action == "put_into_cursor" then
-        local success = util.cursor.set_entity(player, line, line.beacon)
+        local success = util.cursor.set_entity(player, line, beacon)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={floor_id=floor.id, line_id=line.id,
+        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id,
             machine_name=line.machine.proto.localised_name, edit=true}})
 
     elseif action == "copy" then
-        util.clipboard.copy(player, line.beacon)
+        util.clipboard.copy(player, beacon)
 
     elseif action == "paste" then
-        util.clipboard.paste(player, line.beacon)
+        util.clipboard.paste(player, beacon)
 
     elseif action == "delete" then
-        Line.set_beacon(line, nil)
-        solver.update(player, context.subfactory)
+        line:set_beacon(line)
+        solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
-        util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+        util.open_in_recipebook(player, "entity", beacon.proto.name)
     end
 end
 
 local function handle_beacon_add(player, tags, event)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
+    local line = OBJECT_INDEX[tags.line_id]
 
     if event.shift then  -- paste
-        -- Use a fake beacon to paste on top of
-        local fake_beacon = {parent=line, class="Beacon"}
-        util.clipboard.paste(player, fake_beacon)
+        local dummy_beacon = Beacon.init({}, line)
+        util.clipboard.paste(player, dummy_beacon)
     else
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={floor_id=floor.id, line_id=line.id,
+        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id,
             machine_name=line.machine.proto.localised_name, edit=false}})
     end
 end

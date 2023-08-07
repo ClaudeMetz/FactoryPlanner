@@ -12,7 +12,7 @@ end
 local function paste_line(player, _, event)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
-    local dummy_line = Line.init({}, "produce")
+    local dummy_line = Line.init({}, "input")
     floor:insert(dummy_line)
 
     if util.clipboard.paste(player, dummy_line) then
