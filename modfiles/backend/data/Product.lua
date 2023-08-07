@@ -14,6 +14,7 @@ local Product = Object.methods()
 Product.__index = Product
 script.register_metatable("Product", Product)
 
+---@param proto FPItemPrototype
 ---@return Product
 local function init(proto)
     local object = Object.init({

@@ -12,6 +12,8 @@ local SimpleItem = Object.methods()
 SimpleItem.__index = SimpleItem
 script.register_metatable("SimpleItem", SimpleItem)
 
+---@param proto FPItemPrototype
+---@param amount number?
 ---@return SimpleItem
 local function init(proto, amount)
     local object = Object.init({

@@ -21,6 +21,7 @@ local Floor = Object.methods()
 Floor.__index = Floor
 script.register_metatable("Floor", Floor)
 
+---@param level integer
 ---@return Floor
 local function init(level)
     local object = Object.init({

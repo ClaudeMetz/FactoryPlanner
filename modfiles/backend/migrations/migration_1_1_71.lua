@@ -9,6 +9,7 @@ local Product = require("backend.data.Product")
 local Floor = require("backend.data.Floor")
 local Line = require("backend.data.Line")
 local Machine = require("backend.data.Machine")
+local Fuel = require("backend.data.Fuel")
 
 local migration = {}
 
@@ -58,9 +59,12 @@ function migration.player_table(player_table)
                         new_line.active = line.active
                         new_line.percentage = line.percentage
 
-                        local new_machine = Machine.init(line.machine.proto)
+                        local new_machine = Machine.init(line.machine.proto, new_line)
                         new_machine.limit = line.machine.limit
                         new_machine.force_limit = line.machine.force_limit
+                        if line.machine.fuel then
+                            new_machine.fuel = Fuel.init(line.machine.fuel.proto, new_machine)
+                        end
                         new_machine.parent = new_line
                         new_line.machine = new_machine
 
@@ -114,6 +118,7 @@ function migration.packed_subfactory(packed_subfactory)
                         proto = line.machine.proto,
                         limit = line.machine.limit,
                         force_limit = line.machine.force_limit,
+                        fuel = line.machine.fuel,
                         class = "Machine"
                     },
                     priority_product = line.priority_product_proto,

@@ -27,6 +27,8 @@ local Line = Object.methods()
 Line.__index = Line
 script.register_metatable("Line", Line)
 
+---@param recipe_proto FPRecipePrototype
+---@param production_type ProductionType
 ---@return Line
 local function init(recipe_proto, production_type)
     local object = Object.init({
@@ -94,8 +96,7 @@ end
 ---@param proto FPMachinePrototype
 function Line:change_machine_to_proto(player, proto)
     if not self.machine then
-        self.machine = Machine.init(proto)
-        self.machine.parent = self
+        self.machine = Machine.init(proto, self)
         --ModuleSet.summarize_effects(self.machine.module_set)
     else
         self.machine.proto = proto
@@ -105,7 +106,7 @@ function Line:change_machine_to_proto(player, proto)
     end
 
     -- Make sure the machine's fuel still applies
-    --Machine.normalize_fuel(self.machine, player)
+    self.machine:normalize_fuel(player)
 end
 
 -- Up- or downgrades this line's machine, if possible
@@ -220,12 +221,10 @@ local function unpack(packed_self)
     unpacked_self.done = packed_self.done
     unpacked_self.active = packed_self.active
     unpacked_self.percentage = packed_self.percentage
-    unpacked_self.machine = Machine.unpack(packed_self.machine)  --[[@as Machine]]
+    unpacked_self.machine = Machine.unpack(packed_self.machine, unpacked_self)  --[[@as Machine]]
     -- The prototype will be automatically unpacked by the validation process
     unpacked_self.priority_product = packed_self.priority_product
     unpacked_self.comment = packed_self.comment
-
-    unpacked_self.machine.parent = unpacked_self
 
     return unpacked_self
 end

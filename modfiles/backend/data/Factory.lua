@@ -24,6 +24,8 @@ local Factory = Object.methods()
 Factory.__index = Factory
 script.register_metatable("Factory", Factory)
 
+---@param name string
+---@param timescale Timescale
 ---@return Factory
 local function init(name, timescale)
     local object = Object.init({

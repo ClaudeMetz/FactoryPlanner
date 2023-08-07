@@ -3,6 +3,7 @@ local unpackers = {
     Floor = require("backend.data.Floor").unpack,
     Line = require("backend.data.Line").unpack,
     Machine = require("backend.data.Machine").unpack,
+    Fuel = require("backend.data.Fuel").unpack
 }
 
 local _clipboard = {}
@@ -25,7 +26,7 @@ function _clipboard.copy(player, object)
     player_table.clipboard = {
         class = object.class,
         packed_object = object:pack(),
-        --parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
+        parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
     util.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
     util.raise.refresh(player, "paste_button", nil)
@@ -42,7 +43,7 @@ function _clipboard.paste(player, target)
     else
         --local level = (clip.class == "Line") and (target.parent.level or 1) or nil
         --local clone = _G[clip.class].unpack(ftable.deep_copy(clip.object), level)
-        local clone = unpackers[clip.class](clip.packed_object)  -- always returns fresh object
+        local clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
         --clone.parent = clip.parent  -- not very elegant to retain the parent here, but it's an easy solution
         clone:validate()
 
