@@ -315,7 +315,7 @@ function builders.ingredients(line, parent_flow, metadata)
         ::skip_ingredient::
     end
 
-    --if line.class ~= "Floor" and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end TODO
+    if line.class ~= "Floor" and line.machine.fuel then builders.fuel(line, parent_flow, metadata) end
 end
 
 -- This is not a standard builder function, as it gets called indirectly by the ingredient builder
@@ -337,7 +337,7 @@ function builders.fuel(line, parent_flow, metadata)
     local tooltip = {"", name_line, number_line, satisfaction_line, metadata.fuel_tutorial_tt}
 
     parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
-        tags={mod="fp", on_gui_click="act_on_line_fuel", item_id=fuel.id},
+        tags={mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id},
         number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 end
 

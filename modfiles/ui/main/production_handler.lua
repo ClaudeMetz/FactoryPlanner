@@ -298,10 +298,7 @@ local function handle_item_click(player, tags, action)
 end
 
 local function handle_fuel_click(player, tags, action)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-    local fuel = line.machine.fuel  -- must exist to be able to get here
+    local fuel = OBJECT_INDEX[tags.fuel_id]
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
         local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
@@ -309,11 +306,11 @@ local function handle_fuel_click(player, tags, action)
         local proto_id = category.members[fuel.proto.name].id
         util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=category.id,
             product_id=proto_id, floor_id=floor.id, production_type="produce",
-            add_after_position=add_after_position}})
+            add_after_position=add_after_position}})  -- TODO
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
-        util.raise.open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
-            recipe_name=line.recipe.proto.localised_name}})
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id,
+            recipe_name=fuel.parent.parent.recipe_proto.localised_name}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)
