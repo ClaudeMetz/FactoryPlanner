@@ -242,10 +242,9 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.item_category == "byproduct") and "input" or "output"
-        local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=item.proto.category_id,  -- TODO
-            product_id=item.proto.id, floor_id=floor.id, production_type=production_type,
-            add_after_position=add_after_position}})
+        local add_after_line = (action == "add_recipe_below") and line or nil
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line=add_after_line,
+            production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
 
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
@@ -288,18 +287,18 @@ end
 
 local function handle_fuel_click(player, tags, action)
     local fuel = OBJECT_INDEX[tags.fuel_id]
+    local line = fuel.parent.parent
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
-        local add_after_position = (action == "add_recipe_below") and line.gui_position or nil
+        local add_after_line = (action == "add_recipe_below") and line or nil
         local category = PROTOTYPE_MAPS.items[fuel.proto.type]
         local proto_id = category.members[fuel.proto.name].id
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={category_id=category.id,
-            product_id=proto_id, floor_id=floor.id, production_type="produce",
-            add_after_position=add_after_position}})  -- TODO
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line=add_after_line,
+            production_type="produce", category_id=category.id, product_id=proto_id}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
         util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id,
-            recipe_name=fuel.parent.parent.recipe_proto.localised_name}})
+            recipe_name=line.recipe_proto.localised_name}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)

@@ -1,3 +1,5 @@
+local Line = require("backend.data.Line")
+
 -- ** LOCAL UTIL **
 -- Serves the dual-purpose of determining the appropriate settings for the recipe picker filter and, if there
 -- is only one that matches, to return a recipe name that can be added directly without the modal dialog
@@ -85,32 +87,26 @@ end
 
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
 local function attempt_adding_line(player, recipe_id)
-    local ui_state = util.globals.ui_state(player)
-    local modal_data = ui_state.modal_data
-    local recipe = Recipe.init_by_id(recipe_id, modal_data.production_type)
-    local line = Line.init(recipe)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local recipe_proto = global.prototypes.recipes[recipe_id]
+    local line = Line.init(recipe_proto, modal_data.production_type)
 
     -- If finding a machine fails, this line is invalid
-    if Line.change_machine_to_default(line, player) == false then
+    if line:change_machine_to_default(player) == false then
         util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
-
     else
-        local floor = Subfactory.get(ui_state.context.subfactory, "Floor", modal_data.floor_id)
-        -- If add_after_position is given, insert it below that one, add it to the end otherwise
-        if modal_data.add_after_position == nil then
-            Floor.add(floor, line)
-        else
-            Floor.insert_at(floor, (modal_data.add_after_position + 1), line)
-        end
+        local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+        local relative_object = modal_data.add_after_line or floor:find_last() --[[@as LineObject]]
+        floor:insert(line, relative_object)
 
         local message = nil
-        if not (recipe.proto.custom or player.force.recipes[recipe.proto.name].enabled) then
+        if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then
             message = {text={"fp.warning_recipe_disabled"}, category="warning"}
         end
-        local defaults_message = Line.apply_mb_defaults(line, player)
+        local defaults_message = line:apply_mb_defaults(player)
         if not message then message = defaults_message end  -- a bit silly
 
-        solver.update(player, ui_state.context.subfactory)
+        solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
     end
@@ -204,7 +200,7 @@ local function create_dialog_structure(modal_data, translations)
 end
 
 local function apply_recipe_filter(player, search_term)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local disabled, hidden = modal_data.filters.disabled, modal_data.filters.hidden
 
     local any_recipe_visible, desired_scroll_pane_height = false, 64+24
@@ -216,10 +212,9 @@ local function apply_recipe_filter(player, search_term)
             local recipe_name = recipe_data.name
             local recipe_enabled = group_data.recipes[recipe_name].enabled
 
-
             -- Can only get to this if translations are complete, as the textfield is disabled otherwise
             local found = (search_term == recipe_name) or string.find(recipe_data.translated_name, search_term, 1, true)
-            local visible = found and (disabled or recipe_enabled) and (hidden or not recipe_data.hidden)
+            local visible = found and (disabled or recipe_enabled) and (hidden or not recipe_data.hidden) or false
 
             button.visible = visible
             any_group_recipe_visible = any_group_recipe_visible or visible
@@ -259,7 +254,7 @@ local function recipe_early_abort_check(player, modal_data)
         return true  -- signal that the dialog does not need to actually be opened
 
     else
-        -- If 1 relevant recipe is found, try it straight away
+        -- If one relevant recipe is found, try it straight away
         if type(result) == "number" then  -- the given number being the recipe_id
             attempt_adding_line(player, result)
             return true  -- idem. above
@@ -287,9 +282,6 @@ local function open_recipe_dialog(player, modal_data)
     create_dialog_structure(modal_data, translations)
     apply_recipe_filter(player, "")
     modal_data.modal_elements.search_textfield.focus()
-
-    -- Dispose of the temporary GUI-opening variables
-    modal_data.result = nil
 end
 
 
