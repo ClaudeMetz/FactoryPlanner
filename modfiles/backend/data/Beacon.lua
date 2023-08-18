@@ -1,4 +1,5 @@
 local Object = require("backend.data.Object")
+local ModuleSet = require("backend.data.ModuleSet")
 
 ---@class Beacon: Object, ObjectMethods
 ---@field class "Beacon"
@@ -6,6 +7,7 @@ local Object = require("backend.data.Object")
 ---@field proto FPBeaconPrototype | FPPackedPrototype
 ---@field amount number
 ---@field total_amount number?
+---@field module_set ModuleSet
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
 local Beacon = Object.methods()
@@ -20,12 +22,14 @@ local function init(proto, parent)
         proto = proto,
         amount = 0,
         total_amount = nil,
+        module_set = nil,
 
         total_effects = nil,
         effects_tooltip = "",
 
         parent = parent
     }, "Beacon", Beacon)  --[[@as Beacon]]
+    object.module_set = ModuleSet.init(object)
     return object
 end
 
@@ -39,6 +43,41 @@ function Beacon:cleanup()
 end
 
 
+function Beacon:summarize_effects()
+    local effect_multiplier = self.proto.effectivity * self.amount
+    local effects = self.module_set.total_effects
+    for name, effect in pairs(effects) do
+        effects[name] = effect * effect_multiplier
+    end
+    self.total_effects = effects
+    self.effects_tooltip = util.gui.format_module_effects(effects, false)
+
+    self.parent:summarize_effects()
+end
+
+---@param module_proto FPModulePrototype
+function Beacon:check_module_compatibility(module_proto)
+    local recipe_proto, machine_proto = self.parent.recipe_proto, self.parent.machine.proto
+
+    if next(module_proto.limitations) and recipe_proto.use_limitations
+            and not module_proto.limitations[recipe_proto.name] then
+        return false
+    end
+
+    local machine_effects, beacon_effects = machine_proto.allowed_effects, self.proto.allowed_effects
+    if machine_effects == nil or beacon_effects == nil then
+        return false
+    else
+        for effect_name, _ in pairs(module_proto.effects) do
+            if machine_effects[effect_name] == false or beacon_effects[effect_name] == false then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
 
 ---@param object CopyableObject
 ---@return boolean success
@@ -46,11 +85,11 @@ end
 function Beacon:paste(object)
     if object.class == "Beacon" then
         self.parent:set_beacon(object)
-        --self.parent:summarize_effects()
+        self.parent:summarize_effects()
         return true, nil
-    --elseif object.class == "Module" and self.module_set ~= nil then
+    elseif object.class == "Module" and self.module_set ~= nil then
         -- Only allow modules to be pasted if this is a non-fake beacon
-       --return ModuleSet.paste(self.module_set, object)
+       return self.module_set:paste(object)
     else
         return false, "incompatible_class"
     end
@@ -62,6 +101,7 @@ end
 ---@field proto FPBeaconPrototype
 ---@field amount number
 ---@field total_amount number?
+---@field module_set PackedModuleSet
 
 ---@return PackedBeacon packed_self
 function Beacon:pack()
@@ -69,7 +109,8 @@ function Beacon:pack()
         class = self.class,
         proto = prototyper.util.simplify_prototype(self.proto, nil),
         amount = self.amount,
-        total_amount = self.total_amount
+        total_amount = self.total_amount,
+        module_set = self.module_set:pack()
     }
 end
 
@@ -79,7 +120,7 @@ local function unpack(packed_self, parent)
     local unpacked_self = init(packed_self.proto, parent)
     unpacked_self.amount = packed_self.amount
     unpacked_self.total_amount = packed_self.total_amount
-
+    unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
 
     return unpacked_self
 end
@@ -102,6 +143,8 @@ function Beacon:validate()
 
     if BEACON_OVERLOAD_ACTIVE then self.amount = 1 end
 
+    self.valid = self.module_set:validate() and self.valid
+
     return self.valid
 end
 
@@ -112,9 +155,9 @@ function Beacon:repair(player)
         return false
     else  -- otherwise, the modules need to be checked and removed if necessary
         -- Remove invalid modules and normalize the remaining ones
-        --self.valid = ModuleSet.repair(self.module_set)
+        self.valid = self.module_set:repair()
 
-        --if self.module_set.module_count == 0 then return false end   -- if the beacon is empty, remove it
+        if self.module_set.module_count == 0 then return false end   -- if the beacon is empty, remove it
     end
 
     self.valid = true  -- if it gets to here, the beacon was successfully repaired

@@ -209,8 +209,7 @@ local function unpack(packed_self)
     unpacked_self.blueprints = packed_self.blueprints
     unpacked_self.notes = packed_self.notes
 
-    local function unpacker(item) return Product.unpack(item) end
-    unpacked_self.first = Object.unpack(packed_self.products, unpacker, unpacked_self)  --[[@as Product]]
+    unpacked_self.first = Object.unpack(packed_self.products, Product.unpack, unpacked_self)  --[[@as Product]]
 
     unpacked_self.top_floor = Floor.unpack(packed_self.top_floor)
     unpacked_self.top_floor.parent = unpacked_self

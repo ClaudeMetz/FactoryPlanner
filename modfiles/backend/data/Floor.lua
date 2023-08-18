@@ -157,15 +157,15 @@ function Floor:get_component_data(component_table)
         add_component(components.machines, entity_proto.built_by_item, amount)
     end
 
-    for line in self:iterator() do  -- TODO finish
-        --[[ if line.class == "Floor" then
+    for line in self:iterator() do
+        if line.class == "Floor" then  ---@cast line Floor
             line:get_component_data(component_table)
         else  -- class == "Line"
             local machine = line.machine
-            local ceil_machine_count = math.ceil(machine.count - 0.001)
+            local ceil_machine_count = math.ceil(machine.amount - 0.001)
 
             add_machine(machine.proto, ceil_machine_count)
-            for _, module in pairs(ModuleSet.get_in_order(machine.module_set)) do
+            for module in machine.module_set:iterator() do
                 add_component(components.modules, module.proto, ceil_machine_count * module.amount)
             end
 
@@ -174,11 +174,11 @@ function Floor:get_component_data(component_table)
                 local ceil_total_amount = math.ceil(beacon.total_amount - 0.001)
 
                 add_machine(beacon.proto, ceil_total_amount)
-                for _, module in pairs(ModuleSet.get_all(beacon.module_set)) do
+                for module in beacon.module_set:iterator() do
                     add_component(components.modules, module.proto, ceil_total_amount * module.amount)
                 end
             end
-        end ]]
+        end
     end
 
     return components

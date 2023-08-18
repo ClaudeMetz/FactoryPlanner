@@ -10,6 +10,9 @@ local Floor = require("backend.data.Floor")
 local Line = require("backend.data.Line")
 local Machine = require("backend.data.Machine")
 local Fuel = require("backend.data.Fuel")
+local Beacon = require("backend.data.Beacon")
+local ModuleSet = require("backend.data.ModuleSet")
+local Module = require("backend.data.Module")
 
 local migration = {}
 
@@ -65,12 +68,24 @@ function migration.player_table(player_table)
                         if line.machine.fuel then
                             new_machine.fuel = Fuel.init(line.machine.fuel.proto, new_machine)
                         end
+                        local new_module_set = ModuleSet.init(new_machine)
+                        for _, module in pairs(line.machine.module_set.modules.datasets) do
+                            local new_module = Module.init(module.proto, module.amount)
+                            new_module_set:insert(new_module)
+                        end
+                        new_machine.module_set = new_module_set
                         new_line.machine = new_machine
 
                         if line.beacon then
                             local new_beacon = Beacon.init(line.beacon.proto, new_line)
                             new_beacon.amount = line.beacon.amount
                             new_beacon.total_amount = line.beacon.total_amount
+                            local new_module_set = ModuleSet.init(new_beacon)
+                            for _, module in pairs(line.machine.module_set.modules.datasets) do
+                                local new_module = Module.init(module.proto, module.amount)
+                                new_module_set:insert(new_module)
+                            end
+                            new_beacon.module_set = new_module_set
                             new_line.beacon = new_beacon
                         end
 
@@ -108,6 +123,23 @@ function migration.packed_subfactory(packed_subfactory)
         })
     end
 
+    local function convert_module_set(module_set)
+        local modules = {}
+
+        for _, module in pairs(module_set.modules.objects) do
+            table.insert(modules, {
+                proto = module.proto,
+                amount = module.amount,
+                class = "Module"
+            })
+        end
+
+        return {
+            modules = modules,
+            class = "ModuleSet"
+        }
+    end
+
     local function convert_floor(packed_floor)
         local new_floor = {level = packed_floor.level, lines = {}, class = "Floor"}
         for _, line in pairs(packed_floor.Line.objects) do
@@ -125,12 +157,14 @@ function migration.packed_subfactory(packed_subfactory)
                         limit = line.machine.limit,
                         force_limit = line.machine.force_limit,
                         fuel = line.machine.fuel,
+                        module_set = convert_module_set(line.machine.module_set),
                         class = "Machine"
                     },
                     beacon = line.beacon and {
                         proto = line.beacon.proto,
                         amount = line.beacon.amount,
                         total_amount = line.beacon.total_amount,
+                        module_set = convert_module_set(line.beacon.module_set),
                         class = "Beacon"
                     },
                     priority_product = line.priority_product_proto,
