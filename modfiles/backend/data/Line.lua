@@ -38,7 +38,7 @@ local function init(recipe_proto, production_type)
         recipe_proto = recipe_proto,
         production_type = production_type,
         done = false,
-        active = false,
+        active = true,
         percentage = 100,
         machine = nil,
         beacon = nil,
