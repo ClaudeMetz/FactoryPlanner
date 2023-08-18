@@ -1,5 +1,6 @@
 local Object = require("backend.data.Object")
 local Fuel = require("backend.data.Fuel")
+local ModuleSet = require("backend.data.ModuleSet")
 
 ---@class Machine: Object, ObjectMethods
 ---@field class "Machine"
@@ -8,6 +9,7 @@ local Fuel = require("backend.data.Fuel")
 ---@field limit number?
 ---@field force_limit boolean
 ---@field fuel Fuel?
+---@field module_set ModuleSet
 ---@field amount number
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
@@ -24,6 +26,7 @@ local function init(proto, parent)
         limit = nil,
         force_limit = true,  -- ignored if limit is not set
         fuel = nil,  -- needs to be set by calling Machine.find_fuel afterwards
+        module_set = nil,
 
         amount = 0,
         total_effects = nil,
@@ -31,6 +34,7 @@ local function init(proto, parent)
 
         parent = parent
     }, "Machine", Machine)  --[[@as Machine]]
+    object.module_set = ModuleSet.init(object)
     return object
 end
 
@@ -46,6 +50,7 @@ function Machine:cleanup()
 end
 
 
+---@param player LuaPlayer
 function Machine:normalize_fuel(player)
     if self.proto.energy_type ~= "burner" then self.fuel = nil; return end
     -- no need to continue if this machine doesn't have a burner
@@ -66,6 +71,45 @@ function Machine:normalize_fuel(player)
 end
 
 
+---@param mining_prod number
+function Machine:summarize_effects(mining_prod)
+    local effects = self.module_set.total_effects
+
+    effects["base_prod"] = self.proto.base_productivity or nil
+    effects["mining_prod"] = mining_prod or nil
+
+    self.total_effects = effects
+    self.effects_tooltip = util.gui.format_module_effects(effects, false)
+
+    self.parent:summarize_effects()
+end
+
+---@param module_proto FPModulePrototype
+function Machine:check_module_compatibility(module_proto)
+    local recipe_proto = self.parent.recipe_proto
+
+    if self.proto.module_limit == 0 then return false end
+
+    if next(module_proto.limitations) and recipe_proto.use_limitations
+            and not module_proto.limitations[recipe_proto.name] then
+        return false
+    end
+
+    local allowed_effects = self.proto.allowed_effects
+    if allowed_effects == nil then
+        return false
+    else
+        for effect_name, _ in pairs(module_proto.effects) do
+            if allowed_effects[effect_name] == false then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
@@ -77,14 +121,14 @@ function Machine:paste(object)
             object.parent = self.parent
             self.parent.machine = object
 
-            --ModuleSet.normalize(object.module_set, {compatibility=true, effects=true})
-            --Line.summarize_effects(object.parent)
+            object.module_set:normalize({compatibility=true, effects=true})
+            object.parent:summarize_effects()
             return true, nil
         else
             return false, "incompatible"
         end
     elseif object.class == "Module" then
-       --return ModuleSet.paste(self.module_set, object)
+       return self.module_set:paste(object)
     else
         return false, "incompatible_class"
     end
@@ -97,6 +141,7 @@ end
 ---@field limit number?
 ---@field force_limit boolean
 ---@field fuel PackedFuel?
+---@field module_set PackedModuleSet
 
 ---@return PackedMachine packed_self
 function Machine:pack()
@@ -105,7 +150,8 @@ function Machine:pack()
         proto = prototyper.util.simplify_prototype(self.proto, "category"),
         limit = self.limit,
         force_limit = self.force_limit,
-        fuel = self.fuel and self.fuel:pack()
+        fuel = self.fuel and self.fuel:pack(),
+        module_set = self.module_set:pack()
     }
 end
 
@@ -116,7 +162,7 @@ local function unpack(packed_self, parent)
     unpacked_self.limit = packed_self.limit
     unpacked_self.force_limit = packed_self.force_limit
     unpacked_self.fuel = packed_self.fuel and Fuel.unpack(packed_self.fuel, unpacked_self)
-
+    unpacked_self.module_set = ModuleSet.unpack(packed_self.module_set, unpacked_self)
 
     return unpacked_self
 end
@@ -142,6 +188,7 @@ function Machine:validate()
     if not self.proto.burner then self.fuel = nil end
     if self.fuel and self.valid then self.valid = self.fuel:validate() end
 
+    self.valid = self.module_set:validate() and self.valid
 
     return self.valid
 end
@@ -163,6 +210,7 @@ function Machine:repair(player)
         self:normalize_fuel(player)
     end
 
+    self.module_set:repair()
 
     return self.valid
 end

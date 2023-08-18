@@ -115,16 +115,15 @@ function builders.percentage(line, parent_flow, metadata)
 end
 
 
-local function add_module_flow(parent_flow, line, parent_type, metadata)
-    for _, module in ipairs(ModuleSet.get_in_order(line[parent_type].module_set)) do
+local function add_module_flow(parent_flow, module_set, metadata)
+    for module in module_set:iterator() do
         local number_line = {"", "\n", module.amount, " ", {"fp.pl_module", module.amount}}
         local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, module.effects_tooltip,
             metadata.module_tutorial_tt}
 
         parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
-            tags={mod="fp", on_gui_click="act_on_line_module", floor_id=line.parent.id, line_id=line.id,
-            parent_type=parent_type, module_id=module.id}, number=module.amount, style="flib_slot_button_default_small",
-            mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click="act_on_line_module", module_id=module.id}, number=module.amount,
+            style="flib_slot_button_default_small", mouse_button_filter={"left-and-right"}}
     end
 end
 
@@ -164,13 +163,12 @@ function builders.machine(line, parent_flow, metadata)
             tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=line.machine.id}, tooltip=tooltip,
             mouse_button_filter={"left-and-right"}}
 
-        if true then return end -- TODO
-        add_module_flow(parent_flow, line, "machine", metadata)
+        add_module_flow(parent_flow, line.machine.module_set, metadata)
         local module_set = line.machine.module_set
         if module_set.module_limit > module_set.module_count then
             local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
             local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=module_tooltip,
-                tags={mod="fp", on_gui_click="add_machine_module", line_id=line.id},
+                tags={mod="fp", on_gui_click="add_machine_module", machine_id=line.machine.id},
                 style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
             button.style.margin = 2
         end
@@ -206,7 +204,7 @@ function builders.beacon(line, parent_flow, metadata)
             sprite_overlay.ignored_by_interaction = true
         end
 
-        --add_module_flow(parent_flow, line, "beacon", metadata) TODO
+        add_module_flow(parent_flow, line.beacon.module_set, metadata)
     end
 end
 

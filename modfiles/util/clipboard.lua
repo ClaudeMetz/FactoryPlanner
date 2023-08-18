@@ -4,20 +4,17 @@ local unpackers = {
     Line = require("backend.data.Line").unpack,
     Machine = require("backend.data.Machine").unpack,
     Beacon = require("backend.data.Beacon").unpack,
-    Fuel = require("backend.data.Fuel").unpack
+    Fuel = require("backend.data.Fuel").unpack,
+    Module = require("backend.data.Module").unpack
 }
 
 local _clipboard = {}
 
--- TODO clean up
-
 ---@alias CopyableObject Product | LineObject | Machine | Beacon | Module | Fuel
---@alias FPParentObject District | Factory | Floor | Line | ModuleSet
 
 ---@class ClipboardEntry
 ---@field class string
 ---@field packed_object PackedObject
---@field parent FPParentObject
 
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
@@ -42,13 +39,10 @@ function _clipboard.paste(player, target)
     if clip == nil then
         util.cursor.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        --local level = (clip.class == "Line") and (target.parent.level or 1) or nil
-        --local clone = _G[clip.class].unpack(ftable.deep_copy(clip.object), level)
         local clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
-        --clone.parent = clip.parent  -- not very elegant to retain the parent here, but it's an easy solution
         clone:validate()
-
         local success, error = target:paste(clone)
+
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 

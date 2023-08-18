@@ -37,7 +37,7 @@ require("backend.calculation.solver")
 ---@class MBDefaults
 ---@field machine FPModulePrototype?
 ---@field machine_secondary FPModulePrototype?
----@field beacon FPBeaconPrototype?
+---@field beacon FPModulePrototype?
 ---@field beacon_count number?
 
 ---@class DefaultPrototypes
@@ -291,7 +291,6 @@ end)
 
 script.on_event(defines.events.on_player_removed, function(event)
     global.players[event.player_index] = nil
-    -- TODO clear any on_ticks, maybe other stuff?
 end)
 
 

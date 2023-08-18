@@ -1,6 +1,7 @@
 local Object = require("backend.data.Object")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
+local Module = require("backend.data.Module")
 
 ---@alias ProductionType "input" | "output"
 
@@ -61,11 +62,13 @@ end
 function Line:index()
     OBJECT_INDEX[self.id] = self
     self.machine:index()
+    self.beacon:index()
 end
 
 function Line:cleanup()
     OBJECT_INDEX[self.id] = nil
     self.machine:cleanup()
+    self.beacon:cleanup()
 end
 
 
@@ -100,11 +103,11 @@ end
 function Line:change_machine_to_proto(player, proto)
     if not self.machine then
         self.machine = Machine.init(proto, self)
-        --ModuleSet.summarize_effects(self.machine.module_set)
+        self.machine.module_set:summarize_effects()
     else
         self.machine.proto = proto
 
-        --ModuleSet.normalize(self.machine.module_set, {compatibility=true, trim=true, effects=true})
+        self.machine.module_set:normalize({compatibility=true, trim=true, effects=true})
         if self.machine.proto.allowed_effects == nil then self:set_beacon(nil) end
     end
 
@@ -179,10 +182,73 @@ function Line:set_beacon(beacon)
 
     if beacon ~= nil then
         self.beacon.parent = self
-        --beacon.module_set:normalize({sort=true, effects=true})
+        beacon.module_set:normalize({sort=true, effects=true})
     else
-        --self:summarize_effects()
+        self:summarize_effects()
     end
+end
+
+function Line:summarize_effects()
+    local beacon_effects = (self.beacon) and self.beacon.total_effects or nil
+
+    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+    for _, effect_table in pairs({self.machine.total_effects, beacon_effects}) do
+        for name, effect in pairs(effect_table) do
+            if name == "base_prod" or name == "mining_prod" then
+                effects["productivity"] = effects["productivity"] + effect
+            else
+                effects[name] = effects[name] + effect
+            end
+        end
+    end
+    self.total_effects = effects
+    self.effects_tooltip = util.gui.format_module_effects(effects, true)
+end
+
+
+---@param player LuaPlayer
+function Line:apply_mb_defaults(player)
+    self.machine.module_set:clear()
+    self:set_beacon(nil)
+
+    local mb_defaults = util.globals.preferences(player).mb_defaults
+    local machine_module, secondary_module = mb_defaults.machine, mb_defaults.machine_secondary
+    local module_set, module_limit = self.machine.module_set, self.machine.proto.module_limit
+    local message = nil
+
+    if machine_module and self.machine:check_module_compatibility(machine_module) then
+        local module = Module.init(machine_module, module_limit)
+        module_set:insert(module)
+
+    elseif secondary_module and self.machine:check_module_compatibility(secondary_module) then
+        local module = Module.init(secondary_module, module_limit)
+        module_set:insert(module)
+
+    elseif machine_module then  -- only show an error if any module default is actually set
+        message = {text={"fp.warning_module_not_compatible", {"fp.pl_module", 1}}, category="warning"}
+    end
+    self.machine.module_set:summarize_effects()
+
+    -- Add default beacon modules, if desired by the user
+    local beacon_module_proto, beacon_count = mb_defaults.beacon, mb_defaults.beacon_count
+    if BEACON_OVERLOAD_ACTIVE then beacon_count = 1 end
+    local beacon_proto = prototyper.defaults.get(player, "beacons")  --[[@as FPBeaconPrototype]]
+
+    if beacon_module_proto ~= nil and beacon_count ~= nil then
+        local blank_beacon = Beacon.init(beacon_proto, self)
+        blank_beacon.amount = beacon_count
+
+        if blank_beacon:check_module_compatibility(beacon_module_proto) then
+            local module = Module.init(beacon_module_proto, beacon_proto.module_limit)
+            blank_beacon.module_set:insert(module)
+            self:set_beacon(blank_beacon)  -- summarizes effects on its own
+
+        elseif message == nil then  -- don't overwrite previous message, if it exists
+            message = {text={"fp.warning_module_not_compatible", {"fp.pl_beacon", 1}}, category="warning"}
+        end
+    end
+
+    return message
 end
 
 

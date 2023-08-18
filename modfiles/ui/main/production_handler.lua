@@ -114,15 +114,13 @@ local function handle_machine_click(player, tags, action)
 end
 
 local function handle_machine_module_add(player, tags, event)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
+    local machine = OBJECT_INDEX[tags.machine_id]
 
     if event.shift then  -- paste
-        util.clipboard.paste(player, line.machine)
+        util.clipboard.paste(player, machine)
     else
-        util.raise.open_dialog(player, {dialog="machine", modal_data={floor_id=floor.id, line_id=line.id,
-            recipe_name=line.recipe.proto.localised_name}})
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id,
+            recipe_name=machine.parent.recipe.proto.localised_name}})
     end
 end
 
@@ -146,7 +144,7 @@ local function handle_beacon_click(player, tags, action)
         util.clipboard.paste(player, beacon)
 
     elseif action == "delete" then
-        line:set_beacon(line)
+        line:set_beacon(nil)
         solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
 
@@ -169,12 +167,7 @@ end
 
 
 local function handle_module_click(player, tags, action)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", tags.floor_id)
-    local line = Floor.get(floor, "Line", tags.line_id)
-    -- I don't need to care about relevant lines here because this only gets called on lines without subfloor
-    local parent_entity = line[tags.parent_type]
-    local module = ModuleSet.get(parent_entity.module_set, tags.module_id)
+    local module = OBJECT_INDEX[tags.module_id]
 
     if action == "edit" then
         util.raise.open_dialog(player, {dialog=tags.parent_type, modal_data={floor_id=floor.id, line_id=line.id,
@@ -187,15 +180,15 @@ local function handle_module_click(player, tags, action)
         util.clipboard.paste(player, module)
 
     elseif action == "delete" then
-        local module_set = parent_entity.module_set
-        ModuleSet.remove(module_set, module)
+        local module_set = module.parent
+        module_set:remove(module)
 
-        if parent_entity.class == "Beacon" and module_set.module_count == 0 then
-            Line.set_beacon(line, nil)
+        if module_set.parent.class == "Beacon" and module_set.module_count == 0 then
+            module_set.parent.parent:set_beacon(nil)
         end
 
-        ModuleSet.normalize(module_set, {effects=true})
-        solver.update(player, context.subfactory)
+        module_set:normalize({effects=true})
+        solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
