@@ -172,7 +172,10 @@ function ModuleSet:sort()
     for _, category in ipairs(global.prototypes.modules) do
         for _, module_proto in ipairs(category.members) do
             local module = modules_by_name[module_proto.name]
-            if module then self:_insert(module) end
+            if module then
+                module.previous, module.next = nil, nil
+                self:_insert(module)
+            end
         end
     end
 end
@@ -214,6 +217,8 @@ end
 
 
 ---@param module Module
+---@return boolean success
+---@return string? error
 function ModuleSet:paste(module)
     if not self:check_compatibility(module.proto) then
         return false, "incompatible"
@@ -226,6 +231,7 @@ function ModuleSet:paste(module)
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else
+        module.amount = desired_amount
         self:insert(module)
     end
 
