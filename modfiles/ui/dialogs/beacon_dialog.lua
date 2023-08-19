@@ -1,4 +1,5 @@
 require("ui.elements.module_configurator")
+local Beacon = require("backend.data.Beacon")
 
 -- ** LOCAL UTIL **
 local function add_beacon_frame(parent_flow, modal_data)
@@ -57,7 +58,7 @@ local function update_dialog_submit_button(modal_data)
 end
 
 local function handle_beacon_change(player, _, _)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local beacon_button = modal_data.modal_elements.beacon_button
     local beacon = modal_data.object
 
@@ -71,7 +72,7 @@ local function handle_beacon_change(player, _, _)
 
     -- Change the beacon to the new type
     beacon.proto = prototyper.util.find_prototype("beacons", beacon_button.elem_value, nil)
-    ModuleSet.normalize(beacon.module_set, {compatibility=true, trim=true, effects=true})
+    beacon.module_set:normalize({compatibility=true, trim=true, effects=true})
 
     module_configurator.refresh_modules_flow(player, false)
 end
@@ -86,19 +87,17 @@ end
 
 
 local function open_beacon_dialog(player, modal_data)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", modal_data.floor_id)
-    local line = Floor.get(floor, "Line", modal_data.line_id)
+    local line = OBJECT_INDEX[modal_data.line_id]
     modal_data.line = line
 
     if line.beacon ~= nil then
-        modal_data.backup_beacon = Beacon.clone(line.beacon)
+        modal_data.backup_beacon = line.beacon:clone()
         modal_data.object = line.beacon
     else
         local beacon_proto = prototyper.defaults.get(player, "beacons")
-        local beacon_count = util.globals.preferences(player).mb_defaults.beacon_count
-        modal_data.object = Beacon.init(beacon_proto, beacon_count, nil, line)
-        Line.set_beacon(line, modal_data.object)
+        modal_data.object = Beacon.init(beacon_proto, line)
+        modal_data.object.amount = util.globals.preferences(player).mb_defaults.beacon_count or 0
+        line:set_beacon(modal_data.object)
     end
 
     if BEACON_OVERLOAD_ACTIVE then modal_data.object.amount = 1 end
@@ -118,8 +117,8 @@ local function open_beacon_dialog(player, modal_data)
 end
 
 local function close_beacon_dialog(player, action)
-    local modal_data = util.globals.modal_data(player)
-    local subfactory = util.globals.context(player).subfactory
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+    local subfactory = util.context.get(player, "Factory")
 
     if action == "submit" then
         local beacon = modal_data.object
@@ -130,12 +129,12 @@ local function close_beacon_dialog(player, action)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "delete" then
-        Line.set_beacon(modal_data.line, nil)
+        modal_data.line:set_beacon(nil)
         solver.update(player, subfactory)
         util.raise.refresh(player, "subfactory", nil)
 
     else -- action == "cancel"
-        Line.set_beacon(modal_data.line, modal_data.backup_beacon)  -- can write nil
+        modal_data.line:set_beacon(modal_data.backup_beacon)  -- could be nil
     end
 end
 
@@ -154,9 +153,9 @@ listeners.gui = {
         {
             name = "beacon_amount",
             handler = (function(player, _, _)
-                local modal_data = util.globals.modal_data(player)
+                local modal_data = util.globals.modal_data(player)  --[[@as table]]
                 modal_data.object.amount = tonumber(modal_data.modal_elements.beacon_amount.text) or 0
-                ModuleSet.normalize(modal_data.object.module_set, {effects=true})
+                modal_data.module_set:normalize({effects=true})
                 module_configurator.refresh_effects_flow(modal_data)
                 update_dialog_submit_button(modal_data)
             end)
@@ -176,13 +175,16 @@ listeners.gui = {
 listeners.dialog = {
     dialog = "beacon",
     metadata = (function(modal_data)
-        local action = (modal_data.edit) and "edit" or "add"
+        local line = OBJECT_INDEX[modal_data.line_id]
+        local machine_name = line.machine.proto.localised_name
+        local edit = (line.beacon ~= nil)
+        local action = (edit) and "edit" or "add"
         return {
             caption = {"", {"fp." .. action}, " ", {"fp.pl_beacon", 1}},
-            subheader_text = {("fp.beacon_dialog_description_" .. action), modal_data.machine_name},
+            subheader_text = {("fp.beacon_dialog_description_" .. action), machine_name},
             create_content_frame = true,
             show_submit_button = true,
-            show_delete_button = (modal_data.edit)
+            show_delete_button = (edit == true)
         }
     end),
     open = open_beacon_dialog,

@@ -2,14 +2,14 @@ require("ui.elements.module_configurator")
 
 -- ** LOCAL UTIL **
 local function refresh_machine_frame(player)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
 
     local table_machine = modal_data.modal_elements.machine_table
     table_machine.clear()
 
     local current_proto = modal_data.object.proto
     for _, machine_proto in pairs(PROTOTYPE_MAPS.machines[current_proto.category].members) do
-        if Line.is_machine_applicable(modal_data.line, machine_proto) then
+        if modal_data.line:is_machine_applicable(machine_proto) then
             local attributes = prototyper.util.get_attributes(machine_proto)
             local tooltip = {"", {"fp.tt_title", machine_proto.localised_name}, "\n", attributes}
 
@@ -24,7 +24,7 @@ local function refresh_machine_frame(player)
 end
 
 local function refresh_fuel_frame(player)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local machine = modal_data.object
 
     local modal_elements = modal_data.modal_elements
@@ -57,7 +57,7 @@ local function refresh_fuel_frame(player)
 end
 
 local function refresh_limit_elements(player)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local textfield = modal_data.modal_elements.limit_textfield
     local switch = modal_data.modal_elements.force_limit_switch
 
@@ -111,19 +111,18 @@ end
 
 
 local function handle_machine_choice(player, tags, _)
-    local modal_data = util.globals.modal_data(player)
-    local machine = modal_data.object
+    local machine = util.globals.modal_data(player).object
 
     local machine_category_id = PROTOTYPE_MAPS.machines[machine.proto.category].id
     local machine_proto = global.prototypes.machines[machine_category_id].members[tags.proto_id]
 
-    -- This can't use Line.change_machine_to_proto() as that modifies the line, which we can't do
+    -- This can't use Line:change_machine_to_proto() as that modifies the line, which we can't do
     machine.proto = machine_proto
-    Machine.normalize_fuel(machine, player)
-    ModuleSet.normalize(machine.module_set, {compatibility=true, trim=true, effects=true})
+    machine:normalize_fuel(player)
+    machine.module_set:normalize({compatibility=true, trim=true, effects=true})
 
     -- Make sure the line's beacon is removed if this machine no longer supports it
-    if machine.proto.allowed_effects == nil then Line.set_beacon(machine.parent, nil) end
+    if machine.proto.allowed_effects == nil then machine.parent:set_beacon(nil) end
 
     refresh_machine_frame(player)
     refresh_fuel_frame(player)
@@ -131,17 +130,16 @@ local function handle_machine_choice(player, tags, _)
 end
 
 local function handle_fuel_choice(player, tags, _)
-    local modal_data = util.globals.modal_data(player)
+    local machine = util.globals.modal_data(player).object
 
     local split_id = util.split_string(tags.proto_id, "_")
-    modal_data.object.fuel.proto = global.prototypes.fuels[split_id[1]].members[split_id[2]]
+    machine.fuel.proto = global.prototypes.fuels[split_id[1]].members[split_id[2]]
 
     refresh_fuel_frame(player)
 end
 
 local function change_machine_limit(player, _, event)
-    local modal_data = util.globals.modal_data(player)
-    local machine = modal_data.object
+    local machine = util.globals.modal_data(player).object
 
     machine.limit = tonumber(event.element.text)
     if machine.limit == nil then machine.force_limit = true end
@@ -150,27 +148,25 @@ local function change_machine_limit(player, _, event)
 end
 
 local function change_machine_force_limit(player, _, event)
-    local modal_data = util.globals.modal_data(player)
+    local machine = util.globals.modal_data(player).object
 
     local switch_state = util.gui.switch.convert_to_boolean(event.element.switch_state)
-    modal_data.object.force_limit = switch_state
+    machine.force_limit = switch_state
 
     refresh_limit_elements(player)
 end
 
 
 local function open_machine_dialog(player, modal_data)
-    local context = util.globals.context(player)
-    local floor = Subfactory.get(context.subfactory, "Floor", modal_data.floor_id)
-    modal_data.line = Floor.get(floor, "Line", modal_data.line_id)
-    modal_data.object = modal_data.line.machine
+    modal_data.object = OBJECT_INDEX[modal_data.machine_id]
+    modal_data.line = modal_data.object.parent
 
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     content_frame.style.minimal_width = 460
 
-    modal_data.machine_backup = Machine.clone(modal_data.object)
-    modal_data.beacon_backup = Beacon.clone(modal_data.line.beacon)
+    modal_data.machine_backup = modal_data.object:clone()
+    modal_data.beacon_backup = modal_data.line.beacon and modal_data.line.beacon:clone()
     modal_data.module_set = modal_data.object.module_set
 
     -- Choices
@@ -191,20 +187,19 @@ local function open_machine_dialog(player, modal_data)
 end
 
 local function close_machine_dialog(player, action)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local machine, line = modal_data.object, modal_data.line
 
     if action == "submit" then
-        ModuleSet.normalize(machine.module_set, {sort=true})
+        machine.module_set:normalize({sort=true})
 
-        local subfactory = util.globals.context(player).subfactory
-        solver.update(player, subfactory)
+        solver.update(player, util.context.get(player, "Factory"))
         util.raise.refresh(player, "subfactory", nil)
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup
-        ModuleSet.normalize(line.machine.module_set, {effects=true})
-        Line.set_beacon(modal_data.line, modal_data.beacon_backup)
+        line.machine.module_set:normalize({effects=true})
+        line:set_beacon(modal_data.beacon_backup)
     end
 end
 
@@ -239,12 +234,16 @@ listeners.gui = {
 
 listeners.dialog = {
     dialog = "machine",
-    metadata = (function(modal_data) return {
-        caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
-        subheader_text = {"fp.machine_dialog_description", modal_data.recipe_name},
-        create_content_frame = true,
-        show_submit_button = true
-    } end),
+    metadata = (function(modal_data)
+        local machine = OBJECT_INDEX[modal_data.machine_id]
+        local recipe_name = machine.parent.recipe_proto.localised_name
+        return {
+            caption = {"", {"fp.edit"}, " ", {"fp.pl_machine", 1}},
+            subheader_text = {"fp.machine_dialog_description", recipe_name},
+            create_content_frame = true,
+            show_submit_button = true
+        }
+    end),
     open = open_machine_dialog,
     close = close_machine_dialog
 }

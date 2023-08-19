@@ -89,8 +89,7 @@ local function handle_machine_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id,
-            recipe_name=line.recipe.proto.localised_name}})
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, machine)
@@ -119,8 +118,7 @@ local function handle_machine_module_add(player, tags, event)
     if event.shift then  -- paste
         util.clipboard.paste(player, machine)
     else
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id,
-            recipe_name=machine.parent.recipe.proto.localised_name}})
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=machine.id}})
     end
 end
 
@@ -134,8 +132,7 @@ local function handle_beacon_click(player, tags, action)
         if success then main_dialog.toggle(player) end
 
     elseif action == "edit" then
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id,
-            machine_name=line.machine.proto.localised_name, edit=true}})
+        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, beacon)
@@ -160,8 +157,7 @@ local function handle_beacon_add(player, tags, event)
         local dummy_beacon = Beacon.init({}, line)
         util.clipboard.paste(player, dummy_beacon)
     else
-        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id,
-            machine_name=line.machine.proto.localised_name, edit=false}})
+        util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
     end
 end
 
@@ -170,8 +166,12 @@ local function handle_module_click(player, tags, action)
     local module = OBJECT_INDEX[tags.module_id]
 
     if action == "edit" then
-        util.raise.open_dialog(player, {dialog=tags.parent_type, modal_data={floor_id=floor.id, line_id=line.id,
-            recipe_name=line.recipe.proto.localised_name, machine_name=line.machine.proto.localised_name, edit=true}})
+        local line = module.parent.parent.parent
+        if module.parent.parent.class == "Machine" then
+            util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=line.machine.id}})
+        else
+            util.raise.open_dialog(player, {dialog="beacon", modal_data={line_id=line.id}})
+        end
 
     elseif action == "copy" then
         util.clipboard.copy(player, module)
@@ -297,8 +297,7 @@ local function handle_fuel_click(player, tags, action)
             production_type="produce", category_id=category.id, product_id=proto_id}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
-        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id,
-            recipe_name=line.recipe_proto.localised_name}})
+        util.raise.open_dialog(player, {dialog="machine", modal_data={machine_id=fuel.parent.id}})
 
     elseif action == "copy" then
         util.clipboard.copy(player, fuel)

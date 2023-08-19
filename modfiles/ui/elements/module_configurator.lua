@@ -1,3 +1,5 @@
+local Module = require("backend.data.Module")
+
 -- Contains the UI and event handling for machine/beacon modules
 module_configurator = {}
 
@@ -57,37 +59,36 @@ end
 
 
 local function handle_module_selection(player, tags, event)
-    local modal_data = util.globals.modal_data(player)
-    local module_set = modal_data.module_set
+    local module_set = util.globals.modal_data(player).module_set
     local new_name = event.element.elem_value
 
     if tags.module_id then  -- editing an existing module
-        local module = ModuleSet.get(module_set, tags.module_id)
+        local module = OBJECT_INDEX[tags.module_id]
         if new_name then  -- changed to another module
             module.proto = MODULE_NAME_MAP[new_name]
-            Module.summarize_effects(module)
+            module:summarize_effects()
         else  -- removed module
-            ModuleSet.remove(module_set, module)
+            module_set:remove(module)
         end
     elseif new_name then -- choosing a new module on an empty line
         local slider = event.element.parent["fp_slider_module_amount"]
-        ModuleSet.add(module_set, MODULE_NAME_MAP[new_name], slider.slider_value)
+        local module = Module.init(MODULE_NAME_MAP[new_name], slider.slider_value)
+        module_set:insert(module)
     end
 
-    ModuleSet.normalize(module_set, {effects=true})
+    module_set:normalize({effects=true})
     module_configurator.refresh_modules_flow(player, false)
 end
 
 local function handle_module_slider_change(player, tags, event)
-    local modal_data = util.globals.modal_data(player)
-    local module_set = modal_data.module_set
+    local module_set = util.globals.modal_data(player).module_set
     local new_slider_value = event.element.slider_value
     local module_textfield = event.element.parent["fp_textfield_module_amount"]
 
     if tags.module_id then  -- editing an existing module
-        local module = ModuleSet.get(module_set, tags.module_id)
-        Module.set_amount(module, new_slider_value)
-        ModuleSet.normalize(module_set, {effects=true})
+        local module = OBJECT_INDEX[tags.module_id]
+        module:set_amount(new_slider_value)
+        module_set:normalize({effects=true})
         module_configurator.refresh_modules_flow(player, true)
     else  -- empty line, no influence on anything else
         module_textfield.text = tostring(new_slider_value)
@@ -95,8 +96,7 @@ local function handle_module_slider_change(player, tags, event)
 end
 
 local function handle_module_textfield_change(player, tags, event)
-    local modal_data = util.globals.modal_data(player)
-    local module_set = modal_data.module_set
+    local module_set = util.globals.modal_data(player).module_set
     local new_textfield_value = tonumber(event.element.text)
     local module_slider = event.element.parent["fp_slider_module_amount"]
 
@@ -105,9 +105,9 @@ local function handle_module_textfield_change(player, tags, event)
     local new_amount = math.min(normalized_amount, slider_maximum)
 
     if tags.module_id then  -- editing an existing module
-        local module = ModuleSet.get(module_set, tags.module_id)
-        Module.set_amount(module, new_amount)
-        ModuleSet.normalize(module_set, {effects=true})
+        local module = OBJECT_INDEX[tags.module_id]
+        module:set_amount(new_amount)
+        module_set:normalize({effects=true})
         module_configurator.refresh_modules_flow(player, true)
     else  -- empty line, no influence on anything else
         module_slider.slider_value = new_amount
@@ -137,10 +137,10 @@ function module_configurator.refresh_effects_flow(modal_data)
 end
 
 function module_configurator.refresh_modules_flow(player, update_only)
-    local modal_data = util.globals.modal_data(player)
+    local modal_data = util.globals.modal_data(player)  --[[@as table]]
     local modules_flow = modal_data.modal_elements.modules_flow
 
-    local module_filters = ModuleSet.compile_filter(modal_data.module_set)
+    local module_filters = modal_data.module_set:compile_filter()
     local empty_slots = modal_data.module_set.empty_slots
 
     local effects_tooltip = modal_data.object.effects_tooltip
@@ -156,7 +156,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
             if module_id == nil then
                 frame.destroy()  -- destroy empty frame as it'll be re-added below
             else
-                local module = ModuleSet.get(modal_data.module_set, module_id)
+                local module = modal_data.module_set:find({id=module_id})
                 if module == nil then
                     frame.destroy()
                 else
@@ -188,7 +188,7 @@ function module_configurator.refresh_modules_flow(player, update_only)
             add_effects_section(effects_flow, modal_data.line, modal_data.modal_elements)
         end
 
-        for _, module in pairs(ModuleSet.get_in_order(modal_data.module_set)) do
+        for module in modal_data.module_set:iterator() do
             add_module_frame(modules_flow, module, module_filters, empty_slots)
         end
     end
