@@ -7,7 +7,7 @@ local function handle_line_move_click(player, tags, event)
     local spots_to_shift = (event.control) and 5 or ((not event.shift) and 1 or nil)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
-    solver.update(player, util.context.get(player, "Factory"))
+    solver.update(player)
     util.raise.refresh(player, "subfactory", nil)
 end
 
@@ -75,7 +75,7 @@ end
 
 local function handle_percentage_confirmation(player, _, _)
     util.globals.ui_state(player).flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
-    solver.update(player, util.context.get(player, "Factory"))
+    solver.update(player)
     util.raise.refresh(player, "subfactory", nil)
 end
 
@@ -103,7 +103,7 @@ local function handle_machine_click(player, tags, action)
         machine.force_limit = true
         local message = line:apply_mb_defaults(player)
 
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         util.raise.refresh(player, "subfactory", nil)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
@@ -142,7 +142,7 @@ local function handle_beacon_click(player, tags, action)
 
     elseif action == "delete" then
         line:set_beacon(nil)
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
@@ -188,7 +188,7 @@ local function handle_module_click(player, tags, action)
         end
 
         module_set:normalize({effects=true})
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         util.raise.refresh(player, "subfactory", nil)
 
     elseif action == "recipebook" then
@@ -220,7 +220,7 @@ local function apply_item_options(player, options, action)
         relevant_line.percentage = (current_amount == 0) and 100
             or (relevant_line.percentage * item_amount) / current_amount
 
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         util.raise.refresh(player, "subfactory", nil)
     end
 end
@@ -236,7 +236,7 @@ local function handle_item_click(player, tags, action)
             -- Remove the priority_product if the already selected one is clicked
             line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
 
-            solver.update(player, util.context.get(player, "Factory"))
+            solver.update(player)
             util.raise.refresh(player, "subfactory", nil)
         end
 

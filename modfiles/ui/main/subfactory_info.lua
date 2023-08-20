@@ -281,7 +281,7 @@ listeners.gui = {
             handler = (function(player, _, _)
                 -- Reset the recalculation flag as we re-solve below
                 util.globals.flags(player).recalculate_on_subfactory_change = false
-                solver.update(player, util.context.get(player, "Factory"))
+                solver.update(player)
                 util.raise.refresh(player, "subfactory", nil)
             end)
         }

@@ -275,7 +275,7 @@ local function close_preferences_dialog(player, _)
     end
 
     if refresh.calculations then
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         context_to_refresh = "subfactory"
     end
 
