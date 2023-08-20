@@ -100,9 +100,9 @@ function _context.set_adjacent(player, object, archived)
     if archived == nil then archived = object.archived end
     local filter = { archived = archived }
 
-    local previous = object.parent:find(filter, object, "previous")
+    local previous = object.parent:find(filter, object["previous"], "previous")
     if previous then _context.set(player, previous); return end
-    local next = object.parent:find(filter, object, "next")
+    local next = object.parent:find(filter, object["next"], "next")
     if next then _context.set(player, next); return end
 
     _context.set_default(player, false)

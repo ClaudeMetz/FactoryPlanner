@@ -127,7 +127,7 @@ local function refresh_subfactory_list(player)
                 style="fp_button_fake_listbox_item", toggled=selected, mouse_button_filter={"left-and-right"}}
 
             local function create_move_button(flow, direction)
-                local enabled = (subfactory.parent:find(filter, subfactory, direction) ~= nil)
+                local enabled = (subfactory.parent:find(filter, subfactory[direction], direction) ~= nil)
                 local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
                 local up_down = (direction == "next") and "down" or "up"
                 local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_subfactory", 1},

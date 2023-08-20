@@ -14,8 +14,8 @@ local function set_blank_line(player, floor, line)
         machine_count = 0,
         energy_consumption = 0,
         pollution = 0,
-        production_ratio = (not line.subfloor) and 0 or nil,
-        uncapped_production_ratio = (not line.subfloor) and 0 or nil,
+        production_ratio = (line.class == "Line") and 0 or nil,
+        uncapped_production_ratio = (line.class == "Line") and 0 or nil,
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
@@ -36,8 +36,8 @@ local function set_blank_subfactory(player, subfactory)
     }
 
     -- Subfactory structure does not matter as every line just needs to be blanked out
-    for _, floor in pairs(Subfactory.get_all_floors(subfactory)) do
-        for _, line in pairs(Floor.get_in_order(floor, "Line")) do
+    for floor in subfactory:iterator() do
+        for line in floor:iterator() do
             set_blank_line(player, floor, line)
         end
     end
@@ -54,33 +54,33 @@ local function generate_floor_data(player, subfactory, floor)
     local mining_productivity = (subfactory.mining_productivity ~= nil)
         and (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
-    for _, line in ipairs(Floor.get_in_order(floor, "Line")) do
+    for line in floor:iterator() do
         local line_data = { id = line.id }
 
-        if line.subfloor ~= nil then
-            line_data.recipe_proto = line.subfloor.defining_line.recipe.proto
-            line_data.subfloor = generate_floor_data(player, subfactory, line.subfloor)
+        if line.class == "Floor" then
+            line_data.recipe_proto = line.first.recipe_proto
+            line_data.subfloor = generate_floor_data(player, subfactory, line)
             table.insert(floor_data.lines, line_data)
 
         else
-            local relevant_line = (line.parent.level > 1) and line.parent.defining_line or nil
+            local relevant_line = (line.parent.level > 1) and line.parent.first or nil
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
-                line_data.recipe_proto = line.recipe.proto
+                line_data.recipe_proto = line.recipe_proto
                 line_data.timescale = subfactory.timescale
                 line_data.percentage = line.percentage  -- non-zero
-                line_data.production_type = line.recipe.production_type
+                line_data.production_type = line.production_type
                 line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
                 line_data.beacon_consumption = 0
-                line_data.priority_product_proto = line.priority_product_proto
+                line_data.priority_product_proto = line.priority_product
                 line_data.machine_proto = line.machine.proto
 
                 -- Effects - update effects first if mining prod is relevant
-                if line.machine.proto.mining then Machine.summarize_effects(line.machine, mining_productivity) end
+                if line.machine.proto.mining then line.machine:summarize_effects(mining_productivity) end
                 line_data.total_effects = line.total_effects
 
                 -- Fuel prototype
@@ -100,25 +100,23 @@ local function generate_floor_data(player, subfactory, floor)
 end
 
 
--- Replaces the items of the given object (of given class) using the given result
-local function update_object_items(object, item_class, item_results)
-    local object_class = _G[object.class]
-    object_class.clear(object, item_class)
+local function update_object_items(object, item_category, item_results)
+    local simple_items = object[item_category]
+    simple_items:clear()
 
     for _, item_result in pairs(structures.class.to_array(item_results)) do
-        local required_amount = (object.class == "Subfactory") and 0 or nil
         local item_proto = prototyper.util.find_prototype("items", item_result.name, item_result.type)
-        local item = Item.init(item_proto, item_class, item_result.amount, required_amount)
-        object_class.add(object, item)
+        simple_items:insert({proto=item_proto, amount=item_result.amount})
     end
 end
 
-local function set_zeroed_items(line, item_class, items)
-    Line.clear(line, item_class)
+local function set_zeroed_items(line, item_category, items)
+    local simple_items = line[item_category]
+    simple_items:clear()
 
     for _, item in pairs(items) do
         local item_proto = prototyper.util.find_prototype("items", item.name, item.type)
-        Line.add(line, Item.init(item_proto, item_class, 0))
+        simple_items:insert({proto=item_proto, amount=0})
     end
 end
 
@@ -131,10 +129,9 @@ local function update_ingredient_satisfaction(floor, product_class)
         local product_amount = product_class[ingredient.proto.type][ingredient.proto.name]
 
         if product_amount ~= nil then
-            if product_amount >= (ingredient.amount or 0) then  -- TODO dirty fix
+            if product_amount >= ingredient.amount then
                 ingredient.satisfied_amount = ingredient.amount
                 structures.class.subtract(product_class, ingredient)
-
             else  -- product_amount < ingredient.amount
                 ingredient.satisfied_amount = product_amount
                 structures.class.subtract(product_class, ingredient, product_amount)
@@ -145,24 +142,23 @@ local function update_ingredient_satisfaction(floor, product_class)
     end
 
     -- Iterates the lines from the bottom up, setting satisfaction amounts along the way
-    for _, line in ipairs(Floor.get_in_order(floor, "Line", true)) do
-        if line.subfloor ~= nil then
+    for line in floor:iterator(nil, floor:find_last(), "previous") do
+        if line.class == "Floor" then
             local subfloor_product_class = structures.class.copy(product_class)
-            update_ingredient_satisfaction(line.subfloor, subfloor_product_class)
-
+            update_ingredient_satisfaction(line, subfloor_product_class)
         elseif line.machine.fuel then
             determine_satisfaction(line.machine.fuel)
         end
 
-        for _, ingredient in pairs(Line.get_in_order(line, "Ingredient")) do
+        for ingredient in line.ingredients:iterator() do
             if ingredient.proto.type ~= "entity" then
                 determine_satisfaction(ingredient)
             end
         end
 
         -- Products and byproducts just get added to the list as being produced
-        for _, class_name in pairs{"Product", "Byproduct"} do
-            for _, product in pairs(Line.get_in_order(line, class_name)) do
+        for _, item_category in pairs{"products", "byproducts"} do
+            for product in line[item_category]:iterator() do
                 structures.class.add(product_class, product)
             end
         end
@@ -173,7 +169,6 @@ end
 -- ** TOP LEVEL **
 -- Updates the whole subfactory calculations from top to bottom
 function solver.update(player, subfactory)
-    if true then return end  -- TODO remove
     if subfactory ~= nil and subfactory.valid then
         local player_table = util.globals.player_table(player)
         -- Save the active subfactory in global so the solver doesn't have to pass it around
@@ -217,7 +212,7 @@ end
 
 -- Updates the given subfactory's ingredient satisfactions
 function solver.determine_ingredient_satisfaction(subfactory)
-    update_ingredient_satisfaction(Subfactory.get(subfactory, "Floor", 1), nil)
+    update_ingredient_satisfaction(subfactory.top_floor, nil)
 end
 
 
@@ -227,20 +222,17 @@ function solver.generate_subfactory_data(player, subfactory)
     local subfactory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = nil,
+        top_floor = generate_floor_data(player, subfactory, subfactory.top_floor),
         matrix_free_items = subfactory.matrix_free_items
     }
 
-    for _, product in ipairs(Subfactory.get_in_order(subfactory, "Product")) do
+    for product in subfactory:iterator() do
         local product_data = {
             proto = product.proto,  -- reference
-            amount = Item.required_amount(product)
+            amount = product:get_required_amount()
         }
         table.insert(subfactory_data.top_level_products, product_data)
     end
-
-    local top_floor = Subfactory.get(subfactory, "Floor", 1)
-    subfactory_data.top_floor = generate_floor_data(player, subfactory, top_floor)
 
     return subfactory_data
 end
@@ -255,13 +247,13 @@ function solver.set_subfactory_result(result)
     subfactory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
-    for _, product in pairs(Subfactory.get_in_order(subfactory, "Product")) do
+    for product in subfactory:iterator() do
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
-        product.amount = Item.required_amount(product) - product_result_amount
+        product.amount = product:get_required_amount() - product_result_amount
     end
 
-    update_object_items(subfactory, "Ingredient", result.Ingredient)
-    update_object_items(subfactory, "Byproduct", result.Byproduct)
+    update_object_items(subfactory.top_floor, "ingredients", result.Ingredient)
+    update_object_items(subfactory.top_floor, "byproducts", result.Byproduct)
 
     -- Determine satisfaction-amounts for all line ingredients
     if player_table.preferences.ingredient_satisfaction then
@@ -273,14 +265,12 @@ end
 function solver.set_line_result(result)
     local subfactory = global.players[result.player_index].active_subfactory
     if subfactory == nil then return end
+    local line = OBJECT_INDEX[result.line_id]
 
-    local floor = Subfactory.get(subfactory, "Floor", result.floor_id)
-    local line = Floor.get(floor, "Line", result.line_id)
-
-    if line.subfloor ~= nil then
-        line.machine = { count = result.machine_count }
+    if line.class == "Floor" then
+        line.machine_count = result.machine_count
     else
-        line.machine.count = result.machine_count
+        line.machine.amount = result.machine_count
         if line.machine.fuel ~= nil then line.machine.fuel.amount = result.fuel_amount end
 
         line.production_ratio = result.production_ratio
@@ -292,12 +282,12 @@ function solver.set_line_result(result)
 
     if line.production_ratio == 0 and line.subfloor == nil then
         local recipe_proto = line.recipe.proto
-        set_zeroed_items(line, "Product", recipe_proto.products)
-        set_zeroed_items(line, "Ingredient", recipe_proto.ingredients)
+        set_zeroed_items(line, "products", recipe_proto.products)
+        set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
     else
-        update_object_items(line, "Product", result.Product)
-        update_object_items(line, "Byproduct", result.Byproduct)
-        update_object_items(line, "Ingredient", result.Ingredient)
+        update_object_items(line, "products", result.Product)
+        update_object_items(line, "byproducts", result.Byproduct)
+        update_object_items(line, "ingredients", result.Ingredient)
     end
 end
 

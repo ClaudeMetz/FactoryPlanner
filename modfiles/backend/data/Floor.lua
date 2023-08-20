@@ -86,12 +86,9 @@ function Floor:shift(line, direction, spots)
 end
 
 
----@param filter ObjectFilter?
----@param pivot LineObject?
----@param direction NeighbourDirection?
 ---@return LineObject?
-function Floor:find_last(filter, pivot, direction)
-    return self:_find_last(filter, pivot, direction)  --[[@as LineObject?]]
+function Floor:find_last()
+    return self:_find_last()  --[[@as LineObject?]]
 end
 
 ---@param filter ObjectFilter?
