@@ -172,7 +172,7 @@ local function player_init(player)
     reset_ui_state(player)
 
     util.gui.toggle_mod_gui(player)
-    util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 12)
+    util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
 
     if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end
 end
