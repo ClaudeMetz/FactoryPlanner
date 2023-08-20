@@ -7,7 +7,6 @@ local Product = require("backend.data.Product")
 ---@field parent District
 ---@field next Factory?
 ---@field previous Factory?
----@field first Product?
 ---@field archived boolean
 ---@field name string
 ---@field timescale Timescale
@@ -15,6 +14,7 @@ local Product = require("backend.data.Product")
 ---@field matrix_free_items FPItemPrototype[]?
 ---@field blueprints string[]
 ---@field notes string
+---@field first Product?
 ---@field top_floor Floor
 ---@field linearly_dependant boolean?
 ---@field tick_of_deletion uint?
@@ -39,7 +39,8 @@ local function init(name, timescale)
         matrix_free_items = nil,
         blueprints = {},
         notes = "",
-        top_floor = Floor.init(),
+        first = nil,
+        top_floor = Floor.init(1),
 
         linearly_dependant = false,
         tick_of_deletion = nil,
@@ -57,12 +58,6 @@ function Factory:index()
     self.top_floor:index()
 end
 
-function Factory:cleanup()
-    OBJECT_INDEX[self.id] = nil
-    for product in self:iterator() do product:cleanup() end
-    self.top_floor:cleanup()
-end
-
 
 ---@param product Product
 ---@param relative_object Product?
@@ -75,7 +70,6 @@ end
 ---@param product Product
 function Factory:remove(product)
     product.parent = nil
-    product:cleanup()
     self:_remove(product)
 end
 

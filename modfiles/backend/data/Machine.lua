@@ -42,11 +42,7 @@ end
 function Machine:index()
     OBJECT_INDEX[self.id] = self
     if self.fuel then self.fuel:index() end
-end
-
-function Machine:cleanup()
-    OBJECT_INDEX[self.id] = nil
-    if self.fuel then self.fuel:cleanup() end
+    self.module_set:index()
 end
 
 

@@ -63,13 +63,7 @@ end
 function Line:index()
     OBJECT_INDEX[self.id] = self
     self.machine:index()
-    self.beacon:index()
-end
-
-function Line:cleanup()
-    OBJECT_INDEX[self.id] = nil
-    self.machine:cleanup()
-    self.beacon:cleanup()
+    if self.beacon then self.beacon:index() end
 end
 
 
@@ -196,7 +190,7 @@ end
 
 ---@param player LuaPlayer
 function Line:apply_mb_defaults(player)
-    self.machine.module_set:clear()
+    self.machine.module_set.first = nil
     self:set_beacon(nil)
 
     local mb_defaults = util.globals.preferences(player).mb_defaults

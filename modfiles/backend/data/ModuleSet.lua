@@ -37,11 +37,6 @@ function ModuleSet:index()
     for line in self:iterator() do line:index() end
 end
 
-function ModuleSet:cleanup()
-    OBJECT_INDEX[self.id] = nil
-    for line in self:iterator() do line:cleanup() end
-end
-
 
 ---@param module Module
 ---@param relative_object Module?
@@ -55,7 +50,6 @@ end
 ---@param module Module
 function ModuleSet:remove(module)
     module.parent = nil
-    module:cleanup()
     self:_remove(module)
     self:count_modules()
 end
@@ -66,11 +60,6 @@ function ModuleSet:replace(module, new_module)
     new_module.parent = self
     self:_replace(module, new_module)
     self:count_modules()
-end
-
-function ModuleSet:clear()
-    self:cleanup()
-    self.first = nil
 end
 
 

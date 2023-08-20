@@ -28,12 +28,6 @@ function Fuel:index()
     OBJECT_INDEX[self.id] = self
 end
 
-function Fuel:cleanup()
-    OBJECT_INDEX[self.id] = nil
-end
-
-
-
 
 ---@param object CopyableObject
 ---@return boolean success

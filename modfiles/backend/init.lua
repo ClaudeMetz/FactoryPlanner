@@ -185,7 +185,7 @@ local function refresh_player_table(player)
     reload_settings(player)
     reset_ui_state(player)
 
-    util.context.validate(player)  -- TODO verify
+    util.context.validate(player)
 
     player_table.translation_tables = nil
     player_table.clipboard = nil
@@ -218,7 +218,7 @@ local function global_init()
     end
 
     global.players = {}  ---@type { [PlayerIndex]: PlayerTable }
-    global.current_ID = 0  -- Counter used for assigning incrementing IDs to all objects
+    global.next_object_ID = 1  -- Counter used for assigning incrementing IDs to all objects
 
     -- Save metadata about currently registered on_nth_tick events
     global.nth_tick_events = {}  ---@type { [Tick]: NthTickEvent }
