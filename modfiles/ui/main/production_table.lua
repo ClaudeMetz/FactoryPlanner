@@ -221,7 +221,7 @@ function builders.pollution(line, parent_flow, _)
 end
 
 function builders.products(line, parent_flow, metadata)
-    for product in line:item_iterator("product") do
+    for product in line["products"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
@@ -250,7 +250,7 @@ function builders.products(line, parent_flow, metadata)
 end
 
 function builders.byproducts(line, parent_flow, metadata)
-    for byproduct in line:item_iterator("byproduct") do
+    for byproduct in line["byproducts"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
@@ -270,7 +270,7 @@ function builders.byproducts(line, parent_flow, metadata)
 end
 
 function builders.ingredients(line, parent_flow, metadata)
-    for ingredient in line:item_iterator("ingredient") do
+    for ingredient in line["ingredients"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,

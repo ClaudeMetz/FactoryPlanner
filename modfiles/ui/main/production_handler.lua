@@ -206,7 +206,7 @@ local function apply_item_options(player, options, action)
         local current_amount, item_amount = item.amount, options.item_amount or item.amount
         if item_category ~= "ingredient" then
             local other_category = (item_category == "product") and "byproduct" or "product"
-            local corresponding_item = relevant_line:find_item(other_category, {proto=item.proto})
+            local corresponding_item = relevant_line[other_category .. "s"]:find({proto=item.proto})
 
             if corresponding_item then  -- Further adjustments if item is both product and byproduct
                 -- In either case, we need to consider the sum of both types as the current amount

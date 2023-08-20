@@ -73,7 +73,7 @@ end
 
 --- Districts can't be invalid, this just cleanly validates the factories
 function District:validate()
-    self:_validate(self.first)
+    self:_validate()
 end
 
 return {init = init}

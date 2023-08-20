@@ -14,6 +14,7 @@ script.register_metatable("Fuel", Fuel)
 local function init(proto, parent)
     local object = Object.init({
         proto = proto,
+
         amount = 0,
         satisfied_amount = 0,
 

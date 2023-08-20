@@ -2,6 +2,7 @@ local Object = require("backend.data.Object")
 local Machine = require("backend.data.Machine")
 local Beacon = require("backend.data.Beacon")
 local Module = require("backend.data.Module")
+local SimpleItems = require("backend.data.SimpleItems")
 
 ---@alias ProductionType "input" | "output"
 
@@ -19,9 +20,9 @@ local Module = require("backend.data.Module")
 ---@field comment string
 ---@field total_effects ModuleEffects
 ---@field effects_tooltip LocalisedString
----@field first_product SimpleItem?
----@field first_byproduct SimpleItem?
----@field first_ingredient SimpleItem?
+---@field products SimpleItems
+---@field byproducts SimpleItems
+---@field ingredients SimpleItems
 ---@field power number
 ---@field pollution number
 ---@field production_ratio number?
@@ -47,9 +48,9 @@ local function init(recipe_proto, production_type)
 
         total_effects = nil,
         effects_tooltip = "",
-        first_product = nil,
-        first_byproduct = nil,
-        first_ingredient = nil,
+        products = SimpleItems.init(),
+        byproducts = SimpleItems.init(),
+        ingredients = SimpleItems.init(),
         power = 0,
         pollution = 0,
         production_ratio = 0,
@@ -69,19 +70,6 @@ function Line:cleanup()
     OBJECT_INDEX[self.id] = nil
     self.machine:cleanup()
     self.beacon:cleanup()
-end
-
-
----@param item_category SimpleItemCategory
----@return fun(): SimpleItem?
-function Line:item_iterator(item_category)
-    return self:_iterator(nil, self["first_" .. item_category])
-end
-
----@param item_category SimpleItemCategory
----@param filter ObjectFilter
-function Line:find_item(item_category, filter)
-    return self:_find(filter, self["first_" .. item_category])
 end
 
 
