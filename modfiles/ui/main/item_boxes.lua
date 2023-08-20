@@ -237,9 +237,7 @@ local function refresh_item_boxes(player)
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
 
-    -- If I get the Factory this way, it goes up the subfloors for me
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-
     local relevant_floor = (player_table.preferences.show_floor_items) and
         util.context.get(player, "Floor") or factory.top_floor
     local prow_count = refresh_item_box(player, factory, relevant_floor, "product")
