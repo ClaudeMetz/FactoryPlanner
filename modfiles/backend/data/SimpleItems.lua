@@ -30,10 +30,6 @@ function SimpleItems:index()
     OBJECT_INDEX[self.id] = self
 end
 
-function SimpleItems:cleanup()
-    OBJECT_INDEX[self.id] = nil
-end
-
 
 ---@param item SimpleItem
 function SimpleItems:insert(item)

@@ -281,7 +281,7 @@ function solver.set_line_result(result)
     line.pollution = result.pollution
 
     if line.production_ratio == 0 and line.subfloor == nil then
-        local recipe_proto = line.recipe.proto
+        local recipe_proto = line.recipe_proto
         set_zeroed_items(line, "products", recipe_proto.products)
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
     else

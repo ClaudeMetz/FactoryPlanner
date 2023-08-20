@@ -10,6 +10,7 @@ script.register_metatable("District", District)
 ---@return District
 local function init()
     local object = Object.init({
+        first = nil
     }, "District", District)  --[[@as District]]
     return object
 end
@@ -32,7 +33,6 @@ end
 ---@param factory Factory
 function District:remove(factory)
     factory.parent = nil
-    factory:cleanup()
     self:_remove(factory)
 end
 

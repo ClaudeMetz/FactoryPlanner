@@ -34,10 +34,6 @@ function Product:index()
     OBJECT_INDEX[self.id] = self
 end
 
-function Product:cleanup()
-    OBJECT_INDEX[self.id] = nil
-end
-
 
 -- Returns the amount needed to satisfy this item
 ---@return number required_amount

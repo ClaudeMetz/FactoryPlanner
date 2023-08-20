@@ -17,7 +17,7 @@ local Module = require("backend.data.Module")
 local migration = {}
 
 function migration.global()
-    global.current_ID = 0
+    global.next_object_ID = 1
     global.mod_version = nil
 end
 

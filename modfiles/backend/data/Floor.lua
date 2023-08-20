@@ -10,8 +10,8 @@ local Line = require("backend.data.Line")
 ---@field parent LineParent
 ---@field next LineObject?
 ---@field previous LineObject?
----@field first LineObject?
 ---@field level integer
+---@field first LineObject?
 ---@field products SimpleItems
 ---@field byproducts SimpleItems
 ---@field ingredients SimpleItems
@@ -27,6 +27,7 @@ script.register_metatable("Floor", Floor)
 local function init(level)
     local object = Object.init({
         level = level,
+        first = nil,
 
         products = SimpleItems.init(),
         byproducts = SimpleItems.init(),
@@ -44,11 +45,6 @@ function Floor:index()
     for line in self:iterator() do line:index() end
 end
 
-function Floor:cleanup()
-    OBJECT_INDEX[self.id] = nil
-    for line in self:iterator() do line:cleanup() end
-end
-
 
 ---@param line LineObject
 ---@param relative_object LineObject?
@@ -61,7 +57,6 @@ end
 ---@param line LineObject
 function Floor:remove(line)
     line.parent = nil
-    line:cleanup()
     self:_remove(line)
 
     -- Convert floor to line in parent if only defining line remains

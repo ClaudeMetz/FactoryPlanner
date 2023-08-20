@@ -159,6 +159,8 @@ function _context.validate(player)
     local context = util.globals.player_table(player).context
     local cache = context.cache
 
+    -- Using existance in OBJECT_INDEX is valid here as this is only called after a reload,
+    -- which implies that only objects that are still in used have been re-indexed.
     if not OBJECT_INDEX[cache.main] then cache.main = nil end
     if not OBJECT_INDEX[cache.archive] then cache.archive = nil end
 

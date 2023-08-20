@@ -36,10 +36,7 @@ end
 
 function Beacon:index()
     OBJECT_INDEX[self.id] = self
-end
-
-function Beacon:cleanup()
-    OBJECT_INDEX[self.id] = nil
+    self.module_set:index()
 end
 
 

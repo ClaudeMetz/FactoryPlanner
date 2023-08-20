@@ -31,10 +31,6 @@ function Module:index()
     OBJECT_INDEX[self.id] = self
 end
 
-function Module:cleanup()
-    OBJECT_INDEX[self.id] = nil
-end
-
 
 ---@param new_amount integer
 function Module:set_amount(new_amount)

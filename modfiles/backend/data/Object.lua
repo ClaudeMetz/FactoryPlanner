@@ -5,7 +5,6 @@
 ---@field class string
 ---@field valid boolean
 ---@field parent Object?
----@field first Object?
 ---@field next Object?
 ---@field previous Object?
 
@@ -19,11 +18,9 @@ local Object = {}  -- class annotation purposefully not attached
 ---@param metatable table
 ---@return Object
 function Object.init(data, class, metatable)
-    global.current_ID = global.current_ID + 1
-
     local object = ftable.shallow_merge{
         {
-            id = global.current_ID,
+            id = global.next_object_ID,
             class = class,
             valid = true,
             parent = nil,
@@ -32,6 +29,7 @@ function Object.init(data, class, metatable)
         },
         data
     }
+    global.next_object_ID = global.next_object_ID + 1
 
     setmetatable(object, metatable)
     OBJECT_INDEX[object.id] = object
