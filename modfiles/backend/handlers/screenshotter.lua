@@ -50,6 +50,17 @@ local actions = {
     player_setup = function(player)
         local player_table = util.globals.player_table(player)
 
+        -- Subfactories
+        local export_string = "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"
+        util.porter.add_subfactories(player, export_string)
+
+        local hotness = player_table.district.first.next.next
+        local trash = hotness.next.next
+        trash.archived = true
+        util.context.set(player, hotness)
+        solver.update(player, hotness)
+        util.raise.refresh(player, "all", nil)
+
         -- Mod settings
         settings.get_player_settings(player)["fp_display_gui_button"] = {value = false}
         settings.get_player_settings(player)["fp_products_per_row"] = {value = 5}
@@ -73,19 +84,6 @@ local actions = {
         set_machine_default(player, "assembling-machine-2", "crafting")
         set_machine_default(player, "assembling-machine-3", "advanced-crafting")
         set_machine_default(player, "assembling-machine-2", "crafting-with-fluid")
-
-        -- Subfactories
-        local export_string = "eNrtWmlTGk0Q/iup/WrAmdk5dqzKBy9CMBqOiMGURe0uA67uxR4CWv73t4dDycELmIQchR8smenu6e55+hp5MIKo075TSepFobFn4CIucma8NtQwjpKsDbupyoy9B8OxUzUlsBAQdH3Pgc+oiEmR68+2m0XJKPbtMFTJs6jH10aaO5NdT6XG3ucHI7QDLeuzF/TeeJkKdr0wVUmmkqtX9SjKUhCXeYFKXdsHOo5eG2GUaV4Ddhw/V3HihUC29wDSq0nUyd2xjpFzo9zZuuvbqWY5jHwfVrV9sJpFcbvrR1Gi6d97oVqRz1d3yjf28PN+aSxljqExM3MEq09GNgLlg2Wjf8mm54uLJ4qCwELqeip0VSG23durV8dDO4jB0lWt/mwgddZv3kh00rvfP61nlo+HzaDcFajptlo8eVdHpXr/ZFiN89Fu89BUoi8Pq4KNbt+a9aPB6W1d3e87528lOwirTuukZWaoerJ7FF2/Ld2822kcVvYDUS4djM6Sd42oV/Uq5fsD1izv1O5rOzHF6CD1OlV1MBpUZat8LUpHlZ3+Rxm3hmrwqey0LPDrIPU/XKDz89HlWcm9rJ8PT6yb3olrssagVcnNPOf3fdmMeD5Cl4qjo9LOvtsXF6XBG7AW7Ivxze2xtq9WV7sjPCz135ea936zciyc2ik/bjQuDvuN/F4NA8L52zsxYHfm5en5IHnfov7gw30PtfrlXInBbqW+M0rywfta7ejopn5U60asMtxJz6ulVtit3bxr9Afmh9uzc8t29m/D3qBaa5YvysllBZXdXkgjfNBKjuWnZlgJT68vKubZSdTyW0ooJ7xonX/68Gm3l3thtWPfJQ2eVT/azZvd/YPgGF1+NK6+D1AIbIBDFunFKVAWwAO8kXoAD6/rqY6xlyW5ApyMYs2iYaURaAdRHsIB2ALQJKqfe4nqtGerD0ZHdeFGOm1nBEzT5a+4HIi89lSlru2nahorU9xPjp0hfWbR49XLwgysn7GN9yZpbw3yRLlePCb6ES+6dqZ6Olz3DDexu5kX9rTuzyLaUz9PVvTBMz3qEwW074HyTs1EdiKt+9iBIEglrgozuwdLGIGTA9u9nhr3td4gVgWODyoUplQFcx2luxGc1fa9wMuezoeClPuqPS1Kk0/pqjC887JRYcKzXJN5pnlA0mePnY5F/Q9kptq6T5wqiLNRO/V1kdtDX0tqgFVzyfd06tpHDWXb1QX6W9umO0uM6cbtKeGcJdYL3ZnGSnVW9uOYev5Y8mIHkjUdePBk8obz1VyWmeJ21TSjq+zKiSGxPf9vzALk12eBxV3Pl5BCX0GKrB6TK2Jq4SUtAhCxWFFgSixEKDItaRFmUUsKS1KKCRESE4mIZRJkYsI2BjYv0VGReZsuPJO/t4hbHXFLbmoB7jglRYsB8BAmCEuqYUYoAI8Kgjg2JeOUYYo5woxvEHdKsyWeW+jmSWiPgbNNeH8y/Fa6sAUgnGGQcEG5kJwJRpngnOlUxyWzLAoZUDDCLcYot8TmcPidJnILxRe1jOQPbhnXh/uquPgzEH+15DGIfPMYtFaQ2J07G7rmTsH1Ejf3su2Mup1RtzPqT51RVwqxhcnGKn6RbEwC0wVGGHMuucmEIAIxJCy88QYvCqFj+C1ZYztgvKzDW3pjC0BoEV5kJuIwVGBpUsEtJDiCYkctRAljkhNTYKDC8HuDDZ4bxQCCgms7m+7stghcF4FL72oB9kyBaBFZMMSaFpWSYkakhHlWYxCZmJuYcikI3+iEm2ZK+YXYh6taWqj0fxN/Z7+07jQ+r/Cf2Sv9ltli2yttpFdaFlmLnmCRwEXolXRegMYIEgST1OSwYkLVohAjkCEYIpLIjT5BpBmEbcFJVniD/bmJYv0CNfH8T0oS3Vx79juHRL7XKYx3l9W+axV4ru3P3zIr6kd2aIcJklxfMSGMmJxgCiO3ZSFMqcDQqEhMoVvhFI1rwtN0rE99/JVV8+c/VSzDz6pTgyUhMBiBMBACXCSJfjSWQjBTok0WTjAgApuSwtiwZRhw7BTq1hgzvysqnqpn4IW6d+sknu+vqfe/9yaHfw3Q18r40AwWpf4xOTYFRD9kA667Q0ZgOKFMSAmjCcwlSJq/+AnuR76PlcZeRyV6Nrt69S9948z++425evwPtGH0aA=="
-        util.porter.add_subfactories(player, export_string)
-
-        local trash = Factory.get_by_gui_position(player_table.factory, "Subfactory", 5)
-        Factory.remove(player_table.factory, trash)
-        Factory.add(player_table.archive, trash)
-
-        local hotness = Factory.get_by_gui_position(player_table.factory, "Subfactory", 3)
-        util.context.set_subfactory(player, hotness)
-        solver.update(player, hotness)
-        util.raise.refresh(player, "all", nil)
 
         -- Research
         player.force.technologies["oil-processing"].researched=true
@@ -154,10 +152,8 @@ local actions = {
     teardown_04_recipe_picker = (function(player) modal_teardown(player, "04_recipe_picker") end),
 
     setup_05_machine = function(player)
-        local floor = util.globals.context(player).floor
-        local line = Collection.get_by_gui_position(floor.Line, 2)  ---@cast line -nil
-        local modal_data = {floor_id=floor.id, line_id=line.id, recipe_name=line.recipe.proto.localised_name}
-        open_modal(player, "machine", modal_data)
+        local floor = util.context.get(player, "Floor")
+        open_modal(player, "machine", {machine_id=floor.first.next.machine.id})
     end,
     teardown_05_machine = (function(player) modal_teardown(player, "05_machine") end),
 
@@ -174,8 +170,11 @@ local actions = {
         local import_handler = get_handler("ui.dialogs.porter_dialog", 1, "on_gui_click", "import_subfactories")
         import_handler(player, nil, nil)
 
-        modal_elements.subfactory_checkboxes["tmp_1"].state = false
-        modal_elements.subfactory_checkboxes["tmp_3"].state = false
+        local toggle = true
+        for _, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+            checkbox.state = toggle
+            toggle = not toggle
+        end
         modal_elements.master_checkbox.state = false
     end,
     teardown_06_import = (function(player) modal_teardown(player, "06_import") end),

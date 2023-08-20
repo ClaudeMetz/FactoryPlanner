@@ -3,7 +3,7 @@ local District = require("backend.data.District")
 local loader = require("backend.handlers.loader")
 local migrator = require("backend.handlers.migrator")
 require("backend.handlers.prototyper")
---require("backend.handlers.screenshotter")
+require("backend.handlers.screenshotter")
 
 require("backend.calculation.solver")
 
