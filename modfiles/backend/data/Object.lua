@@ -45,6 +45,8 @@ function Object.methods()
 end
 
 
+---@alias NeighbourDirection "next" | "previous"
+
 ---@alias ObjectFilter {id: integer, archived: boolean}
 local filter_options = {"id", "archived", "proto"}
 
@@ -62,21 +64,6 @@ local function match(object, filter)
     end
 
     return true
-end
-
-
----@alias NeighbourDirection "next" | "previous"
-
----@private
----@param pivot Object?
----@param direction NeighbourDirection?
----@return Object? pivot
-function methods:_actual_pivot(pivot, direction)
-    if direction ~= nil and pivot ~= nil then
-        return pivot[direction]  -- can be nil
-    else
-        return self.first
-    end
 end
 
 
@@ -173,7 +160,7 @@ end
 ---@param direction NeighbourDirection?
 ---@return Object? object
 function methods:_find(filter, pivot, direction)
-    local next_object = self:_actual_pivot(pivot, direction)
+    local next_object = pivot or self.first
     while next_object ~= nil do
         if match(next_object, filter) then return next_object end
         next_object = next_object[direction or "next"]
@@ -182,15 +169,11 @@ function methods:_find(filter, pivot, direction)
 end
 
 ---@protected
----@param filter ObjectFilter?
----@param pivot Object?
----@param direction NeighbourDirection?
 ---@return Object? last_object
-function methods:_find_last(filter, pivot, direction)
-    local last_object = self:_actual_pivot(pivot, direction)
-    while last_object ~= nil do
-        local matched = match(last_object, filter)
-        if matched then last_object = last_object[direction or "next"] end
+function methods:_find_last()
+    local last_object = self.first
+    while last_object and last_object.next ~= nil do
+        last_object = last_object.next
     end
     return last_object
 end
@@ -202,7 +185,7 @@ end
 ---@param direction NeighbourDirection?
 ---@return fun(): Object?
 function methods:_iterator(filter, pivot, direction)
-    local next_object = self:_actual_pivot(pivot, direction)
+    local next_object = pivot or self.first
     return function()
         while next_object ~= nil do
             local matched = match(next_object, filter)

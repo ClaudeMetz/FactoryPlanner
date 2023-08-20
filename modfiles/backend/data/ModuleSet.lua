@@ -82,12 +82,9 @@ function ModuleSet:find(filter, pivot, direction)
     return self:_find(filter, pivot, direction)  --[[@as Module?]]
 end
 
----@param filter ObjectFilter?
----@param pivot Module?
----@param direction NeighbourDirection?
 ---@return Module?
-function ModuleSet:find_last(filter, pivot, direction)
-    return self:_find_last(filter, pivot, direction)  --[[@as Module?]]
+function ModuleSet:find_last()
+    return self:_find_last()  --[[@as Module?]]
 end
 
 ---@param filter ObjectFilter?
