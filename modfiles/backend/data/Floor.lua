@@ -1,4 +1,5 @@
 local Object = require("backend.data.Object")
+local SimpleItems = require("backend.data.SimpleItems")
 local Line = require("backend.data.Line")
 
 ---@alias LineObject Line | Floor
@@ -11,9 +12,9 @@ local Line = require("backend.data.Line")
 ---@field previous LineObject?
 ---@field first LineObject?
 ---@field level integer
----@field first_product SimpleItem?
----@field first_byproduct SimpleItem?
----@field first_ingredient SimpleItem?
+---@field products SimpleItems
+---@field byproducts SimpleItems
+---@field ingredients SimpleItems
 ---@field power number
 ---@field pollution number
 ---@field machine_count integer
@@ -27,9 +28,9 @@ local function init(level)
     local object = Object.init({
         level = level,
 
-        first_product = nil,
-        first_byproduct = nil,
-        first_ingredient = nil,
+        products = SimpleItems.init(),
+        byproducts = SimpleItems.init(),
+        ingredients = SimpleItems.init(),
         power = 0,
         pollution = 0,
         machine_count = 0
@@ -99,12 +100,6 @@ end
 ---@return fun(): LineObject?
 function Floor:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
-end
-
----@param item_category SimpleItemCategory
----@return fun(): SimpleItem?
-function Floor:item_iterator(item_category)
-    return self:_iterator(nil, self["first_" .. item_category])
 end
 
 ---@param filter ObjectFilter?
@@ -194,7 +189,7 @@ function Floor:check_product_compatibility(object)  -- TODO test once solver is 
     -- The triple loop is crappy, but it's the simplest way to check
     for _, product in pairs(relevant_line.recipe_proto.products) do
         for line in self:iterator() do
-            for ingredient in line:item_iterator("ingredient") do
+            for ingredient in line.ingredients:iterator() do
                 if ingredient.proto.type == product.type and ingredient.proto.name == product.name then
                     return true
                 end
@@ -234,7 +229,7 @@ function Floor:pack()
     return {
         class = self.class,
         level = self.level,
-        lines = self:_pack(self.first)
+        lines = self:_pack()
     }
 end
 
@@ -252,7 +247,7 @@ end
 
 ---@return boolean valid
 function Floor:validate()
-    self.valid = self:_validate(self.first)
+    self.valid = self:_validate()
     return self.valid
 end
 
@@ -260,7 +255,7 @@ end
 ---@return boolean success
 function Floor:repair(player)
     -- TODO check how this works with subfloors, and the first line being invalid
-    self:_repair(self.first, player)  -- always makes it valid
+    self:_repair(player)  -- always makes it valid
 
     self.valid = true
     return self.valid

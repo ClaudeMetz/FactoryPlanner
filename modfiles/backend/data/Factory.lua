@@ -193,7 +193,7 @@ function Factory:pack()
         matrix_free_items = prototyper.util.simplify_prototypes(self.matrix_free_items, "type"),
         blueprints = self.blueprints,
         notes = self.notes,
-        products = self:_pack(self.first),
+        products = self:_pack(),
         top_floor = self.top_floor:pack()
     }
 end
@@ -230,7 +230,7 @@ function Factory:validate()
     local previous_validity = self.valid
     self.valid = true
 
-    self.valid = self:_validate(self.first) and self.valid
+    self.valid = self:_validate() and self.valid
     self.valid = self.top_floor:validate() and self.valid
 
     local matrix_free_items, valid = prototyper.util.validate_prototype_objects(self.matrix_free_items, "type")
@@ -250,7 +250,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Factory:repair(player)
-    self:_repair(self.first, player)
+    self:_repair(player)
     self.top_floor:repair(player)
 
     -- Remove any unrepairable free items so the factory remains valid

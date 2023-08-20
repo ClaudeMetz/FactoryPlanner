@@ -41,7 +41,7 @@ function _actions.tutorial_tooltip(action_name, active_limitations, player)
         end
     end
 
-    return tooltip
+    return (table_size(tooltip) > 2) and tooltip or ""
 end
 
 ---@param data table

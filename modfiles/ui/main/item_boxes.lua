@@ -71,7 +71,7 @@ local function refresh_item_box(player, factory, floor, item_category)
         and util.actions.tutorial_tooltip(action, nil, player) or nil
 
     local real_products = (not shows_floor_items and item_category == "product")
-    local item_iterator = (real_products) and factory:iterator() or floor:item_iterator(item_category)
+    local item_iterator = (real_products) and factory:iterator() or floor[item_category .. "s"]:iterator()
 
     for item in item_iterator do
         local required_amount = (item.class == "Product") and item:get_required_amount() or nil
@@ -201,7 +201,7 @@ local function put_ingredients_into_cursor(player, _, _)
         or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
     local ingredients = {}
-    for ingredient in relevant_floor:item_iterator("ingredient") do
+    for ingredient in relevant_floor["ingredients"]:iterator() do
         if ingredient.proto.type == "item" then
             ingredients[ingredient.proto.name] = ingredient.amount
         end

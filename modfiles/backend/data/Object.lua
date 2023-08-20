@@ -73,8 +73,7 @@ end
 ---@return Object? pivot
 function methods:_actual_pivot(pivot, direction)
     if direction ~= nil and pivot ~= nil then
-        if pivot[direction] ~= nil then return pivot[direction]
-        else return nil end  -- nothing exists in this direction
+        return pivot[direction]  -- can be nil
     else
         return self.first
     end
@@ -232,11 +231,10 @@ end
 ---@field class string
 
 ---@protected
----@param first_object Object?
 ---@return PackedObject[] packed_objects
-function methods:_pack(first_object)
+function methods:_pack()
     local packed_objects = {}
-    for object in self:_iterator(nil, first_object) do
+    for object in self:_iterator() do
         table.insert(packed_objects, object:pack())
     end
     return packed_objects
@@ -265,11 +263,10 @@ end
 
 
 ---@protected
----@param first_object Object?
 ---@return boolean valid
-function methods:_validate(first_object)
+function methods:_validate()
     local valid = true
-    for object in self:_iterator(nil, first_object) do
+    for object in self:_iterator() do
         -- Stays true until a single dataset is invalid, then stays false
         valid = object:validate() and valid
     end
@@ -277,9 +274,9 @@ function methods:_validate(first_object)
 end
 
 ---@protected
----@param first_object Object?
-function methods:_repair(first_object, player)
-    for object in self:_iterator(nil, first_object) do
+---@param player LuaPlayer
+function methods:_repair(player)
+    for object in self:_iterator() do
         if not object.valid and not object:repair(player) then
             object.parent:remove(object)
         end

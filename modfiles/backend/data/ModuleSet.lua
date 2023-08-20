@@ -98,6 +98,14 @@ function ModuleSet:iterator(filter, pivot, direction)
     return self:_iterator(filter, pivot, direction)
 end
 
+---@param filter ObjectFilter?
+---@param direction NeighbourDirection?
+---@param pivot Module?
+---@return number count
+function ModuleSet:count(filter, pivot, direction)
+    return self:_count(filter, pivot, direction)
+end
+
 
 ---@class ModuleNormalizeFeatures
 ---@field compatibility boolean?
@@ -248,7 +256,7 @@ end
 function ModuleSet:pack()
     return {
         class = self.class,
-        modules = self:_pack(self.first)
+        modules = self:_pack()
     }
 end
 
@@ -266,7 +274,7 @@ end
 
 ---@return boolean valid
 function ModuleSet:validate()
-    self.valid = self:_validate(self.first)
+    self.valid = self:_validate()
 
     if self.valid and self.parent.valid then
         if not self.module_count or not self.empty_slots then  -- when validating an unpacked ModuleSet
@@ -284,7 +292,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function ModuleSet:repair(player)
-    self:_repair(self.first, player)
+    self:_repair(player)
     self:normalize({trim=true, sort=true, effects=true})
 
     self.valid = true
