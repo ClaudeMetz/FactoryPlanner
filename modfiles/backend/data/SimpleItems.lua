@@ -42,7 +42,7 @@ function SimpleItems:insert(item)
 end
 
 function SimpleItems:clear()
-    self.first = nil
+    self.items = {}
     self.amount = 0
 end
 

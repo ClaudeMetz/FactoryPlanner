@@ -367,7 +367,7 @@ function generator.recipes.generate()
         local machine_category = global.prototypes.machines[proto.category]  ---@type { [string]: FPMachinePrototype }
         -- Avoid any recipes that have no machine to produce them, or are irrelevant
         if machine_category ~= nil and not generator_util.is_irrelevant_recipe(proto) then
-            local recipe = {  ---@type FPUnformattedRecipePrototype
+            local recipe = {
                 name = proto.name,
                 localised_name = proto.localised_name,
                 sprite = "recipe/" .. proto.name,

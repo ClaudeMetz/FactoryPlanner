@@ -1,4 +1,5 @@
 local Object = require("backend.data.Object")
+local Line = require("backend.data.Line")
 
 ---@alias ProductDefinedBy "amount" | "belts" | "lanes"
 
@@ -65,7 +66,7 @@ end
 ---@param object CopyableObject
 ---@return boolean success
 ---@return string? error
-function Product:paste(object)  -- TODO fix
+function Product:paste(object)
     if object.class == "Product" or object.class == "SimpleItem" or object.class == "Fuel" then
         -- Avoid duplicate items, but allow pasting over the same item proto
         local existing_item = self.parent:find({proto=object.proto})
@@ -83,25 +84,24 @@ function Product:paste(object)  -- TODO fix
 
         return true, nil
 
-    elseif object.class == "Line" then  ---@cast object LineObject
-        local relevant_line = (object.class == "Floor") and object.first or object  --[[@as Line]]
+    -- TODO This is all kinds of screwed up
+    --[[ elseif object.class == "Line" then  ---@cast object LineObject
+        local relevant_line = (object.class == "Floor") and object.first or object  --[[@as Line] ]
         for product in relevant_line.products:iterator() do
-            local fake_item = {proto={name=""}, parent=self.parent, class=self.class}
-            Item.paste(fake_item, product)  -- avoid duplicating existing items
+            local dummy_product = init({})
+            self.parent:insert(dummy_product)
+            dummy_product:paste(product)  -- avoids duplicating existing items
         end
 
-        local top_floor = Subfactory.get(self.parent, "Floor", 1)  -- line count can be 0
-        if object.class == "Floor" then  -- if the line has a subfloor, paste its contents on the top floor
-            local fake_line = {parent=top_floor, class="Line", gui_position=top_floor.Line.count}
+        local top_floor = self.parent.top_floor  --[[@as Floor] ]
+        if object.class == "Floor" then  -- if the object is a floor, paste all its lines
             for line in object:iterator() do
-                Line.paste(fake_line, line)
-                fake_line.gui_position = fake_line.gui_position + 1
+                top_floor:insert(line)
             end
-        else  -- if the line has no subfloor, just straight paste it onto the top floor
-            local fake_line = {parent=top_floor, class="Line", gui_position=top_floor.Line.count}
-            Line.paste(fake_line, object)
+        else  -- if the object is a basic line, just straight paste it
+            top_floor:insert(object)
         end
-        return true, nil
+        return true, nil ]]
     else
         return false, "incompatible_class"
     end

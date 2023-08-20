@@ -160,8 +160,9 @@ end
 -- Returns a new table that only contains the given prototypes' identifiers
 ---@param prototype AnyFPPrototype
 ---@param category_designation CategoryDesignation?
----@return FPPackedPrototype
+---@return FPPackedPrototype?
 function prototyper.util.simplify_prototype(prototype, category_designation)
+    if not prototype then return nil end
     return { name = prototype.name, category = prototype[category_designation],
         data_type = prototype.data_type, simplified = true }
 end
