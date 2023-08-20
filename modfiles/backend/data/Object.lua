@@ -160,6 +160,7 @@ end
 ---@param direction NeighbourDirection?
 ---@return Object? object
 function methods:_find(filter, pivot, direction)
+    if not pivot and direction then return nil end
     local next_object = pivot or self.first
     while next_object ~= nil do
         if match(next_object, filter) then return next_object end
@@ -185,7 +186,7 @@ end
 ---@param direction NeighbourDirection?
 ---@return fun(): Object?
 function methods:_iterator(filter, pivot, direction)
-    local next_object = pivot or self.first
+    local next_object = (not pivot and not direction) and self.first or pivot
     return function()
         while next_object ~= nil do
             local matched = match(next_object, filter)

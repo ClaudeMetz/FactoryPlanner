@@ -126,8 +126,8 @@ end
 ---@alias ComponentDataSet { proto: FPPrototype, amount: number }
 
 ---@class ComponentData
----@field machines { [string]: ComponentDataSet}
----@field modules { [string]: ComponentDataSet}
+---@field machines { [string]: ComponentDataSet }
+---@field modules { [string]: ComponentDataSet }
 
 -- Returns the machines and modules needed to actually build this floor
 ---@param component_table ComponentData?
