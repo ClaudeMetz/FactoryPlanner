@@ -16,7 +16,7 @@ local function paste_line(player, _, event)
     floor:insert(dummy_line)
 
     if util.clipboard.paste(player, dummy_line) then
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         util.raise.refresh(player, "subfactory", nil)
     end
 end

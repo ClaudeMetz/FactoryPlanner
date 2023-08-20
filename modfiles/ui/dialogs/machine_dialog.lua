@@ -193,7 +193,7 @@ local function close_machine_dialog(player, action)
     if action == "submit" then
         machine.module_set:normalize({sort=true})
 
-        solver.update(player, util.context.get(player, "Factory"))
+        solver.update(player)
         util.raise.refresh(player, "subfactory", nil)
 
     else  -- action == "cancel"

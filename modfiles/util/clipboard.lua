@@ -46,7 +46,7 @@ function _clipboard.paste(player, target)
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
-            solver.update(player, util.context.get(player, "Factory"))
+            solver.update(player)
             util.raise.refresh(player, "subfactory", nil)
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
