@@ -3,7 +3,7 @@
 local migration = {}
 
 function migration.global()
-    global.tutorial_subfactory_validity = nil
+    global.tutorial_factory_validity = nil
 
     local data_types = {"machines", "recipes", "items", "fuels", "belts", "wagons", "modules", "beacons"}
     for _, data_type in pairs(data_types) do global["all_" .. data_type] = nil end
@@ -120,7 +120,7 @@ function migration.player_table(player_table)
     end
 end
 
-function migration.packed_subfactory(packed_subfactory)
+function migration.packed_factory(packed_subfactory)
     for _, product in pairs(packed_subfactory.Product.objects) do
         product.proto = {name=product.proto.name, category=product.proto.type, data_type="items", simplified=true}
         if product.required_amount.belt_proto then

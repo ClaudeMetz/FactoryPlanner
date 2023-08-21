@@ -24,10 +24,10 @@ local function add_utility_box(player, modal_elements, type, show_tooltip, show_
     local scope_switch = nil
     if show_switch then
         local utility_scope = util.globals.preferences(player).utility_scopes[type]
-        local switch_state = (utility_scope == "Subfactory") and "left" or "right"
+        local switch_state = (utility_scope == "Factory") and "left" or "right"
         scope_switch = flow_title_bar.add{type="switch", switch_state=switch_state,
             tags={mod="fp", on_gui_switch_state_changed="utility_change_scope", utility_type=type},
-            left_label_caption={"fp.pu_subfactory", 1}, right_label_caption={"fp.pu_floor", 1}}
+            left_label_caption={"fp.pu_factory", 1}, right_label_caption={"fp.pu_floor", 1}}
     end
 
     return bordered_frame, flow_custom, scope_switch
@@ -36,7 +36,7 @@ end
 
 local utility_structures = {}
 
-local function update_request_button(player, modal_data, subfactory)
+local function update_request_button(player, modal_data, factory)
     local modal_elements = modal_data.modal_elements
 
     local button_enabled, switch_enabled = true, true
@@ -44,7 +44,7 @@ local function update_request_button(player, modal_data, subfactory)
     local tooltip = ""  ---@type LocalisedString
     local font_color = {}
 
-    if subfactory.item_request_proxy ~= nil then
+    if factory.item_request_proxy ~= nil then
         caption = {"fp.cancel_request"}
         font_color = {0.8, 0, 0}
         switch_enabled = false
@@ -116,7 +116,7 @@ function utility_structures.components(player, modal_data)
         component_row.clear()
 
         local inventory_contents, component_data = modal_data.inventory_contents, nil
-        if scope == "Subfactory" then
+        if scope == "Factory" then
             component_data = util.context.get(player, "Factory").top_floor:get_component_data()
         elseif scope == "Floor" then
             component_data = util.context.get(player, "Floor")--[[@as Floor]]:get_component_data()
@@ -244,7 +244,7 @@ function utility_structures.notes(player, modal_data)
 
     local notes = util.context.get(player, "Factory").notes
     local text_box = utility_box.add{type="text-box", text=notes,
-        tags={mod="fp", on_gui_text_changed="subfactory_notes"}}
+        tags={mod="fp", on_gui_text_changed="factory_notes"}}
     text_box.style.size = {500, 250}
     text_box.word_wrap = true
     text_box.style.top_margin = -2
@@ -252,7 +252,7 @@ end
 
 
 local function handle_scope_change(player, tags, event)
-    local utility_scope = (event.element.switch_state == "left") and "Subfactory" or "Floor"
+    local utility_scope = (event.element.switch_state == "left") and "Factory" or "Floor"
     util.globals.preferences(player).utility_scopes[tags.utility_type] = utility_scope
 
     local modal_data = util.globals.modal_data(player)
@@ -375,7 +375,7 @@ end
 
 local function close_utility_dialog(player, _)
     util.globals.modal_data(player).utility_inventory.destroy()
-    util.raise.refresh(player, "subfactory_info", nil)
+    util.raise.refresh(player, "factory_info", nil)
 end
 
 
@@ -423,7 +423,7 @@ listeners.gui = {
     },
     on_gui_text_changed = {
         {
-            name = "subfactory_notes",
+            name = "factory_notes",
             handler = (function(player, _, event)
                 util.context.get(player, "Factory").notes = event.element.text
             end)

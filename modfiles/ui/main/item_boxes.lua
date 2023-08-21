@@ -172,19 +172,19 @@ local function handle_item_button_click(player, tags, action)
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
         local modal_data = {
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
             text = {"fp.options_item_text", item.proto.localised_name},
-            submission_handler_name = "scale_subfactory_by_ingredient_amount",
+            submission_handler_name = "scale_factory_by_ingredient_amount",
             item_id = item.id,
             fields = {
                 {
                     type = "numeric_textfield",
                     name = "item_amount",
                     caption = {"fp.options_item_amount"},
-                    tooltip = {"fp.options_subfactory_ingredient_amount_tt"},
+                    tooltip = {"fp.options_factory_ingredient_amount_tt"},
                     text = item.amount,
                     width = 140,
                     focus = true
@@ -220,7 +220,7 @@ local function put_ingredients_into_cursor(player, _, _)
 end
 
 
-local function scale_subfactory_by_ingredient_amount(player, options, action)
+local function scale_factory_by_ingredient_amount(player, options, action)
     if action == "submit" then
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
         local item = OBJECT_INDEX[util.globals.modal_data(player).item_id]
@@ -234,7 +234,7 @@ local function scale_subfactory_by_ingredient_amount(player, options, action)
         end
 
         solver.update(player, factory)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
     end
 end
 
@@ -351,13 +351,13 @@ listeners.misc = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {item_boxes=true, production=true, subfactory=true, all=true}
+        local triggers = {item_boxes=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_item_boxes(player) end
     end)
 }
 
 listeners.global = {
-    scale_subfactory_by_ingredient_amount = scale_subfactory_by_ingredient_amount
+    scale_factory_by_ingredient_amount = scale_factory_by_ingredient_amount
 }
 
 return { listeners }

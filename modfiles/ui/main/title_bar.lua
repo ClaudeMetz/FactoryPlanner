@@ -17,10 +17,10 @@ local function refresh_title_bar(player)
     local ui_state = util.globals.ui_state(player)
     if ui_state.main_elements.main_frame == nil then return end
 
-    local subfactory = util.context.get(player, "Factory")   --[[@as Factory?]]
+    local factory = util.context.get(player, "Factory")   --[[@as Factory?]]
     local title_bar_elements = ui_state.main_elements.title_bar
-    -- Disallow switching to compact view if the selected subfactory is nil or invalid
-    title_bar_elements.switch_button.enabled = (subfactory and subfactory.valid or false)
+    -- Disallow switching to compact view if the selected factory is nil or invalid
+    title_bar_elements.switch_button.enabled = (factory and factory.valid or false)
 
     title_bar_elements.pause_button.enabled = (not game.is_multiplayer())
 end
@@ -127,7 +127,7 @@ listeners.misc = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {title_bar=true, subfactory=true, all=true}
+        local triggers = {title_bar=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_title_bar(player) end
     end)
 }

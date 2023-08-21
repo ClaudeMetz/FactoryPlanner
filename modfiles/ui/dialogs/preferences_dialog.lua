@@ -163,8 +163,8 @@ local function handle_checkbox_preference_change(player, tags, event)
         refresh.update_ingredient_satisfaction = (event.element.state)
         refresh.production = true  -- always refresh production
 
-    elseif preference_name == "attach_subfactory_products" then
-        refresh.subfactory_list = true
+    elseif preference_name == "attach_factory_products" then
+        refresh.factory_list = true
     end
 end
 
@@ -229,7 +229,7 @@ local function open_preferences_dialog(player, modal_data)
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
-    local general_preference_names = {"attach_subfactory_products", "show_floor_items", "fold_out_subfloors",
+    local general_preference_names = {"attach_factory_products", "show_floor_items", "fold_out_subfloors",
         "ingredient_satisfaction", "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
@@ -257,8 +257,8 @@ local function close_preferences_dialog(player, _)
         end
     end
 
-    if refresh.subfactory_list then
-        util.raise.refresh(player, "subfactory_list", nil)
+    if refresh.factory_list then
+        util.raise.refresh(player, "factory_list", nil)
     end
 
     local context_to_refresh = nil  -- don't refresh by default
@@ -276,7 +276,7 @@ local function close_preferences_dialog(player, _)
 
     if refresh.calculations then
         solver.update(player)
-        context_to_refresh = "subfactory"
+        context_to_refresh = "factory"
     end
 
     if context_to_refresh then

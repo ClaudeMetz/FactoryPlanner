@@ -16,7 +16,7 @@ llog = require("util.llog")
 
 MAGIC_NUMBERS = {
     margin_of_error = 1e-6,  -- the margin of error for floating point calculations
-    subfactory_deletion_delay = 15 * 60 * 60,  -- ticks to deletion after subfactory trashing
+    factory_deletion_delay = 15 * 60 * 60,  -- ticks to deletion after factory trashing
     modal_search_rate_limit = 10,  -- ticks between modal search runs
     effects_lower_bound = -0.8,
     effects_upper_bound = 327.67,
@@ -24,10 +24,10 @@ MAGIC_NUMBERS = {
     -- Some magic numbers to determine and calculate the dimensions of the main dialog
     frame_spacing = 12,  -- Spacing between the base frames in the main dialog
     title_bar_height = 28,  -- Height of the main dialog title bar
-    subheader_height = 36,  -- Height of the subfactory list subheader
-    list_width = 300,  -- Width of the subfactory list
-    list_element_height = 28,  -- Height of an individual subfactory list element
-    info_height = 138,  -- Height of the subfactory info frame
+    subheader_height = 36,  -- Height of the factory list subheader
+    list_width = 300,  -- Width of the factory list
+    list_element_height = 28,  -- Height of an individual factory list element
+    info_height = 138,  -- Height of the factory info frame
     item_button_size = 40,  -- Size of item box buttons
     item_box_max_rows = 4,  -- Maximum number of rows in an item box
 
@@ -35,7 +35,7 @@ MAGIC_NUMBERS = {
     recipes_per_row = 6,  -- Number of recipes per row in the recipe picker
     items_per_row = 10,  -- Number of items per row in the item picker
     groups_per_row = 6,  -- Number of groups in a row in the item picker
-    blueprint_limit = 12  -- Maxmimum number of blueprints allowed per subfactory
+    blueprint_limit = 12  -- Maxmimum number of blueprints allowed per factory
 }
 
 

@@ -373,12 +373,12 @@ local function refresh_production_table(player)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
     local production_table_elements = main_elements.production_table
-    local subfactory_valid = (factory and factory.valid)
-    local any_lines_present = (subfactory_valid) and (floor:count() > 0) or false
+    local factory_valid = (factory and factory.valid)
+    local any_lines_present = (factory_valid) and (floor:count() > 0) or false
 
     local scroll_pane_production = production_table_elements.production_scroll_pane
-    scroll_pane_production.visible = (subfactory_valid and any_lines_present)
-    if not subfactory_valid then return end
+    scroll_pane_production.visible = (factory_valid and any_lines_present)
+    if not factory_valid then return end
     scroll_pane_production.clear()
 
     local production_columns = {}
@@ -453,7 +453,7 @@ listeners.misc = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {production_table=true, production_detail=true, production=true, subfactory=true, all=true}
+        local triggers = {production_table=true, production_detail=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_table(player) end
     end)
 }

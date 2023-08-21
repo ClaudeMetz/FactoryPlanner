@@ -5,7 +5,7 @@ local function refresh_production(player, _, _)
     local factory = util.context.get(player, "Factory")
     if factory and factory.valid then
         solver.update(player, factory)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
     end
 end
 
@@ -17,7 +17,7 @@ local function paste_line(player, _, event)
 
     if util.clipboard.paste(player, dummy_line) then
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
     end
 end
 
@@ -47,34 +47,34 @@ local function refresh_production_box(player)
     if ui_state.main_elements.main_frame == nil then return end
     local production_box_elements = ui_state.main_elements.production_box
 
-    local subfactory_valid = factory and factory.valid
-    local current_level = (subfactory_valid) and floor.level or 1
-    local any_lines_present = (subfactory_valid) and (floor:count() > 0) or false
+    local factory_valid = factory and factory.valid
+    local current_level = (factory_valid) and floor.level or 1
+    local any_lines_present = (factory_valid) and (floor:count() > 0) or false
 
     production_box_elements.refresh_button.enabled =
-        (not factory.archived and subfactory_valid and any_lines_present)
-    production_box_elements.level_label.caption = (not subfactory_valid) and ""
+        (not factory.archived and factory_valid and any_lines_present)
+    production_box_elements.level_label.caption = (not factory_valid) and ""
         or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
-    production_box_elements.floor_up_button.visible = (subfactory_valid)
+    production_box_elements.floor_up_button.visible = (factory_valid)
     production_box_elements.floor_up_button.enabled = (current_level > 1)
 
-    production_box_elements.floor_top_button.visible = (subfactory_valid)
+    production_box_elements.floor_top_button.visible = (factory_valid)
     production_box_elements.floor_top_button.enabled = (current_level > 1)
 
-    production_box_elements.separator_line.visible = (subfactory_valid)
-    production_box_elements.utility_dialog_button.visible = (subfactory_valid)
+    production_box_elements.separator_line.visible = (factory_valid)
+    production_box_elements.utility_dialog_button.visible = (factory_valid)
 
     util.raise.refresh(player, "view_state", production_box_elements.view_state_table)
-    production_box_elements.view_state_table.visible = (subfactory_valid)
+    production_box_elements.view_state_table.visible = (factory_valid)
 
     -- This structure is stupid and huge, but not sure how to do it more elegantly
     production_box_elements.instruction_label.visible = false
     if not factory.archived then
         if factory == nil then
-            production_box_elements.instruction_label.caption = {"fp.production_instruction_subfactory"}
+            production_box_elements.instruction_label.caption = {"fp.production_instruction_factory"}
             production_box_elements.instruction_label.visible = true
-        elseif subfactory_valid and not any_lines_present then
+        elseif factory_valid and not any_lines_present then
             if factory:count() == 0 then
                 production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
                 production_box_elements.instruction_label.visible = true
@@ -202,7 +202,7 @@ listeners.misc = {
         end
     end),
     refresh_gui_element = (function(player, event)
-        local triggers = {production_box=true, production_detail=true, production=true, subfactory=true, all=true}
+        local triggers = {production_box=true, production_detail=true, production=true, factory=true, all=true}
         if triggers[event.trigger] then refresh_production_box(player)
         elseif event.trigger == "paste_button" then refresh_paste_button(player) end
     end)

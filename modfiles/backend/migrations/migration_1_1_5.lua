@@ -2,7 +2,7 @@
 
 local migration = {}
 
-function migration.packed_subfactory(packed_subfactory)
+function migration.packed_factory(packed_subfactory)
     local function update_lines(floor)
         for _, packed_line in ipairs(floor.Line.objects) do
             if packed_line.subfloor then

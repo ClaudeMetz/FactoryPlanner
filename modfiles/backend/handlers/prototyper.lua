@@ -7,10 +7,10 @@ prototyper = {
 
 -- The purpose of the prototyper is to recreate the global tables containing all relevant data types.
 -- It also handles some other things related to prototypes, such as updating preferred ones, etc.
--- Its purpose is to not lose any data, so if a dataset of a factory-dataset doesn't exist anymore
+-- Its purpose is to not lose any data, so if a dataset of a factory doesn't exist anymore
 -- in the newly loaded global tables, it saves the name in string-form instead and makes the
 -- concerned factory-dataset invalid. This accomplishes that invalid data is only permanently
--- removed when the user tells the subfactory to repair itself, giving him a chance to re-add the
+-- removed when the user tells the factory to repair itself, giving him a chance to re-add the
 -- missing mods. It is also a better separation of responsibilities and avoids some redundant code.
 
 -- Load order is important here: machines->recipes->items->fuels
@@ -254,7 +254,7 @@ function prototyper.util.migrate_mb_defaults(player_table)
 
     local beacon = mb_defaults.beacon
     if beacon then
-        mb_defaults.beacon = find("beacons", beacon.name, nil)  --[[@as FPBeaconPrototype ]]
+        mb_defaults.beacon = find("modules", beacon.name, nil)  --[[@as FPModulePrototype ]]
     end
 end
 

@@ -194,7 +194,7 @@ local function close_machine_dialog(player, action)
         machine.module_set:normalize({sort=true})
 
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
     else  -- action == "cancel"
         line.machine = modal_data.machine_backup

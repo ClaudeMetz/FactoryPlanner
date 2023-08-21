@@ -13,7 +13,7 @@ local function migrate_packed_modules(packed_object)
     packed_object.module_set = module_set
 end
 
-function migration.packed_subfactory(packed_subfactory)
+function migration.packed_factory(packed_subfactory)
     if packed_subfactory.icon then
         local icon_path = packed_subfactory.icon.type .. "/" .. packed_subfactory.icon.name
         packed_subfactory.name = "[img=" .. icon_path .. "] " .. packed_subfactory.name
