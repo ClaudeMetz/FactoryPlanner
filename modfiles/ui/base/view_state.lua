@@ -19,7 +19,7 @@ local function cycle_views(player, direction)
         view_state.select(player, new_view_id)
 
         local compact_view = util.globals.flags(player).compact_view
-        local refresh = (compact_view) and "compact_subfactory" or "production"
+        local refresh = (compact_view) and "compact_factory" or "production"
         util.raise.refresh(player, refresh, nil)
 
         -- This avoids the game focusing a random textfield when pressing Tab to change states
@@ -89,12 +89,8 @@ local function refresh_view_state(player, table_view_state)
     local ui_state = util.globals.ui_state(player)
 
     -- Automatically detects a timescale change and refreshes the state if necessary
-    local factory = util.context.get(player, "Factory")
-    if not factory then
-        return
-    elseif factory.current_timescale ~= ui_state.view_states.timescale then
-        view_state.rebuild_state(player)
-    end
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    if factory == nil then return end
 
     for _, view_button in ipairs(table_view_state.children) do
         local view_state = ui_state.view_states[view_button.tags.view_id]
@@ -124,7 +120,7 @@ end
 view_state = {}
 
 -- Creates metadata relevant for a whole batch of items
-function view_state.generate_metadata(player, subfactory)
+function view_state.generate_metadata(player, factory)
     local player_table = util.globals.player_table(player)
 
     local view_states = player_table.ui_state.view_states
@@ -138,9 +134,9 @@ function view_state.generate_metadata(player, subfactory)
 
     return {
         processor = processors[current_view_name],
-        timescale_inverse = 1 / subfactory.timescale,
-        timescale_string = {"fp." .. timescale_map[subfactory.timescale]},
-        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * subfactory.timescale,
+        timescale_inverse = 1 / factory.timescale,
+        timescale_string = {"fp." .. timescale_map[factory.timescale]},
+        adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * factory.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
         throughput_multiplier = 1 / throughput_divisor,
@@ -164,7 +160,7 @@ function view_state.rebuild_state(player)
     local ui_state = util.globals.ui_state(player)
     local factory = util.context.get(player, "Factory")
 
-    -- If no subfactory exists yet, choose a default timescale so the UI can build properly
+    -- If no factory exists yet, choose a default timescale so the UI can build properly
     local timescale = (factory) and timescale_map[factory.timescale] or "second"
     local singular_bol = util.globals.settings(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
@@ -246,7 +242,7 @@ listeners.gui = {
                 view_state.select(player, tags.view_id)
 
                 local compact_view = util.globals.flags(player).compact_view
-                local refresh = (compact_view) and "compact_subfactory" or "production"
+                local refresh = (compact_view) and "compact_factory" or "production"
                 util.raise.refresh(player, refresh, nil)
             end)
         }

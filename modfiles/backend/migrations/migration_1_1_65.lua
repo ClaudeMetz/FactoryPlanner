@@ -10,7 +10,7 @@ function migration.player_table(player_table)
     end
 end
 
-function migration.packed_subfactory(packed_subfactory)
+function migration.packed_factory(packed_subfactory)
     packed_subfactory.blueprints = {}
 end
 

@@ -8,7 +8,7 @@ local function handle_line_move_click(player, tags, event)
     line.parent:shift(line, tags.direction, spots_to_shift)
 
     solver.update(player)
-    util.raise.refresh(player, "subfactory", nil)
+    util.raise.refresh(player, "factory", nil)
 end
 
 local function handle_recipe_click(player, tags, action)
@@ -50,14 +50,14 @@ local function handle_recipe_click(player, tags, action)
     elseif action == "toggle" then
         relevant_line.active = not relevant_line.active
         solver.update(player, factory)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
     elseif action == "delete" then
         util.context.remove(player, line)
         line.parent:remove(line)
 
         solver.update(player, factory)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
@@ -70,13 +70,13 @@ local function handle_percentage_change(player, tags, event)
     local relevant_line = (line.class == "Floor") and line.first or line
     relevant_line.percentage = tonumber(event.element.text) or 100
 
-    util.globals.ui_state(player).flags.recalculate_on_subfactory_change = true -- set flag to recalculate if necessary
+    util.globals.ui_state(player).flags.recalculate_on_factory_change = true -- set flag to recalculate if necessary
 end
 
 local function handle_percentage_confirmation(player, _, _)
-    util.globals.ui_state(player).flags.recalculate_on_subfactory_change = false  -- reset this flag as we refresh below
+    util.globals.ui_state(player).flags.recalculate_on_factory_change = false  -- reset this flag as we refresh below
     solver.update(player)
-    util.raise.refresh(player, "subfactory", nil)
+    util.raise.refresh(player, "factory", nil)
 end
 
 
@@ -104,7 +104,7 @@ local function handle_machine_click(player, tags, action)
         local message = line:apply_mb_defaults(player)
 
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
 
     elseif action == "recipebook" then
@@ -143,7 +143,7 @@ local function handle_beacon_click(player, tags, action)
     elseif action == "delete" then
         line:set_beacon(nil)
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "entity", beacon.proto.name)
@@ -189,7 +189,7 @@ local function handle_module_click(player, tags, action)
 
         module_set:normalize({effects=true})
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "item", module.proto.name)
@@ -221,7 +221,7 @@ local function apply_item_options(player, options, action)
             or (relevant_line.percentage * item_amount) / current_amount
 
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
     end
 end
 
@@ -237,7 +237,7 @@ local function handle_item_click(player, tags, action)
             line.priority_product = (line.priority_product ~= item.proto) and item.proto or nil
 
             solver.update(player)
-            util.raise.refresh(player, "subfactory", nil)
+            util.raise.refresh(player, "factory", nil)
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
@@ -249,7 +249,7 @@ local function handle_item_click(player, tags, action)
     elseif action == "specify_amount" then
         -- Set the view state so that the amount shown in the dialog makes sense
         view_state.select(player, "items_per_timescale")
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
 
         local type_localised_string = {"fp.pl_" .. tags.item_category, 1}
         local produce_consume = (tags.item_category == "ingredient") and {"fp.consume"} or {"fp.produce"}

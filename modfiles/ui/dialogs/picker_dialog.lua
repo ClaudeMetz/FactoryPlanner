@@ -73,7 +73,7 @@ local function add_item_picker(parent_flow, player)
     modal_elements.groups = {}
 
     local existing_products = {}
-    if not ui_state.modal_data.create_subfactory then  -- check if this is for a new subfactory or not
+    if not ui_state.modal_data.create_factory then  -- check if this is for a new factory or not
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
         for product in factory:iterator() do
             existing_products[product.proto.name] = true
@@ -351,7 +351,7 @@ end
 
 
 local function open_picker_dialog(player, modal_data)
-    -- Create a blank subfactory if requested
+    -- Create a blank factory if requested
     local settings = util.globals.settings(player)
     modal_data.timescale = settings.default_timescale
     modal_data.lob = settings.belts_or_lanes
@@ -384,7 +384,7 @@ local function close_picker_dialog(player, action)
         local relevant_textfield_name = ((defined_by == "amount") and "item" or "belt") .. "_amount_textfield"
         local relevant_amount = tonumber(modal_data.modal_elements[relevant_textfield_name].text) or 0
 
-        local refresh_scope = "subfactory"
+        local refresh_scope = "factory"
         if modal_data.item ~= nil then  -- ie. this is an edit
             modal_data.item.defined_by = defined_by
             modal_data.item.required_amount = relevant_amount
@@ -396,16 +396,16 @@ local function close_picker_dialog(player, action)
             top_level_item.required_amount = relevant_amount
             top_level_item.belt_proto = modal_data.belt_proto
 
-            if modal_data.create_subfactory then  -- if this flag is set, create a factory to put the item into
+            if modal_data.create_factory then  -- if this flag is set, create a factory to put the item into
                 local translations = player_table.translation_tables
                 local translated_name = (translations) and translations[item_proto.type][item_proto.name] or ""
-                local icon = (not player_table.preferences.attach_subfactory_products)
+                local icon = (not player_table.preferences.attach_factory_products)
                     and "[img=" .. top_level_item.proto.sprite .. "] " or ""
-                factory = subfactory_list.add_subfactory(player, (icon .. translated_name))
+                factory = factory_list.add_factory(player, (icon .. translated_name))
             end
 
             factory:insert(top_level_item)
-            refresh_scope = "all"  -- need to refresh subfactory list too
+            refresh_scope = "all"  -- need to refresh factory list too
         end
 
         solver.update(player, factory)
@@ -414,7 +414,7 @@ local function close_picker_dialog(player, action)
     elseif action == "delete" then
         factory:remove(modal_data.item)
         solver.update(player, factory)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
     end
 
     -- Remember selected group so it can be re-applied when the dialog is re-opened

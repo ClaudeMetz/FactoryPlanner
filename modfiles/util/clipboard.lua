@@ -47,7 +47,7 @@ function _clipboard.paste(player, target)
             util.cursor.create_flying_text(player, {"fp.pasted_from_clipboard", {"fp.pu_" .. clip.class:lower(), 1}})
 
             solver.update(player)
-            util.raise.refresh(player, "subfactory", nil)
+            util.raise.refresh(player, "factory", nil)
         else
             local object_lower, target_lower = {"fp.pl_" .. clip.class:lower(), 1}, {"fp.pl_" .. target.class:lower(), 1}
             if error == "incompatible_class" then

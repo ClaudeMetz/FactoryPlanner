@@ -23,20 +23,20 @@ local function set_blank_line(player, floor, line)
     }
 end
 
-local function set_blank_subfactory(player, subfactory)
+local function set_blank_factory(player, factory)
     local blank_class = structures.class.init()
-    solver.set_subfactory_result {
+    solver.set_factory_result {
         player_index = player.index,
         energy_consumption = 0,
         pollution = 0,
         Product = blank_class,
         Byproduct = blank_class,
         Ingredient = blank_class,
-        matrix_free_items = subfactory.matrix_free_items
+        matrix_free_items = factory.matrix_free_items
     }
 
-    -- Subfactory structure does not matter as every line just needs to be blanked out
-    for floor in subfactory:iterator() do
+    -- Factory structure does not matter as every line just needs to be blanked out
+    for floor in factory:iterator() do
         for line in floor:iterator() do
             set_blank_line(player, floor, line)
         end
@@ -45,33 +45,33 @@ end
 
 
 -- Generates structured data of the given floor for calculation
-local function generate_floor_data(player, subfactory, floor)
+local function generate_floor_data(player, factory, floor)
     local floor_data = {
         id = floor.id,
         lines = {}
     }
 
-    local mining_productivity = (subfactory.mining_productivity ~= nil)
-        and (subfactory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
+    local mining_productivity = (factory.mining_productivity ~= nil)
+        and (factory.mining_productivity / 100) or player.force.mining_drill_productivity_bonus
 
     for line in floor:iterator() do
         local line_data = { id = line.id }
 
         if line.class == "Floor" then
             line_data.recipe_proto = line.first.recipe_proto
-            line_data.subfloor = generate_floor_data(player, subfactory, line)
+            line_data.subfloor = generate_floor_data(player, factory, line)
             table.insert(floor_data.lines, line_data)
 
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil
-            -- If a line has a percentage of zero or is inactive, it is not useful to the result of the subfactory
+            -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory
             -- Alternatively, if this line is on a subfloor and the top line of the floor is useless, it is useless too
             if (relevant_line and (relevant_line.percentage == 0 or not relevant_line.active))
                     or line.percentage == 0 or not line.active then
                 set_blank_line(player, floor, line)  -- useless lines don't need to run through the solver
             else
                 line_data.recipe_proto = line.recipe_proto
-                line_data.timescale = subfactory.timescale
+                line_data.timescale = factory.timescale
                 line_data.percentage = line.percentage  -- non-zero
                 line_data.production_type = line.production_type
                 line_data.machine_limit = {limit=line.machine.limit, force_limit=line.machine.force_limit}
@@ -167,33 +167,33 @@ end
 
 
 -- ** TOP LEVEL **
--- Updates the whole subfactory calculations from top to bottom
-function solver.update(player, subfactory)
-    subfactory = subfactory or util.context.get(player, "Factory")
-    if subfactory.valid then
+-- Updates the whole factory calculations from top to bottom
+function solver.update(player, factory)
+    factory = factory or util.context.get(player, "Factory")
+    if factory.valid then
         local player_table = util.globals.player_table(player)
-        -- Save the active subfactory in global so the solver doesn't have to pass it around
-        player_table.active_subfactory = subfactory
+        -- Save the active factory in global so the solver doesn't have to pass it around
+        player_table.active_factory = factory
 
-        local subfactory_data = solver.generate_subfactory_data(player, subfactory)
+        local factory_data = solver.generate_factory_data(player, factory)
 
-        if subfactory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
-            local matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
+        if factory.matrix_free_items ~= nil then  -- meaning the matrix solver is active
+            local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
-            if matrix_metadata.num_cols > matrix_metadata.num_rows and #subfactory.matrix_free_items > 0 then
-                subfactory.matrix_free_items = {}
-                subfactory_data = solver.generate_subfactory_data(player, subfactory)
-                matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
+            if matrix_metadata.num_cols > matrix_metadata.num_rows and #factory.matrix_free_items > 0 then
+                factory.matrix_free_items = {}
+                factory_data = solver.generate_factory_data(player, factory)
+                matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
             end
 
-            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the subfactory has no lines
-                local linear_dependence_data = matrix_engine.get_linear_dependence_data(subfactory_data, matrix_metadata)
+            if matrix_metadata.num_rows ~= 0 then  -- don't run calculations if the factory has no lines
+                local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
                 if matrix_metadata.num_rows == matrix_metadata.num_cols
                         and #linear_dependence_data.linearly_dependent_recipes == 0 then
-                    matrix_engine.run_matrix_solver(subfactory_data, false)
-                    subfactory.linearly_dependant = false
+                    matrix_engine.run_matrix_solver(factory_data, false)
+                    factory.linearly_dependant = false
                 else
-                    set_blank_subfactory(player, subfactory)  -- reset subfactory by blanking everything
+                    set_blank_factory(player, factory)  -- reset factory by blanking everything
 
                     -- Don't open the dialog if calculations are run during migration etc.
                     if main_dialog.is_in_focus(player) or player_table.ui_state.modal_dialog_type ~= nil then
@@ -201,71 +201,71 @@ function solver.update(player, subfactory)
                     end
                 end
             else  -- reset top level items
-                set_blank_subfactory(player, subfactory)
+                set_blank_factory(player, factory)
             end
         else
-            sequential_engine.update_subfactory(subfactory_data)
+            sequential_engine.update_factory(factory_data)
         end
 
-        player_table.active_subfactory = nil  -- reset after calculations have been carried out
+        player_table.active_factory = nil  -- reset after calculations have been carried out
     end
 end
 
--- Updates the given subfactory's ingredient satisfactions
-function solver.determine_ingredient_satisfaction(subfactory)
-    update_ingredient_satisfaction(subfactory.top_floor, nil)
+-- Updates the given factory's ingredient satisfactions
+function solver.determine_ingredient_satisfaction(factory)
+    update_ingredient_satisfaction(factory.top_floor, nil)
 end
 
 
 -- ** INTERFACE **
--- Returns a table containing all the data needed to run the calculations for the given subfactory
-function solver.generate_subfactory_data(player, subfactory)
-    local subfactory_data = {
+-- Returns a table containing all the data needed to run the calculations for the given factory
+function solver.generate_factory_data(player, factory)
+    local factory_data = {
         player_index = player.index,
         top_level_products = {},
-        top_floor = generate_floor_data(player, subfactory, subfactory.top_floor),
-        matrix_free_items = subfactory.matrix_free_items
+        top_floor = generate_floor_data(player, factory, factory.top_floor),
+        matrix_free_items = factory.matrix_free_items
     }
 
-    for product in subfactory:iterator() do
+    for product in factory:iterator() do
         local product_data = {
             proto = product.proto,  -- reference
             amount = product:get_required_amount()
         }
-        table.insert(subfactory_data.top_level_products, product_data)
+        table.insert(factory_data.top_level_products, product_data)
     end
 
-    return subfactory_data
+    return factory_data
 end
 
--- Updates the active subfactories top-level data with the given result
-function solver.set_subfactory_result(result)
+-- Updates the active factories top-level data with the given result
+function solver.set_factory_result(result)
     local player_table = global.players[result.player_index]
-    local subfactory = player_table.active_subfactory
+    local factory = player_table.active_factory
 
-    subfactory.energy_consumption = result.energy_consumption
-    subfactory.pollution = result.pollution
-    subfactory.matrix_free_items = result.matrix_free_items
+    factory.energy_consumption = result.energy_consumption
+    factory.pollution = result.pollution
+    factory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
-    for product in subfactory:iterator() do
+    for product in factory:iterator() do
         local product_result_amount = result.Product[product.proto.type][product.proto.name] or 0
         product.amount = product:get_required_amount() - product_result_amount
     end
 
-    update_object_items(subfactory.top_floor, "ingredients", result.Ingredient)
-    update_object_items(subfactory.top_floor, "byproducts", result.Byproduct)
+    update_object_items(factory.top_floor, "ingredients", result.Ingredient)
+    update_object_items(factory.top_floor, "byproducts", result.Byproduct)
 
     -- Determine satisfaction-amounts for all line ingredients
     if player_table.preferences.ingredient_satisfaction then
-        solver.determine_ingredient_satisfaction(subfactory)
+        solver.determine_ingredient_satisfaction(factory)
     end
 end
 
--- Updates the given line of the given floor of the active subfactory
+-- Updates the given line of the given floor of the active factory
 function solver.set_line_result(result)
-    local subfactory = global.players[result.player_index].active_subfactory
-    if subfactory == nil then return end
+    local factory = global.players[result.player_index].active_factory
+    if factory == nil then return end
     local line = OBJECT_INDEX[result.line_id]
 
     if line.class == "Floor" then

@@ -9,13 +9,13 @@ local function set_dialog_submit_button(modal_elements, enabled, action_to_take)
     modal_dialog.set_submit_button_state(modal_elements, enabled, message)
 end
 
--- Sets the state of either the export_subfactories- or dialog_submit-button
+-- Sets the state of either the export_factories- or dialog_submit-button
 local function set_relevant_submit_button(modal_elements, dialog_type, enabled)
     if dialog_type == "export" then
         set_tool_button_state(modal_elements.export_button, dialog_type, enabled)
 
     else -- dialog_type == "import"
-        set_dialog_submit_button(modal_elements, enabled, "select_subfactory")
+        set_dialog_submit_button(modal_elements, enabled, "select_factory")
     end
 end
 
@@ -25,7 +25,7 @@ local function set_all_checkboxes(player, checkbox_state)
     local ui_state = util.globals.ui_state(player)
     local modal_elements = ui_state.modal_data.modal_elements
 
-    for _, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+    for _, checkbox in pairs(modal_elements.factory_checkboxes) do
         if checkbox.enabled then checkbox.state = checkbox_state end
     end
 
@@ -38,7 +38,7 @@ local function adjust_after_checkbox_click(player, _, _)
     local modal_elements = ui_state.modal_data.modal_elements
 
     local checked_element_count, unchecked_element_count = 0, 0
-    for _, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+    for _, checkbox in pairs(modal_elements.factory_checkboxes) do
         if checkbox.state == true then checked_element_count = checked_element_count + 1
         elseif checkbox.enabled then unchecked_element_count = unchecked_element_count + 1 end
     end
@@ -54,7 +54,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
     flow.style.vertical_align = "center"
 
     local function add_button()
-        local button = flow.add{type="sprite-button", tags={mod="fp", on_gui_click=(dialog_type .. "_subfactories")},
+        local button = flow.add{type="sprite-button", tags={mod="fp", on_gui_click=(dialog_type .. "_factories")},
             style="flib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
             mouse_button_filter={"left"}}
         set_tool_button_state(button, dialog_type, button_enabled)
@@ -81,73 +81,72 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
 end
 
 
--- Initializes the subfactories table by adding it and its header
-local function setup_subfactories_table(modal_elements, add_location)
-    modal_elements.subfactory_checkboxes = {}  -- setup for later use in add_to_subfactories_table
+-- Initializes the factories table by adding it and its header
+local function setup_factories_table(modal_elements, add_location)
+    modal_elements.factory_checkboxes = {}  -- setup for later use in add_to_factories_table
 
     local scroll_pane = modal_elements.content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
     scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
-    modal_elements.subfactories_scroll_pane = scroll_pane
+    modal_elements.factories_scroll_pane = scroll_pane
 
-    local frame_subfactories = scroll_pane.add{type="frame", style="deep_frame_in_shallow_frame"}
-    frame_subfactories.style.padding = {-2, 2, 3, 2}
+    local frame_factories = scroll_pane.add{type="frame", style="deep_frame_in_shallow_frame"}
+    frame_factories.style.padding = {-2, 2, 3, 2}
 
     local table_columns = {
-        [2] = {caption={"fp.pu_subfactory", 2}, alignment="left", margin={6, 130, 6, 4}},
+        [2] = {caption={"fp.pu_factory", 2}, alignment="left", margin={6, 130, 6, 4}},
         [3] = {caption={"fp.validity"}}
     }
     if add_location then table_columns[4] = {caption={"fp.location"}} end
 
-    local table_subfactories = frame_subfactories.add{type="table", style="mods_table",
+    local table_factories = frame_factories.add{type="table", style="mods_table",
         column_count=(table_size(table_columns) + 1)}
-    modal_elements.subfactories_table = table_subfactories
+    modal_elements.factories_table = table_factories
 
     -- Add master checkbox in any case
-    local checkbox_master = table_subfactories.add{type="checkbox", state=false,
+    local checkbox_master = table_factories.add{type="checkbox", state=false,
         tags={mod="fp", on_gui_checked_state_changed="toggle_porter_master_checkbox"}}
     modal_elements.master_checkbox = checkbox_master
 
     for column_nr, table_column in pairs(table_columns) do
-        table_subfactories.style.column_alignments[column_nr] = table_column.alignment or "center"
+        table_factories.style.column_alignments[column_nr] = table_column.alignment or "center"
 
-        local label_column = table_subfactories.add{type="label", caption=table_column.caption, style="heading_3_label"}
+        local label_column = table_factories.add{type="label", caption=table_column.caption, style="heading_3_label"}
         label_column.style.margin = table_column.margin or {0, 4}
     end
 end
 
--- Adds a row to the subfactories table
-local function add_to_subfactories_table(modal_elements, subfactory, enable_checkbox, attach_products)
-    local table_subfactories = modal_elements.subfactories_table
+-- Adds a row to the factories table
+local function add_to_factories_table(modal_elements, factory, enable_checkbox, attach_products)
+    local table_factories = modal_elements.factories_table
 
-    local checkbox = table_subfactories.add{type="checkbox", state=false, enabled=(enable_checkbox or subfactory.valid),
+    local checkbox = table_factories.add{type="checkbox", state=false, enabled=(enable_checkbox or factory.valid),
         tags={mod="fp", on_gui_checked_state_changed="toggle_porter_checkbox"}}
 
-    local label = table_subfactories.add{type="label", caption=subfactory:tostring(attach_products, true)}
+    local label = table_factories.add{type="label", caption=factory:tostring(attach_products, true)}
     label.style.maximal_width = 350
     label.style.right_margin = 4
 
-    local validity_caption = (subfactory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
-    table_subfactories.add{type="label", caption=validity_caption}
+    local validity_caption = (factory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
+    table_factories.add{type="label", caption=validity_caption}
 
-    if table_subfactories.column_count == 4 then  -- if location column is present
-        local location = (subfactory.archived) and "archive" or "factory"
-        table_subfactories.add{type="label", caption={"fp." .. location}}
+    if table_factories.column_count == 4 then  -- if location column is present
+        local location = (factory.archived) and "archive" or "factory"
+        table_factories.add{type="label", caption={"fp." .. location}}
     end
 
-    modal_elements.subfactory_checkboxes[subfactory.id] = checkbox
+    modal_elements.factory_checkboxes[factory.id] = checkbox
 end
 
 
--- Tries importing the given string, showing the resulting subfactories-table, if possible
-local function import_subfactories(player, _, _)
+-- Tries importing the given string, showing the resulting factories-table, if possible
+local function import_factories(player, _, _)
     local player_table = util.globals.player_table(player)
-    local attach_subfactory_products = player_table.preferences.attach_subfactory_products
+    local attach_factory_products = player_table.preferences.attach_factory_products
     local modal_data = player_table.ui_state.modal_data  ---@cast modal_data -nil
     local modal_elements = modal_data.modal_elements
     local content_frame = modal_elements.content_frame
     local textfield_export_string = modal_elements.import_textfield
 
-    -- The imported subfactories will be temporarily contained in a factory object
     local import_table, error = util.porter.process_export_string(textfield_export_string.text)
 
     local function add_info_label(caption)
@@ -165,7 +164,7 @@ local function import_subfactories(player, _, _)
     end
 
     if modal_elements.info_label then modal_elements.info_label.destroy() end
-    if modal_elements.subfactories_scroll_pane then modal_elements.subfactories_scroll_pane.destroy() end
+    if modal_elements.factories_scroll_pane then modal_elements.factories_scroll_pane.destroy() end
 
     if error ~= nil then
         add_info_label({"fp.error_message", {"fp.importer_" .. error}})
@@ -174,18 +173,18 @@ local function import_subfactories(player, _, _)
         ---@cast import_table -nil
 
         add_info_label({"fp.import_instruction_2"})
-        setup_subfactories_table(modal_elements, false)
-        modal_data.subfactories = {}
+        setup_factories_table(modal_elements, false)
+        modal_data.factories = {}
 
-        local any_invalid_subfactories = true
-        for _, subfactory in ipairs(import_table.subfactories) do
-            subfactory.archived = false
-            add_to_subfactories_table(modal_elements, subfactory, true, attach_subfactory_products)
-            modal_data.subfactories[subfactory.id] = subfactory
-            any_invalid_subfactories = any_invalid_subfactories or (not subfactory.valid)
+        local any_invalid_factories = true
+        for _, factory in ipairs(import_table.factories) do
+            factory.archived = false
+            add_to_factories_table(modal_elements, factory, true, attach_factory_products)
+            modal_data.factories[factory.id] = factory
+            any_invalid_factories = any_invalid_factories or (not factory.valid)
         end
 
-        if any_invalid_subfactories then
+        if any_invalid_factories then
             modal_data.export_modset = import_table.export_modset
 
             local diff_tooltip = util.porter.format_modset_diff(import_table.export_modset)
@@ -203,19 +202,19 @@ local function import_subfactories(player, _, _)
     modal_elements.modal_frame.force_auto_center()
 end
 
--- Exports the currently selected subfactories and puts the resulting string into the textbox
-local function export_subfactories(player, _, _)
+-- Exports the currently selected factories and puts the resulting string into the textbox
+local function export_factories(player, _, _)
     local modal_data = util.globals.modal_data(player)
     local modal_elements = modal_data.modal_elements
-    local subfactories_to_export = {}
+    local factories_to_export = {}
 
-    for subfactory_id, checkbox in pairs(modal_elements.subfactory_checkboxes) do
+    for factory_id, checkbox in pairs(modal_elements.factory_checkboxes) do
         if checkbox.state == true then
-            local subfactory = modal_data.subfactories[subfactory_id]
-            table.insert(subfactories_to_export, subfactory)
+            local factory = modal_data.factories[factory_id]
+            table.insert(factories_to_export, factory)
         end
     end
-    local export_string = util.porter.generate_export_string(subfactories_to_export)
+    local export_string = util.porter.generate_export_string(factories_to_export)
 
     modal_elements.export_textfield.text = export_string
     util.gui.select_all(modal_elements.export_textfield)
@@ -230,25 +229,25 @@ local function open_import_dialog(_, modal_data)
     util.gui.select_all(modal_elements.import_textfield)
 end
 
--- Imports the selected subfactories into the player's main factory
+-- Imports the selected factories into the player's main district
 local function close_import_dialog(player, action)
     if action == "submit" then
         local modal_data = util.globals.modal_data(player)  ---@cast modal_data -nil
         local district = util.context.get(player, "District")  --[[@as District]]
 
-        local first_subfactory = nil
-        for subfactory_id, checkbox in pairs(modal_data.modal_elements.subfactory_checkboxes) do
+        local first_factory = nil
+        for factory_id, checkbox in pairs(modal_data.modal_elements.factory_checkboxes) do
             if checkbox.state == true then
-                local subfactory = modal_data.subfactories[subfactory_id]
-                if not subfactory.valid then subfactory.last_valid_modset = modal_data.export_modset end
-                district:insert(subfactory)
+                local factory = modal_data.factories[factory_id]
+                if not factory.valid then factory.last_valid_modset = modal_data.export_modset end
+                district:insert(factory)
 
-                solver.update(player, subfactory)
-                first_subfactory = first_subfactory or subfactory
+                solver.update(player, factory)
+                first_factory = first_factory or factory
             end
         end
 
-        util.context.set(player, first_subfactory)
+        util.context.set(player, first_factory)
         util.raise.refresh(player, "all", nil)
     end
 end
@@ -260,9 +259,9 @@ local import_listeners = {}
 import_listeners.gui = {
     on_gui_click = {
         {
-            name = "import_subfactories",
+            name = "import_factories",
             timeout = 20,
-            handler = import_subfactories
+            handler = import_factories
         }
     },
     on_gui_text_changed = {
@@ -278,7 +277,7 @@ import_listeners.gui = {
         {
             name = "import_string",
             handler = (function(player, _, event)
-                if event.element.text ~= "" then import_subfactories(player) end
+                if event.element.text ~= "" then import_factories(player) end
             end)
         }
     }
@@ -287,7 +286,7 @@ import_listeners.gui = {
 import_listeners.dialog = {
     dialog = "import",
     metadata = (function(_) return {
-        caption = {"", {"fp.import"}, " ", {"fp.pl_subfactory", 1}},
+        caption = {"", {"fp.import"}, " ", {"fp.pl_factory", 1}},
         subheader_text = {"fp.import_instruction_1"},
         create_content_frame = true,
         disable_scroll_pane = true,
@@ -299,20 +298,20 @@ import_listeners.dialog = {
 
 
 local function open_export_dialog(player, modal_data)
-    local attach_subfactory_products = util.globals.preferences(player).attach_subfactory_products
+    local attach_factory_products = util.globals.preferences(player).attach_factory_products
     local district = util.context.get(player, "District")  --[[@as District]]
     local modal_elements = modal_data.modal_elements
 
-    setup_subfactories_table(modal_elements, true)
-    modal_data.subfactories = {}
+    setup_factories_table(modal_elements, true)
+    modal_data.factories = {}
 
-    local valid_subfactory_found = false
-    for subfactory in district:iterator() do
-        add_to_subfactories_table(modal_elements, subfactory, false, attach_subfactory_products)
-        modal_data.subfactories[subfactory.id] = subfactory
-        valid_subfactory_found = valid_subfactory_found or subfactory.valid
+    local valid_factory_found = false
+    for factory in district:iterator() do
+        add_to_factories_table(modal_elements, factory, false, attach_factory_products)
+        modal_data.factories[factory.id] = factory
+        valid_factory_found = valid_factory_found or factory.valid
     end
-    modal_elements.master_checkbox.enabled = valid_subfactory_found
+    modal_elements.master_checkbox.enabled = valid_factory_found
 
     add_textfield_and_button(modal_elements, "export", true, false)
     modal_elements.export_textfield.parent.style.top_margin = 6
@@ -325,9 +324,9 @@ local export_listeners = {}
 export_listeners.gui = {
     on_gui_click = {
         {
-            name = "export_subfactories",
+            name = "export_factories",
             timeout = 20,
-            handler = export_subfactories
+            handler = export_factories
         }
     }
 }
@@ -335,7 +334,7 @@ export_listeners.gui = {
 export_listeners.dialog = {
     dialog = "export",
     metadata = (function(_) return {
-        caption = {"", {"fp.export"}, " ", {"fp.pl_subfactory", 1}},
+        caption = {"", {"fp.export"}, " ", {"fp.pl_factory", 1}},
         subheader_text = {"fp.info_label", {"fp.export_instruction"}},
         subheader_tooltip = {"fp.export_instruction_tt"},
         create_content_frame = true,

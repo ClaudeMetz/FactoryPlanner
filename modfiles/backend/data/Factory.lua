@@ -133,10 +133,10 @@ function Factory:tostring(attach_products, export_format)
         if self.tick_of_deletion then
             local ticks_left_in_trash = self.tick_of_deletion - game.tick
             local minutes_left_in_trash = math.ceil(ticks_left_in_trash / 3600)
-            trashed_string = {"fp.subfactory_trashed", minutes_left_in_trash}
+            trashed_string = {"fp.factory_trashed", minutes_left_in_trash}
         end
 
-        local invalid_string = (not self.valid) and {"fp.subfactory_invalid"} or ""
+        local invalid_string = (not self.valid) and {"fp.factory_invalid"} or ""
         tooltip = {"", {"fp.tt_title", caption}, trashed_string, invalid_string}
     end
 
@@ -234,7 +234,7 @@ function Factory:validate()
     self:validate_item_request_proxy()  -- makes sure proxy is valid, or deletes it
 
     if self.valid then self.last_valid_modset = nil
-    -- If this subfactory became invalid with the current configuration, retain the modset before the current one
+    -- If this factory became invalid with the current configuration, retain the modset before the current one
     -- The one in global is still the previous one as it's only updated after migrations
     elseif previous_validity and not self.valid then self.last_valid_modset = global.installed_mods end
 

@@ -76,19 +76,19 @@ end
 
 local function swap_item_category(player, tags, _)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
     -- update the free items here, set the constrained items based on linear dependence data
     if tags.type == "free" then
-        -- note this assumes the gui's list has the same order as the subfactory
-        table.remove(subfactory.matrix_free_items, tags.index)
+        -- note this assumes the gui's list has the same order as the factory
+        table.remove(factory.matrix_free_items, tags.index)
     else -- "constrained"
         local item_proto = modal_data["constrained_items"][tags.index]
-        table.insert(subfactory.matrix_free_items, item_proto)
+        table.insert(factory.matrix_free_items, item_proto)
     end
 
-    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(modal_data.subfactory_data)
-    local linear_dependence_data = matrix_engine.get_linear_dependence_data(modal_data.subfactory_data, matrix_metadata)
+    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(modal_data.factory_data)
+    local linear_dependence_data = matrix_engine.get_linear_dependence_data(modal_data.factory_data, matrix_metadata)
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
 
@@ -99,23 +99,23 @@ end
 
 
 local function matrix_early_abort_check(player, modal_data)
-    local subfactory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-    if subfactory.top_floor.first == nil then return true end
+    if factory.top_floor.first == nil then return true end
 
-    local subfactory_data = solver.generate_subfactory_data(player, subfactory)
-    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(subfactory_data)
+    local factory_data = solver.generate_factory_data(player, factory)
+    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
 
-    modal_data.subfactory_data = subfactory_data
+    modal_data.factory_data = factory_data
 
-    local linear_dependence_data = matrix_engine.get_linear_dependence_data(subfactory_data, matrix_metadata)
+    local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
 
     if next(linear_dependence_data.linearly_dependent_recipes) then  -- too many ways to create the products
         modal_data.linearly_dependent_recipes = linear_dependence_data.linearly_dependent_recipes
-        subfactory.linearly_dependant = true
+        factory.linearly_dependant = true
         return false
     end
-    subfactory.linearly_dependant = false  -- TODO not the proper way to signal this, but it works
+    factory.linearly_dependant = false  -- TODO not the proper way to signal this, but it works
 
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items
@@ -135,7 +135,7 @@ local function matrix_early_abort_check(player, modal_data)
 end
 
 local function open_matrix_dialog(player, modal_data)
-    if util.globals.context(player).subfactory.linearly_dependant then
+    if util.globals.context(player).factory.linearly_dependant then
         show_linearly_dependent_recipes(modal_data, modal_data.linearly_dependent_recipes)
         modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
 
@@ -154,11 +154,11 @@ end
 
 local function close_matrix_dialog(player, action)
     if action == "submit" then
-        local subfactory = util.context.get(player, "Factory")
-        subfactory.matrix_free_items = util.globals.modal_data(player).free_items
+        local factory = util.context.get(player, "Factory")
+        factory.matrix_free_items = util.globals.modal_data(player).free_items
 
-        solver.update(player, subfactory)
-        util.raise.refresh(player, "subfactory", nil)
+        solver.update(player, factory)
+        util.raise.refresh(player, "factory", nil)
 
     elseif action == "cancel" then
         util.raise.refresh(player, "production_detail", nil)

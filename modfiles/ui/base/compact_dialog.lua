@@ -206,16 +206,16 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 end
 
 
-local function refresh_compact_subfactory(player)
+local function refresh_compact_factory(player)
     local player_table = util.globals.player_table(player)
     local compact_elements = player_table.ui_state.compact_elements
-    local subfactory = util.context.get(player, "Factory")  --[[@as Factory?]]
-    if not subfactory or not subfactory.valid then return end
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    if not factory or not factory.valid then return end
 
     util.raise.refresh(player, "view_state", compact_elements.view_state_table)
 
-    local attach_subfactory_products = player_table.preferences.attach_subfactory_products
-    compact_elements.name_label.caption = subfactory:tostring(attach_subfactory_products, true)
+    local attach_factory_products = player_table.preferences.attach_factory_products
+    compact_elements.name_label.caption = factory:tostring(attach_factory_products, true)
 
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
     local current_level = floor.level
@@ -236,7 +236,7 @@ local function refresh_compact_subfactory(player)
     local metadata = {
         parent = production_table,
         column_counts = column_counts,
-        view_state_metadata = view_state.generate_metadata(player, subfactory)
+        view_state_metadata = view_state.generate_metadata(player, factory)
     }
 
     compact_elements.item_buttons = {}  -- (re)set the item_buttons table
@@ -278,7 +278,7 @@ local function refresh_compact_subfactory(player)
     end
 end
 
-local function build_compact_subfactory(player)
+local function build_compact_factory(player)
     local ui_state = util.globals.ui_state(player)
     local compact_elements = ui_state.compact_elements
 
@@ -337,7 +337,7 @@ local function build_compact_subfactory(player)
     table_production.style.padding = {4, 8}
     compact_elements["production_table"] = table_production
 
-    refresh_compact_subfactory(player)
+    refresh_compact_factory(player)
 end
 
 
@@ -348,7 +348,7 @@ local function handle_recipe_click(player, tags, action)
     if action == "open_subfloor" then
         if line.class == "Floor" then
             util.context.set(player, line)
-            refresh_compact_subfactory(player)
+            refresh_compact_factory(player)
         end
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "recipe", relevant_line.recipe_proto.name)
@@ -413,15 +413,15 @@ end
 
 
 -- ** EVENTS **
-local subfactory_listeners = {}
+local factory_listeners = {}
 
-subfactory_listeners.gui = {
+factory_listeners.gui = {
     on_gui_click = {
         {
             name = "change_compact_floor",
             handler = (function(player, tags, _)
                 local floor_changed = util.context.descend_floors(player, tags.destination)
-                if floor_changed then refresh_compact_subfactory(player) end
+                if floor_changed then refresh_compact_factory(player) end
             end)
         },
         {
@@ -471,7 +471,7 @@ subfactory_listeners.gui = {
                 local line = OBJECT_INDEX[tags.line_id]
                 local relevant_line = (line.class == "Floor") and line.first or line
                 relevant_line.done = not relevant_line.done
-                refresh_compact_subfactory(player)
+                refresh_compact_factory(player)
             end)
         }
     },
@@ -489,22 +489,22 @@ subfactory_listeners.gui = {
     }
 }
 
-subfactory_listeners.misc = {
+factory_listeners.misc = {
     build_gui_element = (function(player, event)
-        if event.trigger == "compact_subfactory" then
-            build_compact_subfactory(player)
+        if event.trigger == "compact_factory" then
+            build_compact_factory(player)
         end
     end),
     refresh_gui_element = (function(player, event)
-        if event.trigger == "compact_subfactory" then
-            refresh_compact_subfactory(player)
+        if event.trigger == "compact_factory" then
+            refresh_compact_factory(player)
         end
     end)
 }
 
 
 
--- The frame surrounding the main part of the compact subfactory
+-- The frame surrounding the main part of the compact factory
 local frame_dimensions = {width = 0.25, height = 0.8}  -- as a percentage of the screen
 local frame_location = {x = 10, y = 63}  -- absolute, relative to 1080p with scale 1
 
@@ -564,7 +564,7 @@ local function rebuild_compact_dialog(player, default_visibility)
         tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 
-    util.raise.build(player, "compact_subfactory", nil)
+    util.raise.build(player, "compact_factory", nil)
 
     return frame_compact_dialog
 end
@@ -583,7 +583,7 @@ function compact_dialog.toggle(player)
         local new_dialog_visibility = not frame_compact_dialog.visible
         frame_compact_dialog.visible = new_dialog_visibility
 
-        if new_dialog_visibility then refresh_compact_subfactory(player) end
+        if new_dialog_visibility then refresh_compact_factory(player) end
     end
 end
 
@@ -646,4 +646,4 @@ dialog_listeners.misc = {
     end)
 }
 
-return { subfactory_listeners, dialog_listeners }
+return { factory_listeners, dialog_listeners }

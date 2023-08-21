@@ -22,11 +22,11 @@ function tab_definitions.interface(player, tab, tab_pane)
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    -- If the tutorial subfactory is valid, it can be imported regardless of the current modset
-    local subfactory_valid = (global.tutorial_subfactory ~= nil and global.tutorial_subfactory.valid)
-    local button_tooltip = (not subfactory_valid) and {"fp.warning_message", {"fp.create_example_error"}} or nil
-    flow_interactive.add{type="button", tags={mod="fp", on_gui_click="add_example_subfactory"},
-        caption={"fp.create_example"}, tooltip=button_tooltip, enabled=subfactory_valid, mouse_button_filter={"left"}}
+    -- If the tutorial factory is valid, it can be imported regardless of the current modset
+    local factory_valid = (global.tutorial_factory ~= nil and global.tutorial_factory.valid)
+    local button_tooltip = (not factory_valid) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    flow_interactive.add{type="button", tags={mod="fp", on_gui_click="add_example_factory"},
+        caption={"fp.create_example"}, tooltip=button_tooltip, enabled=factory_valid, mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
@@ -86,12 +86,12 @@ local listeners = {}
 listeners.gui = {
     on_gui_click = {
         {
-            name = "add_example_subfactory",
+            name = "add_example_factory",
             timeout = 20,
             handler = (function(player, _, _)
-                -- If this button can be pressed, the tutorial subfactory is valid implicitly
+                -- If this button can be pressed, the tutorial factory is valid implicitly
                 local player_table = util.globals.player_table(player)
-                local clone = global.tutorial_subfactory:clone()
+                local clone = global.tutorial_factory:clone()
                 player_table.district:insert(clone)
                 solver.update(player, clone)
                 util.context.set(player, clone)

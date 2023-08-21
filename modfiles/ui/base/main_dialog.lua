@@ -1,13 +1,13 @@
-require("ui.main.subfactory_list")
+require("ui.main.factory_list")
 require("ui.base.view_state")
 
 main_dialog = {}
 
 -- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
-local function determine_main_dimensions(player, products_per_row, subfactory_list_rows)
+local function determine_main_dimensions(player, products_per_row, factory_list_rows)
     local settings = util.globals.settings(player)
     products_per_row = products_per_row or settings.products_per_row
-    subfactory_list_rows = subfactory_list_rows or settings.subfactory_list_rows
+    factory_list_rows = factory_list_rows or settings.factory_list_rows
     local frame_spacing = MAGIC_NUMBERS.frame_spacing
 
     -- Width of the larger ingredients-box, which has twice the buttons per row
@@ -16,9 +16,9 @@ local function determine_main_dimensions(player, products_per_row, subfactory_li
     local boxes_width_2 = 2 * ((products_per_row * MAGIC_NUMBERS.item_button_size) + (2 * frame_spacing))
     local width = MAGIC_NUMBERS.list_width + boxes_width_1 + boxes_width_2 + ((2+3) * frame_spacing)
 
-    local subfactory_list_height = (subfactory_list_rows * MAGIC_NUMBERS.list_element_height)
+    local factory_list_height = (factory_list_rows * MAGIC_NUMBERS.list_element_height)
         + MAGIC_NUMBERS.subheader_height
-    local height = MAGIC_NUMBERS.title_bar_height + subfactory_list_height + MAGIC_NUMBERS.info_height
+    local height = MAGIC_NUMBERS.title_bar_height + factory_list_height + MAGIC_NUMBERS.info_height
         + ((2+1) * frame_spacing)
 
     return {width=width, height=height}
@@ -31,24 +31,24 @@ function main_dialog.shrinkwrap_interface(player)
 
     local mod_settings = util.globals.settings(player)
     local products_per_row = mod_settings.products_per_row
-    local subfactory_list_rows = mod_settings.subfactory_list_rows
+    local factory_list_rows = mod_settings.factory_list_rows
 
-    local function dimensions() return determine_main_dimensions(player, products_per_row, subfactory_list_rows) end
+    local function dimensions() return determine_main_dimensions(player, products_per_row, factory_list_rows) end
 
     while (actual_resolution.width * 0.95) < dimensions().width do
         products_per_row = products_per_row - 1
     end
     while (actual_resolution.height * 0.95) < dimensions().height do
-        subfactory_list_rows = subfactory_list_rows - 2
+        factory_list_rows = factory_list_rows - 2
     end
 
     local setting_prototypes = game.mod_setting_prototypes
     local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1] --[[@as number]]
-    local height_minimum = setting_prototypes["fp_subfactory_list_rows"].allowed_values[1] --[[@as number]]
+    local height_minimum = setting_prototypes["fp_factory_list_rows"].allowed_values[1] --[[@as number]]
 
     local live_settings = settings.get_player_settings(player)
     live_settings["fp_products_per_row"] = {value = math.max(products_per_row, width_minimum)}
-    live_settings["fp_subfactory_list_rows"] = {value = math.max(subfactory_list_rows, height_minimum)}
+    live_settings["fp_factory_list_rows"] = {value = math.max(factory_list_rows, height_minimum)}
 end
 
 
@@ -226,7 +226,7 @@ listeners.misc = {
     fp_toggle_compact_view = (function(player, _)
         local ui_state = util.globals.ui_state(player)
         local flags = ui_state.flags
-        local subfactory = ui_state.context.subfactory
+        local factory = util.context.get(player, "Factory")
 
         local main_focus = main_dialog.is_in_focus(player)
         local compact_focus = compact_dialog.is_in_focus(player)
@@ -243,7 +243,7 @@ listeners.misc = {
             util.raise.refresh(player, "production", nil)
             flags.compact_view = false
 
-        elseif main_focus and subfactory ~= nil and subfactory.valid then
+        elseif main_focus and factory ~= nil and factory.valid then
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
             flags.compact_view = true

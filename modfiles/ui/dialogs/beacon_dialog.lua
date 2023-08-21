@@ -118,20 +118,20 @@ end
 
 local function close_beacon_dialog(player, action)
     local modal_data = util.globals.modal_data(player)  --[[@as table]]
-    local subfactory = util.context.get(player, "Factory")
+    local factory = util.context.get(player, "Factory")
 
     if action == "submit" then
         local beacon = modal_data.object
         local total_amount = tonumber(modal_data.modal_elements.beacon_total.text) or 0
         beacon.total_amount = (total_amount > 0) and total_amount or nil
 
-        solver.update(player, subfactory)
-        util.raise.refresh(player, "subfactory", nil)
+        solver.update(player, factory)
+        util.raise.refresh(player, "factory", nil)
 
     elseif action == "delete" then
         modal_data.line:set_beacon(nil)
-        solver.update(player, subfactory)
-        util.raise.refresh(player, "subfactory", nil)
+        solver.update(player, factory)
+        util.raise.refresh(player, "factory", nil)
 
     else -- action == "cancel"
         modal_data.line:set_beacon(modal_data.backup_beacon)  -- could be nil

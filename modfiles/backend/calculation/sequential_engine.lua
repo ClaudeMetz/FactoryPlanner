@@ -259,18 +259,18 @@ end
 
 
 -- ** TOP LEVEL **
-function sequential_engine.update_subfactory(subfactory_data)
+function sequential_engine.update_factory(factory_data)
     -- Initialize aggregate with the top level items
-    local aggregate = structures.aggregate.init(subfactory_data.player_index, 1)
-    for _, product in ipairs(subfactory_data.top_level_products) do
+    local aggregate = structures.aggregate.init(factory_data.player_index, 1)
+    for _, product in ipairs(factory_data.top_level_products) do
         structures.aggregate.add(aggregate, "Product", product)
     end
 
-    update_floor(subfactory_data.top_floor, aggregate)  -- updates aggregate
+    update_floor(factory_data.top_floor, aggregate)  -- updates aggregate
 
     -- Fuels are combined with Ingredients for top-level purposes
-    solver.set_subfactory_result {
-        player_index = subfactory_data.player_index,
+    solver.set_factory_result {
+        player_index = factory_data.player_index,
         energy_consumption = aggregate.energy_consumption,
         pollution = aggregate.pollution,
         Product = aggregate.Product,

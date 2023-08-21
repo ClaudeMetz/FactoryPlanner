@@ -19,6 +19,7 @@ local migration = {}
 function migration.global()
     global.next_object_ID = 1
     global.mod_version = nil
+    global.tutorial_subfactory = nil
 end
 
 function migration.player_table(player_table)
@@ -27,6 +28,10 @@ function migration.player_table(player_table)
         object_id = 2,  -- set to first floor preemptively
         cache = {main = nil, archive = nil, factory = {}}
     }
+
+    player_table.preferences.attach_factory_products = player_table.preferences.attach_subfactory_products
+    local scopes = player_table.preferences.utility_scopes
+    if scopes.components == "Subfactory" then scopes.components = "Factory" end
 
     for _, factory_name in pairs({"factory", "archive"}) do
         for _, subfactory in pairs(player_table[factory_name].Subfactory.datasets) do
@@ -109,7 +114,7 @@ function migration.player_table(player_table)
     player_table.archive = nil
 end
 
-function migration.packed_subfactory(packed_subfactory)
+function migration.packed_factory(packed_subfactory)
     -- Most things just carry over as-is here, only the structure changes
 
     packed_subfactory.products = {}

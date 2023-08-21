@@ -19,9 +19,9 @@ require("backend.calculation.solver")
 ---@class PreferencesTable
 ---@field pause_on_interface boolean
 ---@field tutorial_mode boolean
----@field utility_scopes { components: "Subfactory" | "Floor" }
+---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
----@field attach_subfactory_products boolean
+---@field attach_factory_products boolean
 ---@field show_floor_items boolean
 ---@field fold_out_subfloors boolean
 ---@field ingredient_satisfaction boolean
@@ -56,10 +56,10 @@ local function reload_preferences(player)
 
     preferences.pause_on_interface = preferences.pause_on_interface or false
     if preferences.tutorial_mode == nil then preferences.tutorial_mode = true end
-    preferences.utility_scopes = preferences.utility_scopes or {components = "Subfactory"}
+    preferences.utility_scopes = preferences.utility_scopes or {components = "Factory"}
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
 
-    preferences.attach_subfactory_products = preferences.attach_subfactory_products or false
+    preferences.attach_factory_products = preferences.attach_factory_products or false
     preferences.show_floor_items = preferences.show_floor_items or false
     preferences.fold_out_subfloors = preferences.fold_out_subfloors or false
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
@@ -87,7 +87,7 @@ end
 ---@class SettingsTable
 ---@field show_gui_button boolean
 ---@field products_per_row integer
----@field subfactory_list_rows integer
+---@field factory_list_rows integer
 ---@field default_timescale integer
 ---@field belts_or_lanes string
 ---@field prefer_product_picker boolean
@@ -103,7 +103,7 @@ local function reload_settings(player)
 
     settings_table.show_gui_button = settings["fp_display_gui_button"].value
     settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
-    settings_table.subfactory_list_rows = tonumber(settings["fp_subfactory_list_rows"].value)
+    settings_table.factory_list_rows = tonumber(settings["fp_factory_list_rows"].value)
     settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]  ---@type integer
     settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
     settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
@@ -128,7 +128,7 @@ end
 ---@class UIStateFlags
 ---@field selection_mode boolean
 ---@field compact_view boolean
----@field recalculate_on_subfactory_change boolean
+---@field recalculate_on_factory_change boolean
 
 ---@param player LuaPlayer
 local function reset_ui_state(player)
@@ -149,7 +149,7 @@ local function reset_ui_state(player)
     ui_state_table.flags = {  -- TODO do away with, make them just ui_state variables
         selection_mode = false,  -- Whether the player is currently using a selector
         compact_view = false,  -- Whether the user has switched to the compact main view
-        recalculate_on_subfactory_change = false  -- Whether calculations should re-run
+        recalculate_on_factory_change = false  -- Whether calculations should re-run
     }
 
     -- The UI table gets replaced because the whole interface is reset
@@ -174,7 +174,7 @@ local function player_init(player)
     util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
 
-    if DEV_ACTIVE then util.porter.add_subfactories(player, DEV_EXPORT_STRING) end
+    if DEV_ACTIVE then util.porter.add_factories(player, DEV_EXPORT_STRING) end
 end
 
 ---@param player LuaPlayer
@@ -199,13 +199,13 @@ end
 
 
 ---@return Factory?
-local function import_tutorial_subfactory()
+local function import_tutorial_factory()
     local import_table, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
     if error then
         return nil
     else
         ---@cast import_table -nil
-        return import_table.subfactories[1]
+        return import_table.factories[1]
     end
 end
 
@@ -226,10 +226,10 @@ local function global_init()
     prototyper.build()  -- Generate all relevant prototypes and save them in global
     loader.run(true)  -- Run loader which creates useful indexes of prototype data
 
-    -- Retain current modset to detect mod changes for subfactories that became invalid
+    -- Retain current modset to detect mod changes for factories that became invalid
     global.installed_mods = script.active_mods  ---@type ModToVersion
-    -- Import the tutorial subfactory to validate and cache it
-    global.tutorial_subfactory = import_tutorial_subfactory()
+    -- Import the tutorial factory to validate and cache it
+    global.tutorial_factory = import_tutorial_factory()
 
     -- Initialize flib's translation module
     translator.on_init()
@@ -259,7 +259,7 @@ local function handle_configuration_change()
     end
 
     global.installed_mods = script.active_mods
-    global.tutorial_subfactory = import_tutorial_subfactory()
+    global.tutorial_factory = import_tutorial_factory()
 
     translator.on_configuration_changed()
     prototyper.util.build_translation_dictionaries()
@@ -303,7 +303,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
             util.gui.toggle_mod_gui(player)
 
         elseif event.setting == "fp_products_per_row"
-                or event.setting == "fp_subfactory_list_rows"
+                or event.setting == "fp_factory_list_rows"
                 or event.setting == "fp_prefer_product_picker" then
             main_dialog.rebuild(player, false)
 

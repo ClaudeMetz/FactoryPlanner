@@ -107,7 +107,7 @@ local function attempt_adding_line(player, recipe_id)
         if not message then message = defaults_message end  -- a bit silly
 
         solver.update(player)
-        util.raise.refresh(player, "subfactory", nil)
+        util.raise.refresh(player, "factory", nil)
         if message ~= nil then util.messages.raise(player, message.category, message.text, 1) end
     end
 end
