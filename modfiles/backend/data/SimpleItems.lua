@@ -51,12 +51,12 @@ function SimpleItems:find(proto)
     end
 end
 
----@return fun(): SimpleItem?
+---@return fun(): integer?, SimpleItem?
 function SimpleItems:iterator()
     local i = 0
     return function()
-        i = i + 1;
-        return self.items[i]
+        i = i + 1; local next = self.items[i]
+        if next then return i, next end
     end
 end
 

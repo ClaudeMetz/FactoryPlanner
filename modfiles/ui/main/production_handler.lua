@@ -226,8 +226,8 @@ local function apply_item_options(player, options, action)
 end
 
 local function handle_item_click(player, tags, action)
-    local item = OBJECT_INDEX[tags.item_id]
-    local line = item.parent
+    local line = OBJECT_INDEX[tags.line_id]
+    local item = line[tags.item_category].items[tags.item_index]
 
     if action == "prioritize" then
         if line.Product.count < 2 then
@@ -387,7 +387,10 @@ listeners.gui = {
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
-            handler = handle_item_click
+            handler = (function(player, tags, action)
+                tags.item_category = "products"
+                handle_item_click(player, tags, action)
+            end)
         },
         {
             name = "act_on_line_byproduct",
@@ -399,7 +402,10 @@ listeners.gui = {
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
-            handler = handle_item_click
+            handler = (function(player, tags, action)
+                tags.item_category = "byproducts"
+                handle_item_click(player, tags, action)
+            end)
         },
         {
             name = "act_on_line_ingredient",
@@ -411,7 +417,10 @@ listeners.gui = {
                 put_into_cursor = {"alt-left"},
                 recipebook = {"alt-right", {recipebook=true}}
             },
-            handler = handle_item_click
+            handler = (function(player, tags, action)
+                tags.item_category = "ingredients"
+                handle_item_click(player, tags, action)
+            end)
         },
         {
             name = "act_on_line_fuel",

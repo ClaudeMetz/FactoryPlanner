@@ -116,8 +116,8 @@ function Factory:tostring(attach_products, export_format)
 
     if attach_products and self.valid then
         local product_string = ""
-        for item in self:iterator() do
-            product_string = product_string .. "[img=" .. item.proto.sprite .. "]"
+        for product in self:iterator() do
+            product_string = product_string .. "[img=" .. product.proto.sprite .. "]"
         end
         if product_string ~= "" then product_string = product_string .. "  " end
         caption = product_string .. caption

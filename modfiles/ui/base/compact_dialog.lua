@@ -154,7 +154,8 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     if column_count == 0 then metadata.parent.add{type="empty-widget"}; return end
     local item_table = metadata.parent.add{type="table", column_count=column_count}
 
-    for item in line[item_category .. "s"]:iterator() do
+    local simple_items = line[item_category .. "s"]
+    for index, item in simple_items:iterator() do
         local proto, type = item.proto, item.proto.type
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class == "Line") and line.machine.count or nil
@@ -175,10 +176,10 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount, tooltip=tooltip,
             tags={mod="fp", on_gui_click="act_on_compact_item", on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", item_id=item.id}, style=style, enabled=enabled,
-            mouse_button_filter={"left-and-right"}}
-
+            on_gui_leave="leave_compact_item", simple_items_id=simple_items.id, item_index=index},
+            style=style, enabled=enabled, mouse_button_filter={"left-and-right"}}
         button.raise_hover_events = true
+
         item_buttons[type] = item_buttons[type] or {}
         item_buttons[type][proto.name] = item_buttons[type][proto.name] or {}
         table.insert(item_buttons[type][proto.name], {button=button, proper_style=style})
@@ -197,7 +198,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
         item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
-            tags={mod="fp", on_gui_click="act_on_compact_item", item_id=fuel.id}, tooltip=tooltip,
+            tags={mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id}, tooltip=tooltip,
             mouse_button_filter={"left-and-right"}}
 
         ::skip_fuel::
@@ -387,7 +388,8 @@ local function handle_beacon_click(player, tags, action)
 end
 
 local function handle_item_click(player, tags, action)
-    local item = OBJECT_INDEX[tags.item_id]
+    local item = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id]
+        or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index]
 
     if action == "put_into_cursor" then
         util.cursor.add_to_item_combinator(player, item.proto, item.amount)
@@ -398,7 +400,8 @@ local function handle_item_click(player, tags, action)
 end
 
 local function handle_hover_change(player, tags, event)
-    local proto = OBJECT_INDEX[tags.item_id].proto
+    local proto = (tags.fuel_id) and OBJECT_INDEX[tags.fuel_id].proto
+        or OBJECT_INDEX[tags.simple_items_id].items[tags.item_index].proto
     local compact_elements = util.globals.ui_state(player).compact_elements
 
     local relevant_buttons = compact_elements.item_buttons[proto.type][proto.name]

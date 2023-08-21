@@ -150,7 +150,7 @@ local function update_ingredient_satisfaction(floor, product_class)
             determine_satisfaction(line.machine.fuel)
         end
 
-        for ingredient in line.ingredients:iterator() do
+        for _, ingredient in line.ingredients:iterator() do
             if ingredient.proto.type ~= "entity" then
                 determine_satisfaction(ingredient)
             end
@@ -158,7 +158,7 @@ local function update_ingredient_satisfaction(floor, product_class)
 
         -- Products and byproducts just get added to the list as being produced
         for _, item_category in pairs{"products", "byproducts"} do
-            for product in line[item_category]:iterator() do
+            for _, product in line[item_category]:iterator() do
                 structures.class.add(product_class, product)
             end
         end

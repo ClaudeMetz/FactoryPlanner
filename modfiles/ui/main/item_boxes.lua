@@ -69,14 +69,12 @@ local function refresh_item_box(player, factory, floor, item_category)
     local action = (shows_floor_items) and ("act_on_floor_item") or ("act_on_top_level_" .. item_category)
     local tutorial_tt = (util.globals.preferences(player).tutorial_mode)
         and util.actions.tutorial_tooltip(action, nil, player) or nil
-
     local real_products = (not shows_floor_items and item_category == "product")
-    local item_iterator = (real_products) and factory:iterator() or floor[item_category .. "s"]:iterator()
 
-    for item in item_iterator do
+    local function build_item(item, index)
         local required_amount = (item.class == "Product") and item:get_required_amount() or nil
         local amount, number_tooltip = view_state.process_item(metadata, item, required_amount, nil)
-        if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
+        if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
         local style = default_style
         local satisfaction_line = ""  ---@type LocalisedString
@@ -103,11 +101,19 @@ local function refresh_item_box(player, factory, floor, item_category)
         end
 
         table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-            tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id}, enabled=enabled,
-            mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index},
+            enabled=enabled, mouse_button_filter={"left-and-right"}}
         table_item_count = table_item_count + 1
+    end
 
-        ::skip_item::  -- goto for fun, wooohoo
+    if real_products then
+        for product in factory:iterator() do
+            build_item(product, nil)
+        end
+    else
+        for index, item in floor[item_category .. "s"]:iterator() do
+            build_item(item, index)
+        end
     end
 
     if real_products then  -- meaning allow the user to add items of this type
@@ -140,7 +146,9 @@ local function handle_item_add(player, tags, event)
 end
 
 local function handle_item_button_click(player, tags, action)
-    local item = OBJECT_INDEX[tags.item_id]
+    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+    local item = (tags.item_id) and OBJECT_INDEX[tags.item_id]
+        or floor[tags.item_category .. "s"].items[tags.item_index]
 
     if action == "add_recipe" then
         add_recipe(player, tags.item_category, item.proto)
@@ -201,7 +209,7 @@ local function put_ingredients_into_cursor(player, _, _)
         or util.context.get(player, "Factory").top_floor  --[[@as Floor]]
 
     local ingredients = {}
-    for ingredient in relevant_floor["ingredients"]:iterator() do
+    for _, ingredient in relevant_floor["ingredients"]:iterator() do
         if ingredient.proto.type == "item" then
             ingredients[ingredient.proto.name] = ingredient.amount
         end
