@@ -7,7 +7,7 @@ Date: 00. 00. 0000
     - Rewrote basically the entire data storage backend of the mod. This is not a feature in itself, but lays the groundwork for future ones, like undo/redo, multiplayer support, and more. What it also means is a period of lower stability, as thousands of lines of code were changed. The mod was beta-tested, so the worst issues should be fixed, but there will still be some bugs.
     - Due to this rewrite, the minimum migratable version of the mod is 1.1.60 from here on out. This means any save from before 1.1.60 can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 1.1.60, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
   Bugfixes:
-    -
+    - Fixed a large performance issue in the main interface that seemed to affect only some users
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.72
