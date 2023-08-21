@@ -83,7 +83,7 @@ function Product:paste(object)
     -- TODO This is all kinds of screwed up
     --[[ elseif object.class == "Line" then  ---@cast object LineObject
         local relevant_line = (object.class == "Floor") and object.first or object  --[[@as Line] ]
-        for product in relevant_line.products:iterator() do
+        for _, product in relevant_line.products:iterator() do
             local dummy_product = init({})
             self.parent:insert(dummy_product)
             dummy_product:paste(product)  -- avoids duplicating existing items

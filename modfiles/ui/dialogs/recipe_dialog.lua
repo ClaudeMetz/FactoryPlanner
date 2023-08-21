@@ -97,7 +97,7 @@ local function attempt_adding_line(player, recipe_id)
     else
         local floor = util.context.get(player, "Floor")  --[[@as Floor]]
         local relative_object = modal_data.add_after_line or floor:find_last() --[[@as LineObject]]
-        floor:insert(line, relative_object)
+        floor:insert(line, relative_object, "next")
 
         local message = nil
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then

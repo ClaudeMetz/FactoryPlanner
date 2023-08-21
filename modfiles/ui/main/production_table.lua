@@ -221,7 +221,7 @@ function builders.pollution(line, parent_flow, _)
 end
 
 function builders.products(line, parent_flow, metadata)
-    for product in line["products"]:iterator() do
+    for index, product in line["products"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
@@ -242,7 +242,7 @@ function builders.products(line, parent_flow, metadata)
         local tooltip = {"", name_line, number_line, metadata.product_tutorial_tt}
 
         parent_flow.add{type="sprite-button", sprite=product.proto.sprite, style=style,
-            tags={mod="fp", on_gui_click="act_on_line_product", item_category="product", item_id=product.id},
+            tags={mod="fp", on_gui_click="act_on_line_product", line_id=line.id, item_index=index},
             number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_product::
@@ -250,7 +250,7 @@ function builders.products(line, parent_flow, metadata)
 end
 
 function builders.byproducts(line, parent_flow, metadata)
-    for byproduct in line["byproducts"]:iterator() do
+    for index, byproduct in line["byproducts"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
@@ -262,7 +262,7 @@ function builders.byproducts(line, parent_flow, metadata)
             metadata.byproduct_tutorial_tt}
 
         parent_flow.add{type="sprite-button", sprite=byproduct.proto.sprite, style="flib_slot_button_red_small",
-            tags={mod="fp", on_gui_click="act_on_line_byproduct", item_category="byproduct", item_id=byproduct.id},
+            tags={mod="fp", on_gui_click="act_on_line_byproduct", line_id=line.id, item_index=index},
             number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
 
         ::skip_byproduct::
@@ -270,7 +270,7 @@ function builders.byproducts(line, parent_flow, metadata)
 end
 
 function builders.ingredients(line, parent_flow, metadata)
-    for ingredient in line["ingredients"]:iterator() do
+    for index, ingredient in line["ingredients"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
         local machine_count = (line.class ~= "Floor") and line.machine.count or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
@@ -307,7 +307,7 @@ function builders.ingredients(line, parent_flow, metadata)
         local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
 
         parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
-            tags={mod="fp", on_gui_click="act_on_line_ingredient", item_category="Iigredient", item_id=ingredient.id},
+            tags={mod="fp", on_gui_click="act_on_line_ingredient", line_id=line.id, item_index=index},
             number=amount, tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
 
         ::skip_ingredient::
