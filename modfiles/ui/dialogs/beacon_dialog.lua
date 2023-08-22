@@ -194,12 +194,12 @@ listeners.dialog = {
 listeners.misc = {
     on_player_cursor_stack_changed = (function(player, _)
         -- If the cursor stack is not valid_for_read, it's empty, thus the selector has been put away
-        if util.globals.flags(player).selection_mode and not player.cursor_stack.valid_for_read then
+        if util.globals.ui_state(player).selection_mode and not player.cursor_stack.valid_for_read then
             modal_dialog.leave_selection_mode(player)
         end
     end),
     on_player_selected_area = (function(player, event)
-        if event.item == "fp_beacon_selector" and util.globals.flags(player).selection_mode then
+        if event.item == "fp_beacon_selector" and util.globals.ui_state(player).selection_mode then
             handle_beacon_selection(player, event.entities)
         end
     end)

@@ -17,10 +17,6 @@ function _globals.preferences(player) return global.players[player.index].prefer
 function _globals.ui_state(player) return global.players[player.index].ui_state end
 
 ---@param player LuaPlayer
----@return UIStateFlags
-function _globals.flags(player) return global.players[player.index].ui_state.flags end
-
----@param player LuaPlayer
 ---@return table?
 function _globals.modal_data(player) return global.players[player.index].ui_state.modal_data end
 

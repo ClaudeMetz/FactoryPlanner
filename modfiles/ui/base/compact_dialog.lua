@@ -601,7 +601,7 @@ dialog_listeners.gui = {
         {
             name = "switch_to_main_view",
             handler = (function(player, _, _)
-                util.globals.flags(player).compact_view = false
+                util.globals.ui_state(player).compact_view = false
                 compact_dialog.toggle(player)
 
                 main_dialog.toggle(player)
@@ -636,13 +636,13 @@ dialog_listeners.misc = {
     end),
 
     on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" and util.globals.flags(player).compact_view then
+        if event.prototype_name == "fp_open_interface" and util.globals.ui_state(player).compact_view then
             compact_dialog.toggle(player)
         end
     end),
 
     fp_toggle_interface = (function(player, _)
-        if util.globals.flags(player).compact_view then compact_dialog.toggle(player) end
+        if util.globals.ui_state(player).compact_view then compact_dialog.toggle(player) end
     end)
 }
 

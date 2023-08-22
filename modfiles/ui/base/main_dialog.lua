@@ -54,7 +54,7 @@ end
 
 local function interface_toggle(metadata)
     local player = game.get_player(metadata.player_index)
-    local compact_view = util.globals.flags(player).compact_view
+    local compact_view = util.globals.ui_state(player).compact_view
     if compact_view then compact_dialog.toggle(player)
     else main_dialog.toggle(player) end
 end
@@ -213,19 +213,18 @@ listeners.misc = {
     end),
 
     on_lua_shortcut = (function(player, event)
-        if event.prototype_name == "fp_open_interface" and not util.globals.flags(player).compact_view then
+        if event.prototype_name == "fp_open_interface" and not util.globals.ui_state(player).compact_view then
             main_dialog.toggle(player)
         end
     end),
 
     fp_toggle_interface = (function(player, _)
-        if not util.globals.flags(player).compact_view then main_dialog.toggle(player) end
+        if not util.globals.ui_state(player).compact_view then main_dialog.toggle(player) end
     end),
 
     -- This needs to be in a single place, otherwise the events cancel each other out
     fp_toggle_compact_view = (function(player, _)
         local ui_state = util.globals.ui_state(player)
-        local flags = ui_state.flags
         local factory = util.context.get(player, "Factory")
 
         local main_focus = main_dialog.is_in_focus(player)
@@ -234,19 +233,19 @@ listeners.misc = {
         -- Open the compact view if this toggle is pressed when neither dialog
         -- is open as that makes the most sense from a user perspective
         if not main_focus and not compact_focus then
-            flags.compact_view = true
+            ui_state.compact_view = true
             compact_dialog.toggle(player)
 
-        elseif flags.compact_view and compact_focus then
+        elseif ui_state.compact_view and compact_focus then
             compact_dialog.toggle(player)
             main_dialog.toggle(player)
             util.raise.refresh(player, "production", nil)
-            flags.compact_view = false
+            ui_state.compact_view = false
 
         elseif main_focus and factory ~= nil and factory.valid then
             main_dialog.toggle(player)
             compact_dialog.toggle(player)  -- toggle also refreshes
-            flags.compact_view = true
+            ui_state.compact_view = true
         end
     end)
 }

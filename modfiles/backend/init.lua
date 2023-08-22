@@ -123,9 +123,6 @@ end
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data table?
 ---@field queued_dialog_metadata table?
----@field flags UIStateFlags
-
----@class UIStateFlags
 ---@field selection_mode boolean
 ---@field compact_view boolean
 ---@field recalculate_on_factory_change boolean
@@ -146,11 +143,9 @@ local function reset_ui_state(player)
     ui_state_table.modal_data = nil  ---@type table? Data that can be set for a modal dialog to use
     ui_state_table.queued_dialog_metadata = nil  ---@type table? Info on dialog to open after the current one closes
 
-    ui_state_table.flags = {  -- TODO do away with, make them just ui_state variables
-        selection_mode = false,  -- Whether the player is currently using a selector
-        compact_view = false,  -- Whether the user has switched to the compact main view
-        recalculate_on_factory_change = false  -- Whether calculations should re-run
-    }
+    ui_state_table.selection_mode = false  -- Whether the player is currently using a selector
+    ui_state_table.compact_view = false  -- Whether the user has switched to the compact main view
+    ui_state_table.recalculate_on_factory_change = false  -- Whether calculations should re-run
 
     -- The UI table gets replaced because the whole interface is reset
     global.players[player.index].ui_state = ui_state_table

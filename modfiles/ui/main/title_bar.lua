@@ -92,7 +92,7 @@ listeners.gui = {
             name = "switch_to_compact_view",
             handler = (function(player, _, _)
                 main_dialog.toggle(player)
-                util.globals.flags(player).compact_view = true
+                util.globals.ui_state(player).compact_view = true
 
                 compact_dialog.toggle(player)
             end)

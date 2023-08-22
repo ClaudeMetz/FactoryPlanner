@@ -70,11 +70,11 @@ local function handle_percentage_change(player, tags, event)
     local relevant_line = (line.class == "Floor") and line.first or line
     relevant_line.percentage = tonumber(event.element.text) or 100
 
-    util.globals.ui_state(player).flags.recalculate_on_factory_change = true -- set flag to recalculate if necessary
+    util.globals.ui_state(player).recalculate_on_factory_change = true -- set flag to recalculate if necessary
 end
 
 local function handle_percentage_confirmation(player, _, _)
-    util.globals.ui_state(player).flags.recalculate_on_factory_change = false  -- reset this flag as we refresh below
+    util.globals.ui_state(player).recalculate_on_factory_change = false  -- reset this flag as we refresh below
     solver.update(player)
     util.raise.refresh(player, "factory", nil)
 end

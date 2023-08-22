@@ -232,7 +232,7 @@ end
 
 function modal_dialog.enter_selection_mode(player, selector_name)
     local ui_state = util.globals.ui_state(player)
-    ui_state.flags.selection_mode = true
+    ui_state.selection_mode = true
     player.cursor_stack.set_stack(selector_name)
 
     local frame_main_dialog = ui_state.main_elements.main_frame
@@ -248,7 +248,7 @@ end
 
 function modal_dialog.leave_selection_mode(player)
     local ui_state = util.globals.ui_state(player)
-    ui_state.flags.selection_mode = false
+    ui_state.selection_mode = false
     player.cursor_stack.set_stack(nil)
 
     local modal_elements = ui_state.modal_data.modal_elements
@@ -324,7 +324,7 @@ listeners.gui = {
             handler = (function(player, _, event)
                 local ui_state = util.globals.ui_state(player)
 
-                if ui_state.flags.selection_mode then
+                if ui_state.selection_mode then
                     modal_dialog.leave_selection_mode(player)
                 else
                     -- Here, we need to distinguish between submitting a dialog with E or ESC
@@ -342,7 +342,7 @@ listeners.gui = {
 
 listeners.misc = {
     fp_confirm_dialog = (function(player, _)
-        if not util.globals.flags(player).selection_mode then
+        if not util.globals.ui_state(player).selection_mode then
             util.raise.close_dialog(player, "submit")
         end
     end),
