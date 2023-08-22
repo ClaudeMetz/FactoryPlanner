@@ -174,7 +174,7 @@ end
 
 ---@param object LineObject
 ---@return boolean compatible
-function Floor:check_product_compatibility(object)  -- TODO test once solver is set up again
+function Floor:check_product_compatibility(object)
     if self.level == 1 then return true end
 
     local relevant_line = (object.class == "Floor") and object.first or object

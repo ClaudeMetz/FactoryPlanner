@@ -2,13 +2,13 @@
 
 local parts = {}
 
--- TODO This likely requires a system to define custom prototypes as well, since the vanilla ones
+-- This likely requires a system to define custom prototypes as well, since the vanilla ones
 --      don't cover nearly all use cases. It'll also allow some conveniences like easier numbers
 --      (ex. machine speed of 1), and make it independent of any vanilla prototype changes.
 --      Could define real prototypes, but that has quite a few downsides, and also makes the
 --      generator part of the test net, which I'd like to avoid. So a system to create fake
 --      internal prototype definitions similar to this one could work.
--- TODO Also, these parts are missing lots of things (like the line missing its beacon, for example)
+-- Also, these parts are missing lots of things (like the line missing its beacon, for example)
 
 function parts.export_string(setup)
     return game.table_to_json({

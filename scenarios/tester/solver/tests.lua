@@ -2,7 +2,7 @@
 
 local parts = require("solver.parts")
 local framework = require("solver.framework")
--- TODO doing the following is really bad, but writing a proper interface kinda is as well
+-- Doing the following is really bad, but writing a proper interface kinda is as well
 --      Also, it doesn't work without dumb changes to the main mod, so this whole test
 --      setup is non-functional and untested until the requires are cleaned up
 require("__factoryplanner__.control")  -- pull in all the crap

@@ -9,16 +9,11 @@ local function refresh_production(player, _, _)
     end
 end
 
-local function paste_line(player, _, event)
+local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
 
     local dummy_line = Line.init({}, "input")
-    floor:insert(dummy_line)
-
-    if util.clipboard.paste(player, dummy_line) then
-        solver.update(player)
-        util.raise.refresh(player, "factory", nil)
-    end
+    util.clipboard.dummy_paste(player, dummy_line, floor)
 end
 
 -- Changes the floor to either be the top one or the one above the current one

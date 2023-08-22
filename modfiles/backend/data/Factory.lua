@@ -89,6 +89,11 @@ function Factory:find(filter, pivot, direction)
     return self:_find(filter, pivot, direction)  --[[@as Product?]]
 end
 
+---@return Product?
+function Factory:find_last()
+    return self:_find_last()  --[[@as Product?]]
+end
+
 
 ---@param filter ObjectFilter?
 ---@param pivot Product?
