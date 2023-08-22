@@ -17,7 +17,7 @@ local function handle_recipe_click(player, tags, action)
     local relevant_line = (line.class == "Floor") and line.first or line
 
     if action == "open_subfloor" then
-        if relevant_line.production_type == "input" then
+        if relevant_line.production_type == "consume" then
             util.messages.raise(player, "error", {"fp.error_no_subfloor_on_byproduct_recipes"}, 1)
             return
         end
@@ -241,7 +241,7 @@ local function handle_item_click(player, tags, action)
         end
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
-        local production_type = (tags.item_category == "byproduct") and "input" or "output"
+        local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
         local add_after_line = (action == "add_recipe_below") and line or nil
         util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line=add_after_line,
             production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
