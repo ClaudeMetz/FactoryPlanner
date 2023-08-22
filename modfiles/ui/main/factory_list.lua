@@ -76,10 +76,10 @@ local function handle_factory_click(player, tags, action)
     local selected_factory = OBJECT_INDEX[tags.factory_id]  --[[@as Factory]]
 
     if action == "select" then
-        local flags = util.globals.flags(player)
-        if flags.recalculate_on_factory_change then
+        local ui_state = util.globals.ui_state(player)
+        if ui_state.recalculate_on_factory_change then
             -- This flag is set when a textfield is changed but not confirmed
-            flags.recalculate_on_factory_change = false
+            ui_state.recalculate_on_factory_change = false
             local previous_factory = util.context.get(player, "Factory")
             solver.update(player, previous_factory)
         end

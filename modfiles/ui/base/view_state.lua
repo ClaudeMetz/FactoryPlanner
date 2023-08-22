@@ -18,8 +18,7 @@ local function cycle_views(player, direction)
         end
         view_state.select(player, new_view_id)
 
-        local compact_view = util.globals.flags(player).compact_view
-        local refresh = (compact_view) and "compact_factory" or "production"
+        local refresh = (ui_state.compact_view) and "compact_factory" or "production"
         util.raise.refresh(player, refresh, nil)
 
         -- This avoids the game focusing a random textfield when pressing Tab to change states
@@ -241,7 +240,7 @@ listeners.gui = {
             handler = (function(player, tags, _)
                 view_state.select(player, tags.view_id)
 
-                local compact_view = util.globals.flags(player).compact_view
+                local compact_view = util.globals.ui_state(player).compact_view
                 local refresh = (compact_view) and "compact_factory" or "production"
                 util.raise.refresh(player, refresh, nil)
             end)

@@ -265,7 +265,7 @@ listeners.gui = {
             name = "mining_prod_override",
             handler = (function(player, _, event)
                 util.context.get(player, "Factory").mining_productivity = tonumber(event.element.text)
-                util.globals.flags(player).recalculate_on_factory_change = true  -- set flag to recalculate
+                util.globals.ui_state(player).recalculate_on_factory_change = true  -- set flag to recalculate
             end)
         }
     },
@@ -280,7 +280,7 @@ listeners.gui = {
             name = "mining_prod_override",
             handler = (function(player, _, _)
                 -- Reset the recalculation flag as we re-solve below
-                util.globals.flags(player).recalculate_on_factory_change = false
+                util.globals.ui_state(player).recalculate_on_factory_change = false
                 solver.update(player)
                 util.raise.refresh(player, "factory", nil)
             end)
