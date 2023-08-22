@@ -1,12 +1,8 @@
--- ** LOCAL UTIL **
-local tab_definitions = {"interface", "usage", "matrix_solver"}
-
-function tab_definitions.interface(player, tab, tab_pane)
-    tab.caption = {"fp.interface"}
-
+local function open_tutorial_dialog(player, modal_data)
     local function add_base_frame(name)
-        local frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch", direction="vertical"}
-        frame.style.horizontally_stretchable = true
+        local frame = modal_data.modal_elements.content_frame.add{type="frame",
+            style="bordered_frame", direction="vertical"}
+        frame.style.width = 550
 
         frame.add{type="label", caption={"fp." .. name .. "_tutorial_title"}, style="caption_label"}
         local label_text = frame.add{type="label", caption={"fp." .. name .. "_tutorial_text"}}
@@ -42,41 +38,6 @@ function tab_definitions.interface(player, tab, tab_pane)
     local label_controls = frame_interface.add{type="label", caption={"", {"fp.interface_controls"}, recipebook_string}}
     label_controls.style.single_line = false
     label_controls.style.margin = {6, 0, 0, 6}
-end
-
-function tab_definitions.usage(_, tab, tab_pane)
-    tab.caption = {"fp.usage"}
-
-    local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
-    local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_usage_text"}}
-    label_text.style.single_line = false
-    label_text.style.padding = 2
-end
-
-function tab_definitions.matrix_solver(_, tab, tab_pane)
-    tab.caption = {"fp.matrix_solver"}
-
-    local bordered_frame = tab_pane.add{type="frame", style="fp_frame_bordered_stretch"}
-    local label_text = bordered_frame.add{type="label", caption={"fp.tutorial_matrix_solver_text"}}
-    label_text.style.single_line = false
-    label_text.style.padding = 2
-end
-
-
-local function open_tutorial_dialog(player, modal_data)
-    local frame_tabs = modal_data.modal_elements.dialog_flow.add{type="frame", style="inside_deep_frame_for_tabs"}
-
-    local tabbed_pane = frame_tabs.add{type="tabbed-pane", style="tabbed_pane_with_no_side_padding"}
-    tabbed_pane.style.height = 600
-
-    for _, tab_name in ipairs(tab_definitions) do
-        local tab = tabbed_pane.add{type="tab"}
-        local tab_pane = tabbed_pane.add{type="scroll-pane", style="flib_naked_scroll_pane_under_tabs"}
-        tab_pane.style.width = 555
-
-        tab_definitions[tab_name](player, tab, tab_pane)
-        tabbed_pane.add_tab(tab, tab_pane)
-    end
 end
 
 
@@ -117,7 +78,7 @@ listeners.dialog = {
     dialog = "tutorial",
     metadata = (function(_) return {
         caption = {"fp.tutorial"},
-        create_content_frame = false
+        create_content_frame = true
     } end),
     open = open_tutorial_dialog
 }
