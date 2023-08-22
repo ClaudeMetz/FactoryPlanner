@@ -248,7 +248,7 @@ end
 
 
 -- ** TOP LEVEL **
-factory_list = {}  -- TODO try to move elsewhere or smth to get rid of global variable
+factory_list = {}  -- try to move elsewhere or smth to get rid of global variable
 
 -- Utility function to centralize factory creation behavior
 function factory_list.add_factory(player, name)

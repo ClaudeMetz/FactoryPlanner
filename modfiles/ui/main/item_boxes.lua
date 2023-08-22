@@ -135,11 +135,9 @@ end
 
 local function handle_item_add(player, tags, event)
     if event.shift then  -- paste
-        -- Add a temporary item that can then be replaced
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        local product = Product.init({})
-        factory:insert(product)
-        util.clipboard.paste(player, product)
+        local dummy_product = Product.init({})
+        util.clipboard.dummy_paste(player, dummy_product, factory)
     else
         util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category=tags.item_category}})
     end

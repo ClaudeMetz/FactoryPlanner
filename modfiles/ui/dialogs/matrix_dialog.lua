@@ -115,7 +115,7 @@ local function matrix_early_abort_check(player, modal_data)
         factory.linearly_dependant = true
         return false
     end
-    factory.linearly_dependant = false  -- TODO not the proper way to signal this, but it works
+    factory.linearly_dependant = false  -- not the proper way to signal this, but it works
 
     modal_data.constrained_items = linear_dependence_data.allowed_free_items
     modal_data.free_items = matrix_metadata.free_items

@@ -10,11 +10,13 @@ local unpackers = {
 
 local _clipboard = {}
 
----@alias CopyableObject Product | LineObject | Machine | Beacon | Module | Fuel
+---@alias CopyableObject Product | Floor | Line | Machine | Beacon | Module | Fuel
+---@alias CopyableObjectParent Factory | Floor | Line | ModuleSet
 
 ---@class ClipboardEntry
 ---@field class string
 ---@field packed_object PackedObject
+---@field parent CopyableObjectParent
 
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
@@ -63,6 +65,17 @@ function _clipboard.paste(player, target)
             end
         end
     end
+end
+
+---@param player LuaPlayer
+---@param dummy CopyableObject
+---@param parent CopyableObjectParent
+function _clipboard.dummy_paste(player, dummy, parent)
+    dummy.dummy = true
+    parent:insert(dummy)
+    _clipboard.paste(player, dummy)
+    local last = parent:find_last()  --[[@as CopyableObject]]
+    if last.dummy then parent:remove(last) end
 end
 
 ---@param player LuaPlayer

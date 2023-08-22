@@ -79,25 +79,6 @@ function Product:paste(object)
         end
 
         return true, nil
-
-    -- TODO This is all kinds of screwed up
-    --[[ elseif object.class == "Line" then  ---@cast object LineObject
-        local relevant_line = (object.class == "Floor") and object.first or object  --[[@as Line] ]
-        for _, product in relevant_line.products:iterator() do
-            local dummy_product = init({})
-            self.parent:insert(dummy_product)
-            dummy_product:paste(product)  -- avoids duplicating existing items
-        end
-
-        local top_floor = self.parent.top_floor  --[[@as Floor] ]
-        if object.class == "Floor" then  -- if the object is a floor, paste all its lines
-            for line in object:iterator() do
-                top_floor:insert(line)
-            end
-        else  -- if the object is a basic line, just straight paste it
-            top_floor:insert(object)
-        end
-        return true, nil ]]
     else
         return false, "incompatible_class"
     end
