@@ -351,7 +351,7 @@ end
 local all_production_columns = {
     -- name, caption, tooltip, alignment
     {name="done", caption="", tooltip={"fp.column_done_tt"}, alignment="center"},
-    {name="recipe", caption={"fp.pu_recipe", 1}, alignment="left"},
+    {name="recipe", caption={"fp.pu_recipe", 1}, alignment="center"},
     {name="percentage", caption="%", tooltip={"fp.column_percentage_tt"}, alignment="center"},
     {name="machine", caption={"fp.pu_machine", 1}, alignment="left"},
     {name="beacon", caption={"fp.pu_beacon", 1}, alignment="left"},

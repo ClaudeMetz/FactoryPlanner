@@ -68,6 +68,7 @@ local function reload_preferences(player)
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
 
     preferences.done_column = preferences.done_column or false
+    preferences.percentage_column = preferences.percentage_column or true
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
 
