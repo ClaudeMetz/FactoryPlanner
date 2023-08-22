@@ -88,7 +88,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
             style = (relevant_line.active) and "flib_slot_button_blue_small" or "flib_slot_button_purple_small"
             note = {"fp.recipe_subfloor_attached"}
 
-        elseif line.production_type == "input" then
+        elseif line.production_type == "consume" then
             style = (relevant_line.active) and "flib_slot_button_yellow_small" or "flib_slot_button_orange_small"
             note = {"fp.recipe_consumes_byproduct"}
         end

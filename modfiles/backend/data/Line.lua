@@ -4,7 +4,7 @@ local Beacon = require("backend.data.Beacon")
 local Module = require("backend.data.Module")
 local SimpleItems = require("backend.data.SimpleItems")
 
----@alias ProductionType "input" | "output"
+---@alias ProductionType "produce" | "consume"
 
 ---@class Line: Object, ObjectMethods
 ---@field class "Line"

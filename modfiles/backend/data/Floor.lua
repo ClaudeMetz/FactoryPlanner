@@ -246,7 +246,6 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Floor:repair(player)
-    -- TODO check how this works with subfloors, and the first line being invalid
     self:_repair(player)  -- always makes it valid
 
     self.valid = true
