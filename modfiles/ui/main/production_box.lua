@@ -28,55 +28,53 @@ end
 local function refresh_paste_button(player)
     local main_elements = util.globals.main_elements(player)
     if not main_elements.production_box then return end
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
 
     local line_copied = util.clipboard.check_classes(player, {Floor=true, Line=true})
-    main_elements.production_box.paste_button.visible = line_copied
+    main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied)
 end
 
 
 local function refresh_production_box(player)
     local ui_state = util.globals.ui_state(player)
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    local floor = util.context.get(player, "Floor")  --[[@as Floor?]]
 
     if ui_state.main_elements.main_frame == nil then return end
     local production_box_elements = ui_state.main_elements.production_box
 
-    local factory_valid = factory and factory.valid
+    local factory_valid = factory ~= nil and factory.valid
     local current_level = (factory_valid) and floor.level or 1
     local any_lines_present = (factory_valid) and (floor:count() > 0) or false
 
     production_box_elements.refresh_button.enabled =
-        (not factory.archived and factory_valid and any_lines_present)
+        (factory_valid and not factory.archived and any_lines_present)
     production_box_elements.level_label.caption = (not factory_valid) and ""
         or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
-    production_box_elements.floor_up_button.visible = (factory_valid)
+    production_box_elements.floor_up_button.visible = factory_valid
     production_box_elements.floor_up_button.enabled = (current_level > 1)
 
-    production_box_elements.floor_top_button.visible = (factory_valid)
+    production_box_elements.floor_top_button.visible = factory_valid
     production_box_elements.floor_top_button.enabled = (current_level > 1)
 
-    production_box_elements.separator_line.visible = (factory_valid)
-    production_box_elements.utility_dialog_button.visible = (factory_valid)
+    production_box_elements.separator_line.visible = factory_valid
+    production_box_elements.utility_dialog_button.visible = factory_valid
 
     util.raise.refresh(player, "view_state", production_box_elements.view_state_table)
-    production_box_elements.view_state_table.visible = (factory_valid)
+    production_box_elements.view_state_table.visible = factory_valid
 
-    -- This structure is stupid and huge, but not sure how to do it more elegantly
     production_box_elements.instruction_label.visible = false
-    if not factory.archived then
-        if factory == nil then
-            production_box_elements.instruction_label.caption = {"fp.production_instruction_factory"}
+    if factory == nil then
+        production_box_elements.instruction_label.caption = {"fp.production_instruction_factory"}
+        production_box_elements.instruction_label.visible = true
+    elseif factory_valid and not factory.archived and not any_lines_present then
+        if factory:count() == 0 then
+            production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
             production_box_elements.instruction_label.visible = true
-        elseif factory_valid and not any_lines_present then
-            if factory:count() == 0 then
-                production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
-                production_box_elements.instruction_label.visible = true
-            else
-                production_box_elements.instruction_label.caption = {"fp.production_instruction_recipe"}
-                production_box_elements.instruction_label.visible = true
-            end
+        else
+            production_box_elements.instruction_label.caption = {"fp.production_instruction_recipe"}
+            production_box_elements.instruction_label.visible = true
         end
     end
 

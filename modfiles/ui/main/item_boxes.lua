@@ -50,16 +50,17 @@ local function build_item_box(player, category, column_count)
     item_boxes_elements[category .. "_item_table"] = table_items
 end
 
-local function refresh_item_box(player, factory, floor, item_category)
+local function refresh_item_box(player, factory, show_floor_items, item_category)
     local item_boxes_elements = util.globals.main_elements(player).item_boxes
 
     local table_items = item_boxes_elements[item_category .. "_item_table"]
     table_items.clear()
 
-    if not factory or not factory.valid then
+    if factory == nil or not factory.valid then
         item_boxes_elements["ingredient_combinator_button"].visible = false
         return 0
     end
+    local floor = (show_floor_items) and util.context.get(player, "Floor") or factory.top_floor
 
     local table_item_count = 0
     local metadata = view_state.generate_metadata(player, factory)
@@ -243,12 +244,12 @@ local function refresh_item_boxes(player)
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
 
-    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    local relevant_floor = (player_table.preferences.show_floor_items) and
-        util.context.get(player, "Floor") or factory.top_floor
-    local prow_count = refresh_item_box(player, factory, relevant_floor, "product")
-    local brow_count = refresh_item_box(player, factory, relevant_floor, "byproduct")
-    local irow_count = refresh_item_box(player, factory, relevant_floor, "ingredient")
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    local show_floor_items = player_table.preferences.show_floor_items
+
+    local prow_count = refresh_item_box(player, factory, show_floor_items, "product")
+    local brow_count = refresh_item_box(player, factory, show_floor_items, "byproduct")
+    local irow_count = refresh_item_box(player, factory, show_floor_items, "ingredient")
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
     local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)
