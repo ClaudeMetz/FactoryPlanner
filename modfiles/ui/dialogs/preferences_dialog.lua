@@ -233,7 +233,7 @@ local function open_preferences_dialog(player, modal_data)
         "ingredient_satisfaction", "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
     preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
 
-    local production_preference_names = {"done_column", "pollution_column", "line_comment_column"}
+    local production_preference_names = {"done_column", "percentage_column", "pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
     preference_structures.mb_defaults(preferences, left_content_frame)
