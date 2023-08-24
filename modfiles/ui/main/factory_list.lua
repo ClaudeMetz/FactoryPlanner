@@ -98,6 +98,8 @@ end
 
 local function refresh_factory_list(player)
     local player_table = util.globals.player_table(player)
+    local tooltips = player_table.ui_state.tooltips
+    tooltips.factory_list = {}
 
     local main_elements = player_table.ui_state.main_elements
     if main_elements.main_frame == nil then return end
@@ -122,9 +124,11 @@ local function refresh_factory_list(player)
             local tooltip = {"", info_tooltip, tutorial_tt}
 
             -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
-            local factory_button = listbox.add{type="button", caption=padded_caption, tooltip=tooltip,
-                tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id},
-                style="fp_button_fake_listbox_item", toggled=selected, mouse_button_filter={"left-and-right"}}
+            local factory_button = listbox.add{type="button", caption=padded_caption, toggled=selected,
+                tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
+                context="factory_list"}, style="fp_button_fake_listbox_item", mouse_button_filter={"left-and-right"},
+                raise_hover_events=true}
+            tooltips.factory_list[factory_button.index] = tooltip
 
             local function create_move_button(flow, direction)
                 local enabled = (factory.parent:find(filter, factory[direction], direction) ~= nil)
@@ -133,9 +137,11 @@ local function refresh_factory_list(player)
                 local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_factory", 1},
                     {"fp." .. up_down}, endpoint} or ""
 
-                flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. up_down,
-                    tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id},
-                    tooltip=move_tooltip, enabled=enabled, mouse_button_filter={"left"}}
+                local move_button = flow.add{type="sprite-button", style="fp_button_move_row", enabled=enabled,
+                    tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
+                    on_gui_hover="set_tooltip", context="factory_list"}, sprite="fp_sprite_arrow_" .. up_down,
+                    mouse_button_filter={"left"}, raise_hover_events=true}
+                tooltips.factory_list[move_button.index] = move_tooltip
             end
 
             local move_flow = factory_button.add{type="flow", direction="horizontal"}

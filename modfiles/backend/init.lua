@@ -98,17 +98,17 @@ end
 local function reload_settings(player)
     -- Writes the current user mod settings to their player_table, for read-performance
     local settings = settings.get_player_settings(player)
-    local settings_table = {}
-
     local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
 
-    settings_table.show_gui_button = settings["fp_display_gui_button"].value
-    settings_table.products_per_row = tonumber(settings["fp_products_per_row"].value)
-    settings_table.factory_list_rows = tonumber(settings["fp_factory_list_rows"].value)
-    settings_table.default_timescale = timescale_to_number[settings["fp_default_timescale"].value]  ---@type integer
-    settings_table.belts_or_lanes = settings["fp_view_belts_or_lanes"].value
-    settings_table.prefer_product_picker = settings["fp_prefer_product_picker"].value
-    settings_table.prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
+    local settings_table = {  ---@type SettingsTable
+        show_gui_button = settings["fp_display_gui_button"].value,
+        products_per_row = tonumber(settings["fp_products_per_row"].value),
+        factory_list_rows = tonumber(settings["fp_factory_list_rows"].value),
+        default_timescale = timescale_to_number[settings["fp_default_timescale"].value],
+        belts_or_lanes = settings["fp_view_belts_or_lanes"].value,
+        prefer_product_picker = settings["fp_prefer_product_picker"].value,
+        prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
+    }
 
     global.players[player.index].settings = settings_table
 end
@@ -121,6 +121,7 @@ end
 ---@field main_elements table
 ---@field compact_elements table
 ---@field last_selected_picker_group integer?
+---@field tooltips table
 ---@field modal_dialog_type ModalDialogType?
 ---@field modal_data table?
 ---@field queued_dialog_metadata table?
@@ -130,23 +131,24 @@ end
 
 ---@param player LuaPlayer
 local function reset_ui_state(player)
-    local ui_state_table = {}
+    local ui_state_table = {  ---@type UIStateTable
+        main_dialog_dimensions = nil,
+        last_action = nil,
+        view_states = nil,
+        messages = {},
+        main_elements = {},
+        compact_elements = {},
+        last_selected_picker_group = nil,
+        tooltips = {},
 
-    ui_state_table.main_dialog_dimensions = nil  ---@type DisplayResolution Can only be calculated after on_init
-    ui_state_table.last_action = nil  ---@type string The last user action (used for rate limiting)
-    ui_state_table.view_states = nil  ---@type ViewStates The state of the production views
-    ui_state_table.messages = {}  ---@type PlayerMessage[]  The general message/warning list
-    ui_state_table.main_elements = {}  -- References to UI elements in the main interface
-    ui_state_table.compact_elements = {}  -- References to UI elements in the compact interface
-    ui_state_table.last_selected_picker_group = nil  ---@type integer The item picker category that was last selected
+        modal_dialog_type = nil,
+        modal_data = nil,
+        queued_dialog_metadata = nil,
 
-    ui_state_table.modal_dialog_type = nil  ---@type ModalDialogType The internal modal dialog type
-    ui_state_table.modal_data = nil  ---@type table? Data that can be set for a modal dialog to use
-    ui_state_table.queued_dialog_metadata = nil  ---@type table? Info on dialog to open after the current one closes
-
-    ui_state_table.selection_mode = false  -- Whether the player is currently using a selector
-    ui_state_table.compact_view = false  -- Whether the user has switched to the compact main view
-    ui_state_table.recalculate_on_factory_change = false  -- Whether calculations should re-run
+        selection_mode = false,
+        compact_view = false,
+        recalculate_on_factory_change = false
+    }
 
     -- The UI table gets replaced because the whole interface is reset
     global.players[player.index].ui_state = ui_state_table

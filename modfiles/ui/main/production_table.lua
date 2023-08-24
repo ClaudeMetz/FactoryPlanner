@@ -1,6 +1,8 @@
 -- ** LOCAL UTIL **
 local function generate_metadata(player, factory)
     local preferences = util.globals.preferences(player)
+    local tooltips = util.globals.ui_state(player).tooltips
+    tooltips.production_table = {}
 
     local metadata = {
         archive_open = factory.archived,
@@ -10,7 +12,8 @@ local function generate_metadata(player, factory)
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         view_state_metadata = view_state.generate_metadata(player, factory),
-        any_beacons_available = (next(global.prototypes.beacons) ~= nil)
+        any_beacons_available = (next(global.prototypes.beacons) ~= nil),
+        tooltips = tooltips.production_table
     }
 
     if preferences.tutorial_mode then
@@ -61,9 +64,10 @@ function builders.recipe(line, parent_flow, metadata, indent)
         local up_down = (direction == "previous") and "up" or "down"
         local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
 
-        flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. up_down,
-            tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id},
-            tooltip=move_tooltip, enabled=enabled, mouse_button_filter={"left"}}
+        local button = flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. up_down,
+            tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id, on_gui_hover="set_tooltip",
+            context="production_table"}, enabled=enabled, mouse_button_filter={"left"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = move_tooltip
     end
 
     local move_flow = parent_flow.add{type="flow", direction="vertical"}
@@ -97,9 +101,11 @@ function builders.recipe(line, parent_flow, metadata, indent)
     local first_line = (note == "") and {"fp.tt_title", recipe_proto.localised_name}
         or {"fp.tt_title_with_note", recipe_proto.localised_name, note}
     local tooltip = {"", first_line, relevant_line.effects_tooltip, tutorial_tooltip}
-    parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id},
-        enabled=enabled, sprite=recipe_proto.sprite, tooltip=tooltip, style=style,
-        mouse_button_filter={"left-and-right"}}
+    local button = parent_flow.add{type="sprite-button", enabled=enabled, sprite=recipe_proto.sprite,style=style,
+        tags={mod="fp", on_gui_click="act_on_line_recipe", line_id=line.id, on_gui_hover="set_tooltip",
+        context="production_table"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+    metadata.tooltips[button.index] = tooltip
+
 end
 
 function builders.percentage(line, parent_flow, metadata)
@@ -121,9 +127,11 @@ local function add_module_flow(parent_flow, module_set, metadata)
         local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, module.effects_tooltip,
             metadata.module_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
-            tags={mod="fp", on_gui_click="act_on_line_module", module_id=module.id}, number=module.amount,
-            style="flib_slot_button_default_small", mouse_button_filter={"left-and-right"}}
+        local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, number=module.amount,
+            tags={mod="fp", on_gui_click="act_on_line_module", module_id=module.id, on_gui_hover="set_tooltip",
+            context="production_table"}, style="flib_slot_button_default_small",
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
     end
 end
 
@@ -159,18 +167,19 @@ function builders.machine(line, parent_flow, metadata)
         local tooltip = {"", {"fp.tt_title", line.machine.proto.localised_name}, "\n", tooltip_line,
             line.machine.effects_tooltip, metadata.machine_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", style=style, sprite=line.machine.proto.sprite, number=count,
-            tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=line.machine.id}, tooltip=tooltip,
-            mouse_button_filter={"left-and-right"}}
+        local button = parent_flow.add{type="sprite-button", sprite=line.machine.proto.sprite, number=count,
+            tags={mod="fp", on_gui_click="act_on_line_machine", machine_id=line.machine.id, on_gui_hover="set_tooltip",
+            context="production_table"}, style=style, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         add_module_flow(parent_flow, line.machine.module_set, metadata)
         local module_set = line.machine.module_set
         if module_set.module_limit > module_set.module_count then
             local module_tooltip = {"", {"fp.add_machine_module"}, "\n", {"fp.shift_to_paste"}}
-            local button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=module_tooltip,
+            local module_button = parent_flow.add{type="sprite-button", sprite="utility/add", tooltip=module_tooltip,
                 tags={mod="fp", on_gui_click="add_machine_module", machine_id=line.machine.id},
                 style="fp_sprite-button_inset_add", mouse_button_filter={"left"}, enabled=(not metadata.archive_open)}
-            button.style.margin = 2
+            module_button.style.margin = 2
         end
     end
 end
@@ -196,8 +205,10 @@ function builders.beacon(line, parent_flow, metadata)
             metadata.beacon_tutorial_tt}
 
         local button_beacon = parent_flow.add{type="sprite-button", sprite=beacon.proto.sprite, number=beacon.amount,
-            tags={mod="fp", on_gui_click="act_on_line_beacon", beacon_id=beacon.id},
-            style="flib_slot_button_default_small", tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+            tags={mod="fp", on_gui_click="act_on_line_beacon", beacon_id=beacon.id, on_gui_hover="set_tooltip",
+            context="production_table"}, style="flib_slot_button_default_small",
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button_beacon.index] = tooltip
 
         if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
             local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
@@ -241,9 +252,11 @@ function builders.products(line, parent_flow, metadata)
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tooltip = {"", name_line, number_line, metadata.product_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", sprite=product.proto.sprite, style=style,
-            tags={mod="fp", on_gui_click="act_on_line_product", line_id=line.id, item_index=index},
-            number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+        local button = parent_flow.add{type="sprite-button", sprite=product.proto.sprite, style=style,
+            tags={mod="fp", on_gui_click="act_on_line_product", line_id=line.id, item_index=index,
+            on_gui_hover="set_tooltip", context="production_table"}, number=amount,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         ::skip_product::
     end
@@ -261,9 +274,11 @@ function builders.byproducts(line, parent_flow, metadata)
         local tooltip = {"", {"fp.tt_title", byproduct.proto.localised_name}, number_line,
             metadata.byproduct_tutorial_tt}
 
-        parent_flow.add{type="sprite-button", sprite=byproduct.proto.sprite, style="flib_slot_button_red_small",
-            tags={mod="fp", on_gui_click="act_on_line_byproduct", line_id=line.id, item_index=index},
-            number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+        local button = parent_flow.add{type="sprite-button", sprite=byproduct.proto.sprite,
+            tags={mod="fp", on_gui_click="act_on_line_byproduct", line_id=line.id, item_index=index,
+            on_gui_hover="set_tooltip", context="production_table"}, number=amount,
+            mouse_button_filter={"left-and-right"}, style="flib_slot_button_red_small", raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         ::skip_byproduct::
     end
@@ -306,9 +321,11 @@ function builders.ingredients(line, parent_flow, metadata)
         local tutorial_tt = (enabled) and metadata.ingredient_tutorial_tt or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
 
-        parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
-            tags={mod="fp", on_gui_click="act_on_line_ingredient", line_id=line.id, item_index=index},
-            number=amount, tooltip=tooltip, enabled=enabled, mouse_button_filter={"left-and-right"}}
+        local button = parent_flow.add{type="sprite-button", sprite=ingredient.proto.sprite, style=style,
+            tags={mod="fp", on_gui_click="act_on_line_ingredient", line_id=line.id, item_index=index,
+            on_gui_hover="set_tooltip", context="production_table"}, number=amount, enabled=enabled,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         ::skip_ingredient::
     end
@@ -334,9 +351,10 @@ function builders.fuel(line, parent_flow, metadata)
     local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
     local tooltip = {"", name_line, number_line, satisfaction_line, metadata.fuel_tutorial_tt}
 
-    parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
-        tags={mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id},
-        number=amount, tooltip=tooltip, mouse_button_filter={"left-and-right"}}
+    local button = parent_flow.add{type="sprite-button", sprite=fuel.proto.sprite, style="flib_slot_button_cyan_small",
+        tags={mod="fp", on_gui_click="act_on_line_fuel", fuel_id=fuel.id, on_gui_hover="set_tooltip",
+        context="production_table"},  number=amount, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+    metadata.tooltips[button.index] = tooltip
 end
 
 function builders.line_comment(line, parent_flow, _)
