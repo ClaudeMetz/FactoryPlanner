@@ -246,9 +246,9 @@ end
 ---@param player LuaPlayer
 ---@return boolean success
 function Floor:repair(player)
-    self:_repair(player)  -- always makes it valid
+    self:_repair(player)
+    self.valid = (self.level == 1 or self.first ~= nil)
 
-    self.valid = true
     return self.valid
 end
 

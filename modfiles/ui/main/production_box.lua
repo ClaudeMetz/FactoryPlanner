@@ -45,10 +45,9 @@ local function refresh_production_box(player)
 
     local factory_valid = factory ~= nil and factory.valid
     local current_level = (factory_valid) and floor.level or 1
-    local any_lines_present = (factory_valid) and (floor:count() > 0) or false
+    local any_lines_present = factory_valid and not factory.archived and floor:count() > 0
 
-    production_box_elements.refresh_button.enabled =
-        (factory_valid and not factory.archived and any_lines_present)
+    production_box_elements.refresh_button.enabled = any_lines_present
     production_box_elements.level_label.caption = (not factory_valid) and ""
         or {"fp.bold_label", {"", {"fp.level"}, " ", current_level}}
 
@@ -68,7 +67,7 @@ local function refresh_production_box(player)
     if factory == nil then
         production_box_elements.instruction_label.caption = {"fp.production_instruction_factory"}
         production_box_elements.instruction_label.visible = true
-    elseif factory_valid and not factory.archived and not any_lines_present then
+    elseif not any_lines_present then
         if factory:count() == 0 then
             production_box_elements.instruction_label.caption = {"fp.production_instruction_product"}
             production_box_elements.instruction_label.visible = true

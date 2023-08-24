@@ -149,7 +149,7 @@ local function refresh_factory_list(player)
     -- Set all the button states and styles appropriately
     local factory_exists = (selected_factory ~= nil)
     local district = util.context.get(player, "District")  --[[@as District]]
-    local archived_factory_count = district:count{archived=true}
+    local archived_factory_count = district:count({archived=true})
 
     factory_list_elements.toggle_archive_button.enabled = (archived_factory_count > 0)
     factory_list_elements.toggle_archive_button.style = (archived)

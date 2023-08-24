@@ -266,7 +266,7 @@ local function handle_configuration_change()
 
         -- Update calculations in case prototypes changed in a relevant way
         local district = global.players[index].district  ---@type District
-        for _, factory in district:iterator() do solver.update(player, factory) end
+        for factory in district:iterator() do solver.update(player, factory) end
     end
 end
 

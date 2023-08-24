@@ -158,7 +158,6 @@ end
 ---@param direction NeighbourDirection?
 ---@return Object? object
 function methods:_find(filter, pivot, direction)
-    if not pivot and direction then return nil end
     local next_object = pivot or self.first
     while next_object ~= nil do
         if match(next_object, filter) then return next_object end
@@ -260,7 +259,7 @@ end
 function methods:_repair(player)
     for object in self:_iterator() do
         if not object.valid and not object:repair(player) then
-            object.parent:remove(object)
+            object.parent:_remove(object)
         end
     end
 end
