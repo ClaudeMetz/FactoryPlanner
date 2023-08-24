@@ -18,4 +18,4 @@ Localisation of Factory Planner is handled entirely through a [separate project]
 
 ## License
 
-This mod is licensed under [MIT](https://en.wikipedia.org/wiki/Public_domain), with the exception of the localisation, which is in the [public domain](https://unlicense.org).
+This mod is licensed under [MIT](https://en.wikipedia.org/wiki/Public_domain), with the exception of the localisation, which is in the [public domain](https://github.com/ClaudeMetz/FactoryPlannerLocale?tab=Unlicense-1-ov-file).
