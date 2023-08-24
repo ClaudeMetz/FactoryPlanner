@@ -199,12 +199,13 @@ end
 ---@return Factory?
 local function import_tutorial_factory()
     local import_table, error = util.porter.process_export_string(TUTORIAL_EXPORT_STRING)
-    if error then
-        return nil
-    else
-        ---@cast import_table -nil
-        return import_table.factories[1]
-    end
+    if error then return nil end
+
+    ---@cast import_table -nil
+    local factory = import_table.factories[1]
+    if not factory.valid then return nil end
+
+    return factory  -- can still not be admissible if any lines don't produce anything
 end
 
 local function global_init()

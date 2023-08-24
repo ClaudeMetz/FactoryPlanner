@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Due to this rewrite, the minimum migratable version of the mod is 1.1.60 from here on out. This means any save from before 1.1.60 can not be loaded with any new versions of the mod any more. Old saves can be brought forward by first loading them with 1.1.60, saving them, then loading them with a recent version. Export strings are not affected by this, so they'll continue to work as expected.
     - Improved performance of the main interface substantially. This is due to both fixing a big bug introduced a few versions ago, and some other targeted optimizations.
     - Added the ability to disable the percentage column in the main production table
+    - Made the tutorial example validity detection more fine-grained
     - Removed the written tutorials since they were outdated and bad
   Bugfixes:
     -

@@ -18,11 +18,21 @@ local function open_tutorial_dialog(player, modal_data)
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    -- If the tutorial factory is valid, it can be imported regardless of the current modset
-    local factory_valid = (global.tutorial_factory ~= nil and global.tutorial_factory.valid)
-    local button_tooltip = (not factory_valid) and {"fp.warning_message", {"fp.create_example_error"}} or nil
-    flow_interactive.add{type="button", tags={mod="fp", on_gui_click="add_example_factory"},
-        caption={"fp.create_example"}, tooltip=button_tooltip, enabled=factory_valid, mouse_button_filter={"left"}}
+    -- Run solver to see if any lines don't do anything, indicating an unuseful example
+    local tutorial_factory = global.tutorial_factory
+    if tutorial_factory then
+        solver.update(player, tutorial_factory)
+        for line in tutorial_factory.top_floor:iterator() do
+            if line.production_ratio == 0 then
+                tutorial_factory = nil
+                break
+            end
+        end
+    end
+
+    local button_tooltip = (tutorial_factory == nil) and {"fp.warning_message", {"fp.create_example_error"}} or nil
+    flow_interactive.add{type="button", tags={mod="fp", on_gui_click="add_example_factory"}, tooltip=button_tooltip,
+        caption={"fp.create_example"}, enabled=(tutorial_factory ~= nil), mouse_button_filter={"left"}}
 
     flow_interactive.add{type="empty-widget", style="flib_horizontal_pusher"}
 
