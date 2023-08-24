@@ -35,12 +35,16 @@ local function set_blank_factory(player, factory)
         matrix_free_items = factory.matrix_free_items
     }
 
-    -- Factory structure does not matter as every line just needs to be blanked out
-    for floor in factory:iterator() do
+    local function set_blank_floor(floor)
         for line in floor:iterator() do
-            set_blank_line(player, floor, line)
+            if line.class == "Floor" then
+                set_blank_floor(line)
+            else
+                set_blank_line(player, floor, line)
+            end
         end
     end
+    set_blank_floor(factory.top_floor)
 end
 
 
@@ -61,7 +65,6 @@ local function generate_floor_data(player, factory, floor)
             line_data.recipe_proto = line.first.recipe_proto
             line_data.subfloor = generate_floor_data(player, factory, line)
             table.insert(floor_data.lines, line_data)
-
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil
             -- If a line has a percentage of zero or is inactive, it is not useful to the result of the factory

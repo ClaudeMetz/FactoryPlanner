@@ -19,9 +19,8 @@ local function refresh_title_bar(player)
 
     local factory = util.context.get(player, "Factory")   --[[@as Factory?]]
     local title_bar_elements = ui_state.main_elements.title_bar
-    -- Disallow switching to compact view if the selected factory is nil or invalid
-    title_bar_elements.switch_button.enabled = (factory and factory.valid or false)
 
+    title_bar_elements.switch_button.enabled = factory ~= nil and factory.valid
     title_bar_elements.pause_button.enabled = (not game.is_multiplayer())
 end
 
@@ -70,6 +69,8 @@ local function build_title_bar(player)
         sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
         tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
+
+    refresh_title_bar(player)
 end
 
 

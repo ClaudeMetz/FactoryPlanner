@@ -23,16 +23,11 @@ function migration.global()
 end
 
 function migration.player_table(player_table)
-    player_table.district = District.init()
-    player_table.context = {
-        object_id = 2,  -- set to first floor preemptively
-        cache = {main = nil, archive = nil, factory = {}}
-    }
-
     player_table.preferences.attach_factory_products = player_table.preferences.attach_subfactory_products
     local scopes = player_table.preferences.utility_scopes
     if scopes.components == "Subfactory" then scopes.components = "Factory" end
 
+    local district = District.init()
     for _, factory_name in pairs({"factory", "archive"}) do
         for _, subfactory in pairs(player_table[factory_name].Subfactory.datasets) do
             local factory = Factory.init(subfactory.name, subfactory.timescale)
@@ -55,11 +50,12 @@ function migration.player_table(player_table)
                 factory:insert(new_product)
             end
 
-            local function convert_floor(floor)
+            local function convert_floor(floor, parent)
                 local new_floor = Floor.init(floor.level)
+                new_floor.parent = parent
                 for _, line in pairs(floor.Line.datasets) do
                     if line.subfloor then
-                        local subfloor = convert_floor(line.subfloor)
+                        local subfloor = convert_floor(line.subfloor, new_floor)
                         new_floor:insert(subfloor)
                     else
                         local new_line = Line.init(line.recipe.proto, line.recipe.production_type)
@@ -102,11 +98,17 @@ function migration.player_table(player_table)
                 end
                 return new_floor
             end
-            factory.top_floor = convert_floor(subfactory.Floor.datasets[1])
+            factory.top_floor = convert_floor(subfactory.Floor.datasets[1], factory)
 
-            player_table.district:insert(factory)
+            district:insert(factory)
         end
     end
+
+    player_table.district = district
+    player_table.context = {
+        object_id = (district.first) and district.first.top_floor.id or 1,
+        cache = {main = nil, archive = nil, factory = {}}
+    }
 
     player_table.index = nil
     player_table.mod_version = nil

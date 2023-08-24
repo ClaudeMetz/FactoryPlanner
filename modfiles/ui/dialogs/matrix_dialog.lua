@@ -135,7 +135,7 @@ local function matrix_early_abort_check(player, modal_data)
 end
 
 local function open_matrix_dialog(player, modal_data)
-    if util.globals.context(player).factory.linearly_dependant then
+    if util.context.get(player, "Factory").linearly_dependant then
         show_linearly_dependent_recipes(modal_data, modal_data.linearly_dependent_recipes)
         modal_dialog.set_submit_button_state(modal_data.modal_elements, false, {"fp.matrix_linearly_dependent_recipes"})
 
