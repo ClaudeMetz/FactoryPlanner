@@ -227,7 +227,7 @@ end
 
 local function handle_item_click(player, tags, action)
     local line = OBJECT_INDEX[tags.line_id]
-    local item = line[tags.item_category].items[tags.item_index]
+    local item = line[tags.item_category .. "s"].items[tags.item_index]
 
     if action == "prioritize" then
         if line.Product.count < 2 then
@@ -388,7 +388,7 @@ listeners.gui = {
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = (function(player, tags, action)
-                tags.item_category = "products"
+                tags.item_category = "product"
                 handle_item_click(player, tags, action)
             end)
         },
@@ -403,7 +403,7 @@ listeners.gui = {
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = (function(player, tags, action)
-                tags.item_category = "byproducts"
+                tags.item_category = "byproduct"
                 handle_item_click(player, tags, action)
             end)
         },
@@ -418,7 +418,7 @@ listeners.gui = {
                 recipebook = {"alt-right", {recipebook=true}}
             },
             handler = (function(player, tags, action)
-                tags.item_category = "ingredients"
+                tags.item_category = "ingredient"
                 handle_item_click(player, tags, action)
             end)
         },
