@@ -153,6 +153,16 @@ function main_dialog.set_pause_state(player, frame_main_dialog, force_false)
         and frame_main_dialog.visible or false
 end
 
+-- General handler for setting a previously stored tooltip on any element
+function main_dialog.set_tooltip(player, element)
+    local ui_state = util.globals.ui_state(player)
+    local tooltips = ui_state.tooltips[element.tags.context]
+    if tooltips[element.index] ~= nil then
+        element.tooltip = tooltips[element.index]
+        tooltips[element.index] = nil
+    end
+end
+
 
 -- ** EVENTS **
 local listeners = {}
@@ -179,6 +189,14 @@ listeners.gui = {
                 else  -- call the interface toggle function directly
                     interface_toggle({player_index=player.index})
                 end
+            end)
+        }
+    },
+    on_gui_hover = {
+        {
+            name = "set_tooltip",
+            handler = (function(player, _, event)
+                main_dialog.set_tooltip(player, event.element)
             end)
         }
     }

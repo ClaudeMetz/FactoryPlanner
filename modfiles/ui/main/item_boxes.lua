@@ -50,7 +50,7 @@ local function build_item_box(player, category, column_count)
     item_boxes_elements[category .. "_item_table"] = table_items
 end
 
-local function refresh_item_box(player, factory, show_floor_items, item_category)
+local function refresh_item_box(player, factory, show_floor_items, item_category, tooltips)
     local item_boxes_elements = util.globals.main_elements(player).item_boxes
 
     local table_items = item_boxes_elements[item_category .. "_item_table"]
@@ -101,9 +101,11 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
         end
 
-        table_items.add{type="sprite-button", tooltip=tooltip, number=amount, style=style, sprite=item.proto.sprite,
-            tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index},
-            enabled=enabled, mouse_button_filter={"left-and-right"}}
+        local button = table_items.add{type="sprite-button", number=amount, style=style, sprite=item.proto.sprite,
+            tags={mod="fp", on_gui_click=action, item_category=item_category, item_id=item.id, item_index=index,
+            on_gui_hover="set_tooltip", context="item_boxes"}, enabled=enabled, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
+        tooltips.item_boxes[button.index] = tooltip
         table_item_count = table_item_count + 1
     end
 
@@ -247,9 +249,12 @@ local function refresh_item_boxes(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
     local show_floor_items = player_table.preferences.show_floor_items
 
-    local prow_count = refresh_item_box(player, factory, show_floor_items, "product")
-    local brow_count = refresh_item_box(player, factory, show_floor_items, "byproduct")
-    local irow_count = refresh_item_box(player, factory, show_floor_items, "ingredient")
+    local tooltips = player_table.ui_state.tooltips
+    tooltips.item_boxes = {}
+
+    local prow_count = refresh_item_box(player, factory, show_floor_items, "product", tooltips)
+    local brow_count = refresh_item_box(player, factory, show_floor_items, "byproduct", tooltips)
+    local irow_count = refresh_item_box(player, factory, show_floor_items, "ingredient", tooltips)
 
     local maxrow_count = math.max(prow_count, math.max(brow_count, irow_count))
     local actual_row_count = math.min(math.max(maxrow_count, 1), MAGIC_NUMBERS.item_box_max_rows)

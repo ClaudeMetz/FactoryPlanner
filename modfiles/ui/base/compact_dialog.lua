@@ -96,8 +96,10 @@ local function add_recipe_button(parent_flow, line, relevant_line, metadata)
     local tooltip = (line.class == "Line") and {"fp.tt_title", recipe_proto.localised_name}
         or {"", {"fp.tt_title", recipe_proto.localised_name}, metadata.recipe_tutorial_tt}
 
-    parent_flow.add{type="sprite-button", tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id},
-        sprite=recipe_proto.sprite, tooltip=tooltip, style=style, mouse_button_filter={"left-and-right"}}
+    local button = parent_flow.add{type="sprite-button", sprite=recipe_proto.sprite, style=style,
+        tags={mod="fp", on_gui_click="act_on_compact_recipe", line_id=line.id, on_gui_hover="set_tooltip",
+        context="compact_dialog"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+    metadata.tooltips[button.index] = tooltip
 end
 
 local function add_modules_flow(parent_flow, parent_type, line, metadata)
@@ -106,9 +108,11 @@ local function add_modules_flow(parent_flow, parent_type, line, metadata)
         local tooltip = {"", {"fp.tt_title", module.proto.localised_name}, number_line, metadata.module_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        parent_flow.add{type="sprite-button", sprite=module.proto.sprite, tooltip=tooltip,
-            tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id},
-            number=module.amount, style=style, mouse_button_filter={"left-and-right"}}
+        local button = parent_flow.add{type="sprite-button", sprite=module.proto.sprite, style=style,
+            tags={mod="fp", on_gui_click="act_on_compact_module", module_id=module.id, on_gui_hover="set_tooltip",
+            context="compact_dialog"}, number=module.amount, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
     end
 end
 
@@ -122,9 +126,11 @@ local function add_machine_flow(parent_flow, line, metadata)
             tooltip_line, metadata.machine_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount, tooltip=tooltip,
-            tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id},
-            style=style, mouse_button_filter={"left-and-right"}}
+        local button = machine_flow.add{type="sprite-button", sprite=machine_proto.sprite, number=amount, style=style,
+            tags={mod="fp", on_gui_click="act_on_compact_machine", type="machine", line_id=line.id,
+            on_gui_hover="set_tooltip", context="compact_dialog"}, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         add_modules_flow(machine_flow, "machine", line, metadata)
     end
@@ -140,9 +146,11 @@ local function add_beacon_flow(parent_flow, line, metadata)
         local tooltip = {"", {"fp.tt_title", beacon_proto.localised_name}, number_line, metadata.beacon_tutorial_tt}
         local style = (line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_default_small"
 
-        beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
-            tooltip=tooltip, tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id},
-            style=style, mouse_button_filter={"left-and-right"}}
+        local button = beacon_flow.add{type="sprite-button", sprite=beacon_proto.sprite, number=line.beacon.amount,
+            tags={mod="fp", on_gui_click="act_on_compact_beacon", type="beacon", line_id=line.id,
+            on_gui_hover="set_tooltip", context="compact_dialog"}, style=style,
+            mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         add_modules_flow(beacon_flow, "beacon", line, metadata)
     end
@@ -174,11 +182,12 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             tooltip = {"", {"fp.tt_title_with_note", proto.localised_name, {"fp.raw_ore"}}, number_line}
         end
 
-        local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount, tooltip=tooltip,
+        local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,
             tags={mod="fp", on_gui_click="act_on_compact_item", on_gui_hover="hover_compact_item",
-            on_gui_leave="leave_compact_item", simple_items_id=simple_items.id, item_index=index},
-            style=style, enabled=enabled, mouse_button_filter={"left-and-right"}}
-        button.raise_hover_events = true
+            on_gui_leave="leave_compact_item", simple_items_id=simple_items.id, item_index=index,
+            context="compact_dialog"}, style=style, enabled=enabled, mouse_button_filter={"left-and-right"},
+            raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         item_buttons[type] = item_buttons[type] or {}
         item_buttons[type][proto.name] = item_buttons[type][proto.name] or {}
@@ -197,9 +206,10 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
         local tooltip = {"", name_line, number_line, metadata.item_tutorial_tt}
         local style = (relevant_line.done) and "flib_slot_button_grayscale_small" or "flib_slot_button_cyan_small"
 
-        item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
-            tags={mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id}, tooltip=tooltip,
-            mouse_button_filter={"left-and-right"}}
+        local button = item_table.add{type="sprite-button", sprite=fuel.proto.sprite, style=style, number=amount,
+            tags={mod="fp", on_gui_click="act_on_compact_item", fuel_id=fuel.id, on_gui_hover="set_tooltip",
+            context="compact_dialog"}, mouse_button_filter={"left-and-right"}, raise_hover_events=true}
+        metadata.tooltips[button.index] = tooltip
 
         ::skip_fuel::
     end
@@ -233,10 +243,14 @@ local function refresh_compact_factory(player)
     if available_columns < 2 then available_columns = 2 end  -- fix for too many modules or too high of a GUI scale
     local column_counts = determine_column_counts(floor, available_columns)
 
+    local tooltips = player_table.ui_state.tooltips
+    tooltips.compact_dialog = {}
+
     local metadata = {
         parent = production_table,
         column_counts = column_counts,
-        view_state_metadata = view_state.generate_metadata(player, factory)
+        view_state_metadata = view_state.generate_metadata(player, factory),
+        tooltips = tooltips.compact_dialog
     }
 
     compact_elements.item_buttons = {}  -- (re)set the item_buttons table
@@ -478,7 +492,10 @@ factory_listeners.gui = {
     on_gui_hover = {
         {
             name = "hover_compact_item",
-            handler = handle_hover_change
+            handler = (function(player, tags, event)
+                handle_hover_change(player, tags, event)
+                main_dialog.set_tooltip(player, event.element)
+            end)
         }
     },
     on_gui_leave = {
