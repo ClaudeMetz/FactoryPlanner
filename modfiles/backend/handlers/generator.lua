@@ -663,6 +663,7 @@ function generator.items.generate()
             if proto == nil then goto skip_item end
 
             local localised_name = generator_util.format_temperature_localised_name(item_details, proto)
+            if type == "entity" then localised_name = {"", localised_name, " ", {"fp.ore_deposit"}} end
             local stack_size = (type == "item") and proto.stack_size or nil
             local order = (item_details.temperature) and (proto.order .. item_details.temperature) or proto.order
 
