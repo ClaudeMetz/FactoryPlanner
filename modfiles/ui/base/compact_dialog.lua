@@ -179,7 +179,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
             style = (relevant_line.done) and "flib_slot_button_transparent_grayscale_small"
                 or "flib_slot_button_transparent_small"
             enabled = false
-            tooltip = {"", {"fp.tt_title_with_note", proto.localised_name, {"fp.raw_ore"}}, number_line}
+            tooltip = {"", {"fp.tt_title", proto.localised_name}, number_line}
         end
 
         local button = item_table.add{type="sprite-button", sprite=proto.sprite, number=amount,

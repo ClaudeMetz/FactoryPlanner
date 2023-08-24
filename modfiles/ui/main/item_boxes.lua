@@ -89,15 +89,14 @@ local function refresh_item_box(player, factory, show_floor_items, item_category
             else style = "flib_slot_button_green" end
         end
 
+        local name_line = {"fp.tt_title", item.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
-        local name_line, tooltip, enabled = nil, nil, true
+        local tooltip, enabled = nil, true
         if item.proto.type == "entity" then  -- only relevant to ingredients
-            name_line = {"fp.tt_title_with_note", item.proto.localised_name, {"fp.raw_ore"}}
             tooltip = {"", name_line, number_line, satisfaction_line}
             style = "flib_slot_button_transparent"
             enabled = false
         else
-            name_line = {"fp.tt_title", item.proto.localised_name}
             tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
         end
 

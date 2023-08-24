@@ -40,7 +40,7 @@ function processors.items_per_timescale(metadata, raw_amount, item_proto, _)
 end
 
 function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "entity" then return nil, nil end  -- raw ores don't make sense here
+    if item_proto.type == "entity" then return nil, nil end  -- ore deposits don't make sense here
 
     local divisor = (item_proto.type == "fluid") and 50 or 1
     local raw_number = raw_amount * metadata.throughput_multiplier * metadata.timescale_inverse / divisor
@@ -54,7 +54,7 @@ function processors.belts_or_lanes(metadata, raw_amount, item_proto, _)
 end
 
 function processors.wagons_per_timescale(metadata, raw_amount, item_proto, _)
-    if item_proto.type == "entity" then return nil, nil end  -- raw ores don't make sense here
+    if item_proto.type == "entity" then return nil, nil end  -- ore deposits don't make sense here
 
     local wagon_capacity = (item_proto.type == "fluid") and metadata.fluid_wagon_capacity
         or metadata.cargo_wagon_capactiy * item_proto.stack_size
@@ -69,7 +69,7 @@ end
 
 function processors.items_per_second_per_machine(metadata, raw_amount, item_proto, machine_count)
     if machine_count == 0 then return 0, "" end  -- avoid division by zero
-    if item_proto.type == "entity" then return nil, nil end  -- raw ores don't make sense here
+    if item_proto.type == "entity" then return nil, nil end  -- ore deposits don't make sense here
 
     local raw_number = raw_amount * metadata.timescale_inverse / (math.ceil((machine_count or 1) - 0.001))
     local number = util.format.number(raw_number, metadata.formatting_precision)

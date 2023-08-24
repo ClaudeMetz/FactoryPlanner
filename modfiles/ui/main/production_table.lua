@@ -292,14 +292,12 @@ function builders.ingredients(line, parent_flow, metadata)
             ingredient, nil, machine_count)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
 
-        local style, enabled, note = "flib_slot_button_green_small", true, nil
+        local style, enabled = "flib_slot_button_green_small", true
         local satisfaction_line = ""  ---@type LocalisedString
 
         if ingredient.proto.type == "entity" then
             style = "flib_slot_button_transparent_small"
             enabled = false
-            note = {"fp.raw_ore"}
-
         elseif metadata.ingredient_satisfaction and ingredient.amount > 0 then
             local satisfaction_percentage = (ingredient.satisfied_amount / ingredient.amount) * 100
             local formatted_percentage = util.format.number(satisfaction_percentage, 3)
@@ -315,8 +313,7 @@ function builders.ingredients(line, parent_flow, metadata)
             satisfaction_line = {"", "\n", (formatted_percentage .. "%"), " ", {"fp.satisfied"}}
         end
 
-        local name_line = (note == nil) and {"fp.tt_title", ingredient.proto.localised_name}
-            or {"fp.tt_title_with_note", ingredient.proto.localised_name, note}
+        local name_line = {"fp.tt_title", ingredient.proto.localised_name}
         local number_line = (number_tooltip) and {"", "\n", number_tooltip} or ""
         local tutorial_tt = (enabled) and metadata.ingredient_tutorial_tt or ""
         local tooltip = {"", name_line, number_line, satisfaction_line, tutorial_tt}
