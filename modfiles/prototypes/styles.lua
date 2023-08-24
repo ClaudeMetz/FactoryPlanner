@@ -196,6 +196,15 @@ styles["fp_button_move_row"] = {
     padding = -1
 }
 
+-- frame_action_button but correct
+styles["fp_button_frame"] = {
+    type = "button_style",
+    parent = "frame_action_button",
+    selected_graphical_set = styles.frame_button.clicked_graphical_set,
+    selected_hovered_graphical_set = styles.frame_button.hovered_graphical_set,
+    selected_clicked_graphical_set = styles.frame_button.default_graphical_set,
+}
+
 -- Text button in the style of icon tool buttons, for use in the title bar
 styles["fp_button_frame_tool"] = {
     type = "button_style",

@@ -38,9 +38,8 @@ local function build_title_bar(player)
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
-        sprite="fp_sprite_arrow_left_light", hovered_sprite="fp_sprite_arrow_left_dark",
-        clicked_sprite="fp_sprite_arrow_left_dark", mouse_button_filter={"left"}}
-    button_switch.style.padding = 2
+        sprite="flib_pin_white", hovered_sprite="flib_pin_black", clicked_sprite="flib_pin_black",
+        mouse_button_filter={"left"}}
     main_elements.title_bar["switch_button"] = button_switch
 
     flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
