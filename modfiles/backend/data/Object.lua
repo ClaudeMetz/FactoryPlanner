@@ -158,7 +158,7 @@ end
 ---@param direction NeighbourDirection?
 ---@return Object? object
 function methods:_find(filter, pivot, direction)
-    local next_object = pivot or self.first
+    local next_object = (not pivot and not direction) and self.first or pivot
     while next_object ~= nil do
         if match(next_object, filter) then return next_object end
         next_object = next_object[direction or "next"]
