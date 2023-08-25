@@ -20,6 +20,14 @@ function migration.global()
     global.next_object_ID = 1
     global.mod_version = nil
     global.tutorial_subfactory = nil
+
+    for _, event_data in pairs(global.nth_tick_events) do
+        if event_data.handler_name == "delete_subfactory_for_good" then
+            event_data.handler_name = "delete_factory_for_good"
+        elseif event_data.handler_name == "scale_subfactory_by_ingredient_amount" then
+            event_data.handler_name = "scale_factory_by_product_amount"
+        end
+    end
 end
 
 function migration.player_table(player_table)
