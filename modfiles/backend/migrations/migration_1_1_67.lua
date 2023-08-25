@@ -18,7 +18,7 @@ function migration.player_table(player_table)
     default_prototypes["beacons"] = default_prototypes["beacons"].prototype
 
     for _, factory in pairs({"factory", "archive"}) do
-        for subfactory in pairs(player_table[factory].Subfactory.datasets) do
+        for _, subfactory in pairs(player_table[factory].Subfactory.datasets) do
             for _, product in pairs(subfactory.Product.datasets) do
                 if product.proto.simplified then
                     product.proto = {name=product.proto.name, category=product.proto.type, data_type="items", simplified=true}
