@@ -74,7 +74,9 @@ local function update_request_button(player, modal_data, factory)
 end
 
 function utility_structures.components(player, modal_data)
-    local scope = util.globals.preferences(player).utility_scopes.components
+    local preferences = util.globals.preferences(player)
+    local scope = preferences.utility_scopes.components
+    local skip_done = (preferences.done_column == true)
     local modal_elements = modal_data.modal_elements
 
     if modal_elements.components_box == nil then
@@ -110,18 +112,15 @@ function utility_structures.components(player, modal_data)
         add_component_row("module")
     end
 
+    local component_data, relevant_object = nil, util.context.get(player, scope)
+    if scope == "Factory" then relevant_object = relevant_object--[[@as Factory]].top_floor end
+    component_data = relevant_object--[[@as Floor]]:get_component_data(skip_done, nil)
 
     local function refresh_component_flow(type)
         local component_row = modal_elements["components_" .. type .. "_flow"]
         component_row.clear()
 
-        local inventory_contents, component_data = modal_data.inventory_contents, nil
-        if scope == "Factory" then
-            component_data = util.context.get(player, "Factory").top_floor:get_component_data()
-        elseif scope == "Floor" then
-            component_data = util.context.get(player, "Floor")--[[@as Floor]]:get_component_data()
-        end
-
+        local inventory_contents = modal_data.inventory_contents
         local frame_components = component_row.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
         local table_components = frame_components.add{type="table", column_count=10, style="filter_slot_table"}
 

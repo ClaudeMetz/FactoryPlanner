@@ -125,9 +125,10 @@ end
 ---@field modules { [string]: ComponentDataSet }
 
 -- Returns the machines and modules needed to actually build this floor
+---@param skip_done boolean
 ---@param component_table ComponentData?
 ---@return ComponentData components
-function Floor:get_component_data(component_table)
+function Floor:get_component_data(skip_done, component_table)
     local components = component_table or {machines={}, modules={}}
 
     local function add_component(table, proto, amount)
@@ -146,8 +147,8 @@ function Floor:get_component_data(component_table)
 
     for line in self:iterator() do
         if line.class == "Floor" then  ---@cast line Floor
-            line:get_component_data(component_table)
-        else  -- class == "Line"
+            line:get_component_data(skip_done, components)
+        elseif not skip_done or not line.done then
             local machine = line.machine
             local ceil_machine_count = math.ceil(machine.amount - 0.001)
 
