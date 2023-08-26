@@ -29,6 +29,7 @@ require("backend.calculation.solver")
 ---@field ignore_barreling_recipes boolean
 ---@field ignore_recycling_recipes boolean
 ---@field done_column boolean
+---@field percentage_column boolean
 ---@field pollution_column boolean
 ---@field line_comment_column boolean
 ---@field mb_defaults MBDefaults
@@ -67,8 +68,8 @@ local function reload_preferences(player)
     preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
 
-    preferences.done_column = preferences.done_column or false
-    preferences.percentage_column = preferences.percentage_column or true
+    if preferences.done_column == nil then preferences.done_column = true end
+    if preferences.percentage_column == nil then preferences.percentage_column = true end
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
 
