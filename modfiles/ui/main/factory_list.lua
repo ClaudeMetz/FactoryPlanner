@@ -40,7 +40,7 @@ local function change_factory_archived(player, archived)
 end
 
 local function add_factory(player, _, event)
-    local prefer_product_picker = util.globals.settings(player).prefer_product_picker
+    local prefer_product_picker = util.globals.preferences(player).prefer_product_picker
     local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
     if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic factory naming
@@ -179,7 +179,7 @@ local function refresh_factory_list(player)
     factory_list_elements.import_button.enabled = (not archived)
     factory_list_elements.export_button.enabled = (factory_exists)
 
-    local prefer_product_picker = util.globals.settings(player).prefer_product_picker
+    local prefer_product_picker = util.globals.preferences(player).prefer_product_picker
     factory_list_elements.add_button.enabled = (not archived)
     factory_list_elements.add_button.tooltip = (prefer_product_picker)
         and {"fp.action_add_factory_by_product"} or {"fp.action_add_factory_by_name"}
@@ -199,7 +199,7 @@ local function build_factory_list(player)
 
     local parent_flow = main_elements.flows.left_vertical
     local frame_vertical = parent_flow.add{type="frame", direction="vertical", style="inside_deep_frame"}
-    local row_count = util.globals.settings(player).factory_list_rows
+    local row_count = util.globals.preferences(player).factory_list_rows
     frame_vertical.style.height = MAGIC_NUMBERS.subheader_height + (row_count * MAGIC_NUMBERS.list_element_height)
 
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
@@ -258,9 +258,9 @@ factory_list = {}  -- try to move elsewhere or smth to get rid of global variabl
 
 -- Utility function to centralize factory creation behavior
 function factory_list.add_factory(player, name)
-    local settings = util.globals.settings(player)
-    local factory = Factory.init(name, settings.default_timescale)
-    if settings.prefer_matrix_solver then factory.matrix_free_items = {} end
+    local preferences = util.globals.preferences(player)
+    local factory = Factory.init(name, preferences.default_timescale)
+    if preferences.prefer_matrix_solver then factory.matrix_free_items = {} end
 
     local district = util.context.get(player, "District")  --[[@as District]]
     district:insert(factory)

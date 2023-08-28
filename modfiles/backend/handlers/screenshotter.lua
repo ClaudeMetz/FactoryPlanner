@@ -61,16 +61,13 @@ local actions = {
         solver.update(player, hotness)
         util.raise.refresh(player, "all", nil)
 
-        -- Mod settings
-        settings.get_player_settings(player)["fp_display_gui_button"] = {value = false}
-        settings.get_player_settings(player)["fp_products_per_row"] = {value = 5}
-        settings.get_player_settings(player)["fp_factory_list_rows"] = {value = 18}
-
         -- Preferences
+        player_table.preferences.display_gui_button = false
+        player_table.preferences.products_per_row = 5
+        player_table.preferences.factory_list_rows = 18
         player_table.preferences.recipe_filters = {disabled = true, hidden = false}
         player_table.preferences.ignore_barreling_recipes = true
         player_table.preferences.ignore_recycling_recipes = true
-        player_table.preferences.done_column = true
         player_table.preferences.mb_defaults = {  -- naughty use of the prototyper function
             machine = prototyper.util.find_prototype("modules", "productivity-module-3", "productivity"),
             machine_secondary = nil,
@@ -145,7 +142,6 @@ local actions = {
 
     setup_04_recipe_picker = function(player)
         local product_proto = prototyper.util.find_prototype("items", "petroleum-gas", "fluid")
-        ---@cast product_proto -nil
         open_modal(player, "recipe", {category_id=product_proto.category_id,
             product_id=product_proto.id, production_type="produce"})
     end,
@@ -192,7 +188,6 @@ local actions = {
 
 local function initial_setup()
     DEV_ACTIVE = false  -- desync city, but it's fiiine. Avoids any accidental artifacts.
-    return {"09_settings"}
 end
 
 local function execute_action(player_index, action_name)

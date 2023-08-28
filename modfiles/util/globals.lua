@@ -5,10 +5,6 @@ local _globals = {}
 function _globals.player_table(player) return global.players[player.index] end
 
 ---@param player LuaPlayer
----@return SettingsTable
-function _globals.settings(player) return global.players[player.index].settings end
-
----@param player LuaPlayer
 ---@return PreferencesTable
 function _globals.preferences(player) return global.players[player.index].preferences end
 

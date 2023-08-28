@@ -1,10 +1,12 @@
 -- ** LOCAL UTIL **
 local function add_preference_box(content_frame, type)
     local bordered_frame = content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
+    local title_flow = bordered_frame.add{type="flow", direction="horizontal", name="title_flow"}
+    title_flow.style.vertical_align = "center"
 
     local caption = {"fp.info_label", {"fp.preference_".. type .. "_title"}}
     local tooltip = {"fp.preference_".. type .. "_title_tt"}
-    bordered_frame.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
+    title_flow.add{type="label", caption=caption, tooltip=tooltip, style="caption_label"}
 
     return bordered_frame
 end
@@ -50,6 +52,43 @@ function preference_structures.checkboxes(preferences, content_frame, type, pref
         flow_checkboxes.add{type="checkbox", state=preferences[pref_name], caption=caption, tooltip=tooltip,
             tags={mod="fp", on_gui_checked_state_changed="toggle_preference", type=type, name=pref_name}}
     end
+
+    return preference_box
+end
+
+function preference_structures.dropdowns(preferences, parent_flow)
+    local function add_dropdown(name, items, selected_index)
+        local flow = parent_flow.add{type="flow", direction="horizontal"}
+        flow.style.top_margin = 4
+
+        flow.add{type="label", caption={"fp.info_label", {"fp.preference_dropdown_" .. name}},
+            tooltip={"fp.preference_dropdown_" .. name .. "_tt"}}
+        flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+        flow.add{type="drop-down", items=items, selected_index=selected_index, style="fp_drop-down_slim",
+            tags={mod="fp", on_gui_selection_state_changed="choose_preference", name=name}}
+    end
+
+
+    local width_items, width_index = {}, nil
+    for index, value in pairs(PRODUCTS_PER_ROW_OPTIONS) do
+        width_items[index] = {"", value .. " ", {"fp.pl_product", 2}}
+        if value == preferences.products_per_row then width_index = index end
+    end
+    add_dropdown("products_per_row", width_items, width_index)
+
+    local height_items, height_index = {}, nil
+    for index, value in pairs(FACTORY_LIST_ROWS_OPTIONS) do
+        height_items[index] = {"", value .. " ", {"fp.rows"}}
+        if value == preferences.factory_list_rows then height_index = index end
+    end
+    add_dropdown("factory_list_rows", height_items, height_index)
+
+    local timescale_items, timescale_index = {}, nil
+    for value, name in pairs(TIMESCALE_MAP) do
+        table.insert(timescale_items, {"fp.per_timescale", {"fp." .. name}})
+        if value == preferences.default_timescale then timescale_index = table_size(timescale_items) end
+    end
+    add_dropdown("default_timescale", timescale_items, timescale_index)
 end
 
 function preference_structures.mb_defaults(preferences, content_frame)
@@ -118,15 +157,13 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
 
     if not prototyper.data_types[type] then
         local prototypes = global.prototypes[type]
-        if #prototypes < 2 then preference_box.visible = false; return end
+        if #prototypes < 2 then preference_box.visible = false; goto skip end
 
-        table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
         add_defaults_table(8, nil)
         refresh_defaults_table(player, modal_elements, type, nil)
-
     else
         local categories = global.prototypes[type]
-        if not next(categories) then preference_box.visible = false; return end
+        if not next(categories) then preference_box.visible = false; goto skip end
 
         local any_category_visible = false
         for category_id, category in ipairs(categories) do
@@ -144,6 +181,9 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
         end
         if not any_category_visible then preference_box.visible = false end
     end
+
+    :: skip ::
+    return preference_box
 end
 
 
@@ -151,20 +191,40 @@ local function handle_checkbox_preference_change(player, tags, event)
     local preference_name = tags.name
     util.globals.preferences(player)[preference_name] = event.element.state
 
-    local refresh = util.globals.modal_data(player).refresh
-
     if tags.type == "production" or preference_name == "round_button_numbers"
             or preference_name == "show_floor_items" or preference_name == "fold_out_subfloors" then
-        refresh.production = true
-    end
+        util.raise.refresh(player, "production", nil)
 
-    if preference_name == "ingredient_satisfaction" then
+    elseif preference_name == "ingredient_satisfaction" then
         -- Only recalculate if the satisfaction data will actually be shown now
-        refresh.update_ingredient_satisfaction = (event.element.state)
-        refresh.production = true  -- always refresh production
+        if event.element.state == true then
+            for factory in util.context.get(player, "District"):iterator() do
+                solver.determine_ingredient_satisfaction(factory)
+            end
+        end
+        util.raise.refresh(player, "production", nil)
 
-    elseif preference_name == "attach_factory_products" then
-        refresh.factory_list = true
+    elseif preference_name == "attach_factory_products" or preference_name == "prefer_product_picker" then
+        util.raise.refresh(player, "factory_list", nil)
+
+    elseif preference_name == "show_gui_button" then
+        util.gui.toggle_mod_gui(player)
+    end
+end
+
+local function handle_dropdown_preference_change(player, tags, event)
+    local selected_index = event.element.selected_index
+    local preferences = util.globals.preferences(player)
+
+    if tags.name == "products_per_row" then
+        preferences.products_per_row = PRODUCTS_PER_ROW_OPTIONS[selected_index]
+        util.globals.modal_data(player).rebuild = true
+    elseif tags.name == "factory_list_rows" then
+        preferences.factory_list_rows = FACTORY_LIST_ROWS_OPTIONS[selected_index]
+        util.globals.modal_data(player).rebuild = true
+    elseif tags.name == "default_timescale" then
+        local index_map = {[1] = 1, [2] = 60, [3] = 3600}
+        preferences.default_timescale = index_map[selected_index]
     end
 end
 
@@ -175,16 +235,29 @@ local function handle_mb_default_change(player, tags, event)
     mb_defaults[tags.type] = (module_name ~= nil) and MODULE_NAME_MAP[module_name] or nil
 end
 
+local function handle_bol_change(player, _, event)
+    local player_table = util.globals.player_table(player)
+    local defined_by = (event.element.switch_state == "left") and "belts" or "lanes"
+
+    player_table.preferences.belts_or_lanes = defined_by
+    view_state.rebuild_state(player)
+
+    -- Go through every factory's top level products and update their defined_by
+    for factory in player_table.district:iterator() do
+        factory:update_product_definitions(defined_by)
+    end
+
+    solver.update(player, nil)
+    util.raise.refresh(player, "all", nil)
+end
+
 local function handle_default_prototype_change(player, tags, event)
     local type = tags.type
     local category_id = tags.category_id
 
-    local modal_data = util.globals.modal_data(player)
-    if type == "belts" then modal_data.refresh.view_state = true end
-    if type == "wagons" then modal_data.refresh.production = true end
-
+    local modal_elements = util.globals.modal_elements(player)
     prototyper.defaults.set(player, type, tags.prototype_id, category_id)
-    refresh_defaults_table(player, modal_data.modal_elements, type, category_id)
+    refresh_defaults_table(player, modal_elements, type, category_id)
 
     -- If this was an shift-click, set this prototype on every category that also has it
     if event.shift and type == "machines" then
@@ -196,10 +269,15 @@ local function handle_default_prototype_change(player, tags, event)
 
                 if secondary_prototype ~= nil then
                     prototyper.defaults.set(player, type, secondary_prototype.id, secondary_category.id)
-                    refresh_defaults_table(player, modal_data.modal_elements, type, secondary_category.id)
+                    refresh_defaults_table(player, modal_elements, type, secondary_category.id)
                 end
             end
         end
+    end
+
+    if type == "belts" or type == "wagons" then
+        view_state.rebuild_state(player)
+        util.raise.refresh(player, "all", nil)
     end
 end
 
@@ -207,7 +285,6 @@ end
 local function open_preferences_dialog(player, modal_data)
     local preferences = util.globals.preferences(player)
     local modal_elements = modal_data.modal_elements
-    modal_data.refresh = {}
 
     local flow_content = modal_elements.dialog_flow.add{type="flow", direction="horizontal"}
     flow_content.style.horizontal_spacing = 12
@@ -220,67 +297,47 @@ local function open_preferences_dialog(player, modal_data)
     end
 
     local left_content_frame = add_content_frame()
-
-    local info_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
-    local label_preferences_info = info_frame.add{type="label", caption={"fp.preferences_info"}}
-    label_preferences_info.style.single_line = false
-    label_preferences_info.style.width = 335
+    left_content_frame.style.width = 300
 
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
-    local general_preference_names = {"attach_factory_products", "show_floor_items", "fold_out_subfloors",
-        "ingredient_satisfaction", "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
-    preference_structures.checkboxes(preferences, left_content_frame, "general", general_preference_names)
+    local general_preference_names = {"show_gui_button", "attach_factory_products", "prefer_product_picker",
+        "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
+        "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
+    local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",
+        general_preference_names)
+
+    general_box.add{type="line", direction="horizontal"}.style.margin = {4, 0, 2, 0}
+
+    preference_structures.dropdowns(preferences, general_box)
 
     local production_preference_names = {"done_column", "percentage_column", "pollution_column", "line_comment_column"}
     preference_structures.checkboxes(preferences, left_content_frame, "production", production_preference_names)
 
-    preference_structures.mb_defaults(preferences, left_content_frame)
-
     local right_content_frame = add_content_frame()
 
-    preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
+    preference_structures.mb_defaults(preferences, right_content_frame)
+
+    local belts_box = preference_structures.prototypes(player, right_content_frame, modal_elements, "belts")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "beacons")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "wagons")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "fuels")
     preference_structures.prototypes(player, right_content_frame, modal_elements, "machines")
+
+    belts_box.visible = true  -- force visible so additional preference is accessible
+    belts_box.title_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
+    local switch_state = (preferences.belts_or_lanes == "belts") and "left" or "right"
+    belts_box.title_flow.add{type="switch", switch_state=switch_state, tooltip={"fp.preference_belts_or_lanes_tt"},
+        tags={mod="fp", on_gui_switch_state_changed="choose_belts_or_lanes"},
+        left_label_caption={"fp.pu_belt", 2}, right_label_caption={"fp.pu_lane", 2}}
 end
 
 local function close_preferences_dialog(player, _)
-    -- We refresh all these things only when closing to avoid duplicate refreshes
-    local refresh = util.globals.modal_data(player).refresh
-
-    if refresh.update_ingredient_satisfaction then
-        for factory in util.context.get(player, "District"):iterator() do
-            solver.determine_ingredient_satisfaction(factory)
-        end
-    end
-
-    if refresh.factory_list then
-        util.raise.refresh(player, "factory_list", nil)
-    end
-
-    local context_to_refresh = nil  -- don't refresh by default
-
-    -- The order of these matters, they go from smallest context to biggest
-    if refresh.production then
-        context_to_refresh = "production"
-    end
-
-    if refresh.view_state then
-        -- Rebuilding state requires every button that shows item amounts to refresh
-        view_state.rebuild_state(player)
-        context_to_refresh = "production"
-    end
-
-    if refresh.calculations then
-        solver.update(player)
-        context_to_refresh = "factory"
-    end
-
-    if context_to_refresh then
-        util.raise.refresh(player, context_to_refresh, nil)
+    local ui_state = util.globals.ui_state(player)
+    if ui_state.modal_data.rebuild then
+        main_dialog.rebuild(player, true)
+        ui_state.modal_data = {}  -- fix as rebuild deletes the table
     end
 end
 
@@ -310,22 +367,47 @@ listeners.gui = {
             handler = handle_checkbox_preference_change
         }
     },
+    on_gui_selection_state_changed = {
+        {
+            name = "choose_preference",
+            handler = handle_dropdown_preference_change
+        }
+    },
     on_gui_elem_changed = {
         {
             name = "change_mb_default",
             handler = handle_mb_default_change
         }
-    }
+    },
+    on_gui_switch_state_changed = {
+        {
+            name = "choose_belts_or_lanes",
+            handler = handle_bol_change
+        }
+    },
 }
 
 listeners.dialog = {
     dialog = "preferences",
     metadata = (function(_) return {
         caption = {"fp.preferences"},
-        create_content_frame = false
+        create_content_frame = false,
+        reset_handler_name = "reset_preferences"
     } end),
     open = open_preferences_dialog,
     close = close_preferences_dialog
+}
+
+listeners.global = {
+    reset_preferences = (function(player)
+        local player_table = util.globals.player_table(player)
+        player_table.preferences = {}
+        reload_preferences(player_table)
+        -- Pretty heavy way to reset, but it's very simple
+        player_table.ui_state.modal_data.rebuild = true
+        util.raise.close_dialog(player, "cancel")
+        util.raise.open_dialog(player, {dialog="preferences"})
+    end)
 }
 
 return { listeners }

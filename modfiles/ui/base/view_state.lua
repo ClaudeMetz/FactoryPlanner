@@ -1,7 +1,5 @@
 -- This contains both the UI handling for view states, as well as the amount conversions
 
-local timescale_map = {[1] = "second", [60] = "minute", [3600] = "hour"}
-
 ---@class ViewStates: table
 
 -- ** LOCAL UTIL **
@@ -124,7 +122,7 @@ function view_state.generate_metadata(player, factory)
 
     local view_states = player_table.ui_state.view_states
     local current_view_name = view_states[view_states.selected_view_id].name
-    local belts_or_lanes = player_table.settings.belts_or_lanes
+    local belts_or_lanes = player_table.preferences.belts_or_lanes
     local round_button_numbers = player_table.preferences.round_button_numbers
     local throughput = prototyper.defaults.get(player, "belts").throughput
     local throughput_divisor = (belts_or_lanes == "belts") and throughput or (throughput / 2)
@@ -134,7 +132,7 @@ function view_state.generate_metadata(player, factory)
     return {
         processor = processors[current_view_name],
         timescale_inverse = 1 / factory.timescale,
-        timescale_string = {"fp." .. timescale_map[factory.timescale]},
+        timescale_string = {"fp." .. TIMESCALE_MAP[factory.timescale]},
         adjusted_margin_of_error = MAGIC_NUMBERS.margin_of_error * factory.timescale,
         belt_or_lane = belts_or_lanes:sub(1, -2),
         round_button_numbers = round_button_numbers,
@@ -160,8 +158,8 @@ function view_state.rebuild_state(player)
     local factory = util.context.get(player, "Factory")
 
     -- If no factory exists yet, choose a default timescale so the UI can build properly
-    local timescale = (factory) and timescale_map[factory.timescale] or "second"
-    local singular_bol = util.globals.settings(player).belts_or_lanes:sub(1, -2)
+    local timescale = (factory) and TIMESCALE_MAP[factory.timescale] or "second"
+    local singular_bol = util.globals.preferences(player).belts_or_lanes:sub(1, -2)
     local belt_proto = prototyper.defaults.get(player, "belts")
     local default_cargo_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["cargo-wagon"].id)
     local default_fluid_wagon = prototyper.defaults.get(player, "wagons", PROTOTYPE_MAPS.wagons["fluid-wagon"].id)

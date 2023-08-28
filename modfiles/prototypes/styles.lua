@@ -151,6 +151,16 @@ styles["fp_table_production"] = {
 }
 
 
+styles["fp_drop-down_slim"] = {
+    type = "dropdown_style",
+    minimal_width = 0,
+    height = 24,
+    top_padding = -2,
+    right_padding = 2,
+    bottom_padding = 0,
+    left_padding = 4
+}
+
 -- This style is hacked together from rounded-button and textbox
 styles["fp_sprite-button_inset"] = {
     type = "button_style",

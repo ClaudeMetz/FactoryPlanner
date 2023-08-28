@@ -278,7 +278,7 @@ local function build_item_boxes(player)
     flow_horizontal.style.horizontal_spacing = MAGIC_NUMBERS.frame_spacing
     main_elements.item_boxes["horizontal_flow"] = flow_horizontal
 
-    local products_per_row = util.globals.settings(player).products_per_row
+    local products_per_row = util.globals.preferences(player).products_per_row
     build_item_box(player, "product", products_per_row)
     build_item_box(player, "byproduct", products_per_row)
     build_item_box(player, "ingredient", products_per_row*2)
