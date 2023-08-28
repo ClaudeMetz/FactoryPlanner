@@ -38,13 +38,17 @@ MAGIC_NUMBERS = {
     blueprint_limit = 12  -- Maxmimum number of blueprints allowed per factory
 }
 
-
 CUSTOM_EVENTS = {
     open_modal_dialog = script.generate_event_name(),
     close_modal_dialog = script.generate_event_name(),
     build_gui_element = script.generate_event_name(),
     refresh_gui_element = script.generate_event_name()
 }
+
+PRODUCTS_PER_ROW_OPTIONS = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
+FACTORY_LIST_ROWS_OPTIONS = {14, 16, 18, 20, 22, 24, 26, 28, 30, 32}
+
+TIMESCALE_MAP = {[1] = "second", [60] = "minute", [3600] = "hour"}
 
 
 ftable = require("__flib__.table")  -- has more functionality than built-in table
@@ -75,9 +79,6 @@ DEV_EXPORT_STRING = "eNrtWV9v2jAQ/ypTngkjaZk6pL1saqVJmzStjxWKHOdCvdlxZjuoCPHdd05
 
 ---@class GuiEvent : Event
 ---@field player_index PlayerIndex
-
-
----@alias Timescale 1 | 60 | 3600
 
 ---@alias PlayerIndex uint
 ---@alias Tick uint

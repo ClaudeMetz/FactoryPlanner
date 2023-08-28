@@ -74,7 +74,7 @@ end
 -- Toggles the visibility of the toggle-main-dialog-button
 ---@param player LuaPlayer
 function _gui.toggle_mod_gui(player)
-    local enable = util.globals.settings(player).show_gui_button
+    local enable = util.globals.preferences(player).show_gui_button
 
     local frame_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = frame_flow["fp_button_toggle_interface"]

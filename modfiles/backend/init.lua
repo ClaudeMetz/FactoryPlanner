@@ -7,21 +7,19 @@ require("backend.handlers.screenshotter")
 
 require("backend.calculation.solver")
 
----@class PlayerTable
----@field preferences PreferencesTable
----@field settings SettingsTable
----@field ui_state UIStateTable
----@field district District
----@field context ContextTable
----@field translation_tables { [string]: TranslatedDictionary }?
----@field clipboard ClipboardEntry?
 
 ---@class PreferencesTable
 ---@field pause_on_interface boolean
 ---@field tutorial_mode boolean
 ---@field utility_scopes { components: "Factory" | "Floor" }
 ---@field recipe_filters { disabled: boolean, hidden: boolean }
+---@field products_per_row integer
+---@field factory_list_rows integer
+---@field default_timescale Timescale
+---@field show_gui_button boolean
 ---@field attach_factory_products boolean
+---@field prefer_product_picker boolean
+---@field prefer_matrix_solver boolean
 ---@field show_floor_items boolean
 ---@field fold_out_subfloors boolean
 ---@field ingredient_satisfaction boolean
@@ -33,7 +31,10 @@ require("backend.calculation.solver")
 ---@field pollution_column boolean
 ---@field line_comment_column boolean
 ---@field mb_defaults MBDefaults
+---@field belts_or_lanes "belts" | "lanes"
 ---@field default_prototypes DefaultPrototypes
+
+---@alias Timescale 1 | 60 | 3600
 
 ---@class MBDefaults
 ---@field machine FPModulePrototype?
@@ -48,19 +49,26 @@ require("backend.calculation.solver")
 ---@field wagons PrototypeWithCategoryDefault
 ---@field beacons PrototypeDefault
 
-
--- ** LOCAL UTIL **
----@param player LuaPlayer
-local function reload_preferences(player)
+---@param player_table PlayerTable
+function reload_preferences(player_table)
     -- Reloads the user preferences, incorporating previous preferences if possible
-    local preferences = global.players[player.index].preferences
+    player_table.preferences = player_table.preferences or {}
+    local preferences = player_table.preferences
 
     preferences.pause_on_interface = preferences.pause_on_interface or false
     if preferences.tutorial_mode == nil then preferences.tutorial_mode = true end
     preferences.utility_scopes = preferences.utility_scopes or {components = "Factory"}
     preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
 
+    preferences.products_per_row = preferences.products_per_row or 7
+    preferences.factory_list_rows = preferences.factory_list_rows or 24
+
+    preferences.default_timescale = preferences.default_timescale or 60
+
+    if preferences.show_gui_button == nil then preferences.show_gui_button = true end
     preferences.attach_factory_products = preferences.attach_factory_products or false
+    preferences.prefer_product_picker = preferences.prefer_product_picker or false
+    preferences.prefer_matrix_solver = preferences.prefer_matrix_solver or false
     preferences.show_floor_items = preferences.show_floor_items or false
     preferences.fold_out_subfloors = preferences.fold_out_subfloors or false
     preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
@@ -76,6 +84,8 @@ local function reload_preferences(player)
     preferences.mb_defaults = preferences.mb_defaults
         or {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}
 
+    preferences.belts_or_lanes = preferences.belts_or_lanes or "belts"
+
     preferences.default_prototypes = preferences.default_prototypes or {}
     preferences.default_prototypes = {
         machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines"),
@@ -86,38 +96,11 @@ local function reload_preferences(player)
     }
 end
 
----@class SettingsTable
----@field show_gui_button boolean
----@field products_per_row integer
----@field factory_list_rows integer
----@field default_timescale integer
----@field belts_or_lanes string
----@field prefer_product_picker boolean
----@field prefer_matrix_solver boolean
-
----@param player LuaPlayer
-local function reload_settings(player)
-    -- Writes the current user mod settings to their player_table, for read-performance
-    local settings = settings.get_player_settings(player)
-    local timescale_to_number = {one_second = 1, one_minute = 60, one_hour = 3600}
-
-    local settings_table = {  ---@type SettingsTable
-        show_gui_button = settings["fp_display_gui_button"].value,
-        products_per_row = tonumber(settings["fp_products_per_row"].value),
-        factory_list_rows = tonumber(settings["fp_factory_list_rows"].value),
-        default_timescale = timescale_to_number[settings["fp_default_timescale"].value],
-        belts_or_lanes = settings["fp_view_belts_or_lanes"].value,
-        prefer_product_picker = settings["fp_prefer_product_picker"].value,
-        prefer_matrix_solver = settings["fp_prefer_matrix_solver"].value
-    }
-
-    global.players[player.index].settings = settings_table
-end
 
 ---@class UIStateTable
----@field main_dialog_dimensions DisplayResolution
----@field last_action string
----@field view_states ViewStates
+---@field main_dialog_dimensions DisplayResolution?
+---@field last_action string?
+---@field view_states ViewStates?
 ---@field messages PlayerMessage[]
 ---@field main_elements table
 ---@field compact_elements table
@@ -130,9 +113,10 @@ end
 ---@field compact_view boolean
 ---@field recalculate_on_factory_change boolean
 
----@param player LuaPlayer
-local function reset_ui_state(player)
-    local ui_state_table = {  ---@type UIStateTable
+---@param player_table PlayerTable
+local function reset_ui_state(player_table)
+    -- The UI table gets replaced because the whole interface is reset
+    player_table.ui_state = {
         main_dialog_dimensions = nil,
         last_action = nil,
         view_states = nil,
@@ -150,25 +134,27 @@ local function reset_ui_state(player)
         compact_view = false,
         recalculate_on_factory_change = false
     }
-
-    -- The UI table gets replaced because the whole interface is reset
-    global.players[player.index].ui_state = ui_state_table
 end
 
 
+---@class PlayerTable
+---@field preferences PreferencesTable
+---@field ui_state UIStateTable
+---@field district District
+---@field context ContextTable
+---@field translation_tables { [string]: TranslatedDictionary }?
+---@field clipboard ClipboardEntry?
+
 ---@param player LuaPlayer
 local function player_init(player)
-    global.players[player.index] = {}
+    global.players[player.index] = {}  --[[@as table]]
     local player_table = global.players[player.index]
 
     player_table.district = District.init()
     util.context.init(player)
 
-    player_table.preferences = {}
-    reload_preferences(player)
-
-    reload_settings(player)
-    reset_ui_state(player)
+    reload_preferences(player_table)
+    reset_ui_state(player_table)
 
     util.gui.toggle_mod_gui(player)
     util.messages.raise(player, "hint", {"fp.hint_tutorial"}, 6)
@@ -180,9 +166,8 @@ end
 local function refresh_player_table(player)
     local player_table = global.players[player.index]
 
-    reload_preferences(player)
-    reload_settings(player)
-    reset_ui_state(player)
+    reload_preferences(player_table)
+    reset_ui_state(player_table)
 
     util.context.validate(player)
 
@@ -291,36 +276,6 @@ end)
 
 script.on_event(defines.events.on_player_removed, function(event)
     global.players[event.player_index] = nil
-end)
-
-
-script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
-    if event.setting_type == "runtime-per-user" then  -- this mod only has per-user settings
-        local player = game.get_player(event.player_index)  ---@cast player -nil
-        reload_settings(player)
-
-        if event.setting == "fp_display_gui_button" then
-            util.gui.toggle_mod_gui(player)
-
-        elseif event.setting == "fp_products_per_row"
-                or event.setting == "fp_factory_list_rows"
-                or event.setting == "fp_prefer_product_picker" then
-            main_dialog.rebuild(player, false)
-
-        elseif event.setting == "fp_view_belts_or_lanes" then
-            local player_table = util.globals.player_table(player)
-
-            -- Goes through every factory's top level products and updates their defined_by
-            local defined_by = player_table.settings.belts_or_lanes
-            for _, factory in player_table.district:iterator() do
-                factory:update_product_definitions(defined_by)
-            end
-
-            local factory = util.context.get(player, "Factory")
-            solver.update(player, factory)
-            main_dialog.rebuild(player, false)
-        end
-    end
 end)
 
 

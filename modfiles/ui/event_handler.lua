@@ -27,6 +27,7 @@ local gui_identifier_map = {
     [defines.events.on_gui_text_changed] = "on_gui_text_changed",
     [defines.events.on_gui_checked_state_changed] = "on_gui_checked_state_changed",
     [defines.events.on_gui_switch_state_changed] = "on_gui_switch_state_changed",
+    [defines.events.on_gui_selection_state_changed] = "on_gui_selection_state_changed",
     [defines.events.on_gui_elem_changed] = "on_gui_elem_changed",
     [defines.events.on_gui_value_changed] = "on_gui_value_changed",
     [defines.events.on_gui_hover] = "on_gui_hover",

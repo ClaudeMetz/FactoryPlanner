@@ -352,9 +352,9 @@ end
 
 local function open_picker_dialog(player, modal_data)
     -- Create a blank factory if requested
-    local settings = util.globals.settings(player)
-    modal_data.timescale = settings.default_timescale
-    modal_data.lob = settings.belts_or_lanes
+    local preferences = util.globals.preferences(player)
+    modal_data.timescale = preferences.default_timescale
+    modal_data.lob = preferences.belts_or_lanes
 
     if modal_data.item_id then modal_data.item = OBJECT_INDEX[modal_data.item_id] end
 

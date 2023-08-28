@@ -31,6 +31,15 @@ function migration.global()
 end
 
 function migration.player_table(player_table)
+    player_table.preferences.products_per_row = player_table.settings.products_per_row
+    player_table.preferences.factory_list_rows = player_table.settings.subfactory_list_rows
+    player_table.preferences.default_timescale = player_table.settings.default_timescale
+    player_table.preferences.show_gui_button = player_table.settings.show_gui_button
+    player_table.preferences.prefer_product_picker = player_table.settings.prefer_product_picker
+    player_table.preferences.prefer_matrix_solver = player_table.settings.prefer_matrix_solver
+    player_table.preferences.belts_or_lanes = player_table.settings.belts_or_lanes
+    player_table.settings = nil
+
     player_table.preferences.attach_factory_products = player_table.preferences.attach_subfactory_products
     local scopes = player_table.preferences.utility_scopes
     if scopes.components == "Subfactory" then scopes.components = "Factory" end

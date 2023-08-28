@@ -40,6 +40,16 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
             search_button.style.left_margin = 4
         end
 
+        if dialog_settings.reset_handler_name then  -- add a reset button if requested
+            modal_data.reset_handler_name = dialog_settings.reset_handler_name
+
+            local reset_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.reset_button_tt"},
+                tags={mod="fp", on_gui_click="reset_modal_dialog"}, sprite="utility/reset",
+                style="tool_button_red", mouse_button_filter={"left"}}
+            reset_button.style.size = 24
+            reset_button.style.padding = 1
+        end
+
         if not dialog_settings.show_submit_button then  -- add X-to-close button if this is not a submit dialog
             local close_button = flow_title_bar.add{type="sprite-button", tooltip={"fp.close_button_tt"},
                 tags={mod="fp", on_gui_click="close_modal_dialog", action="cancel"}, sprite="utility/close_white",
@@ -297,6 +307,13 @@ listeners.gui = {
             handler = (function(player, _, _)
                 util.gui.select_all(util.globals.modal_elements(player).search_textfield)
             end)
+        },
+        {
+            name = "reset_modal_dialog",
+            handler = (function(player, _, _)
+                local modal_data = util.globals.modal_data(player)  --[[@as table]]
+                GLOBAL_HANDLERS[modal_data.reset_handler_name](player)
+            end)
         }
     },
     on_gui_text_changed = {
@@ -304,7 +321,7 @@ listeners.gui = {
             name = "modal_searchfield",
             timeout = MAGIC_NUMBERS.modal_search_rate_limit,
             handler = (function(player, _, metadata)
-                local modal_data = util.globals.modal_data(player)
+                local modal_data = util.globals.modal_data(player)  --[[@as table]]
                 local search_tick = modal_data.search_tick
                 if search_tick ~= nil then util.nth_tick.cancel(search_tick) end
 

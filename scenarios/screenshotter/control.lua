@@ -14,7 +14,7 @@ script.on_event(defines.events.on_game_created_from_scenario, function()
     global.setup = function() remote.call("screenshotter_input", "execute_action", 1, "player_setup") end
     global.dimensions = {}
 
-    global.protected_names = remote.call("screenshotter_input", "initial_setup")
+    remote.call("screenshotter_input", "initial_setup")
 end)
 
 
@@ -35,7 +35,7 @@ local function write_metadata_file()
         }
     end
 
-    local metadata = {frame_corners=frame_corners, protected_names=global.protected_names}
+    local metadata = {frame_corners=frame_corners}
     game.write_file("metadata.json", game.table_to_json(metadata))
 end
 

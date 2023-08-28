@@ -3,11 +3,11 @@ require("ui.base.view_state")
 
 main_dialog = {}
 
--- Accepts custom width and height parameters so dimensions can be tried out without needing to change actual settings
+-- Accepts custom width and height parameters so dimensions can be tried out without changing actual preferences
 local function determine_main_dimensions(player, products_per_row, factory_list_rows)
-    local settings = util.globals.settings(player)
-    products_per_row = products_per_row or settings.products_per_row
-    factory_list_rows = factory_list_rows or settings.factory_list_rows
+    local preferences = util.globals.preferences(player)
+    products_per_row = products_per_row or preferences.products_per_row
+    factory_list_rows = factory_list_rows or preferences.factory_list_rows
     local frame_spacing = MAGIC_NUMBERS.frame_spacing
 
     -- Width of the larger ingredients-box, which has twice the buttons per row
@@ -24,36 +24,30 @@ local function determine_main_dimensions(player, products_per_row, factory_list_
     return {width=width, height=height}
 end
 
--- Downscale width and height mod settings until the main interface fits onto the player's screen
+-- Downscale width and height preferences until the main interface fits onto the player's screen
 function main_dialog.shrinkwrap_interface(player)
     local resolution, scale = player.display_resolution, player.display_scale
     local actual_resolution = {width=math.ceil(resolution.width / scale), height=math.ceil(resolution.height / scale)}
+    local preferences = util.globals.preferences(player)
 
-    local mod_settings = util.globals.settings(player)
-    local products_per_row = mod_settings.products_per_row
-    local factory_list_rows = mod_settings.factory_list_rows
-
-    local function dimensions() return determine_main_dimensions(player, products_per_row, factory_list_rows) end
-
-    while (actual_resolution.width * 0.95) < dimensions().width do
-        products_per_row = products_per_row - 1
-    end
-    while (actual_resolution.height * 0.95) < dimensions().height do
-        factory_list_rows = factory_list_rows - 2
+    local width_minimum = PRODUCTS_PER_ROW_OPTIONS[1]
+    while (actual_resolution.width * 0.95) < determine_main_dimensions(player).width
+            and preferences.products_per_row > width_minimum do
+        preferences.products_per_row = preferences.products_per_row - 1
     end
 
-    local setting_prototypes = game.mod_setting_prototypes
-    local width_minimum = setting_prototypes["fp_products_per_row"].allowed_values[1] --[[@as number]]
-    local height_minimum = setting_prototypes["fp_factory_list_rows"].allowed_values[1] --[[@as number]]
+    local height_minimum = FACTORY_LIST_ROWS_OPTIONS[1]
+    while (actual_resolution.height * 0.95) < determine_main_dimensions(player).height
+            and preferences.factory_list_rows > height_minimum do
+        preferences.factory_list_rows = preferences.factory_list_rows - 2
+    end
 
-    local live_settings = settings.get_player_settings(player)
-    live_settings["fp_products_per_row"] = {value = math.max(products_per_row, width_minimum)}
-    live_settings["fp_factory_list_rows"] = {value = math.max(factory_list_rows, height_minimum)}
+    main_dialog.rebuild(player, false)
 end
 
 
 local function interface_toggle(metadata)
-    local player = game.get_player(metadata.player_index)
+    local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
     local compact_view = util.globals.ui_state(player).compact_view
     if compact_view then compact_dialog.toggle(player)
     else main_dialog.toggle(player) end

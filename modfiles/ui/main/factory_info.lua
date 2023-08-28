@@ -163,13 +163,11 @@ local function build_factory_info(player)
     flow_timescale.add{type="label", caption={"fp.info_label", {"fp.timescale"}}, tooltip={"fp.timescale_tt"}}
     flow_timescale.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-
-    local timescale_map = {[1] = "second", [60] = "minute", [3600] = "hour"}
-    local table_timescales = flow_timescale.add{type="table", column_count=table_size(timescale_map)}
+    local table_timescales = flow_timescale.add{type="table", column_count=table_size(TIMESCALE_MAP)}
     table_timescales.style.horizontal_spacing = 0
     main_elements.factory_info["timescales_table"] = table_timescales
 
-    for scale, name in pairs(timescale_map) do
+    for scale, name in pairs(TIMESCALE_MAP) do
         local button = table_timescales.add{type="button", caption={"", "1", {"fp.unit_" .. name}},
             tags={mod="fp", on_gui_click="change_timescale", timescale=scale},
             style="fp_button_push", mouse_button_filter={"left"}}
