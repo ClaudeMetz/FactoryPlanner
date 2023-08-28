@@ -246,8 +246,8 @@ function solver.set_factory_result(result)
     local player_table = global.players[result.player_index]
     local factory = player_table.active_factory
 
-    factory.energy_consumption = result.energy_consumption
-    factory.pollution = result.pollution
+    factory.top_floor.power = result.energy_consumption
+    factory.top_floor.pollution = result.pollution
     factory.matrix_free_items = result.matrix_free_items
 
     -- If products are not present in the result, it means they have been produced
@@ -281,7 +281,7 @@ function solver.set_line_result(result)
         line.uncapped_production_ratio = result.uncapped_production_ratio
     end
 
-    line.energy_consumption = result.energy_consumption
+    line.power = result.energy_consumption
     line.pollution = result.pollution
 
     if line.production_ratio == 0 and line.subfloor == nil then
