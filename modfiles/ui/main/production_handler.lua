@@ -242,8 +242,8 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "add_recipe_to_end" or action == "add_recipe_below" then
         local production_type = (tags.item_category == "byproduct") and "consume" or "produce"
-        local add_after_line = (action == "add_recipe_below") and line or nil
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line=add_after_line,
+        local add_after_line_id = (action == "add_recipe_below") and line.id or nil
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type=production_type, category_id=item.proto.category_id, product_id=item.proto.id}})
 
     elseif action == "specify_amount" then
@@ -290,10 +290,10 @@ local function handle_fuel_click(player, tags, action)
     local line = fuel.parent.parent
 
     if action == "add_recipe_to_end" or action == "add_recipe_below" then
-        local add_after_line = (action == "add_recipe_below") and line or nil
+        local add_after_line_id = (action == "add_recipe_below") and line.id or nil
         local category = PROTOTYPE_MAPS.items[fuel.proto.type]
         local proto_id = category.members[fuel.proto.name].id
-        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line=add_after_line,
+        util.raise.open_dialog(player, {dialog="recipe", modal_data={add_after_line_id=add_after_line_id,
             production_type="produce", category_id=category.id, product_id=proto_id}})
 
     elseif action == "edit" then  -- fuel is changed through the machine dialog
