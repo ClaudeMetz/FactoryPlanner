@@ -96,8 +96,8 @@ local function attempt_adding_line(player, recipe_id)
         util.messages.raise(player, "error", {"fp.error_no_compatible_machine"}, 1)
     else
         local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-        local relative_object = modal_data.add_after_line or floor:find_last() --[[@as LineObject]]
-        floor:insert(line, relative_object, "next")
+        local relative_object = OBJECT_INDEX[modal_data.add_after_line_id]  --[[@as LineObject]]
+        floor:insert(line, relative_object, "next")  -- if not relative, insert uses last line
 
         local message = nil
         if not (recipe_proto.custom or player.force.recipes[recipe_proto.name].enabled) then

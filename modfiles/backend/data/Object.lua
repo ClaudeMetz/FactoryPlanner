@@ -74,13 +74,10 @@ function methods:_insert(new_object, relative_object, direction)
         self.first = new_object
     else
         if relative_object == nil then  -- no relative object means append
-            relative_object, direction = self.first, "next"
-            while relative_object.next ~= nil do
-                relative_object = relative_object.next
-            end
+            relative_object, direction = self:_find_last(), "next"
+            ---@cast relative_object -nil
+            ---@cast direction -nil
         end
-        ---@cast relative_object -nil
-        ---@cast direction -nil
 
         -- Make sure list header is adjusted if necessary
         if direction == "previous" and relative_object.previous == nil then
