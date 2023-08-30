@@ -138,7 +138,7 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 end
 
 local function run_delayed_modal_search(metadata)
-    local player = game.get_player(metadata.player_index)
+    local player = game.get_player(metadata.player_index)  --[[@as LuaPlayer]]
     local modal_data = util.globals.modal_data(player)
     if not modal_data or not modal_data.modal_elements then return end
 
@@ -150,23 +150,12 @@ end
 
 -- ** TOP LEVEL **
 -- Opens a barebone modal dialog and calls upon the given function to populate it
-function modal_dialog.enter(player, metadata, dialog_open, early_abort_check)
+function modal_dialog.enter(player, metadata, dialog_open, early_abort)
+    if early_abort ~= nil and early_abort(player, metadata.modal_data or {}) then return end
+
     local ui_state = util.globals.ui_state(player)
-
-    if ui_state.modal_dialog_type ~= nil then
-        -- If a dialog is currently open, and this one wants to be queued, do so
-        if metadata.allow_queueing then ui_state.queued_dialog_metadata = metadata end
-        return
-    end
-
-    ui_state.modal_data = metadata.modal_data or {}
-
-    if early_abort_check ~= nil and early_abort_check(player, ui_state.modal_data) then  -- abort early if need be
-        --ui_state.modal_data = nil  -- this should be reset, but that breaks the stupid queueing stuff .........
-        return
-    end
-
     ui_state.modal_dialog_type = metadata.dialog
+    ui_state.modal_data = metadata.modal_data or {}
     ui_state.modal_data.modal_elements = {}
     ui_state.modal_data.confirmed_dialog = false
 
@@ -206,14 +195,8 @@ function modal_dialog.exit(player, action, skip_opened, dialog_close)
 
     modal_elements.interface_dimmer.destroy()
     modal_elements.modal_frame.destroy()
-    ui_state.modal_elements = nil
 
     if not skip_opened then player.opened = ui_state.main_elements.main_frame end
-
-    if ui_state.queued_dialog_metadata ~= nil then
-        util.raise.open_dialog(player, ui_state.queued_dialog_metadata)
-        ui_state.queued_dialog_metadata = nil
-    end
 end
 
 

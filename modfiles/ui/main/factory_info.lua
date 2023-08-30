@@ -108,7 +108,6 @@ local function refresh_factory_info(player)
         local switch_state = (matrix_solver_active) and "right" or "left"
         factory_info_elements.solver_choice_switch.switch_state = switch_state
         factory_info_elements.solver_choice_switch.enabled = (not archive_open)
-        factory_info_elements.configure_solver_button.enabled = (not archive_open and matrix_solver_active)
     end
 end
 
@@ -210,17 +209,10 @@ local function build_factory_info(player)
         tooltip={"fp.solver_choice_tt"}}
     flow_solver_choice.add{type="empty-widget", style="flib_horizontal_pusher"}
 
-    local switch_solver_choice = flow_solver_choice.add{type="switch", right_label_caption={"fp.solver_choice_matrix"},
-        left_label_caption={"fp.solver_choice_traditional"},
+    local switch_solver_choice = flow_solver_choice.add{type="switch",
+        right_label_caption={"fp.solver_choice_matrix"}, left_label_caption={"fp.solver_choice_traditional"},
         tags={mod="fp", on_gui_switch_state_changed="solver_choice_changed"}}
     main_elements.factory_info["solver_choice_switch"] = switch_solver_choice
-
-    local button_configure_solver = flow_solver_choice.add{type="sprite-button", sprite="utility/change_recipe",
-        tooltip={"fp.solver_choice_configure"}, tags={mod="fp", on_gui_click="configure_matrix_solver"},
-        style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
-    button_configure_solver.style.size = 26
-    button_configure_solver.style.padding = 0
-    main_elements.factory_info["configure_solver_button"] = button_configure_solver
 
     refresh_factory_info(player)
 end
@@ -249,12 +241,6 @@ listeners.gui = {
                 factory.mining_productivity = 0
                 solver.update(player, factory)
                 util.raise.refresh(player, "factory", nil)
-            end)
-        },
-        {
-            name = "configure_matrix_solver",
-            handler = (function(player, _, _)
-                util.raise.open_dialog(player, {dialog="matrix", modal_data={configuration=true}})
             end)
         }
     },
