@@ -16,7 +16,7 @@ local _clipboard = {}
 ---@class ClipboardEntry
 ---@field class string
 ---@field packed_object PackedObject
----@field parent CopyableObjectParent
+---@field parent CopyableObjectParent?
 
 -- Copies the given object into the player's clipboard as a packed object
 ---@param player LuaPlayer
@@ -25,9 +25,10 @@ function _clipboard.copy(player, object)
     local player_table = util.globals.player_table(player)
     player_table.clipboard = {
         class = object.class,
-        packed_object = object:pack(),
+        packed_object = (object.pack ~= nil) and object:pack() or object,
         parent = object.parent  -- just used for unpacking, will remain a reference even if deleted elsewhere
     }
+
     util.cursor.create_flying_text(player, {"fp.copied_into_clipboard", {"fp.pu_" .. object.class:lower(), 1}})
     util.raise.refresh(player, "paste_button", nil)
 end
@@ -41,8 +42,13 @@ function _clipboard.paste(player, target)
     if clip == nil then
         util.cursor.create_flying_text(player, {"fp.clipboard_empty"})
     else
-        local clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
-        clone:validate()
+        local clone = nil
+        if clip.parent then  -- only real objects have parents
+            clone = unpackers[clip.class](clip.packed_object, clip.parent)  -- always returns fresh object
+            clone:validate()
+        else
+            clone = ftable.shallow_copy(clip.packed_object)
+        end
         local success, error = target:paste(clone)
 
         if success then  -- objects in the clipboard are always valid since it resets on_config_changed
