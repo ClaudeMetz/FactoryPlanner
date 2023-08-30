@@ -157,7 +157,8 @@ local function handle_gui_event(event)
 
     action_table.handler(player, tags, third_parameter)  -- send the actual event
 
-    util.messages.refresh(player)  -- give messages a chance to update themselves
+    -- Only refresh messages if the event wasn't a hover event
+    if event_name ~= "on_gui_hover" and event_name ~= "on_gui_leave" then util.messages.refresh(player) end
 end
 
 -- Register all the GUI events from the identifier map
@@ -308,8 +309,8 @@ local function handle_misc_event(event)
         registered_handler(player, event)  -- send actual event
     end
 
-    if CUSTOM_EVENTS[string_name] then return end  -- don't refresh message for events inside other events
-    util.messages.refresh(player)  -- give messages a chance to update themselves
+    -- Only refresh messages if this event was a keyboard shortcut
+    if event.input_name then util.messages.refresh(player) end
 end
 
 -- Register all the misc events from the identifier map
