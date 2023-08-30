@@ -1,4 +1,5 @@
 local Line = require("backend.data.Line")
+local matrix_engine = require("backend.calculation.matrix_engine")
 
 -- ** LOCAL UTIL **
 local function refresh_production(player, _, _)
@@ -8,6 +9,73 @@ local function refresh_production(player, _, _)
         util.raise.refresh(player, "factory", nil)
     end
 end
+
+local function refresh_paste_button(player)
+    local main_elements = util.globals.main_elements(player)
+    if not main_elements.production_box then return end
+    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+
+    local line_copied = util.clipboard.check_classes(player, {Floor=true, Line=true})
+    main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied)
+end
+
+local function refresh_solver_frame(player)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
+    local solver_flow = util.globals.main_elements(player).solver_flow
+    solver_flow.clear()
+
+    local factory_data = solver.generate_factory_data(player, factory)
+    local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
+    local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
+    local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
+
+    if next(linear_dependence_data.linearly_dependent_recipes) then
+        solver_flow.parent.visible = true
+
+        local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
+        solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="bold_label"}
+        local flow_recipes = solver_flow.add{type="flow", direction="horizontal"}
+
+        for _, recipe_proto in pairs(linear_dependence_data.linearly_dependent_recipes) do
+            local sprite = flow_recipes.add{type="sprite", sprite=recipe_proto.sprite,
+                tooltip=recipe_proto.localised_name, resize_to_sprite=true}
+            sprite.style.size = 36
+            sprite.style.stretch_image_to_widget_size = true
+        end
+
+    elseif num_needed_free_items ~= 0 then
+        solver_flow.parent.visible = true
+
+        local function build_item_flow(flow, status, items)
+            for _, proto in pairs(items) do
+                local tooltip = {"fp.turn_" .. status, proto.localised_name}
+                flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
+                    tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
+                    style="flib_slot_button_default_small", mouse_button_filter={"left"}}
+            end
+        end
+
+        if #linear_dependence_data.allowed_free_items > 0 then
+            local caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
+            local tooltip = {"fp.choose_unrestricted_items_tt", num_needed_free_items,
+                {"fp.pl_item", num_needed_free_items}}
+            solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
+
+            local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
+            build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
+
+            local line = solver_flow.add{type="line", direction="vertical"}
+            line.style.margin = {4, -4}
+        else
+            solver_flow.add{type="label", caption={"fp.info_label", {"fp.unrestricted_items_balanced"}},
+                tooltip={"fp.unrestricted_items_balanced_tt"}, style="bold_label"}
+        end
+
+        local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
+        build_item_flow(flow_unrestricted, "unrestricted", matrix_metadata.free_items)
+    end
+end
+
 
 local function paste_line(player, _, _)
     local floor = util.context.get(player, "Floor")  --[[@as Floor]]
@@ -24,14 +92,23 @@ local function change_floor(player, destination)
     end
 end
 
+local function switch_matrix_item(player, tags, event)
+    local factory = util.context.get(player, "Factory")  --[[@as Factory]]
 
-local function refresh_paste_button(player)
-    local main_elements = util.globals.main_elements(player)
-    if not main_elements.production_box then return end
-    local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
+    if tags.status == "unrestricted" then
+        for index, item in pairs(factory.matrix_free_items) do
+            if item.type == tags.type and item.name == tags.name then
+                table.remove(factory.matrix_free_items, index)
+                break
+            end
+        end
+    else -- "constrained"
+        local item_proto = PROTOTYPE_MAPS.items[tags.type].members[tags.name]
+        table.insert(factory.matrix_free_items, item_proto)
+    end
 
-    local line_copied = util.clipboard.check_classes(player, {Floor=true, Line=true})
-    main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied)
+    solver.update(player, factory)
+    util.raise.refresh(player, "factory", nil)
 end
 
 
@@ -78,6 +155,10 @@ local function refresh_production_box(player)
     end
 
     refresh_paste_button(player)
+
+    local solver_flow = ui_state.main_elements.solver_flow
+    solver_flow.parent.visible = false
+    if any_lines_present and factory.matrix_free_items then refresh_solver_frame(player) end
 end
 
 local function build_production_box(player)
@@ -140,8 +221,15 @@ local function build_production_box(player)
 
     frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
 
+    local frame_solver = frame_vertical.add{type="frame", direction="vertical",
+        visible=false, style="fp_frame_bottom_inlay"}
+    local flow_solver = frame_solver.add{type="flow", direction="horizontal"}
+    flow_solver.style.vertical_align = "center"
+    flow_solver.style.horizontal_spacing = 12
+    main_elements["solver_flow"] = flow_solver
+
     local frame_messages = frame_vertical.add{type="frame", direction="vertical",
-        visible=false, style="fp_frame_messages"}
+        visible=false, style="fp_frame_bottom_inlay"}
     main_elements["messages_frame"] = frame_messages
 
     refresh_production_box(player)
@@ -173,6 +261,10 @@ listeners.gui = {
         {
             name = "paste_line",
             handler = paste_line
+        },
+        {
+            name = "switch_matrix_item",
+            handler = switch_matrix_item
         }
     }
 }

@@ -197,11 +197,7 @@ function solver.update(player, factory)
                     factory.linearly_dependant = false
                 else
                     set_blank_factory(player, factory)  -- reset factory by blanking everything
-
-                    -- Don't open the dialog if calculations are run during migration etc.
-                    if main_dialog.is_in_focus(player) or player_table.ui_state.modal_dialog_type ~= nil then
-                        util.raise.open_dialog(player, {dialog="matrix", allow_queueing=true})
-                    end
+                    factory.linearly_dependant = true
                 end
             else  -- reset top level items
                 set_blank_factory(player, factory)
@@ -287,6 +283,7 @@ function solver.set_line_result(result)
     if line.production_ratio == 0 and line.subfloor == nil then
         local recipe_proto = line.recipe_proto
         set_zeroed_items(line, "products", recipe_proto.products)
+        line.byproducts:clear()
         set_zeroed_items(line, "ingredients", recipe_proto.ingredients)
     else
         update_object_items(line, "products", result.Product)

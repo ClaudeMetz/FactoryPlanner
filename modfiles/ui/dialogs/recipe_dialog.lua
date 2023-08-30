@@ -86,8 +86,7 @@ local function run_preliminary_checks(player, modal_data)
 end
 
 -- Tries to add the given recipe to the current floor, then exiting the modal dialog
-local function attempt_adding_line(player, recipe_id)
-    local modal_data = util.globals.modal_data(player)  --[[@as table]]
+local function attempt_adding_line(player, recipe_id, modal_data)
     local recipe_proto = global.prototypes.recipes[recipe_id]
     local line = Line.init(recipe_proto, modal_data.production_type)
 
@@ -256,7 +255,7 @@ local function recipe_early_abort_check(player, modal_data)
     else
         -- If one relevant recipe is found, try it straight away
         if type(result) == "number" then  -- the given number being the recipe_id
-            attempt_adding_line(player, result)
+            attempt_adding_line(player, result, modal_data)
             return true  -- idem. above
 
         else  -- Otherwise, save the relevant data for the dialog opener
@@ -294,7 +293,8 @@ listeners.gui = {
             name = "pick_recipe",
             timeout = 20,
             handler = (function(player, tags, _)
-                attempt_adding_line(player, tags.recipe_proto_id)
+                local modal_data = util.globals.modal_data(player)
+                attempt_adding_line(player, tags.recipe_proto_id, modal_data)
                 util.raise.close_dialog(player, "cancel")
             end)
         }
