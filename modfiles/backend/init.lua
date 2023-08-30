@@ -77,7 +77,7 @@ function reload_preferences(player_table)
     preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
 
     if preferences.done_column == nil then preferences.done_column = true end
-    if preferences.percentage_column == nil then preferences.percentage_column = true end
+    preferences.percentage_column = preferences.percentage_column or false
     preferences.pollution_column = preferences.pollution_column or false
     preferences.line_comment_column = preferences.line_comment_column or false
 
