@@ -210,9 +210,8 @@ local function put_ingredients_into_cursor(player, _, _)
 
     local ingredients = {}
     for _, ingredient in relevant_floor["ingredients"]:iterator() do
-        if ingredient.proto.type == "item" then
-            ingredients[ingredient.proto.name] = ingredient.amount
-        end
+        local signal = {type=ingredient.proto.type, name=ingredient.proto.name}
+        ingredients[signal] = ingredient.amount
     end
 
     local success = util.cursor.set_item_combinator(player, ingredients)
