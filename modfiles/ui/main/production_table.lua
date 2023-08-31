@@ -406,7 +406,7 @@ local function refresh_production_table(player)
 
     local table_production = scroll_pane_production.add{type="table", column_count=(#production_columns+1),
         style="fp_table_production"}
-    table_production.style.horizontal_spacing = 16
+    table_production.style.horizontal_spacing = 12
     table_production.style.padding = {6, 0, 0, 12}
 
     -- Column headers
