@@ -21,7 +21,8 @@ end
 
 local function refresh_solver_frame(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-    local solver_flow = util.globals.main_elements(player).solver_flow
+    local main_elements = util.globals.main_elements(player)
+    local solver_flow = main_elements.solver_flow
     solver_flow.clear()
 
     local factory_data = solver.generate_factory_data(player, factory)
@@ -30,7 +31,7 @@ local function refresh_solver_frame(player)
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
 
     if next(linear_dependence_data.linearly_dependent_recipes) then
-        solver_flow.parent.visible = true
+        main_elements.solver_frame.visible = true
 
         local caption = {"fp.error_message", {"fp.info_label", {"fp.linearly_dependent_recipes"}}}
         solver_flow.add{type="label", caption=caption, tooltip={"fp.linearly_dependent_recipes_tt"}, style="bold_label"}
@@ -44,7 +45,7 @@ local function refresh_solver_frame(player)
         end
 
     elseif num_needed_free_items ~= 0 then
-        solver_flow.parent.visible = true
+        main_elements.solver_frame.visible = true
 
         local function build_item_flow(flow, status, items)
             for _, proto in pairs(items) do
@@ -64,8 +65,8 @@ local function refresh_solver_frame(player)
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
             build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
 
-            local line = solver_flow.add{type="line", direction="vertical"}
-            line.style.margin = {4, -4}
+            --local line = solver_flow.add{type="line", direction="vertical"}
+            --line.style.margin = {4, -4}
         else
             solver_flow.add{type="label", caption={"fp.info_label", {"fp.unrestricted_items_balanced"}},
                 tooltip={"fp.unrestricted_items_balanced_tt"}, style="bold_label"}
@@ -156,9 +157,10 @@ local function refresh_production_box(player)
 
     refresh_paste_button(player)
 
-    local solver_flow = ui_state.main_elements.solver_flow
-    solver_flow.parent.visible = false
-    if any_lines_present and factory.matrix_free_items then refresh_solver_frame(player) end
+    ui_state.main_elements.solver_frame.visible = false
+    if any_lines_present and factory.matrix_free_items then
+        refresh_solver_frame(player)
+    end
 end
 
 local function build_production_box(player)
@@ -221,16 +223,29 @@ local function build_production_box(player)
 
     frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
 
-    local frame_solver = frame_vertical.add{type="frame", direction="vertical",
-        visible=false, style="fp_frame_bottom_inlay"}
-    local flow_solver = frame_solver.add{type="flow", direction="horizontal"}
+    local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy = "never",
+        visible=false, style="flib_naked_scroll_pane_no_padding"}
+    main_elements["messages_frame"] = scroll_pane_messages
+
+    local line_messages = scroll_pane_messages.add{type="line", direction="horizontal"}
+    line_messages.style.margin = -1  -- hack around some scrollpane styling issues
+
+    local flow_messages = scroll_pane_messages.add{type="flow", direction="vertical"}
+    flow_messages.style.padding = {0, 12, 6, 12}
+    main_elements["messages_flow"] = flow_messages
+
+    local scroll_pane_solver = frame_vertical.add{type="scroll-pane", vertical_scroll_policy = "never",
+        visible=false, style="flib_naked_scroll_pane_no_padding"}
+    main_elements["solver_frame"] = scroll_pane_solver
+
+    local line_solver = scroll_pane_solver.add{type="line", direction="horizontal"}
+    line_solver.style.margin = -1  -- hack around some scrollpane styling issues
+
+    local flow_solver = scroll_pane_solver.add{type="flow", direction="horizontal"}
+    flow_solver.style.padding = {0, 12, 4, 12}
     flow_solver.style.vertical_align = "center"
     flow_solver.style.horizontal_spacing = 12
     main_elements["solver_flow"] = flow_solver
-
-    local frame_messages = frame_vertical.add{type="frame", direction="vertical",
-        visible=false, style="fp_frame_bottom_inlay"}
-    main_elements["messages_frame"] = frame_messages
 
     refresh_production_box(player)
 end
