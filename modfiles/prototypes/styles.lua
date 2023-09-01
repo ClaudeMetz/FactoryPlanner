@@ -127,19 +127,6 @@ styles["fp_frame_transparent"] = {
     }
 }
 
-styles["fp_frame_bottom_inlay"] = {
-    type = "frame_style",
-    parent = "subfooter_frame",
-    graphical_set = {
-        base = styles.subfooter_frame.graphical_set.base,
-        shadow = top_shadow,
-    },
-    left_padding = 12,
-    bottom_padding = 4,
-    horizontally_stretchable = "on",
-    vertically_stretchable = "off"
-}
-
 
 styles["fp_table_production"] = {
     type = "table_style",

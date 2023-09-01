@@ -27,12 +27,14 @@ function _messages.refresh(player)
 
     local messages = ui_state.messages
     message_frame.visible = (next(messages) ~= nil)
-    message_frame.clear()
+
+    local message_flow = ui_state.main_elements["messages_flow"]
+    message_flow.clear()
 
     for i=#messages, 1, -1 do
         local message = messages[i]  ---@type PlayerMessage
         local caption = {"", "[img=warning-white]  ", {"fp." .. message.category .. "_message", message.text}}
-        message_frame.add{type="label", caption=caption, style="bold_label"}
+        message_flow.add{type="label", caption=caption, style="bold_label"}
 
         message.lifetime = message.lifetime - 1
         if message.lifetime == 0 then table.remove(messages, i) end
