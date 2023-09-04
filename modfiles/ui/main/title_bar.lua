@@ -38,7 +38,7 @@ local function build_title_bar(player)
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
-        sprite="flib_pin_white", hovered_sprite="flib_pin_black", clicked_sprite="flib_pin_black",
+        sprite="fp_pin_light", hovered_sprite="fp_pin_dark", clicked_sprite="fp_pin_dark",
         mouse_button_filter={"left"}}
     main_elements.title_bar["switch_button"] = button_switch
 
