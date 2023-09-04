@@ -572,7 +572,7 @@ local function rebuild_compact_dialog(player, default_visibility)
 
     flow_title_bar.add{type="sprite-button", style="fp_button_frame", toggled=true,
         tags={mod="fp", on_gui_click="switch_to_main_view"}, tooltip={"fp.switch_to_main_view"},
-        sprite="flib_pin_black", hovered_sprite="flib_pin_black", clicked_sprite="flib_pin_white",
+        sprite="fp_pin_dark", hovered_sprite="fp_pin_dark", clicked_sprite="fp_pin_light",
         mouse_button_filter={"left"}}
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_compact_dialog"},
