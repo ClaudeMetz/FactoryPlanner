@@ -172,7 +172,9 @@ function preference_structures.prototypes(player, content_frame, modal_elements,
             if #prototypes > 1 then
                 any_category_visible = true
 
-                table_prototypes.add{type="label", caption=("'" .. category.name .. "'")}
+                local category_caption = {"?", {type:sub(1, -2) .. "-category-name." .. category.name},
+                    "'" .. category.name .. "'"}
+                table_prototypes.add{type="label", caption=category_caption}
                 table_prototypes.add{type="empty-widget", style="flib_horizontal_pusher"}
 
                 add_defaults_table(8, category_id)
