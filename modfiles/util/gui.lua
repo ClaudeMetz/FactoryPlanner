@@ -53,22 +53,21 @@ function _gui.switch.convert_to_state(boolean)
 end
 
 
+local function check_empty_flow(player)
+    local button_flow = mod_gui.get_button_flow(player)
+    -- parent.parent is to check that I'm not deleting a top level element. Now, I have no idea how that
+    -- could ever be a top level element, but oh well, can't know everything now can we?
+    if #button_flow.children_names == 0 and button_flow.parent.parent then
+        button_flow.parent.destroy()
+    end
+end
+
 -- Destroys the toggle-main-dialog-button if present
 ---@param player LuaPlayer
 local function destroy_mod_gui(player)
     local button_flow = mod_gui.get_button_flow(player)
     local mod_gui_button = button_flow["fp_button_toggle_interface"]
-
-    if mod_gui_button then
-        -- parent.parent is to check that I'm not deleting a top level element. Now, I have no idea how that
-        -- could ever be a top level element, but oh well, can't know everything now can we?
-        if #button_flow.children_names == 1 and button_flow.parent.parent then
-            -- Remove whole frame if FP is the last button in there
-            button_flow.parent.destroy()
-        else
-            mod_gui_button.destroy()
-        end
-    end
+    if mod_gui_button then mod_gui_button.destroy() end
 end
 
 -- Toggles the visibility of the toggle-main-dialog-button
@@ -88,6 +87,10 @@ function _gui.toggle_mod_gui(player)
     elseif mod_gui_button then  -- use the destroy function for possible cleanup reasons
         destroy_mod_gui(player)
     end
+
+    -- The simple fact of getting the button flow creates it, so make sure
+    -- it doesn't stay around if it's empty
+    check_empty_flow(player)
 end
 
 
@@ -129,6 +132,7 @@ end
 ---@param player LuaPlayer
 function _gui.reset_player(player)
     destroy_mod_gui(player)  -- mod_gui button
+    check_empty_flow(player)  -- make sure no empty flow is left behind
 
     for _, gui_element in pairs(player.gui.screen.children) do  -- all mod frames
         if gui_element.valid and gui_element.get_mod() == "factoryplanner" then
