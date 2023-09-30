@@ -15,7 +15,7 @@ Date: 00. 00. 0000
     - Made the tutorial example validity detection more fine-grained
     - Removed the written tutorials since they were outdated and bad
   Bugfixes:
-    -
+    - Fixed that an empty frame could stay around in the top left corner in certain situations
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.72
