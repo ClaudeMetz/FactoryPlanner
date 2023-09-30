@@ -11,8 +11,7 @@ Date: 00. 00. 0000
     - Improved performance of the main interface substantially. This is due to both fixing a big bug introduced a few versions ago, and some other targeted optimizations.
     - Made the utility dialog only show components for lines that have not been marked as 'done' yet (Thanks microlith57!)
     - Allowed the various 'put into combinator' actions to also work on fluids
-    - Added the option to disable the percentage column in the main production table
-    - Changed the percentage column to be hidden by default
+    - Added the option to disable the percentage column in the main production table, and made it hidden by default
     - Made the tutorial example validity detection more fine-grained
     - Removed the written tutorials since they were outdated and bad
   Bugfixes:
