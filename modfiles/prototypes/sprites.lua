@@ -1,11 +1,11 @@
 ---@diagnostic disable
 
 local function add_sprite(name, filename, size, mipmaps)
-    data:extend({{
+    data:extend{{
         type = "sprite", name = "fp_" .. name,
         filename = "__factoryplanner__/graphics/" .. (filename or (name .. ".png")),
         size = size, icon_mipmaps = mipmaps, flags = {"gui-icon"}
-    }})
+    }}
 end
 
 add_sprite("mod_gui", "shortcut_open_x32.png", 32, nil)
