@@ -188,7 +188,6 @@ local function build_factory_info(player)
     local button_override_prod_bonus = flow_mining_prod.add{type="button", caption={"fp.override"},
         tags={mod="fp", on_gui_click="override_mining_prod"}, style="fp_button_rounded_mini",
         mouse_button_filter={"left"}}
-    button_override_prod_bonus.style.disabled_font_color = {}
     main_elements.factory_info["override_prod_bonus_button"] = button_override_prod_bonus
 
     local textfield_prod_bonus = flow_mining_prod.add{type="textfield",

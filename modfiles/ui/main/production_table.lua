@@ -64,7 +64,7 @@ function builders.recipe(line, parent_flow, metadata, indent)
         local up_down = (direction == "previous") and "up" or "down"
         local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
 
-        local button = flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_sprite_arrow_" .. up_down,
+        local button = flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_arrow_" .. up_down,
             tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id, on_gui_hover="set_tooltip",
             context="production_table"}, enabled=enabled, mouse_button_filter={"left"}, raise_hover_events=true}
         metadata.tooltips[button.index] = move_tooltip
@@ -211,7 +211,7 @@ function builders.beacon(line, parent_flow, metadata)
         metadata.tooltips[button_beacon.index] = tooltip
 
         if beacon.total_amount ~= nil then  -- add a graphical hint that a beacon total is set
-            local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_sprite_white_square"}
+            local sprite_overlay = button_beacon.add{type="sprite", sprite="fp_white_square"}
             sprite_overlay.ignored_by_interaction = true
         end
 

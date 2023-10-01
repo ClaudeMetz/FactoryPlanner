@@ -185,12 +185,12 @@ local function build_production_box(player)
     label_level.style.right_margin = 8
     main_elements.production_box["level_label"] = label_level
 
-    local button_floor_up = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
+    local button_floor_up = subheader.add{type="sprite-button", sprite="fp_arrow_line_up",
         tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="up"},
         style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_up_button"] = button_floor_up
 
-    local button_floor_top = subheader.add{type="sprite-button", sprite="fp_sprite_arrow_line_bar_up",
+    local button_floor_top = subheader.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
         tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_floor", destination="top"},
         style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     main_elements.production_box["floor_top_button"] = button_floor_top
