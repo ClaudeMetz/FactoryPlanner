@@ -1,80 +1,29 @@
 ---@diagnostic disable
 
-data:extend({
-    {
+local order_string = "abcdefghijklmnopqrstuvwxyz"
+local order_counter = 0
+
+local function add_hotkey(name, sequence, alternate, consuming, linked)
+    order_counter = order_counter + 1
+    data:extend{{
         type = "custom-input",
-        name = "fp_toggle_interface",
-        key_sequence = "CONTROL + R",
-        consuming = "game-only",
-        order = "a"
-    },
-    {
-        type = "custom-input",
-        name = "fp_toggle_compact_view",
-        key_sequence = "CONTROL + SHIFT + R",
-        consuming = "game-only",
-        order = "b"
-    },
-    {
-        type = "custom-input",
-        name = "fp_toggle_pause",
-        key_sequence = "CONTROL + P",
-        consuming = "none",
-        order = "c"
-    },
-    {
-        type = "custom-input",
-        name = "fp_refresh_production",
-        key_sequence = "R",
-        consuming = "none",
-        order = "d"
-    },
-    {
-        type = "custom-input",
-        name = "fp_up_floor",
-        key_sequence = "ALT + UP",
-        consuming = "none",
-        order = "e"
-    },
-    {
-        type = "custom-input",
-        name = "fp_top_floor",
-        key_sequence = "SHIFT + ALT + UP",
-        consuming = "none",
-        order = "f"
-    },
-    {
-        type = "custom-input",
-        name = "fp_cycle_production_views",
-        key_sequence = "TAB",
-        consuming = "none",
-        order = "g"
-    },
-    {
-        type = "custom-input",
-        name = "fp_reverse_cycle_production_views",
-        key_sequence = "CONTROL + TAB",
-        consuming = "none",
-        order = "h"
-    },
-    {
-        type = "custom-input",
-        name = "fp_confirm_dialog",
-        key_sequence = "ENTER",
-        alternative_key_sequence = "KP_ENTER",
-        consuming = "none",
-        order = "i"
-    },
-    {
-        type = "custom-input",
-        name = "fp_confirm_gui",
-        key_sequence = "",
-        linked_game_control = "confirm-gui"
-    },
-    {
-        type = "custom-input",
-        name = "fp_focus_searchfield",
-        key_sequence = "",
-        linked_game_control = "focus-search"
-    }
-})
+        name = "fp_" .. name,
+        key_sequence = sequence,
+        alternative_key_sequence = alternate,
+        consuming = consuming,
+        linked_game_control = linked,
+        order = order_string:sub(order_counter, order_counter)
+    }}
+end
+
+add_hotkey("toggle_interface", "CONTROL + R", nil, "game-only", nil)
+add_hotkey("toggle_compact_view", "CONTROL + SHIFT + R", nil, "game-only", nil)
+add_hotkey("toggle_pause", "CONTROL + P", nil, "none", nil)
+add_hotkey("refresh_production", "R", nil, "none", nil)
+add_hotkey("up_floor", "ALT + UP", nil, "none", nil)
+add_hotkey("top_floor", "SHIFT + ALT + UP", nil, "none", nil)
+add_hotkey("cycle_production_views", "TAB", nil, "none", nil)
+add_hotkey("reverse_cycle_production_views", "CONTROL + TAB", nil, "none", nil)
+add_hotkey("confirm_dialog", "ENTER", "KP_ENTER", "none", nil)
+add_hotkey("confirm_gui", "", nil, nil, "confirm-gui")
+add_hotkey("focus_searchfield", "", nil, nil, "focus-search")
