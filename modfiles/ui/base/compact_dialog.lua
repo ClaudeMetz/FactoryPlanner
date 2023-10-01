@@ -329,12 +329,12 @@ local function build_compact_factory(player)
     label_level.style.margin = {0, 6, 0, 6}
     compact_elements["level_label"] = label_level
 
-    local button_floor_up = flow_navigation.add{type="sprite-button", sprite="fp_sprite_arrow_line_up",
+    local button_floor_up = flow_navigation.add{type="sprite-button", sprite="fp_arrow_line_up",
         tooltip={"fp.floor_up_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="up"},
         style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     compact_elements["floor_up_button"] = button_floor_up
 
-    local button_floor_top = flow_navigation.add{type="sprite-button", sprite="fp_sprite_arrow_line_bar_up",
+    local button_floor_top = flow_navigation.add{type="sprite-button", sprite="fp_arrow_line_bar_up",
         tooltip={"fp.floor_top_tt"}, tags={mod="fp", on_gui_click="change_compact_floor", destination="top"},
         style="fp_sprite-button_rounded_mini", mouse_button_filter={"left"}}
     compact_elements["floor_top_button"] = button_floor_top

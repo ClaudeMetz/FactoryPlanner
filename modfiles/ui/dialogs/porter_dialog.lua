@@ -1,9 +1,4 @@
 -- ** LOCAL UTIL **
-local function set_tool_button_state(button, dialog_type, enabled)
-    button.enabled = enabled
-    button.sprite = (enabled) and ("utility/" .. dialog_type) or ("fp_sprite_" .. dialog_type .. "_light")
-end
-
 local function set_dialog_submit_button(modal_elements, enabled, action_to_take)
     local message = (not enabled) and {"fp.importer_issue_" .. action_to_take} or nil
     modal_dialog.set_submit_button_state(modal_elements, enabled, message)
@@ -12,8 +7,7 @@ end
 -- Sets the state of either the export_factories- or dialog_submit-button
 local function set_relevant_submit_button(modal_elements, dialog_type, enabled)
     if dialog_type == "export" then
-        set_tool_button_state(modal_elements.export_button, dialog_type, enabled)
-
+        modal_elements.export_button.enabled = enabled
     else -- dialog_type == "import"
         set_dialog_submit_button(modal_elements, enabled, "select_factory")
     end
@@ -56,8 +50,7 @@ local function add_textfield_and_button(modal_elements, dialog_type, button_firs
     local function add_button()
         local button = flow.add{type="sprite-button", tags={mod="fp", on_gui_click=(dialog_type .. "_factories")},
             style="flib_tool_button_light_green", tooltip={"fp." .. dialog_type .. "_button_tooltip"},
-            mouse_button_filter={"left"}}
-        set_tool_button_state(button, dialog_type, button_enabled)
+            sprite="utility/" .. dialog_type, enabled=button_enabled, mouse_button_filter={"left"}}
         modal_elements[dialog_type .. "_button"] = button
     end
 
@@ -269,7 +262,7 @@ import_listeners.gui = {
             name = "import_string",
             handler = (function(player, _, event)
                 local button_import = util.globals.modal_elements(player).import_button
-                set_tool_button_state(button_import, "import", (string.len(event.element.text) > 0))
+                button_import.enabled = (string.len(event.element.text) > 0)
             end)
         }
     },

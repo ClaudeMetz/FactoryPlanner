@@ -139,7 +139,7 @@ local function refresh_factory_list(player)
 
                 local move_button = flow.add{type="sprite-button", style="fp_button_move_row", enabled=enabled,
                     tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
-                    on_gui_hover="set_tooltip", context="factory_list"}, sprite="fp_sprite_arrow_" .. up_down,
+                    on_gui_hover="set_tooltip", context="factory_list"}, sprite="fp_arrow_" .. up_down,
                     mouse_button_filter={"left"}, raise_hover_events=true}
                 tooltips.factory_list[move_button.index] = move_tooltip
             end
@@ -205,7 +205,7 @@ local function build_factory_list(player)
     local subheader = frame_vertical.add{type="frame", direction="horizontal", style="subheader_frame"}
 
     local button_toggle_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="toggle_archive"},
-        sprite="fp_sprite_archive_dark", mouse_button_filter={"left"}}
+        sprite="fp_archive_dark", mouse_button_filter={"left"}}
     main_elements.factory_list["toggle_archive_button"] = button_toggle_archive
 
     local button_archive = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="archive_factory"},

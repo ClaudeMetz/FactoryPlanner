@@ -130,8 +130,8 @@ function Factory:tostring(attach_products, export_format)
 
     if not export_format then
         local status_string = ""
-        if self.tick_of_deletion then status_string = status_string .. "[img=fp_sprite_trash_red] " end
-        if not self.valid then status_string = status_string .. "[img=fp_sprite_warning_red] " end
+        if self.tick_of_deletion then status_string = status_string .. "[img=fp_trash_red] " end
+        if not self.valid then status_string = status_string .. "[img=fp_warning_red] " end
         caption = status_string .. caption
 
         local trashed_string = ""  ---@type LocalisedString
