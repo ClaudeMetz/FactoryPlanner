@@ -32,7 +32,11 @@ require("backend.calculation.solver")
 ---@field line_comment_column boolean
 ---@field mb_defaults MBDefaults
 ---@field belts_or_lanes "belts" | "lanes"
----@field default_prototypes DefaultPrototypes
+---@field default_machines PrototypeWithCategoryDefault
+---@field default_fuels PrototypeWithCategoryDefault
+---@field default_belts PrototypeDefault
+---@field default_wagons PrototypeWithCategoryDefault
+---@field default_beacons PrototypeDefault
 
 ---@alias Timescale 1 | 60 | 3600
 
@@ -42,58 +46,57 @@ require("backend.calculation.solver")
 ---@field beacon FPModulePrototype?
 ---@field beacon_count number?
 
----@class DefaultPrototypes
----@field machines PrototypeWithCategoryDefault
----@field fuels PrototypeWithCategoryDefault
----@field belts PrototypeDefault
----@field wagons PrototypeWithCategoryDefault
----@field beacons PrototypeDefault
-
 ---@param player_table PlayerTable
 function reload_preferences(player_table)
     -- Reloads the user preferences, incorporating previous preferences if possible
-    player_table.preferences = player_table.preferences or {}
-    local preferences = player_table.preferences
+    local player_preferences = player_table.preferences or {}
+    local updated_prefs = {}
 
-    preferences.pause_on_interface = preferences.pause_on_interface or false
-    if preferences.tutorial_mode == nil then preferences.tutorial_mode = true end
-    preferences.utility_scopes = preferences.utility_scopes or {components = "Factory"}
-    preferences.recipe_filters = preferences.recipe_filters or {disabled = false, hidden = false}
+    local function reload(name, default)
+        -- Needs to be longform-if because true is a valid default
+        if player_preferences[name] == nil then
+            updated_prefs[name] = default
+        else
+            updated_prefs[name] = player_preferences[name]
+        end
+    end
 
-    preferences.products_per_row = preferences.products_per_row or 7
-    preferences.factory_list_rows = preferences.factory_list_rows or 24
+    reload("pause_on_interface", false)
+    reload("tutorial_mode", true)
+    reload("utility_scopes", {components = "Factory"})
+    reload("recipe_filters", {disabled = false, hidden = false})
 
-    preferences.default_timescale = preferences.default_timescale or 60
+    reload("products_per_row", 7)
+    reload("factory_list_rows", 24)
+    reload("default_timescale", 60)
 
-    if preferences.show_gui_button == nil then preferences.show_gui_button = true end
-    preferences.attach_factory_products = preferences.attach_factory_products or false
-    preferences.prefer_product_picker = preferences.prefer_product_picker or false
-    preferences.prefer_matrix_solver = preferences.prefer_matrix_solver or false
-    preferences.show_floor_items = preferences.show_floor_items or false
-    preferences.fold_out_subfloors = preferences.fold_out_subfloors or false
-    preferences.ingredient_satisfaction = preferences.ingredient_satisfaction or false
-    preferences.round_button_numbers = preferences.round_button_numbers or false
-    preferences.ignore_barreling_recipes = preferences.ignore_barreling_recipes or false
-    preferences.ignore_recycling_recipes = preferences.ignore_recycling_recipes or false
+    reload("show_gui_button", true)
+    reload("attach_factory_products", false)
+    reload("prefer_product_picker", false)
+    reload("prefer_matrix_solver", false)
+    reload("show_floor_items", false)
+    reload("fold_out_subfloors", false)
+    reload("ingredient_satisfaction", false)
+    reload("round_button_numbers", false)
+    reload("ignore_barreling_recipes", false)
+    reload("ignore_recycling_recipes", false)
 
-    if preferences.done_column == nil then preferences.done_column = true end
-    preferences.percentage_column = preferences.percentage_column or false
-    preferences.pollution_column = preferences.pollution_column or false
-    preferences.line_comment_column = preferences.line_comment_column or false
+    reload("done_column", true)
+    reload("percentage_column", false)
+    reload("pollution_column", false)
+    reload("line_comment_column", false)
 
-    preferences.mb_defaults = preferences.mb_defaults
-        or {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil}
+    reload("mb_defaults", {machine = nil, machine_secondary = nil, beacon = nil, beacon_count = nil})
 
-    preferences.belts_or_lanes = preferences.belts_or_lanes or "belts"
+    reload("belts_or_lanes", "belts")
 
-    preferences.default_prototypes = preferences.default_prototypes or {}
-    preferences.default_prototypes = {
-        machines = preferences.default_prototypes.machines or prototyper.defaults.get_fallback("machines"),
-        fuels = preferences.default_prototypes.fuels or prototyper.defaults.get_fallback("fuels"),
-        belts = preferences.default_prototypes.belts or prototyper.defaults.get_fallback("belts"),
-        wagons = preferences.default_prototypes.wagons or prototyper.defaults.get_fallback("wagons"),
-        beacons = preferences.default_prototypes.beacons or prototyper.defaults.get_fallback("beacons")
-    }
+    reload("default_machines", prototyper.defaults.get_fallback("machines"))
+    reload("default_fuels", prototyper.defaults.get_fallback("fuels"))
+    reload("default_belts", prototyper.defaults.get_fallback("belts"))
+    reload("default_wagons", prototyper.defaults.get_fallback("wagons"))
+    reload("default_beacons", prototyper.defaults.get_fallback("beacons"))
+
+    player_table.preferences = updated_prefs
 end
 
 
