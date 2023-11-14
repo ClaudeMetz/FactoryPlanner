@@ -22,11 +22,10 @@ function migration.global()
     global.tutorial_subfactory = nil
 
     for _, event_data in pairs(global.nth_tick_events) do
-        if event_data.handler_name == "delete_subfactory_for_good" then
-            event_data.handler_name = "delete_factory_for_good"
-        elseif event_data.handler_name == "scale_subfactory_by_ingredient_amount" then
+        if event_data.handler_name == "scale_subfactory_by_ingredient_amount" then
             event_data.handler_name = "scale_factory_by_product_amount"
         end
+        -- No need to migrate "delete_subfactory_for_good" since those factories will be deleted
     end
 end
 
@@ -54,6 +53,15 @@ function migration.player_table(player_table)
     local district = District.init()
     for _, factory_name in pairs({"factory", "archive"}) do
         for _, subfactory in pairs(player_table[factory_name].Subfactory.datasets) do
+            -- Delete it now so nth_tick doesn't need to be linked up
+            if subfactory.tick_of_deletion then
+                if subfactory.item_request_proxy then
+                    subfactory.item_request_proxy.destroy{raise_destroy=false}
+                end
+                util.nth_tick.cancel(subfactory.tick_of_deletion)
+                goto skip
+            end
+
             local factory = Factory.init(subfactory.name, subfactory.timescale)
             factory.archived = (factory_name == "archive")
 
@@ -125,6 +133,7 @@ function migration.player_table(player_table)
             factory.top_floor = convert_floor(subfactory.Floor.datasets[1], factory)
 
             district:insert(factory)
+            ::skip::
         end
     end
 

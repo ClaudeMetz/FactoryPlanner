@@ -3,13 +3,14 @@ local Factory = require("backend.data.Factory")
 -- Delete factory for good and refresh interface if necessary
 local function delete_factory_for_good(metadata)
     local player = game.get_player(metadata.player_index)  ---@cast player -nil
-    util.context.remove(player, metadata.factory)
+    local factory = OBJECT_INDEX[metadata.factory_id]  --[[@as Factory]]
+    util.context.remove(player, factory)
 
     local selected_factory = util.context.get(player, "Factory")  --[[@as Factory?]]
-    if selected_factory and selected_factory.id == metadata.factory.id then
+    if selected_factory and selected_factory.id == factory.id then
         util.context.set_adjacent(player, selected_factory)
     end
-    metadata.factory.parent:remove(metadata.factory)
+    factory.parent:remove(factory)
 
     if not main_dialog.is_in_focus(player) then return end
 
@@ -284,7 +285,7 @@ function factory_list.delete_factory(player)
     else
         local desired_tick_of_deletion = game.tick + MAGIC_NUMBERS.factory_deletion_delay
         local actual_tick_of_deletion = util.nth_tick.register(desired_tick_of_deletion,
-            "delete_factory_for_good", {player_index=player.index, factory=factory})
+            "delete_factory_for_good", {player_index=player.index, factory_id=factory.id})
         factory.tick_of_deletion = actual_tick_of_deletion
 
         change_factory_archived(player, true)
