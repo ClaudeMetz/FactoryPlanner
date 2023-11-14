@@ -403,7 +403,7 @@ listeners.dialog = {
 listeners.global = {
     reset_preferences = (function(player)
         local player_table = util.globals.player_table(player)
-        player_table.preferences = {}
+        player_table.preferences = nil
         reload_preferences(player_table)
         -- Pretty heavy way to reset, but it's very simple
         player_table.ui_state.modal_data.rebuild = true

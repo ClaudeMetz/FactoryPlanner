@@ -31,6 +31,13 @@ function migration.global()
 end
 
 function migration.player_table(player_table)
+    player_table.preferences.default_machines = player_table.preferences.default_prototypes.machines
+    player_table.preferences.default_fuels = player_table.preferences.default_prototypes.fuels
+    player_table.preferences.default_belts = player_table.preferences.default_prototypes.belts
+    player_table.preferences.default_wagons = player_table.preferences.default_prototypes.wagons
+    player_table.preferences.default_beacons = player_table.preferences.default_prototypes.beacons
+    player_table.preferences.default_prototypes = nil
+
     player_table.preferences.products_per_row = player_table.settings.products_per_row
     player_table.preferences.factory_list_rows = player_table.settings.subfactory_list_rows
     player_table.preferences.default_timescale = player_table.settings.default_timescale
