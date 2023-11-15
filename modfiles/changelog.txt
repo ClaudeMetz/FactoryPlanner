@@ -16,6 +16,7 @@ Date: 00. 00. 0000
     - Removed the written tutorials since they were outdated and bad
   Bugfixes:
     - Fixed a crash that would happen a certain time after deleting a factory
+    - Fixed a crash when trying to copy modules in certain configurations
     - Fixed that an empty frame could stay around in the top left corner in certain situations
     - Fixed that you could not enter beacon amounts between 0 and 1
 
