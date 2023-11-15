@@ -15,6 +15,7 @@ Date: 00. 00. 0000
     - Made the tutorial example validity detection more fine-grained
     - Removed the written tutorials since they were outdated and bad
   Bugfixes:
+    - Fixed a crash that would happen a certain time after deleting a factory
     - Fixed that an empty frame could stay around in the top left corner in certain situations
 
 ---------------------------------------------------------------------------------------------------
