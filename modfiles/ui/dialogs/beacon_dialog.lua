@@ -49,7 +49,7 @@ local function update_dialog_submit_button(modal_data)
     local beacon_amount = tonumber(modal_data.modal_elements.beacon_amount.text)
 
     local message = nil
-    if not beacon_amount or beacon_amount < 1 then
+    if not beacon_amount or beacon_amount == 0 then
         message = {"fp.beacon_issue_set_amount"}
     elseif modal_data.module_set.module_count == 0 then
         message = {"fp.beacon_issue_no_modules"}
