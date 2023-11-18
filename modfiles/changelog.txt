@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash when trying to set an amount on recipe ingredients
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.73
