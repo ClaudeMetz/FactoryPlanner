@@ -199,14 +199,14 @@ end
 
 local function apply_item_options(player, options, action)
     if action == "submit" then
-        local item = OBJECT_INDEX[options.item_id]
-        local relevant_line = (item.parent.class == "Floor") and item.parent.first or item.parent
-        local item_category = util.globals.modal_data(player).item_category
+        local modal_data = util.globals.modal_data(player)  --[[@as table]]
+        local line = OBJECT_INDEX[modal_data.line_id]
+        local item_category = modal_data.item_category
 
-        local current_amount, item_amount = item.amount, options.item_amount or item.amount
+        local current_amount, item_amount = modal_data.item_amount, options.item_amount or modal_data.item_amount
         if item_category ~= "ingredient" then
             local other_category = (item_category == "product") and "byproduct" or "product"
-            local corresponding_item = relevant_line[other_category .. "s"]:find({proto=item.proto})
+            local corresponding_item = line[other_category .. "s"]:find({proto=modal_data.item_proto})
 
             if corresponding_item then  -- Further adjustments if item is both product and byproduct
                 -- In either case, we need to consider the sum of both types as the current amount
@@ -217,8 +217,7 @@ local function apply_item_options(player, options, action)
             end
         end
 
-        relevant_line.percentage = (current_amount == 0) and 100
-            or (relevant_line.percentage * item_amount) / current_amount
+        line.percentage = (current_amount == 0) and 100 or (line.percentage * item_amount) / current_amount
 
         solver.update(player)
         util.raise.refresh(player, "factory", nil)
@@ -258,8 +257,10 @@ local function handle_item_click(player, tags, action)
             title = {"fp.options_item_title", type_localised_string},
             text = {"fp.options_item_text", item.proto.localised_name},
             submission_handler_name = "apply_item_options",
+            line_id = line.id,
             item_category = tags.item_category,
-            item_id = item.id,
+            item_amount = item.amount,
+            item_proto = item.proto,
             fields = {
                 {
                     type = "numeric_textfield",
