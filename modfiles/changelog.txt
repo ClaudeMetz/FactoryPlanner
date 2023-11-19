@@ -6,6 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
+    - Fixed an issue that could cause several different crashes after a save/load cycle
     - Fixed a crash when trying to set an amount on top level or recipe ingredients
     - Fixed a crash when trying to put certain items into a combinator
     - Fixed a crash when deleting a factory in certain situations (potentially)
