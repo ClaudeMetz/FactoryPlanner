@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.74
+Date: 19. 11. 2023
   Bugfixes:
     - Fixed an issue that could cause several different crashes after a save/load cycle
     - Fixed a crash when trying to set an amount on top level or recipe ingredients
