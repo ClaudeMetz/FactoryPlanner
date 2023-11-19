@@ -8,6 +8,7 @@ Date: 00. 00. 0000
   Bugfixes:
     - Fixed a crash when trying to set an amount on top level or recipe ingredients
     - Fixed a crash when trying to put certain items into a combinator
+    - Fixed a crash when deleting a factory in certain situations (potentially)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.73
