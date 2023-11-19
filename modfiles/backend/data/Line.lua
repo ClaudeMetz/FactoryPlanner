@@ -43,14 +43,14 @@ local function init(recipe_proto, production_type)
         percentage = 100,
         machine = nil,
         beacon = nil,
+        products = SimpleItems.init(),
+        byproducts = SimpleItems.init(),
+        ingredients = SimpleItems.init(),
         priority_product = nil,
         comment = "",
 
         total_effects = nil,
         effects_tooltip = "",
-        products = SimpleItems.init(),
-        byproducts = SimpleItems.init(),
-        ingredients = SimpleItems.init(),
         power = 0,
         pollution = 0,
         production_ratio = 0,
@@ -64,6 +64,9 @@ function Line:index()
     OBJECT_INDEX[self.id] = self
     self.machine:index()
     if self.beacon then self.beacon:index() end
+    self.products:index()
+    self.byproducts:index()
+    self.ingredients:index()
 end
 
 

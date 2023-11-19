@@ -27,11 +27,11 @@ script.register_metatable("Floor", Floor)
 local function init(level)
     local object = Object.init({
         level = level,
-        first = nil,
-
         products = SimpleItems.init(),
         byproducts = SimpleItems.init(),
         ingredients = SimpleItems.init(),
+        first = nil,
+
         power = 0,
         pollution = 0,
         machine_count = 0
@@ -43,6 +43,9 @@ end
 function Floor:index()
     OBJECT_INDEX[self.id] = self
     for line in self:iterator() do line:index() end
+    self.products:index()
+    self.byproducts:index()
+    self.ingredients:index()
 end
 
 
