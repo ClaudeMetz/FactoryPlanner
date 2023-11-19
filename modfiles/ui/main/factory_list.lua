@@ -309,6 +309,7 @@ listeners.gui = {
         },
         {
             name = "archive_factory",
+            timeout = 10,
             handler = (function(player, _, _)
                 local factory = util.context.get(player, "Factory")  --[[@as Factory]]
                 change_factory_archived(player, (not factory.archived))
@@ -337,10 +338,12 @@ listeners.gui = {
         },
         {
             name = "delete_factory",
+            timeout = 10,
             handler = factory_list.delete_factory
         },
         {
             name = "move_factory",
+            timeout = 10,
             handler = handle_move_factory_click
         },
         {
