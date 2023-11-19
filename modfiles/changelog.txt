@@ -6,7 +6,7 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    - Fixed a crash when trying to set an amount on recipe ingredients
+    - Fixed a crash when trying to set an amount on top level or recipe ingredients
     - Fixed a crash when trying to put certain items into a combinator
 
 ---------------------------------------------------------------------------------------------------

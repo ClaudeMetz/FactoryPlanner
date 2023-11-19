@@ -203,7 +203,8 @@ local function apply_item_options(player, options, action)
         local line = OBJECT_INDEX[modal_data.line_id]
         local item_category = modal_data.item_category
 
-        local current_amount, item_amount = modal_data.item_amount, options.item_amount or modal_data.item_amount
+        local current_amount = modal_data.current_amount
+        local target_amount = options.target_amount or modal_data.current_amount
         if item_category ~= "ingredient" then
             local other_category = (item_category == "product") and "byproduct" or "product"
             local corresponding_item = line[other_category .. "s"]:find({proto=modal_data.item_proto})
@@ -213,11 +214,11 @@ local function apply_item_options(player, options, action)
                 current_amount = current_amount + corresponding_item.amount
 
                 -- If it's a byproduct, we want to set its amount to the exact number entered, which this does
-                if item_category == "byproduct" then item_amount = item_amount + corresponding_item.amount end
+                if item_category == "byproduct" then target_amount = target_amount + corresponding_item.amount end
             end
         end
 
-        line.percentage = (current_amount == 0) and 100 or (line.percentage * item_amount) / current_amount
+        line.percentage = (current_amount == 0) and 100 or (line.percentage * target_amount) / current_amount
 
         solver.update(player)
         util.raise.refresh(player, "factory", nil)
@@ -259,14 +260,14 @@ local function handle_item_click(player, tags, action)
             submission_handler_name = "apply_item_options",
             line_id = line.id,
             item_category = tags.item_category,
-            item_amount = item.amount,
+            current_amount = item.amount,
             item_proto = item.proto,
             fields = {
                 {
                     type = "numeric_textfield",
-                    name = "item_amount",
-                    caption = {"fp.options_item_amount"},
-                    tooltip = {"fp.options_item_amount_tt", type_localised_string, produce_consume},
+                    name = "target_amount",
+                    caption = {"fp.options_target_amount"},
+                    tooltip = {"fp.options_target_amount_tt", type_localised_string, produce_consume},
                     text = item.amount,
                     width = 140,
                     focus = true
