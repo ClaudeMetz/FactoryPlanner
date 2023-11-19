@@ -178,12 +178,12 @@ local function handle_item_button_click(player, tags, action)
             title = {"fp.options_item_title", {"fp.pl_ingredient", 1}},
             text = {"fp.options_item_text", item.proto.localised_name},
             submission_handler_name = "scale_factory_by_ingredient_amount",
-            item_id = item.id,
+            current_amount = item.amount,
             fields = {
                 {
                     type = "numeric_textfield",
-                    name = "item_amount",
-                    caption = {"fp.options_item_amount"},
+                    name = "target_amount",
+                    caption = {"fp.options_target_amount"},
                     tooltip = {"fp.options_factory_ingredient_amount_tt"},
                     text = item.amount,
                     width = 140,
@@ -224,13 +224,12 @@ end
 local function scale_factory_by_ingredient_amount(player, options, action)
     if action == "submit" then
         local factory = util.context.get(player, "Factory")  --[[@as Factory]]
-        local item = OBJECT_INDEX[util.globals.modal_data(player).item_id]
 
-        if options.item_amount then
+        if options.target_amount then
             -- The division is not pre-calculated to avoid precision errors in some cases
-            local current_amount, target_amount = item.amount, options.item_amount
+            local current_amount = util.globals.modal_data(player).current_amount
             for product in factory:iterator() do
-                product.required_amount = product.required_amount * target_amount / current_amount
+                product.required_amount = product.required_amount * options.target_amount / current_amount
             end
         end
 
