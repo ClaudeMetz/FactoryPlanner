@@ -60,6 +60,12 @@ function SimpleItems:iterator()
     end
 end
 
+---@return number count
+function SimpleItems:count()
+    return table_size(self.items)
+end
+
+
 -- SimpleItems don't need any validation or repair, they are just removed and re-calculated
 
 return {init = init}
