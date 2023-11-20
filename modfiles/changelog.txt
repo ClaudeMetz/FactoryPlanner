@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fix crash when clicking on any line product
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.74

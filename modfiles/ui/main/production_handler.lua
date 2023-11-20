@@ -230,7 +230,7 @@ local function handle_item_click(player, tags, action)
     local item = line[tags.item_category .. "s"].items[tags.item_index]
 
     if action == "prioritize" then
-        if line.Product.count < 2 then
+        if line.products:count() < 2 then
             util.messages.raise(player, "warning", {"fp.warning_no_prioritizing_single_product"}, 1)
         else
             -- Remove the priority_product if the already selected one is clicked
