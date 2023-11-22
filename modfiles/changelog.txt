@@ -6,7 +6,8 @@ Date: 00. 00. 0000
   Changes:
     -
   Bugfixes:
-    - Fix crash when clicking on any line product
+    - Fix crash when clicking on any line product (#167)
+    - Fix crash when opening the tutorial dialog (#176)
     - Fixed an icon not being shown properly in languages other than English
 
 ---------------------------------------------------------------------------------------------------
