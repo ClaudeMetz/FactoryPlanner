@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        *Before filing a bug, please have a look if it wasn't already reported previously.*
+        *Before filing a bug, please check if it wasn't already reported previously.*
   - type: textarea
     attributes:
       label: Problem Description
@@ -20,6 +20,7 @@ body:
       value: |
         **Including the `factorio-current.log` file and a copy of your save is very helpful.**
         They can be dropped right into the above textfield, if below 25MB in size.
+        Alternatively, you can upload them [here](https://drive.google.com/drive/folders/1JZErOFq7ibpk09dSeMV5BwPmG6xzhQNu?usp=sharing) with a descriptive name.
   - type: textarea
     attributes:
       label: Reproduction
