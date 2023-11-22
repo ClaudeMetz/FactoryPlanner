@@ -131,7 +131,7 @@ function utility_structures.components(player, modal_data)
                 local missing_amount = required_amount - amount_in_inventory
 
                 if missing_amount > 0 then
-                    local signal = {type=proto.type, name=proto.name}
+                    local signal = {type=proto.type or "item", name=proto.name}
                     modal_data.missing_items[signal] = missing_amount
                 end
 
