@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.75
+Date: 22. 11. 2023
   Bugfixes:
     - Fix crash when clicking on any line product (#167)
     - Fix crash when opening the tutorial dialog (#176)
