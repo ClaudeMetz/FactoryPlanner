@@ -246,6 +246,10 @@ local function generate_object_index()
         if not player_table.district then return {} end  -- migration issue mitigation
         district:index()  -- recursively indexes all objects
     end
+
+    if global.tutorial_factory then
+        global.tutorial_factory:index()
+    end
 end
 
 
