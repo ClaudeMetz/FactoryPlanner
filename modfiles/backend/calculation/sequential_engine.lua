@@ -20,13 +20,13 @@ local function update_line(line_data, aggregate)
 
     -- Determine production ratio
     local production_ratio, uncapped_production_ratio = 0, 0
-    local crafts_per_tick = solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+    local crafts_per_second = solver_util.determine_crafts_per_second(machine_proto, recipe_proto, total_effects)
 
     -- Determines the production ratio that would be needed to fully satisfy the given product
     local function determine_production_ratio(relevant_product)
         local demand = aggregate.Product[relevant_product.type][relevant_product.name]
         local prodded_amount = solver_util.determine_prodded_amount(relevant_product,
-            crafts_per_tick, total_effects)
+            crafts_per_second, total_effects)
         return (demand * (line_data.percentage / 100)) / prodded_amount
     end
 
@@ -56,7 +56,7 @@ local function update_line(line_data, aggregate)
     -- Limit the machine_count by reducing the production_ratio, if necessary
     local machine_limit = line_data.machine_limit
     if machine_limit.limit ~= nil then
-        local capped_production_ratio = solver_util.determine_production_ratio(crafts_per_tick,
+        local capped_production_ratio = solver_util.determine_production_ratio(crafts_per_second,
             machine_limit.limit, timescale, machine_proto.launch_sequence_time)
         production_ratio = machine_limit.force_limit and capped_production_ratio
             or math.min(production_ratio, capped_production_ratio)
@@ -65,7 +65,7 @@ local function update_line(line_data, aggregate)
 
     -- Determines the amount of the given item, considering productivity
     local function determine_amount_with_productivity(item)
-        local prodded_amount = solver_util.determine_prodded_amount(item, crafts_per_tick, total_effects)
+        local prodded_amount = solver_util.determine_prodded_amount(item, crafts_per_second, total_effects)
         return prodded_amount * production_ratio
     end
 
@@ -116,7 +116,7 @@ local function update_line(line_data, aggregate)
 
 
     -- Determine machine count
-    local machine_count = solver_util.determine_machine_count(crafts_per_tick, production_ratio,
+    local machine_count = solver_util.determine_machine_count(crafts_per_second, production_ratio,
         timescale, machine_proto.launch_sequence_time)
 
     -- Add the integer machine count to the aggregate so it can be displayed on the origin_line

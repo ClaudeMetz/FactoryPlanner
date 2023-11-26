@@ -304,32 +304,32 @@ local function cap_effect(value)
     return math.min(math.max(value, MAGIC_NUMBERS.effects_lower_bound), MAGIC_NUMBERS.effects_upper_bound)
 end
 
--- Determines the number of crafts per tick for the given data
-function solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+-- Determines the number of crafts per second for the given data
+function solver_util.determine_crafts_per_second(machine_proto, recipe_proto, total_effects)
     local machine_speed = machine_proto.speed * (1 + cap_effect(total_effects.speed))
     return machine_speed / recipe_proto.energy
 end
 
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
-    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
-    return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
+function solver_util.determine_machine_count(crafts_per_second, production_ratio, timescale, launch_sequence_time)
+    crafts_per_second = math.min(crafts_per_second, 60)  -- At most one per tick
+    return (production_ratio * (crafts_per_second * (launch_sequence_time or 0) + 1)) / (crafts_per_second * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
-    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+function solver_util.determine_production_ratio(crafts_per_second, machine_limit, timescale, launch_sequence_time)
+    crafts_per_second = math.min(crafts_per_second, 60)  -- At most one per tick
     -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
-    return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
+    return (crafts_per_second * machine_limit * timescale) / (crafts_per_second * (launch_sequence_time or 0) + 1)
 end
 
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, crafts_per_tick, total_effects)
+function solver_util.determine_prodded_amount(item, crafts_per_second, total_effects)
     local productivity = math.max(total_effects.productivity, 0)  -- no negative productivity
     if productivity == 0 then return item.amount end
 
-    if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
+    if crafts_per_second > 60 then productivity = ((1/60) * productivity) * crafts_per_second end
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))
