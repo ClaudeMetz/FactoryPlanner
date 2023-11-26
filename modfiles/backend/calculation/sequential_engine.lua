@@ -10,7 +10,7 @@ local function update_line(line_data, aggregate)
 
     -- Determine relevant products
     local relevant_products, byproducts = {}, {}
-    for _, product in pairs(recipe_proto.products) do
+    for _, product in pairs(line_data.line_products) do
         if aggregate.Product[product.type][product.name] ~= nil then
             table.insert(relevant_products, product)
         else
@@ -179,7 +179,7 @@ local function update_floor(floor_data, aggregate)
         if subfloor ~= nil then
             -- Convert proto product table to class for easier and faster access
             local proto_products = structures.class.init()
-            for _, product in pairs(line_data.recipe_proto.products) do
+            for _, product in pairs(line_data.line_products) do
                 proto_products[product.type][product.name] = true
             end
 
