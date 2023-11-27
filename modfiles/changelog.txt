@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed a crash when trying to migrate from a mod version of 1.1.64 or earlier (#190) (Thanks francoiscampbell!)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.75
