@@ -146,9 +146,16 @@ local function handle_item_add(player, tags, event)
 end
 
 local function handle_item_button_click(player, tags, action)
-    local floor = util.context.get(player, "Floor")  --[[@as Floor]]
-    local item = (tags.item_id) and OBJECT_INDEX[tags.item_id]
-        or floor[tags.item_category .. "s"].items[tags.item_index]
+    local item = nil
+    if tags.item_id then
+        item = OBJECT_INDEX[tags.item_id]
+    else
+        -- Need to get items from the right floor depending on display settings
+        local show_floor_items = util.globals.preferences(player).show_floor_items
+        local floor = (show_floor_items) and util.context.get(player, "Floor")
+          or util.context.get(player, "Factory").top_floor
+        item = floor[tags.item_category .. "s"].items[tags.item_index]
+    end
 
     if action == "add_recipe" then
         add_recipe(player, tags.item_category, item.proto)
