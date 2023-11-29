@@ -53,8 +53,7 @@ local function handle_recipe_click(player, tags, action)
         util.raise.refresh(player, "factory", nil)
 
     elseif action == "delete" then
-        util.context.remove(player, line)
-        line.parent:remove(line)
+        line.parent:remove(line, true)
 
         solver.update(player, factory)
         util.raise.refresh(player, "factory", nil)
