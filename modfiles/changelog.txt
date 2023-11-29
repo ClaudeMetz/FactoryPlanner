@@ -7,6 +7,8 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed various related crashes when deleting all the lines on a subfloor (#182)
+    - Fixed a migration crash that would show up in certain setups (#173)
+    - Fixed an embarrasing migration issue that would overwrite beacon modules with machine ones (#169)
     - Fixed a crash when trying to migrate from a mod version of 1.1.64 or earlier (#190) (Thanks francoiscampbell!)
     - Fixed an issue when trying to open top level byproducts and ingredients in Recipe Book (#191)
 

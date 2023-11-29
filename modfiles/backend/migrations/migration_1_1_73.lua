@@ -114,7 +114,7 @@ function migration.player_table(player_table)
                             new_beacon.amount = line.beacon.amount
                             new_beacon.total_amount = line.beacon.total_amount
                             local new_module_set = ModuleSet.init(new_beacon)
-                            for _, module in pairs(line.machine.module_set.modules.datasets) do
+                            for _, module in pairs(line.beacon.module_set.modules.datasets) do
                                 local new_module = Module.init(module.proto, module.amount)
                                 new_module_set:insert(new_module)
                             end
