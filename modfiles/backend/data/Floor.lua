@@ -58,10 +58,12 @@ function Floor:insert(line, relative_object, direction)
 end
 
 ---@param line LineObject
-function Floor:remove(line)
+---@param preserve boolean?
+function Floor:remove(line, preserve)
     line.parent = nil
     self:_remove(line)
 
+    if preserve then return end
     -- Convert floor to line in parent if only defining line remains
     if self.level > 1 and self.first.next == nil then
         self.parent:replace(self, self.first)
