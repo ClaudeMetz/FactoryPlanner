@@ -22,8 +22,9 @@ local function init(parent)
         first = nil,
 
         module_count = 0,
-        module_limit = parent.proto.module_limit,
-        empty_slots = parent.proto.module_limit,
+        -- 0 as placeholder for simplified parents
+        module_limit = parent.proto.module_limit or 0,
+        empty_slots = parent.proto.module_limit or 0,
         total_effects = nil,
 
         parent = parent
@@ -34,7 +35,7 @@ end
 
 function ModuleSet:index()
     OBJECT_INDEX[self.id] = self
-    for line in self:iterator() do line:index() end
+    for module in self:iterator() do module:index() end
 end
 
 
