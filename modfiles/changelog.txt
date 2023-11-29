@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.76
+Date: 29. 11. 2023
   Bugfixes:
     - Fixed various related crashes when deleting all the lines on a subfloor (#182)
     - Fixed a migration crash that would show up in certain setups (#173)
