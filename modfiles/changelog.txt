@@ -2,9 +2,15 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    -
+    - 
   Changes:
-    -
+    - 
+  Bugfixes:
+    - 
+
+---------------------------------------------------------------------------------------------------
+Version: 1.1.77
+Date: 05. 12. 2023
   Bugfixes:
     - Fixed a crash with the matrix solver when there are no active recipes (#172)
     - Fixed a crash when repairing specific migrated setups (#181)
