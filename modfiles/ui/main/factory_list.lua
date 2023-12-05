@@ -88,10 +88,12 @@ local function handle_factory_click(player, tags, action)
         util.raise.refresh(player, "all", nil)
 
     elseif action == "edit" then
+        util.context.set(player, selected_factory)
         util.raise.refresh(player, "all", nil)  -- refresh to update the selected factory
         util.raise.open_dialog(player, {dialog="factory", modal_data={factory_id=selected_factory.id}})
 
     elseif action == "delete" then
+        util.context.set(player, selected_factory)
         factory_list.delete_factory(player)
     end
 end
