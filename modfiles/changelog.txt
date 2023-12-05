@@ -7,6 +7,7 @@ Date: 00. 00. 0000
     -
   Bugfixes:
     - Fixed a crash with the matrix solver when there are no active recipes (#172)
+    - Fixed a crash when repairing specific migrated setups (#181)
     - Fixed an issue where deleting a non-selected factory would still delete the currently selected one (#203)
 
 ---------------------------------------------------------------------------------------------------

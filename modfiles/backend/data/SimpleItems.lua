@@ -2,7 +2,9 @@ local Object = require("backend.data.Object")
 
 ---@alias SimpleItemCategory "product" | "byproduct" | "ingredient"
 
+--- Not actually a class
 ---@class SimpleItem
+---@field class "SimpleItem"
 ---@field proto FPItemPrototype
 ---@field amount number
 ---@field satisfied_amount number?

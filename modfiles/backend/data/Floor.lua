@@ -255,6 +255,11 @@ function Floor:repair(player)
     self:_repair(player)
     self.valid = (self.level == 1 or self.first ~= nil)
 
+    -- Reset so solver doesn't have to
+    self.products:clear()
+    self.byproducts:clear()
+    self.ingredients:clear()
+
     return self.valid
 end
 
