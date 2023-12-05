@@ -336,6 +336,11 @@ function Line:repair(player)
         self.priority_product = nil
     end
 
+    -- Reset so solver doesn't have to
+    self.products:clear()
+    self.byproducts:clear()
+    self.ingredients:clear()
+
     return self.valid
 end
 
