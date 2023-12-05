@@ -2,11 +2,11 @@
 Version: 0.00.00
 Date: 00. 00. 0000
   Features:
-    - 
+    -
   Changes:
-    - 
+    -
   Bugfixes:
-    - 
+    - Fixed an issue where deleting a non-selected factory would still delete the currently selected one
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.76
