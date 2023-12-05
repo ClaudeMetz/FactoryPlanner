@@ -333,6 +333,9 @@ listeners.gui = {
                     if event.element.valid then player.opened = event.element end
                 end
 
+                -- TODO Not sure why I need this check, possibly a multiplayer latency thing?
+                if not ui_state.modal_data then return end
+
                 -- Reset .confirmed_dialog if this event didn't actually lead to the dialog closing
                 if event.element.valid then ui_state.modal_data.confirmed_dialog = false end
             end)
