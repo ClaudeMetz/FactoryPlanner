@@ -27,6 +27,7 @@ local function refresh_solver_frame(player)
 
     local factory_data = solver.generate_factory_data(player, factory)
     local matrix_metadata = matrix_engine.get_matrix_solver_metadata(factory_data)
+    if matrix_metadata.num_rows == 0 then return end  -- skip if there are no active lines
     local linear_dependence_data = matrix_engine.get_linear_dependence_data(factory_data, matrix_metadata)
     local num_needed_free_items = matrix_metadata.num_rows - matrix_metadata.num_cols + #matrix_metadata.free_items
 
@@ -64,9 +65,6 @@ local function refresh_solver_frame(player)
 
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
             build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
-
-            --local line = solver_flow.add{type="line", direction="vertical"}
-            --line.style.margin = {4, -4}
         else
             solver_flow.add{type="label", caption={"fp.info_label", {"fp.unrestricted_items_balanced"}},
                 tooltip={"fp.unrestricted_items_balanced_tt"}, style="bold_label"}
