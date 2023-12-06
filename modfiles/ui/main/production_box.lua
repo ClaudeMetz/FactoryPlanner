@@ -262,7 +262,17 @@ listeners.gui = {
         {
             name = "refresh_production",
             timeout = 20,
-            handler = refresh_production
+            handler = (function(player, _, _)
+                if DEV_ACTIVE then  -- implicit mod reload for easier development
+                    util.gui.reset_player(player)  -- destroys all FP GUIs
+                    util.gui.toggle_mod_gui(player)  -- fixes the mod gui button after its been destroyed
+                    game.reload_mods()  -- toggle needs to be delayed by a tick since the reload is not instant
+                    game.print("Mods reloaded")
+                    util.nth_tick.register((game.tick + 1), "interface_toggle", {player_index=player.index})
+                else
+                    refresh_production(player, nil, nil)
+                end
+            end)
         },
         {
             name = "change_floor",
