@@ -18,7 +18,7 @@ require("backend.calculation.solver")
 ---@field default_timescale Timescale
 ---@field show_gui_button boolean
 ---@field attach_factory_products boolean
----@field prefer_product_picker boolean
+---@field skip_factory_naming boolean
 ---@field prefer_matrix_solver boolean
 ---@field show_floor_items boolean
 ---@field fold_out_subfloors boolean
@@ -72,7 +72,7 @@ function reload_preferences(player_table)
 
     reload("show_gui_button", true)
     reload("attach_factory_products", false)
-    reload("prefer_product_picker", false)
+    reload("skip_factory_naming", false)
     reload("prefer_matrix_solver", false)
     reload("show_floor_items", false)
     reload("fold_out_subfloors", false)
