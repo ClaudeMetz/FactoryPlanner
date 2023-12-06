@@ -51,20 +51,20 @@ local function refresh_solver_frame(player)
         local function build_item_flow(flow, status, items)
             for _, proto in pairs(items) do
                 local tooltip = {"fp.turn_" .. status, proto.localised_name}
+                local color = (status == "unrestricted") and "green" or "default"
                 flow.add{type="sprite-button", sprite=proto.sprite, tooltip=tooltip,
                     tags={mod="fp", on_gui_click="switch_matrix_item", status=status, type=proto.type, name=proto.name},
-                    style="flib_slot_button_default_small", mouse_button_filter={"left"}}
+                    style="flib_slot_button_" .. color .. "_small", mouse_button_filter={"left"}}
             end
         end
 
-        if #linear_dependence_data.allowed_free_items > 0 then
+        local needs_choice = (#linear_dependence_data.allowed_free_items > 0)
+
+        if needs_choice then
             local caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
             local tooltip = {"fp.choose_unrestricted_items_tt", num_needed_free_items,
                 {"fp.pl_item", num_needed_free_items}}
             solver_flow.add{type="label", caption=caption, tooltip=tooltip, style="bold_label"}
-
-            local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
-            build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
         else
             solver_flow.add{type="label", caption={"fp.info_label", {"fp.unrestricted_items_balanced"}},
                 tooltip={"fp.unrestricted_items_balanced_tt"}, style="bold_label"}
@@ -72,6 +72,11 @@ local function refresh_solver_frame(player)
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_item_flow(flow_unrestricted, "unrestricted", matrix_metadata.free_items)
+
+        if needs_choice then
+            local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
+            build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
+        end
     end
 end
 
