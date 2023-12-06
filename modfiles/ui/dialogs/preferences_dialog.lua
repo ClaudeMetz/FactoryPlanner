@@ -206,7 +206,7 @@ local function handle_checkbox_preference_change(player, tags, event)
         end
         util.raise.refresh(player, "production", nil)
 
-    elseif preference_name == "attach_factory_products" or preference_name == "prefer_product_picker" then
+    elseif preference_name == "attach_factory_products" or preference_name == "skip_factory_naming" then
         util.raise.refresh(player, "factory_list", nil)
 
     elseif preference_name == "show_gui_button" then
@@ -304,7 +304,7 @@ local function open_preferences_dialog(player, modal_data)
     local support_frame = left_content_frame.add{type="frame", direction="vertical", style="fp_frame_bordered_stretch"}
     support_frame.add{type="label", caption={"fp.preferences_support"}}
 
-    local general_preference_names = {"show_gui_button", "attach_factory_products", "prefer_product_picker",
+    local general_preference_names = {"show_gui_button", "attach_factory_products", "skip_factory_naming",
         "prefer_matrix_solver", "show_floor_items", "fold_out_subfloors", "ingredient_satisfaction",
         "round_button_numbers", "ignore_barreling_recipes", "ignore_recycling_recipes"}
     local general_box = preference_structures.checkboxes(preferences, left_content_frame, "general",

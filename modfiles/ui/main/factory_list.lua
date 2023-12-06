@@ -41,10 +41,10 @@ local function change_factory_archived(player, archived)
 end
 
 local function add_factory(player, _, event)
-    local prefer_product_picker = util.globals.preferences(player).prefer_product_picker
+    local skip_factory_naming = util.globals.preferences(player).skip_factory_naming
     local function xor(a, b) return not a ~= not b end  -- fancy, first time I ever needed this
 
-    if xor(event.shift, prefer_product_picker) then  -- go right to the item picker with automatic factory naming
+    if xor(event.shift, skip_factory_naming) then  -- go right to the item picker with automatic factory naming
         util.raise.open_dialog(player, {dialog="picker", modal_data={item_id=nil, item_category="product",
             create_factory=true}})
     else  -- otherwise, have the user pick a factory name first
@@ -182,9 +182,9 @@ local function refresh_factory_list(player)
     factory_list_elements.import_button.enabled = (not archived)
     factory_list_elements.export_button.enabled = (factory_exists)
 
-    local prefer_product_picker = util.globals.preferences(player).prefer_product_picker
+    local skip_factory_naming = util.globals.preferences(player).skip_factory_naming
     factory_list_elements.add_button.enabled = (not archived)
-    factory_list_elements.add_button.tooltip = (prefer_product_picker)
+    factory_list_elements.add_button.tooltip = (skip_factory_naming)
         and {"fp.action_add_factory_by_product"} or {"fp.action_add_factory_by_name"}
 
     factory_list_elements.edit_button.enabled = (factory_exists)
