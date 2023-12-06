@@ -5,6 +5,7 @@ Date: 00. 00. 0000
     -
   Changes:
     - Improved visual presentation of the matrix solver choices (#200)
+    - Improved preference names and descriptions slightly
   Bugfixes:
     - Fixed that items/s/machine didn't divide by the machine amount at all (#177)
 
