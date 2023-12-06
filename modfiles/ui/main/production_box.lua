@@ -59,6 +59,7 @@ local function refresh_solver_frame(player)
         end
 
         local needs_choice = (#linear_dependence_data.allowed_free_items > 0)
+        local item_count = 0
 
         if needs_choice then
             local caption = {"fp.error_message", {"fp.info_label", {"fp.choose_unrestricted_items"}}}
@@ -72,11 +73,19 @@ local function refresh_solver_frame(player)
 
         local flow_unrestricted = solver_flow.add{type="flow", direction="horizontal"}
         build_item_flow(flow_unrestricted, "unrestricted", matrix_metadata.free_items)
+        item_count = item_count + #matrix_metadata.free_items
 
         if needs_choice then
             local flow_constrained = solver_flow.add{type="flow", direction="horizontal"}
             build_item_flow(flow_constrained, "constrained", linear_dependence_data.allowed_free_items)
+            item_count = item_count + #linear_dependence_data.allowed_free_items
         end
+
+        -- This is some total bullshit because extra_bottom_padding_when_activated doesn't work
+        local total_width = 180 + (4 * 12) + (item_count * 40)
+        local interface_width = util.globals.ui_state(player).main_dialog_dimensions.width
+        local box_width = interface_width - MAGIC_NUMBERS.list_width
+        solver_flow.style.bottom_padding = (total_width > box_width) and 16 or 4
     end
 end
 
@@ -226,7 +235,7 @@ local function build_production_box(player)
 
     frame_vertical.add{type="empty-widget", style="flib_vertical_pusher"}
 
-    local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy = "never",
+    local scroll_pane_messages = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
         visible=false, style="flib_naked_scroll_pane_no_padding"}
     main_elements["messages_frame"] = scroll_pane_messages
 
@@ -237,7 +246,7 @@ local function build_production_box(player)
     flow_messages.style.padding = {0, 12, 6, 12}
     main_elements["messages_flow"] = flow_messages
 
-    local scroll_pane_solver = frame_vertical.add{type="scroll-pane", vertical_scroll_policy = "never",
+    local scroll_pane_solver = frame_vertical.add{type="scroll-pane", vertical_scroll_policy="never",
         visible=false, style="flib_naked_scroll_pane_no_padding"}
     main_elements["solver_frame"] = scroll_pane_solver
 
