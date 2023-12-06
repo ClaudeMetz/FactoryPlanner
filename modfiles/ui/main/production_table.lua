@@ -234,7 +234,7 @@ end
 function builders.products(line, parent_flow, metadata)
     for index, product in line["products"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (line.class ~= "Floor") and line.machine.count or nil
+        local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
             product, nil, machine_count)
         if amount == -1 then goto skip_product end  -- an amount of -1 means it was below the margin of error
@@ -265,7 +265,7 @@ end
 function builders.byproducts(line, parent_flow, metadata)
     for index, byproduct in line["byproducts"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (line.class ~= "Floor") and line.machine.count or nil
+        local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
             byproduct, nil, machine_count)
         if amount == -1 then goto skip_byproduct end  -- an amount of -1 means it was below the margin of error
@@ -287,7 +287,7 @@ end
 function builders.ingredients(line, parent_flow, metadata)
     for index, ingredient in line["ingredients"]:iterator() do
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (line.class ~= "Floor") and line.machine.count or nil
+        local machine_count = (line.class ~= "Floor") and line.machine.amount or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata,
             ingredient, nil, machine_count)
         if amount == -1 then goto skip_ingredient end  -- an amount of -1 means it was below the margin of error
@@ -334,7 +334,7 @@ end
 function builders.fuel(line, parent_flow, metadata)
     local fuel = line.machine.fuel
 
-    local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, line.machine.count)
+    local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, line.machine.amount)
     if amount == -1 then return end  -- an amount of -1 means it was below the margin of error
 
     local satisfaction_line = ""  ---@type LocalisedString

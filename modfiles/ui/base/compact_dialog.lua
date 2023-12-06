@@ -166,7 +166,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     for index, item in simple_items:iterator() do
         local proto, type = item.proto, item.proto.type
         -- items/s/machine does not make sense for lines with subfloors, show items/s instead
-        local machine_count = (line.class == "Line") and line.machine.count or nil
+        local machine_count = (line.class == "Line") and line.machine.amount or nil
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, item, nil, machine_count)
         if amount == -1 then goto skip_item end  -- an amount of -1 means it was below the margin of error
 
@@ -197,7 +197,7 @@ local function add_item_flow(line, relevant_line, item_category, button_color, m
     end
 
     if item_category == "ingredient" and line.class == "Line" and line.machine.fuel then
-        local fuel, machine_count = line.machine.fuel, line.machine.count
+        local fuel, machine_count = line.machine.fuel, line.machine.amount
         local amount, number_tooltip = view_state.process_item(metadata.view_state_metadata, fuel, nil, machine_count)
         if amount == -1 then goto skip_fuel end  -- an amount of -1 means it was below the margin of error
 
