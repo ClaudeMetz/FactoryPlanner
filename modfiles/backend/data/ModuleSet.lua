@@ -226,8 +226,8 @@ function ModuleSet:paste(module)
     if existing_module then
         existing_module:set_amount(existing_module.amount + desired_amount)
     else
-        module.amount = desired_amount
         self:insert(module)
+        module:set_amount(desired_amount)
     end
 
     self:normalize({sort=true, effects=true})
