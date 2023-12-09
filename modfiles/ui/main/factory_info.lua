@@ -23,7 +23,7 @@ local function change_timescale(player, new_timescale)
     end
 
     solver.update(player, factory)
-    -- View state updates itself automatically if it detects a timescale change
+    view_state.rebuild_state(player)
     util.raise.refresh(player, "factory", nil)
 end
 

@@ -8,6 +8,7 @@ Date: 00. 00. 0000
     - Improved preference names and descriptions slightly
   Bugfixes:
     - Fixed that items/s/machine didn't divide by the machine amount at all (#177)
+    - Fixed that the viewstates didn't update when the timescale for a factory is changed (#209)
 
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.77
