@@ -167,7 +167,8 @@ function Line:set_beacon(beacon)
 
     if beacon ~= nil then
         self.beacon.parent = self
-        beacon.module_set:normalize({sort=true, effects=true})
+        beacon.module_set:normalize({compatibility=true, effects=true})
+        -- Normalization already summarizes effects
     else
         self:summarize_effects()
     end

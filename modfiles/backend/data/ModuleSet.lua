@@ -189,6 +189,7 @@ end
 
 
 ---@param module_proto FPModulePrototype
+---@return boolean compatible
 function ModuleSet:check_compatibility(module_proto)
     return self.parent:check_module_compatibility(module_proto)
 end

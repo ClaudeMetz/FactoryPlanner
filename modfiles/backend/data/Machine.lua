@@ -81,6 +81,7 @@ function Machine:summarize_effects(mining_prod)
 end
 
 ---@param module_proto FPModulePrototype
+---@return boolean compatible
 function Machine:check_module_compatibility(module_proto)
     local recipe_proto = self.parent.recipe_proto
 

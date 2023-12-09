@@ -53,6 +53,7 @@ function Beacon:summarize_effects()
 end
 
 ---@param module_proto FPModulePrototype
+---@return boolean compatible
 function Beacon:check_module_compatibility(module_proto)
     local recipe_proto, machine_proto = self.parent.recipe_proto, self.parent.machine.proto
 
@@ -81,9 +82,13 @@ end
 ---@return string? error
 function Beacon:paste(object)
     if object.class == "Beacon" then
-        self.parent:set_beacon(object)
-        self.parent:summarize_effects()
-        return true, nil
+        self.parent:set_beacon(object)  -- weeds out incompatibilities
+        if object.module_set.first == nil then
+            object.parent:set_beacon(nil)
+            return false, "incompatible"
+        else
+            return true, nil
+        end
     elseif object.class == "Module" and self.module_set ~= nil then
         -- Only allow modules to be pasted if this is a non-fake beacon
        return self.module_set:paste(object)
