@@ -12,7 +12,6 @@ local function generate_metadata(player, factory)
         pollution_column = preferences.pollution_column,
         ingredient_satisfaction = preferences.ingredient_satisfaction,
         view_state_metadata = view_state.generate_metadata(player, factory),
-        any_beacons_available = (next(global.prototypes.beacons) ~= nil),
         tooltips = tooltips.production_table
     }
 
@@ -185,8 +184,6 @@ function builders.machine(line, parent_flow, metadata)
 end
 
 function builders.beacon(line, parent_flow, metadata)
-    -- Some mods might remove all beacons, in which case no beacon buttons should be added
-    if not metadata.any_beacons_available then return end
     -- Beacons only work on machines that have some allowed_effects
     if line.class == "Floor" or line.machine.proto.allowed_effects == nil then return end
 
@@ -398,8 +395,9 @@ local function refresh_production_table(player)
 
     local production_columns = {}
     for _, column_data in ipairs(all_production_columns) do
-        -- Explicit comparison needed here, as both true and nil columns should be shown
-        if preferences[column_data.name .. "_column"] ~= false then
+        -- Explicit preferences comparison needed here, as both true and nil columns should be shown
+        -- Some mods might remove all beacons, in which case the column shouldn't be shown at all
+        if preferences[column_data.name .. "_column"] ~= false and (next(global.prototypes.beacons) ~= nil) then
             table.insert(production_columns, column_data)
         end
     end
