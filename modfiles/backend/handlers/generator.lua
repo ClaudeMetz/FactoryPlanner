@@ -207,7 +207,8 @@ function generator.machines.generate()
             if fluidbox.production_type == "output" and fluidbox.filter
                     and fluidbox.filter.name == "steam" and proto.target_temperature ~= nil then
                 -- Exclude any boilers that use heat as their energy source
-                if proto.burner_prototype or proto.electric_energy_source_prototype then
+                if proto.burner_prototype or proto.electric_energy_source_prototype
+                        or proto.fluid_energy_source_prototype then
                     -- Find the corresponding input fluidbox
                     local input_fluidbox = nil  ---@type LuaFluidBoxPrototype
                     for _, fb in ipairs(proto.fluidbox_prototypes) do
