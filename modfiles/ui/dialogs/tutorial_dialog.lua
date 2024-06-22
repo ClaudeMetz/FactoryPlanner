@@ -45,7 +45,8 @@ local function open_tutorial_dialog(player, modal_data)
     -- Interface tutorial
     local frame_interface = add_base_frame("interface")
     local recipebook_string = (RECIPEBOOK_ACTIVE) and {"fp.interface_controls_recipebook"} or ""
-    local label_controls = frame_interface.add{type="label", caption={"", {"fp.interface_controls"}, recipebook_string}}
+    local factorysearch_string = (RECIPEBOOK_ACTIVE) and {"fp.interface_controls_factorysearch"} or ""
+    local label_controls = frame_interface.add{type="label", caption={"", {"fp.interface_controls"}, recipebook_string, factorysearch_string}}
     label_controls.style.single_line = false
     label_controls.style.margin = {6, 0, 0, 6}
 end
