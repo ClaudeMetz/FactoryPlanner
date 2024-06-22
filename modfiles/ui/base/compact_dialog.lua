@@ -374,6 +374,8 @@ local function handle_module_click(player, tags, action)
 
     if action == "recipebook" then
         util.open_in_recipebook(player, "item", module.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, "item", module.proto.name)
     end
 end
 
@@ -386,6 +388,8 @@ local function handle_machine_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "entity", line.machine.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, "item", line.machine.proto.name)
     end
 end
 
@@ -398,6 +402,8 @@ local function handle_beacon_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, "entity", line.beacon.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, "item", line.beacon.proto.name)
     end
 end
 
@@ -410,6 +416,8 @@ local function handle_item_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -442,14 +450,16 @@ factory_listeners.gui = {
             name = "act_on_compact_recipe",
             modifier_actions = {
                 open_subfloor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_recipe_click
         },
         {
             name = "act_on_compact_module",
             modifier_actions = {
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_module_click
         },
@@ -457,7 +467,8 @@ factory_listeners.gui = {
             name = "act_on_compact_machine",
             modifier_actions = {
                 put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_machine_click
         },
@@ -465,7 +476,8 @@ factory_listeners.gui = {
             name = "act_on_compact_beacon",
             modifier_actions = {
                 put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_beacon_click
         },
@@ -473,7 +485,8 @@ factory_listeners.gui = {
             name = "act_on_compact_item",
             modifier_actions = {
                 put_into_cursor = {"left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_item_click
         }
