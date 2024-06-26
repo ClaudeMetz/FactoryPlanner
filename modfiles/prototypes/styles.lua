@@ -7,34 +7,11 @@ local styles = data.raw["gui-style"].default
 -- Imitates a listbox, but allowing for way more customisation by using real buttons
 styles["fp_scroll-pane_fake_listbox"] = {
     type = "scroll_pane_style",
-    parent = "list_box_in_shallow_frame_scroll_pane",
-    extra_right_padding_when_activated = -12,
-    background_graphical_set = { -- rubber grid
-        position = {282,17},
-        corner_size = 8,
-        overall_tiling_vertical_size = 22,
-        overall_tiling_vertical_spacing = 6,
-        overall_tiling_vertical_padding = 4,
-        overall_tiling_horizontal_padding = 4
-    },
+    parent = "list_box_under_subheader_scroll_pane",
     vertically_stretchable = "on",
-    padding = 0,
     vertical_flow_style = {
         type = "vertical_flow_style",
         vertical_spacing = 0
-    }
-}
-
-styles["fp_scroll-pane_slot_table"] = {
-    type = "scroll_pane_style",
-    parent = "shallow_scroll_pane",
-    bottom_margin = 0,
-    bottom_padding = 0,
-    extra_bottom_padding_when_activated = 0,
-    graphical_set =
-    {
-        base = {position = {85, 0}, corner_size = 8, draw_type = "outer"},
-        shadow = default_inner_shadow
     }
 }
 
@@ -302,6 +279,12 @@ styles["fp_label_module_error"] = {
     type = "label_style",
     font = "heading-2",
     padding = 2
+}
+
+styles["fp_label_frame_title"] = {
+    type = "label_style",
+    parent = "frame_title",
+    top_margin = -3
 }
 
 

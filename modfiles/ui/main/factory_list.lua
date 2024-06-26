@@ -231,6 +231,7 @@ local function build_factory_list(player)
 
     local button_add = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="add_factory"},
         sprite="utility/add", style="flib_tool_button_light_green", mouse_button_filter={"left"}}
+    button_add.style.padding = 1
     main_elements.factory_list["add_button"] = button_add
 
     local button_edit = subheader.add{type="sprite-button", tags={mod="fp", on_gui_click="edit_factory"},

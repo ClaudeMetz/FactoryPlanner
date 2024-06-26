@@ -560,9 +560,8 @@ local function rebuild_compact_dialog(player, default_visibility)
     ui_state.compact_elements["compact_frame"] = frame_compact_dialog
 
     -- Title bar
-    local flow_title_bar = frame_compact_dialog.add{type="flow", direction="horizontal",
+    local flow_title_bar = frame_compact_dialog.add{type="flow", direction="horizontal", style="frame_header_flow",
         tags={mod="fp", on_gui_click="place_compact_dialog"}}
-    flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = frame_compact_dialog
 
     flow_title_bar.add{type="sprite-button", style="fp_button_frame", toggled=true,
@@ -570,7 +569,7 @@ local function rebuild_compact_dialog(player, default_visibility)
         sprite="fp_pin_dark", hovered_sprite="fp_pin_dark", clicked_sprite="fp_pin_light",
         mouse_button_filter={"left"}}
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
         ignored_by_interaction=true}
     flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
         ignored_by_interaction=true}

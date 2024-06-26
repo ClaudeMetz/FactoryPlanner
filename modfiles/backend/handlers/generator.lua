@@ -159,7 +159,7 @@ function generator.machines.generate()
             energy_drain = energy_drain,
             emissions = emissions,
             built_by_item = built_by_item,
-            base_productivity = 0--(proto.base_productivity or 0),
+            base_productivity = 0,--(proto.base_productivity or 0),
             allowed_effects = generator_util.format_allowed_effects(proto.allowed_effects),
             module_limit = (proto.module_inventory_size or 0),
             launch_sequence_time = generator_util.determine_launch_sequence_time(proto),
