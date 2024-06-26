@@ -29,12 +29,9 @@ local function build_title_bar(player)
     main_elements.title_bar = {}
 
     local parent_flow = main_elements.flows.top_horizontal
-    local flow_title_bar = parent_flow.add{type="flow", direction="horizontal",
+    local flow_title_bar = parent_flow.add{type="flow", direction="horizontal", style="frame_header_flow",
         tags={mod="fp", on_gui_click="re-center_main_dialog"}}
-    flow_title_bar.style.horizontal_spacing = 8
     flow_title_bar.drag_target = main_elements.main_frame
-    -- The separator line causes the height to increase for some inexplicable reason, so we must hardcode it here
-    flow_title_bar.style.height = MAGIC_NUMBERS.title_bar_height
 
     local button_switch = flow_title_bar.add{type="sprite-button", style="frame_action_button",
         tags={mod="fp", on_gui_click="switch_to_compact_view"}, tooltip={"fp.switch_to_compact_view"},
@@ -42,7 +39,7 @@ local function build_title_bar(player)
         mouse_button_filter={"left"}}
     main_elements.title_bar["switch_button"] = button_switch
 
-    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="frame_title",
+    flow_title_bar.add{type="label", caption={"mod-name.factoryplanner"}, style="fp_label_frame_title",
         ignored_by_interaction=true}
 
     local drag_handle = flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle",
@@ -55,7 +52,7 @@ local function build_title_bar(player)
         tags={mod="fp", on_gui_click="title_bar_open_dialog", type="preferences"}, mouse_button_filter={"left"}}
 
     local separation = flow_title_bar.add{type="line", direction="vertical"}
-    separation.style.height = 24
+    separation.style.height = MAGIC_NUMBERS.title_bar_height - 4
 
     local button_pause = flow_title_bar.add{type="button", caption={"fp.pause"}, tooltip={"fp.pause_on_interface"},
         tags={mod="fp", on_gui_click="toggle_pause_game"}, style="fp_button_frame_tool", mouse_button_filter={"left"}}

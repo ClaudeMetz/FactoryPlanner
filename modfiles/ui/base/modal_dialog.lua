@@ -13,10 +13,10 @@ local function create_base_modal_dialog(player, dialog_settings, modal_data)
 
     -- Title bar
     if dialog_settings.caption ~= nil then
-        local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal",
+        local flow_title_bar = frame_modal_dialog.add{type="flow", direction="horizontal", style="frame_header_flow",
             tags={mod="fp", on_gui_click="re-center_modal_dialog"}}
         flow_title_bar.drag_target = frame_modal_dialog
-        flow_title_bar.add{type="label", caption=dialog_settings.caption, style="frame_title",
+        flow_title_bar.add{type="label", caption=dialog_settings.caption, style="fp_label_frame_title",
             ignored_by_interaction=true}
 
         flow_title_bar.add{type="empty-widget", style="flib_titlebar_drag_handle", ignored_by_interaction=true}

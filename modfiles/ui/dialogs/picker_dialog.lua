@@ -100,8 +100,7 @@ local function add_item_picker(parent_flow, player)
                     mouse_button_filter={"left"}}
 
                 -- This only exists when button_group also exists
-                local scroll_pane_subgroups = frame_filters.add{type="scroll-pane",
-                    style="fp_scroll-pane_slot_table"}
+                local scroll_pane_subgroups = frame_filters.add{type="scroll-pane", style="shallow_scroll_pane"}
                 scroll_pane_subgroups.style.vertically_stretchable = true
 
                 local frame_subgroups = scroll_pane_subgroups.add{type="frame", style="slot_button_deep_frame"}

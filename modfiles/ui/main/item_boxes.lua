@@ -19,14 +19,13 @@ local function build_item_box(player, category, column_count)
     local window_frame = item_boxes_elements.horizontal_flow.add{type="frame", direction="vertical",
         style="inside_shallow_frame"}
     window_frame.style.top_padding = 6
-    window_frame.style.bottom_padding = MAGIC_NUMBERS.frame_spacing
+    window_frame.style.padding = {4, 12, 12, 12}
 
     local title_flow = window_frame.add{type="flow", direction="horizontal"}
     title_flow.style.vertical_align = "center"
 
     local label = title_flow.add{type="label", caption={"fp.pu_" .. category, 2}, style="caption_label"}
-    label.style.left_padding = MAGIC_NUMBERS.frame_spacing
-    label.style.bottom_margin = 4
+    label.style.bottom_margin = 8
 
     if category == "ingredient" then
         local button_combinator = title_flow.add{type="sprite-button", sprite="item/constant-combinator",
@@ -38,10 +37,8 @@ local function build_item_box(player, category, column_count)
         item_boxes_elements["ingredient_combinator_button"] = button_combinator
     end
 
-    local scroll_pane = window_frame.add{type="scroll-pane", style="fp_scroll-pane_slot_table"}
+    local scroll_pane = window_frame.add{type="scroll-pane", style="shallow_scroll_pane"}
     scroll_pane.style.maximal_height = MAGIC_NUMBERS.item_box_max_rows * MAGIC_NUMBERS.item_button_size
-    scroll_pane.style.horizontally_stretchable = false
-    scroll_pane.style.vertically_stretchable = false
 
     local item_frame = scroll_pane.add{type="frame", style="slot_button_deep_frame"}
     item_frame.style.width = column_count * MAGIC_NUMBERS.item_button_size

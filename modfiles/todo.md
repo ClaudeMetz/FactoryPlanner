@@ -4,9 +4,9 @@
 
 - Check whether shortcut still looks correct, even if disabled
 - Check whether pollution calculations are still correct
-- Check elements using `fp_scroll-pane_fake_listbox`, `fp_scroll-pane_slot_table` and `fp_sprite-button_group_tab` still look correct
 - Check if beacon selector still looks and works correctly
 - Check if blueprint in hand still looks correct (when generating blueprint from machines etc)
+- Look into using the new sprite button definition style if that's a thing
 
 # Any time
 
@@ -27,3 +27,7 @@
 
 - Run Factorio with `--check-unused-prototype-data` to clean up the definitions and make sure no functionality was lost
 - Uncomment all the `.hidden` uses that were missing from the API
+
+# Release
+
+- Update other language docs for the new `plural_for_parameter` format
