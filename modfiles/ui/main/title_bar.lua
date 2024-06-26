@@ -65,7 +65,7 @@ local function build_title_bar(player)
     button_pause.toggled = (preferences.pause_on_interface)
 
     local button_close = flow_title_bar.add{type="sprite-button", tags={mod="fp", on_gui_click="close_main_dialog"},
-        sprite="utility/close_white", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
+        sprite="utility/close", hovered_sprite="utility/close_black", clicked_sprite="utility/close_black",
         tooltip={"fp.close_interface"}, style="frame_action_button", mouse_button_filter={"left"}}
     button_close.style.padding = 1
 

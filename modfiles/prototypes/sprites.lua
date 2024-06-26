@@ -4,7 +4,7 @@ local function add_sprite(name, filename, size, mipmaps)
     data:extend{{
         type = "sprite", name = "fp_" .. name,
         filename = "__factoryplanner__/graphics/" .. (filename or (name .. ".png")),
-        size = size, icon_mipmaps = mipmaps, flags = {"gui-icon"}
+        size = size, mipmap_count = mipmaps, flags = {"gui-icon"}
     }}
 end
 

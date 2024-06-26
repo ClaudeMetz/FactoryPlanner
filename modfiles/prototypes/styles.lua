@@ -7,7 +7,7 @@ local styles = data.raw["gui-style"].default
 -- Imitates a listbox, but allowing for way more customisation by using real buttons
 styles["fp_scroll-pane_fake_listbox"] = {
     type = "scroll_pane_style",
-    parent = "scroll_pane_with_dark_background_under_subheader",
+    parent = "list_box_in_shallow_frame_scroll_pane",
     extra_right_padding_when_activated = -12,
     background_graphical_set = { -- rubber grid
         position = {282,17},
@@ -27,7 +27,7 @@ styles["fp_scroll-pane_fake_listbox"] = {
 
 styles["fp_scroll-pane_slot_table"] = {
     type = "scroll_pane_style",
-    parent = "filter_scroll_pane",
+    parent = "shallow_scroll_pane",
     bottom_margin = 0,
     bottom_padding = 0,
     extra_bottom_padding_when_activated = 0,
@@ -180,7 +180,7 @@ styles["fp_sprite-button_inset_add_slot"] = {
 
 styles["fp_sprite-button_group_tab"] = {
     type = "button_style",
-    parent = "filter_group_button_tab",
+    parent = "filter_group_button_tab_slightly_larger",
     horizontally_stretchable = "on",
     width = 0,  -- allows stretching
     height = 71,
