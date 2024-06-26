@@ -1,7 +1,7 @@
 local _actions = {}
 
----@alias ActionLimitations { archive_open: boolean?, matrix_active: boolean?, recipebook: boolean? }
----@alias ActiveLimitations { archive_open: boolean, matrix_active: boolean, recipebook: boolean }
+---@alias ActionLimitations { archive_open: boolean?, matrix_active: boolean?, recipebook: boolean?, factorysesarch: boolean? }
+---@alias ActiveLimitations { archive_open: boolean, matrix_active: boolean, recipebook: boolean, factorysesarch: boolean }
 ---@alias ActionList { [string]: string }
 
 ---@param player LuaPlayer
@@ -11,7 +11,8 @@ function _actions.current_limitations(player)
     return {
         archive_open = (factory ~= nil) and factory.archived or false,
         matrix_active = (factory ~= nil) and (factory.matrix_free_items ~= nil) or false,
-        recipebook = RECIPEBOOK_ACTIVE
+        recipebook = RECIPEBOOK_ACTIVE,
+        factorysearch = FACTORYSEARCH_ACTIVE
     }
 end
 

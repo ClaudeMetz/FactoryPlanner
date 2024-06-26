@@ -3,6 +3,8 @@ local active_mods = script.active_mods
 RECIPEBOOK_ACTIVE = (active_mods["RecipeBook"] ~= nil)
 RECIPEBOOK_API_VERSION = 4  -- the API version of Recipe Book this mod works with
 
+FACTORYSEARCH_ACTIVE = (active_mods["FactorySearch"] ~= nil)
+
 BEACON_OVERLOAD_ACTIVE = (
     active_mods["space-exploration"]
     or active_mods["wret-beacon-rebalance-mod"]

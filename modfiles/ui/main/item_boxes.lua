@@ -206,6 +206,8 @@ local function handle_item_button_click(player, tags, action)
 
     elseif action == "recipebook" then
         util.open_in_recipebook(player, item.proto.type, item.proto.name)
+    elseif action == "factorysearch" then
+        util.open_in_factorysearch(player, item.proto.type, item.proto.name)
     end
 end
 
@@ -312,7 +314,8 @@ listeners.gui = {
                 paste = {"shift-left", {archive_open=false}},
                 delete = {"control-right", {archive_open=false}},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_item_button_click
         },
@@ -322,7 +325,8 @@ listeners.gui = {
                 add_recipe = {"left", {archive_open=false, matrix_active=true}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_item_button_click
         },
@@ -333,7 +337,8 @@ listeners.gui = {
                 specify_amount = {"right", {archive_open=false}},
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_item_button_click
         },
@@ -342,7 +347,8 @@ listeners.gui = {
             modifier_actions = {
                 copy = {"shift-right"},
                 put_into_cursor = {"alt-left"},
-                recipebook = {"alt-right", {recipebook=true}}
+                recipebook = {"alt-right", {recipebook=true}},
+                factorysearch = {"control-shift-left", {factorysearch=true}}
             },
             handler = handle_item_button_click
         },
