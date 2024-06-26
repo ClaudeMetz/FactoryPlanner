@@ -345,7 +345,7 @@ function solver_util.determine_energy_consumption_and_pollution(machine_proto, r
 
     local fuel_multiplier = (fuel_proto ~= nil) and fuel_proto.emissions_multiplier or 1
     local pollution_multiplier = 1 + cap_effect(total_effects.pollution)
-    local pollution = energy_consumption * (machine_proto.emissions * 60) * pollution_multiplier
+    local pollution = energy_consumption * machine_proto.emissions * pollution_multiplier
         * fuel_multiplier * recipe_proto.emissions_multiplier
 
     return (energy_consumption + drain), pollution

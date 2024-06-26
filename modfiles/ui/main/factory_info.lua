@@ -55,10 +55,10 @@ local function refresh_factory_info(player)
     local factory_info_elements = main_elements.factory_info
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
 
-    local invalid_factory_selected = (factory and not factory.valid)
+    local invalid_factory_selected = (factory and not factory.valid) or false
     factory_info_elements.repair_flow.visible = invalid_factory_selected
 
-    local valid_factory_selected = (factory and factory.valid)
+    local valid_factory_selected = (factory and factory.valid) or false
     factory_info_elements.power_pollution_flow.visible = valid_factory_selected
     factory_info_elements.info_flow.visible = valid_factory_selected
 
@@ -85,7 +85,7 @@ local function refresh_factory_info(player)
 
         -- Mining Productivity
         local archive_open = factory.archived
-        local custom_prod_set = factory.mining_productivity
+        local custom_prod_set = factory.mining_productivity or false
 
         if not custom_prod_set then  -- only do this calculation when it'll actually be shown
             local prod_bonus = util.format.number((player.force.mining_drill_productivity_bonus * 100), 4)

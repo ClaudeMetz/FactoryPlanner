@@ -106,17 +106,10 @@ function _gui.properly_center_frame(player, frame, dimensions)
 end
 
 ---@param textfield LuaGuiElement
-function _gui.setup_textfield(textfield)
-    textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
-end
-
----@param textfield LuaGuiElement
 ---@param decimal boolean
 ---@param negative boolean
 function _gui.setup_numeric_textfield(textfield, decimal, negative)
     textfield.lose_focus_on_confirm = true
-    textfield.clear_and_focus_on_right_click = true
     textfield.numeric = true
     textfield.allow_decimal = (decimal or false)
     textfield.allow_negative = (negative or false)

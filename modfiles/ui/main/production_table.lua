@@ -356,7 +356,7 @@ function builders.line_comment(line, parent_flow, _)
     local textfield_comment = parent_flow.add{type="textfield", text=(relevant_line.comment or ""),
         tags={mod="fp", on_gui_text_changed="line_comment", line_id=line.id}}
     textfield_comment.style.width = 250
-    util.gui.setup_textfield(textfield_comment)
+    textfield_comment.lose_focus_on_confirm = true
 end
 
 
@@ -389,7 +389,7 @@ local function refresh_production_table(player)
     local any_lines_present = (factory_valid) and (floor:count() > 0) or false
 
     local scroll_pane_production = production_table_elements.production_scroll_pane
-    scroll_pane_production.visible = (factory_valid and any_lines_present)
+    scroll_pane_production.visible = (factory_valid and any_lines_present) or false
     if not factory_valid then return end
     scroll_pane_production.clear()
 

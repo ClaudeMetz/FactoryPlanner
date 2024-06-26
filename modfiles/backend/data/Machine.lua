@@ -71,7 +71,7 @@ end
 function Machine:summarize_effects(mining_prod)
     local effects = self.module_set.total_effects
 
-    effects["base_prod"] = self.proto.base_productivity or nil
+    effects["base_prod"] = --[[ self.proto.base_productivity or ]] nil
     effects["mining_prod"] = mining_prod or nil
 
     self.total_effects = effects
