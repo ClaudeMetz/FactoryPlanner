@@ -78,21 +78,21 @@ end
 local function setup_factories_table(modal_elements, add_location)
     modal_elements.factory_checkboxes = {}  -- setup for later use in add_to_factories_table
 
-    local scroll_pane = modal_elements.content_frame.add{type="scroll-pane", style="flib_naked_scroll_pane_no_padding"}
-    scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
-    modal_elements.factories_scroll_pane = scroll_pane
+    local frame_factories = modal_elements.content_frame.add{type="frame", style="deep_frame_in_shallow_frame"}
+    modal_elements.factories_frame = frame_factories
 
-    local frame_factories = scroll_pane.add{type="frame", style="deep_frame_in_shallow_frame"}
-    frame_factories.style.padding = {-2, 2, 3, 2}
+    local scroll_pane = frame_factories.add{type="scroll-pane", style="mods_scroll_pane"}
+    scroll_pane.style.maximal_height = 450  -- I hate that I have to set this, seemingly
 
     local table_columns = {
-        [2] = {caption={"fp.pu_factory", 2}, alignment="left", margin={6, 130, 6, 4}},
-        [3] = {caption={"fp.validity"}}
+        [2] = {caption={"fp.u_factory"}, alignment="left", margin={0, 100, 0, 4}},
+        [3] = {caption={"fp.status"}}
     }
     if add_location then table_columns[4] = {caption={"fp.location"}} end
 
-    local table_factories = frame_factories.add{type="table", style="mods_table",
+    local table_factories = scroll_pane.add{type="table", style="table_with_selection",
         column_count=(table_size(table_columns) + 1)}
+    table_factories.style.horizontally_stretchable = true
     modal_elements.factories_table = table_factories
 
     -- Add master checkbox in any case
@@ -103,7 +103,7 @@ local function setup_factories_table(modal_elements, add_location)
     for column_nr, table_column in pairs(table_columns) do
         table_factories.style.column_alignments[column_nr] = table_column.alignment or "center"
 
-        local label_column = table_factories.add{type="label", caption=table_column.caption, style="heading_3_label"}
+        local label_column = table_factories.add{type="label", caption=table_column.caption, style="heading_2_label"}
         label_column.style.margin = table_column.margin or {0, 4}
     end
 end
@@ -115,16 +115,17 @@ local function add_to_factories_table(modal_elements, factory, enable_checkbox, 
     local checkbox = table_factories.add{type="checkbox", state=false, enabled=(enable_checkbox or factory.valid),
         tags={mod="fp", on_gui_checked_state_changed="toggle_porter_checkbox"}}
 
-    local label = table_factories.add{type="label", caption=factory:tostring(attach_products, true)}
-    label.style.maximal_width = 350
-    label.style.right_margin = 4
+    local label_flow = table_factories.add{type="flow", direction="horizontal"}
+    label_flow.style.maximal_width = 350
+    label_flow.add{type="label", caption=factory:tostring(attach_products, true)}
+    label_flow.add{type="empty-widget", style="flib_horizontal_pusher"}
 
     local validity_caption = (factory.valid) and {"fp.valid"} or {"fp.error_message", {"fp.invalid"}}
     table_factories.add{type="label", caption=validity_caption}
 
     if table_factories.column_count == 4 then  -- if location column is present
         local location = (factory.archived) and "archive" or "factory"
-        table_factories.add{type="label", caption={"fp." .. location}}
+        table_factories.add{type="label", caption={"fp.u_" .. location}}
     end
 
     modal_elements.factory_checkboxes[factory.id] = checkbox
@@ -157,7 +158,7 @@ local function import_factories(player, _, _)
     end
 
     if modal_elements.info_label then modal_elements.info_label.destroy() end
-    if modal_elements.factories_scroll_pane then modal_elements.factories_scroll_pane.destroy() end
+    if modal_elements.factories_frame then modal_elements.factories_frame.destroy() end
 
     if error ~= nil then
         add_info_label({"fp.error_message", {"fp.importer_" .. error}})
