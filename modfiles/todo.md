@@ -2,14 +2,13 @@
 
 # Verify
 
-- Check whether shortcut still looks correct, even if disabled
 - Check whether pollution calculations are still correct
 - Check if beacon selector still looks and works correctly
 - Check if blueprint in hand still looks correct (when generating blueprint from machines etc)
-- Look into using the new sprite button definition style if that's a thing
 
 # Any time
 
+- Look into using the new sprite button definition style if that's a thing
 - Figure out how to generate offshore pump prototypes again
 - Figure out how energy consumption and drain works in the new API
 - Check out how to handle emissions for different pollutant types? Do I just need to show all if applicable?
