@@ -16,6 +16,7 @@
 - Is `base_productivity` not a thing on Entities anymore? If not, remove from code, otherwise migrate
 - Are `limitations` on module items not a thing anymore? What replaces that system?
 - Fix _porter.import_factories(), probably by adjusting the factory string
+  - Example subfactory also doesn't work, needs some general migration fix it seems
 - Holy shit quality fucks up a lot of stuff.
   - Every place I need a property that can be influenced by quality, I can specify that quality.
   - So theoretically every place I use such a prototype I could offer a choice of which prototype to use.
