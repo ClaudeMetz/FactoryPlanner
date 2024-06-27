@@ -61,9 +61,10 @@ function builders.recipe(line, parent_flow, metadata, indent)
 
         local endpoint = (direction == "previous") and {"fp.top"} or {"fp.bottom"}
         local up_down = (direction == "previous") and "up" or "down"
+        local sprite = "fp_arrow_" .. up_down .. "_dark"
         local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_recipe", 1}, {"fp." .. up_down}, endpoint} or ""
 
-        local button = flow.add{type="sprite-button", style="fp_button_move_row", sprite="fp_arrow_" .. up_down,
+        local button = flow.add{type="sprite-button", style="fp_button_move_row", sprite=sprite,
             tags={mod="fp", on_gui_click="move_line", direction=direction, line_id=line.id, on_gui_hover="set_tooltip",
             context="production_table"}, enabled=enabled, mouse_button_filter={"left"}, raise_hover_events=true}
         metadata.tooltips[button.index] = move_tooltip

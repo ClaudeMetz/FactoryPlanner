@@ -120,38 +120,42 @@ local function refresh_factory_list(player)
         local tutorial_tt = (player_table.preferences.tutorial_mode)
             and util.actions.tutorial_tooltip("act_on_factory", nil, player) or nil
 
+        local function create_move_button(flow, direction, factory)
+            local enabled = (factory.parent:find(filter, factory[direction], direction) ~= nil)
+            local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
+            local up_down = (direction == "next") and "down" or "up"
+            local sprite = "fp_arrow_" .. up_down .. "_light"
+            local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_factory", 1},
+                {"fp." .. up_down}, endpoint} or ""
+
+            local move_button = flow.add{type="sprite-button", enabled=enabled, sprite=sprite,
+                tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
+                on_gui_hover="set_tooltip", context="factory_list"}, mouse_button_filter={"left"},
+                raise_hover_events=true, style="list_box_item"}
+            move_button.style.size = {20, 12}
+            move_button.style.padding = -2
+            tooltips.factory_list[move_button.index] = move_tooltip
+        end
+
         for factory in selected_factory.parent:iterator(filter) do
             local selected = (selected_factory.id == factory.id)
             local caption, info_tooltip = factory:tostring(attach_factory_products, false)
-            local padded_caption = {"", "           ", caption}
             local tooltip = {"", info_tooltip, tutorial_tt}
 
-            -- Pretty sure this needs the 'using-spaces-to-shift-the-label'-hack, padding doesn't work
-            local factory_button = listbox.add{type="button", caption=padded_caption, toggled=selected,
+            local button_flow = listbox.add{type="flow", direction="horizontal"}
+            button_flow.style.horizontal_spacing = 0
+
+            local move_flow = button_flow.add{type="flow", direction="vertical"}
+            move_flow.style.vertical_spacing = 0
+            move_flow.style.padding = {2, 0}
+            create_move_button(move_flow, "previous", factory)
+            create_move_button(move_flow, "next", factory)
+
+            local factory_button = button_flow.add{type="button", caption=caption, toggled=selected,
                 tags={mod="fp", on_gui_click="act_on_factory", factory_id=factory.id, on_gui_hover="set_tooltip",
                 context="factory_list"}, style="fp_button_fake_listbox_item", mouse_button_filter={"left-and-right"},
                 raise_hover_events=true}
             tooltips.factory_list[factory_button.index] = tooltip
-
-            local function create_move_button(flow, direction)
-                local enabled = (factory.parent:find(filter, factory[direction], direction) ~= nil)
-                local endpoint = (direction == "next") and {"fp.bottom"} or {"fp.top"}
-                local up_down = (direction == "next") and "down" or "up"
-                local move_tooltip = (enabled) and {"fp.move_row_tt", {"fp.pl_factory", 1},
-                    {"fp." .. up_down}, endpoint} or ""
-
-                local move_button = flow.add{type="sprite-button", style="fp_button_move_row", enabled=enabled,
-                    tags={mod="fp", on_gui_click="move_factory", direction=direction, factory_id=factory.id,
-                    on_gui_hover="set_tooltip", context="factory_list"}, sprite="fp_arrow_" .. up_down,
-                    mouse_button_filter={"left"}, raise_hover_events=true}
-                tooltips.factory_list[move_button.index] = move_tooltip
-            end
-
-            local move_flow = factory_button.add{type="flow", direction="horizontal"}
-            move_flow.style.top_padding = 3
-            move_flow.style.horizontal_spacing = 0
-            create_move_button(move_flow, "previous")
-            create_move_button(move_flow, "next")
         end
     end
 
