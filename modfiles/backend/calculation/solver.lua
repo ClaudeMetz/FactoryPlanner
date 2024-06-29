@@ -52,6 +52,46 @@ local function set_blank_factory(player, factory)
     set_blank_floor(factory.top_floor)
 end
 
+local function all_line_products(line_data)
+    local recipe_proto, machine_proto = line_data.recipe_proto, line_data.machine_proto
+    local total_effects, fuel_proto = line_data.total_effects, line_data.fuel_proto
+
+    -- Copy from the recipe, so that we can add any burnt result
+    local line_products = {}
+    for _, product in pairs(recipe_proto.products) do
+        table.insert(line_products, product)
+    end
+
+    -- Add in fuel's burnt result.
+    if fuel_proto and fuel_proto.burnt_result then
+        local crafts_per_second = solver_util.determine_crafts_per_second(machine_proto, recipe_proto, total_effects)
+        local fuel_amount_per_craft = solver_util.determine_fuel_amount_per_craft(
+            machine_proto, total_effects, crafts_per_second, fuel_proto.fuel_value)
+        local burnt_result = {
+            type = 'item',
+            name = fuel_proto.burnt_result,
+            amount = fuel_amount_per_craft,
+            proddable_amount = 0
+        }
+
+        -- Combine if the recipe also produces this item.
+        local found_duplicate = false
+        for i, product in ipairs(line_products) do
+            if product.name == burnt_result.name then
+                burnt_result.amount = burnt_result.amount + product.amount
+                burnt_result.proddable_amount = burnt_result.proddable_amount + product.proddable_amount
+                line_products[i] = burnt_result
+                found_duplicate = true
+                break
+            end
+        end
+        if not found_duplicate then
+            table.insert(line_products, burnt_result)
+        end
+    end
+
+    return line_products
+end
 
 -- Generates structured data of the given floor for calculation
 local function generate_floor_data(player, factory, floor)
@@ -67,8 +107,9 @@ local function generate_floor_data(player, factory, floor)
         local line_data = { id = line.id }
 
         if line.class == "Floor" then
-            line_data.recipe_proto = line.first.recipe_proto
             line_data.subfloor = generate_floor_data(player, factory, line)
+            line_data.recipe_proto = line_data.subfloor.lines[1].recipe_proto
+            line_data.line_products = line_data.subfloor.lines[1].line_products
             table.insert(floor_data.lines, line_data)
         else
             local relevant_line = (line.parent.level > 1) and line.parent.first or nil
@@ -98,6 +139,8 @@ local function generate_floor_data(player, factory, floor)
                 if line.beacon ~= nil and line.beacon.total_amount ~= nil then
                     line_data.beacon_consumption = line.beacon.proto.energy_usage * line.beacon.total_amount * 60
                 end
+
+                line_data.line_products = all_line_products(line_data)
 
                 table.insert(floor_data.lines, line_data)
             end
@@ -304,32 +347,40 @@ local function cap_effect(value)
     return math.min(math.max(value, MAGIC_NUMBERS.effects_lower_bound), MAGIC_NUMBERS.effects_upper_bound)
 end
 
--- Determines the number of crafts per tick for the given data
-function solver_util.determine_crafts_per_tick(machine_proto, recipe_proto, total_effects)
+-- Determines the number of crafts per second for the given data
+function solver_util.determine_crafts_per_second(machine_proto, recipe_proto, total_effects)
     local machine_speed = machine_proto.speed * (1 + cap_effect(total_effects.speed))
     return machine_speed / recipe_proto.energy
 end
 
+-- Determines the amount of fuel needed per craft
+function solver_util.determine_fuel_amount_per_craft(machine_proto, total_effects, crafts_per_second, fuel_value)
+    local consumption_multiplier = 1 + cap_effect(total_effects.consumption)
+    local energy_consumption_per_second = (machine_proto.energy_usage * 60) * consumption_multiplier
+    local energy_consumption_per_craft = energy_consumption_per_second / crafts_per_second
+    return ((energy_consumption_per_craft / machine_proto.burner.effectivity) / fuel_value)
+end
+
 -- Determine the amount of machines needed to produce the given recipe in the given context
-function solver_util.determine_machine_count(crafts_per_tick, production_ratio, timescale, launch_sequence_time)
-    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
-    return (production_ratio * (crafts_per_tick * (launch_sequence_time or 0) + 1)) / (crafts_per_tick * timescale)
+function solver_util.determine_machine_count(crafts_per_second, production_ratio, timescale, launch_sequence_time)
+    crafts_per_second = math.min(crafts_per_second, 60)  -- At most one per tick
+    return (production_ratio * (crafts_per_second * (launch_sequence_time or 0) + 1)) / (crafts_per_second * timescale)
 end
 
 -- Calculates the production ratio that the given amount of machines would result in
 -- Formula derived from determine_machine_count(), isolating production_ratio and using machine_limit as machine_count
-function solver_util.determine_production_ratio(crafts_per_tick, machine_limit, timescale, launch_sequence_time)
-    crafts_per_tick = math.min(crafts_per_tick, 60)  -- crafts_per_tick need to be limited for these calculations
+function solver_util.determine_production_ratio(crafts_per_second, machine_limit, timescale, launch_sequence_time)
+    crafts_per_second = math.min(crafts_per_second, 60)  -- At most one per tick
     -- If launch_sequence_time is 0, the forumla is elegantly simplified to only the numerator
-    return (crafts_per_tick * machine_limit * timescale) / (crafts_per_tick * (launch_sequence_time or 0) + 1)
+    return (crafts_per_second * machine_limit * timescale) / (crafts_per_second * (launch_sequence_time or 0) + 1)
 end
 
 -- Calculates the product amount after applying productivity bonuses
-function solver_util.determine_prodded_amount(item, crafts_per_tick, total_effects)
+function solver_util.determine_prodded_amount(item, crafts_per_second, total_effects)
     local productivity = math.max(total_effects.productivity, 0)  -- no negative productivity
     if productivity == 0 then return item.amount end
 
-    if crafts_per_tick > 60 then productivity = ((1/60) * productivity) * crafts_per_tick end
+    if crafts_per_second > 60 then productivity = ((1/60) * productivity) * crafts_per_second end
 
     -- Return formula is a simplification of the following formula:
     -- item.amount - item.proddable_amount + (item.proddable_amount * (productivity + 1))

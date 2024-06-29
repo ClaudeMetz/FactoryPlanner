@@ -703,6 +703,7 @@ end
 ---@field fuel_value float
 ---@field stack_size uint?
 ---@field emissions_multiplier double
+---@field burnt_result string?
 
 -- Generates a table containing all fuels that can be used in a burner
 ---@return NamedPrototypesWithCategory<FPFuelPrototype>
@@ -740,7 +741,8 @@ function generator.fuels.generate()
                 category = proto.fuel_category,
                 fuel_value = proto.fuel_value,
                 stack_size = proto.stack_size,
-                emissions_multiplier = proto.fuel_emissions_multiplier
+                emissions_multiplier = proto.fuel_emissions_multiplier,
+                burnt_result = proto.burnt_result and proto.burnt_result.name or nil
             }
             insert_prototype(fuels, fuel, fuel.category)
         end
