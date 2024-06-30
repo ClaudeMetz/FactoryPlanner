@@ -40,9 +40,9 @@ function Module:set_amount(new_amount)
 end
 
 function Module:summarize_effects()
-    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0}
+    local effects = {consumption = 0, speed = 0, productivity = 0, pollution = 0, quality = 0}
     for name, effect in pairs(self.proto.effects) do
-        effects[name] = effect.bonus * self.amount
+        effects[name] = effect * self.amount
     end
     self.total_effects = effects
     self.effects_tooltip = util.gui.format_module_effects(effects, false)

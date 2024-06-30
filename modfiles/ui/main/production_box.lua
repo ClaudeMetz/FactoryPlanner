@@ -16,7 +16,7 @@ local function refresh_paste_button(player)
     local factory = util.context.get(player, "Factory")  --[[@as Factory?]]
 
     local line_copied = util.clipboard.check_classes(player, {Floor=true, Line=true})
-    main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied)
+    main_elements.production_box.paste_button.visible = (factory ~= nil and line_copied) or false
 end
 
 local function refresh_solver_frame(player)
