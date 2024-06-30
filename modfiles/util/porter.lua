@@ -131,9 +131,8 @@ end
 ---@param player LuaPlayer
 ---@param export_string ExportString
 function _porter.add_factories(player, export_string)
-    local import_table, error = util.porter.process_export_string(export_string)  ---@cast import_table -nil
+    local import_table, _ = util.porter.process_export_string(export_string)  ---@cast import_table -nil
     -- No error handling here, as the export_string for this will always be known to work
-    if error then log("import error: " .. error) end
 
     local district = util.context.get(player, "District")  --[[@as District]]
     local first_factory = nil
