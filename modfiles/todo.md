@@ -8,6 +8,7 @@
 
 # Any time
 
+- Quality effect is multiplied by 10 in machine/beacon dialogs
 - Check why the example factory doesn't import properly
 - Use button's `auto_toggle` argument? Sounds really nice, in combination with `toggle` elsewhere maybe
 - Look into using the new sprite button definition style if that's a thing
