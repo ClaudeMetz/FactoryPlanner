@@ -19,9 +19,12 @@
   - Only implemented `"pollution"` for now
 - Redo rocket handling now that they can't take specific items anymore, which hopefully is a simplification
 - Check which prototype attributes to use for sorting them in preferences
+- Combinators are completely changed due to logistic groups, so all that logic needs redoing
+  - Logistic groups might impact other stuff as well, or could be useful for the mod (utility item requests anyone?)
 - Is `base_productivity` not a thing on Entities anymore? If not, remove from code, otherwise migrate
 - Are `limitations` on module items not a thing anymore? What replaces that system?
   - `allowed_effects` now a thing on recipes apparently
+  - also effect_receiver :: EffectReceiverPrototype ?
 - Fix _porter.import_factories(), probably by adjusting the factory string
   - Example subfactory also doesn't work, needs some general migration fix it seems
 - Holy shit quality fucks up a lot of stuff.

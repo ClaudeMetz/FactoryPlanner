@@ -74,7 +74,7 @@ local function add_choices_frame(parent_frame, modal_elements, type)
     table_choices.style.horizontal_spacing = 20
     table_choices.style.padding = {0, 0, -4, 0}
 
-    table_choices.add{type="label", caption={"fp.pu_" .. type, 1}, style="heading_3_label"}
+    table_choices.add{type="label", caption={"fp.pu_" .. type, 1}, style="semibold_label"}
 
     local flow = table_choices.add{type="flow", direction="horizontal"}
     local frame = flow.add{type="frame", direction="horizontal", style="slot_button_deep_frame"}
@@ -96,7 +96,7 @@ local function add_limit_frame(parent_frame, modal_elements)
     local flow_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
 
     flow_limit.add{type="label", caption={"fp.info_label", {"fp.machine_limit"}},
-        tooltip={"fp.machine_limit_tt"}, style="heading_3_label"}
+        tooltip={"fp.machine_limit_tt"}, style="semibold_label"}
     local textfield_limit = flow_limit.add{type="textfield", tags={mod="fp", on_gui_text_changed="machine_limit"}}
     textfield_limit.style.width = 45
     util.gui.setup_numeric_textfield(textfield_limit, true, false)
@@ -104,7 +104,7 @@ local function add_limit_frame(parent_frame, modal_elements)
 
     local flow_force_limit = table_limit.add{type="flow", direction="horizontal", style="fp_flow_horizontal_centered"}
     flow_force_limit.add{type="label", caption={"fp.info_label", {"fp.machine_force_limit"}},
-        tooltip={"fp.machine_force_limit_tt"}, style="heading_3_label"}
+        tooltip={"fp.machine_force_limit_tt"}, style="semibold_label"}
     local switch_force_limit = util.gui.switch.add_on_off(flow_force_limit, "machine_force_limit", {}, "left")
     modal_elements["force_limit_switch"] = switch_force_limit
 end
