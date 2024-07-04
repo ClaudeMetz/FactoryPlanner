@@ -398,13 +398,13 @@ function generator.recipes.generate()
 
 
     -- Determine all the items that can be inserted usefully into a rocket silo
-    local launch_products_filter = {{filter="has-rocket-launch-products"}}
+    --[[ local launch_products_filter = {{filter="has-rocket-launch-products"}}
     local rocket_silo_inputs = {}  ---@type LuaItemPrototype[]
     for _, item in pairs(game.get_filtered_item_prototypes(launch_products_filter)) do
         if next(item.rocket_launch_products) then
             table.insert(rocket_silo_inputs, item)
         end
-    end
+    end ]]
 
     -- Localize them here so they don't have to be recreated over and over
     local item_prototypes, recipe_prototypes = game.item_prototypes, game.recipe_prototypes
@@ -478,8 +478,8 @@ function generator.recipes.generate()
             insert_prototype(recipes, recipe, nil) ]]
 
         -- Detect all the implicit rocket silo recipes
-        elseif proto.rocket_parts_required ~= nil then
-            local fixed_recipe = recipe_prototypes[proto.fixed_recipe --[[@as string]]]
+        --[[ elseif proto.rocket_parts_required ~= nil then
+            local fixed_recipe = recipe_prototypes[proto.fixed_recipe --[[@as string] ] ]
             if fixed_recipe ~= nil then
                 -- Add recipe for all 'launchable' items
                 for _, silo_input in pairs(rocket_silo_inputs) do
@@ -491,7 +491,7 @@ function generator.recipes.generate()
                     recipe.localised_name = silo_product.localised_name
                     recipe.sprite = "item/" .. silo_product.name
                     recipe.category = next(proto.crafting_categories, nil)  -- hopefully this stays working
-                    recipe.energy = fixed_recipe.energy * proto.rocket_parts_required --[[@as number]]
+                    recipe.energy = fixed_recipe.energy * proto.rocket_parts_required --[[@as number] ]
                     recipe.subgroup = {name="science-pack", order="g", valid=true}
                     recipe.order = "x-silo-" .. proto.order .. "-" .. silo_input.order
 
@@ -516,7 +516,7 @@ function generator.recipes.generate()
                 if rocket_part_recipe then
                     generator_util.multiply_recipe(rocket_part_recipe, proto.rocket_parts_required)
                 end
-            end
+            end ]]
         end
 
         -- Add a recipe for producing steam from a boiler
